@@ -1,1 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My MES System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 {
+      color: #4fd1c5;
+    }
+    .task {
+      background: #222;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    .ok {
+      color: #90ee90;
+    }
+    .ng {
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
 
+  <h1>✔ 我的 MES 系統（Beta）</h1>
+  <p>你的專屬 MES 系統已成功運作。</p>
+
+  <div id="tasks"></div>
+
+<script>
+  // 這邊是你 MES 的資料
+  const tasks = [
+    { id: "AI-01", name: "AI 技術拆模組", status: "OK" },
+    { id: "AI-02", name: "AI 修仙技術盤點", status: "WIP" },
+    { id: "ISO-10", name: "ISO 法規比對", status: "NG" }
+  ];
+
+  const box = document.getElementById("tasks");
+
+  tasks.forEach(t => {
+    box.innerHTML += `
+      <div class="task">
+        <strong>${t.id}</strong> - ${t.name}  
+        <span class="${t.status === 'OK' ? 'ok' : t.status === 'NG' ? 'ng' : ''}">
+          (${t.status})
+        </span>
+      </div>
+    `;
+  });
+</script>
+
+</body>
+</html>
