@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex 協作任務儀表板</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #18202f;
+      --muted: #687386;
+      --line: #dfe4ec;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Microsoft JhengHei", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header { position: sticky; top: 0; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); padding: 14px 16px; backdrop-filter: blur(10px); }
+    h1 { margin: 0; font-size: 21px; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    main { padding: 14px; max-width: 960px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 13px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+    .metric strong { display: block; font-size: 28px; margin-top: 4px; }
+    .metric span, .label { color: var(--muted); font-size: 13px; }
+    section { margin-top: 14px; }
+    h2 { font-size: 16px; margin: 0 0 10px; }
+    .task { margin-bottom: 10px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .id { color: var(--muted); font-size: 12px; }
+    .status { font-size: 12px; border-radius: 999px; padding: 3px 8px; border: 1px solid var(--line); white-space: nowrap; }
+    .done { color: var(--green); background: #ecfdf3; }
+    .active { color: var(--blue); background: #eff6ff; }
+    .review { color: var(--amber); background: #fff7ed; }
+    .blocked { color: var(--red); background: #fef2f2; }
+    .bar { height: 8px; border-radius: 999px; background: #e8edf5; overflow: hidden; margin: 10px 0 8px; }
+    .fill { height: 100%; background: var(--blue); }
+    .meta { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .alert { border-left: 4px solid var(--blue); }
+    .alert.warning { border-left-color: var(--amber); }
+    ul { padding-left: 18px; margin: 8px 0 0; }
+    li { margin-bottom: 6px; }
+    @media (min-width: 760px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Codex 協作任務儀表板</h1>
+    <div class="sub">最後更新：2026-05-25 15:37</div>
+  </header>
+  <main id="app"></main>
+  <script>
+    const data = {"updatedAt": "2026-05-25 15:37", "flow": [{"name": "GPT 討論", "status": "需求整理"}, {"name": "任務單", "status": "AI-F-001"}, {"name": "Codex 掃描", "status": "Gmail / 表單"}, {"name": "執行回報", "status": "AI-F-002"}, {"name": "版控 Debug", "status": "AI-F-004 / AI-F-005"}, {"name": "儀表板同步", "status": "AI-F-006"}], "alerts": [{"level": "warning", "title": "Google Drive 檔案移動尚未支援", "detail": "Drive connector 可讀取，但未提供移動/改名工具；此類任務需走確認或改用其他通道。"}, {"level": "info", "title": "程序套件已升級為 A1", "detail": "A1 版本已新增儀表板同步流程、狀態欄位與 AI-F-006 儀表板同步紀錄表。"}, {"level": "info", "title": "Gmail 自動掃描已驗證", "detail": "已成功掃描 Codex指令、執行任務、寄回報並標記 Codex/已處理。"}], "tasks": [{"id": "AI-20260525-001", "name": "Gmail 指令掃描測試", "source": "Gmail", "status": "done", "progress": 100, "owner": "Codex", "next": "可建立常態掃描規則"}, {"id": "AI-20260525-002", "name": "桌面資料深度分析", "source": "Gmail 指令", "status": "done", "progress": 100, "owner": "Codex", "next": "等待使用者確認是否執行低風險整理"}, {"id": "AI-20260525-003", "name": "GPT/Codex 協作程序套件", "source": "Codex 對話", "status": "active", "progress": 95, "owner": "使用者 / Codex", "next": "使用 A1 表單測試填寫後同步到儀表板"}, {"id": "AI-20260525-004", "name": "Google Drive 檔案整理", "source": "Google Drive", "status": "review", "progress": 35, "owner": "使用者 / Codex", "next": "需確認可用工具或改用人工/Chrome 操作"}, {"id": "AI-20260525-005", "name": "流程儀表板網站", "source": "Codex 對話", "status": "active", "progress": 90, "owner": "Codex", "next": "用 AI-F-001 或 AI-F-002 實際填一筆任務後重新同步"}], "issues": [{"id": "DBG-20260525-001", "title": "Word 中文轉碼曾出現問號", "level": "open", "status": "已改善", "next": "使用 UTF-8 Python 腳本產生文件"}, {"id": "DBG-20260525-002", "title": "自動化時區曾誤判", "level": "open", "status": "已改善", "next": "排程使用 UTC DTSTART"}, {"id": "DBG-20260525-003", "title": "Drive connector 無檔案移動能力", "level": "blocked", "status": "待解法", "next": "確認其他工具或採人工流程"}], "forms": [{"id": "AI-F-001", "name": "Codex可執行任務單", "file": "AI-F-001_Codex可執行任務單_A1.docx"}, {"id": "AI-F-002", "name": "AI任務執行紀錄表", "file": "AI-F-002_AI任務執行紀錄表_A1.docx"}, {"id": "AI-F-003", "name": "Codex權限確認紀錄表", "file": "AI-F-003_Codex權限確認紀錄表_A1.docx"}, {"id": "AI-F-004", "name": "問題與Debug紀錄表", "file": "AI-F-004_問題與Debug紀錄表_A1.docx"}, {"id": "AI-F-005", "name": "版本修訂紀錄表", "file": "AI-F-005_版本修訂紀錄表_A1.docx"}, {"id": "AI-F-006", "name": "儀表板同步紀錄表", "file": "AI-F-006_儀表板同步紀錄表_A1.docx"}, {"id": "AI-P-001-S", "name": "GPT與Codex協作任務派發程序", "file": "AI-P-001-S_GPT與Codex協作任務派發程序_A1.docx"}]};
+    const label = { done: "已完成", active: "進行中", review: "待確認", blocked: "卡住" };
+    const tasks = data.tasks || [];
+    const counts = {
+      total: tasks.length,
+      active: tasks.filter(t => t.status === "active").length,
+      review: tasks.filter(t => t.status === "review").length,
+      blocked: tasks.filter(t => t.status === "blocked").length
+    };
+    document.getElementById("app").innerHTML = `
+      <div class="grid">
+        <div class="card metric"><span>任務總數</span><strong>${counts.total}</strong></div>
+        <div class="card metric"><span>進行中</span><strong>${counts.active}</strong></div>
+        <div class="card metric"><span>待確認</span><strong>${counts.review}</strong></div>
+        <div class="card metric"><span>卡住</span><strong>${counts.blocked}</strong></div>
+      </div>
+      <section>
+        <h2>重要訊息</h2>
+        ${(data.alerts || []).map(a => `<div class="card alert ${a.level || ""}"><strong>${a.title}</strong><div class="meta">${a.detail}</div></div>`).join("")}
+      </section>
+      <section>
+        <h2>任務進度</h2>
+        ${tasks.map(t => `
+          <article class="card task">
+            <div class="row">
+              <div><strong>${t.name}</strong><div class="id">${t.id} · ${t.source || ""}</div></div>
+              <span class="status ${t.status}">${label[t.status] || t.status}</span>
+            </div>
+            <div class="bar"><div class="fill" style="width:${Number(t.progress || 0)}%"></div></div>
+            <div class="meta">進度：${t.progress || 0}% · 負責：${t.owner || "未指定"}</div>
+            <div class="meta">下一步：${t.next || "待確認"}</div>
+          </article>
+        `).join("")}
+      </section>
+      <section>
+        <h2>問題與 Debug</h2>
+        ${(data.issues || []).map(i => `<div class="card task"><strong>${i.id} · ${i.title}</strong><div class="meta">狀態：${i.status}｜下一步：${i.next}</div></div>`).join("")}
+      </section>
+      <section>
+        <h2>表單</h2>
+        <div class="card"><ul>${(data.forms || []).map(f => `<li><strong>${f.id}</strong> ${f.name}</li>`).join("")}</ul></div>
+      </section>
+    `;
+  </script>
+</body>
+</html>
