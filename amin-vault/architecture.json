@@ -35,8 +35,14 @@
     "total_objects": 9,
     "versions": 10,
     "relationships": 6,
-    "mirror_registry": 9,
+    "mirror_registry": 10,
     "security_warnings": 0
+  },
+  "contracts": {
+    "web": "/amin-vault/",
+    "json": "/amin-vault/architecture.json",
+    "markdown": "/amin-vault/ARCHITECTURE.md",
+    "drive": "03_Knowledge/Universal Vault 核心架構.md"
   },
   "boundaries": ["Android file-level automatic sync", "Vault MCP", "automatic three-way merge"]
 }
