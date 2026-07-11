@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05070b">
+  <meta name="description" content="Amin Pocket Vault GBA 遊戲中心">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./gba.css">
+  <title>GBA 遊戲中心 · Amin Pocket Vault</title>
+</head>
+<body>
+  <header class="gba-topbar">
+    <a href="./" class="back-link">← Pocket OS</a>
+    <div>
+      <p>AMIN POCKET VAULT</p>
+      <h1>GBA 遊戲中心</h1>
+    </div>
+    <span id="gbaStatus" class="gba-badge">初始化</span>
+  </header>
+
+  <main>
+    <section id="libraryView" class="library-view">
+      <article class="intro-card">
+        <span class="kicker">mGBA · WEBASSEMBLY</span>
+        <h2>把你合法持有的 GBA 遊戲，放進自己的掌機 OS。</h2>
+        <p>ROM 只保存在這台裝置的瀏覽器資料庫，不會上傳到 Supabase、Google Drive 或 GitHub。</p>
+        <div class="import-row">
+          <label class="import-button">
+            匯入 .gba／.zip
+            <input id="romInput" type="file" accept=".gba,.zip,application/zip" multiple hidden>
+          </label>
+          <button id="persistButton" class="secondary">保留本機資料</button>
+        </div>
+        <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
+      </article>
+
+      <section class="library-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">LOCAL LIBRARY</p>
+            <h2>我的 GBA 遊戲</h2>
+          </div>
+          <span class="core-badge">mGBA</span>
+        </div>
+        <div id="emptyLibrary" class="empty-library">
+          <div class="cartridge">GBA</div>
+          <h3>遊戲匣還是空的</h3>
+          <p>按上方「匯入」選擇手機中的合法 ROM。GBA BIOS 為選用，不需要另外提供也能先玩多數遊戲。</p>
+        </div>
+        <div id="romLibrary" class="rom-library"></div>
+      </section>
+
+      <article class="notice-card">
+        <h3>保存與離線</h3>
+        <p>模擬器內的遊戲存檔與即時存檔由 EmulatorJS 儲存在瀏覽器中。第一次啟動需要網路下載 mGBA 核心，之後會使用快取；目前尚未同步到 Universal Vault。</p>
+      </article>
+
+      <footer>
+        <p>Emulation powered by EmulatorJS (GPL-3.0) and the mGBA core. 本頁不提供或散布 ROM、BIOS。</p>
+      </footer>
+    </section>
+
+    <section id="playerView" class="player-view hidden">
+      <div class="player-toolbar">
+        <button id="backToLibrary" class="secondary">← 遊戲庫</button>
+        <strong id="activeGameTitle">GBA Game</strong>
+        <span class="core-badge">mGBA</span>
+      </div>
+      <div id="game" class="game-stage"></div>
+    </section>
+  </main>
+
+  <script src="./gba.js"></script>
+</body>
+</html>
