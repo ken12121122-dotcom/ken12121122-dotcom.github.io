@@ -1,4 +1,4 @@
-const CACHE='amin-vault-v081';
+const CACHE='amin-vault-v082';
 const ASSETS=[
   './',
   './styles.css',
@@ -10,6 +10,7 @@ const ASSETS=[
   './config.js',
   './gba.html',
   './gba.css',
+  './gba-immersive.js',
   './gba.js',
   './manifest.webmanifest',
   './icon.svg',
