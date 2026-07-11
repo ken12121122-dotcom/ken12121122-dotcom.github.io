@@ -28,12 +28,26 @@
         <p>ROM 只保存在這台裝置的瀏覽器資料庫，不會上傳到 Supabase、Google Drive 或 GitHub。</p>
         <div class="import-row">
           <label class="import-button">
-            匯入 .gba／.zip
-            <input id="romInput" type="file" accept=".gba,.zip,application/zip" multiple hidden>
+            匯入 ROM／合集 ZIP
+            <input id="romInput" type="file" accept=".gba,.bin,.zip,application/zip" multiple hidden>
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
+        <p id="importStatus" class="storage-status">支援單一 `.gba`、`.bin`，以及內含多個 ROM 的 `.zip` 合集。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
+      </article>
+
+      <article class="official-pack-card">
+        <div class="official-pack-copy">
+          <span class="kicker">LEGAL HOMEBREW PACK</span>
+          <h2>Retrobrews GBA Homebrew Collection</h2>
+          <p>這是原專案提供的合法 GBA 自製遊戲集合。下載後回到這裡，選擇整個 ZIP，系統會自動找出其中所有 `.gba`／`.bin` 並一次加入遊戲庫。</p>
+          <p class="pack-note">授權範圍限制於 Retrobrews 原專案散布，因此本站只連到官方 ZIP，不重新託管或改包。</p>
+        </div>
+        <div class="official-pack-actions">
+          <a id="officialPackLink" class="official-download" href="https://github.com/retrobrews/gba-games/archive/refs/heads/master.zip" target="_blank" rel="noopener noreferrer">下載官方合集 ZIP</a>
+          <a class="source-link" href="https://github.com/retrobrews/gba-games" target="_blank" rel="noopener noreferrer">查看遊戲清單與作者說明</a>
+        </div>
       </article>
 
       <section class="library-panel">
@@ -47,7 +61,7 @@
         <div id="emptyLibrary" class="empty-library">
           <div class="cartridge">GBA</div>
           <h3>遊戲匣還是空的</h3>
-          <p>按上方「匯入」選擇手機中的合法 ROM。GBA BIOS 為選用，不需要另外提供也能先玩多數遊戲。</p>
+          <p>匯入自己的 ROM，或先下載上方合法 Homebrew 合集。GBA BIOS 為選用，不需要另外提供也能先玩多數遊戲。</p>
         </div>
         <div id="romLibrary" class="rom-library"></div>
       </section>
@@ -58,7 +72,7 @@
       </article>
 
       <footer>
-        <p>Emulation powered by EmulatorJS (GPL-3.0) and the mGBA core. 本頁不提供或散布 ROM、BIOS。</p>
+        <p>Emulation powered by EmulatorJS (GPL-3.0), mGBA and fflate. 本頁不提供或散布商業 ROM、BIOS；Retrobrews 合集由原專案直接提供。</p>
       </footer>
     </section>
 
@@ -72,6 +86,7 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./gba.js"></script>
 </body>
 </html>
