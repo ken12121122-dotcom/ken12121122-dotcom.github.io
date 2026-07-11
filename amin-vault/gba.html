@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#05070b">
-  <meta name="description" content="Amin Pocket Vault GBA 遊戲中心">
+  <meta name="description" content="Amin Pocket Vault Pokémon GBA 遊戲中心">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./gba.css">
-  <title>GBA 遊戲中心 · Amin Pocket Vault</title>
+  <title>Pokémon GBA 遊戲中心 · Amin Pocket Vault</title>
 </head>
 <body>
   <header class="gba-topbar">
     <a href="./" class="back-link">← Pocket OS</a>
     <div>
       <p>AMIN POCKET VAULT</p>
-      <h1>GBA 遊戲中心</h1>
+      <h1>Pokémon GBA 遊戲中心</h1>
     </div>
     <span id="gbaStatus" class="gba-badge">初始化</span>
   </header>
@@ -23,45 +23,37 @@
   <main>
     <section id="libraryView" class="library-view">
       <article class="intro-card">
-        <span class="kicker">mGBA · WEBASSEMBLY</span>
-        <h2>把你合法持有的 GBA 遊戲，放進自己的掌機 OS。</h2>
-        <p>ROM 只保存在這台裝置的瀏覽器資料庫，不會上傳到 Supabase、Google Drive 或 GitHub。</p>
+        <span class="kicker">POKÉMON LIBRARY · mGBA</span>
+        <h2>只保留你的 Pokémon GBA 遊戲。</h2>
+        <p>請匯入你由合法持有卡帶自行備份的 `.gba`，或包含個人備份的 ZIP。檔案只保存在這台裝置的瀏覽器，不會上傳到 Supabase、Google Drive 或 GitHub。</p>
         <div class="import-row">
           <label class="import-button">
-            匯入 ROM／合集 ZIP
+            匯入 Pokémon ROM 備份
             <input id="romInput" type="file" accept=".gba,.bin,.zip,application/zip" multiple hidden>
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
-        <p id="importStatus" class="storage-status">支援單一 `.gba`、`.bin`，以及內含多個 ROM 的 `.zip` 合集。</p>
+        <p id="importStatus" class="storage-status">支援單一 `.gba`／`.bin`，以及內含多個個人備份的 `.zip`。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
       </article>
 
-      <article class="official-pack-card">
-        <div class="official-pack-copy">
-          <span class="kicker">LEGAL HOMEBREW PACK</span>
-          <h2>Retrobrews GBA Homebrew Collection</h2>
-          <p>這是原專案提供的合法 GBA 自製遊戲集合。下載後回到這裡，選擇整個 ZIP，系統會自動找出其中所有 `.gba`／`.bin` 並一次加入遊戲庫。</p>
-          <p class="pack-note">授權範圍限制於 Retrobrews 原專案散布，因此本站只連到官方 ZIP，不重新託管或改包。</p>
-        </div>
-        <div class="official-pack-actions">
-          <a id="officialPackLink" class="official-download" href="https://github.com/retrobrews/gba-games/archive/refs/heads/master.zip" target="_blank" rel="noopener noreferrer">下載官方合集 ZIP</a>
-          <a class="source-link" href="https://github.com/retrobrews/gba-games" target="_blank" rel="noopener noreferrer">查看遊戲清單與作者說明</a>
-        </div>
+      <article class="notice-card">
+        <h3>合法取得方式</h3>
+        <p>本頁不提供 Pokémon ROM 下載。可使用自己持有的原版 GBA 卡帶與卡帶讀取器建立個人備份，再匯入此遊戲庫。不同地區對備份的規定可能不同，請依所在地法律使用。</p>
       </article>
 
       <section class="library-panel">
         <div class="section-head">
           <div>
-            <p class="eyebrow">LOCAL LIBRARY</p>
-            <h2>我的 GBA 遊戲</h2>
+            <p class="eyebrow">POKÉMON LOCAL LIBRARY</p>
+            <h2>我的 Pokémon 遊戲</h2>
           </div>
           <span class="core-badge">mGBA</span>
         </div>
         <div id="emptyLibrary" class="empty-library">
-          <div class="cartridge">GBA</div>
-          <h3>遊戲匣還是空的</h3>
-          <p>匯入自己的 ROM，或先下載上方合法 Homebrew 合集。GBA BIOS 為選用，不需要另外提供也能先玩多數遊戲。</p>
+          <div class="cartridge">PKMN</div>
+          <h3>還沒有 Pokémon 遊戲</h3>
+          <p>匯入你自己的合法卡帶備份後，就能在手機上用 mGBA 遊玩。</p>
         </div>
         <div id="romLibrary" class="rom-library"></div>
       </section>
@@ -72,14 +64,14 @@
       </article>
 
       <footer>
-        <p>Emulation powered by EmulatorJS (GPL-3.0), mGBA and fflate. 本頁不提供或散布商業 ROM、BIOS；Retrobrews 合集由原專案直接提供。</p>
+        <p>Emulation powered by EmulatorJS (GPL-3.0), mGBA and fflate。本頁不提供或散布 Pokémon ROM、BIOS。</p>
       </footer>
     </section>
 
     <section id="playerView" class="player-view hidden">
       <div class="player-toolbar">
         <button id="backToLibrary" class="secondary">← 遊戲庫</button>
-        <strong id="activeGameTitle">GBA Game</strong>
+        <strong id="activeGameTitle">Pokémon GBA</strong>
         <span class="core-badge">mGBA</span>
       </div>
       <div id="game" class="game-stage"></div>
