@@ -4,6 +4,29 @@
 
 資料屬於 Vault，不屬於任何單一 App。Obsidian、ChatGPT、Codex、PWA 與 Google Drive 都只是客戶端、轉接器或鏡像層。
 
+## Interface Shell
+
+The canonical PWA now uses a Three.js desktop and navigation shell with a GBA-style interaction model.
+
+```text
+Touch / Keyboard / Gamepad
+→ GBA Action Layer
+→ Focus Manager or Pointer Mode
+→ Three.js Portal
+→ Existing Vault Feature
+```
+
+Controls:
+
+- D-pad: move focus or pointer
+- A: open or click
+- B: return to the console
+- L / R: cycle portals
+- Start: system menu
+- Select: switch between focus and pointer mode
+
+Three.js controls presentation, spatial navigation, and input feedback. It does not replace the canonical database, RLS, versions, or audit flow.
+
 ## Public and Private Separation
 
 The public website reads only curated records from `vault_public_content`. Anonymous access to the private core tables is revoked. Authenticated users see private Workspace data only after ownership binding and RLS checks.
@@ -36,7 +59,7 @@ Protection mechanisms:
 
 ### 3. Platform Adapters
 
-- PWA
+- Three.js GBA PWA
 - ChatGPT Connected App
 - Google Drive Mirror
 - Obsidian Android
@@ -70,10 +93,14 @@ The mirror runs hourly and uses stable Google Drive file IDs recorded in `vault_
 - Relationships: 6
 - Mirror registry entries: 10
 - Supabase security warnings: 0
-- PWA version: 0.6.2
+- PWA version: 0.7.0
+- Three.js shell: active
+- GBA focus controls: active
+- Pointer mode: active
 
 ## Pending
 
 - Android file-level automatic sync
 - Vault MCP
+- Cross-app Android system control
 - Automatic three-way conflict merge
