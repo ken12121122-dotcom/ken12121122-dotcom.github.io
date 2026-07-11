@@ -1,7 +1,7 @@
 {
   "name": "Amin Universal Vault",
   "architecture_version": 2,
-  "pwa_version": "0.7.0",
+  "pwa_version": "0.8.0",
   "principle": "資料屬於 Vault，不屬於任何單一 App。",
   "interface_shell": {
     "engine": "Three.js r185",
@@ -10,6 +10,18 @@
     "modes": ["focus", "pointer"],
     "inputs": ["touch controls", "keyboard", "Gamepad API"],
     "boundary": "Three.js controls presentation and navigation; Supabase remains the canonical data core."
+  },
+  "emulation_center": {
+    "status": "active",
+    "system": "Game Boy Advance",
+    "frontend": "EmulatorJS stable",
+    "core": "mGBA",
+    "rom_source": "user-selected local files",
+    "rom_storage": "browser IndexedDB only",
+    "accepted_formats": [".gba", ".zip"],
+    "bios": "optional",
+    "save_storage": "browser local storage managed by EmulatorJS",
+    "cloud_save_sync": false
   },
   "layers": [
     {
@@ -27,7 +39,7 @@
     {
       "order": 3,
       "name": "Platform Adapters",
-      "clients": ["Three.js GBA PWA", "ChatGPT", "Google Drive Mirror", "Obsidian Android", "Obsidian Windows", "Codex", "Future MCP"]
+      "clients": ["Three.js GBA PWA", "Local GBA Game Center", "ChatGPT", "Google Drive Mirror", "Obsidian Android", "Obsidian Windows", "Codex", "Future MCP"]
     },
     {
       "order": 4,
@@ -45,13 +57,15 @@
     "relationships": 6,
     "mirror_registry": 10,
     "security_warnings": 0,
-    "three_shell": true
+    "three_shell": true,
+    "gba_emulator": true
   },
   "contracts": {
     "web": "/amin-vault/",
+    "gba": "/amin-vault/gba.html",
     "json": "/amin-vault/architecture.json",
     "markdown": "/amin-vault/ARCHITECTURE.md",
     "drive": "03_Knowledge/Universal Vault 核心架構.md"
   },
-  "boundaries": ["Android file-level automatic sync", "Vault MCP", "cross-app Android control", "automatic three-way merge"]
+  "boundaries": ["GBA cloud save synchronization", "Android file-level automatic sync", "Vault MCP", "cross-app Android control", "automatic three-way merge"]
 }
