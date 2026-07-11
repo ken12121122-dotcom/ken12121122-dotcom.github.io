@@ -18,23 +18,29 @@
   </header>
   <main>
     <section class="hero card">
-      <span class="kicker">Vault v0.6.1</span>
+      <span id="publicPwaVersion" class="kicker">Vault v0.6.2</span>
       <h2>資料不屬於任何 App。</h2>
       <p>Obsidian、ChatGPT、Codex、Drive 與手機 App，都只是同一個知識核心的入口。</p>
-      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>90%</strong></div><div class="progress-track"><div class="progress-bar" style="width:90%"></div></div></div>
+      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>92%</strong></div><div class="progress-track"><div class="progress-bar" style="width:92%"></div></div></div>
     </section>
 
     <section class="card">
-      <p class="eyebrow">SYSTEM ARCHITECTURE</p>
-      <h3>Universal Vault 四層架構</h3>
-      <p>這裡顯示可公開的高階架構。完整節點、版本與內部狀態需登入後查看。</p>
-      <div class="stack">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">SYSTEM ARCHITECTURE</p>
+          <h3 id="architectureTitle">Universal Vault 四層架構</h3>
+        </div>
+        <span id="architectureVersion" class="badge active">v2</span>
+      </div>
+      <p id="architectureSummary">這裡顯示可公開的高階架構。完整節點、版本與內部狀態需登入後查看。</p>
+      <div id="architectureLayerList" class="stack">
         <div class="row"><div><div class="row-title">1. Data Core</div><div class="row-sub">Workspace、Objects、Relationships、Versions、Audit</div></div><span class="badge active">Supabase</span></div>
         <div class="row"><div><div class="row-title">2. Governance</div><div class="row-sub">Capture → Change Request → Review → Publish → Version → Audit</div></div><span class="badge">RLS + Version Lock</span></div>
         <div class="row"><div><div class="row-title">3. Platform Adapters</div><div class="row-sub">PWA、ChatGPT、Drive、Obsidian、Codex、Future MCP</div></div><span class="badge">Clients</span></div>
         <div class="row"><div><div class="row-title">4. Mirror & Recovery</div><div class="row-sub">Supabase → Google Drive Markdown Mirror → Obsidian</div></div><span class="badge active">Hourly</span></div>
       </div>
-      <p class="message success">核心原則：資料屬於 Vault，不屬於任何單一 App。</p>
+      <p id="architecturePrinciple" class="message success">核心原則：資料屬於 Vault，不屬於任何單一 App。</p>
+      <p id="architectureUpdatedAt" class="message">等待雲端架構資料…</p>
     </section>
 
     <section class="metric-grid">
@@ -49,7 +55,7 @@
         <label>電子郵件<input id="emailInput" type="email" autocomplete="email" placeholder="name@example.com"></label>
         <label>密碼<input id="passwordInput" type="password" autocomplete="current-password" placeholder="至少 6 碼"></label>
         <div class="button-row"><button id="signupButton">建立帳號</button><button id="loginButton" class="secondary">登入</button></div>
-        <p id="authMessage" class="message">尚未登入，先顯示 Demo 快照。</p>
+        <p id="authMessage" class="message">尚未登入，先顯示公開架構與 Demo 快照。</p>
       </div>
       <div id="sessionPanel" class="hidden">
         <p class="message success">已登入：<span id="sessionEmail"></span></p>
@@ -58,42 +64,30 @@
       </div>
     </section>
     <section id="composePanel" class="card hidden">
-      <p class="eyebrow">CAPTURE</p>
-      <h3>建立 Vault 草稿</h3>
-      <label>類型
-        <select id="draftType">
-          <option value="task">任務</option><option value="knowledge">知識</option><option value="decision">決策</option><option value="project">專案</option><option value="conversation">對話</option><option value="source">來源</option>
-        </select>
-      </label>
+      <p class="eyebrow">CAPTURE</p><h3>建立 Vault 草稿</h3>
+      <label>類型<select id="draftType"><option value="task">任務</option><option value="knowledge">知識</option><option value="decision">決策</option><option value="project">專案</option><option value="conversation">對話</option><option value="source">來源</option></select></label>
       <label>標題<input id="draftTitle" type="text" placeholder="例如：完成 Android 自動同步"></label>
       <label>內容<textarea id="draftContent" rows="5" placeholder="輸入說明、下一步或筆記內容"></textarea></label>
-      <button id="createDraftButton">送入 Change Request</button>
-      <p id="draftMessage" class="message">草稿會先進待審核區，不直接改寫正式資料。</p>
+      <button id="createDraftButton">送入 Change Request</button><p id="draftMessage" class="message">草稿會先進待審核區，不直接改寫正式資料。</p>
     </section>
     <section id="reviewPanel" class="card hidden">
       <div class="section-head"><div><p class="eyebrow">GOVERNANCE</p><h3>待審核變更</h3></div><button id="refreshReviewButton" class="ghost">重新整理</button></div>
-      <div id="changeRequestList" class="stack"></div>
-      <p id="reviewMessage" class="message">核准後會建立或更新正式 Object、Version 與 Audit Log。</p>
+      <div id="changeRequestList" class="stack"></div><p id="reviewMessage" class="message">核准後會建立或更新正式 Object、Version 與 Audit Log。</p>
     </section>
     <section id="explorerPanel" class="card hidden">
       <div class="section-head"><div><p class="eyebrow">EXPLORER</p><h3>正式知識瀏覽器</h3></div><span id="offlineBadge" class="badge">Live</span></div>
-      <div class="filter-grid">
-        <label>搜尋<input id="objectSearch" type="search" placeholder="搜尋標題或內容"></label>
-        <label>類型
-          <select id="objectTypeFilter"><option value="all">全部</option><option value="project">專案</option><option value="task">任務</option><option value="knowledge">知識</option><option value="decision">決策</option><option value="conversation">對話</option><option value="source">來源</option></select>
-        </label>
-      </div>
-      <div id="objectList" class="stack"></div>
-      <p id="explorerMessage" class="message">每個正式節點都能複製 Markdown 或提出版本化修改。</p>
+      <div class="filter-grid"><label>搜尋<input id="objectSearch" type="search" placeholder="搜尋標題或內容"></label><label>類型<select id="objectTypeFilter"><option value="all">全部</option><option value="project">專案</option><option value="task">任務</option><option value="knowledge">知識</option><option value="decision">決策</option><option value="conversation">對話</option><option value="source">來源</option></select></label></div>
+      <div id="objectList" class="stack"></div><p id="explorerMessage" class="message">每個正式節點都能複製 Markdown 或提出版本化修改。</p>
     </section>
     <section class="card"><div class="section-head"><div><p class="eyebrow">PLATFORMS</p><h3>入口狀態</h3></div><button id="refreshButton" class="ghost">重新整理</button></div><div id="clientList" class="stack"></div></section>
     <section class="card"><p class="eyebrow">NEXT ACTIONS</p><h3>下一步任務</h3><div id="taskList" class="stack"></div></section>
-    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 檔案層自動同步、Vault MCP 與自動三方合併仍在施工。v0.6.1 已補上公開架構總覽。</p></section>
+    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 檔案層自動同步、Vault MCP 與自動三方合併仍在施工。v0.6.2 已完成公開資料層與私有核心分流。</p></section>
   </main>
   <footer><span>Amin Universal Vault</span><span id="footerStatus">initializing</span></footer>
 </div>
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./app.js"></script>
+<script src="./public.js"></script>
 </body>
 </html>
