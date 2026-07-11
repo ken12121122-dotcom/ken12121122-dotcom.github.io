@@ -1,0 +1,69 @@
+:root{
+  color-scheme:dark;
+  --bg:#05070b;
+  --panel:#111722;
+  --panel2:#1a2230;
+  --line:rgba(255,255,255,.1);
+  --text:#f7f8fa;
+  --muted:#a3acb9;
+  --accent:#8da2ff;
+  --accent2:#5ee3b2;
+  --danger:#ff8d9e;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 15% 0%,rgba(141,162,255,.18),transparent 34rem),var(--bg);color:var(--text)}
+body{padding-bottom:max(20px,env(safe-area-inset-bottom))}
+button,input{font:inherit}
+button,.import-button,.back-link{touch-action:manipulation}
+.gba-topbar{width:min(100%,920px);margin:0 auto;padding:16px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.gba-topbar p{margin:0;color:var(--accent);font-size:.65rem;font-weight:900;letter-spacing:.12em}
+.gba-topbar h1{margin:3px 0 0;font-size:1.15rem}
+.back-link{color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.04);font-weight:800;font-size:.78rem}
+.gba-badge,.core-badge{border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:.7rem;font-weight:900;color:var(--muted);white-space:nowrap}
+.gba-badge.active,.core-badge{color:var(--accent2)}
+.gba-badge.error{color:var(--danger)}
+main{width:min(100%,920px);margin:0 auto;padding:0 14px}
+.intro-card,.library-panel,.notice-card{border:1px solid var(--line);border-radius:24px;background:linear-gradient(150deg,rgba(28,36,50,.94),rgba(12,16,24,.94));box-shadow:0 22px 70px rgba(0,0,0,.3);padding:22px;margin-bottom:14px}
+.kicker,.eyebrow{display:block;color:var(--accent2);font-size:.68rem;font-weight:900;letter-spacing:.13em;margin-bottom:8px}
+h2,h3,p{margin-top:0}
+h2{font-size:clamp(1.45rem,6vw,2.35rem);line-height:1.1;margin-bottom:12px}
+h3{font-size:1rem}
+p{color:var(--muted);line-height:1.6}
+.import-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+button,.import-button{display:flex;align-items:center;justify-content:center;min-height:48px;border:0;border-radius:14px;padding:12px 15px;background:var(--accent);color:#07090d;font-weight:900;cursor:pointer;text-align:center}
+button.secondary,.import-row .secondary{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text)}
+.storage-status{font-size:.76rem;margin:12px 0 0}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.section-head h2{font-size:1.25rem;margin:0}
+.empty-library{text-align:center;padding:28px 12px}
+.cartridge,.rom-icon{display:grid;place-items:center;background:linear-gradient(145deg,#6f79c8,#3b426f);border:2px solid rgba(255,255,255,.16);box-shadow:inset 0 -8px rgba(0,0,0,.22),0 14px 38px rgba(0,0,0,.32);font-weight:1000;letter-spacing:.08em}
+.cartridge{width:90px;height:112px;margin:0 auto 22px;border-radius:10px 10px 24px 24px}
+.rom-library{display:grid;gap:10px}
+.rom-card{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:18px;background:rgba(0,0,0,.18)}
+.rom-icon{width:58px;height:68px;border-radius:7px 7px 16px 16px;font-size:.72rem}
+.rom-info{min-width:0}
+.rom-info strong,.rom-info span,.rom-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rom-info strong{margin-bottom:5px}
+.rom-info span{color:var(--muted);font-size:.75rem}
+.rom-info small{color:#747f90;font-size:.66rem;margin-top:4px}
+.rom-actions{display:grid;gap:7px}
+.rom-actions button{min-height:36px;padding:8px 12px;font-size:.72rem}
+.notice-card h3{margin-bottom:8px}
+.notice-card p{margin-bottom:0}
+footer{text-align:center;padding:12px 10px}
+footer p{font-size:.68rem}
+.hidden{display:none!important}
+.player-view{position:fixed;inset:0;z-index:50;background:#000;display:grid;grid-template-rows:auto 1fr}
+.player-toolbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:max(10px,env(safe-area-inset-top)) 12px 10px;background:#080b11;border-bottom:1px solid var(--line)}
+.player-toolbar strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.player-toolbar button{min-height:38px;padding:8px 11px;font-size:.72rem}
+.game-stage{width:100%;height:100%;min-height:0;background:#000}
+.playing{overflow:hidden}
+@media(max-width:560px){
+  .gba-topbar{grid-template-columns:auto 1fr}.gba-topbar .gba-badge{grid-column:1/-1;justify-self:stretch;text-align:center}
+  .import-row{grid-template-columns:1fr}
+  .rom-card{grid-template-columns:52px minmax(0,1fr)}
+  .rom-icon{width:52px;height:62px}
+  .rom-actions{grid-column:1/-1;grid-template-columns:1fr 1fr}
+}
