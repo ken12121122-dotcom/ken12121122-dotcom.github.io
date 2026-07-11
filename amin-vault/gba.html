@@ -25,8 +25,8 @@
     <section id="libraryView" class="library-view">
       <article class="intro-card">
         <span class="kicker">POKÉMON LIBRARY · mGBA</span>
-        <h2>只保留你的 Pokémon GBA 遊戲。</h2>
-        <p>請匯入你由合法持有卡帶自行備份的 `.gba`，或包含個人備份的 ZIP。檔案只保存在這台裝置的瀏覽器，不會上傳到 Supabase、Google Drive 或 GitHub。</p>
+        <h2>原生手把橋接已加入。</h2>
+        <p>Android App 版會直接接收 KeyEvent 與 MotionEvent，繞過 Chrome 對泛用 USB 手把遺失按鈕的問題。ROM 仍只保存在這台裝置，不上傳到 Supabase、Google Drive 或 GitHub。</p>
         <div class="import-row">
           <label class="import-button">
             匯入 Pokémon ROM 備份
@@ -34,15 +34,15 @@
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
-        <a href="./gba-signal-lab.html?v=085" class="controller-settings-link">📡 先收集手把原始訊號</a>
-        <a href="./gba-controller.html?v=084" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
+        <a href="./gba-signal-lab.html?v=090" class="controller-settings-link">📡 收集手把原始訊號</a>
+        <a href="./gba-controller.html?v=090" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
         <p id="importStatus" class="storage-status">支援單一 `.gba`／`.bin`，以及內含多個個人備份的 `.zip`。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
       </article>
 
       <article class="notice-card">
-        <h3>合法取得方式</h3>
-        <p>本頁不提供 Pokémon ROM 下載。可使用自己持有的原版 GBA 卡帶與卡帶讀取器建立個人備份，再匯入此遊戲庫。不同地區對備份的規定可能不同，請依所在地法律使用。</p>
+        <h3>目前預設控制</h3>
+        <p>實體按鈕 2 → GBA A；按鈕 3 → GBA B；按鈕 1、4與右搖桿無功能；十字鍵與左搖桿都控制方向。Start、Select、L、R 也由 Android 原生層接收。</p>
       </article>
 
       <section class="library-panel">
@@ -63,7 +63,7 @@
 
       <article class="notice-card">
         <h3>保存與離線</h3>
-        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。請不要清除瀏覽器網站資料，目前存檔尚未同步到 Universal Vault。</p>
+        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。請不要清除 App 或網站資料，目前存檔尚未同步到 Universal Vault。</p>
       </article>
 
       <footer>
@@ -87,6 +87,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <script src="./gba-native-input.js"></script>
   <script src="./gba-immersive.js"></script>
   <script src="./gba-save-guard.js"></script>
   <script src="./gba-controller-runtime.js"></script>
