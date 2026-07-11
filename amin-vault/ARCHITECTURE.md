@@ -4,6 +4,10 @@
 
 資料屬於 Vault，不屬於任何單一 App。Obsidian、ChatGPT、Codex、PWA 與 Google Drive 都只是客戶端、轉接器或鏡像層。
 
+## Public and Private Separation
+
+The public website reads only curated records from `vault_public_content`. Anonymous access to the private core tables is revoked. Authenticated users see private Workspace data only after ownership binding and RLS checks.
+
 ## Layers
 
 ### 1. Data Core
@@ -28,6 +32,7 @@ Protection mechanisms:
 - Optimistic version checks
 - Version-conflict blocking
 - Public/private data separation
+- Anonymous core-table privileges revoked
 
 ### 3. Platform Adapters
 
@@ -49,6 +54,13 @@ Supabase
 
 The mirror runs hourly and uses stable Google Drive file IDs recorded in `vault_mirror_files`.
 
+## Architecture Contracts
+
+- Web: `/amin-vault/`
+- JSON: `/amin-vault/architecture.json`
+- Markdown: `/amin-vault/ARCHITECTURE.md`
+- Drive: `03_Knowledge/Universal Vault 核心架構.md`
+
 ## Current State
 
 - Active objects: 5
@@ -56,7 +68,7 @@ The mirror runs hourly and uses stable Google Drive file IDs recorded in `vault_
 - Total objects: 9
 - Versions: 10
 - Relationships: 6
-- Mirror registry entries: 9
+- Mirror registry entries: 10
 - Supabase security warnings: 0
 - PWA version: 0.6.2
 
