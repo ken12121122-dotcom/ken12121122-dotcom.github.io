@@ -1,4 +1,4 @@
-const CACHE='amin-vault-v084';
+const CACHE='amin-vault-v085';
 const ASSETS=[
   './',
   './styles.css',
@@ -14,6 +14,9 @@ const ASSETS=[
   './gba-controller.html',
   './gba-controller.css',
   './gba-controller.js',
+  './gba-signal-lab.html',
+  './gba-signal-lab.css',
+  './gba-signal-lab.js',
   './gba-immersive.js',
   './gba-save-guard.js',
   './gba-controller-runtime.js',
