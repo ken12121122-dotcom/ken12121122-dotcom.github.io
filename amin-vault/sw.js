@@ -1,13 +1,29 @@
-const CACHE='amin-vault-v062';
-const ASSETS=['./','./styles.css','./app.js','./public.js','./config.js','./manifest.webmanifest','./icon.svg','./architecture.json','./ARCHITECTURE.md'];
+const CACHE='amin-vault-v070';
+const ASSETS=[
+  './',
+  './styles.css',
+  './app.js',
+  './public.js',
+  './three-shell.js',
+  './config.js',
+  './manifest.webmanifest',
+  './icon.svg',
+  './architecture.json',
+  './ARCHITECTURE.md'
+];
+
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
   self.skipWaiting();
 });
+
 self.addEventListener('activate',event=>{
-  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));
+  event.waitUntil(
+    caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
+  );
   self.clients.claim();
 });
+
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET') return;
   event.respondWith(
