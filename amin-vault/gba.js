@@ -5,11 +5,14 @@
   const DB_VERSION = 1;
   const STORE_NAME = 'roms';
   const MAX_ROM_BYTES = 64 * 1024 * 1024;
+  const MAX_ARCHIVE_BYTES = 160 * 1024 * 1024;
+  const ROM_PATTERN = /\.(gba|bin)$/i;
   let activeObjectUrl = null;
 
   const $ = id => document.getElementById(id);
   const statusBadge = $('gbaStatus');
   const storageText = $('storageStatus');
+  const importText = $('importStatus');
   const libraryList = $('romLibrary');
   const emptyState = $('emptyLibrary');
   const playerView = $('playerView');
@@ -19,6 +22,11 @@
   function setStatus(text, kind = '') {
     statusBadge.textContent = text;
     statusBadge.className = `gba-badge ${kind}`.trim();
+  }
+
+  function setImportStatus(text, kind = '') {
+    importText.textContent = text;
+    importText.className = `storage-status ${kind}`.trim();
   }
 
   function escapeHtml(value) {
@@ -109,8 +117,8 @@
     return `${(bytes / (1024 ** index)).toFixed(index ? 1 : 0)} ${units[index]}`;
   }
 
-  async function createRomId(file) {
-    const raw = new TextEncoder().encode(`${file.name}|${file.size}|${file.lastModified}`);
+  async function createRomId(name, size, modified = 0) {
+    const raw = new TextEncoder().encode(`${name}|${size}|${modified}`);
     const digest = await crypto.subtle.digest('SHA-256', raw);
     return [...new Uint8Array(digest)].slice(0, 12).map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
@@ -124,8 +132,12 @@
     return Math.abs(hash | 0) || 1;
   }
 
+  function baseName(path) {
+    return String(path || '').split('/').pop().split('\\').pop();
+  }
+
   function cleanGameName(name) {
-    return name.replace(/\.(gba|zip)$/i, '').trim() || 'GBA Game';
+    return baseName(name).replace(/\.(gba|bin|zip)$/i, '').trim() || 'GBA Game';
   }
 
   async function requestPersistentStorage() {
@@ -161,7 +173,7 @@
           <div class="rom-info">
             <strong>${escapeHtml(cleanGameName(record.name))}</strong>
             <span>${escapeHtml(record.name)} · ${formatBytes(record.size)}</span>
-            <small>${record.lastPlayedAt ? `最近遊玩：${new Date(record.lastPlayedAt).toLocaleString('zh-TW')}` : `匯入：${new Date(record.addedAt).toLocaleString('zh-TW')}`}</small>
+            <small>${record.sourcePack ? `來源：${escapeHtml(record.sourcePack)} · ` : ''}${record.lastPlayedAt ? `最近遊玩：${new Date(record.lastPlayedAt).toLocaleString('zh-TW')}` : `匯入：${new Date(record.addedAt).toLocaleString('zh-TW')}`}</small>
           </div>
           <div class="rom-actions">
             <button data-play="${escapeHtml(record.id)}">開始</button>
@@ -177,41 +189,129 @@
     }
   }
 
+  async function storeRomBlob({ name, blob, modified = 0, sourcePack = null }) {
+    if (!ROM_PATTERN.test(name)) return { imported: false, reason: 'unsupported' };
+    if (!blob.size || blob.size > MAX_ROM_BYTES) return { imported: false, reason: 'size' };
+
+    const normalizedName = baseName(name);
+    const id = await createRomId(normalizedName, blob.size, modified);
+    const existing = await getRom(id);
+    await putRom({
+      id,
+      name: normalizedName,
+      size: blob.size,
+      type: blob.type || 'application/octet-stream',
+      blob,
+      sourcePack,
+      addedAt: existing?.addedAt || Date.now(),
+      lastPlayedAt: existing?.lastPlayedAt || null
+    });
+    return { imported: true, duplicate: Boolean(existing) };
+  }
+
+  function unzipArchive(file) {
+    return new Promise(async (resolve, reject) => {
+      if (!window.fflate?.unzip) {
+        reject(new Error('ZIP 解壓縮元件尚未載入，請重新整理後再試。'));
+        return;
+      }
+      try {
+        const buffer = new Uint8Array(await file.arrayBuffer());
+        window.fflate.unzip(buffer, {
+          filter: entry => ROM_PATTERN.test(entry.name)
+        }, (error, entries) => {
+          if (error) reject(error);
+          else resolve(entries || {});
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async function importArchive(file) {
+    if (file.size > MAX_ARCHIVE_BYTES) {
+      throw new Error(`合集 ZIP 超過 ${formatBytes(MAX_ARCHIVE_BYTES)}，未匯入。`);
+    }
+
+    setImportStatus(`正在解開「${file.name}」並尋找 GBA 遊戲…`, 'working');
+    const entries = await unzipArchive(file);
+    const romEntries = Object.entries(entries).filter(([name]) => ROM_PATTERN.test(name));
+    if (!romEntries.length) {
+      throw new Error('這個 ZIP 裡沒有找到 `.gba` 或 `.bin` 遊戲。');
+    }
+
+    let imported = 0;
+    let duplicates = 0;
+    let skipped = 0;
+    for (let index = 0; index < romEntries.length; index += 1) {
+      const [path, bytes] = romEntries[index];
+      setImportStatus(`正在加入 ${index + 1} / ${romEntries.length}：${baseName(path)}`, 'working');
+      const blob = new Blob([bytes], { type: 'application/octet-stream' });
+      const result = await storeRomBlob({
+        name: path,
+        blob,
+        modified: file.lastModified,
+        sourcePack: file.name
+      });
+      if (result.imported) {
+        imported += 1;
+        if (result.duplicate) duplicates += 1;
+      } else {
+        skipped += 1;
+      }
+    }
+
+    return { imported, duplicates, skipped, total: romEntries.length };
+  }
+
   async function importFiles(fileList) {
     const files = [...fileList];
     if (!files.length) return;
     setStatus('正在匯入…');
     let imported = 0;
+    let duplicates = 0;
+    let skipped = 0;
 
-    for (const file of files) {
-      if (!/\.(gba|zip)$/i.test(file.name)) {
-        setStatus('格式不支援', 'error');
-        window.alert(`「${file.name}」不是 .gba 或 .zip 檔案。`);
-        continue;
-      }
-      if (file.size > MAX_ROM_BYTES) {
-        setStatus('檔案過大', 'error');
-        window.alert(`「${file.name}」超過 64 MB，未匯入。`);
-        continue;
+    try {
+      for (const file of files) {
+        if (/\.zip$/i.test(file.name)) {
+          const result = await importArchive(file);
+          imported += result.imported;
+          duplicates += result.duplicates;
+          skipped += result.skipped;
+          continue;
+        }
+
+        if (!ROM_PATTERN.test(file.name)) {
+          skipped += 1;
+          continue;
+        }
+
+        setImportStatus(`正在加入：${file.name}`, 'working');
+        const result = await storeRomBlob({
+          name: file.name,
+          blob: file,
+          modified: file.lastModified
+        });
+        if (result.imported) {
+          imported += 1;
+          if (result.duplicate) duplicates += 1;
+        } else {
+          skipped += 1;
+        }
       }
 
-      const id = await createRomId(file);
-      const existing = await getRom(id);
-      await putRom({
-        id,
-        name: file.name,
-        size: file.size,
-        type: file.type || 'application/octet-stream',
-        blob: file,
-        addedAt: existing?.addedAt || Date.now(),
-        lastPlayedAt: existing?.lastPlayedAt || null
-      });
-      imported += 1;
+      await requestPersistentStorage();
+      await renderLibrary();
+      setStatus(imported ? `已加入 ${imported} 款` : '沒有新增遊戲', imported ? 'active' : '');
+      setImportStatus(`完成：處理 ${imported} 款${duplicates ? `，其中 ${duplicates} 款已存在並更新` : ''}${skipped ? `，略過 ${skipped} 個不支援或過大的檔案` : ''}。`, imported ? 'success' : '');
+    } catch (error) {
+      setStatus('匯入失敗', 'error');
+      setImportStatus(error.message || '合集匯入失敗。', 'error');
+    } finally {
+      $('romInput').value = '';
     }
-
-    await requestPersistentStorage();
-    await renderLibrary();
-    if (imported) setStatus(`已匯入 ${imported} 款`, 'active');
   }
 
   function showPlayer(record) {
