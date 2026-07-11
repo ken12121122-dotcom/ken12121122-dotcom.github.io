@@ -60,7 +60,7 @@
 
       <article class="notice-card">
         <h3>保存與離線</h3>
-        <p>模擬器內的遊戲存檔與即時存檔由 EmulatorJS 儲存在瀏覽器中。第一次啟動需要網路下載 mGBA 核心，之後會使用快取；目前尚未同步到 Universal Vault。</p>
+        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。請不要清除瀏覽器網站資料，目前存檔尚未同步到 Universal Vault。</p>
       </article>
 
       <footer>
@@ -85,6 +85,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./gba-immersive.js"></script>
+  <script src="./gba-save-guard.js"></script>
   <script src="./gba.js"></script>
 </body>
 </html>
