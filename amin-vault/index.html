@@ -18,10 +18,10 @@
   </header>
   <main>
     <section class="hero card">
-      <span class="kicker">Vault v0.3</span>
+      <span class="kicker">Vault v0.4</span>
       <h2>資料不屬於任何 App。</h2>
       <p>Obsidian、ChatGPT、Codex、Drive 與手機 App，都只是同一個知識核心的入口。</p>
-      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>65%</strong></div><div class="progress-track"><div class="progress-bar" style="width:65%"></div></div></div>
+      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>75%</strong></div><div class="progress-track"><div class="progress-bar" style="width:75%"></div></div></div>
     </section>
     <section class="metric-grid">
       <article class="metric card"><span>Objects</span><strong id="objectCount">9</strong></article>
@@ -40,7 +40,7 @@
       <div id="sessionPanel" class="hidden">
         <p class="message success">已登入：<span id="sessionEmail"></span></p>
         <button id="claimButton">認領 Amin Universal Vault</button>
-        <p id="claimMessage" class="message">第一次認領會把現有 Workspace 與 9 個節點正式綁定到你的帳號。</p>
+        <p id="claimMessage" class="message">第一次認領會把現有 Workspace 與節點正式綁定到你的帳號。</p>
       </div>
     </section>
     <section id="composePanel" class="card hidden">
@@ -61,9 +61,14 @@
       <button id="createDraftButton">送入 Change Request</button>
       <p id="draftMessage" class="message">草稿會先進待審核區，不直接改寫正式資料。</p>
     </section>
+    <section id="reviewPanel" class="card hidden">
+      <div class="section-head"><div><p class="eyebrow">GOVERNANCE</p><h3>待審核變更</h3></div><button id="refreshReviewButton" class="ghost">重新整理</button></div>
+      <div id="changeRequestList" class="stack"></div>
+      <p id="reviewMessage" class="message">核准後會自動建立正式 Object、Version 與 Audit Log。</p>
+    </section>
     <section class="card"><div class="section-head"><div><p class="eyebrow">PLATFORMS</p><h3>入口狀態</h3></div><button id="refreshButton" class="ghost">重新整理</button></div><div id="clientList" class="stack"></div></section>
     <section class="card"><p class="eyebrow">NEXT ACTIONS</p><h3>下一步任務</h3><div id="taskList" class="stack"></div></section>
-    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 自動同步、MCP、雙向衝突合併與正式審核發布仍在施工。v0.3 已能建立安全的 Change Request 草稿。</p></section>
+    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 自動同步、MCP、跨裝置衝突合併仍在施工。v0.4 已完成草稿、審核、發布與版本快照閉環。</p></section>
   </main>
   <footer><span>Amin Universal Vault</span><span id="footerStatus">initializing</span></footer>
 </div>
