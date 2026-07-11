@@ -1,0 +1,18 @@
+{
+  "name": "Amin Universal Vault",
+  "short_name": "Amin Vault",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080a0d",
+  "theme_color": "#0b0d10",
+  "description": "跨平台知識核心行動管理介面",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
