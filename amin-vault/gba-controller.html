@@ -10,7 +10,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="./gba.html?v=084" class="back-link">← 遊戲中心</a>
+    <a href="./gba.html?v=090" class="back-link">← 遊戲中心</a>
     <div>
       <p>AMIN CONTROLLER LAB</p>
       <h1>GBA 手把設定</h1>
@@ -22,7 +22,7 @@
     <section class="hero card">
       <span class="kicker">PRESS · CAPTURE · SAVE</span>
       <h2>每一顆按鈕與搖桿，都由你自己定義。</h2>
-      <p>先讓手把維持 ANALOG 模式。點某個 GBA 功能的「新增綁定」，再按實體按鈕或推動搖桿。方向可以同時綁十字鍵與左搖桿。</p>
+      <p>網頁模式會讀取 Gamepad API；Android App 模式會額外接收原生 KeyEvent 與 MotionEvent。點某個 GBA 功能的「新增綁定」，再按實體按鈕或推動搖桿。</p>
       <div class="hero-actions">
         <button id="applySuggestedButton">套用目前建議配置</button>
         <button id="clearAllButton" class="secondary">全部清除</button>
@@ -69,7 +69,7 @@
       <div class="capture-dialog">
         <span class="kicker">CAPTURING</span>
         <h2 id="captureTitle">正在設定 GBA A</h2>
-        <p>現在按一下實體按鈕，或把要使用的搖桿推到底。按取消可停止。</p>
+        <p>現在按一下實體按鈕，或把要使用的搖桿推到底。Android App 會直接從原生輸入層捕捉。</p>
         <div class="capture-pulse"></div>
         <button id="cancelCaptureButton" class="secondary">取消</button>
       </div>
@@ -83,12 +83,14 @@
     </section>
 
     <section class="card summary-card">
-      <h2>目前指定方向</h2>
-      <p>建議配置預設為：十字鍵與左搖桿都控制方向；按鈕 2 是 A、按鈕 3 是 B；按鈕 1、4 與右搖桿沒有功能。若瀏覽器讀到的編號不同，逐顆重新指定即可。</p>
-      <a href="./gba.html?v=084" class="launch-link">儲存完成，回遊戲中心</a>
+      <h2>預設指定方向</h2>
+      <p>按鈕 2 是 A、按鈕 3 是 B；按鈕 1、4 與右搖桿沒有功能。十字鍵和左搖桿都能控制方向。原生 App 仍可逐顆覆寫。</p>
+      <a href="./gba.html?v=090" class="launch-link">儲存完成，回遊戲中心</a>
     </section>
   </main>
 
+  <script src="./gba-native-input.js"></script>
   <script src="./gba-controller.js"></script>
+  <script src="./gba-controller-native-addon.js"></script>
 </body>
 </html>
