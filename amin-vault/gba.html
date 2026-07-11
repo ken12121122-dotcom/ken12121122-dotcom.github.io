@@ -8,6 +8,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./gba.css">
+  <link rel="stylesheet" href="./gba-controller-link.css">
   <title>Pokémon GBA 遊戲中心 · Amin Pocket Vault</title>
 </head>
 <body>
@@ -33,6 +34,7 @@
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
+        <a href="./gba-controller.html?v=084" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
         <p id="importStatus" class="storage-status">支援單一 `.gba`／`.bin`，以及內含多個個人備份的 `.zip`。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
       </article>
@@ -86,6 +88,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./gba-immersive.js"></script>
   <script src="./gba-save-guard.js"></script>
+  <script src="./gba-controller-runtime.js"></script>
   <script src="./gba.js"></script>
 </body>
 </html>
