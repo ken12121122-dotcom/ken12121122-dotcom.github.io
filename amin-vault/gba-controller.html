@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080b11">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./gba-controller.css">
+  <title>GBA 手把設定 · Amin Pocket Vault</title>
+</head>
+<body>
+  <header class="topbar">
+    <a href="./gba.html?v=084" class="back-link">← 遊戲中心</a>
+    <div>
+      <p>AMIN CONTROLLER LAB</p>
+      <h1>GBA 手把設定</h1>
+    </div>
+    <span id="connectionBadge" class="badge">等待手把</span>
+  </header>
+
+  <main>
+    <section class="hero card">
+      <span class="kicker">PRESS · CAPTURE · SAVE</span>
+      <h2>每一顆按鈕與搖桿，都由你自己定義。</h2>
+      <p>先讓手把維持 ANALOG 模式。點某個 GBA 功能的「新增綁定」，再按實體按鈕或推動搖桿。方向可以同時綁十字鍵與左搖桿。</p>
+      <div class="hero-actions">
+        <button id="applySuggestedButton">套用目前建議配置</button>
+        <button id="clearAllButton" class="secondary">全部清除</button>
+      </div>
+    </section>
+
+    <section class="card controller-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">CONNECTED DEVICE</p>
+          <h2>目前手把</h2>
+        </div>
+        <button id="refreshGamepadButton" class="secondary compact">重新偵測</button>
+      </div>
+      <p id="gamepadName" class="device-name">尚未偵測到手把。請按任意鍵喚醒。</p>
+      <div class="meter-grid">
+        <div><span>左搖桿 X</span><div class="meter"><i id="axis0Meter"></i></div><strong id="axis0Value">0.00</strong></div>
+        <div><span>左搖桿 Y</span><div class="meter"><i id="axis1Meter"></i></div><strong id="axis1Value">0.00</strong></div>
+        <div><span>右搖桿 X</span><div class="meter"><i id="axis2Meter"></i></div><strong id="axis2Value">0.00</strong></div>
+        <div><span>右搖桿 Y</span><div class="meter"><i id="axis3Meter"></i></div><strong id="axis3Value">0.00</strong></div>
+      </div>
+      <div id="rawButtons" class="raw-buttons"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">MAPPING</p>
+          <h2>GBA 功能配置</h2>
+        </div>
+        <span id="saveBadge" class="badge active">自動儲存</span>
+      </div>
+
+      <div id="mappingList" class="mapping-list"></div>
+
+      <label class="deadzone-control">
+        <span>搖桿死區 <strong id="deadzoneValue">0.55</strong></span>
+        <input id="deadzoneInput" type="range" min="0.30" max="0.85" step="0.05" value="0.55">
+        <small>搖桿漂移時往右調；反應太慢時往左調。</small>
+      </label>
+    </section>
+
+    <section id="capturePanel" class="capture-panel hidden" aria-live="polite">
+      <div class="capture-dialog">
+        <span class="kicker">CAPTURING</span>
+        <h2 id="captureTitle">正在設定 GBA A</h2>
+        <p>現在按一下實體按鈕，或把要使用的搖桿推到底。按取消可停止。</p>
+        <div class="capture-pulse"></div>
+        <button id="cancelCaptureButton" class="secondary">取消</button>
+      </div>
+    </section>
+
+    <section class="card test-card">
+      <p class="eyebrow">LIVE TEST</p>
+      <h2>即時測試</h2>
+      <p>完成設定後直接操作手把。下方會亮起實際送給 GBA 的功能，還不用開遊戲。</p>
+      <div id="logicalTest" class="logical-test"></div>
+    </section>
+
+    <section class="card summary-card">
+      <h2>目前指定方向</h2>
+      <p>建議配置預設為：十字鍵與左搖桿都控制方向；按鈕 2 是 A、按鈕 3 是 B；按鈕 1、4 與右搖桿沒有功能。若瀏覽器讀到的編號不同，逐顆重新指定即可。</p>
+      <a href="./gba.html?v=084" class="launch-link">儲存完成，回遊戲中心</a>
+    </section>
+  </main>
+
+  <script src="./gba-controller.js"></script>
+</body>
+</html>
