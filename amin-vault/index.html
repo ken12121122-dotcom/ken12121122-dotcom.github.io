@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="description" content="Amin Universal Vault 行動管理介面">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Amin Universal Vault</title>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div><p class="eyebrow">AMIN UNIVERSAL VAULT</p><h1>跨平台知識核心</h1></div>
+    <span id="connectionBadge" class="badge">Loading</span>
+  </header>
+  <main>
+    <section class="hero card">
+      <span class="kicker">Vault v0.2</span>
+      <h2>資料不屬於任何 App。</h2>
+      <p>Obsidian、ChatGPT、Codex、Drive 與手機 App，都只是同一個知識核心的入口。</p>
+      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>55%</strong></div><div class="progress-track"><div class="progress-bar" style="width:55%"></div></div></div>
+    </section>
+    <section class="metric-grid">
+      <article class="metric card"><span>Objects</span><strong id="objectCount">9</strong></article>
+      <article class="metric card"><span>Clients</span><strong id="clientCount">6</strong></article>
+      <article class="metric card"><span>Versions</span><strong id="versionCount">9</strong></article>
+      <article class="metric card"><span>Pending</span><strong id="pendingCount">0</strong></article>
+    </section>
+    <section class="card">
+      <div class="section-head"><div><p class="eyebrow">IDENTITY</p><h3>登入與認領 Workspace</h3></div><button id="logoutButton" class="ghost hidden">登出</button></div>
+      <div id="authPanel">
+        <label>電子郵件<input id="emailInput" type="email" autocomplete="email" placeholder="name@example.com"></label>
+        <label>密碼<input id="passwordInput" type="password" autocomplete="current-password" placeholder="至少 6 碼"></label>
+        <div class="button-row"><button id="signupButton">建立帳號</button><button id="loginButton" class="secondary">登入</button></div>
+        <p id="authMessage" class="message">尚未登入，先顯示 Demo 快照。</p>
+      </div>
+      <div id="sessionPanel" class="hidden">
+        <p class="message success">已登入：<span id="sessionEmail"></span></p>
+        <button id="claimButton">認領 Amin Universal Vault</button>
+        <p id="claimMessage" class="message">第一次認領會把現有 Workspace 與 9 個節點正式綁定到你的帳號。</p>
+      </div>
+    </section>
+    <section class="card"><div class="section-head"><div><p class="eyebrow">PLATFORMS</p><h3>入口狀態</h3></div><button id="refreshButton" class="ghost">重新整理</button></div><div id="clientList" class="stack"></div></section>
+    <section class="card"><p class="eyebrow">NEXT ACTIONS</p><h3>下一步任務</h3><div id="taskList" class="stack"></div></section>
+    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 自動同步、MCP、雙向衝突合併與完整編輯器仍在施工。v0.2 已加入登入、認領與正式資料讀取。</p></section>
+  </main>
+  <footer><span>Amin Universal Vault</span><span id="footerStatus">initializing</span></footer>
+</div>
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./app.js"></script>
+</body>
+</html>
