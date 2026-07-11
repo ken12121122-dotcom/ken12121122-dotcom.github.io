@@ -5,6 +5,7 @@ const ASSETS=[
   './app.js',
   './public.js',
   './three-shell.js',
+  './three-boot.js',
   './config.js',
   './manifest.webmanifest',
   './icon.svg',
