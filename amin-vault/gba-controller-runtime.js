@@ -23,29 +23,61 @@
     { id:'RIGHT', logicalIndex:7 }
   ];
 
+  const NATIVE_DEFAULTS = {
+    A:['NATIVE_KEY:KEYCODE_BUTTON_2','NATIVE_KEY:KEYCODE_BUTTON_A'],
+    B:['NATIVE_KEY:KEYCODE_BUTTON_3','NATIVE_KEY:KEYCODE_BUTTON_B'],
+    START:['NATIVE_KEY:KEYCODE_BUTTON_START'],
+    SELECT:['NATIVE_KEY:KEYCODE_BUTTON_SELECT'],
+    L:['NATIVE_KEY:KEYCODE_BUTTON_L1'],
+    R:['NATIVE_KEY:KEYCODE_BUTTON_R1'],
+    UP:['NATIVE_KEY:KEYCODE_DPAD_UP','NATIVE_AXIS:AXIS_Y:-1','NATIVE_AXIS:AXIS_HAT_Y:-1'],
+    DOWN:['NATIVE_KEY:KEYCODE_DPAD_DOWN','NATIVE_AXIS:AXIS_Y:+1','NATIVE_AXIS:AXIS_HAT_Y:+1'],
+    LEFT:['NATIVE_KEY:KEYCODE_DPAD_LEFT','NATIVE_AXIS:AXIS_X:-1','NATIVE_AXIS:AXIS_HAT_X:-1'],
+    RIGHT:['NATIVE_KEY:KEYCODE_DPAD_RIGHT','NATIVE_AXIS:AXIS_X:+1','NATIVE_AXIS:AXIS_HAT_X:+1']
+  };
+
   let animationFrame = 0;
-  let currentStates = new Map();
+  const currentStates = new Map();
   let prepared = false;
 
   function fallbackProfile() {
     return {
       version:1,
+      nativeSchemaVersion:1,
       deadzone:0.55,
       actions:{
-        A:['BUTTON_2'],B:['BUTTON_3'],START:['START'],SELECT:['SELECT'],
-        L:['LEFT_TOP_SHOULDER'],R:['RIGHT_TOP_SHOULDER'],
-        UP:['DPAD_UP','LEFT_STICK_Y:-1'],
-        DOWN:['DPAD_DOWN','LEFT_STICK_Y:+1'],
-        LEFT:['DPAD_LEFT','LEFT_STICK_X:-1'],
-        RIGHT:['DPAD_RIGHT','LEFT_STICK_X:+1']
+        A:['BUTTON_2',...NATIVE_DEFAULTS.A],
+        B:['BUTTON_3',...NATIVE_DEFAULTS.B],
+        START:['START',...NATIVE_DEFAULTS.START],
+        SELECT:['SELECT',...NATIVE_DEFAULTS.SELECT],
+        L:['LEFT_TOP_SHOULDER',...NATIVE_DEFAULTS.L],
+        R:['RIGHT_TOP_SHOULDER',...NATIVE_DEFAULTS.R],
+        UP:['DPAD_UP','LEFT_STICK_Y:-1',...NATIVE_DEFAULTS.UP],
+        DOWN:['DPAD_DOWN','LEFT_STICK_Y:+1',...NATIVE_DEFAULTS.DOWN],
+        LEFT:['DPAD_LEFT','LEFT_STICK_X:-1',...NATIVE_DEFAULTS.LEFT],
+        RIGHT:['DPAD_RIGHT','LEFT_STICK_X:+1',...NATIVE_DEFAULTS.RIGHT]
       }
     };
+  }
+
+  function ensureNativeDefaults(profile) {
+    if (!profile?.actions || profile.nativeSchemaVersion >= 1) return profile;
+    Object.entries(NATIVE_DEFAULTS).forEach(([actionId, bindings]) => {
+      const current = Array.isArray(profile.actions[actionId]) ? profile.actions[actionId] : [];
+      bindings.forEach(binding => {
+        if (!current.includes(binding)) current.push(binding);
+      });
+      profile.actions[actionId] = current;
+    });
+    profile.nativeSchemaVersion = 1;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch {}
+    return profile;
   }
 
   function loadProfile() {
     try {
       const profile = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (profile?.version === 1 && profile.actions) return profile;
+      if (profile?.version === 1 && profile.actions) return ensureNativeDefaults(profile);
     } catch {}
     return fallbackProfile();
   }
@@ -55,8 +87,19 @@
   }
 
   function bindingActive(binding,pad,deadzone) {
-    if (!pad) return false;
+    if (binding.startsWith('NATIVE_KEY:')) {
+      const keyName = binding.slice('NATIVE_KEY:'.length);
+      return Boolean(window.AMIN_NATIVE_INPUT?.isKeyPressed?.(keyName));
+    }
 
+    if (binding.startsWith('NATIVE_AXIS:')) {
+      const match = binding.match(/^NATIVE_AXIS:([^:]+):([+-]1)$/);
+      if (!match) return false;
+      const value = Number(window.AMIN_NATIVE_INPUT?.axis?.(match[1]) || 0);
+      return match[2] === '+1' ? value >= deadzone : value <= -deadzone;
+    }
+
+    if (!pad) return false;
     const buttonEntry = Object.entries(BUTTON_LABELS).find(([,label]) => label === binding);
     if (buttonEntry) return Boolean(pad.buttons[Number(buttonEntry[0])]?.pressed);
 
@@ -118,6 +161,7 @@
   function prepareRuntime() {
     if (prepared) return;
     prepared = true;
+    ensureNativeDefaults(loadProfile());
     disableBuiltInControllerBindings();
 
     const existingReady = window.EJS_ready;
@@ -137,11 +181,12 @@
   addEventListener('pagehide',() => {
     cancelAnimationFrame(animationFrame);
     releaseAll();
+    window.AMIN_NATIVE_INPUT?.reset?.();
   });
 
   window.AMIN_GBA_CONTROLLER_RUNTIME = {
     prepare:prepareRuntime,
     releaseAll,
-    version:'0.8.4'
+    version:'0.9.0'
   };
 })();
