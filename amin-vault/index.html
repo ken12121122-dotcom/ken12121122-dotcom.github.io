@@ -18,14 +18,14 @@
   </header>
   <main>
     <section class="hero card">
-      <span class="kicker">Vault v0.2</span>
+      <span class="kicker">Vault v0.3</span>
       <h2>資料不屬於任何 App。</h2>
       <p>Obsidian、ChatGPT、Codex、Drive 與手機 App，都只是同一個知識核心的入口。</p>
-      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>55%</strong></div><div class="progress-track"><div class="progress-bar" style="width:55%"></div></div></div>
+      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>65%</strong></div><div class="progress-track"><div class="progress-bar" style="width:65%"></div></div></div>
     </section>
     <section class="metric-grid">
       <article class="metric card"><span>Objects</span><strong id="objectCount">9</strong></article>
-      <article class="metric card"><span>Clients</span><strong id="clientCount">6</strong></article>
+      <article class="metric card"><span>Clients</span><strong id="clientCount">7</strong></article>
       <article class="metric card"><span>Versions</span><strong id="versionCount">9</strong></article>
       <article class="metric card"><span>Pending</span><strong id="pendingCount">0</strong></article>
     </section>
@@ -43,9 +43,27 @@
         <p id="claimMessage" class="message">第一次認領會把現有 Workspace 與 9 個節點正式綁定到你的帳號。</p>
       </div>
     </section>
+    <section id="composePanel" class="card hidden">
+      <p class="eyebrow">CAPTURE</p>
+      <h3>建立 Vault 草稿</h3>
+      <label>類型
+        <select id="draftType">
+          <option value="task">任務</option>
+          <option value="knowledge">知識</option>
+          <option value="decision">決策</option>
+          <option value="project">專案</option>
+          <option value="conversation">對話</option>
+          <option value="source">來源</option>
+        </select>
+      </label>
+      <label>標題<input id="draftTitle" type="text" placeholder="例如：完成 Android 自動同步"></label>
+      <label>內容<textarea id="draftContent" rows="5" placeholder="輸入說明、下一步或筆記內容"></textarea></label>
+      <button id="createDraftButton">送入 Change Request</button>
+      <p id="draftMessage" class="message">草稿會先進待審核區，不直接改寫正式資料。</p>
+    </section>
     <section class="card"><div class="section-head"><div><p class="eyebrow">PLATFORMS</p><h3>入口狀態</h3></div><button id="refreshButton" class="ghost">重新整理</button></div><div id="clientList" class="stack"></div></section>
     <section class="card"><p class="eyebrow">NEXT ACTIONS</p><h3>下一步任務</h3><div id="taskList" class="stack"></div></section>
-    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 自動同步、MCP、雙向衝突合併與完整編輯器仍在施工。v0.2 已加入登入、認領與正式資料讀取。</p></section>
+    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>還沒有做完</h3><p>Android 自動同步、MCP、雙向衝突合併與正式審核發布仍在施工。v0.3 已能建立安全的 Change Request 草稿。</p></section>
   </main>
   <footer><span>Amin Universal Vault</span><span id="footerStatus">initializing</span></footer>
 </div>
