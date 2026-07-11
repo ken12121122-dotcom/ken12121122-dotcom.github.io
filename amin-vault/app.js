@@ -2,9 +2,16 @@
   const cfg = window.VAULT_CONFIG;
   const badge = document.getElementById("connectionBadge");
   const footer = document.getElementById("footerStatus");
-  if (!cfg || !window.supabase) { badge.textContent = "Config error"; footer.textContent = "configuration unavailable"; return; }
+
+  if (!cfg || !window.supabase) {
+    badge.textContent = "Config error";
+    footer.textContent = "configuration unavailable";
+    return;
+  }
+
   const client = window.supabase.createClient(cfg.url, cfg.publishableKey);
   const $ = id => document.getElementById(id);
+
   const demoClients = [
     {name:"ChatGPT Connected App",client_type:"chatgpt",platform:"cloud",status:"active"},
     {name:"Google Drive Mirror",client_type:"google_drive_mirror",platform:"cloud",status:"active"},
@@ -14,32 +21,96 @@
     {name:"Amin Vault PWA",client_type:"pwa",platform:"web",status:"active"},
     {name:"Amin Vault GitHub Pages",client_type:"pwa",platform:"web",status:"active"}
   ];
+
   const demoTasks = [
-    {title:"建立正式登入與 Workspace 綁定",content:{priority:"P0",next_action:"登入後認領 Workspace"}},
     {title:"完成 Android 自動同步",content:{priority:"P0",next_action:"建立 Android Drive 同步層"}},
-    {title:"建立 Vault MCP",content:{priority:"P1",next_action:"Auth 與 API 完成後接入"}},
-    {title:"建立 PWA 管理介面",content:{priority:"P1",next_action:"擴充建立與編輯功能"}}
+    {title:"建立 Vault MCP",content:{priority:"P1",next_action:"Auth 與治理閉環完成後接入"}},
+    {title:"建立跨裝置衝突合併",content:{priority:"P1",next_action:"加入版本差異與合併介面"}}
   ];
-  const esc = v => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-  const msg = (el,text,kind="") => { el.textContent=text; el.className=`message ${kind}`.trim(); };
-  const busy = (btn,on) => { btn.disabled=on; btn.dataset.t ||= btn.textContent; btn.textContent=on?"處理中…":btn.dataset.t; };
+
+  const esc = value => String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+  const setMessage = (element, text, kind = "") => {
+    element.textContent = text;
+    element.className = `message ${kind}`.trim();
+  };
+
+  const setBusy = (button, busy) => {
+    button.disabled = busy;
+    button.dataset.originalText ||= button.textContent;
+    button.textContent = busy ? "處理中…" : button.dataset.originalText;
+  };
 
   function renderClients(items) {
-    $("clientList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.name)}</div><div class="row-sub">${esc(x.client_type)} · ${esc(x.platform)}</div></div><span class="status-dot ${x.status==="active"?"active":""}"></span></div>`).join("");
+    $("clientList").innerHTML = items.map(item => `
+      <div class="row">
+        <div>
+          <div class="row-title">${esc(item.name)}</div>
+          <div class="row-sub">${esc(item.client_type)} · ${esc(item.platform)}</div>
+        </div>
+        <span class="status-dot ${item.status === "active" ? "active" : ""}"></span>
+      </div>
+    `).join("");
   }
 
   function renderTasks(items) {
-    $("taskList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.title)}</div><div class="row-sub">${esc(x.content?.priority)} · ${esc(x.content?.next_action)}</div></div></div>`).join("");
+    $("taskList").innerHTML = items.map(item => `
+      <div class="row">
+        <div>
+          <div class="row-title">${esc(item.title)}</div>
+          <div class="row-sub">${esc(item.content?.priority)} · ${esc(item.content?.next_action)}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderChangeRequests(items) {
+    if (!items.length) {
+      $("changeRequestList").innerHTML = `
+        <div class="row">
+          <div>
+            <div class="row-title">目前沒有待審核變更</div>
+            <div class="row-sub">從上方建立一筆草稿，就會出現在這裡。</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    $("changeRequestList").innerHTML = items.map(item => {
+      const patch = item.proposed_patch || {};
+      const content = patch.content?.text ?? JSON.stringify(patch.content ?? {});
+      const excerpt = String(content).slice(0, 180);
+      return `
+        <article class="review-card">
+          <div class="review-meta">${esc(patch.object_type || "unknown")} · ${esc(item.risk_level || "low")}</div>
+          <div class="row-title">${esc(patch.title || "未命名")}</div>
+          <p class="review-excerpt">${esc(excerpt || "沒有內容")}</p>
+          <div class="button-row">
+            <button data-review-action="approve" data-request-id="${esc(item.id)}">核准發布</button>
+            <button class="danger" data-review-action="reject" data-request-id="${esc(item.id)}">駁回</button>
+          </div>
+        </article>
+      `;
+    }).join("");
   }
 
   async function refreshSession() {
-    const {data:{session}} = await client.auth.getSession();
-    const logged = Boolean(session?.user);
-    $("authPanel").classList.toggle("hidden", logged);
-    $("sessionPanel").classList.toggle("hidden", !logged);
-    $("composePanel").classList.toggle("hidden", !logged);
-    $("logoutButton").classList.toggle("hidden", !logged);
-    if (logged) {
+    const {data: {session}} = await client.auth.getSession();
+    const loggedIn = Boolean(session?.user);
+
+    $("authPanel").classList.toggle("hidden", loggedIn);
+    $("sessionPanel").classList.toggle("hidden", !loggedIn);
+    $("composePanel").classList.toggle("hidden", !loggedIn);
+    $("reviewPanel").classList.toggle("hidden", !loggedIn);
+    $("logoutButton").classList.toggle("hidden", !loggedIn);
+
+    if (loggedIn) {
       $("sessionEmail").textContent = session.user.email || session.user.id;
       badge.textContent = "Signed in";
       badge.className = "badge active";
@@ -50,99 +121,197 @@
       footer.textContent = "demo snapshot";
       renderClients(demoClients);
       renderTasks(demoTasks);
+      renderChangeRequests([]);
     }
   }
 
   async function signup() {
-    const btn=$("signupButton"); busy(btn,true);
+    const button = $("signupButton");
+    setBusy(button, true);
     try {
-      const email=$("emailInput").value.trim(), password=$("passwordInput").value;
-      if(!email || password.length<6) throw new Error("請輸入有效信箱，密碼至少 6 碼。");
-      const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin + location.pathname}});
-      if(error) throw error;
-      if(data.session){msg($("authMessage"),"帳號已建立並登入。","success");await refreshSession();}
-      else msg($("authMessage"),"帳號已建立，請先到信箱驗證。","success");
-    } catch(e){msg($("authMessage"),e.message||"建立帳號失敗。","error");}
-    finally{busy(btn,false);}
+      const email = $("emailInput").value.trim();
+      const password = $("passwordInput").value;
+      if (!email || password.length < 6) throw new Error("請輸入有效信箱，密碼至少 6 碼。");
+
+      const {data, error} = await client.auth.signUp({
+        email,
+        password,
+        options: {emailRedirectTo: location.origin + location.pathname}
+      });
+      if (error) throw error;
+
+      if (data.session) {
+        setMessage($("authMessage"), "帳號已建立並登入。", "success");
+        await refreshSession();
+      } else {
+        setMessage($("authMessage"), "帳號已建立，請先到信箱驗證。", "success");
+      }
+    } catch (error) {
+      setMessage($("authMessage"), error.message || "建立帳號失敗。", "error");
+    } finally {
+      setBusy(button, false);
+    }
   }
 
   async function login() {
-    const btn=$("loginButton"); busy(btn,true);
+    const button = $("loginButton");
+    setBusy(button, true);
     try {
-      const {error}=await client.auth.signInWithPassword({email:$("emailInput").value.trim(),password:$("passwordInput").value});
-      if(error) throw error;
+      const {error} = await client.auth.signInWithPassword({
+        email: $("emailInput").value.trim(),
+        password: $("passwordInput").value
+      });
+      if (error) throw error;
       await refreshSession();
-    } catch(e){msg($("authMessage"),e.message||"登入失敗。","error");}
-    finally{busy(btn,false);}
+    } catch (error) {
+      setMessage($("authMessage"), error.message || "登入失敗。", "error");
+    } finally {
+      setBusy(button, false);
+    }
   }
 
-  async function claim() {
-    const btn=$("claimButton"); busy(btn,true);
+  async function claimWorkspace() {
+    const button = $("claimButton");
+    setBusy(button, true);
     try {
-      const {data,error}=await client.rpc("claim_bootstrap_workspace",{target_slug:cfg.workspaceSlug});
-      if(error) throw error;
-      const r=Array.isArray(data)?data[0]:data;
-      msg($("claimMessage"),r?.claimed_now?"Workspace 已正式綁定到你的帳號。":"這個 Workspace 已經屬於你。","success");
+      const {data, error} = await client.rpc("claim_bootstrap_workspace", {
+        target_slug: cfg.workspaceSlug
+      });
+      if (error) throw error;
+
+      const result = Array.isArray(data) ? data[0] : data;
+      setMessage(
+        $("claimMessage"),
+        result?.claimed_now ? "Workspace 已正式綁定到你的帳號。" : "這個 Workspace 已經屬於你。",
+        "success"
+      );
       await loadLive();
-    } catch(e){msg($("claimMessage"),e.message||"認領失敗。","error");}
-    finally{busy(btn,false);}
+    } catch (error) {
+      setMessage($("claimMessage"), error.message || "認領失敗。", "error");
+    } finally {
+      setBusy(button, false);
+    }
   }
 
   async function createDraft() {
-    const btn=$("createDraftButton"); busy(btn,true);
+    const button = $("createDraftButton");
+    setBusy(button, true);
     try {
-      const title=$("draftTitle").value.trim();
-      const body=$("draftContent").value.trim();
-      const type=$("draftType").value;
-      if(!title) throw new Error("請先輸入標題。");
-      const {data,error}=await client.rpc("create_object_change_request",{
-        target_workspace_slug:cfg.workspaceSlug,
-        target_object_type:type,
-        target_title:title,
-        target_content:{text:body,source:"pwa",captured_at:new Date().toISOString()}
+      const title = $("draftTitle").value.trim();
+      const body = $("draftContent").value.trim();
+      const type = $("draftType").value;
+      if (!title) throw new Error("請先輸入標題。");
+
+      const {data, error} = await client.rpc("create_object_change_request", {
+        target_workspace_slug: cfg.workspaceSlug,
+        target_object_type: type,
+        target_title: title,
+        target_content: {
+          text: body,
+          source: "pwa",
+          captured_at: new Date().toISOString()
+        }
       });
-      if(error) throw error;
-      $("draftTitle").value="";
-      $("draftContent").value="";
-      msg($("draftMessage"),`已建立 Change Request：${data}`,"success");
+      if (error) throw error;
+
+      $("draftTitle").value = "";
+      $("draftContent").value = "";
+      setMessage($("draftMessage"), `已建立 Change Request：${data}`, "success");
       await loadLive();
-    } catch(e){msg($("draftMessage"),e.message||"草稿建立失敗。","error");}
-    finally{busy(btn,false);}
+    } catch (error) {
+      setMessage($("draftMessage"), error.message || "草稿建立失敗。", "error");
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
+  async function reviewChangeRequest(requestId, decision) {
+    const note = window.prompt(
+      decision === "approve" ? "核准備註，可留空：" : "駁回原因，可留空：",
+      ""
+    );
+    if (note === null) return;
+
+    setMessage($("reviewMessage"), decision === "approve" ? "正在發布…" : "正在駁回…");
+
+    try {
+      const {data, error} = await client.rpc("review_change_request", {
+        target_request_id: requestId,
+        review_decision: decision,
+        review_note_text: note || null
+      });
+      if (error) throw error;
+
+      const result = Array.isArray(data) ? data[0] : data;
+      const message = decision === "approve"
+        ? `已發布為正式 Object：${result?.created_object_id || "完成"}`
+        : "Change Request 已駁回。";
+      setMessage($("reviewMessage"), message, "success");
+      await loadLive();
+    } catch (error) {
+      setMessage($("reviewMessage"), error.message || "審核失敗。", "error");
+    }
   }
 
   async function loadLive() {
     try {
-      const [p,c,t] = await Promise.all([
-        client.from("vault_workspace_progress").select("*").eq("slug",cfg.workspaceSlug).maybeSingle(),
+      const [progressResult, clientResult, taskResult, changeResult] = await Promise.all([
+        client.from("vault_workspace_progress").select("*").eq("slug", cfg.workspaceSlug).maybeSingle(),
         client.from("vault_clients").select("name,platform,status,client_type").order("client_type"),
-        client.from("vault_objects").select("title,content,status").eq("object_type","task").order("title")
+        client.from("vault_objects").select("title,content,status").eq("object_type", "task").order("title"),
+        client.from("vault_change_requests")
+          .select("id,proposed_patch,risk_level,status,created_at")
+          .eq("status", "pending")
+          .order("created_at", {ascending: false})
       ]);
-      if(p.error) throw p.error; if(c.error) throw c.error; if(t.error) throw t.error;
-      if(p.data){
-        $("objectCount").textContent=p.data.object_count??0;
-        $("clientCount").textContent=c.data?.length??0;
-        $("versionCount").textContent=p.data.version_count??0;
-        $("pendingCount").textContent=p.data.pending_change_count??0;
-        badge.textContent="Live";
-        badge.className="badge active";
-        footer.textContent="live vault connected";
+
+      if (progressResult.error) throw progressResult.error;
+      if (clientResult.error) throw clientResult.error;
+      if (taskResult.error) throw taskResult.error;
+      if (changeResult.error) throw changeResult.error;
+
+      if (progressResult.data) {
+        $("objectCount").textContent = progressResult.data.object_count ?? 0;
+        $("clientCount").textContent = clientResult.data?.length ?? 0;
+        $("versionCount").textContent = progressResult.data.version_count ?? 0;
+        $("pendingCount").textContent = progressResult.data.pending_change_count ?? 0;
+        badge.textContent = "Live";
+        badge.className = "badge active";
+        footer.textContent = "live vault connected";
       }
-      renderClients(c.data?.length?c.data:demoClients);
-      renderTasks(t.data?.length?t.data:demoTasks);
-    } catch(e) {
-      footer.textContent="signed in · claim workspace";
+
+      renderClients(clientResult.data?.length ? clientResult.data : demoClients);
+      renderTasks(taskResult.data?.length ? taskResult.data : demoTasks);
+      renderChangeRequests(changeResult.data || []);
+    } catch (error) {
+      footer.textContent = "signed in · claim workspace";
       renderClients(demoClients);
       renderTasks(demoTasks);
+      renderChangeRequests([]);
     }
   }
 
-  $("signupButton").onclick=signup;
-  $("loginButton").onclick=login;
-  $("logoutButton").onclick=async()=>{await client.auth.signOut();await refreshSession();};
-  $("claimButton").onclick=claim;
-  $("createDraftButton").onclick=createDraft;
-  $("refreshButton").onclick=loadLive;
-  client.auth.onAuthStateChange(()=>refreshSession());
+  $("signupButton").onclick = signup;
+  $("loginButton").onclick = login;
+  $("logoutButton").onclick = async () => {
+    await client.auth.signOut();
+    await refreshSession();
+  };
+  $("claimButton").onclick = claimWorkspace;
+  $("createDraftButton").onclick = createDraft;
+  $("refreshButton").onclick = loadLive;
+  $("refreshReviewButton").onclick = loadLive;
+
+  $("changeRequestList").addEventListener("click", event => {
+    const button = event.target.closest("button[data-review-action]");
+    if (!button) return;
+    reviewChangeRequest(button.dataset.requestId, button.dataset.reviewAction);
+  });
+
+  client.auth.onAuthStateChange(() => refreshSession());
   refreshSession();
-  if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("./sw.js",{scope:"./"}));
+
+  if ("serviceWorker" in navigator) {
+    addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope: "./"}));
+  }
 })();
