@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#05070b">
+  <meta name="theme-color" content="#000000">
   <meta name="description" content="Amin Pocket Vault Pokémon GBA 遊戲中心">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
@@ -68,13 +68,18 @@
       </footer>
     </section>
 
-    <section id="playerView" class="player-view hidden">
-      <div class="player-toolbar">
-        <button id="backToLibrary" class="secondary">← 遊戲庫</button>
-        <strong id="activeGameTitle">Pokémon GBA</strong>
-        <span class="core-badge">mGBA</span>
-      </div>
+    <section id="playerView" class="player-view hidden" aria-label="GBA 全螢幕遊戲畫面">
       <div id="game" class="game-stage"></div>
+      <button id="exitGameButton" class="exit-game-button" aria-label="離開遊戲">✕ 離開</button>
+      <div id="rotateHint" class="rotate-hint hidden" role="status">
+        <div class="rotate-phone">▯</div>
+        <strong>請將手機橫放</strong>
+        <span>瀏覽器未能自動旋轉時，手動轉橫即可繼續。</span>
+      </div>
+      <div id="gameLoading" class="game-loading hidden">
+        <div class="loading-cartridge">GBA</div>
+        <strong id="activeGameTitle">正在載入 Pokémon GBA…</strong>
+      </div>
     </section>
   </main>
 
