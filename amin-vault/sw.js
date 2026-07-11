@@ -1,4 +1,4 @@
-const CACHE='amin-vault-v080';
+const CACHE='amin-vault-v081';
 const ASSETS=[
   './',
   './styles.css',
