@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Amin Pocket GBA</string>
+    <string name="load_failed">無法載入 GBA 遊戲中心，請確認網路後重試。</string>
+    <string name="file_picker_failed">無法開啟檔案選擇器。</string>
+</resources>
