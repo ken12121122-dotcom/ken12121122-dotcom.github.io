@@ -1,4 +1,9 @@
 (() => {
+  const guard = document.createElement('script');
+  guard.src = './three-boot.js';
+  guard.async = true;
+  document.head.appendChild(guard);
+
   const cfg = window.VAULT_CONFIG;
   if (!cfg || !window.supabase) return;
 
