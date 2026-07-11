@@ -10,7 +10,7 @@
 </head>
 <body tabindex="-1">
   <header class="topbar">
-    <a href="./gba.html?v=085" class="back-link">← 遊戲中心</a>
+    <a href="./gba.html?v=090" class="back-link">← 遊戲中心</a>
     <div>
       <p>AMIN INPUT SIGNAL LAB</p>
       <h1>手把原始訊號接收器</h1>
@@ -20,9 +20,9 @@
 
   <main>
     <section class="card hero">
-      <span class="kicker">RECORD FIRST · MAP LATER</span>
-      <h2>先把手把真正送出的訊號抓出來。</h2>
-      <p>這一頁暫時不定義 GBA 的 A、B 或方向。它會同時監聽 Gamepad API 與 Android 可能送出的鍵盤事件，記錄按鈕、搖桿、按下、放開與時間順序。</p>
+      <span class="kicker">WEB + ANDROID NATIVE</span>
+      <h2>同時觀察瀏覽器與 Android 底層輸入。</h2>
+      <p>網頁版監聽 Gamepad API、鍵盤與 Pointer；Android App 版另外記錄 Activity 收到的 KeyEvent 與 MotionEvent，因此可抓到 Chrome 遺失的按鈕。</p>
       <div class="primary-actions">
         <button id="startButton">● 開始收集</button>
         <button id="stopButton" class="secondary" disabled>■ 停止</button>
@@ -33,10 +33,7 @@
 
     <section class="card device-card">
       <div class="section-head">
-        <div>
-          <p class="eyebrow">LIVE DEVICE</p>
-          <h2>即時接收狀態</h2>
-        </div>
+        <div><p class="eyebrow">LIVE DEVICE</p><h2>即時接收狀態</h2></div>
         <button id="wakeButton" class="secondary compact">重新偵測</button>
       </div>
       <p id="deviceName" class="device-name">等待手把。請按任意鍵喚醒，並保持 ANALOG 模式。</p>
@@ -46,7 +43,6 @@
         <div><span>Axes</span><strong id="axisCount">0</strong></div>
         <div><span>Events</span><strong id="eventCount">0</strong></div>
       </div>
-
       <div class="axis-grid">
         <article><span>Axis 0</span><div class="axis-meter"><i id="axisMeter0"></i></div><strong id="axisValue0">0.000</strong></article>
         <article><span>Axis 1</span><div class="axis-meter"><i id="axisMeter1"></i></div><strong id="axisValue1">0.000</strong></article>
@@ -54,16 +50,13 @@
         <article><span>Axis 3</span><div class="axis-meter"><i id="axisMeter3"></i></div><strong id="axisValue3">0.000</strong></article>
       </div>
       <div id="buttonMonitor" class="button-monitor"></div>
-      <div class="last-key">
-        <span>最後鍵盤事件</span>
-        <strong id="lastKeyValue">尚無</strong>
-      </div>
+      <div class="last-key"><span>最後鍵盤事件</span><strong id="lastKeyValue">尚無</strong></div>
     </section>
 
     <section class="card marker-card">
       <p class="eyebrow">TEST MARKERS</p>
       <h2>操作前先插入標記</h2>
-      <p>例如先點「按鈕 2」，再按手把上的實體 2。報告裡就會知道下一段訊號屬於哪個實體控制。</p>
+      <p>先點對應標記，再操作實體控制。報告會保留事件順序，方便建立精確映射。</p>
       <div class="marker-grid">
         <button data-marker="按鈕 1" class="secondary">按鈕 1</button>
         <button data-marker="按鈕 2" class="secondary">按鈕 2</button>
@@ -86,10 +79,7 @@
 
     <section class="card log-card">
       <div class="section-head">
-        <div>
-          <p class="eyebrow">RAW EVENT STREAM</p>
-          <h2>原始訊號紀錄</h2>
-        </div>
+        <div><p class="eyebrow">RAW EVENT STREAM</p><h2>原始訊號紀錄</h2></div>
         <label class="filter-toggle"><input id="showAxesToggle" type="checkbox" checked> 顯示軸訊號</label>
       </div>
       <div id="eventLog" class="event-log"><p class="empty-log">按「開始收集」後，事件會出現在這裡。</p></div>
@@ -104,11 +94,11 @@
         <div><span>活動軸</span><strong>尚無</strong></div>
       </div>
       <div class="export-actions">
-        <button id="copyButton" class="secondary">複製 JSON</button>
-        <button id="downloadButton">下載 JSON</button>
+        <button id="copyButton" class="secondary">複製 Web JSON</button>
+        <button id="downloadButton">下載 Web JSON</button>
         <button id="shareButton" class="secondary">分享報告</button>
       </div>
-      <p id="exportStatus" class="export-status">完成測試後，把 JSON 檔上傳到聊天，我就能依照真實訊號替你定義按鍵。</p>
+      <p id="exportStatus" class="export-status">Android App 會額外出現「下載 Android 原生 JSON」。</p>
     </section>
 
     <section class="card instructions-card">
@@ -119,11 +109,13 @@
         <li>依序測試 2、3、4、Start、Select、L、R。</li>
         <li>標記「左搖桿」，慢慢推上、下、左、右各一次。</li>
         <li>標記「右搖桿」，同樣測試一輪。</li>
-        <li>按停止，下載或分享 JSON。</li>
+        <li>按停止，下載 Web 與 Android 原生報告。</li>
       </ol>
     </section>
   </main>
 
+  <script src="./gba-native-input.js"></script>
   <script src="./gba-signal-lab.js"></script>
+  <script src="./gba-signal-native-addon.js"></script>
 </body>
 </html>
