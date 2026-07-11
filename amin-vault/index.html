@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#05070b">
-  <meta name="description" content="Amin Universal Vault Three.js 個人掌機桌面">
+  <meta name="description" content="Amin Universal Vault Three.js 個人掌機桌面與 GBA 遊戲中心">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./console-gba.css">
   <title>Amin Pocket Vault</title>
 </head>
 <body>
@@ -22,14 +23,15 @@
       <div class="console-stage-head">
         <div>
           <p class="eyebrow">THREE.JS CONSOLE SHELL</p>
-          <h2>你的資料宇宙，改用掌機文法操作。</h2>
+          <h2>資料宇宙與遊戲世界，現在共用同一台掌機。</h2>
         </div>
-        <span class="badge active">v0.7.0</span>
+        <span class="badge active">v0.8.0</span>
       </div>
 
       <div id="threeCanvas" class="three-canvas">
         <div class="three-fallback" aria-hidden="true">
           <button data-console-target="core">Vault Core</button>
+          <a href="./gba.html" class="console-game-link">GBA Arcade</a>
           <button data-console-target="identity">Identity</button>
           <button data-console-target="capture">Capture</button>
           <button data-console-target="explorer">Explorer</button>
@@ -48,6 +50,7 @@
       <div id="consoleMenu" class="console-menu hidden">
         <p class="eyebrow">SYSTEM MENU</p>
         <div class="console-menu-grid">
+          <a href="./gba.html" class="console-menu-link">🎮 GBA 遊戲中心</a>
           <button data-console-target="core">核心架構</button>
           <button data-console-target="identity">登入帳號</button>
           <button data-console-target="capture">新增資料</button>
@@ -59,10 +62,28 @@
     </section>
 
     <section class="hero card">
-      <span id="publicPwaVersion" class="kicker">Vault v0.7.0</span>
-      <h2>Three.js 是世界，GBA 按鍵是語法。</h2>
-      <p>現有的 Supabase、登入、Workspace、版本、審核與 Obsidian 鏡像全部保留，現在由 3D 掌機桌面統一帶路。</p>
-      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>94%</strong></div><div class="progress-track"><div class="progress-bar" style="width:94%"></div></div></div>
+      <span id="publicPwaVersion" class="kicker">Vault v0.8.0</span>
+      <h2>Three.js 是世界，GBA 按鍵是語法，mGBA 是遊戲引擎。</h2>
+      <p>原本的 Supabase、登入、Workspace、版本、審核與 Obsidian 鏡像全部保留，並新增可匯入本機 ROM 的 GBA 遊戲中心。</p>
+      <div class="progress-wrap"><div class="progress-meta"><span>建置進度</span><strong>96%</strong></div><div class="progress-track"><div class="progress-bar" style="width:96%"></div></div></div>
+    </section>
+
+    <section id="gbaPanel" class="card gba-entry-card">
+      <div class="gba-entry-grid">
+        <div class="gba-entry-copy">
+          <p class="eyebrow">GBA ARCADE</p>
+          <h3>插入你自己的遊戲匣</h3>
+          <p>選擇手機中的 `.gba` 或 `.zip`，ROM 只留在這台裝置的瀏覽器。遊戲由 EmulatorJS 的 mGBA 核心執行。</p>
+        </div>
+        <a href="./gba.html" class="gba-launch-link">開啟 GBA 遊戲中心</a>
+      </div>
+      <div class="gba-feature-row">
+        <span>本機 ROM 遊戲庫</span>
+        <span>mGBA WebAssembly</span>
+        <span>觸控虛擬手把</span>
+        <span>USB／藍牙手把</span>
+        <span>瀏覽器存檔</span>
+      </div>
     </section>
 
     <section id="architecturePanel" class="card">
@@ -77,7 +98,7 @@
       <div id="architectureLayerList" class="stack">
         <div class="row"><div><div class="row-title">1. Data Core</div><div class="row-sub">Workspace、Objects、Relationships、Versions、Audit</div></div><span class="badge active">Supabase</span></div>
         <div class="row"><div><div class="row-title">2. Governance</div><div class="row-sub">Capture → Change Request → Review → Publish → Version → Audit</div></div><span class="badge">RLS + Version Lock</span></div>
-        <div class="row"><div><div class="row-title">3. Platform Adapters</div><div class="row-sub">PWA、ChatGPT、Drive、Obsidian、Codex、Future MCP</div></div><span class="badge">Clients</span></div>
+        <div class="row"><div><div class="row-title">3. Platform Adapters</div><div class="row-sub">PWA、GBA Center、ChatGPT、Drive、Obsidian、Codex、Future MCP</div></div><span class="badge">Clients</span></div>
         <div class="row"><div><div class="row-title">4. Mirror & Recovery</div><div class="row-sub">Supabase → Google Drive Markdown Mirror → Obsidian</div></div><span class="badge active">Hourly</span></div>
       </div>
       <p id="architecturePrinciple" class="message success">核心原則：資料屬於 Vault，不屬於任何單一 App。</p>
@@ -127,7 +148,7 @@
 
     <section id="platformPanel" class="card"><div class="section-head"><div><p class="eyebrow">PLATFORMS</p><h3>入口狀態</h3></div><button id="refreshButton" class="ghost">重新整理</button></div><div id="clientList" class="stack"></div></section>
     <section id="nextActionsPanel" class="card"><p class="eyebrow">NEXT ACTIONS</p><h3>下一步任務</h3><div id="taskList" class="stack"></div></section>
-    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>目前仍在施工</h3><p>Android 檔案層自動同步、Vault MCP、跨 App 系統控制與自動三方合併尚未完成。v0.7.0 已加入 Three.js 掌機桌面與 GBA 輸入層。</p></section>
+    <section class="card warning-card"><p class="eyebrow">CURRENT BOUNDARY</p><h3>目前仍在施工</h3><p>GBA 已可在瀏覽器本機遊玩，但遊戲存檔尚未同步到 Universal Vault。Android 檔案層自動同步、Vault MCP、跨 App 系統控制與自動三方合併仍未完成。</p></section>
   </main>
 
   <footer><span>Amin Universal Vault</span><span id="footerStatus">initializing</span></footer>
