@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'com.amin.pocketgba'
-    compileSdk 37
+    compileSdk 35
 
     defaultConfig {
         applicationId 'com.amin.pocketgba'
