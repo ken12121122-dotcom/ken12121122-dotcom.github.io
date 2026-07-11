@@ -1,4 +1,4 @@
-const CACHE='amin-vault-v03';
+const CACHE='amin-vault-v04';
 const ASSETS=['./','./styles.css','./app.js','./config.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
