@@ -1,0 +1,42 @@
+{
+  "name": "Amin Universal Vault",
+  "architecture_version": 2,
+  "pwa_version": "0.6.2",
+  "principle": "資料屬於 Vault，不屬於任何單一 App。",
+  "layers": [
+    {
+      "order": 1,
+      "name": "Data Core",
+      "platform": "Supabase",
+      "components": ["workspaces", "objects", "relationships", "versions", "change_requests", "audit_logs", "clients", "sync_runs", "mirror_files", "public_content"]
+    },
+    {
+      "order": 2,
+      "name": "Governance",
+      "flow": ["capture", "change_request", "review", "publish", "version_snapshot", "audit_log"],
+      "protections": ["RLS", "owner_binding", "optimistic_version_check", "version_conflict_block", "public_private_separation"]
+    },
+    {
+      "order": 3,
+      "name": "Platform Adapters",
+      "clients": ["PWA", "ChatGPT", "Google Drive Mirror", "Obsidian Android", "Obsidian Windows", "Codex", "Future MCP"]
+    },
+    {
+      "order": 4,
+      "name": "Mirror & Recovery",
+      "flow": ["Supabase", "Google Drive Markdown Mirror", "Obsidian"],
+      "schedule": "hourly",
+      "identity": "stable drive_file_id registry"
+    }
+  ],
+  "status": {
+    "active_objects": 5,
+    "draft_objects": 4,
+    "total_objects": 9,
+    "versions": 10,
+    "relationships": 6,
+    "mirror_registry": 9,
+    "security_warnings": 0
+  },
+  "boundaries": ["Android file-level automatic sync", "Vault MCP", "automatic three-way merge"]
+}
