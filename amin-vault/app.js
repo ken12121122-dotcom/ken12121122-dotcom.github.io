@@ -11,7 +11,8 @@
     {name:"Obsidian Android",client_type:"obsidian_android",platform:"android",status:"active"},
     {name:"Obsidian Windows",client_type:"obsidian_windows",platform:"windows",status:"offline"},
     {name:"Codex",client_type:"codex",platform:"windows",status:"offline"},
-    {name:"Amin Vault PWA",client_type:"pwa",platform:"web",status:"active"}
+    {name:"Amin Vault PWA",client_type:"pwa",platform:"web",status:"active"},
+    {name:"Amin Vault GitHub Pages",client_type:"pwa",platform:"web",status:"active"}
   ];
   const demoTasks = [
     {title:"建立正式登入與 Workspace 綁定",content:{priority:"P0",next_action:"登入後認領 Workspace"}},
@@ -22,17 +23,36 @@
   const esc = v => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const msg = (el,text,kind="") => { el.textContent=text; el.className=`message ${kind}`.trim(); };
   const busy = (btn,on) => { btn.disabled=on; btn.dataset.t ||= btn.textContent; btn.textContent=on?"處理中…":btn.dataset.t; };
-  function renderClients(items) { $("clientList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.name)}</div><div class="row-sub">${esc(x.client_type)} · ${esc(x.platform)}</div></div><span class="status-dot ${x.status==="active"?"active":""}"></span></div>`).join(""); }
-  function renderTasks(items) { $("taskList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.title)}</div><div class="row-sub">${esc(x.content?.priority)} · ${esc(x.content?.next_action)}</div></div></div>`).join(""); }
+
+  function renderClients(items) {
+    $("clientList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.name)}</div><div class="row-sub">${esc(x.client_type)} · ${esc(x.platform)}</div></div><span class="status-dot ${x.status==="active"?"active":""}"></span></div>`).join("");
+  }
+
+  function renderTasks(items) {
+    $("taskList").innerHTML = items.map(x => `<div class="row"><div><div class="row-title">${esc(x.title)}</div><div class="row-sub">${esc(x.content?.priority)} · ${esc(x.content?.next_action)}</div></div></div>`).join("");
+  }
+
   async function refreshSession() {
     const {data:{session}} = await client.auth.getSession();
     const logged = Boolean(session?.user);
     $("authPanel").classList.toggle("hidden", logged);
     $("sessionPanel").classList.toggle("hidden", !logged);
+    $("composePanel").classList.toggle("hidden", !logged);
     $("logoutButton").classList.toggle("hidden", !logged);
-    if (logged) { $("sessionEmail").textContent = session.user.email || session.user.id; badge.textContent = "Signed in"; badge.className = "badge active"; await loadLive(); }
-    else { badge.textContent = "Demo"; badge.className = "badge"; footer.textContent = "demo snapshot"; renderClients(demoClients); renderTasks(demoTasks); }
+    if (logged) {
+      $("sessionEmail").textContent = session.user.email || session.user.id;
+      badge.textContent = "Signed in";
+      badge.className = "badge active";
+      await loadLive();
+    } else {
+      badge.textContent = "Demo";
+      badge.className = "badge";
+      footer.textContent = "demo snapshot";
+      renderClients(demoClients);
+      renderTasks(demoTasks);
+    }
   }
+
   async function signup() {
     const btn=$("signupButton"); busy(btn,true);
     try {
@@ -45,12 +65,17 @@
     } catch(e){msg($("authMessage"),e.message||"建立帳號失敗。","error");}
     finally{busy(btn,false);}
   }
+
   async function login() {
     const btn=$("loginButton"); busy(btn,true);
-    try { const {error}=await client.auth.signInWithPassword({email:$("emailInput").value.trim(),password:$("passwordInput").value}); if(error) throw error; await refreshSession(); }
-    catch(e){msg($("authMessage"),e.message||"登入失敗。","error");}
+    try {
+      const {error}=await client.auth.signInWithPassword({email:$("emailInput").value.trim(),password:$("passwordInput").value});
+      if(error) throw error;
+      await refreshSession();
+    } catch(e){msg($("authMessage"),e.message||"登入失敗。","error");}
     finally{busy(btn,false);}
   }
+
   async function claim() {
     const btn=$("claimButton"); busy(btn,true);
     try {
@@ -62,6 +87,29 @@
     } catch(e){msg($("claimMessage"),e.message||"認領失敗。","error");}
     finally{busy(btn,false);}
   }
+
+  async function createDraft() {
+    const btn=$("createDraftButton"); busy(btn,true);
+    try {
+      const title=$("draftTitle").value.trim();
+      const body=$("draftContent").value.trim();
+      const type=$("draftType").value;
+      if(!title) throw new Error("請先輸入標題。");
+      const {data,error}=await client.rpc("create_object_change_request",{
+        target_workspace_slug:cfg.workspaceSlug,
+        target_object_type:type,
+        target_title:title,
+        target_content:{text:body,source:"pwa",captured_at:new Date().toISOString()}
+      });
+      if(error) throw error;
+      $("draftTitle").value="";
+      $("draftContent").value="";
+      msg($("draftMessage"),`已建立 Change Request：${data}`,"success");
+      await loadLive();
+    } catch(e){msg($("draftMessage"),e.message||"草稿建立失敗。","error");}
+    finally{busy(btn,false);}
+  }
+
   async function loadLive() {
     try {
       const [p,c,t] = await Promise.all([
@@ -70,14 +118,29 @@
         client.from("vault_objects").select("title,content,status").eq("object_type","task").order("title")
       ]);
       if(p.error) throw p.error; if(c.error) throw c.error; if(t.error) throw t.error;
-      if(p.data){ $("objectCount").textContent=p.data.object_count??0; $("clientCount").textContent=c.data?.length??0; $("versionCount").textContent=p.data.version_count??0; $("pendingCount").textContent=p.data.pending_change_count??0; badge.textContent="Live"; badge.className="badge active"; footer.textContent="live vault connected"; }
-      renderClients(c.data?.length?c.data:demoClients); renderTasks(t.data?.length?t.data:demoTasks);
-    } catch(e) { footer.textContent="signed in · claim workspace"; renderClients(demoClients); renderTasks(demoTasks); }
+      if(p.data){
+        $("objectCount").textContent=p.data.object_count??0;
+        $("clientCount").textContent=c.data?.length??0;
+        $("versionCount").textContent=p.data.version_count??0;
+        $("pendingCount").textContent=p.data.pending_change_count??0;
+        badge.textContent="Live";
+        badge.className="badge active";
+        footer.textContent="live vault connected";
+      }
+      renderClients(c.data?.length?c.data:demoClients);
+      renderTasks(t.data?.length?t.data:demoTasks);
+    } catch(e) {
+      footer.textContent="signed in · claim workspace";
+      renderClients(demoClients);
+      renderTasks(demoTasks);
+    }
   }
+
   $("signupButton").onclick=signup;
   $("loginButton").onclick=login;
   $("logoutButton").onclick=async()=>{await client.auth.signOut();await refreshSession();};
   $("claimButton").onclick=claim;
+  $("createDraftButton").onclick=createDraft;
   $("refreshButton").onclick=loadLive;
   client.auth.onAuthStateChange(()=>refreshSession());
   refreshSession();
