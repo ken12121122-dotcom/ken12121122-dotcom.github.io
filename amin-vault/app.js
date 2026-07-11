@@ -2,6 +2,7 @@
   const cfg = window.VAULT_CONFIG;
   const badge = document.getElementById("connectionBadge");
   const footer = document.getElementById("footerStatus");
+  const SNAPSHOT_KEY = "amin_vault_snapshot_v05";
 
   if (!cfg || !window.supabase) {
     badge.textContent = "Config error";
@@ -11,6 +12,7 @@
 
   const client = window.supabase.createClient(cfg.url, cfg.publishableKey);
   const $ = id => document.getElementById(id);
+  const state = {objects: []};
 
   const demoClients = [
     {name:"ChatGPT Connected App",client_type:"chatgpt",platform:"cloud",status:"active"},
@@ -45,6 +47,13 @@
     button.dataset.originalText ||= button.textContent;
     button.textContent = busy ? "處理中…" : button.dataset.originalText;
   };
+
+  function contentToText(content) {
+    if (content == null) return "";
+    if (typeof content === "string") return content;
+    if (typeof content?.text === "string") return content.text;
+    return JSON.stringify(content, null, 2);
+  }
 
   function renderClients(items) {
     $("clientList").innerHTML = items.map(item => `
@@ -84,8 +93,7 @@
 
     $("changeRequestList").innerHTML = items.map(item => {
       const patch = item.proposed_patch || {};
-      const content = patch.content?.text ?? JSON.stringify(patch.content ?? {});
-      const excerpt = String(content).slice(0, 180);
+      const excerpt = contentToText(patch.content).slice(0, 180);
       return `
         <article class="review-card">
           <div class="review-meta">${esc(patch.object_type || "unknown")} · ${esc(item.risk_level || "low")}</div>
@@ -100,6 +108,106 @@
     }).join("");
   }
 
+  function renderObjects() {
+    const query = $("objectSearch").value.trim().toLowerCase();
+    const type = $("objectTypeFilter").value;
+    const filtered = state.objects.filter(item => {
+      const typeMatch = type === "all" || item.object_type === type;
+      const haystack = `${item.title} ${contentToText(item.content)}`.toLowerCase();
+      return typeMatch && (!query || haystack.includes(query));
+    });
+
+    if (!filtered.length) {
+      $("objectList").innerHTML = `
+        <div class="row">
+          <div>
+            <div class="row-title">沒有符合條件的正式物件</div>
+            <div class="row-sub">調整搜尋字或類型篩選。</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    $("objectList").innerHTML = filtered.map(item => {
+      const excerpt = contentToText(item.content).slice(0, 220);
+      return `
+        <article class="object-card">
+          <div class="object-head">
+            <div>
+              <div class="review-meta">${esc(item.object_type)} · v${esc(item.canonical_version)}</div>
+              <div class="row-title">${esc(item.title)}</div>
+            </div>
+            <span class="badge">${esc(item.sensitivity)}</span>
+          </div>
+          <p class="review-excerpt">${esc(excerpt || "沒有內容")}</p>
+          <div class="object-actions">
+            <button class="secondary" data-copy-object-id="${esc(item.id)}">複製 Markdown</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function buildMarkdown(item) {
+    const body = contentToText(item.content);
+    return `---\nvault_id: "${item.id}"\nobject_type: "${item.object_type}"\nstatus: "${item.status}"\nsensitivity: "${item.sensitivity}"\ncanonical_version: ${item.canonical_version}\nupdated_at: "${item.updated_at}"\n---\n\n# ${item.title}\n\n${body}\n`;
+  }
+
+  async function copyObjectMarkdown(objectId) {
+    const item = state.objects.find(object => object.id === objectId);
+    if (!item) return;
+    const markdown = buildMarkdown(item);
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setMessage($("explorerMessage"), `已複製「${item.title}」的 Markdown。`, "success");
+    } catch {
+      window.prompt("複製以下 Markdown：", markdown);
+    }
+  }
+
+  function saveSnapshot(payload) {
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
+        saved_at: new Date().toISOString(),
+        ...payload
+      }));
+    } catch {
+      setMessage($("explorerMessage"), "資料已載入，但瀏覽器拒絕保存離線快照。", "error");
+    }
+  }
+
+  function loadSnapshot() {
+    try {
+      const snapshot = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "null");
+      if (!snapshot) return false;
+
+      state.objects = snapshot.objects || [];
+      renderObjects();
+      renderClients(snapshot.clients?.length ? snapshot.clients : demoClients);
+      renderTasks(snapshot.tasks?.length ? snapshot.tasks : demoTasks);
+      renderChangeRequests(snapshot.changes || []);
+
+      $("objectCount").textContent = snapshot.progress?.object_count ?? state.objects.length;
+      $("clientCount").textContent = snapshot.clients?.length ?? 0;
+      $("versionCount").textContent = snapshot.progress?.version_count ?? 0;
+      $("pendingCount").textContent = snapshot.progress?.pending_change_count ?? 0;
+      $("offlineBadge").textContent = "Cached";
+      footer.textContent = `offline snapshot · ${snapshot.saved_at || "unknown"}`;
+      setMessage($("explorerMessage"), "目前顯示最近一次離線快照。", "success");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function updateNetworkBadge() {
+    $("offlineBadge").textContent = navigator.onLine ? "Live" : "Offline";
+    $("offlineBadge").className = navigator.onLine ? "badge active" : "badge";
+    if (!navigator.onLine) loadSnapshot();
+  }
+
   async function refreshSession() {
     const {data: {session}} = await client.auth.getSession();
     const loggedIn = Boolean(session?.user);
@@ -108,6 +216,7 @@
     $("sessionPanel").classList.toggle("hidden", !loggedIn);
     $("composePanel").classList.toggle("hidden", !loggedIn);
     $("reviewPanel").classList.toggle("hidden", !loggedIn);
+    $("explorerPanel").classList.toggle("hidden", !loggedIn);
     $("logoutButton").classList.toggle("hidden", !loggedIn);
 
     if (loggedIn) {
@@ -243,10 +352,13 @@
       if (error) throw error;
 
       const result = Array.isArray(data) ? data[0] : data;
-      const message = decision === "approve"
-        ? `已發布為正式 Object：${result?.created_object_id || "完成"}`
-        : "Change Request 已駁回。";
-      setMessage($("reviewMessage"), message, "success");
+      setMessage(
+        $("reviewMessage"),
+        decision === "approve"
+          ? `已發布為正式 Object：${result?.created_object_id || "完成"}`
+          : "Change Request 已駁回。",
+        "success"
+      );
       await loadLive();
     } catch (error) {
       setMessage($("reviewMessage"), error.message || "審核失敗。", "error");
@@ -255,39 +367,63 @@
 
   async function loadLive() {
     try {
-      const [progressResult, clientResult, taskResult, changeResult] = await Promise.all([
+      const [progressResult, clientResult, taskResult, changeResult, objectResult] = await Promise.all([
         client.from("vault_workspace_progress").select("*").eq("slug", cfg.workspaceSlug).maybeSingle(),
         client.from("vault_clients").select("name,platform,status,client_type").order("client_type"),
         client.from("vault_objects").select("title,content,status").eq("object_type", "task").order("title"),
         client.from("vault_change_requests")
           .select("id,proposed_patch,risk_level,status,created_at")
           .eq("status", "pending")
-          .order("created_at", {ascending: false})
+          .order("created_at", {ascending: false}),
+        client.from("vault_objects")
+          .select("id,object_type,title,content,status,sensitivity,canonical_version,updated_at")
+          .eq("status", "active")
+          .order("updated_at", {ascending: false})
       ]);
 
       if (progressResult.error) throw progressResult.error;
       if (clientResult.error) throw clientResult.error;
       if (taskResult.error) throw taskResult.error;
       if (changeResult.error) throw changeResult.error;
+      if (objectResult.error) throw objectResult.error;
 
-      if (progressResult.data) {
-        $("objectCount").textContent = progressResult.data.object_count ?? 0;
-        $("clientCount").textContent = clientResult.data?.length ?? 0;
-        $("versionCount").textContent = progressResult.data.version_count ?? 0;
-        $("pendingCount").textContent = progressResult.data.pending_change_count ?? 0;
-        badge.textContent = "Live";
-        badge.className = "badge active";
-        footer.textContent = "live vault connected";
-      }
-
+      state.objects = objectResult.data || [];
+      renderObjects();
       renderClients(clientResult.data?.length ? clientResult.data : demoClients);
       renderTasks(taskResult.data?.length ? taskResult.data : demoTasks);
       renderChangeRequests(changeResult.data || []);
+
+      if (progressResult.data) {
+        $("objectCount").textContent = progressResult.data.object_count ?? state.objects.length;
+        $("clientCount").textContent = clientResult.data?.length ?? 0;
+        $("versionCount").textContent = progressResult.data.version_count ?? 0;
+        $("pendingCount").textContent = progressResult.data.pending_change_count ?? 0;
+      }
+
+      saveSnapshot({
+        progress: progressResult.data,
+        clients: clientResult.data || [],
+        tasks: taskResult.data || [],
+        changes: changeResult.data || [],
+        objects: state.objects
+      });
+
+      badge.textContent = "Live";
+      badge.className = "badge active";
+      $("offlineBadge").textContent = "Live";
+      $("offlineBadge").className = "badge active";
+      footer.textContent = "live vault connected";
+      setMessage($("explorerMessage"), `已快取 ${state.objects.length} 個正式 Objects。`, "success");
     } catch (error) {
-      footer.textContent = "signed in · claim workspace";
-      renderClients(demoClients);
-      renderTasks(demoTasks);
-      renderChangeRequests([]);
+      const loaded = loadSnapshot();
+      if (!loaded) {
+        footer.textContent = "signed in · claim workspace";
+        renderClients(demoClients);
+        renderTasks(demoTasks);
+        renderChangeRequests([]);
+        state.objects = [];
+        renderObjects();
+      }
     }
   }
 
@@ -301,6 +437,8 @@
   $("createDraftButton").onclick = createDraft;
   $("refreshButton").onclick = loadLive;
   $("refreshReviewButton").onclick = loadLive;
+  $("objectSearch").oninput = renderObjects;
+  $("objectTypeFilter").onchange = renderObjects;
 
   $("changeRequestList").addEventListener("click", event => {
     const button = event.target.closest("button[data-review-action]");
@@ -308,7 +446,20 @@
     reviewChangeRequest(button.dataset.requestId, button.dataset.reviewAction);
   });
 
+  $("objectList").addEventListener("click", event => {
+    const button = event.target.closest("button[data-copy-object-id]");
+    if (!button) return;
+    copyObjectMarkdown(button.dataset.copyObjectId);
+  });
+
+  window.addEventListener("online", () => {
+    updateNetworkBadge();
+    loadLive();
+  });
+  window.addEventListener("offline", updateNetworkBadge);
+
   client.auth.onAuthStateChange(() => refreshSession());
+  updateNetworkBadge();
   refreshSession();
 
   if ("serviceWorker" in navigator) {
