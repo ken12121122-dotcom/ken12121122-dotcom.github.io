@@ -66,13 +66,14 @@
   function decorateNativeBindings() {
     document.querySelectorAll('.binding-chip').forEach(chip => {
       const binding = chip.getAttribute('title') || '';
-      if (!binding.startsWith('NATIVE_')) return;
+      if (!binding.startsWith('NATIVE_') || chip.dataset.nativeDecorated === binding) return;
       const button = chip.querySelector('button');
       chip.childNodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE) node.textContent = '';
       });
       chip.insertBefore(document.createTextNode(`${friendly(binding)} `),button || null);
       chip.classList.add('native-binding-chip');
+      chip.dataset.nativeDecorated = binding;
     });
   }
 
