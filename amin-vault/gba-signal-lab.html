@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070a10">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./gba-signal-lab.css">
+  <title>手把原始訊號接收器 · Amin Pocket Vault</title>
+</head>
+<body tabindex="-1">
+  <header class="topbar">
+    <a href="./gba.html?v=085" class="back-link">← 遊戲中心</a>
+    <div>
+      <p>AMIN INPUT SIGNAL LAB</p>
+      <h1>手把原始訊號接收器</h1>
+    </div>
+    <span id="recordBadge" class="badge">未錄製</span>
+  </header>
+
+  <main>
+    <section class="card hero">
+      <span class="kicker">RECORD FIRST · MAP LATER</span>
+      <h2>先把手把真正送出的訊號抓出來。</h2>
+      <p>這一頁暫時不定義 GBA 的 A、B 或方向。它會同時監聽 Gamepad API 與 Android 可能送出的鍵盤事件，記錄按鈕、搖桿、按下、放開與時間順序。</p>
+      <div class="primary-actions">
+        <button id="startButton">● 開始收集</button>
+        <button id="stopButton" class="secondary" disabled>■ 停止</button>
+        <button id="clearButton" class="danger">清除紀錄</button>
+      </div>
+      <p class="privacy-note">報告不包含 ROM、遊戲存檔或 Vault 資料，只包含裝置資訊與輸入事件。</p>
+    </section>
+
+    <section class="card device-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">LIVE DEVICE</p>
+          <h2>即時接收狀態</h2>
+        </div>
+        <button id="wakeButton" class="secondary compact">重新偵測</button>
+      </div>
+      <p id="deviceName" class="device-name">等待手把。請按任意鍵喚醒，並保持 ANALOG 模式。</p>
+      <div class="stats-grid">
+        <div><span>Gamepad</span><strong id="gamepadStatus">未偵測</strong></div>
+        <div><span>Buttons</span><strong id="buttonCount">0</strong></div>
+        <div><span>Axes</span><strong id="axisCount">0</strong></div>
+        <div><span>Events</span><strong id="eventCount">0</strong></div>
+      </div>
+
+      <div class="axis-grid">
+        <article><span>Axis 0</span><div class="axis-meter"><i id="axisMeter0"></i></div><strong id="axisValue0">0.000</strong></article>
+        <article><span>Axis 1</span><div class="axis-meter"><i id="axisMeter1"></i></div><strong id="axisValue1">0.000</strong></article>
+        <article><span>Axis 2</span><div class="axis-meter"><i id="axisMeter2"></i></div><strong id="axisValue2">0.000</strong></article>
+        <article><span>Axis 3</span><div class="axis-meter"><i id="axisMeter3"></i></div><strong id="axisValue3">0.000</strong></article>
+      </div>
+      <div id="buttonMonitor" class="button-monitor"></div>
+      <div class="last-key">
+        <span>最後鍵盤事件</span>
+        <strong id="lastKeyValue">尚無</strong>
+      </div>
+    </section>
+
+    <section class="card marker-card">
+      <p class="eyebrow">TEST MARKERS</p>
+      <h2>操作前先插入標記</h2>
+      <p>例如先點「按鈕 2」，再按手把上的實體 2。報告裡就會知道下一段訊號屬於哪個實體控制。</p>
+      <div class="marker-grid">
+        <button data-marker="按鈕 1" class="secondary">按鈕 1</button>
+        <button data-marker="按鈕 2" class="secondary">按鈕 2</button>
+        <button data-marker="按鈕 3" class="secondary">按鈕 3</button>
+        <button data-marker="按鈕 4" class="secondary">按鈕 4</button>
+        <button data-marker="十字鍵" class="secondary">十字鍵</button>
+        <button data-marker="左搖桿" class="secondary">左搖桿</button>
+        <button data-marker="右搖桿" class="secondary">右搖桿</button>
+        <button data-marker="Start" class="secondary">Start</button>
+        <button data-marker="Select" class="secondary">Select</button>
+        <button data-marker="L" class="secondary">L</button>
+        <button data-marker="R" class="secondary">R</button>
+      </div>
+      <div class="custom-marker-row">
+        <input id="customMarkerInput" type="text" placeholder="自訂標記，例如：左搖桿按下">
+        <button id="customMarkerButton">加入標記</button>
+      </div>
+      <p id="markerStatus" class="marker-status">尚未插入標記。</p>
+    </section>
+
+    <section class="card log-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">RAW EVENT STREAM</p>
+          <h2>原始訊號紀錄</h2>
+        </div>
+        <label class="filter-toggle"><input id="showAxesToggle" type="checkbox" checked> 顯示軸訊號</label>
+      </div>
+      <div id="eventLog" class="event-log"><p class="empty-log">按「開始收集」後，事件會出現在這裡。</p></div>
+    </section>
+
+    <section class="card summary-card">
+      <p class="eyebrow">OBSERVED SIGNALS</p>
+      <h2>已觀察到的訊號</h2>
+      <div id="signalSummary" class="signal-summary">
+        <div><span>Gamepad 按鈕</span><strong>尚無</strong></div>
+        <div><span>鍵盤代碼</span><strong>尚無</strong></div>
+        <div><span>活動軸</span><strong>尚無</strong></div>
+      </div>
+      <div class="export-actions">
+        <button id="copyButton" class="secondary">複製 JSON</button>
+        <button id="downloadButton">下載 JSON</button>
+        <button id="shareButton" class="secondary">分享報告</button>
+      </div>
+      <p id="exportStatus" class="export-status">完成測試後，把 JSON 檔上傳到聊天，我就能依照真實訊號替你定義按鍵。</p>
+    </section>
+
+    <section class="card instructions-card">
+      <h2>建議測試順序</h2>
+      <ol>
+        <li>按「開始收集」。</li>
+        <li>點「按鈕 1」標記，再按下與放開實體按鈕 1。</li>
+        <li>依序測試 2、3、4、Start、Select、L、R。</li>
+        <li>標記「左搖桿」，慢慢推上、下、左、右各一次。</li>
+        <li>標記「右搖桿」，同樣測試一輪。</li>
+        <li>按停止，下載或分享 JSON。</li>
+      </ol>
+    </section>
+  </main>
+
+  <script src="./gba-signal-lab.js"></script>
+</body>
+</html>
