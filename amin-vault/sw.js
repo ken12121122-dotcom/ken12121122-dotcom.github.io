@@ -22,7 +22,7 @@ const BOOTSTRAP_ASSETS = [
   './gba-controller-native-addon.js',
   './gba-native-input.js',
   './amin-native-shell.js',
-  './amin-backup.js',
+  './amin-backup-v2.js',
   './amin-diagnostics.js',
   './gba-signal-lab.html',
   './gba-signal-lab.css',
