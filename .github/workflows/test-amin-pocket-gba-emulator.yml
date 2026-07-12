@@ -163,17 +163,11 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          P3='com.amin.pocketgba.preview092'
-          P4='com.amin.pocketgba.preview094'
-          adb shell run-as "$P3" mkdir -p files
-          adb shell run-as "$P4" mkdir -p files/gba-saves
-          printf '%s' 'preview3-remains' \
-            | adb exec-out run-as "$P3" tee files/preview3-marker.txt >/dev/null
-          printf '%s' 'preview4-save-before-update' \
-            | adb exec-out run-as "$P4" tee files/gba-saves/ci-update-retention.sav >/dev/null
-          adb exec-out run-as "$P3" cat files/preview3-marker.txt \
+          adb shell "run-as com.amin.pocketgba.preview092 sh -c 'mkdir -p files && printf %s preview3-remains > files/preview3-marker.txt'"
+          adb shell "run-as com.amin.pocketgba.preview094 sh -c 'mkdir -p files/gba-saves && printf %s preview4-save-before-update > files/gba-saves/ci-update-retention.sav'"
+          adb shell "run-as com.amin.pocketgba.preview092 cat files/preview3-marker.txt" \
             | tr -d '\r' | grep -Fx 'preview3-remains'
-          adb exec-out run-as "$P4" cat files/gba-saves/ci-update-retention.sav \
+          adb shell "run-as com.amin.pocketgba.preview094 cat files/gba-saves/ci-update-retention.sav" \
             | tr -d '\r' | grep -Fx 'preview4-save-before-update'
 
       - name: Update Preview 4 in place and verify both sandboxes
@@ -182,9 +176,9 @@ jobs:
           set -euxo pipefail
           CURRENT="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
           adb install -r "$CURRENT"
-          adb exec-out run-as com.amin.pocketgba.preview094 cat files/gba-saves/ci-update-retention.sav \
+          adb shell "run-as com.amin.pocketgba.preview094 cat files/gba-saves/ci-update-retention.sav" \
             | tr -d '\r' | grep -Fx 'preview4-save-before-update'
-          adb exec-out run-as com.amin.pocketgba.preview092 cat files/preview3-marker.txt \
+          adb shell "run-as com.amin.pocketgba.preview092 cat files/preview3-marker.txt" \
             | tr -d '\r' | grep -Fx 'preview3-remains'
           adb shell dumpsys package com.amin.pocketgba.preview094 > "$RUNNER_TEMP/p4-package.txt"
           grep -F 'versionName=0.9.2-preview4' "$RUNNER_TEMP/p4-package.txt"
