@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "runtimeId": "amin-pocket-gba",
   "runtimeVersion": "0.9.1",
-  "publishedAt": "2026-07-12T00:00:00+08:00",
+  "publishedAt": "2026-07-12T09:35:00+08:00",
   "minimumNativeVersion": "0.9.0",
   "entryPoint": "./gba.html",
   "assets": [
