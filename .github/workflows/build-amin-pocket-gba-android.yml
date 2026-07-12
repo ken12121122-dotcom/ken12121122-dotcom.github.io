@@ -95,7 +95,7 @@ jobs:
           assert 'AMIN_VERSION_CODE' in gradle
           assert 'versionCode aminVersionCode' in gradle
           assert "applicationIdSuffix '.preview094'" in gradle
-          assert 'f0bc618c36e8ae9c09a1987b9cc65fd821cdb455' in gradle
+          assert '4a738e37c36680669ae986b18c5e59015f35d1fc' in gradle
 
           application = Path('android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java').read_text(encoding='utf-8')
           bridge = Path('android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java').read_text(encoding='utf-8')
