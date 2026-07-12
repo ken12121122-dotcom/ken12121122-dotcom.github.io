@@ -113,8 +113,23 @@ jobs:
       - name: Test Runtime atomic updates
         run: node --test tests/runtime-service-worker.test.mjs
 
-      - name: Test durable save contract
-        run: node --test tests/gba-save-contract.test.mjs
+      - name: Test ROM save identity
+        run: node --test --test-name-pattern='ROM identity' tests/gba-save-contract.test.mjs
+
+      - name: Test save flush synchronization
+        run: node --test --test-name-pattern='save exit' tests/gba-save-contract.test.mjs
+
+      - name: Test legacy save contract
+        run: node --test --test-name-pattern='legacy name-based' tests/gba-save-contract.test.mjs
+
+      - name: Test native save vault contract
+        run: node --test --test-name-pattern='native vault' tests/gba-save-contract.test.mjs
+
+      - name: Test Android save backup contract
+        run: node --test --test-name-pattern='Android backup' tests/gba-save-contract.test.mjs
+
+      - name: Test Preview migration package contract
+        run: node --test --test-name-pattern='Preview 4 is' tests/gba-save-contract.test.mjs
 
       - name: Test legacy save migration behavior
         run: node --test tests/gba-save-migration.test.mjs
