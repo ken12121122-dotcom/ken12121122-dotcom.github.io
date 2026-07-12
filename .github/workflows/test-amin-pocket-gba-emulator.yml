@@ -107,11 +107,13 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             set -euxo pipefail
-            OLD_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.1-preview.apk'
-            NEW_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk'
+            OLD_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.1-preview.apk"
+            NEW_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
             OLD_PACKAGE='com.amin.pocketgba.preview091'
             NEW_PACKAGE='com.amin.pocketgba.preview092'
 
+            test -f "$OLD_APK"
+            test -f "$NEW_APK"
             adb install -r "$OLD_APK"
             adb install -r "$NEW_APK"
 
@@ -176,9 +178,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             set -euxo pipefail
-            APP_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk'
-            TEST_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-androidTest.apk'
+            APP_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
+            TEST_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-androidTest.apk"
             TEST_CLASS='${{ matrix.class_name }}'
+            test -f "$APP_APK"
+            test -f "$TEST_APK"
             adb install -r "$APP_APK"
             adb install -r "$TEST_APK"
 
@@ -236,8 +240,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             set -euxo pipefail
-            APP_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk'
+            APP_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
             PACKAGE='com.amin.pocketgba.preview092'
+            test -f "$APP_APK"
             adb install -r "$APP_APK"
 
             adb shell am start -W \
