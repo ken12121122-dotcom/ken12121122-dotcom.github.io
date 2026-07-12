@@ -46,7 +46,7 @@
             <p class="eyebrow">DATA SAFETY</p>
             <h2>備份與搬家</h2>
           </div>
-          <span class="core-badge">.agbbackup</span>
+          <span class="core-badge">.agbbackup v2</span>
         </div>
         <p>快速備份會包含存檔、手把設定與此 App 網域下的 IndexedDB，但不包含 ROM 本體。勾選完整備份後，檔案可能非常大。</p>
         <label class="check-row">
@@ -58,7 +58,7 @@
           <button id="importBackupButton" class="secondary">匯入備份</button>
           <input id="backupImportInput" type="file" accept=".agbbackup,application/zip" hidden>
         </div>
-        <p id="backupStatus" class="storage-status">尚未建立備份。匯入前會再次確認，並覆寫同名資料庫內容。</p>
+        <p id="backupStatus" class="storage-status">尚未建立備份。匯入前會再次確認，並完整取代備份中同名的資料庫。</p>
       </article>
 
       <article class="notice-card tool-card">
@@ -75,6 +75,19 @@
           <button id="refreshDiagnosticsButton">重新檢查</button>
           <button id="exportDiagnosticsButton" class="secondary">匯出診斷報告</button>
         </div>
+      </article>
+
+      <article id="nativeUpdateCard" class="notice-card tool-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">NATIVE RELEASE CHANNEL</p>
+            <h2>原生 APK 更新</h2>
+          </div>
+          <span class="core-badge">SIGNED</span>
+        </div>
+        <p>相容的 Android Native Shell 會開啟獨立更新中心。更新中心只接受 HTTPS、正確 SHA-256、正確套件名稱、版本碼與固定簽章憑證。</p>
+        <a id="nativeUpdateLink" href="amin-update://check" class="source-link hidden">檢查原生 APK 更新</a>
+        <p class="storage-status">目前正式簽章通道保持停用，設定安全金鑰與簽章 manifest 後才會下載 APK。</p>
       </article>
 
       <article class="notice-card">
@@ -131,7 +144,7 @@
   <script src="./gba-save-guard.js"></script>
   <script src="./gba-controller-runtime.js"></script>
   <script src="./gba.js"></script>
-  <script src="./amin-backup.js"></script>
+  <script src="./amin-backup-v2.js"></script>
   <script src="./amin-diagnostics.js"></script>
 </body>
 </html>
