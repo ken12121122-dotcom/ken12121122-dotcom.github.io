@@ -94,7 +94,7 @@ jobs:
           gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
           assert 'versionCode 95' in gradle
           assert "versionNameSuffix '-preview4'" in gradle
-          assert '966e2c31bb3b0af1caaba62a302f278c4570242a' in gradle
+          assert 'a8fa0ea1e2d53d7036f8712118b6ddc5590a3a47' in gradle
 
           application = Path('android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java').read_text(encoding='utf-8')
           bridge = Path('android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java').read_text(encoding='utf-8')
