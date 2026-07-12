@@ -24,7 +24,7 @@ public final class MainActivitySmokeTest {
             new ActivityScenarioRule<>(MainActivity.class);
 
     @Test
-    public void launchesLandscapeNativeShellWithWebView() {
+    public void keepsLibraryPortraitAndRotatesOnlyGameplay() {
         activityRule.getScenario().onActivity(activity -> {
             FrameLayout root = activity.findViewById(R.id.root);
             WebView webView = activity.findViewById(R.id.webView);
@@ -33,7 +33,16 @@ public final class MainActivitySmokeTest {
             assertNotNull(webView);
             assertEquals(View.VISIBLE, root.getVisibility());
             assertEquals(View.VISIBLE, webView.getVisibility());
-            assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.getRequestedOrientation());
+            assertEquals(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, activity.getRequestedOrientation());
+
+            activity.applyRequestedOrientation("landscape");
+            assertEquals(
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+                    activity.getRequestedOrientation()
+            );
+
+            activity.applyRequestedOrientation("portrait");
+            assertEquals(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, activity.getRequestedOrientation());
         });
     }
 }
