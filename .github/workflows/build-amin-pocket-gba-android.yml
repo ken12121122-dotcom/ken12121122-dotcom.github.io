@@ -92,9 +92,10 @@ jobs:
               assert target.exists(), asset
 
           gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
-          assert 'versionCode 95' in gradle
-          assert "versionNameSuffix '-preview4'" in gradle
-          assert 'a8fa0ea1e2d53d7036f8712118b6ddc5590a3a47' in gradle
+          assert 'AMIN_VERSION_CODE' in gradle
+          assert 'versionCode aminVersionCode' in gradle
+          assert "applicationIdSuffix '.preview094'" in gradle
+          assert 'f0bc618c36e8ae9c09a1987b9cc65fd821cdb455' in gradle
 
           application = Path('android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java').read_text(encoding='utf-8')
           bridge = Path('android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java').read_text(encoding='utf-8')
@@ -131,7 +132,7 @@ jobs:
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba.preview092' versionCode='95' versionName='0.9.2-preview4'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba.preview094' versionCode='95' versionName='0.9.2-preview4'" /tmp/apk-badging.txt
           grep -q "application-label:'Amin Pocket GBA Preview 0.9.2 P4'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.INTERNET' /tmp/apk-permissions.txt
