@@ -84,14 +84,21 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+
           echo no | avdmanager create avd \
             --force \
             --name amin_api35 \
             --package 'system-images;android-35;google_apis;x86_64' \
             --device 'pixel_7'
 
+          "$ANDROID_HOME/emulator/emulator" -list-avds | tee "$RUNNER_TEMP/avd-list.txt"
+          grep -Fx 'amin_api35' "$RUNNER_TEMP/avd-list.txt"
+
           EMULATOR_LOG="$RUNNER_TEMP/amin-emulator.log"
-          nohup env -u RUNNER_TRACKING_ID "$ANDROID_HOME/emulator/emulator" \
+          nohup env -u RUNNER_TRACKING_ID ANDROID_AVD_HOME="$ANDROID_AVD_HOME" \
+            "$ANDROID_HOME/emulator/emulator" \
             -avd amin_api35 \
             -no-window \
             -gpu swiftshader_indirect \
