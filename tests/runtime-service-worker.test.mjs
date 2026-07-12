@@ -53,6 +53,8 @@ const caches = new MemoryCacheStorage();
 const posted = [];
 let failPattern = null;
 let offline = false;
+let networkGeneration = 'v1';
+let networkFetches = 0;
 
 const scope = 'https://example.test/amin-vault/';
 const context = vm.createContext({
@@ -62,12 +64,13 @@ const context = vm.createContext({
   console,
   caches,
   fetch: async request => {
+    networkFetches += 1;
     const url = new URL(typeof request === 'string' ? request : request.url);
     if (offline) throw new Error('offline');
     if (failPattern && url.pathname.includes(failPattern)) {
       return new Response('missing', { status: 404 });
     }
-    return new Response(`asset:${url.pathname}`, { status: 200 });
+    return new Response(`asset:${networkGeneration}:${url.pathname}`, { status: 200 });
   },
   self: {
     registration: { scope },
@@ -96,6 +99,20 @@ async function dispatchExtendable(type, extra = {}) {
     }
   });
   if (task) await task;
+}
+
+async function dispatchFetch(path, options = {}) {
+  const handler = handlers.get('fetch');
+  assert.ok(handler, 'missing fetch handler');
+  let responsePromise;
+  handler({
+    request: new Request(new URL(path, scope), options),
+    respondWith(promise) {
+      responsePromise = Promise.resolve(promise);
+    }
+  });
+  assert.ok(responsePromise, `fetch handler ignored ${path}`);
+  return responsePromise;
 }
 
 async function activeCacheName() {
@@ -130,6 +147,18 @@ assert.ok(posted.some(message => message.type === 'AMIN_RUNTIME_READY' && messag
 const v1Cache = await caches.open('amin-vault-runtime-1.0.0');
 assert.ok(await v1Cache.match(new URL('./gba.html', scope).href));
 
+// Online requests must still receive the active runtime. A server deployment is
+// not allowed to leak individual v2 files before the complete cache is staged.
+networkGeneration = 'v2-uncommitted';
+const fetchesBeforeActiveRead = networkFetches;
+const activeResponse = await dispatchFetch('./gba.html?online=1');
+assert.match(await activeResponse.text(), /asset:v1:\/amin-vault\/gba\.html/);
+assert.equal(networkFetches, fetchesBeforeActiveRead, 'active runtime unexpectedly fetched a newer network file');
+
+// The version manifest is the intentional exception and must check the network.
+const manifestResponse = await dispatchFetch('./runtime-manifest.json?check=1');
+assert.match(await manifestResponse.text(), /asset:v2-uncommitted:\/amin-vault\/runtime-manifest\.json/);
+
 failPattern = 'missing.js';
 const v2Manifest = {
   format: 'amin-runtime-manifest',
@@ -147,16 +176,8 @@ assert.ok(!(await caches.keys()).includes('amin-vault-runtime-2.0.0'), 'failed s
 
 failPattern = null;
 offline = true;
-const fetchHandler = handlers.get('fetch');
-let responsePromise;
-fetchHandler({
-  request: new Request(new URL('./gba.html?offline=1', scope)),
-  respondWith(promise) {
-    responsePromise = Promise.resolve(promise);
-  }
-});
-const offlineResponse = await responsePromise;
+const offlineResponse = await dispatchFetch('./gba.html?offline=1');
 assert.equal(offlineResponse.status, 200);
-assert.match(await offlineResponse.text(), /asset:\/amin-vault\/gba\.html/);
+assert.match(await offlineResponse.text(), /asset:v1:\/amin-vault\/gba\.html/);
 
 console.log('runtime service worker tests passed');
