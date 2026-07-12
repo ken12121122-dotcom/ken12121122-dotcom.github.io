@@ -7,23 +7,27 @@ on:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-native-shell.js'
+      - 'amin-vault/amin-*.js'
+      - 'amin-vault/native-release-manifest.json'
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
       - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
+      - '.github/workflows/release-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-native-shell.js'
+      - 'amin-vault/amin-*.js'
+      - 'amin-vault/native-release-manifest.json'
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
       - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
+      - '.github/workflows/release-amin-pocket-gba-android.yml'
 
 permissions:
   contents: read
@@ -60,9 +64,12 @@ jobs:
         shell: bash
         run: |
           node --check amin-vault/amin-native-shell.js
+          node --check amin-vault/amin-backup.js
+          node --check amin-vault/amin-diagnostics.js
           node --check amin-vault/runtime-updater.js
           node --check amin-vault/sw.js
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
+          python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
           test -f android-native/app/src/main/assets/bootstrap/index.html
           python3 - <<'PY'
           import json
@@ -70,6 +77,9 @@ jobs:
 
           root = Path('amin-vault')
           manifest = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
+          if manifest['runtimeVersion'] != '0.9.2-rc1':
+              raise SystemExit('Unexpected runtime version')
+
           missing = []
           for asset in manifest['assets']:
               relative = asset.removeprefix('./')
@@ -78,7 +88,24 @@ jobs:
                   missing.append(asset)
           if missing:
               raise SystemExit('Missing runtime assets: ' + ', '.join(missing))
-          print(f"Validated {len(manifest['assets'])} runtime assets")
+
+          html = (root / 'gba.html').read_text(encoding='utf-8')
+          required_ids = [
+              'exportBackupButton', 'importBackupButton', 'backupImportInput',
+              'backupIncludeRoms', 'backupStatus', 'diagnosticSummary',
+              'refreshDiagnosticsButton', 'exportDiagnosticsButton'
+          ]
+          missing_ids = [item for item in required_ids if f'id="{item}"' not in html]
+          if missing_ids:
+              raise SystemExit('Missing GBA tool controls: ' + ', '.join(missing_ids))
+
+          native_manifest = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
+          if native_manifest['enabled'] is not False:
+              raise SystemExit('Unsigned native release channel must remain disabled')
+          if native_manifest['packageId'] != 'com.amin.pocketgba':
+              raise SystemExit('Unexpected native package ID')
+
+          print(f"Validated {len(manifest['assets'])} runtime assets and {len(required_ids)} tool controls")
           PY
           node --test tests/runtime-service-worker.test.mjs
 
@@ -96,8 +123,8 @@ jobs:
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba.preview091' versionCode='91' versionName='0.9.1-preview'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Preview'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba.preview092' versionCode='92' versionName='0.9.2-preview'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Preview 0.9.2'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
           unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
@@ -105,9 +132,9 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.1-preview.apk
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.2-preview.apk
           cd dist
-          sha256sum Amin-Pocket-GBA-v0.9.1-preview.apk > SHA256SUMS.txt
+          sha256sum Amin-Pocket-GBA-v0.9.2-preview.apk > SHA256SUMS.txt
 
       - name: Verify artifact checksum
         run: |
@@ -117,7 +144,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.1-preview
+          name: Amin-Pocket-GBA-v0.9.2-preview
           path: dist/
           if-no-files-found: error
           retention-days: 30
