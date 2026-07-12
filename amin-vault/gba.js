@@ -7,6 +7,11 @@
   const MAX_ROM_BYTES = 64 * 1024 * 1024;
   const MAX_ARCHIVE_BYTES = 160 * 1024 * 1024;
   const ROM_PATTERN = /\.(gba|bin)$/i;
+  const EMULATORJS_VERSION = '4.2.3';
+  const EMULATOR_DATA_PATH = `https://cdn.emulatorjs.org/${EMULATORJS_VERSION}/data/`;
+
+  let activeObjectUrl = null;
+  let emulatorLoaderScript = null;
 
   const $ = id => document.getElementById(id);
   const statusBadge = $('gbaStatus');
@@ -45,6 +50,24 @@
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;');
+  }
+
+  function releaseActiveObjectUrl() {
+    if (!activeObjectUrl) return;
+    URL.revokeObjectURL(activeObjectUrl);
+    activeObjectUrl = null;
+  }
+
+  function resetPlayerAfterFailure(message) {
+    releaseActiveObjectUrl();
+    emulatorLoaderScript?.remove();
+    emulatorLoaderScript = null;
+    requestNativeOrientation('portrait');
+    document.body.classList.remove('playing');
+    playerView.classList.add('hidden');
+    libraryView.classList.remove('hidden');
+    setStatus('啟動失敗', 'error');
+    window.alert(message || '遊戲啟動失敗。');
   }
 
   function openDb() {
@@ -164,10 +187,6 @@
 
   function cleanGameName(name) {
     return baseName(name).replace(/\.(gba|bin|zip)$/i, '').trim() || 'GBA Game';
-  }
-
-  function stableExtension(name) {
-    return /\.bin$/i.test(name) ? 'bin' : 'gba';
   }
 
   async function ensureSaveIdentity(record) {
@@ -392,6 +411,7 @@
       if (!leaveAnyway) return;
     }
     requestNativeOrientation('portrait');
+    releaseActiveObjectUrl();
     const next = new URL('./gba.html', location.href);
     next.searchParams.set('native', '1');
     next.searchParams.set('saveReturn', String(Date.now()));
@@ -399,6 +419,10 @@
   }
 
   async function playRom(id) {
+    if (emulatorLoaderScript || window.EJS_emulator) {
+      throw new Error('模擬器已經在執行，請先回到遊戲庫後再開啟。');
+    }
+
     let record = await getRom(id);
     if (!record?.blob) {
       window.alert('找不到這個遊戲檔案，請重新匯入。');
@@ -412,11 +436,8 @@
     await requestPersistentStorage();
 
     const stableBaseName = `amin-${record.saveKey}`;
-    const stableFileName = `${stableBaseName}.${stableExtension(record.name)}`;
-    const stableFile = new File([record.blob], stableFileName, {
-      type: record.type || 'application/octet-stream',
-      lastModified: 0
-    });
+    releaseActiveObjectUrl();
+    activeObjectUrl = URL.createObjectURL(record.blob);
 
     window.AMIN_GBA_SAVE_GUARD?.setGame?.({
       saveKey: record.saveKey,
@@ -429,8 +450,8 @@
 
     window.EJS_player = '#game';
     window.EJS_core = 'mgba';
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    window.EJS_gameUrl = stableFile;
+    window.EJS_pathtodata = EMULATOR_DATA_PATH;
+    window.EJS_gameUrl = activeObjectUrl;
     window.EJS_gameName = stableBaseName;
     window.EJS_gameID = numericGameId(record.saveKey);
     window.EJS_color = '#8da2ff';
@@ -442,6 +463,7 @@
     window.EJS_askBeforeExit = true;
     window.EJS_fixedSaveInterval = 5000;
     window.EJS_dontExtractRom = true;
+    window.EJS_DEBUG_XX = false;
     window.EJS_cacheConfig = {
       enabled: true,
       cacheMaxSizeMB: 1024,
@@ -449,16 +471,13 @@
     };
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+    emulatorLoaderScript = script;
+    script.id = 'amin-emulatorjs-loader';
+    script.src = `${EMULATOR_DATA_PATH}loader.js`;
     script.async = true;
-    script.onload = () => setStatus('mGBA 已啟動', 'active');
+    script.onload = () => setStatus(`mGBA ${EMULATORJS_VERSION} 已載入`, 'active');
     script.onerror = () => {
-      setStatus('核心載入失敗', 'error');
-      requestNativeOrientation('portrait');
-      document.body.classList.remove('playing');
-      playerView.classList.add('hidden');
-      libraryView.classList.remove('hidden');
-      window.alert('無法載入 EmulatorJS。請確認網路後再試。');
+      resetPlayerAfterFailure('無法載入 EmulatorJS 4.2.3。請確認網路後再試。');
     };
     document.body.appendChild(script);
   }
@@ -481,9 +500,7 @@
       try {
         await playRom(playButton.dataset.play);
       } catch (error) {
-        requestNativeOrientation('portrait');
-        setStatus('啟動失敗', 'error');
-        window.alert(error.message || '遊戲啟動失敗。');
+        resetPlayerAfterFailure(error.message || '遊戲啟動失敗。');
       }
       return;
     }
@@ -506,6 +523,9 @@
     record.saveNativeProtected = Boolean(detail.native);
     await putRom(record).catch(() => {});
   });
+
+  addEventListener('pagehide', releaseActiveObjectUrl);
+  addEventListener('beforeunload', releaseActiveObjectUrl);
 
   renderLibrary();
 })();
