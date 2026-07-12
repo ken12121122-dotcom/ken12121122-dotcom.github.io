@@ -54,6 +54,12 @@
         <div id="romLibrary" class="rom-library"></div>
       </section>
 
+      <article class="notice-card compact-note save-vault-card">
+        <p class="eyebrow">PREVIEW MIGRATION</p>
+        <h3>從 Preview 3 安全搬到 Preview 4</h3>
+        <p>先保留 Preview 3，在它的「備份與搬家」匯出 Saves 備份；再安裝可並存的 Preview 4、匯入備份並開啟同一份 ROM。確認進度正確後，才移除 Preview 3。</p>
+      </article>
+
       <details class="utility-drawer">
         <summary>
           <span>
@@ -142,7 +148,7 @@
               </div>
               <span class="core-badge">SYSTEM</span>
             </div>
-            <p>權限與 APK 更新由 Android 原生頁面處理。更新前會保留 App 私有存檔，但解除安裝仍會清除 App 資料。</p>
+            <p>Preview 3 與 Preview 4 採並存搬家，避免先解除安裝而清掉資料。正式版原生更新必須使用同一套永久簽章。</p>
             <div class="tool-actions">
               <a id="nativePermissionsLink" href="amin-permissions://open" class="source-link hidden">權限與裝置</a>
               <a id="nativeUpdateLink" href="amin-update://check" class="source-link hidden">版本與更新</a>
@@ -154,7 +160,7 @@
 
       <article class="notice-card compact-note">
         <h3>保存與更新</h3>
-        <p>同套件、同簽章的正常 App 更新會保留原生存檔保險庫。清除 App 資料或解除安裝前，仍須先匯出 `.agbbackup`。</p>
+        <p>同套件、同簽章的正常覆蓋更新會保留原生存檔保險庫；清除 App 資料或解除安裝仍會刪除資料，因此必須先匯出 `.agbbackup`。</p>
       </article>
 
       <footer>
