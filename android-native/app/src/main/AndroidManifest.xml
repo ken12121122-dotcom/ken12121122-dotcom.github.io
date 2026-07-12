@@ -75,7 +75,7 @@
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="portrait">
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
