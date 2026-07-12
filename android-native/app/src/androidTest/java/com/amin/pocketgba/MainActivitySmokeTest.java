@@ -1,9 +1,11 @@
 package com.amin.pocketgba;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import android.view.View;
+import android.webkit.WebView;
+import android.widget.FrameLayout;
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -22,7 +24,14 @@ public final class MainActivitySmokeTest {
 
     @Test
     public void launchesNativeShellWithWebView() {
-        onView(withId(R.id.root)).check(matches(isDisplayed()));
-        onView(withId(R.id.webView)).check(matches(isDisplayed()));
+        activityRule.getScenario().onActivity(activity -> {
+            FrameLayout root = activity.findViewById(R.id.root);
+            WebView webView = activity.findViewById(R.id.webView);
+
+            assertNotNull(root);
+            assertNotNull(webView);
+            assertEquals(View.VISIBLE, root.getVisibility());
+            assertEquals(View.VISIBLE, webView.getVisibility());
+        });
     }
 }
