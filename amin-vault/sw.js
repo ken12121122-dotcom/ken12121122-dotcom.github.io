@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'amin-vault-runtime-';
-const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v091`;
+const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092`;
 const META_CACHE = `${CACHE_PREFIX}meta`;
 const ACTIVE_KEY = new URL('__amin_runtime_active__', self.registration.scope).href;
 const MANIFEST_PATH = new URL('./runtime-manifest.json', self.registration.scope).pathname;
@@ -22,6 +22,8 @@ const BOOTSTRAP_ASSETS = [
   './gba-controller-native-addon.js',
   './gba-native-input.js',
   './amin-native-shell.js',
+  './amin-backup.js',
+  './amin-diagnostics.js',
   './gba-signal-lab.html',
   './gba-signal-lab.css',
   './gba-signal-lab.js',
@@ -123,8 +125,6 @@ async function refreshRuntime(manifest, source) {
       })
     );
 
-    // The pointer changes only after every file is safely cached. A failed update
-    // therefore leaves the previous runtime untouched and available offline.
     await setActiveCacheName(nextCacheName);
     await cleanupRuntimeCaches(nextCacheName);
     await postToClient(source, {
@@ -187,15 +187,10 @@ self.addEventListener('fetch', event => {
     const activeCacheName = await getActiveCacheName();
     const cache = await caches.open(activeCacheName);
 
-    // The manifest is the only runtime file that must bypass the active cache so
-    // the updater can discover a newer complete version.
     if (requestUrl.pathname === MANIFEST_PATH) {
       return networkFirstManifest(event.request, cache);
     }
 
-    // All declared runtime files are served from the active cache first. This
-    // prevents online requests from mixing old and new files before the pointer
-    // is atomically switched to the fully staged cache.
     const cached = await cache.match(event.request, { ignoreSearch: true });
     if (cached) return cached;
 
