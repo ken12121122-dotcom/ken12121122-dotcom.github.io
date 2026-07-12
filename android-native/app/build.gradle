@@ -10,8 +10,9 @@ android {
         applicationId 'com.amin.pocketgba'
         minSdk 26
         targetSdk 35
-        versionCode 90
-        versionName '0.9.0'
+        versionCode 91
+        versionName '0.9.1'
+        manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
     }
 
     buildFeatures {
@@ -20,11 +21,13 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix '.debug'
-            versionNameSuffix '-debug'
+            applicationIdSuffix '.preview091'
+            versionNameSuffix '-preview'
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview']
         }
         release {
             minifyEnabled false
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
