@@ -109,7 +109,7 @@ jobs:
           assert extraction.count('path="gba-saves/"') == 2
           PY
 
-          node --test tests/runtime-service-worker.test.mjs tests/gba-save-contract.test.mjs
+          node --test tests/*.test.mjs
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
