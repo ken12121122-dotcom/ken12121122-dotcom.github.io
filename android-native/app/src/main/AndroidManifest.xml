@@ -31,6 +31,16 @@
         </provider>
 
         <activity
+            android:name=".ControlCenterActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".PermissionCenterActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape">
@@ -61,11 +71,6 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
