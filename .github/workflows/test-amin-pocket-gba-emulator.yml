@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: amin-pocket-gba-emulator-v2-${{ github.ref }}
+  group: amin-pocket-gba-emulator-v3-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -64,7 +64,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build v0.9.2 app and test APKs
+      - name: Build Preview 2 app and test APKs
         shell: bash
         run: |
           set -euxo pipefail
@@ -86,7 +86,6 @@ jobs:
           set -euxo pipefail
           export ANDROID_AVD_HOME="$RUNNER_TEMP/avd"
           mkdir -p "$ANDROID_AVD_HOME"
-
           echo no | avdmanager create avd \
             --force \
             --name amin_api35 \
@@ -112,52 +111,38 @@ jobs:
             -camera-back none \
             > "$EMULATOR_LOG" 2>&1 &
           EMULATOR_PID=$!
-          echo "$EMULATOR_PID" > "$RUNNER_TEMP/amin-emulator.pid"
-
           adb start-server
           BOOTED=0
           for attempt in $(seq 1 120); do
             if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
-              echo 'Android Emulator process exited before boot.'
               cat "$EMULATOR_LOG"
               exit 1
             fi
-
             DEVICE_STATE="$(adb get-state 2>/dev/null || true)"
             BOOT_STATE="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
-            echo "attempt=$attempt device=$DEVICE_STATE boot=$BOOT_STATE"
             if [ "$DEVICE_STATE" = 'device' ] && [ "$BOOT_STATE" = '1' ]; then
               BOOTED=1
               break
             fi
             sleep 5
           done
-
-          if [ "$BOOTED" -ne 1 ]; then
-            echo 'Android Emulator did not finish booting within 10 minutes.'
-            cat "$EMULATOR_LOG"
-            exit 1
-          fi
-
+          test "$BOOTED" -eq 1
           adb shell input keyevent 82 || true
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
           adb shell getprop ro.build.version.sdk | grep -Fx '35'
-          adb devices -l
 
-      - name: Install v0.9.1 and v0.9.2 Preview
+      - name: Install v0.9.1 and Preview 2
         shell: bash
         run: |
           set -euxo pipefail
           OLD_APK='/tmp/amin-pocket-main/android-native/app/build/outputs/apk/debug/app-debug.apk'
           NEW_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$OLD_APK"
-          test -f "$NEW_APK"
           adb install -r "$OLD_APK"
           adb install -r "$NEW_APK"
 
-      - name: Verify v0.9.1 and v0.9.2 coexist
+      - name: Verify coexistence and Preview 2 identity
         shell: bash
         run: |
           set -euxo pipefail
@@ -169,40 +154,49 @@ jobs:
           adb shell dumpsys package "$OLD_PACKAGE" > "$RUNNER_TEMP/old-package.txt"
           adb shell dumpsys package "$NEW_PACKAGE" > "$RUNNER_TEMP/new-package.txt"
           grep -F 'versionName=0.9.1-preview' "$RUNNER_TEMP/old-package.txt"
-          grep -F 'versionName=0.9.2-preview' "$RUNNER_TEMP/new-package.txt"
+          grep -F 'versionName=0.9.2-preview2' "$RUNNER_TEMP/new-package.txt"
+          grep -F 'versionCode=93' "$RUNNER_TEMP/new-package.txt"
 
-      - name: Launch v0.9.1 Preview
+      - name: Verify launcher resolves to native Control Center
         shell: bash
         run: |
           set -euxo pipefail
-          adb shell am start -W \
-            -n 'com.amin.pocketgba.preview091/com.amin.pocketgba.MainActivity' \
-            > "$RUNNER_TEMP/old-launch.txt"
-          cat "$RUNNER_TEMP/old-launch.txt"
-          grep -F 'Status: ok' "$RUNNER_TEMP/old-launch.txt"
-          adb shell am force-stop com.amin.pocketgba.preview091
+          adb shell cmd package resolve-activity --brief \
+            -a android.intent.action.MAIN \
+            -c android.intent.category.LAUNCHER \
+            com.amin.pocketgba.preview092 \
+            > "$RUNNER_TEMP/launcher-resolution.txt"
+          cat "$RUNNER_TEMP/launcher-resolution.txt"
+          grep -F 'ControlCenterActivity' "$RUNNER_TEMP/launcher-resolution.txt"
 
-      - name: Launch v0.9.2 Preview
+      - name: Launch Preview 2 through normal launcher
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell monkey -p com.amin.pocketgba.preview092 -c android.intent.category.LAUNCHER 1 \
+            > "$RUNNER_TEMP/launcher-output.txt"
+          sleep 2
+          adb shell dumpsys activity activities > "$RUNNER_TEMP/launcher-state.txt"
+          grep -F 'ControlCenterActivity' "$RUNNER_TEMP/launcher-state.txt"
+
+      - name: Launch remote game library from MainActivity
         shell: bash
         run: |
           set -euxo pipefail
           adb shell am start -W \
             -n 'com.amin.pocketgba.preview092/com.amin.pocketgba.MainActivity' \
-            > "$RUNNER_TEMP/new-launch.txt"
-          cat "$RUNNER_TEMP/new-launch.txt"
-          grep -F 'Status: ok' "$RUNNER_TEMP/new-launch.txt"
+            > "$RUNNER_TEMP/library-launch.txt"
+          cat "$RUNNER_TEMP/library-launch.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/library-launch.txt"
           adb shell am force-stop com.amin.pocketgba.preview092
 
       - name: Verify Permission Center deep link
         shell: bash
         run: |
           set -euxo pipefail
-          adb shell am start -W \
-            -a android.intent.action.VIEW \
-            -d 'amin-permissions://open' \
-            -p 'com.amin.pocketgba.preview092' \
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-permissions://open' -p 'com.amin.pocketgba.preview092' \
             > "$RUNNER_TEMP/permission-link.txt"
-          cat "$RUNNER_TEMP/permission-link.txt"
           grep -F 'Status: ok' "$RUNNER_TEMP/permission-link.txt"
           sleep 1
           adb shell dumpsys activity activities > "$RUNNER_TEMP/permission-state.txt"
@@ -213,12 +207,9 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          adb shell am start -W \
-            -a android.intent.action.VIEW \
-            -d 'amin-update://check' \
-            -p 'com.amin.pocketgba.preview092' \
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-update://check' -p 'com.amin.pocketgba.preview092' \
             > "$RUNNER_TEMP/update-link.txt"
-          cat "$RUNNER_TEMP/update-link.txt"
           grep -F 'Status: ok' "$RUNNER_TEMP/update-link.txt"
           sleep 1
           adb shell dumpsys activity activities > "$RUNNER_TEMP/update-state.txt"
@@ -230,12 +221,21 @@ jobs:
         run: |
           set -euxo pipefail
           TEST_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
-          test -f "$TEST_APK"
           adb install -r "$TEST_APK"
           adb shell pm list instrumentation > "$RUNNER_TEMP/instrumentation-list.txt"
-          cat "$RUNNER_TEMP/instrumentation-list.txt"
           grep -F 'com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner' \
             "$RUNNER_TEMP/instrumentation-list.txt"
+
+      - name: Run Control Center tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell am instrument -w \
+            -e class com.amin.pocketgba.ControlCenterActivityTest \
+            com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
+            > "$RUNNER_TEMP/control-center-tests.txt"
+          cat "$RUNNER_TEMP/control-center-tests.txt"
+          grep -F 'OK (' "$RUNNER_TEMP/control-center-tests.txt"
 
       - name: Run MainActivity smoke tests
         shell: bash
@@ -245,7 +245,6 @@ jobs:
             -e class com.amin.pocketgba.MainActivitySmokeTest \
             com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
             > "$RUNNER_TEMP/main-smoke.txt"
-          cat "$RUNNER_TEMP/main-smoke.txt"
           grep -F 'OK (' "$RUNNER_TEMP/main-smoke.txt"
 
       - name: Run Permission Center tests
@@ -256,7 +255,6 @@ jobs:
             -e class com.amin.pocketgba.PermissionCenterActivityTest \
             com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
             > "$RUNNER_TEMP/permission-tests.txt"
-          cat "$RUNNER_TEMP/permission-tests.txt"
           grep -F 'OK (' "$RUNNER_TEMP/permission-tests.txt"
 
       - name: Run Native Update Center tests
@@ -267,7 +265,6 @@ jobs:
             -e class com.amin.pocketgba.NativeUpdateActivityTest \
             com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
             > "$RUNNER_TEMP/update-tests.txt"
-          cat "$RUNNER_TEMP/update-tests.txt"
           grep -F 'OK (' "$RUNNER_TEMP/update-tests.txt"
 
       - name: Collect emulator diagnostics
@@ -279,13 +276,12 @@ jobs:
           cp "$RUNNER_TEMP/amin-emulator.log" emulator-diagnostics/ 2>/dev/null || true
           timeout 15 adb logcat -d > emulator-diagnostics/logcat.txt 2>/dev/null || true
           timeout 15 adb exec-out screencap -p > emulator-diagnostics/final-screen.png 2>/dev/null || true
-          find emulator-diagnostics -maxdepth 2 -type f -print | sort
 
       - name: Upload emulator diagnostics
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-emulator-diagnostics
+          name: Amin-Pocket-GBA-v0.9.2-preview2-emulator-diagnostics
           path: emulator-diagnostics/
           if-no-files-found: warn
           retention-days: 30
