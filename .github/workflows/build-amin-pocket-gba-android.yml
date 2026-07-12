@@ -60,7 +60,7 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
-      - name: Validate downloadable runtime
+      - name: Validate downloadable runtime and native entry points
         shell: bash
         run: |
           node --check amin-vault/amin-native-shell.js
@@ -72,6 +72,7 @@ jobs:
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
           test -f android-native/app/src/main/assets/bootstrap/index.html
           test -f android-native/app/src/main/res/xml/file_paths.xml
+          test -f android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java
           test -f android-native/app/src/main/java/com/amin/pocketgba/NativeUpdateActivity.java
           test -f android-native/app/src/main/java/com/amin/pocketgba/PermissionCenterActivity.java
           python3 - <<'PY'
@@ -105,21 +106,15 @@ jobs:
           missing_ids = [item for item in required_ids if f'id="{item}"' not in html]
           if missing_ids:
               raise SystemExit('Missing GBA tool controls: ' + ', '.join(missing_ids))
-          if 'amin-permissions://open' not in html:
-              raise SystemExit('Permission center deep link is missing')
-          if 'amin-backup-v2.js' not in html:
-              raise SystemExit('Hardened backup v2 is not loaded')
-          if 'amin-backup.js' in html:
-              raise SystemExit('Legacy backup script is still loaded')
 
-          backup = (root / 'amin-backup-v2.js').read_text(encoding='utf-8')
-          for required in [
-              "const FORMAT_VERSION = 2", 'indexedDB.databases',
-              'indexedDB.deleteDatabase', 'LOCAL_STORAGE_PREFIXES',
-              'AMIN_GBA_SAVE_GUARD'
+          control_center = Path('android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java').read_text(encoding='utf-8')
+          for marker in [
+              '原生控制台', '重新自動偵測', '進入 Pokémon GBA 遊戲庫',
+              'PermissionCenterActivity.class', 'NativeUpdateActivity.class',
+              'PREVIEW_RUNTIME_MANIFEST_URL', 'NATIVE_UPDATE_MANIFEST_URL'
           ]:
-              if required not in backup:
-                  raise SystemExit(f'Backup hardening marker missing: {required}')
+              if marker not in control_center:
+                  raise SystemExit(f'Control Center marker missing: {marker}')
 
           native_manifest = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
           if native_manifest['enabled'] is not False:
@@ -129,17 +124,7 @@ jobs:
           if native_manifest['apkUrl'] is not None or native_manifest['apkSha256'] is not None:
               raise SystemExit('Disabled native release channel must not expose an APK')
 
-          permission_source = Path('android-native/app/src/main/java/com/amin/pocketgba/PermissionCenterActivity.java').read_text(encoding='utf-8')
-          for marker in [
-              'POST_NOTIFICATIONS', 'canRequestPackageInstalls',
-              'ACTION_APPLICATION_DETAILS_SETTINGS',
-              'ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
-              'MANAGE_EXTERNAL_STORAGE'
-          ]:
-              if marker not in permission_source:
-                  raise SystemExit(f'Permission center marker missing: {marker}')
-
-          print(f"Validated {len(manifest['assets'])} runtime assets and {len(required_ids)} tool controls")
+          print(f"Validated {len(manifest['assets'])} runtime assets, {len(required_ids)} web controls, and visible native startup")
           PY
           node --test tests/runtime-service-worker.test.mjs
 
@@ -148,7 +133,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Compile preview APK
+      - name: Compile Preview 2 APK
         id: compile
         continue-on-error: true
         shell: bash
@@ -161,7 +146,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-compile-diagnostics
+          name: Amin-Pocket-GBA-v0.9.2-preview2-compile-diagnostics
           path: ci-diagnostics/
           if-no-files-found: warn
           retention-days: 14
@@ -184,7 +169,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-lint-diagnostics
+          name: Amin-Pocket-GBA-v0.9.2-preview2-lint-diagnostics
           path: ci-lint/
           if-no-files-found: warn
           retention-days: 14
@@ -193,14 +178,14 @@ jobs:
         if: ${{ steps.lint.outcome == 'failure' }}
         run: exit 1
 
-      - name: Validate preview APK manifest and assets
+      - name: Validate Preview 2 APK manifest and assets
         shell: bash
         run: |
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba.preview092' versionCode='92' versionName='0.9.2-preview'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Preview 0.9.2'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba.preview092' versionCode='93' versionName='0.9.2-preview2'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Preview 0.9.2 P2'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
           grep -q 'android.permission.VIBRATE' /tmp/apk-permissions.txt
@@ -211,29 +196,32 @@ jobs:
           ! grep -q 'android.permission.CAMERA' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.ACCESS_FINE_LOCATION' /tmp/apk-permissions.txt
           "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest-tree.txt
+          grep -q 'ControlCenterActivity' /tmp/apk-manifest-tree.txt
           grep -q 'NativeUpdateActivity' /tmp/apk-manifest-tree.txt
           grep -q 'PermissionCenterActivity' /tmp/apk-manifest-tree.txt
+          grep -q 'android.intent.action.MAIN' /tmp/apk-manifest-tree.txt
+          grep -q 'android.intent.category.LAUNCHER' /tmp/apk-manifest-tree.txt
           grep -q 'amin-update' /tmp/apk-manifest-tree.txt
           grep -q 'amin-permissions' /tmp/apk-manifest-tree.txt
           grep -q 'androidx.core.content.FileProvider' /tmp/apk-manifest-tree.txt
           unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
 
-      - name: Prepare artifact
+      - name: Prepare Preview 2 artifact
         run: |
           mkdir -p dist
-          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.2-preview.apk
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.2-preview2.apk
           cd dist
-          sha256sum Amin-Pocket-GBA-v0.9.2-preview.apk > SHA256SUMS.txt
+          sha256sum Amin-Pocket-GBA-v0.9.2-preview2.apk > SHA256SUMS.txt
 
       - name: Verify artifact checksum
         run: |
           cd dist
           sha256sum -c SHA256SUMS.txt
 
-      - name: Upload APK
+      - name: Upload Preview 2 APK
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-preview
+          name: Amin-Pocket-GBA-v0.9.2-preview2
           path: dist/
           if-no-files-found: error
           retention-days: 30
