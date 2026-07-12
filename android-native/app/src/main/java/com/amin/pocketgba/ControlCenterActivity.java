@@ -2,7 +2,10 @@ package com.amin.pocketgba;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -27,6 +30,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class ControlCenterActivity extends Activity {
+    private static final int COLOR_BG = 0xfff4f7f5;
+    private static final int COLOR_SURFACE = 0xffffffff;
+    private static final int COLOR_SURFACE_SOFT = 0xffeaf3ee;
+    private static final int COLOR_TEXT = 0xff16231b;
+    private static final int COLOR_MUTED = 0xff68766e;
+    private static final int COLOR_ACCENT = 0xff19794b;
+    private static final int COLOR_ACCENT_DARK = 0xff105f39;
+    private static final int COLOR_BORDER = 0xffd9e4de;
+    private static final int COLOR_WARNING = 0xff9a5b00;
+
     private static final String PREVIEW_RUNTIME_MANIFEST_URL =
             "https://raw.githubusercontent.com/ken12121122-dotcom/ken12121122-dotcom.github.io/agent/amin-pocket-gba-rc092/amin-vault/runtime-manifest.json";
     private static final String STABLE_RUNTIME_MANIFEST_URL =
@@ -41,10 +54,13 @@ public final class ControlCenterActivity extends Activity {
     private TextView detectionSummary;
     private ProgressBar detectionProgress;
     private Button detectButton;
+    private Button detailsButton;
+    private LinearLayout technicalDetails;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        configureWindow();
         buildUi();
         detectEverything();
     }
@@ -55,101 +71,171 @@ public final class ControlCenterActivity extends Activity {
         refreshNetwork();
     }
 
+    private void configureWindow() {
+        getWindow().setStatusBarColor(COLOR_BG);
+        getWindow().setNavigationBarColor(COLOR_BG);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        );
+    }
+
     private void buildUi() {
-        int padding = dp(20);
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(COLOR_BG);
+
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(padding, padding, padding, padding);
-        content.setBackgroundColor(0xff070908);
+        content.setPadding(dp(20), dp(22), dp(20), dp(36));
+        content.setBackgroundColor(COLOR_BG);
+        scroll.addView(content);
 
-        TextView eyebrow = text("AMIN POCKET GBA · PREVIEW 2", 12f, true);
-        eyebrow.setTextColor(0xff79f2b0);
+        TextView eyebrow = text("AMIN POCKET GBA", 12f, true, COLOR_ACCENT);
         content.addView(eyebrow, fullWidth());
 
-        TextView title = text("原生控制台", 30f, true);
-        title.setTextColor(0xffffffff);
-        LinearLayout.LayoutParams titleParams = fullWidth();
-        titleParams.topMargin = dp(4);
-        content.addView(title, titleParams);
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams titleRowParams = fullWidth();
+        titleRowParams.topMargin = dp(4);
+        content.addView(titleRow, titleRowParams);
+
+        TextView title = text("遊戲控制台", 30f, true, COLOR_TEXT);
+        titleRow.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        titleRow.addView(chip("PREVIEW 3"), wrapContent());
 
         TextView intro = text(
-                "這個畫面直接內建在 APK。即使遠端遊戲庫仍是舊版，你也能看見並操作新的原生功能。",
+                "首頁保持直向，只有進入模擬器時切換橫向；離開遊戲後會回到這個直向控制台。",
                 14f,
-                false
+                false,
+                COLOR_MUTED
         );
-        intro.setTextColor(0xffcbd4cf);
         LinearLayout.LayoutParams introParams = fullWidth();
         introParams.topMargin = dp(8);
         content.addView(intro, introParams);
 
-        addSectionTitle(content, "啟動自動偵測");
-        LinearLayout statusCard = card();
+        LinearLayout playCard = actionCard(
+                "🎮",
+                "開啟 GBA 遊戲庫",
+                "進入模擬器並自動切換橫向",
+                "開始",
+                true
+        );
+        playCard.setContentDescription("進入 Pokémon GBA 遊戲庫");
+        playCard.setOnClickListener(view -> startActivity(new Intent(this, MainActivity.class)));
+        LinearLayout.LayoutParams playParams = fullWidth();
+        playParams.topMargin = dp(24);
+        content.addView(playCard, playParams);
+
+        LinearLayout statusHeader = new LinearLayout(this);
+        statusHeader.setOrientation(LinearLayout.HORIZONTAL);
+        statusHeader.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams statusHeaderParams = fullWidth();
+        statusHeaderParams.topMargin = dp(26);
+        content.addView(statusHeader, statusHeaderParams);
+
+        TextView statusTitle = text("目前狀態", 18f, true, COLOR_TEXT);
+        statusHeader.addView(statusTitle, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        detectButton = compactButton("重新檢查");
+        detectButton.setOnClickListener(view -> detectEverything());
+        statusHeader.addView(detectButton, wrapContent());
+
+        LinearLayout statusCard = surfaceCard();
         networkValue = addStatusRow(statusCard, "網路", "讀取中…");
         nativeValue = addStatusRow(
                 statusCard,
-                "Native APK",
+                "App 版本",
                 BuildConfig.VERSION_NAME + " · code " + BuildConfig.VERSION_CODE
         );
-        previewRuntimeValue = addStatusRow(statusCard, "Preview Runtime", "檢查中…");
-        stableRuntimeValue = addStatusRow(statusCard, "Stable Runtime", "檢查中…");
-        nativeUpdateValue = addStatusRow(statusCard, "原生更新通道", "檢查中…");
+        previewRuntimeValue = addStatusRow(statusCard, "遊戲 Runtime", "檢查中…");
+        nativeUpdateValue = addStatusRow(statusCard, "APK 更新", "檢查中…");
         content.addView(statusCard, cardParams());
 
         detectionProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         detectionProgress.setIndeterminate(true);
+        detectionProgress.setProgressTintList(ColorStateList.valueOf(COLOR_ACCENT));
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(8)
+                dp(6)
         );
-        progressParams.topMargin = dp(12);
+        progressParams.topMargin = dp(10);
         content.addView(detectionProgress, progressParams);
 
-        detectionSummary = text("App 啟動後會自動檢查兩個 Runtime 與原生 APK 更新通道。", 13f, false);
-        detectionSummary.setTextColor(0xffaebbb4);
+        detectionSummary = text(
+                "啟動時會自動檢查網路、Runtime 與 APK 更新通道。",
+                13f,
+                false,
+                COLOR_MUTED
+        );
         LinearLayout.LayoutParams summaryParams = fullWidth();
-        summaryParams.topMargin = dp(8);
+        summaryParams.topMargin = dp(7);
         content.addView(detectionSummary, summaryParams);
 
-        detectButton = button("重新自動偵測");
-        detectButton.setOnClickListener(view -> detectEverything());
-        content.addView(detectButton, spaced());
+        addSectionTitle(content, "管理");
 
-        addSectionTitle(content, "原生功能入口");
-
-        Button libraryButton = primaryButton("進入 Pokémon GBA 遊戲庫");
-        libraryButton.setOnClickListener(view -> startActivity(new Intent(this, MainActivity.class)));
-        content.addView(libraryButton, spaced());
-
-        Button permissionsButton = button("開啟權限控制中心");
-        permissionsButton.setOnClickListener(view -> startActivity(new Intent(this, PermissionCenterActivity.class)));
-        content.addView(permissionsButton, spaced());
-
-        Button updateButton = button("開啟原生 APK 更新中心");
-        updateButton.setOnClickListener(view -> startActivity(new Intent(this, NativeUpdateActivity.class)));
-        content.addView(updateButton, spaced());
-
-        addSectionTitle(content, "這一包實際新增了什麼");
-        addInfoCard(content, "啟動首頁", "現在一開啟 App 就會先看到這個控制台，不再把新功能藏在遠端網頁裡。", "可見");
-        addInfoCard(content, "自動偵測", "啟動時檢查網路、Preview Runtime、Stable Runtime 與原生更新清單。", "自動");
-        addInfoCard(content, "權限中心", "通知、APK 安裝來源、App 設定、通知設定與電池最佳化入口。", "原生");
-        addInfoCard(content, "更新中心", "檢查正式更新清單；正式簽章通道尚未啟用時會明確顯示停用。", "原生");
-        addInfoCard(content, "遠端遊戲庫", "目前仍開啟正式 GitHub Pages 遊戲庫。PR 未合併前，備份 v2 與診斷網頁不會冒充已發布。", "誠實狀態");
-
-        TextView warning = text(
-                "注意：這是 Preview 2 測試包。正式 APK 自動更新仍需永久簽章與實體覆蓋升級驗收。",
-                13f,
-                true
+        LinearLayout permissionCard = actionCard(
+                "🔐",
+                "權限與裝置",
+                "通知、APK 安裝來源與電池設定",
+                "管理",
+                false
         );
-        warning.setTextColor(0xffffc56b);
-        LinearLayout.LayoutParams warningParams = fullWidth();
-        warningParams.topMargin = dp(22);
-        warningParams.bottomMargin = dp(28);
-        content.addView(warning, warningParams);
+        permissionCard.setContentDescription("開啟權限控制中心");
+        permissionCard.setOnClickListener(view -> startActivity(new Intent(this, PermissionCenterActivity.class)));
+        content.addView(permissionCard, cardParams());
 
-        ScrollView scrollView = new ScrollView(this);
-        scrollView.setFillViewport(true);
-        scrollView.addView(content);
-        setContentView(scrollView);
+        LinearLayout updateCard = actionCard(
+                "↻",
+                "版本與更新",
+                "檢查原生 APK、簽章與發布通道",
+                "檢查",
+                false
+        );
+        updateCard.setContentDescription("開啟原生 APK 更新中心");
+        updateCard.setOnClickListener(view -> startActivity(new Intent(this, NativeUpdateActivity.class)));
+        content.addView(updateCard, cardParams());
+
+        addSectionTitle(content, "進階");
+
+        detailsButton = secondaryButton("顯示系統詳細資訊");
+        detailsButton.setOnClickListener(view -> toggleTechnicalDetails());
+        content.addView(detailsButton, cardParams());
+
+        technicalDetails = surfaceCard();
+        technicalDetails.setVisibility(View.GONE);
+        stableRuntimeValue = addStatusRow(technicalDetails, "Stable Runtime", "檢查中…");
+        addPlainRow(technicalDetails, "Preview 來源", "PR #4 測試通道");
+        addPlainRow(technicalDetails, "正式 APK", "安全鎖定中");
+        TextView technicalNote = text(
+                "Preview Runtime 只用於測試。正式發布前不會啟用 APK 自動下載，也不會靜默安裝。",
+                12f,
+                false,
+                COLOR_MUTED
+        );
+        LinearLayout.LayoutParams noteParams = fullWidth();
+        noteParams.topMargin = dp(10);
+        technicalDetails.addView(technicalNote, noteParams);
+        content.addView(technicalDetails, cardParams());
+
+        TextView footer = text(
+                "v0.9.2 Preview 3 · 原生更新通道仍保持停用",
+                12f,
+                false,
+                COLOR_WARNING
+        );
+        footer.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams footerParams = fullWidth();
+        footerParams.topMargin = dp(24);
+        content.addView(footer, footerParams);
+
+        setContentView(scroll);
+    }
+
+    private void toggleTechnicalDetails() {
+        boolean show = technicalDetails.getVisibility() != View.VISIBLE;
+        technicalDetails.setVisibility(show ? View.VISIBLE : View.GONE);
+        detailsButton.setText(show ? "隱藏系統詳細資訊" : "顯示系統詳細資訊");
     }
 
     private void detectEverything() {
@@ -159,7 +245,7 @@ public final class ControlCenterActivity extends Activity {
         previewRuntimeValue.setText("檢查中…");
         stableRuntimeValue.setText("檢查中…");
         nativeUpdateValue.setText("檢查中…");
-        detectionSummary.setText("正在自動偵測，這不是安裝動作。");
+        detectionSummary.setText("正在偵測，這不會下載或安裝 APK。");
         refreshNetwork();
 
         EXECUTOR.execute(() -> {
@@ -174,7 +260,7 @@ public final class ControlCenterActivity extends Activity {
                 detectionProgress.setVisibility(View.GONE);
                 detectButton.setEnabled(true);
                 detectionSummary.setText(
-                        "偵測完成。Runtime 可自動檢查；APK 更新仍由 Android 要求使用者確認安裝。"
+                        "偵測完成。Runtime 可自動更新；APK 更新仍需 Android 安裝確認。"
                 );
             });
         });
@@ -198,7 +284,7 @@ public final class ControlCenterActivity extends Activity {
             else transport = "其他網路";
         }
         networkValue.setText(connected
-                ? transport + (validated ? " · 已驗證" : " · 尚未驗證")
+                ? transport + (validated ? " · 正常" : " · 待驗證")
                 : "離線"
         );
     }
@@ -207,11 +293,10 @@ public final class ControlCenterActivity extends Activity {
         try {
             JSONObject manifest = fetchJson(url);
             if (!"amin-runtime-manifest".equals(manifest.optString("format"))) {
-                return label + " 清單格式不正確";
+                return label + " 格式錯誤";
             }
             String version = manifest.optString("runtimeVersion", "未知版本");
-            String minimum = manifest.optString("minimumNativeVersion", "未指定");
-            return version + " · Native ≥ " + minimum;
+            return version;
         } catch (Exception error) {
             return "偵測失敗 · " + safeMessage(error);
         }
@@ -221,13 +306,14 @@ public final class ControlCenterActivity extends Activity {
         try {
             JSONObject manifest = fetchJson(BuildConfig.NATIVE_UPDATE_MANIFEST_URL);
             if (!"amin-native-release-manifest".equals(manifest.optString("format"))) {
-                return "清單格式不正確";
+                return "清單格式錯誤";
             }
             if (!manifest.optBoolean("enabled", false)) {
-                return "正式通道停用 · 不會下載 APK";
+                return "正式通道停用";
             }
-            return "可用 " + manifest.optString("latestVersionName", "未知版本")
-                    + " · code " + manifest.optLong("latestVersionCode", 0L);
+            long latestCode = manifest.optLong("latestVersionCode", 0L);
+            if (latestCode <= BuildConfig.VERSION_CODE) return "目前已是最新";
+            return "可更新至 " + manifest.optString("latestVersionName", "未知版本");
         } catch (Exception error) {
             return "偵測失敗 · " + safeMessage(error);
         }
@@ -251,9 +337,7 @@ public final class ControlCenterActivity extends Activity {
                 int total = 0;
                 while ((read = input.read(buffer)) != -1) {
                     total += read;
-                    if (total > 1024 * 1024) {
-                        throw new IllegalStateException("清單過大");
-                    }
+                    if (total > 1024 * 1024) throw new IllegalStateException("清單過大");
                     output.write(buffer, 0, read);
                 }
                 return new JSONObject(new String(output.toByteArray(), StandardCharsets.UTF_8));
@@ -263,75 +347,140 @@ public final class ControlCenterActivity extends Activity {
         }
     }
 
+    private LinearLayout actionCard(
+            String icon,
+            String title,
+            String description,
+            String action,
+            boolean primary
+    ) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(16), dp(14), dp(16));
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setElevation(dp(primary ? 4 : 2));
+        card.setBackground(roundedBackground(
+                primary ? COLOR_ACCENT : COLOR_SURFACE,
+                20,
+                primary ? COLOR_ACCENT : COLOR_BORDER,
+                1
+        ));
+
+        TextView iconView = text(icon, 25f, false, primary ? Color.WHITE : COLOR_ACCENT);
+        iconView.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+        card.addView(iconView, iconParams);
+
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams copyParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        copyParams.leftMargin = dp(12);
+        card.addView(copy, copyParams);
+
+        copy.addView(text(title, primary ? 19f : 17f, true, primary ? Color.WHITE : COLOR_TEXT), fullWidth());
+        TextView descriptionView = text(
+                description,
+                13f,
+                false,
+                primary ? 0xffdff4e8 : COLOR_MUTED
+        );
+        LinearLayout.LayoutParams descriptionParams = fullWidth();
+        descriptionParams.topMargin = dp(4);
+        copy.addView(descriptionView, descriptionParams);
+
+        TextView actionView = text(action + "  ›", 13f, true, primary ? Color.WHITE : COLOR_ACCENT);
+        actionView.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        card.addView(actionView, wrapContent());
+        return card;
+    }
+
+    private LinearLayout surfaceCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(10), dp(16), dp(10));
+        card.setBackground(roundedBackground(COLOR_SURFACE, 18, COLOR_BORDER, 1));
+        card.setElevation(dp(1));
+        return card;
+    }
+
     private TextView addStatusRow(LinearLayout parent, String label, String initialValue) {
+        return addPlainRow(parent, label, initialValue);
+    }
+
+    private TextView addPlainRow(LinearLayout parent, String label, String initialValue) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, dp(7), 0, dp(7));
+        row.setPadding(0, dp(8), 0, dp(8));
 
-        TextView labelView = text(label, 13f, true);
-        labelView.setTextColor(0xff91a49a);
-        row.addView(labelView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.34f));
+        TextView labelView = text(label, 13f, true, COLOR_MUTED);
+        row.addView(labelView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.42f));
 
-        TextView valueView = text(initialValue, 13f, false);
-        valueView.setTextColor(0xffffffff);
+        TextView valueView = text(initialValue, 13f, false, COLOR_TEXT);
         valueView.setGravity(Gravity.END);
-        row.addView(valueView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.66f));
+        row.addView(valueView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.58f));
 
         parent.addView(row, fullWidth());
         return valueView;
     }
 
     private void addSectionTitle(LinearLayout parent, String value) {
-        TextView heading = text(value, 17f, true);
-        heading.setTextColor(0xffffffff);
+        TextView heading = text(value, 18f, true, COLOR_TEXT);
         LinearLayout.LayoutParams params = fullWidth();
-        params.topMargin = dp(24);
+        params.topMargin = dp(26);
         parent.addView(heading, params);
     }
 
-    private void addInfoCard(LinearLayout parent, String title, String description, String badge) {
-        LinearLayout info = card();
-        TextView heading = text(title + "  ·  " + badge, 15f, true);
-        heading.setTextColor(0xff79f2b0);
-        info.addView(heading, fullWidth());
-        TextView body = text(description, 13f, false);
-        body.setTextColor(0xffcbd4cf);
-        LinearLayout.LayoutParams bodyParams = fullWidth();
-        bodyParams.topMargin = dp(6);
-        info.addView(body, bodyParams);
-        parent.addView(info, cardParams());
+    private TextView chip(String value) {
+        TextView chip = text(value, 11f, true, COLOR_ACCENT_DARK);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(10), dp(6), dp(10), dp(6));
+        chip.setBackground(roundedBackground(COLOR_SURFACE_SOFT, 20, COLOR_SURFACE_SOFT, 0));
+        return chip;
     }
 
-    private LinearLayout card() {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(15), dp(12), dp(15), dp(12));
-        card.setBackgroundColor(0xff111714);
-        return card;
-    }
-
-    private Button primaryButton(String label) {
-        Button button = button(label);
-        button.setTypeface(Typeface.DEFAULT_BOLD);
-        return button;
-    }
-
-    private Button button(String label) {
+    private Button compactButton(String label) {
         Button button = new Button(this);
         button.setText(label);
+        button.setTextSize(12f);
+        button.setTextColor(COLOR_ACCENT_DARK);
         button.setAllCaps(false);
-        button.setMinHeight(dp(50));
+        button.setMinHeight(0);
+        button.setMinimumHeight(0);
+        button.setPadding(dp(12), dp(7), dp(12), dp(7));
+        button.setBackgroundTintList(ColorStateList.valueOf(COLOR_SURFACE_SOFT));
         return button;
     }
 
-    private TextView text(String value, float size, boolean bold) {
+    private Button secondaryButton(String label) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setTextSize(14f);
+        button.setTextColor(COLOR_ACCENT_DARK);
+        button.setAllCaps(false);
+        button.setMinHeight(dp(48));
+        button.setBackgroundTintList(ColorStateList.valueOf(COLOR_SURFACE));
+        return button;
+    }
+
+    private TextView text(String value, float size, boolean bold, int color) {
         TextView view = new TextView(this);
         view.setText(value);
         view.setTextSize(size);
-        view.setLineSpacing(0f, 1.28f);
+        view.setTextColor(color);
+        view.setLineSpacing(0f, 1.25f);
         if (bold) view.setTypeface(Typeface.DEFAULT_BOLD);
         return view;
+    }
+
+    private GradientDrawable roundedBackground(int fill, int radiusDp, int stroke, int strokeDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(fill);
+        drawable.setCornerRadius(dp(radiusDp));
+        if (strokeDp > 0) drawable.setStroke(dp(strokeDp), stroke);
+        return drawable;
     }
 
     private LinearLayout.LayoutParams fullWidth() {
@@ -341,15 +490,16 @@ public final class ControlCenterActivity extends Activity {
         );
     }
 
-    private LinearLayout.LayoutParams spaced() {
-        LinearLayout.LayoutParams params = fullWidth();
-        params.topMargin = dp(10);
-        return params;
+    private LinearLayout.LayoutParams wrapContent() {
+        return new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
     }
 
     private LinearLayout.LayoutParams cardParams() {
         LinearLayout.LayoutParams params = fullWidth();
-        params.topMargin = dp(12);
+        params.topMargin = dp(10);
         return params;
     }
 
