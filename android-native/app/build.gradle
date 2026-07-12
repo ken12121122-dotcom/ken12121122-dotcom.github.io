@@ -51,7 +51,7 @@ android {
             versionNameSuffix aminPreviewSuffix
             manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview 0.9.2 P4']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"preview"'
-            buildConfigField 'String', 'APP_WEB_URL', '"https://cdn.jsdelivr.net/gh/ken12121122-dotcom/ken12121122-dotcom.github.io@a8fa0ea1e2d53d7036f8712118b6ddc5590a3a47/amin-vault/gba.html?native=1&preview=4"'
+            buildConfigField 'String', 'APP_WEB_URL', '"https://cdn.jsdelivr.net/gh/ken12121122-dotcom/ken12121122-dotcom.github.io@f0bc618c36e8ae9c09a1987b9cc65fd821cdb455/amin-vault/gba.html?native=1&preview=4"'
         }
         release {
             minifyEnabled false
