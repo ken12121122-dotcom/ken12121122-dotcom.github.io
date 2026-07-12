@@ -25,8 +25,8 @@
     <section id="libraryView" class="library-view">
       <article class="intro-card">
         <span class="kicker">POKÉMON LIBRARY · mGBA</span>
-        <h2>原生手把橋接已加入。</h2>
-        <p>Android App 版會直接接收 KeyEvent 與 MotionEvent，繞過 Chrome 對泛用 USB 手把遺失按鈕的問題。ROM 仍只保存在這台裝置，不上傳到 Supabase、Google Drive 或 GitHub。</p>
+        <h2>原生掌機外殼已接通。</h2>
+        <p>Android App 版會直接接收手把、網路與外部卡匣事件。從檔案管理器點選 `.gba`、`.bin` 或 `.zip` 時，可直接交給遊戲庫匯入；ROM 仍只保存在這台裝置。</p>
         <div class="import-row">
           <label class="import-button">
             匯入 Pokémon ROM 備份
@@ -87,6 +87,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <script src="./amin-native-shell.js"></script>
   <script src="./runtime-updater.js"></script>
   <script src="./gba-native-input.js"></script>
   <script src="./gba-immersive.js"></script>
