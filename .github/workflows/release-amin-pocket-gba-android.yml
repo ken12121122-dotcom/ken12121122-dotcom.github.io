@@ -1,0 +1,119 @@
+name: Release Amin Pocket GBA Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Git tag to create, for example amin-pocket-gba-v0.9.2
+        required: true
+        default: amin-pocket-gba-v0.9.2
+      publish_github_release:
+        description: Publish the signed APK as a GitHub Release
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amin-pocket-gba-release
+  cancel-in-progress: false
+
+jobs:
+  build-signed-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+
+      - name: Validate signing secrets
+        shell: bash
+        env:
+          AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+          AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+          AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+          AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+        run: |
+          test -n "$AMIN_KEYSTORE_BASE64" || { echo 'Missing AMIN_KEYSTORE_BASE64'; exit 1; }
+          test -n "$AMIN_KEYSTORE_PASSWORD" || { echo 'Missing AMIN_KEYSTORE_PASSWORD'; exit 1; }
+          test -n "$AMIN_KEY_ALIAS" || { echo 'Missing AMIN_KEY_ALIAS'; exit 1; }
+          test -n "$AMIN_KEY_PASSWORD" || { echo 'Missing AMIN_KEY_PASSWORD'; exit 1; }
+          printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/amin-release.jks"
+          test -s "$RUNNER_TEMP/amin-release.jks"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build signed release APK
+        env:
+          AMIN_KEYSTORE_PATH: ${{ runner.temp }}/amin-release.jks
+          AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+          AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+          AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+        run: |
+          gradle --no-daemon --stacktrace -p android-native \
+            verifyAminReleaseSigning \
+            :app:assembleRelease
+
+      - name: Verify APK signature and package
+        shell: bash
+        run: |
+          APK='android-native/app/build/outputs/apk/release/app-release.apk'
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apksigner.txt
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/apksigner.txt
+          "$AAPT" dump badging "$APK" | tee /tmp/release-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='92' versionName='0.9.2'" /tmp/release-badging.txt
+
+      - name: Prepare signed release artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp android-native/app/build/outputs/apk/release/app-release.apk dist/Amin-Pocket-GBA-v0.9.2.apk
+          cd dist
+          sha256sum Amin-Pocket-GBA-v0.9.2.apk > SHA256SUMS.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs Amin-Pocket-GBA-v0.9.2.apk > SIGNER-CERTIFICATE.txt
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-v0.9.2-signed
+          path: dist/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub Release
+        if: ${{ inputs.publish_github_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: Amin Pocket GBA v0.9.2
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            dist/Amin-Pocket-GBA-v0.9.2.apk
+            dist/SHA256SUMS.txt
+            dist/SIGNER-CERTIFICATE.txt
