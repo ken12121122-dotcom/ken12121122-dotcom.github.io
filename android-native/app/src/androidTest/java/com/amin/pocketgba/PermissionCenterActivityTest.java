@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
@@ -40,14 +41,20 @@ public final class PermissionCenterActivityTest {
 
     @Test
     public void rendersPermissionControlsAndSecurityExplanation() {
-        onView(withText("權限控制中心")).check(matches(isDisplayed()));
-        onView(withText("啟用建議權限")).check(matches(isDisplayed()));
-        onView(withText("通知")).check(matches(isDisplayed()));
-        onView(withText("安裝 App 更新")).check(matches(isDisplayed()));
-        onView(withText("開啟 App 完整權限頁")).check(matches(isDisplayed()));
-        onView(withText("開啟通知詳細設定")).check(matches(isDisplayed()));
-        onView(withText("開啟電池最佳化設定")).check(matches(isDisplayed()));
-        onView(withText("整機檔案管理  ·  不要求")).check(matches(isDisplayed()));
+        assertScrollableTextVisible("權限控制中心");
+        assertScrollableTextVisible("啟用建議權限");
+        assertScrollableTextVisible("通知");
+        assertScrollableTextVisible("安裝 App 更新");
+        assertScrollableTextVisible("開啟 App 完整權限頁");
+        assertScrollableTextVisible("開啟通知詳細設定");
+        assertScrollableTextVisible("開啟電池最佳化設定");
+        assertScrollableTextVisible("整機檔案管理  ·  不要求");
+    }
+
+    private void assertScrollableTextVisible(String text) {
+        onView(withText(text))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
     }
 
     @Test
