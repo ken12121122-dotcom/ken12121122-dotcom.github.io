@@ -32,15 +32,22 @@ test('save exit waits for explicit IDBFS synchronization and verification', () =
   assert.match(guard, /amin-save-verified/);
 });
 
-test('legacy name-based saves are copied to the stable path without deleting the source', () => {
+test('legacy name-based saves migrate before blank stable saves are protected', () => {
   assert.match(migration, /legacyBaseName/);
   assert.match(migration, /findLegacyPath/);
+  assert.match(migration, /isLikelyBlankSave/);
+  assert.match(migration, /stable-vault-already-protected/);
+  assert.match(migration, /blank-stable-save-removed/);
   assert.match(migration, /fs\.readdir\(directory\)/);
   assert.match(migration, /fs\.readFile\(legacyPath\)/);
   assert.match(migration, /fs\.writeFile\(currentPath, bytes\)/);
   assert.match(migration, /await syncFileSystem\(fs\)/);
   assert.match(migration, /flush\?\.\('legacy-migration'\)/);
   assert.match(migration, /legacy-migrated/);
+  assert.match(
+    migration,
+    /window\.EJS_onGameStart = async event => \{\s*await migrateLegacySaveIfNeeded\(\);\s*if \(typeof previousOnGameStart/
+  );
   assert.doesNotMatch(migration, /unlink\(legacyPath\)/);
 });
 
@@ -71,5 +78,5 @@ test('UI and manifest explain RC4 save protection and migration', () => {
   assert.match(manifest, /"\.\/gba-save-migration\.js"/);
   assert.match(gradle, /versionCode 95/);
   assert.match(gradle, /versionNameSuffix '-preview4'/);
-  assert.match(gradle, /966e2c31bb3b0af1caaba62a302f278c4570242a/);
+  assert.match(gradle, /a8fa0ea1e2d53d7036f8712118b6ddc5590a3a47/);
 });
