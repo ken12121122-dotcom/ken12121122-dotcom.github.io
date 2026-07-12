@@ -17,7 +17,8 @@
     "save-flush",
     "backup-v2",
     "diagnostics-v1",
-    "native-update-center"
+    "native-update-center",
+    "permission-center"
   ],
   "assets": [
     "./",
