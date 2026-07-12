@@ -70,6 +70,8 @@ jobs:
           test -f /tmp/amin-pocket-main/android-native/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Run emulator acceptance suite
+        id: emulator
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -82,52 +84,91 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euo pipefail
-            mkdir -p emulator-evidence
+            set -u
+            EVIDENCE="$GITHUB_WORKSPACE/emulator-evidence"
+            mkdir -p "$EVIDENCE"
+            STATUS=0
+
+            run_step() {
+              local label="$1"
+              shift
+              echo "===== ${label} =====" | tee "$EVIDENCE/${label}.log"
+              "$@" >> "$EVIDENCE/${label}.log" 2>&1
+              local code=$?
+              cat "$EVIDENCE/${label}.log"
+              echo "exit_code=${code}" >> "$EVIDENCE/${label}.log"
+              if [ "$code" -ne 0 ]; then
+                STATUS=1
+              fi
+              return 0
+            }
+
+            assert_file_contains() {
+              local label="$1"
+              local pattern="$2"
+              local file="$3"
+              if grep -q "$pattern" "$file"; then
+                echo "PASS: ${pattern}" | tee "$EVIDENCE/${label}.log"
+              else
+                echo "FAIL: ${pattern} not found in ${file}" | tee "$EVIDENCE/${label}.log"
+                STATUS=1
+              fi
+            }
 
             OLD_APK='/tmp/amin-pocket-main/android-native/app/build/outputs/apk/debug/app-debug.apk'
-            NEW_APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+            NEW_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
             OLD_PACKAGE='com.amin.pocketgba.preview091'
             NEW_PACKAGE='com.amin.pocketgba.preview092'
 
-            adb install -r "$OLD_APK"
-            adb install -r "$NEW_APK"
+            run_step install-old adb install -r "$OLD_APK"
+            run_step install-new adb install -r "$NEW_APK"
 
-            adb shell pm list packages | tee emulator-evidence/packages.txt
-            grep -q "package:${OLD_PACKAGE}" emulator-evidence/packages.txt
-            grep -q "package:${NEW_PACKAGE}" emulator-evidence/packages.txt
+            adb shell pm list packages > "$EVIDENCE/packages.txt" 2>&1
+            cat "$EVIDENCE/packages.txt"
+            assert_file_contains package-old "package:${OLD_PACKAGE}" "$EVIDENCE/packages.txt"
+            assert_file_contains package-new "package:${NEW_PACKAGE}" "$EVIDENCE/packages.txt"
 
-            adb shell dumpsys package "$OLD_PACKAGE" | tee emulator-evidence/old-package.txt
-            adb shell dumpsys package "$NEW_PACKAGE" | tee emulator-evidence/new-package.txt
-            grep -q 'versionName=0.9.1-preview' emulator-evidence/old-package.txt
-            grep -q 'versionName=0.9.2-preview' emulator-evidence/new-package.txt
+            adb shell dumpsys package "$OLD_PACKAGE" > "$EVIDENCE/old-package.txt" 2>&1
+            adb shell dumpsys package "$NEW_PACKAGE" > "$EVIDENCE/new-package.txt" 2>&1
+            assert_file_contains old-version 'versionName=0.9.1-preview' "$EVIDENCE/old-package.txt"
+            assert_file_contains new-version 'versionName=0.9.2-preview' "$EVIDENCE/new-package.txt"
 
-            adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity" | tee emulator-evidence/old-launch.txt
-            adb shell am force-stop "$OLD_PACKAGE"
-            adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity" | tee emulator-evidence/new-launch.txt
-            adb exec-out screencap -p > emulator-evidence/main-activity.png
-            adb shell am force-stop "$NEW_PACKAGE"
+            run_step old-launch adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity"
+            adb shell am force-stop "$OLD_PACKAGE" || true
+            run_step new-launch adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity"
+            adb exec-out screencap -p > "$EVIDENCE/main-activity.png" 2> "$EVIDENCE/main-screenshot-error.txt" || STATUS=1
+            adb shell am force-stop "$NEW_PACKAGE" || true
 
-            gradle --no-daemon --console=plain -p android-native :app:connectedDebugAndroidTest
+            set +e
+            gradle --no-daemon --console=plain -p android-native :app:connectedDebugAndroidTest \
+              > "$EVIDENCE/instrumentation.log" 2>&1
+            TEST_STATUS=$?
+            set -e
+            cat "$EVIDENCE/instrumentation.log"
+            echo "exit_code=${TEST_STATUS}" >> "$EVIDENCE/instrumentation.log"
+            if [ "$TEST_STATUS" -ne 0 ]; then STATUS=1; fi
 
-            adb shell am start -W \
+            run_step permission-deeplink adb shell am start -W \
               -a android.intent.action.VIEW \
               -d 'amin-permissions://open' \
-              -p "$NEW_PACKAGE" | tee emulator-evidence/permission-deeplink.txt
+              -p "$NEW_PACKAGE"
             sleep 2
-            adb shell dumpsys activity activities | tee emulator-evidence/permission-activity.txt
-            grep -q 'PermissionCenterActivity' emulator-evidence/permission-activity.txt
-            adb exec-out screencap -p > emulator-evidence/permission-center.png
+            adb shell dumpsys activity activities > "$EVIDENCE/permission-activity.txt" 2>&1
+            assert_file_contains permission-top 'PermissionCenterActivity' "$EVIDENCE/permission-activity.txt"
+            adb exec-out screencap -p > "$EVIDENCE/permission-center.png" 2> "$EVIDENCE/permission-screenshot-error.txt" || STATUS=1
 
-            adb shell am force-stop "$NEW_PACKAGE"
-            adb shell am start -W \
+            adb shell am force-stop "$NEW_PACKAGE" || true
+            run_step update-deeplink adb shell am start -W \
               -a android.intent.action.VIEW \
               -d 'amin-update://check' \
-              -p "$NEW_PACKAGE" | tee emulator-evidence/update-deeplink.txt
+              -p "$NEW_PACKAGE"
             sleep 2
-            adb shell dumpsys activity activities | tee emulator-evidence/update-activity.txt
-            grep -q 'NativeUpdateActivity' emulator-evidence/update-activity.txt
-            adb exec-out screencap -p > emulator-evidence/update-center.png
+            adb shell dumpsys activity activities > "$EVIDENCE/update-activity.txt" 2>&1
+            assert_file_contains update-top 'NativeUpdateActivity' "$EVIDENCE/update-activity.txt"
+            adb exec-out screencap -p > "$EVIDENCE/update-center.png" 2> "$EVIDENCE/update-screenshot-error.txt" || STATUS=1
+
+            printf '%s\n' "$STATUS" > "$EVIDENCE/result-code.txt"
+            exit "$STATUS"
 
       - name: Upload emulator evidence and test reports
         if: ${{ always() }}
@@ -138,5 +179,9 @@ jobs:
             emulator-evidence/
             android-native/app/build/outputs/androidTest-results/
             android-native/app/build/reports/androidTests/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
+
+      - name: Stop after emulator acceptance failure
+        if: ${{ steps.emulator.outcome == 'failure' }}
+        run: exit 1
