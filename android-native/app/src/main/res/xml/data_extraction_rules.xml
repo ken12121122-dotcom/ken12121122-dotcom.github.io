@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup disableIfNoEncryptionCapabilities="true">
-        <exclude domain="root" path="." />
-        <exclude domain="file" path="." />
-        <exclude domain="database" path="." />
-        <exclude domain="sharedpref" path="." />
-        <exclude domain="external" path="." />
+        <include domain="file" path="gba-saves/" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="root" path="." />
-        <exclude domain="file" path="." />
-        <exclude domain="database" path="." />
-        <exclude domain="sharedpref" path="." />
-        <exclude domain="external" path="." />
+        <include domain="file" path="gba-saves/" />
     </device-transfer>
 </data-extraction-rules>
