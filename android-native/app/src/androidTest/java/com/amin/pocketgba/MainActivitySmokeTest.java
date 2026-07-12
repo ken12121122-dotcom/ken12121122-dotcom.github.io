@@ -3,6 +3,7 @@ package com.amin.pocketgba;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import android.content.pm.ActivityInfo;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
@@ -23,7 +24,7 @@ public final class MainActivitySmokeTest {
             new ActivityScenarioRule<>(MainActivity.class);
 
     @Test
-    public void launchesNativeShellWithWebView() {
+    public void launchesLandscapeNativeShellWithWebView() {
         activityRule.getScenario().onActivity(activity -> {
             FrameLayout root = activity.findViewById(R.id.root);
             WebView webView = activity.findViewById(R.id.webView);
@@ -32,6 +33,7 @@ public final class MainActivitySmokeTest {
             assertNotNull(webView);
             assertEquals(View.VISIBLE, root.getVisibility());
             assertEquals(View.VISIBLE, webView.getVisibility());
+            assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, activity.getRequestedOrientation());
         });
     }
 }
