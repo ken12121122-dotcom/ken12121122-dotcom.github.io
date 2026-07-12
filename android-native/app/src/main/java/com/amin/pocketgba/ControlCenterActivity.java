@@ -193,7 +193,7 @@ public final class ControlCenterActivity extends Activity {
                 false
         );
         updateCard.setContentDescription("開啟原生 APK 更新中心");
-        updateCard.setOnClickListener(view -> startActivity(new Intent(this, NativeUpdateActivity.class)));
+        updateCard.setOnClickListener(view -> startActivity(new Intent(this, UpdateHubActivity.class)));
         content.addView(updateCard, cardParams());
 
         addSectionTitle(content, "進階");
