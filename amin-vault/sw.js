@@ -2,6 +2,7 @@ const CACHE_PREFIX = 'amin-vault-runtime-';
 const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v091`;
 const META_CACHE = `${CACHE_PREFIX}meta`;
 const ACTIVE_KEY = new URL('__amin_runtime_active__', self.registration.scope).href;
+const MANIFEST_PATH = new URL('./runtime-manifest.json', self.registration.scope).pathname;
 
 const BOOTSTRAP_ASSETS = [
   './',
@@ -140,6 +141,18 @@ async function refreshRuntime(manifest, source) {
   }
 }
 
+async function networkFirstManifest(request, cache) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response.ok) await cache.put(assetUrl('./runtime-manifest.json'), response.clone());
+    return response;
+  } catch (error) {
+    const cached = await cache.match(assetUrl('./runtime-manifest.json'), { ignoreSearch: true });
+    if (cached) return cached;
+    throw error;
+  }
+}
+
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     await cacheAssetList(BOOTSTRAP_CACHE, BOOTSTRAP_ASSETS);
@@ -173,13 +186,23 @@ self.addEventListener('fetch', event => {
     const activeCacheName = await getActiveCacheName();
     const cache = await caches.open(activeCacheName);
 
+    // The manifest is the only runtime file that must bypass the active cache so
+    // the updater can discover a newer complete version.
+    if (requestUrl.pathname === MANIFEST_PATH) {
+      return networkFirstManifest(event.request, cache);
+    }
+
+    // All declared runtime files are served from the active cache first. This
+    // prevents online requests from mixing old and new files before the pointer
+    // is atomically switched to the fully staged cache.
+    const cached = await cache.match(event.request, { ignoreSearch: true });
+    if (cached) return cached;
+
     try {
       const response = await fetch(event.request);
       if (response.ok) await cache.put(event.request, response.clone());
       return response;
     } catch (error) {
-      const cached = await cache.match(event.request, { ignoreSearch: true });
-      if (cached) return cached;
       if (event.request.mode === 'navigate') {
         const fallback = await cache.match(assetUrl('./gba.html'), { ignoreSearch: true });
         if (fallback) return fallback;
