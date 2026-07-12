@@ -128,8 +128,17 @@ jobs:
       - name: Test Android save backup contract
         run: node --test --test-name-pattern='Android backup' tests/gba-save-contract.test.mjs
 
-      - name: Test Preview migration package contract
-        run: node --test --test-name-pattern='Preview 4 is' tests/gba-save-contract.test.mjs
+      - name: Test Preview migration UI
+        run: node --test --test-name-pattern='Preview migration UI' tests/gba-save-contract.test.mjs
+
+      - name: Test RC4 save manifest
+        run: node --test --test-name-pattern='RC4 manifest' tests/gba-save-contract.test.mjs
+
+      - name: Test Preview side-by-side package
+        run: node --test --test-name-pattern='package installs beside' tests/gba-save-contract.test.mjs
+
+      - name: Test Preview runtime pin
+        run: node --test --test-name-pattern='pinned to the final' tests/gba-save-contract.test.mjs
 
       - name: Test legacy save migration behavior
         run: node --test tests/gba-save-migration.test.mjs
