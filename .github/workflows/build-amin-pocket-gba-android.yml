@@ -7,12 +7,18 @@ on:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/sw.js'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/sw.js'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
 
 permissions:
@@ -46,6 +52,29 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
+      - name: Validate downloadable runtime
+        shell: bash
+        run: |
+          node --check amin-vault/runtime-updater.js
+          node --check amin-vault/sw.js
+          python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('amin-vault')
+          manifest = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
+          missing = []
+          for asset in manifest['assets']:
+              relative = asset.removeprefix('./')
+              target = root if relative == '' else root / relative
+              if not target.exists():
+                  missing.append(asset)
+          if missing:
+              raise SystemExit('Missing runtime assets: ' + ', '.join(missing))
+          print(f"Validated {len(manifest['assets'])} runtime assets")
+          PY
+
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -58,7 +87,13 @@ jobs:
         run: |
           mkdir -p dist
           cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.0-debug.apk
-          sha256sum dist/Amin-Pocket-GBA-v0.9.0-debug.apk > dist/SHA256SUMS.txt
+          cd dist
+          sha256sum Amin-Pocket-GBA-v0.9.0-debug.apk > SHA256SUMS.txt
+
+      - name: Verify artifact checksum
+        run: |
+          cd dist
+          sha256sum -c SHA256SUMS.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
