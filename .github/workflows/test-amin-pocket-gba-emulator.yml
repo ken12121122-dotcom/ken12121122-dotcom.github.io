@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: amin-pocket-gba-emulator-${{ github.ref }}
+  group: amin-pocket-gba-emulator-v2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -264,18 +264,18 @@ jobs:
           grep -F 'OK (' "$RUNNER_TEMP/update-tests.txt"
 
       - name: Collect emulator diagnostics
-        if: ${{ always() }}
+        if: ${{ failure() }}
         shell: bash
         run: |
           mkdir -p emulator-diagnostics
           cp "$RUNNER_TEMP"/*.txt emulator-diagnostics/ 2>/dev/null || true
           cp "$RUNNER_TEMP/amin-emulator.log" emulator-diagnostics/ 2>/dev/null || true
-          adb logcat -d > emulator-diagnostics/logcat.txt 2>/dev/null || true
-          adb exec-out screencap -p > emulator-diagnostics/final-screen.png 2>/dev/null || true
+          timeout 15 adb logcat -d > emulator-diagnostics/logcat.txt 2>/dev/null || true
+          timeout 15 adb exec-out screencap -p > emulator-diagnostics/final-screen.png 2>/dev/null || true
           find emulator-diagnostics -maxdepth 2 -type f -print | sort
 
       - name: Upload emulator diagnostics
-        if: ${{ always() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: Amin-Pocket-GBA-v0.9.2-emulator-diagnostics
