@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
@@ -31,9 +32,15 @@ public final class NativeUpdateActivityTest {
 
     @Test
     public void rendersUpdateCenterShellBeforeNetworkResult() {
-        onView(withText("Amin Native Update Center")).check(matches(isDisplayed()));
-        onView(withText("重新檢查")).check(matches(isDisplayed()));
-        onView(withText("關閉")).check(matches(isDisplayed()));
+        assertScrollableTextVisible("Amin Native Update Center");
+        assertScrollableTextVisible("重新檢查");
+        assertScrollableTextVisible("關閉");
+    }
+
+    private void assertScrollableTextVisible(String text) {
+        onView(withText(text))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
     }
 
     @Test
