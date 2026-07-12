@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const [gba, guard, html, gradle, backupRules, extractionRules, bridge] = await Promise.all([
+const [gba, guard, migration, html, manifest, gradle, backupRules, extractionRules, bridge] = await Promise.all([
   readFile(new URL('../amin-vault/gba.js', import.meta.url), 'utf8'),
   readFile(new URL('../amin-vault/gba-save-guard.js', import.meta.url), 'utf8'),
+  readFile(new URL('../amin-vault/gba-save-migration.js', import.meta.url), 'utf8'),
   readFile(new URL('../amin-vault/gba.html', import.meta.url), 'utf8'),
+  readFile(new URL('../amin-vault/runtime-manifest.json', import.meta.url), 'utf8'),
   readFile(new URL('../android-native/app/build.gradle', import.meta.url), 'utf8'),
   readFile(new URL('../android-native/app/src/main/res/xml/backup_rules.xml', import.meta.url), 'utf8'),
   readFile(new URL('../android-native/app/src/main/res/xml/data_extraction_rules.xml', import.meta.url), 'utf8'),
@@ -30,6 +32,18 @@ test('save exit waits for explicit IDBFS synchronization and verification', () =
   assert.match(guard, /amin-save-verified/);
 });
 
+test('legacy name-based saves are copied to the stable path without deleting the source', () => {
+  assert.match(migration, /legacyBaseName/);
+  assert.match(migration, /findLegacyPath/);
+  assert.match(migration, /fs\.readdir\(directory\)/);
+  assert.match(migration, /fs\.readFile\(legacyPath\)/);
+  assert.match(migration, /fs\.writeFile\(currentPath, bytes\)/);
+  assert.match(migration, /await syncFileSystem\(fs\)/);
+  assert.match(migration, /flush\?\.\('legacy-migration'\)/);
+  assert.match(migration, /legacy-migrated/);
+  assert.doesNotMatch(migration, /unlink\(legacyPath\)/);
+});
+
 test('native vault is bounded atomic and keeps a prior generation', () => {
   assert.match(bridge, /MAX_SAVE_BYTES = 2 \* 1024 \* 1024/);
   assert.match(bridge, /SAFE_KEY/);
@@ -46,11 +60,16 @@ test('Android backup includes only the app-private save vault', () => {
   assert.equal((extractionRules.match(/path="gba-saves\/"/g) || []).length, 2);
 });
 
-test('UI explains save protection and preview build points to RC3 runtime', () => {
+test('UI and manifest explain RC4 save protection and migration', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
+  assert.match(html, /gba-save-migration\.js/);
   assert.match(html, /三層存檔/);
+  assert.match(html, /舊名稱存檔/);
+  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc4"/);
+  assert.match(manifest, /"legacy-save-migration-v1"/);
+  assert.match(manifest, /"\.\/gba-save-migration\.js"/);
   assert.match(gradle, /versionCode 95/);
   assert.match(gradle, /versionNameSuffix '-preview4'/);
-  assert.match(gradle, /1907f4d4d2e6877442b3a1a775eac17761ad9d9f/);
+  assert.match(gradle, /966e2c31bb3b0af1caaba62a302f278c4570242a/);
 });
