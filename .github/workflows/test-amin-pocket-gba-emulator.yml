@@ -19,11 +19,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: amin-pocket-gba-emulator-v6-${{ github.ref }}
+  group: amin-pocket-gba-emulator-v7-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  android-35-acceptance:
+  android-35-preview5:
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -68,20 +68,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build Preview 4 baseline with lower version code
-        shell: bash
-        run: |
-          set -euxo pipefail
-          git worktree add --detach /tmp/amin-pocket-preview4-baseline "$GITHUB_SHA"
-          gradle --no-daemon --console=plain \
-            -PAMIN_VERSION_CODE=94 \
-            -PAMIN_PREVIEW_SUFFIX=-preview4-baseline \
-            -p /tmp/amin-pocket-preview4-baseline/android-native \
-            :app:assembleDebug
-          cp /tmp/amin-pocket-preview4-baseline/android-native/app/build/outputs/apk/debug/app-debug.apk \
-            /tmp/amin-pocket-preview4-baseline.apk
-
-      - name: Build current Preview 4 and instrumentation tests
+      - name: Build Preview 5 and instrumentation tests
         shell: bash
         run: |
           set -euxo pipefail
@@ -89,13 +76,13 @@ jobs:
             :app:assembleDebug \
             :app:assembleDebugAndroidTest
 
-      - name: Build existing Preview 3 fixture
+      - name: Build existing Preview 4 fixture
         shell: bash
         run: |
           set -euxo pipefail
-          git worktree add --detach /tmp/amin-pocket-preview3 58f7760627d8a03a24a72697e5db60104d424fb0
-          gradle --no-daemon --console=plain -p /tmp/amin-pocket-preview3/android-native :app:assembleDebug
-          test -f /tmp/amin-pocket-preview3/android-native/app/build/outputs/apk/debug/app-debug.apk
+          git worktree add --detach /tmp/amin-pocket-preview4 1b3d4f7e86eaa507fe15766899fbb88a33396400
+          gradle --no-daemon --console=plain -p /tmp/amin-pocket-preview4/android-native :app:assembleDebug
+          test -f /tmp/amin-pocket-preview4/android-native/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Create and boot Android 35 AVD
         shell: bash
@@ -147,53 +134,32 @@ jobs:
           adb shell settings put global animator_duration_scale 0
           adb shell getprop ro.build.version.sdk | grep -Fx '35'
 
-      - name: Install Preview 3 and Preview 4 baseline side by side
+      - name: Install Preview 4 and Preview 5 side by side
         shell: bash
         run: |
           set -euxo pipefail
-          P3='/tmp/amin-pocket-preview3/android-native/app/build/outputs/apk/debug/app-debug.apk'
-          P4_BASE='/tmp/amin-pocket-preview4-baseline.apk'
-          adb install -r "$P3"
-          adb install -r "$P4_BASE"
-          adb shell pm list packages | tee "$RUNNER_TEMP/packages-before-update.txt"
-          grep -F 'package:com.amin.pocketgba.preview092' "$RUNNER_TEMP/packages-before-update.txt"
-          grep -F 'package:com.amin.pocketgba.preview094' "$RUNNER_TEMP/packages-before-update.txt"
+          P4='/tmp/amin-pocket-preview4/android-native/app/build/outputs/apk/debug/app-debug.apk'
+          P5="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
+          adb install -r "$P4"
+          adb install -r "$P5"
+          adb shell pm list packages | tee "$RUNNER_TEMP/packages.txt"
+          grep -F 'package:com.amin.pocketgba.preview094' "$RUNNER_TEMP/packages.txt"
+          grep -F 'package:com.amin.pocketgba.preview095' "$RUNNER_TEMP/packages.txt"
+          adb shell dumpsys package com.amin.pocketgba.preview095 > "$RUNNER_TEMP/p5-package.txt"
+          grep -F 'versionName=0.9.2-preview5' "$RUNNER_TEMP/p5-package.txt"
+          grep -F 'versionCode=96' "$RUNNER_TEMP/p5-package.txt"
 
-      - name: Seed data in both previews
+      - name: Verify Preview 5 launcher and routes
         shell: bash
         run: |
           set -euxo pipefail
-          adb shell "run-as com.amin.pocketgba.preview092 sh -c 'mkdir -p files && printf %s preview3-remains > files/preview3-marker.txt'"
-          adb shell "run-as com.amin.pocketgba.preview094 sh -c 'mkdir -p files/gba-saves && printf %s preview4-save-before-update > files/gba-saves/ci-update-retention.sav'"
-          adb shell "run-as com.amin.pocketgba.preview092 cat files/preview3-marker.txt" \
-            | tr -d '\r' | grep -Fx 'preview3-remains'
-          adb shell "run-as com.amin.pocketgba.preview094 cat files/gba-saves/ci-update-retention.sav" \
-            | tr -d '\r' | grep -Fx 'preview4-save-before-update'
-
-      - name: Update Preview 4 in place and verify both sandboxes
-        shell: bash
-        run: |
-          set -euxo pipefail
-          CURRENT="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
-          adb install -r "$CURRENT"
-          adb shell "run-as com.amin.pocketgba.preview094 cat files/gba-saves/ci-update-retention.sav" \
-            | tr -d '\r' | grep -Fx 'preview4-save-before-update'
-          adb shell "run-as com.amin.pocketgba.preview092 cat files/preview3-marker.txt" \
-            | tr -d '\r' | grep -Fx 'preview3-remains'
-          adb shell dumpsys package com.amin.pocketgba.preview094 > "$RUNNER_TEMP/p4-package.txt"
-          grep -F 'versionName=0.9.2-preview4' "$RUNNER_TEMP/p4-package.txt"
-          grep -F 'versionCode=95' "$RUNNER_TEMP/p4-package.txt"
-
-      - name: Verify Preview 4 launcher and primary routes
-        shell: bash
-        run: |
-          set -euxo pipefail
-          PACKAGE='com.amin.pocketgba.preview094'
+          PACKAGE='com.amin.pocketgba.preview095'
           adb shell cmd package resolve-activity --brief \
             -a android.intent.action.MAIN \
             -c android.intent.category.LAUNCHER \
             "$PACKAGE" | tee "$RUNNER_TEMP/launcher.txt"
           grep -F 'ControlCenterActivity' "$RUNNER_TEMP/launcher.txt"
+
           adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1
           sleep 2
           adb shell dumpsys activity activities | grep -F 'ControlCenterActivity'
@@ -222,14 +188,14 @@ jobs:
           TEST_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
           adb install -r "$TEST_APK"
           adb shell pm list instrumentation | tee "$RUNNER_TEMP/instrumentation.txt"
-          grep -F 'com.amin.pocketgba.preview094.test/androidx.test.runner.AndroidJUnitRunner' \
+          grep -F 'com.amin.pocketgba.preview095.test/androidx.test.runner.AndroidJUnitRunner' \
             "$RUNNER_TEMP/instrumentation.txt"
 
       - name: Run Android acceptance tests
         shell: bash
         run: |
           set -euxo pipefail
-          RUNNER='com.amin.pocketgba.preview094.test/androidx.test.runner.AndroidJUnitRunner'
+          RUNNER='com.amin.pocketgba.preview095.test/androidx.test.runner.AndroidJUnitRunner'
           for TEST in \
             com.amin.pocketgba.ControlCenterActivityTest \
             com.amin.pocketgba.MainActivitySmokeTest \
@@ -257,7 +223,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-preview4-emulator-diagnostics
+          name: Amin-Pocket-GBA-v0.9.2-preview5-emulator-diagnostics
           path: emulator-diagnostics/
           if-no-files-found: warn
           retention-days: 30
