@@ -6,6 +6,16 @@
   "publishedAt": "2026-07-12T09:35:00+08:00",
   "minimumNativeVersion": "0.9.0",
   "entryPoint": "./gba.html",
+  "requiredCapabilities": [],
+  "optionalCapabilities": [
+    "native-gamepad",
+    "native-file-picker",
+    "network-status",
+    "runtime-update-v1",
+    "open-cartridge",
+    "offline-bootstrap",
+    "save-flush"
+  ],
   "assets": [
     "./",
     "./styles.css",
@@ -23,6 +33,7 @@
     "./gba-controller.js",
     "./gba-controller-native-addon.js",
     "./gba-native-input.js",
+    "./amin-native-shell.js",
     "./gba-signal-lab.html",
     "./gba-signal-lab.css",
     "./gba-signal-lab.js",
