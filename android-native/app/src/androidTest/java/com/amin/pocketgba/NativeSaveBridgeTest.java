@@ -45,7 +45,7 @@ public final class NativeSaveBridgeTest {
     }
 
     @Test
-    public void storesReadsAndKeepsPreviousGeneration() throws Exception {
+    public void storesReadsKeepsPreviousGenerationAndSkipsDuplicates() throws Exception {
         byte[] first = "first-save-generation".getBytes(StandardCharsets.UTF_8);
         byte[] second = "second-save-generation".getBytes(StandardCharsets.UTF_8);
 
@@ -54,6 +54,7 @@ public final class NativeSaveBridgeTest {
                 Base64.encodeToString(first, Base64.NO_WRAP)
         ));
         assertTrue(firstResult.optBoolean("ok"));
+        assertFalse(firstResult.optBoolean("unchanged"));
         assertArrayEquals(first, Base64.decode(bridge.getSave(key), Base64.DEFAULT));
 
         JSONObject secondResult = new JSONObject(bridge.putSave(
@@ -61,8 +62,17 @@ public final class NativeSaveBridgeTest {
                 Base64.encodeToString(second, Base64.NO_WRAP)
         ));
         assertTrue(secondResult.optBoolean("ok"));
+        assertFalse(secondResult.optBoolean("unchanged"));
         assertTrue(secondResult.optBoolean("hasBackup"));
         assertArrayEquals(second, Base64.decode(bridge.getSave(key), Base64.DEFAULT));
+
+        JSONObject duplicateResult = new JSONObject(bridge.putSave(
+                key,
+                Base64.encodeToString(second, Base64.NO_WRAP)
+        ));
+        assertTrue(duplicateResult.optBoolean("ok"));
+        assertTrue(duplicateResult.optBoolean("unchanged"));
+        assertTrue(duplicateResult.optBoolean("hasBackup"));
 
         JSONObject info = new JSONObject(bridge.getSaveInfo(key));
         assertTrue(info.optBoolean("ok"));
