@@ -10,6 +10,7 @@ on:
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
+      - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
+      - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
 
 permissions:
@@ -74,6 +76,7 @@ jobs:
               raise SystemExit('Missing runtime assets: ' + ', '.join(missing))
           print(f"Validated {len(manifest['assets'])} runtime assets")
           PY
+          node --test tests/runtime-service-worker.test.mjs
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
