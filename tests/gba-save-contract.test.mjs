@@ -67,16 +67,18 @@ test('Android backup includes only the app-private save vault', () => {
   assert.equal((extractionRules.match(/path="gba-saves\/"/g) || []).length, 2);
 });
 
-test('UI and manifest explain RC4 save protection and migration', () => {
+test('Preview 4 is a safe side-by-side migration build pinned to final RC4 runtime', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
   assert.match(html, /gba-save-migration\.js/);
   assert.match(html, /三層存檔/);
-  assert.match(html, /舊名稱存檔/);
+  assert.match(html, /從 Preview 3 安全搬到 Preview 4/);
   assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc4"/);
   assert.match(manifest, /"legacy-save-migration-v1"/);
   assert.match(manifest, /"\.\/gba-save-migration\.js"/);
-  assert.match(gradle, /versionCode 95/);
-  assert.match(gradle, /versionNameSuffix '-preview4'/);
-  assert.match(gradle, /a8fa0ea1e2d53d7036f8712118b6ddc5590a3a47/);
+  assert.match(gradle, /AMIN_VERSION_CODE/);
+  assert.match(gradle, /versionCode aminVersionCode/);
+  assert.match(gradle, /applicationIdSuffix '\.preview094'/);
+  assert.match(gradle, /versionNameSuffix aminPreviewSuffix/);
+  assert.match(gradle, /f0bc618c36e8ae9c09a1987b9cc65fd821cdb455/);
 });
