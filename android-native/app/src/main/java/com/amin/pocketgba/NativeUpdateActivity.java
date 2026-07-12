@@ -36,31 +36,27 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.cert.CertificateEncodingException;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.net.ssl.HttpsURLConnection;
-
 public final class NativeUpdateActivity extends Activity {
     private static final long MAX_MANIFEST_BYTES = 512L * 1024L;
     private static final long MAX_APK_BYTES = 250L * 1024L * 1024L;
-    private static final Set<String> ALLOWED_EXACT_HOSTS = Set.of(
+    private static final Set<String> ALLOWED_EXACT_HOSTS = new HashSet<>(Arrays.asList(
             "ken12121122-dotcom.github.io",
             "github.com"
-    );
+    ));
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
-    private TextView titleView;
     private TextView statusView;
     private TextView detailView;
     private ProgressBar progressBar;
     private Button primaryButton;
     private Button retryButton;
-
     private JSONObject releaseManifest;
     private File verifiedApk;
 
@@ -78,14 +74,13 @@ public final class NativeUpdateActivity extends Activity {
         content.setPadding(padding, padding, padding, padding);
         content.setGravity(Gravity.CENTER_HORIZONTAL);
 
-        titleView = new TextView(this);
-        titleView.setText("Amin Native Update Center");
-        titleView.setTextSize(24f);
-        titleView.setTypeface(Typeface.DEFAULT_BOLD);
-        content.addView(titleView, matchWrap());
+        TextView title = new TextView(this);
+        title.setText("Amin Native Update Center");
+        title.setTextSize(24f);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        content.addView(title, matchWrap());
 
         statusView = new TextView(this);
-        statusView.setText("正在檢查原生版本…");
         statusView.setTextSize(18f);
         statusView.setTypeface(Typeface.DEFAULT_BOLD);
         LinearLayout.LayoutParams statusParams = matchWrap();
@@ -93,7 +88,6 @@ public final class NativeUpdateActivity extends Activity {
         content.addView(statusView, statusParams);
 
         detailView = new TextView(this);
-        detailView.setText("目前版本：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）");
         detailView.setTextSize(14f);
         detailView.setLineSpacing(0f, 1.35f);
         LinearLayout.LayoutParams detailParams = matchWrap();
@@ -102,7 +96,6 @@ public final class NativeUpdateActivity extends Activity {
 
         progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setMax(100);
-        progressBar.setIndeterminate(true);
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(12)
@@ -111,9 +104,7 @@ public final class NativeUpdateActivity extends Activity {
         content.addView(progressBar, progressParams);
 
         primaryButton = new Button(this);
-        primaryButton.setText("下載並驗證更新");
         primaryButton.setEnabled(false);
-        primaryButton.setOnClickListener(view -> downloadAndVerify());
         LinearLayout.LayoutParams primaryParams = matchWrap();
         primaryParams.topMargin = dp(22);
         content.addView(primaryButton, primaryParams);
@@ -152,8 +143,8 @@ public final class NativeUpdateActivity extends Activity {
         runOnUiThread(() -> {
             statusView.setText(status);
             detailView.setText(detail);
-            progressBar.setIndeterminate(true);
             progressBar.setVisibility(View.VISIBLE);
+            progressBar.setIndeterminate(true);
             primaryButton.setEnabled(false);
             retryButton.setEnabled(false);
         });
@@ -174,20 +165,21 @@ public final class NativeUpdateActivity extends Activity {
         releaseManifest = null;
         primaryButton.setText("下載並驗證更新");
         primaryButton.setOnClickListener(view -> downloadAndVerify());
-        setBusy("正在檢查原生版本…", "連線至 Amin 簽章版本清單。\n目前版本："
-                + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）");
+        setBusy(
+                "正在檢查原生版本…",
+                "目前版本：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）"
+        );
 
         EXECUTOR.execute(() -> {
             try {
                 JSONObject manifest = fetchJson(BuildConfig.NATIVE_UPDATE_MANIFEST_URL);
-                validateManifestContract(manifest);
+                validateManifest(manifest);
                 releaseManifest = manifest;
 
                 if (!manifest.optBoolean("enabled", false)) {
                     showResult(
                             "正式更新通道尚未啟用",
-                            releaseNotes(manifest)
-                                    + "\n\n這是安全鎖定狀態，不會下載任何 APK。",
+                            releaseNotes(manifest) + "\n\n安全鎖定中，不會下載 APK。",
                             false
                     );
                     return;
@@ -198,9 +190,9 @@ public final class NativeUpdateActivity extends Activity {
                 if (latestCode <= BuildConfig.VERSION_CODE) {
                     showResult(
                             "目前已是最新版本",
-                            "本機：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）"
-                                    + "\n線上：" + latestName + "（" + latestCode + "）"
-                                    + "\n\n" + releaseNotes(manifest),
+                            "本機：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）\n"
+                                    + "線上：" + latestName + "（" + latestCode + "）\n\n"
+                                    + releaseNotes(manifest),
                             false
                     );
                     return;
@@ -211,7 +203,7 @@ public final class NativeUpdateActivity extends Activity {
                         "版本碼：" + latestCode
                                 + "\n檔案大小：" + formatBytes(manifest.optLong("sizeBytes", -1L))
                                 + "\n\n" + releaseNotes(manifest)
-                                + "\n\n下載後會驗證 SHA-256、套件名稱、版本碼與簽章憑證。",
+                                + "\n\n下載後會驗證檔案、套件、版本與簽章。",
                         true
                 );
             } catch (Exception error) {
@@ -226,13 +218,12 @@ public final class NativeUpdateActivity extends Activity {
         connection.setReadTimeout(20000);
         connection.setRequestProperty("Accept", "application/json");
         connection.connect();
-        verifyResponseHost(connection.getURL());
+        verifyTrustedUrl(connection.getURL());
         if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
             throw new IllegalStateException("更新清單 HTTP " + connection.getResponseCode());
         }
-        long length = connection.getContentLengthLong();
-        if (length > MAX_MANIFEST_BYTES) {
-            throw new IllegalStateException("更新清單超過安全大小。");
+        if (connection.getContentLengthLong() > MAX_MANIFEST_BYTES) {
+            throw new SecurityException("更新清單超過安全大小。");
         }
 
         try (InputStream input = new BufferedInputStream(connection.getInputStream());
@@ -243,17 +234,18 @@ public final class NativeUpdateActivity extends Activity {
             while ((read = input.read(buffer)) != -1) {
                 total += read;
                 if (total > MAX_MANIFEST_BYTES) {
-                    throw new IllegalStateException("更新清單超過安全大小。");
+                    throw new SecurityException("更新清單超過安全大小。");
                 }
                 output.write(buffer, 0, read);
             }
-            return new JSONObject(output.toString(StandardCharsets.UTF_8));
+            String json = new String(output.toByteArray(), StandardCharsets.UTF_8);
+            return new JSONObject(json);
         } finally {
             connection.disconnect();
         }
     }
 
-    private void validateManifestContract(JSONObject manifest) throws Exception {
+    private void validateManifest(JSONObject manifest) throws Exception {
         if (!"amin-native-release-manifest".equals(manifest.optString("format"))) {
             throw new IllegalStateException("更新清單格式不正確。");
         }
@@ -266,10 +258,10 @@ public final class NativeUpdateActivity extends Activity {
         if (!manifest.optBoolean("enabled", false)) return;
 
         String apkUrl = manifest.optString("apkUrl");
-        String sha256 = normalizeFingerprint(manifest.optString("apkSha256"));
-        String signer = normalizeFingerprint(manifest.optString("signerCertificateSha256"));
+        String apkHash = normalizeFingerprint(manifest.optString("apkSha256"));
+        String signerHash = normalizeFingerprint(manifest.optString("signerCertificateSha256"));
         long versionCode = manifest.optLong("latestVersionCode", 0L);
-        if (apkUrl.isBlank() || sha256.length() != 64 || signer.length() != 64 || versionCode <= 0) {
+        if (isBlank(apkUrl) || apkHash.length() != 64 || signerHash.length() != 64 || versionCode <= 0) {
             throw new SecurityException("已啟用的更新清單缺少必要驗證資料。");
         }
         verifyTrustedUrl(new URL(apkUrl));
@@ -287,10 +279,6 @@ public final class NativeUpdateActivity extends Activity {
         if (!"https".equalsIgnoreCase(url.getProtocol())) {
             throw new SecurityException("只允許 HTTPS 更新來源。");
         }
-        verifyResponseHost(url);
-    }
-
-    private void verifyResponseHost(URL url) throws Exception {
         String host = url.getHost().toLowerCase(Locale.ROOT);
         boolean allowed = ALLOWED_EXACT_HOSTS.contains(host)
                 || host.endsWith(".githubusercontent.com")
@@ -318,19 +306,14 @@ public final class NativeUpdateActivity extends Activity {
             File partial = new File(getCacheDir(), "amin-update.partial.apk");
             File completed = new File(getCacheDir(), "amin-update-verified.apk");
             try {
-                if (partial.exists() && !partial.delete()) {
-                    throw new IllegalStateException("無法清除舊的暫存更新。");
-                }
-                if (completed.exists() && !completed.delete()) {
-                    throw new IllegalStateException("無法清除舊的驗證版本。");
-                }
+                deleteIfPresent(partial);
+                deleteIfPresent(completed);
 
-                String apkUrl = manifest.getString("apkUrl");
-                HttpURLConnection connection = openTrustedConnection(apkUrl);
+                HttpURLConnection connection = openTrustedConnection(manifest.getString("apkUrl"));
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(30000);
                 connection.connect();
-                verifyResponseHost(connection.getURL());
+                verifyTrustedUrl(connection.getURL());
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                     throw new IllegalStateException("APK 下載 HTTP " + connection.getResponseCode());
                 }
@@ -348,11 +331,9 @@ public final class NativeUpdateActivity extends Activity {
                     int read;
                     while ((read = input.read(buffer)) != -1) {
                         total += read;
-                        if (total > MAX_APK_BYTES) {
-                            throw new SecurityException("APK 超過允許大小。");
-                        }
+                        if (total > MAX_APK_BYTES) throw new SecurityException("APK 超過允許大小。");
                         output.write(buffer, 0, read);
-                        updateDownloadProgress(total, expectedLength);
+                        updateProgress(total, expectedLength);
                     }
                     output.flush();
                     if (expectedLength > 0 && total != expectedLength) {
@@ -363,29 +344,30 @@ public final class NativeUpdateActivity extends Activity {
                 }
 
                 verifyApk(partial, manifest);
-                if (!partial.renameTo(completed)) {
-                    copyFile(partial, completed);
-                    if (!partial.delete()) partial.deleteOnExit();
-                }
+                copyFile(partial, completed);
+                deleteIfPresent(partial);
                 verifiedApk = completed;
                 runOnUiThread(() -> {
-                    progressBar.setProgress(100);
                     progressBar.setVisibility(View.GONE);
                     statusView.setText("APK 驗證完成");
-                    detailView.setText("SHA-256、套件名稱、版本碼與簽章憑證全部相符。\n\nAndroid 仍會要求你確認安裝。");
+                    detailView.setText("SHA-256、套件、版本碼與簽章憑證全部相符。\n\nAndroid 仍會要求確認安裝。");
                     primaryButton.setText("開啟 Android 安裝畫面");
                     primaryButton.setOnClickListener(view -> openInstaller());
                     primaryButton.setEnabled(true);
                     retryButton.setEnabled(true);
                 });
             } catch (Exception error) {
-                if (partial.exists() && !partial.delete()) partial.deleteOnExit();
+                try {
+                    deleteIfPresent(partial);
+                } catch (Exception ignored) {
+                    // Keep the original verification failure as the user-facing error.
+                }
                 showResult("下載或驗證失敗", safeMessage(error), true);
             }
         });
     }
 
-    private void updateDownloadProgress(long completed, long total) {
+    private void updateProgress(long completed, long total) {
         if (total <= 0) return;
         int percent = (int) Math.min(100L, completed * 100L / total);
         runOnUiThread(() -> {
@@ -396,23 +378,19 @@ public final class NativeUpdateActivity extends Activity {
     }
 
     private void verifyApk(File apk, JSONObject manifest) throws Exception {
-        String expectedSha = normalizeFingerprint(manifest.getString("apkSha256"));
-        String actualSha = sha256(apk);
-        if (!expectedSha.equals(actualSha)) {
+        if (!normalizeFingerprint(manifest.getString("apkSha256")).equals(sha256(apk))) {
             throw new SecurityException("APK SHA-256 不一致。");
         }
 
-        PackageManager packageManager = getPackageManager();
         int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                 ? PackageManager.GET_SIGNING_CERTIFICATES
                 : PackageManager.GET_SIGNATURES;
-        PackageInfo archive = packageManager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
-        if (archive == null) {
-            throw new SecurityException("Android 無法辨識下載的 APK。");
-        }
+        PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), flags);
+        if (archive == null) throw new SecurityException("Android 無法辨識下載的 APK。");
         if (!manifest.getString("packageId").equals(archive.packageName)) {
             throw new SecurityException("APK 套件名稱不一致。");
         }
+
         long archiveVersion = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                 ? archive.getLongVersionCode()
                 : archive.versionCode;
@@ -430,6 +408,7 @@ public final class NativeUpdateActivity extends Activity {
         if (signatures == null || signatures.length != 1) {
             throw new SecurityException("APK 簽章數量不符合預期。");
         }
+
         String expectedSigner = normalizeFingerprint(manifest.getString("signerCertificateSha256"));
         String actualSigner = sha256(signatures[0].toByteArray());
         if (!expectedSigner.equals(actualSigner)) {
@@ -438,8 +417,7 @@ public final class NativeUpdateActivity extends Activity {
     }
 
     private void openInstaller() {
-        File apk = verifiedApk;
-        if (apk == null || !apk.isFile()) {
+        if (verifiedApk == null || !verifiedApk.isFile()) {
             showResult("找不到已驗證 APK", "請重新下載更新。", true);
             return;
         }
@@ -447,12 +425,11 @@ public final class NativeUpdateActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && !getPackageManager().canRequestPackageInstalls()) {
             try {
-                Intent settingsIntent = new Intent(
+                startActivity(new Intent(
                         Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                         Uri.parse("package:" + getPackageName())
-                );
-                startActivity(settingsIntent);
-                Toast.makeText(this, "允許此 App 安裝更新後，返回再按一次安裝。", Toast.LENGTH_LONG).show();
+                ));
+                Toast.makeText(this, "允許安裝更新後，返回再按一次安裝。", Toast.LENGTH_LONG).show();
             } catch (ActivityNotFoundException error) {
                 showResult("無法開啟安裝權限", safeMessage(error), false);
             }
@@ -462,7 +439,7 @@ public final class NativeUpdateActivity extends Activity {
         Uri uri = FileProvider.getUriForFile(
                 this,
                 getPackageName() + ".fileprovider",
-                apk
+                verifiedApk
         );
         Intent installIntent = new Intent(Intent.ACTION_VIEW);
         installIntent.setDataAndType(uri, "application/vnd.android.package-archive");
@@ -496,8 +473,7 @@ public final class NativeUpdateActivity extends Activity {
     }
 
     private String sha256(byte[] bytes) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return toHex(digest.digest(bytes));
+        return toHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
     private String toHex(byte[] bytes) {
@@ -520,6 +496,12 @@ public final class NativeUpdateActivity extends Activity {
         }
     }
 
+    private void deleteIfPresent(File file) throws Exception {
+        if (file.exists() && !file.delete()) {
+            throw new IllegalStateException("無法清除舊的更新暫存檔。");
+        }
+    }
+
     private String formatBytes(long bytes) {
         if (bytes < 0) return "未知";
         String[] units = { "B", "KB", "MB", "GB" };
@@ -532,8 +514,12 @@ public final class NativeUpdateActivity extends Activity {
         return String.format(Locale.TAIWAN, index == 0 ? "%.0f %s" : "%.1f %s", value, units[index]);
     }
 
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     private String safeMessage(Exception error) {
         String message = error.getMessage();
-        return message == null || message.isBlank() ? error.getClass().getSimpleName() : message;
+        return isBlank(message) ? error.getClass().getSimpleName() : message;
     }
 }
