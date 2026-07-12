@@ -67,18 +67,32 @@ test('Android backup includes only the app-private save vault', () => {
   assert.equal((extractionRules.match(/path="gba-saves\/"/g) || []).length, 2);
 });
 
-test('Preview 4 is a safe side-by-side migration build pinned to final RC4 runtime', () => {
+test('Preview migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
   assert.match(html, /gba-save-migration\.js/);
   assert.match(html, /三層存檔/);
   assert.match(html, /從 Preview 3 安全搬到 Preview 4/);
+  assert.match(html, /確認進度正確後，才移除 Preview 3/);
+});
+
+test('RC4 manifest includes every save persistence capability and asset', () => {
   assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc4"/);
+  assert.match(manifest, /"save-vault-v1"/);
+  assert.match(manifest, /"native-save-vault-v1"/);
   assert.match(manifest, /"legacy-save-migration-v1"/);
   assert.match(manifest, /"\.\/gba-save-migration\.js"/);
+});
+
+test('Preview 4 package installs beside Preview 3', () => {
   assert.match(gradle, /AMIN_VERSION_CODE/);
   assert.match(gradle, /versionCode aminVersionCode/);
   assert.match(gradle, /applicationIdSuffix '\.preview094'/);
   assert.match(gradle, /versionNameSuffix aminPreviewSuffix/);
+  assert.match(gradle, /Amin Pocket GBA Preview 0\.9\.2 P4/);
+});
+
+test('Preview 4 is pinned to the final RC4 migration runtime', () => {
   assert.match(gradle, /f0bc618c36e8ae9c09a1987b9cc65fd821cdb455/);
+  assert.match(gradle, /preview=4/);
 });
