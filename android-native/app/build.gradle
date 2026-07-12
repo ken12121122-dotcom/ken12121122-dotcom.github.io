@@ -70,6 +70,10 @@ android {
     }
 }
 
+dependencies {
+    implementation 'androidx.core:core:1.15.0'
+}
+
 tasks.register('verifyAminReleaseSigning') {
     doLast {
         if (!aminSigningReady) {
