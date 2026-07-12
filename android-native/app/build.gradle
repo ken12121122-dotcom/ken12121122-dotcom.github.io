@@ -16,7 +16,7 @@ android {
         applicationId 'com.amin.pocketgba'
         minSdk 26
         targetSdk 35
-        versionCode 94
+        versionCode 95
         versionName '0.9.2'
         manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
@@ -46,10 +46,10 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix '.preview092'
-            versionNameSuffix '-preview3'
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview 0.9.2 P3']
+            versionNameSuffix '-preview4'
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview 0.9.2 P4']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"preview"'
-            buildConfigField 'String', 'APP_WEB_URL', '"https://cdn.jsdelivr.net/gh/ken12121122-dotcom/ken12121122-dotcom.github.io@27ccea8affdd606d7e115a391e85c37a52e3e3c5/amin-vault/gba.html?native=1&preview=3"'
+            buildConfigField 'String', 'APP_WEB_URL', '"https://cdn.jsdelivr.net/gh/ken12121122-dotcom/ken12121122-dotcom.github.io@1907f4d4d2e6877442b3a1a775eac17761ad9d9f/amin-vault/gba.html?native=1&preview=4"'
         }
         release {
             minifyEnabled false
