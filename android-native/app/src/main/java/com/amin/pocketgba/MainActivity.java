@@ -4,10 +4,16 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -22,6 +28,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -29,17 +36,28 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 public final class MainActivity extends Activity {
     private static final String APP_URL =
-            "https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&v=090";
+            "https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&v=091";
     private static final String TRUSTED_HOST = "ken12121122-dotcom.github.io";
+    private static final String NATIVE_CARTRIDGE_PATH = "/__amin_native__/cartridge";
+    private static final String OFFLINE_URL = "file:///android_asset/bootstrap/index.html";
     private static final int FILE_CHOOSER_REQUEST = 4107;
+    private static final int OFFLINE_CARTRIDGE_REQUEST = 4108;
 
     private FrameLayout root;
     private WebView webView;
@@ -48,6 +66,11 @@ public final class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private boolean pageReady;
+
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+    private JSONObject lastNetworkPayload;
+    private PendingCartridge pendingCartridge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,10 +82,21 @@ public final class MainActivity extends Activity {
         root = findViewById(R.id.root);
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
+        connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
+        handleIncomingIntent(getIntent());
         configureWebView();
+        registerNetworkMonitor();
         hideSystemUi();
         webView.loadUrl(APP_URL);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+        injectPendingCartridge();
     }
 
     @SuppressWarnings("SetJavaScriptEnabled")
@@ -71,12 +105,16 @@ public final class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(false);
+        settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AminPocketGBA/0.9.0");
+        settings.setSafeBrowsingEnabled(true);
+        settings.setUserAgentString(settings.getUserAgentString()
+                + " AminPocketGBA/" + BuildConfig.VERSION_NAME);
 
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         webView.setFocusable(true);
@@ -99,6 +137,9 @@ public final class MainActivity extends Activity {
             progressBar.setVisibility(View.GONE);
             view.requestFocus();
             injectConnectedControllers();
+            injectNativeCapabilities();
+            injectNetworkState();
+            injectPendingCartridge();
             hideSystemUi();
         }
 
@@ -106,8 +147,16 @@ public final class MainActivity extends Activity {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
             String scheme = uri.getScheme();
+
+            if ("amin".equalsIgnoreCase(scheme)) {
+                handleNativeAction(uri);
+                return true;
+            }
+
+            String url = uri.toString();
             if ("about".equalsIgnoreCase(scheme)
                     || "blob".equalsIgnoreCase(scheme)
+                    || ("file".equalsIgnoreCase(scheme) && url.startsWith(OFFLINE_URL))
                     || ("https".equalsIgnoreCase(scheme)
                     && TRUSTED_HOST.equalsIgnoreCase(uri.getHost()))) {
                 return false;
@@ -126,14 +175,39 @@ public final class MainActivity extends Activity {
         }
 
         @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            Uri uri = request.getUrl();
+            if ("https".equalsIgnoreCase(uri.getScheme())
+                    && TRUSTED_HOST.equalsIgnoreCase(uri.getHost())
+                    && NATIVE_CARTRIDGE_PATH.equals(uri.getPath())) {
+                return servePendingCartridge(uri);
+            }
+            return super.shouldInterceptRequest(view, request);
+        }
+
+        @Override
         public void onReceivedError(
                 WebView view,
                 WebResourceRequest request,
                 WebResourceError error
         ) {
-            if (request.isForMainFrame()) {
+            if (request.isForMainFrame() && !isOfflineBootstrap(request.getUrl())) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(MainActivity.this, R.string.load_failed, Toast.LENGTH_LONG).show();
+                showOfflineBootstrap(String.valueOf(error.getDescription()));
+            }
+        }
+
+        @Override
+        public void onReceivedHttpError(
+                WebView view,
+                WebResourceRequest request,
+                WebResourceResponse errorResponse
+        ) {
+            if (request.isForMainFrame()
+                    && errorResponse.getStatusCode() >= 400
+                    && !isOfflineBootstrap(request.getUrl())) {
+                progressBar.setVisibility(View.GONE);
+                showOfflineBootstrap("HTTP " + errorResponse.getStatusCode());
             }
         }
 
@@ -157,25 +231,7 @@ public final class MainActivity extends Activity {
                 filePathCallback.onReceiveValue(null);
             }
             filePathCallback = callback;
-
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
-                    "application/octet-stream",
-                    "application/zip",
-                    "application/x-gba-rom"
-            });
-
-            try {
-                startActivityForResult(intent, FILE_CHOOSER_REQUEST);
-                return true;
-            } catch (ActivityNotFoundException error) {
-                filePathCallback = null;
-                Toast.makeText(MainActivity.this, R.string.file_picker_failed, Toast.LENGTH_LONG).show();
-                return false;
-            }
+            return launchCartridgePicker(FILE_CHOOSER_REQUEST, true);
         }
 
         @Override
@@ -210,10 +266,49 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private boolean launchCartridgePicker(int requestCode, boolean allowMultiple) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, allowMultiple);
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
+                "application/octet-stream",
+                "application/zip",
+                "application/x-gba-rom"
+        });
+
+        try {
+            startActivityForResult(intent, requestCode);
+            return true;
+        } catch (ActivityNotFoundException error) {
+            if (requestCode == FILE_CHOOSER_REQUEST) {
+                filePathCallback = null;
+            }
+            Toast.makeText(this, R.string.file_picker_failed, Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != FILE_CHOOSER_REQUEST || filePathCallback == null) {
+
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            finishWebFileChooser(resultCode, data);
+            return;
+        }
+
+        if (requestCode == OFFLINE_CARTRIDGE_REQUEST && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null && stagePendingCartridge(uri, data.getFlags())) {
+                Toast.makeText(this, "卡匣已準備，連線後會自動匯入。", Toast.LENGTH_LONG).show();
+                injectPendingCartridge();
+            }
+        }
+    }
+
+    private void finishWebFileChooser(int resultCode, Intent data) {
+        if (filePathCallback == null) {
             return;
         }
 
@@ -224,12 +319,12 @@ public final class MainActivity extends Activity {
                 for (int index = 0; index < data.getClipData().getItemCount(); index++) {
                     Uri uri = data.getClipData().getItemAt(index).getUri();
                     uris.add(uri);
-                    persistReadPermission(data, uri);
+                    persistReadPermission(uri, data.getFlags());
                 }
             } else if (data.getData() != null) {
                 Uri uri = data.getData();
                 uris.add(uri);
-                persistReadPermission(data, uri);
+                persistReadPermission(uri, data.getFlags());
             }
             if (!uris.isEmpty()) {
                 results = uris.toArray(new Uri[0]);
@@ -240,13 +335,321 @@ public final class MainActivity extends Activity {
         filePathCallback = null;
     }
 
-    private void persistReadPermission(Intent data, Uri uri) {
+    private void persistReadPermission(Uri uri, int intentFlags) {
         try {
-            int flags = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
-            getContentResolver().takePersistableUriPermission(uri, flags);
+            int flags = intentFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+            if (flags != 0) {
+                getContentResolver().takePersistableUriPermission(uri, flags);
+            }
         } catch (SecurityException ignored) {
-            // The selected provider may not offer persistable access. The WebView can still read it now.
+            // Some providers grant only temporary access. Immediate importing still works.
         }
+    }
+
+    private void handleIncomingIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+
+        Uri uri = null;
+        String action = intent.getAction();
+        if (Intent.ACTION_VIEW.equals(action)) {
+            uri = intent.getData();
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            ArrayList<Uri> streams = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (streams != null && !streams.isEmpty()) {
+                uri = streams.get(0);
+            }
+        }
+
+        if (uri != null) {
+            stagePendingCartridge(uri, intent.getFlags());
+        }
+    }
+
+    private boolean stagePendingCartridge(Uri uri, int intentFlags) {
+        String name = queryDisplayName(uri);
+        String mimeType = getContentResolver().getType(uri);
+        if (mimeType == null || mimeType.isBlank()) {
+            mimeType = guessMimeType(name);
+        }
+        if (!isSupportedCartridge(name, mimeType)) {
+            Toast.makeText(this, "目前只支援 .gba、.bin 與 .zip 卡匣。", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        persistReadPermission(uri, intentFlags);
+        pendingCartridge = new PendingCartridge(
+                UUID.randomUUID().toString(),
+                uri,
+                name,
+                mimeType,
+                querySize(uri)
+        );
+        return true;
+    }
+
+    private String queryDisplayName(Uri uri) {
+        try (Cursor cursor = getContentResolver().query(
+                uri,
+                new String[] { OpenableColumns.DISPLAY_NAME },
+                null,
+                null,
+                null
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (column >= 0) {
+                    String value = cursor.getString(column);
+                    if (value != null && !value.isBlank()) {
+                        return value;
+                    }
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Fall through to the URI path.
+        }
+        String fallback = uri.getLastPathSegment();
+        return fallback == null || fallback.isBlank() ? "cartridge.gba" : fallback;
+    }
+
+    private long querySize(Uri uri) {
+        try (Cursor cursor = getContentResolver().query(
+                uri,
+                new String[] { OpenableColumns.SIZE },
+                null,
+                null,
+                null
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int column = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if (column >= 0 && !cursor.isNull(column)) {
+                    return cursor.getLong(column);
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Unknown sizes are represented by -1.
+        }
+        return -1L;
+    }
+
+    private boolean isSupportedCartridge(String name, String mimeType) {
+        String lowerName = name.toLowerCase(Locale.ROOT);
+        return lowerName.endsWith(".gba")
+                || lowerName.endsWith(".bin")
+                || lowerName.endsWith(".zip")
+                || "application/zip".equalsIgnoreCase(mimeType)
+                || "application/x-gba-rom".equalsIgnoreCase(mimeType)
+                || "application/octet-stream".equalsIgnoreCase(mimeType);
+    }
+
+    private String guessMimeType(String name) {
+        String lowerName = name.toLowerCase(Locale.ROOT);
+        if (lowerName.endsWith(".zip")) {
+            return "application/zip";
+        }
+        return "application/octet-stream";
+    }
+
+    private WebResourceResponse servePendingCartridge(Uri requestUri) {
+        PendingCartridge cartridge = pendingCartridge;
+        String token = requestUri.getQueryParameter("token");
+        if (cartridge == null || token == null || !token.equals(cartridge.token)) {
+            return textResponse(404, "Not Found", "Native cartridge token is not available.");
+        }
+
+        try {
+            InputStream stream = getContentResolver().openInputStream(cartridge.uri);
+            if (stream == null) {
+                return textResponse(404, "Not Found", "Native cartridge stream is unavailable.");
+            }
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Cache-Control", "no-store");
+            headers.put("Access-Control-Allow-Origin", "https://" + TRUSTED_HOST);
+            if (cartridge.size >= 0) {
+                headers.put("Content-Length", String.valueOf(cartridge.size));
+            }
+            return new WebResourceResponse(
+                    cartridge.mimeType,
+                    null,
+                    200,
+                    "OK",
+                    headers,
+                    stream
+            );
+        } catch (Exception error) {
+            return textResponse(500, "Read Failed", "Unable to read the selected cartridge.");
+        }
+    }
+
+    private WebResourceResponse textResponse(int status, String reason, String text) {
+        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Cache-Control", "no-store");
+        return new WebResourceResponse(
+                "text/plain",
+                "utf-8",
+                status,
+                reason,
+                headers,
+                new ByteArrayInputStream(bytes)
+        );
+    }
+
+    private void handleNativeAction(Uri uri) {
+        String action = uri.getHost();
+        if ("retry".equalsIgnoreCase(action)) {
+            webView.loadUrl(APP_URL + "&retry=" + System.currentTimeMillis());
+            return;
+        }
+        if ("choose-cartridge".equalsIgnoreCase(action)) {
+            launchCartridgePicker(OFFLINE_CARTRIDGE_REQUEST, false);
+        }
+    }
+
+    private boolean isOfflineBootstrap(Uri uri) {
+        return uri != null && uri.toString().startsWith(OFFLINE_URL);
+    }
+
+    private void showOfflineBootstrap(String reason) {
+        String transport = lastNetworkPayload == null
+                ? "unknown"
+                : lastNetworkPayload.optString("transport", "unknown");
+        String url = OFFLINE_URL
+                + "?reason=" + Uri.encode(reason == null ? "無法載入線上 Runtime" : reason)
+                + "&native=" + Uri.encode(BuildConfig.VERSION_NAME)
+                + "&network=" + Uri.encode(transport);
+        webView.loadUrl(url);
+    }
+
+    private void registerNetworkMonitor() {
+        if (connectivityManager == null) {
+            return;
+        }
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(Network network) {
+                updateNetworkState();
+            }
+
+            @Override
+            public void onLost(Network network) {
+                updateNetworkState();
+            }
+
+            @Override
+            public void onCapabilitiesChanged(Network network, NetworkCapabilities capabilities) {
+                updateNetworkState();
+            }
+        };
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+        } catch (RuntimeException ignored) {
+            networkCallback = null;
+        }
+        updateNetworkState();
+    }
+
+    private void updateNetworkState() {
+        if (connectivityManager == null) {
+            return;
+        }
+        Network activeNetwork = connectivityManager.getActiveNetwork();
+        NetworkCapabilities capabilities = activeNetwork == null
+                ? null
+                : connectivityManager.getNetworkCapabilities(activeNetwork);
+
+        JSONObject payload = new JSONObject();
+        try {
+            boolean connected = capabilities != null
+                    && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            boolean validated = capabilities != null
+                    && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+            payload.put("connected", connected);
+            payload.put("validated", validated);
+            payload.put("transport", describeTransport(capabilities));
+            payload.put("metered", connectivityManager.isActiveNetworkMetered());
+            payload.put("downstreamKbps", capabilities == null
+                    ? 0 : capabilities.getLinkDownstreamBandwidthKbps());
+            payload.put("upstreamKbps", capabilities == null
+                    ? 0 : capabilities.getLinkUpstreamBandwidthKbps());
+            payload.put("timestamp", System.currentTimeMillis());
+        } catch (JSONException ignored) {
+            return;
+        }
+        lastNetworkPayload = payload;
+        sendShellJs("receiveNetwork", payload);
+    }
+
+    private String describeTransport(NetworkCapabilities capabilities) {
+        if (capabilities == null) return "offline";
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) return "vpn";
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return "wifi";
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) return "cellular";
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return "ethernet";
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) return "bluetooth";
+        return "other";
+    }
+
+    private void injectNetworkState() {
+        if (lastNetworkPayload == null) {
+            updateNetworkState();
+            return;
+        }
+        sendShellJs("receiveNetwork", lastNetworkPayload);
+    }
+
+    private void injectNativeCapabilities() {
+        JSONObject payload = new JSONObject();
+        JSONArray capabilities = new JSONArray();
+        capabilities.put("native-gamepad");
+        capabilities.put("native-file-picker");
+        capabilities.put("network-status");
+        capabilities.put("runtime-update-v1");
+        capabilities.put("open-cartridge");
+        capabilities.put("offline-bootstrap");
+        capabilities.put("save-flush");
+
+        try {
+            payload.put("appId", BuildConfig.APPLICATION_ID);
+            payload.put("nativeVersion", BuildConfig.VERSION_NAME);
+            payload.put("nativeVersionCode", BuildConfig.VERSION_CODE);
+            payload.put("androidRelease", Build.VERSION.RELEASE);
+            payload.put("sdkInt", Build.VERSION.SDK_INT);
+            payload.put("manufacturer", Build.MANUFACTURER);
+            payload.put("deviceModel", Build.MODEL);
+            payload.put("debug", BuildConfig.DEBUG);
+            payload.put("capabilities", capabilities);
+            PackageInfo webViewPackage = WebView.getCurrentWebViewPackage();
+            if (webViewPackage != null) {
+                payload.put("webViewPackage", webViewPackage.packageName);
+                payload.put("webViewVersion", webViewPackage.versionName);
+            }
+        } catch (JSONException ignored) {
+            return;
+        }
+        sendShellJs("receiveCapabilities", payload);
+    }
+
+    private void injectPendingCartridge() {
+        PendingCartridge cartridge = pendingCartridge;
+        if (cartridge == null) {
+            return;
+        }
+        JSONObject payload = new JSONObject();
+        try {
+            payload.put("token", cartridge.token);
+            payload.put("name", cartridge.name);
+            payload.put("mimeType", cartridge.mimeType);
+            payload.put("size", cartridge.size);
+            payload.put("downloadUrl", "https://" + TRUSTED_HOST
+                    + NATIVE_CARTRIDGE_PATH + "?token=" + Uri.encode(cartridge.token));
+        } catch (JSONException ignored) {
+            return;
+        }
+        sendShellJs("receiveCartridge", payload);
     }
 
     @Override
@@ -309,7 +712,7 @@ public final class MainActivity extends Activity {
         } catch (JSONException ignored) {
             return;
         }
-        sendJs("receiveKey", payload);
+        sendInputJs("receiveKey", payload);
     }
 
     private void sendMotionToWeb(MotionEvent event) {
@@ -339,7 +742,7 @@ public final class MainActivity extends Activity {
             payload.put("source", event.getSource());
             payload.put("eventTime", event.getEventTime());
             payload.put("axes", axes);
-            sendJs("receiveMotion", payload);
+            sendInputJs("receiveMotion", payload);
         } catch (JSONException ignored) {
             // A malformed payload should never interrupt gameplay.
         }
@@ -382,15 +785,24 @@ public final class MainActivity extends Activity {
             } catch (JSONException ignored) {
                 continue;
             }
-            sendJs("receiveDevice", payload);
+            sendInputJs("receiveDevice", payload);
         }
     }
 
-    private void sendJs(String method, JSONObject payload) {
+    private void sendInputJs(String method, JSONObject payload) {
         if (!pageReady || webView == null) {
             return;
         }
         String script = "(function(){if(window.AMIN_NATIVE_INPUT){window.AMIN_NATIVE_INPUT."
+                + method + "(" + payload + ");}})();";
+        webView.post(() -> webView.evaluateJavascript(script, null));
+    }
+
+    private void sendShellJs(String method, JSONObject payload) {
+        if (!pageReady || webView == null) {
+            return;
+        }
+        String script = "(function(){if(window.AMIN_NATIVE_SHELL){window.AMIN_NATIVE_SHELL."
                 + method + "(" + payload + ");}})();";
         webView.post(() -> webView.evaluateJavascript(script, null));
     }
@@ -463,9 +875,11 @@ public final class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         hideSystemUi();
+        updateNetworkState();
         if (webView != null) {
             webView.onResume();
             webView.requestFocus();
+            injectPendingCartridge();
         }
     }
 
@@ -491,6 +905,14 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (networkCallback != null && connectivityManager != null) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            } catch (RuntimeException ignored) {
+                // It may already be unregistered after a process or network reset.
+            }
+            networkCallback = null;
+        }
         if (filePathCallback != null) {
             filePathCallback.onReceiveValue(null);
             filePathCallback = null;
@@ -504,5 +926,21 @@ public final class MainActivity extends Activity {
             webView = null;
         }
         super.onDestroy();
+    }
+
+    private static final class PendingCartridge {
+        final String token;
+        final Uri uri;
+        final String name;
+        final String mimeType;
+        final long size;
+
+        PendingCartridge(String token, Uri uri, String name, String mimeType, long size) {
+            this.token = token;
+            this.uri = uri;
+            this.name = name;
+            this.mimeType = mimeType;
+            this.size = size;
+        }
     }
 }

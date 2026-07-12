@@ -7,12 +7,22 @@ on:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/amin-native-shell.js'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/sw.js'
+      - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/amin-native-shell.js'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/sw.js'
+      - 'tests/runtime-*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
 
 permissions:
@@ -46,24 +56,68 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
+      - name: Validate downloadable runtime
+        shell: bash
+        run: |
+          node --check amin-vault/amin-native-shell.js
+          node --check amin-vault/runtime-updater.js
+          node --check amin-vault/sw.js
+          python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
+          test -f android-native/app/src/main/assets/bootstrap/index.html
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('amin-vault')
+          manifest = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
+          missing = []
+          for asset in manifest['assets']:
+              relative = asset.removeprefix('./')
+              target = root if relative == '' else root / relative
+              if not target.exists():
+                  missing.append(asset)
+          if missing:
+              raise SystemExit('Missing runtime assets: ' + ', '.join(missing))
+          print(f"Validated {len(manifest['assets'])} runtime assets")
+          PY
+          node --test tests/runtime-service-worker.test.mjs
+
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Assemble debug APK
+      - name: Assemble preview APK
         run: gradle --no-daemon --stacktrace -p android-native :app:assembleDebug
+
+      - name: Validate preview APK manifest and assets
+        shell: bash
+        run: |
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba.preview091' versionCode='91' versionName='0.9.1-preview'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Preview'" /tmp/apk-badging.txt
+          "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
+          grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
+          unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
 
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.0-debug.apk
-          sha256sum dist/Amin-Pocket-GBA-v0.9.0-debug.apk > dist/SHA256SUMS.txt
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.1-preview.apk
+          cd dist
+          sha256sum Amin-Pocket-GBA-v0.9.1-preview.apk > SHA256SUMS.txt
+
+      - name: Verify artifact checksum
+        run: |
+          cd dist
+          sha256sum -c SHA256SUMS.txt
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.0-debug
+          name: Amin-Pocket-GBA-v0.9.1-preview
           path: dist/
           if-no-files-found: error
           retention-days: 30

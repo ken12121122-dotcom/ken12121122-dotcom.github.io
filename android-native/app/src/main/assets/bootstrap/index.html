@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Amin Pocket GBA · 離線救援</title>
+  <style>
+    :root { font-family: system-ui,-apple-system,"Noto Sans TC",sans-serif; color:#eef1ff; background:#06070c; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at top,#17213e 0,#080a12 48%,#030409 100%); }
+    main { width:min(760px,100%); border:1px solid #30395b; border-radius:24px; padding:28px; background:rgba(10,13,24,.94); box-shadow:0 24px 80px rgba(0,0,0,.45); }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; background:#242d4f; color:#b8c6ff; font-size:12px; letter-spacing:.08em; }
+    h1 { margin:18px 0 8px; font-size:clamp(28px,5vw,48px); }
+    p { color:#b9bfd6; line-height:1.65; }
+    .actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:24px 0; }
+    a { display:flex; align-items:center; justify-content:center; min-height:52px; padding:12px 18px; border-radius:14px; text-decoration:none; font-weight:700; color:#fff; background:#6177ff; }
+    a.secondary { background:#1c2235; border:1px solid #3b4567; }
+    dl { display:grid; grid-template-columns:max-content 1fr; gap:10px 18px; margin:22px 0 0; padding-top:18px; border-top:1px solid #282e43; font-size:14px; }
+    dt { color:#7e88a8; }
+    dd { margin:0; overflow-wrap:anywhere; }
+    small { display:block; margin-top:18px; color:#747d99; }
+    @media (max-width:600px) { .actions { grid-template-columns:1fr; } main { padding:22px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="badge">AMIN NATIVE BOOTSTRAP</span>
+    <h1>線上 Runtime 暫時沒有回應</h1>
+    <p>舊的可用 Runtime 若已快取，App 會優先使用它。這個畫面只在沒有可啟動版本時出現，因此不會清除你的 ROM、存檔或控制器設定。</p>
+
+    <div class="actions">
+      <a href="amin://retry">重新連線</a>
+      <a class="secondary" href="amin://choose-cartridge">先選擇本機卡匣</a>
+    </div>
+
+    <p>離線時選擇的卡匣會先保留在 Android 原生層，等 Runtime 成功開啟後再交給遊戲庫匯入。</p>
+
+    <dl>
+      <dt>原生版本</dt><dd id="nativeVersion">未知</dd>
+      <dt>網路類型</dt><dd id="networkType">未知</dd>
+      <dt>錯誤摘要</dt><dd id="errorReason">未提供</dd>
+      <dt>瀏覽器判定</dt><dd id="browserOnline">未知</dd>
+    </dl>
+
+    <small>此救援頁內建於 APK，不依賴 GitHub Pages。</small>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    document.getElementById('nativeVersion').textContent = params.get('native') || '未知';
+    document.getElementById('networkType').textContent = params.get('network') || '未知';
+    document.getElementById('errorReason').textContent = params.get('reason') || '未提供';
+    document.getElementById('browserOnline').textContent = navigator.onLine ? '有網路介面' : '離線';
+  </script>
+</body>
+</html>
