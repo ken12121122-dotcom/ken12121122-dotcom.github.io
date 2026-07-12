@@ -114,18 +114,40 @@ jobs:
 
             adb install -r "$OLD_APK"
             adb install -r "$NEW_APK"
-            adb shell pm list packages | grep -q "package:${OLD_PACKAGE}"
-            adb shell pm list packages | grep -q "package:${NEW_PACKAGE}"
-            adb shell dumpsys package "$OLD_PACKAGE" | grep -q 'versionName=0.9.1-preview'
-            adb shell dumpsys package "$NEW_PACKAGE" | grep -q 'versionName=0.9.2-preview'
-            adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity" | grep -q 'Status: ok'
-            adb shell am force-stop "$OLD_PACKAGE"
-            adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity" | grep -q 'Status: ok'
 
-  instrumentation-tests:
+            adb shell pm list packages > packages.txt
+            grep -F "package:${OLD_PACKAGE}" packages.txt
+            grep -F "package:${NEW_PACKAGE}" packages.txt
+
+            adb shell dumpsys package "$OLD_PACKAGE" > old-package.txt
+            adb shell dumpsys package "$NEW_PACKAGE" > new-package.txt
+            grep -F 'versionName=0.9.1-preview' old-package.txt
+            grep -F 'versionName=0.9.2-preview' new-package.txt
+
+            adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity" > old-launch.txt
+            cat old-launch.txt
+            grep -F 'Status: ok' old-launch.txt
+            adb shell am force-stop "$OLD_PACKAGE"
+
+            adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity" > new-launch.txt
+            cat new-launch.txt
+            grep -F 'Status: ok' new-launch.txt
+
+  instrumentation-class:
+    name: instrumentation-${{ matrix.id }}
     needs: build-fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: main-smoke
+            class_name: com.amin.pocketgba.MainActivitySmokeTest
+          - id: permission-center
+            class_name: com.amin.pocketgba.PermissionCenterActivityTest
+          - id: update-center
+            class_name: com.amin.pocketgba.NativeUpdateActivityTest
     steps:
       - name: Download emulator fixtures
         uses: actions/download-artifact@v4
@@ -140,7 +162,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run Android instrumentation suite
+      - name: Run ${{ matrix.id }} instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -156,26 +178,36 @@ jobs:
             set -euxo pipefail
             APP_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk'
             TEST_APK='emulator-fixtures/Amin-Pocket-GBA-v0.9.2-androidTest.apk'
+            TEST_CLASS='${{ matrix.class_name }}'
             adb install -r "$APP_APK"
             adb install -r "$TEST_APK"
+
+            set +e
             adb shell am instrument -w \
+              -e class "$TEST_CLASS" \
               com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
-              | tee instrumentation-output.txt
-            grep -q '^OK (' instrumentation-output.txt
+              > instrumentation-output.txt
+            STATUS=$?
+            set -e
+            cat instrumentation-output.txt
+            test "$STATUS" -eq 0
+            grep -F 'OK (' instrumentation-output.txt
 
-      - name: Upload instrumentation output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Amin-Pocket-GBA-instrumentation-output
-          path: instrumentation-output.txt
-          if-no-files-found: warn
-          retention-days: 30
-
-  native-deep-links:
+  native-deep-link:
+    name: deep-link-${{ matrix.id }}
     needs: build-fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: permission-center
+            uri: amin-permissions://open
+            activity: PermissionCenterActivity
+          - id: update-center
+            uri: amin-update://check
+            activity: NativeUpdateActivity
     steps:
       - name: Download emulator fixtures
         uses: actions/download-artifact@v4
@@ -190,7 +222,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Verify permission and update deep links
+      - name: Verify ${{ matrix.id }} deep link
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -210,15 +242,11 @@ jobs:
 
             adb shell am start -W \
               -a android.intent.action.VIEW \
-              -d 'amin-permissions://open' \
-              -p "$PACKAGE" | grep -q 'Status: ok'
-            sleep 1
-            adb shell dumpsys activity activities | grep -q 'PermissionCenterActivity'
+              -d '${{ matrix.uri }}' \
+              -p "$PACKAGE" > deep-link-launch.txt
+            cat deep-link-launch.txt
+            grep -F 'Status: ok' deep-link-launch.txt
 
-            adb shell am force-stop "$PACKAGE"
-            adb shell am start -W \
-              -a android.intent.action.VIEW \
-              -d 'amin-update://check' \
-              -p "$PACKAGE" | grep -q 'Status: ok'
             sleep 1
-            adb shell dumpsys activity activities | grep -q 'NativeUpdateActivity'
+            adb shell dumpsys activity activities > activity-state.txt
+            grep -F '${{ matrix.activity }}' activity-state.txt
