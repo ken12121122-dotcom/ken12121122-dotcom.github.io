@@ -159,7 +159,27 @@ jobs:
         run: exit 1
 
       - name: Run Android lint
-        run: gradle --no-daemon --console=plain --stacktrace -p android-native :app:lintDebug
+        id: lint
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ci-lint
+          gradle --no-daemon --console=plain --stacktrace -p android-native :app:lintDebug 2>&1 | tee ci-lint/lint-console.log
+          find android-native/app/build/reports -type f -maxdepth 3 -print -exec cp {} ci-lint/ \; 2>/dev/null || true
+
+      - name: Upload lint diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-v0.9.2-lint-diagnostics
+          path: ci-lint/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop after lint failure
+        if: ${{ steps.lint.outcome == 'failure' }}
+        run: exit 1
 
       - name: Validate preview APK manifest and assets
         shell: bash
