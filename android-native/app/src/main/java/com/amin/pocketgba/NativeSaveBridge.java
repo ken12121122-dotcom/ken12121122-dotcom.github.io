@@ -44,8 +44,24 @@ public final class NativeSaveBridge {
 
             File current = saveFile(safeKey);
             File backup = backupFile(safeKey);
-            File temporary = new File(saveDirectory, safeKey + ".tmp");
+            String hash = sha256(bytes);
+            JSONObject previousMetadata = readMetadata(safeKey);
+            boolean unchanged = current.exists()
+                    && current.length() == bytes.length
+                    && hash.equals(previousMetadata.optString("sha256", ""));
 
+            if (unchanged) {
+                result.put("ok", true);
+                result.put("unchanged", true);
+                result.put("key", safeKey);
+                result.put("byteLength", bytes.length);
+                result.put("updatedAt", previousMetadata.optLong("updatedAt", current.lastModified()));
+                result.put("sha256", hash);
+                result.put("hasBackup", backup.exists());
+                return result.toString();
+            }
+
+            File temporary = new File(saveDirectory, safeKey + ".tmp");
             writeAtomically(temporary, bytes);
             if (backup.exists() && !backup.delete()) {
                 throw new IllegalStateException("無法更新上一版存檔");
@@ -60,13 +76,14 @@ public final class NativeSaveBridge {
 
             long updatedAt = System.currentTimeMillis();
             current.setLastModified(updatedAt);
-            writeMetadata(safeKey, bytes.length, updatedAt, sha256(bytes));
+            writeMetadata(safeKey, bytes.length, updatedAt, hash);
 
             result.put("ok", true);
+            result.put("unchanged", false);
             result.put("key", safeKey);
             result.put("byteLength", bytes.length);
             result.put("updatedAt", updatedAt);
-            result.put("sha256", sha256(bytes));
+            result.put("sha256", hash);
             result.put("hasBackup", backup.exists());
         } catch (Exception error) {
             try {
