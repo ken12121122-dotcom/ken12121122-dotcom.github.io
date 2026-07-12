@@ -14,13 +14,16 @@ const [gba, guard, migration, html, manifest, gradle, backupRules, extractionRul
   readFile(new URL('../android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java', import.meta.url), 'utf8')
 ]);
 
-test('ROM identity is content-based and stable across names and updates', () => {
+test('ROM identity stays stable while launch transport uses an object URL', () => {
   assert.match(gba, /crypto\.subtle\.digest\('SHA-256'/);
   assert.match(gba, /saveKey/);
-  assert.match(gba, /new File\(\[record\.blob\], stableFileName/);
+  assert.match(gba, /URL\.createObjectURL\(record\.blob\)/);
+  assert.match(gba, /window\.EJS_gameUrl = activeObjectUrl/);
   assert.match(gba, /window\.EJS_gameName = stableBaseName/);
   assert.match(gba, /window\.EJS_gameID = numericGameId\(record\.saveKey\)/);
-  assert.doesNotMatch(gba, /URL\.createObjectURL\(record\.blob\)/);
+  assert.match(gba, /URL\.revokeObjectURL\(activeObjectUrl\)/);
+  assert.match(gba, /EMULATORJS_VERSION = '4\.2\.3'/);
+  assert.doesNotMatch(gba, /new File\(\[record\.blob\], stableFileName/);
 });
 
 test('save exit waits for explicit IDBFS synchronization and verification', () => {
@@ -76,23 +79,25 @@ test('Preview migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /確認進度正確後，才移除 Preview 3/);
 });
 
-test('RC4 manifest includes every save persistence capability and asset', () => {
-  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc4"/);
+test('RC5 manifest includes launcher and save persistence capabilities', () => {
+  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc5"/);
   assert.match(manifest, /"save-vault-v1"/);
   assert.match(manifest, /"native-save-vault-v1"/);
   assert.match(manifest, /"legacy-save-migration-v1"/);
+  assert.match(manifest, /"rom-object-url-v2"/);
+  assert.match(manifest, /"emulatorjs-pinned-4\.2\.3"/);
   assert.match(manifest, /"\.\/gba-save-migration\.js"/);
 });
 
-test('Preview 4 package installs beside Preview 3', () => {
+test('Preview 5 package installs beside broken Preview 4', () => {
   assert.match(gradle, /AMIN_VERSION_CODE/);
   assert.match(gradle, /versionCode aminVersionCode/);
-  assert.match(gradle, /applicationIdSuffix '\.preview094'/);
+  assert.match(gradle, /applicationIdSuffix '\.preview095'/);
   assert.match(gradle, /versionNameSuffix aminPreviewSuffix/);
-  assert.match(gradle, /Amin Pocket GBA Preview 0\.9\.2 P4/);
+  assert.match(gradle, /Amin Pocket GBA Preview 0\.9\.2 P5/);
 });
 
-test('Preview 4 is pinned to the final RC4 migration runtime', () => {
-  assert.match(gradle, /4a738e37c36680669ae986b18c5e59015f35d1fc/);
-  assert.match(gradle, /preview=4/);
+test('Preview 5 is pinned to the RC5 launcher runtime', () => {
+  assert.match(gradle, /3984eb99cfe28789032abefd5cb1ce6d9329ac36/);
+  assert.match(gradle, /preview=5/);
 });
