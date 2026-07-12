@@ -5,6 +5,7 @@
   const STORAGE_KEY = 'amin.runtime.version';
   const RELOAD_KEY = 'amin.runtime.reloaded';
   const UPDATE_TIMEOUT_MS = 120000;
+  const WORKER_ACTIVATION_TIMEOUT_MS = 15000;
 
   const badge = document.getElementById('gbaStatus');
 
@@ -67,15 +68,43 @@
     return validateManifest(await response.json());
   }
 
+  function waitForWorkerActivation(worker) {
+    if (!worker || worker.state === 'activated') return Promise.resolve();
+    return new Promise(resolve => {
+      let settled = false;
+      const timer = setTimeout(done, WORKER_ACTIVATION_TIMEOUT_MS);
+
+      function done() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        worker.removeEventListener('statechange', check);
+        navigator.serviceWorker.removeEventListener('controllerchange', done);
+        resolve();
+      }
+
+      function check() {
+        if (worker.state === 'activated' || worker.state === 'redundant') done();
+      }
+
+      worker.addEventListener('statechange', check);
+      navigator.serviceWorker.addEventListener('controllerchange', done);
+      check();
+    });
+  }
+
   async function registerWorker() {
     if (!('serviceWorker' in navigator)) return null;
     const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
     try {
       await registration.update();
+      const upgradingWorker = registration.installing || registration.waiting;
+      if (upgradingWorker) await waitForWorkerActivation(upgradingWorker);
     } catch {
       // The installed worker can still serve the last working runtime while offline.
     }
-    return navigator.serviceWorker.ready;
+    await navigator.serviceWorker.ready;
+    return registration;
   }
 
   function requestRuntimeRefresh(registration, manifest) {
@@ -111,8 +140,8 @@
       }
 
       navigator.serviceWorker.addEventListener('message', onMessage);
-      const worker = registration.active || registration.waiting || registration.installing || navigator.serviceWorker.controller;
-      if (!worker) {
+      const worker = registration.active || navigator.serviceWorker.controller || registration.waiting || registration.installing;
+      if (!worker || worker.state === 'redundant') {
         finish(new Error('更新服務尚未啟動。'));
         return;
       }
