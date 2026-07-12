@@ -15,6 +15,16 @@
     return null;
   }
 
+  function isLikelyBlankSave(bytes) {
+    if (!bytes?.byteLength) return true;
+    const first = bytes[0];
+    if (first !== 0x00 && first !== 0xff) return false;
+    for (let index = 1; index < bytes.length; index += 1) {
+      if (bytes[index] !== first) return false;
+    }
+    return true;
+  }
+
   function legacyBaseName(name) {
     const raw = String(name || '').split('/').pop().split('\\').pop();
     const withoutExtension = raw.replace(/\.(gba|bin|zip)$/i, '').trim();
@@ -94,19 +104,46 @@
     const fs = gameManager?.FS;
     if (!emulator?.started || !gameManager || !fs) return false;
 
+    const protectedSummary = await window.AMIN_GBA_SAVE_GUARD?.getSummary?.(gameContext.saveKey);
+    if (protectedSummary?.byteLength) {
+      recordMigration('stable-vault-already-protected', {
+        byteLength: protectedSummary.byteLength,
+        updatedAt: protectedSummary.updatedAt
+      });
+      return false;
+    }
+
     const currentPath = gameManager.getSaveFilePath();
     if (!currentPath) return false;
 
+    let currentBytes = null;
     try {
       if (fs.analyzePath(currentPath).exists) {
-        const current = normalizeBytes(fs.readFile(currentPath));
-        if (current?.byteLength) return false;
+        currentBytes = normalizeBytes(fs.readFile(currentPath));
+        if (currentBytes?.byteLength && !isLikelyBlankSave(currentBytes)) {
+          recordMigration('stable-save-already-present', {
+            currentPath,
+            byteLength: currentBytes.byteLength
+          });
+          return false;
+        }
       }
     } catch {}
 
     const legacyPath = findLegacyPath(fs, currentPath);
     if (!legacyPath) {
-      recordMigration('legacy-not-found', { currentPath });
+      if (currentBytes?.byteLength && isLikelyBlankSave(currentBytes)) {
+        try {
+          fs.unlink(currentPath);
+          await syncFileSystem(fs);
+          recordMigration('blank-stable-save-removed', {
+            currentPath,
+            byteLength: currentBytes.byteLength
+          });
+        } catch {}
+      } else {
+        recordMigration('legacy-not-found', { currentPath });
+      }
       return false;
     }
 
@@ -118,8 +155,8 @@
       return false;
     }
 
-    if (!bytes?.byteLength || bytes.byteLength > MAX_SAVE_BYTES) {
-      recordMigration('legacy-invalid-size', {
+    if (!bytes?.byteLength || bytes.byteLength > MAX_SAVE_BYTES || isLikelyBlankSave(bytes)) {
+      recordMigration('legacy-invalid-save', {
         legacyPath,
         byteLength: bytes?.byteLength || 0
       });
@@ -177,10 +214,10 @@
 
   const previousOnGameStart = window.EJS_onGameStart;
   window.EJS_onGameStart = async event => {
-    if (typeof previousOnGameStart === 'function') await previousOnGameStart(event);
     await migrateLegacySaveIfNeeded();
+    if (typeof previousOnGameStart === 'function') await previousOnGameStart(event);
   };
 
   guard.migrateLegacy = migrateLegacySaveIfNeeded;
-  guard.migrationVersion = '1.0.0';
+  guard.migrationVersion = '1.1.0';
 })();
