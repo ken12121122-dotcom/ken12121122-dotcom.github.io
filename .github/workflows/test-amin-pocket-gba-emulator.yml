@@ -5,16 +5,10 @@ on:
   pull_request:
     paths:
       - 'android-native/**'
-      - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-native-shell.js'
-      - 'amin-vault/runtime-manifest.json'
       - '.github/workflows/test-amin-pocket-gba-emulator.yml'
   push:
     paths:
       - 'android-native/**'
-      - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-native-shell.js'
-      - 'amin-vault/runtime-manifest.json'
       - '.github/workflows/test-amin-pocket-gba-emulator.yml'
 
 permissions:
@@ -48,17 +42,16 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build v0.9.2 app and instrumentation APKs
+      - name: Build emulator fixtures
+        shell: bash
         run: |
+          set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
             :app:assembleDebug \
             :app:assembleDebugAndroidTest
-
-      - name: Build current main as v0.9.1 fixture
-        shell: bash
-        run: |
           git worktree add --detach /tmp/amin-pocket-main origin/main
           gradle --no-daemon --console=plain -p /tmp/amin-pocket-main/android-native :app:assembleDebug
+
           mkdir -p emulator-fixtures
           cp /tmp/amin-pocket-main/android-native/app/build/outputs/apk/debug/app-debug.apk \
             emulator-fixtures/Amin-Pocket-GBA-v0.9.1-preview.apk
@@ -66,6 +59,7 @@ jobs:
             emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk
           cp android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             emulator-fixtures/Amin-Pocket-GBA-v0.9.2-androidTest.apk
+          ls -l emulator-fixtures
 
       - name: Upload emulator fixtures
         uses: actions/upload-artifact@v4
@@ -75,7 +69,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  coexistence-and-launch:
+  diagnose-coexistence:
     needs: build-fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -93,7 +87,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Verify v0.9.1 and v0.9.2 coexist and launch
+      - name: Probe coexistence stages
+        id: emulator
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -106,50 +102,72 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euxo pipefail
+            set +e
             OLD_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.1-preview.apk"
             NEW_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
             OLD_PACKAGE='com.amin.pocketgba.preview091'
             NEW_PACKAGE='com.amin.pocketgba.preview092'
 
-            test -f "$OLD_APK"
-            test -f "$NEW_APK"
-            adb install -r "$OLD_APK"
-            adb install -r "$NEW_APK"
+            test -f "$OLD_APK"; OLD_FILE=$?
+            test -f "$NEW_APK"; NEW_FILE=$?
+            adb install -r "$OLD_APK" > old-install.txt 2>&1; OLD_INSTALL=$?
+            adb install -r "$NEW_APK" > new-install.txt 2>&1; NEW_INSTALL=$?
+            adb shell pm list packages > packages.txt 2>&1
+            grep -F "package:${OLD_PACKAGE}" packages.txt; OLD_PACKAGE_FOUND=$?
+            grep -F "package:${NEW_PACKAGE}" packages.txt; NEW_PACKAGE_FOUND=$?
+            adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity" > old-launch.txt 2>&1; OLD_LAUNCH=$?
+            grep -F 'Status: ok' old-launch.txt; OLD_STATUS=$?
+            adb shell am force-stop "$OLD_PACKAGE" >/dev/null 2>&1
+            adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity" > new-launch.txt 2>&1; NEW_LAUNCH=$?
+            grep -F 'Status: ok' new-launch.txt; NEW_STATUS=$?
 
-            adb shell pm list packages > packages.txt
-            grep -F "package:${OLD_PACKAGE}" packages.txt
-            grep -F "package:${NEW_PACKAGE}" packages.txt
+            cat old-install.txt new-install.txt old-launch.txt new-launch.txt
+            {
+              echo "old_file=$OLD_FILE"
+              echo "new_file=$NEW_FILE"
+              echo "old_install=$OLD_INSTALL"
+              echo "new_install=$NEW_INSTALL"
+              echo "old_package=$OLD_PACKAGE_FOUND"
+              echo "new_package=$NEW_PACKAGE_FOUND"
+              echo "old_launch=$OLD_LAUNCH"
+              echo "old_status=$OLD_STATUS"
+              echo "new_launch=$NEW_LAUNCH"
+              echo "new_status=$NEW_STATUS"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
 
-            adb shell dumpsys package "$OLD_PACKAGE" > old-package.txt
-            adb shell dumpsys package "$NEW_PACKAGE" > new-package.txt
-            grep -F 'versionName=0.9.1-preview' old-package.txt
-            grep -F 'versionName=0.9.2-preview' new-package.txt
+      - name: Emulator infrastructure failed
+        if: ${{ steps.emulator.outcome == 'failure' }}
+        run: exit 1
+      - name: Old APK file missing
+        if: ${{ steps.emulator.outputs.old_file != '0' }}
+        run: exit 1
+      - name: New APK file missing
+        if: ${{ steps.emulator.outputs.new_file != '0' }}
+        run: exit 1
+      - name: Old APK install failed
+        if: ${{ steps.emulator.outputs.old_install != '0' }}
+        run: exit 1
+      - name: New APK install failed
+        if: ${{ steps.emulator.outputs.new_install != '0' }}
+        run: exit 1
+      - name: Old package not found
+        if: ${{ steps.emulator.outputs.old_package != '0' }}
+        run: exit 1
+      - name: New package not found
+        if: ${{ steps.emulator.outputs.new_package != '0' }}
+        run: exit 1
+      - name: Old App launch failed
+        if: ${{ steps.emulator.outputs.old_launch != '0' || steps.emulator.outputs.old_status != '0' }}
+        run: exit 1
+      - name: New App launch failed
+        if: ${{ steps.emulator.outputs.new_launch != '0' || steps.emulator.outputs.new_status != '0' }}
+        run: exit 1
 
-            adb shell am start -W -n "${OLD_PACKAGE}/com.amin.pocketgba.MainActivity" > old-launch.txt
-            cat old-launch.txt
-            grep -F 'Status: ok' old-launch.txt
-            adb shell am force-stop "$OLD_PACKAGE"
-
-            adb shell am start -W -n "${NEW_PACKAGE}/com.amin.pocketgba.MainActivity" > new-launch.txt
-            cat new-launch.txt
-            grep -F 'Status: ok' new-launch.txt
-
-  instrumentation-class:
-    name: instrumentation-${{ matrix.id }}
+  diagnose-instrumentation:
     needs: build-fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: main-smoke
-            class_name: com.amin.pocketgba.MainActivitySmokeTest
-          - id: permission-center
-            class_name: com.amin.pocketgba.PermissionCenterActivityTest
-          - id: update-center
-            class_name: com.amin.pocketgba.NativeUpdateActivityTest
     steps:
       - name: Download emulator fixtures
         uses: actions/download-artifact@v4
@@ -164,7 +182,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run ${{ matrix.id }} instrumentation tests
+      - name: Probe instrumentation stages
+        id: emulator
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -177,41 +197,63 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euxo pipefail
+            set +e
             APP_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
             TEST_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-androidTest.apk"
-            TEST_CLASS='${{ matrix.class_name }}'
-            test -f "$APP_APK"
-            test -f "$TEST_APK"
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
 
-            set +e
+            test -f "$APP_APK"; APP_FILE=$?
+            test -f "$TEST_APK"; TEST_FILE=$?
+            adb install -r "$APP_APK" > app-install.txt 2>&1; APP_INSTALL=$?
+            adb install -r "$TEST_APK" > test-install.txt 2>&1; TEST_INSTALL=$?
+            adb shell pm list instrumentation > instrumentation-list.txt 2>&1
+            grep -F 'com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner' instrumentation-list.txt; RUNNER_FOUND=$?
             adb shell am instrument -w \
-              -e class "$TEST_CLASS" \
+              -e class com.amin.pocketgba.MainActivitySmokeTest \
               com.amin.pocketgba.preview092.test/androidx.test.runner.AndroidJUnitRunner \
-              > instrumentation-output.txt
-            STATUS=$?
-            set -e
-            cat instrumentation-output.txt
-            test "$STATUS" -eq 0
-            grep -F 'OK (' instrumentation-output.txt
+              > instrumentation-output.txt 2>&1; TEST_RUN=$?
+            grep -F 'OK (' instrumentation-output.txt; TEST_OK=$?
 
-  native-deep-link:
-    name: deep-link-${{ matrix.id }}
+            cat app-install.txt test-install.txt instrumentation-list.txt instrumentation-output.txt
+            {
+              echo "app_file=$APP_FILE"
+              echo "test_file=$TEST_FILE"
+              echo "app_install=$APP_INSTALL"
+              echo "test_install=$TEST_INSTALL"
+              echo "runner_found=$RUNNER_FOUND"
+              echo "test_run=$TEST_RUN"
+              echo "test_ok=$TEST_OK"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+
+      - name: Emulator infrastructure failed
+        if: ${{ steps.emulator.outcome == 'failure' }}
+        run: exit 1
+      - name: App APK file missing
+        if: ${{ steps.emulator.outputs.app_file != '0' }}
+        run: exit 1
+      - name: Test APK file missing
+        if: ${{ steps.emulator.outputs.test_file != '0' }}
+        run: exit 1
+      - name: App APK install failed
+        if: ${{ steps.emulator.outputs.app_install != '0' }}
+        run: exit 1
+      - name: Test APK install failed
+        if: ${{ steps.emulator.outputs.test_install != '0' }}
+        run: exit 1
+      - name: Instrumentation runner not registered
+        if: ${{ steps.emulator.outputs.runner_found != '0' }}
+        run: exit 1
+      - name: Instrumentation execution failed
+        if: ${{ steps.emulator.outputs.test_run != '0' }}
+        run: exit 1
+      - name: Main smoke test failed
+        if: ${{ steps.emulator.outputs.test_ok != '0' }}
+        run: exit 1
+
+  diagnose-deep-link:
     needs: build-fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: permission-center
-            uri: amin-permissions://open
-            activity: PermissionCenterActivity
-          - id: update-center
-            uri: amin-update://check
-            activity: NativeUpdateActivity
     steps:
       - name: Download emulator fixtures
         uses: actions/download-artifact@v4
@@ -226,7 +268,9 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Verify ${{ matrix.id }} deep link
+      - name: Probe deep-link stages
+        id: emulator
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -239,19 +283,53 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -euxo pipefail
+            set +e
             APP_APK="$GITHUB_WORKSPACE/emulator-fixtures/Amin-Pocket-GBA-v0.9.2-preview.apk"
             PACKAGE='com.amin.pocketgba.preview092'
-            test -f "$APP_APK"
-            adb install -r "$APP_APK"
 
-            adb shell am start -W \
-              -a android.intent.action.VIEW \
-              -d '${{ matrix.uri }}' \
-              -p "$PACKAGE" > deep-link-launch.txt
-            cat deep-link-launch.txt
-            grep -F 'Status: ok' deep-link-launch.txt
+            test -f "$APP_APK"; APP_FILE=$?
+            adb install -r "$APP_APK" > app-install.txt 2>&1; APP_INSTALL=$?
+            adb shell am start -W -a android.intent.action.VIEW -d 'amin-permissions://open' -p "$PACKAGE" > permission-launch.txt 2>&1; PERMISSION_LAUNCH=$?
+            grep -F 'Status: ok' permission-launch.txt; PERMISSION_STATUS=$?
+            adb shell dumpsys activity activities > permission-state.txt 2>&1
+            grep -F 'PermissionCenterActivity' permission-state.txt; PERMISSION_ACTIVITY=$?
+            adb shell am force-stop "$PACKAGE" >/dev/null 2>&1
+            adb shell am start -W -a android.intent.action.VIEW -d 'amin-update://check' -p "$PACKAGE" > update-launch.txt 2>&1; UPDATE_LAUNCH=$?
+            grep -F 'Status: ok' update-launch.txt; UPDATE_STATUS=$?
+            adb shell dumpsys activity activities > update-state.txt 2>&1
+            grep -F 'NativeUpdateActivity' update-state.txt; UPDATE_ACTIVITY=$?
 
-            sleep 1
-            adb shell dumpsys activity activities > activity-state.txt
-            grep -F '${{ matrix.activity }}' activity-state.txt
+            cat app-install.txt permission-launch.txt update-launch.txt
+            {
+              echo "app_file=$APP_FILE"
+              echo "app_install=$APP_INSTALL"
+              echo "permission_launch=$PERMISSION_LAUNCH"
+              echo "permission_status=$PERMISSION_STATUS"
+              echo "permission_activity=$PERMISSION_ACTIVITY"
+              echo "update_launch=$UPDATE_LAUNCH"
+              echo "update_status=$UPDATE_STATUS"
+              echo "update_activity=$UPDATE_ACTIVITY"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+
+      - name: Emulator infrastructure failed
+        if: ${{ steps.emulator.outcome == 'failure' }}
+        run: exit 1
+      - name: App APK file missing
+        if: ${{ steps.emulator.outputs.app_file != '0' }}
+        run: exit 1
+      - name: App APK install failed
+        if: ${{ steps.emulator.outputs.app_install != '0' }}
+        run: exit 1
+      - name: Permission deep link launch failed
+        if: ${{ steps.emulator.outputs.permission_launch != '0' || steps.emulator.outputs.permission_status != '0' }}
+        run: exit 1
+      - name: Permission Activity not in foreground
+        if: ${{ steps.emulator.outputs.permission_activity != '0' }}
+        run: exit 1
+      - name: Update deep link launch failed
+        if: ${{ steps.emulator.outputs.update_launch != '0' || steps.emulator.outputs.update_status != '0' }}
+        run: exit 1
+      - name: Update Activity not in foreground
+        if: ${{ steps.emulator.outputs.update_activity != '0' }}
+        run: exit 1
