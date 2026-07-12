@@ -41,12 +41,20 @@
   }
 
   function updateNativeControls(payload) {
-    const updateLink = document.getElementById('nativeUpdateLink');
-    if (!updateLink) return;
-    const declared = Array.isArray(payload?.capabilities)
-      && payload.capabilities.includes('native-update-center');
+    const capabilities = Array.isArray(payload?.capabilities) ? payload.capabilities : [];
     const compatibleVersion = versionAtLeast(payload?.nativeVersion, '0.9.2');
-    updateLink.classList.toggle('hidden', !(declared || compatibleVersion));
+
+    const updateLink = document.getElementById('nativeUpdateLink');
+    if (updateLink) {
+      const supported = capabilities.includes('native-update-center') || compatibleVersion;
+      updateLink.classList.toggle('hidden', !supported);
+    }
+
+    const permissionLink = document.getElementById('nativePermissionsLink');
+    if (permissionLink) {
+      const supported = capabilities.includes('permission-center') || compatibleVersion;
+      permissionLink.classList.toggle('hidden', !supported);
+    }
   }
 
   async function waitForRomInput(timeoutMs = 15000) {
