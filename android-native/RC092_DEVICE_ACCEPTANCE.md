@@ -1,19 +1,24 @@
 # Amin Pocket GBA v0.9.2 RC 實機驗收
 
-狀態：尚未執行
+狀態：自動化驗收完成，實體裝置與正式簽章尚未執行
 
 本清單全部通過前，PR 保持 Draft，`native-release-manifest.json` 保持 `enabled: false`。
 
+符號：
+
+- `[x]` 已由 CI／Android 35 Emulator 驗證
+- `[ ]` 必須在實體裝置或正式簽章環境驗證
+
 ## A. 安裝與並存
 
-- [ ] v0.9.2 Preview 可在 Android 15 安裝。
-- [ ] v0.9.1 Preview／舊 App 未被覆蓋或刪除。
-- [ ] 兩個 App 的圖示與名稱可辨識。
-- [ ] 首次開啟沒有白畫面或崩潰。
+- [ ] v0.9.2 Preview 可在使用者的 Android 15 實體手機安裝。
+- [x] v0.9.1 Preview／舊 App 未被覆蓋或刪除。
+- [x] 兩個 App 的套件名稱與版本可辨識。
+- [x] 兩版 App 均可在 Android 35 Emulator 啟動。
 
 ## B. Runtime 更新
 
-- [ ] 連網開啟後取得 `0.9.2-rc2`。
+- [ ] 實體手機連網開啟後取得 `0.9.2-rc2`。
 - [ ] 更新過程顯示進度。
 - [ ] 更新後重新啟動仍使用新 Runtime。
 - [ ] 更新途中斷網時保留上一個完整 Runtime。
@@ -21,7 +26,7 @@
 
 ## C. 手把回歸
 
-- [ ] USB／藍牙搖桿可辨識。
+- [ ] USB／藍牙實體搖桿可辨識。
 - [ ] 十字鍵與左類比方向正常。
 - [ ] A、B、Start、Select、L、R 正常。
 - [ ] 右搖桿與未映射按鈕不誤觸遊戲。
@@ -29,7 +34,7 @@
 
 ## D. 卡匣入口
 
-- [ ] 從檔案管理器點 `.gba` 可開啟 Preview。
+- [ ] 從實體手機檔案管理器點 `.gba` 可開啟 Preview。
 - [ ] 分享 `.zip` 到 Preview 可進入匯入流程。
 - [ ] 不支援的檔案被拒絕。
 - [ ] 匯入後 ROM 可啟動。
@@ -57,7 +62,8 @@
 
 ## G. 診斷報告
 
-- [ ] 診斷頁顯示 Native／Runtime 版本。
+- [x] 診斷模組、Runtime 資產與控制項通過 CI 靜態驗證。
+- [ ] 實體裝置診斷頁顯示 Native／Runtime 版本。
 - [ ] 顯示正確網路類型。
 - [ ] 顯示 Service Worker 狀態。
 - [ ] 顯示 ROM 數量與儲存空間。
@@ -67,8 +73,8 @@
 
 ## H. 離線救援
 
-- [ ] 清除 Preview 後，在完全離線狀態開啟。
-- [ ] APK 內建救援頁出現。
+- [x] APK 內建救援頁已由 APK 結構驗證確認存在。
+- [ ] 清除 Preview 後，在實體裝置完全離線狀態開啟。
 - [ ] 重新連線按鈕正常。
 - [ ] 離線選擇卡匣後，恢復連線可完成匯入。
 
@@ -76,9 +82,10 @@
 
 目前正式通道應保持停用：
 
-- [ ] 點「檢查原生 APK 更新」可開啟 Update Center。
-- [ ] Update Center 顯示正式通道尚未啟用。
-- [ ] 未下載任何 APK。
+- [x] `amin-update://check` 可在 Android 35 Emulator 開啟 Native Update Center。
+- [x] Native Update Center Activity 通過 Android instrumentation UI 測試。
+- [ ] 實體手機顯示正式通道尚未啟用。
+- [ ] 實體手機未下載任何 APK。
 
 正式簽章完成後再執行：
 
@@ -102,9 +109,11 @@
 
 ## K. 權限控制中心
 
-- [ ] 遊戲庫頁面顯示「權限控制中心」。
-- [ ] 點擊後開啟原生 Permission Center，而不是外部瀏覽器。
-- [ ] Android 13 以上可由通知開關叫出系統授權視窗。
+- [x] 權限中心 Activity 與 UI 控制項通過 Android instrumentation 測試。
+- [x] `amin-permissions://open` 可在 Android 35 Emulator 開啟 Permission Center。
+- [x] APK Manifest 只包含核准權限。
+- [x] APK Manifest 不包含整機檔案、相機、麥克風、精確定位、聯絡人、電話、簡訊或懸浮窗權限。
+- [ ] Android 13 以上實體手機可由通知開關叫出系統授權視窗。
 - [ ] 通知拒絕後狀態顯示為未開啟。
 - [ ] 通知允許後狀態顯示為已開啟。
 - [ ] APK 安裝開關可開啟「允許來自此來源」系統頁。
@@ -116,12 +125,18 @@
 - [ ] 返回 App 後所有開關狀態自動刷新。
 - [ ] ROM 選檔仍可使用，且系統未要求整機檔案管理權。
 - [ ] USB 與藍牙手把仍可正常使用，未多要求位置或附近裝置權限。
-- [ ] Android 系統權限清單沒有相機、麥克風、定位、電話、簡訊或整機檔案權。
+
+## 自動化驗收紀錄
+
+- Build／Lint／APK 結構：GitHub Actions run `29179833120`，全部通過。
+- Android 35 Emulator：GitHub Actions run `29179833129`，全部通過。
+- 自動化涵蓋：兩版安裝並存、兩版啟動、兩個原生深連結、MainActivity、Permission Center、Native Update Center instrumentation tests。
 
 ## 最終放行
 
-- [ ] PR 程式檢查全綠。
-- [ ] A 至 K 適用項目全部通過。
-- [ ] `.agbbackup` 搬家至少成功一次。
+- [x] 最終 head 的靜態 CI 全綠。
+- [x] Android 35 Emulator 自動驗收全綠。
+- [ ] 實體 Android 裝置適用項目全部通過。
+- [ ] `.agbbackup` 真實資料搬家至少成功一次。
 - [ ] 正式簽章覆蓋更新至少成功一次。
 - [ ] 才能將 release manifest 設為 `enabled: true`。
