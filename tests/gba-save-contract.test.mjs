@@ -71,7 +71,7 @@ test('Preview migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
   assert.match(html, /gba-save-migration\.js/);
-  assert.match(html, /三層存檔/);
+  assert.match(html, /三層存檔保護/);
   assert.match(html, /從 Preview 3 安全搬到 Preview 4/);
   assert.match(html, /確認進度正確後，才移除 Preview 3/);
 });
@@ -93,6 +93,6 @@ test('Preview 4 package installs beside Preview 3', () => {
 });
 
 test('Preview 4 is pinned to the final RC4 migration runtime', () => {
-  assert.match(gradle, /f0bc618c36e8ae9c09a1987b9cc65fd821cdb455/);
+  assert.match(gradle, /4a738e37c36680669ae986b18c5e59015f35d1fc/);
   assert.match(gradle, /preview=4/);
 });
