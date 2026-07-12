@@ -26,7 +26,7 @@
       <article class="intro-card compact-intro">
         <span class="kicker">LOCAL LIBRARY · mGBA</span>
         <h2>選一款遊戲，直接開始。</h2>
-        <p>ROM 只保存在這台裝置。匯入你自己的合法卡帶備份後，App 會在進入模擬器時切換成橫向。</p>
+        <p>ROM 只保存在這台裝置。相同 ROM 會以內容雜湊辨識，即使重新命名或重新匯入，仍會連回同一份存檔。</p>
         <div class="import-row">
           <label class="import-button">
             ＋ 匯入 ROM 備份
@@ -58,12 +58,30 @@
         <summary>
           <span>
             <strong>工具與設定</strong>
-            <small>備份、診斷、手把與原生管理</small>
+            <small>存檔、備份、診斷、手把與原生管理</small>
           </span>
           <span class="drawer-chevron">⌄</span>
         </summary>
 
         <div class="utility-content">
+          <article class="notice-card tool-card compact-tool-card save-vault-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">SAVE VAULT</p>
+                <h2>存檔保險庫</h2>
+              </div>
+              <span class="core-badge">3 LAYERS</span>
+            </div>
+            <p>遊戲內 SRAM 會同步到 EmulatorJS IDBFS、Amin IndexedDB，以及 Android App 私有雙版本副本。</p>
+            <div class="save-layer-list">
+              <span>① mGBA SRAM</span>
+              <span>② IndexedDB 保險庫</span>
+              <span>③ Android 原生副本</span>
+            </div>
+            <button id="verifySaveVaultButton" class="secondary">檢查目前存檔保護</button>
+            <p id="saveVaultStatus" class="storage-status">尚未啟動遊戲，等待建立永久存檔身分。</p>
+          </article>
+
           <article class="notice-card tool-card compact-tool-card">
             <div class="section-head">
               <div>
@@ -87,7 +105,7 @@
               </div>
               <span class="core-badge">.agbbackup v2</span>
             </div>
-            <p>快速備份包含存檔、手把設定與 IndexedDB；完整備份可另外包含 ROM。</p>
+            <p>快速備份包含存檔、手把設定與 IndexedDB；完整備份可另外包含 ROM。原生存檔副本也會由 Android 裝置轉移機制備份。</p>
             <label class="check-row">
               <input id="backupIncludeRoms" type="checkbox">
               <span>完整備份，包含 ROM 本體</span>
@@ -124,7 +142,7 @@
               </div>
               <span class="core-badge">SYSTEM</span>
             </div>
-            <p>權限與 APK 更新由 Android 原生頁面處理，不會在遊戲庫裡假裝直接切換。</p>
+            <p>權限與 APK 更新由 Android 原生頁面處理。更新前會保留 App 私有存檔，但解除安裝仍會清除 App 資料。</p>
             <div class="tool-actions">
               <a id="nativePermissionsLink" href="amin-permissions://open" class="source-link hidden">權限與裝置</a>
               <a id="nativeUpdateLink" href="amin-update://check" class="source-link hidden">版本與更新</a>
@@ -135,8 +153,8 @@
       </details>
 
       <article class="notice-card compact-note">
-        <h3>保存與離線</h3>
-        <p>遊戲內存檔會定期寫回。清除 App 或網站資料前，先在「工具與設定」匯出備份。</p>
+        <h3>保存與更新</h3>
+        <p>同套件、同簽章的正常 App 更新會保留原生存檔保險庫。清除 App 資料或解除安裝前，仍須先匯出 `.agbbackup`。</p>
       </article>
 
       <footer>
