@@ -23,110 +23,120 @@
 
   <main>
     <section id="libraryView" class="library-view">
-      <article class="intro-card">
-        <span class="kicker">POKÉMON LIBRARY · mGBA</span>
-        <h2>原生掌機外殼已接通。</h2>
-        <p>Android App 版會直接接收手把、網路與外部卡匣事件。從檔案管理器點選 `.gba`、`.bin` 或 `.zip` 時，可直接交給遊戲庫匯入；ROM 仍只保存在這台裝置。</p>
+      <article class="intro-card compact-intro">
+        <span class="kicker">LOCAL LIBRARY · mGBA</span>
+        <h2>選一款遊戲，直接開始。</h2>
+        <p>ROM 只保存在這台裝置。匯入你自己的合法卡帶備份後，App 會在進入模擬器時切換成橫向。</p>
         <div class="import-row">
           <label class="import-button">
-            匯入 Pokémon ROM 備份
+            ＋ 匯入 ROM 備份
             <input id="romInput" type="file" accept=".gba,.bin,.zip,application/zip" multiple hidden>
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
-        <a href="./gba-signal-lab.html?v=092" class="controller-settings-link">📡 收集手把原始訊號</a>
-        <a href="./gba-controller.html?v=092" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
-        <p id="importStatus" class="storage-status">支援單一 `.gba`／`.bin`，以及內含多個個人備份的 `.zip`。</p>
+        <p id="importStatus" class="storage-status">支援 `.gba`、`.bin`，以及包含多個個人備份的 `.zip`。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
       </article>
 
-      <article class="notice-card tool-card">
+      <section class="library-panel primary-library">
         <div class="section-head">
           <div>
-            <p class="eyebrow">DATA SAFETY</p>
-            <h2>備份與搬家</h2>
-          </div>
-          <span class="core-badge">.agbbackup v2</span>
-        </div>
-        <p>快速備份會包含存檔、手把設定與此 App 網域下的 IndexedDB，但不包含 ROM 本體。勾選完整備份後，檔案可能非常大。</p>
-        <label class="check-row">
-          <input id="backupIncludeRoms" type="checkbox">
-          <span>完整備份，包含 ROM 本體</span>
-        </label>
-        <div class="tool-actions">
-          <button id="exportBackupButton">匯出備份</button>
-          <button id="importBackupButton" class="secondary">匯入備份</button>
-          <input id="backupImportInput" type="file" accept=".agbbackup,application/zip" hidden>
-        </div>
-        <p id="backupStatus" class="storage-status">尚未建立備份。匯入前會再次確認，並完整取代備份中同名的資料庫。</p>
-      </article>
-
-      <article class="notice-card tool-card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">SYSTEM BLACK BOX</p>
-            <h2>系統診斷</h2>
-          </div>
-          <span class="core-badge">JSON</span>
-        </div>
-        <p>診斷報告會記錄 Runtime、Native Shell、網路、Service Worker、IndexedDB、ROM 數量與近期錯誤，不會匯出 ROM 內容。</p>
-        <div id="diagnosticSummary" class="diagnostic-summary">正在收集診斷資料…</div>
-        <div class="tool-actions">
-          <button id="refreshDiagnosticsButton">重新檢查</button>
-          <button id="exportDiagnosticsButton" class="secondary">匯出診斷報告</button>
-        </div>
-      </article>
-
-      <article class="notice-card tool-card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">ANDROID PERMISSIONS</p>
-            <h2>權限控制中心</h2>
-          </div>
-          <span class="core-badge">SYSTEM</span>
-        </div>
-        <p>集中檢查通知、APK 安裝來源、電池限制與 App 系統權限。Android 不允許 App 靜默取得敏感權限，所以每個敏感項目仍由系統頁面確認。</p>
-        <a id="nativePermissionsLink" href="amin-permissions://open" class="source-link hidden">開啟原生權限中心</a>
-        <p class="storage-status">整機檔案、相機、麥克風、位置、電話、簡訊與無障礙等高能力權限目前不索取，因為現有功能不需要。</p>
-      </article>
-
-      <article id="nativeUpdateCard" class="notice-card tool-card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">NATIVE RELEASE CHANNEL</p>
-            <h2>原生 APK 更新</h2>
-          </div>
-          <span class="core-badge">SIGNED</span>
-        </div>
-        <p>相容的 Android Native Shell 會開啟獨立更新中心。更新中心只接受 HTTPS、正確 SHA-256、正確套件名稱、版本碼與固定簽章憑證。</p>
-        <a id="nativeUpdateLink" href="amin-update://check" class="source-link hidden">檢查原生 APK 更新</a>
-        <p class="storage-status">目前正式簽章通道保持停用，設定安全金鑰與簽章 manifest 後才會下載 APK。</p>
-      </article>
-
-      <article class="notice-card">
-        <h3>目前預設控制</h3>
-        <p>實體按鈕 2 → GBA A；按鈕 3 → GBA B；按鈕 1、4與右搖桿無功能；十字鍵與左搖桿都控制方向。Start、Select、L、R 也由 Android 原生層接收。</p>
-      </article>
-
-      <section class="library-panel">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">POKÉMON LOCAL LIBRARY</p>
+            <p class="eyebrow">MY GAMES</p>
             <h2>我的 Pokémon 遊戲</h2>
           </div>
           <span class="core-badge">mGBA</span>
         </div>
         <div id="emptyLibrary" class="empty-library">
           <div class="cartridge">PKMN</div>
-          <h3>還沒有 Pokémon 遊戲</h3>
-          <p>匯入你自己的合法卡帶備份後，就能在手機上用 mGBA 遊玩。</p>
+          <h3>還沒有遊戲</h3>
+          <p>先匯入你自己的合法卡帶備份。</p>
         </div>
         <div id="romLibrary" class="rom-library"></div>
       </section>
 
-      <article class="notice-card">
+      <details class="utility-drawer">
+        <summary>
+          <span>
+            <strong>工具與設定</strong>
+            <small>備份、診斷、手把與原生管理</small>
+          </span>
+          <span class="drawer-chevron">⌄</span>
+        </summary>
+
+        <div class="utility-content">
+          <article class="notice-card tool-card compact-tool-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">CONTROLLER</p>
+                <h2>手把設定</h2>
+              </div>
+              <span class="core-badge">INPUT</span>
+            </div>
+            <p>需要重新映射按鈕或收集原始訊號時再進入，不影響一般遊玩。</p>
+            <div class="tool-actions">
+              <a href="./gba-controller.html?v=092" class="source-link">🎮 按鈕與搖桿設定</a>
+              <a href="./gba-signal-lab.html?v=092" class="source-link">📡 原始訊號工具</a>
+            </div>
+          </article>
+
+          <article class="notice-card tool-card compact-tool-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">DATA SAFETY</p>
+                <h2>備份與搬家</h2>
+              </div>
+              <span class="core-badge">.agbbackup v2</span>
+            </div>
+            <p>快速備份包含存檔、手把設定與 IndexedDB；完整備份可另外包含 ROM。</p>
+            <label class="check-row">
+              <input id="backupIncludeRoms" type="checkbox">
+              <span>完整備份，包含 ROM 本體</span>
+            </label>
+            <div class="tool-actions">
+              <button id="exportBackupButton">匯出備份</button>
+              <button id="importBackupButton" class="secondary">匯入備份</button>
+              <input id="backupImportInput" type="file" accept=".agbbackup,application/zip" hidden>
+            </div>
+            <p id="backupStatus" class="storage-status">尚未建立備份。匯入前會再次確認。</p>
+          </article>
+
+          <article class="notice-card tool-card compact-tool-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">SYSTEM HEALTH</p>
+                <h2>系統診斷</h2>
+              </div>
+              <span class="core-badge">JSON</span>
+            </div>
+            <p>只在排錯時使用。報告不會匯出 ROM 二進位內容。</p>
+            <div id="diagnosticSummary" class="diagnostic-summary">正在收集診斷資料…</div>
+            <div class="tool-actions">
+              <button id="refreshDiagnosticsButton">重新檢查</button>
+              <button id="exportDiagnosticsButton" class="secondary">匯出診斷報告</button>
+            </div>
+          </article>
+
+          <article class="notice-card tool-card compact-tool-card native-management-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">ANDROID APP</p>
+                <h2>原生管理</h2>
+              </div>
+              <span class="core-badge">SYSTEM</span>
+            </div>
+            <p>權限與 APK 更新由 Android 原生頁面處理，不會在遊戲庫裡假裝直接切換。</p>
+            <div class="tool-actions">
+              <a id="nativePermissionsLink" href="amin-permissions://open" class="source-link hidden">權限與裝置</a>
+              <a id="nativeUpdateLink" href="amin-update://check" class="source-link hidden">版本與更新</a>
+            </div>
+            <p class="storage-status">正式 APK 更新通道目前保持停用。</p>
+          </article>
+        </div>
+      </details>
+
+      <article class="notice-card compact-note">
         <h3>保存與離線</h3>
-        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。清除 App 或網站資料前，請先匯出 `.agbbackup`。</p>
+        <p>遊戲內存檔會定期寫回。清除 App 或網站資料前，先在「工具與設定」匯出備份。</p>
       </article>
 
       <footer>
