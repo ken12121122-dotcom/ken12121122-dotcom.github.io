@@ -1,18 +1,18 @@
 package com.amin.pocketgba;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.scrollTo;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
@@ -27,24 +27,23 @@ import org.junit.runner.RunWith;
 @LargeTest
 public final class NativeUpdateActivityTest {
     @Rule
-    public final ActivityScenarioRule<NativeUpdateActivity> activityRule =
-            new ActivityScenarioRule<>(NativeUpdateActivity.class);
+    public final ActivityScenarioRule<UpdateHubActivity> activityRule =
+            new ActivityScenarioRule<>(UpdateHubActivity.class);
 
     @Test
-    public void rendersUpdateCenterShellBeforeNetworkResult() {
-        assertScrollableTextVisible("Amin Native Update Center");
-        assertScrollableTextVisible("重新檢查");
-        assertScrollableTextVisible("關閉");
-    }
-
-    private void assertScrollableTextVisible(String text) {
-        onView(withText(text))
-                .perform(scrollTo())
-                .check(matches(isDisplayed()));
+    public void rendersCleanPortraitUpdateHub() {
+        activityRule.getScenario().onActivity(activity -> {
+            assertEquals(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, activity.getRequestedOrientation());
+            View root = activity.findViewById(android.R.id.content);
+            assertTrue(containsText(root, "版本與更新"));
+            assertTrue(containsText(root, "目前安裝版本"));
+            assertTrue(containsText(root, "重新檢查"));
+            assertTrue(containsText(root, "更新安全機制"));
+        });
     }
 
     @Test
-    public void updateDeepLinkResolvesToTheNativeActivity() {
+    public void updateDeepLinkResolvesToTheCleanHub() {
         Context context = ApplicationProvider.getApplicationContext();
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("amin-update://check"));
         intent.setPackage(context.getPackageName());
@@ -52,8 +51,22 @@ public final class NativeUpdateActivityTest {
 
         assertNotNull(resolved);
         assertEquals(
-                NativeUpdateActivity.class.getName(),
+                UpdateHubActivity.class.getName(),
                 resolved.activityInfo.name
         );
+    }
+
+    private boolean containsText(View view, String target) {
+        if (view instanceof TextView) {
+            CharSequence value = ((TextView) view).getText();
+            if (target.contentEquals(value)) return true;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index += 1) {
+                if (containsText(group.getChildAt(index), target)) return true;
+            }
+        }
+        return false;
     }
 }
