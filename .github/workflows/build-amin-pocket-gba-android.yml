@@ -59,7 +59,7 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
-      - name: Validate RC4 save and migration contract
+      - name: Validate RC4 syntax and static contract
         shell: bash
         run: |
           set -euxo pipefail
@@ -110,7 +110,14 @@ jobs:
           assert extraction.count('path="gba-saves/"') == 2
           PY
 
-          node --test tests/*.test.mjs
+      - name: Test Runtime atomic updates
+        run: node --test tests/runtime-service-worker.test.mjs
+
+      - name: Test durable save contract
+        run: node --test tests/gba-save-contract.test.mjs
+
+      - name: Test legacy save migration behavior
+        run: node --test tests/gba-save-migration.test.mjs
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
