@@ -15,8 +15,9 @@
     "open-cartridge",
     "offline-bootstrap",
     "save-flush",
-    "backup-v1",
-    "diagnostics-v1"
+    "backup-v2",
+    "diagnostics-v1",
+    "native-update-center"
   ],
   "assets": [
     "./",
@@ -36,7 +37,7 @@
     "./gba-controller-native-addon.js",
     "./gba-native-input.js",
     "./amin-native-shell.js",
-    "./amin-backup.js",
+    "./amin-backup-v2.js",
     "./amin-diagnostics.js",
     "./gba-signal-lab.html",
     "./gba-signal-lab.css",
