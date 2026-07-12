@@ -19,6 +19,16 @@
   const libraryView = $('libraryView');
   const gameTitle = $('activeGameTitle');
 
+  function requestNativeOrientation(mode) {
+    if (!document.documentElement.dataset.nativeShell) return;
+    const link = document.createElement('a');
+    link.href = `amin://orientation?mode=${encodeURIComponent(mode)}`;
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
   function setStatus(text, kind = '') {
     statusBadge.textContent = text;
     statusBadge.className = `gba-badge ${kind}`.trim();
@@ -315,10 +325,17 @@
   }
 
   function showPlayer(record) {
+    requestNativeOrientation('landscape');
     libraryView.classList.add('hidden');
     playerView.classList.remove('hidden');
     gameTitle.textContent = cleanGameName(record.name);
     document.body.classList.add('playing');
+  }
+
+  function returnToLibrary() {
+    window.AMIN_GBA_SAVE_GUARD?.flush?.('leave-game');
+    requestNativeOrientation('portrait');
+    setTimeout(() => location.replace('./gba.html?native=1'), 160);
   }
 
   async function playRom(id) {
@@ -363,7 +380,11 @@
     script.onload = () => setStatus('mGBA 已啟動', 'active');
     script.onerror = () => {
       setStatus('核心載入失敗', 'error');
-      window.alert('無法載入 EmulatorJS。請確認網路後重新開啟 GBA 遊戲中心。');
+      requestNativeOrientation('portrait');
+      document.body.classList.remove('playing');
+      playerView.classList.add('hidden');
+      libraryView.classList.remove('hidden');
+      window.alert('無法載入 EmulatorJS。請確認網路後再試。');
     };
     document.body.appendChild(script);
   }
@@ -375,8 +396,8 @@
     window.alert(granted ? '已要求瀏覽器保留本機遊戲資料。' : '瀏覽器沒有授予持久儲存，但仍可使用遊戲庫。');
   });
   $('backToLibrary').addEventListener('click', () => {
-    if (window.confirm('離開目前遊戲並回到遊戲庫？請先在模擬器內完成存檔。')) {
-      location.replace('./gba.html');
+    if (window.confirm('離開目前遊戲並回到遊戲庫？系統會先要求寫回存檔。')) {
+      returnToLibrary();
     }
   });
 
@@ -386,6 +407,7 @@
       try {
         await playRom(playButton.dataset.play);
       } catch (error) {
+        requestNativeOrientation('portrait');
         setStatus('啟動失敗', 'error');
         window.alert(error.message || '遊戲啟動失敗。');
       }
