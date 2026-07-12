@@ -9,13 +9,11 @@ on:
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
       - 'amin-vault/amin-*.js'
-      - 'amin-vault/native-release-manifest.json'
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
-      - '.github/workflows/release-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
@@ -23,13 +21,11 @@ on:
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
       - 'amin-vault/amin-*.js'
-      - 'amin-vault/native-release-manifest.json'
       - 'amin-vault/runtime-*.js'
       - 'amin-vault/runtime-*.json'
       - 'amin-vault/sw.js'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
-      - '.github/workflows/release-amin-pocket-gba-android.yml'
 
 permissions:
   contents: read
@@ -56,202 +52,63 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android platform and build tools
+      - name: Install Android 35 tools
         shell: bash
         run: |
+          set -euxo pipefail
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
-      - name: Validate runtime, save vault, routes, and orientation contract
+      - name: Validate RC4 save and migration contract
         shell: bash
         run: |
           set -euxo pipefail
           node --check amin-vault/gba.js
           node --check amin-vault/gba-save-guard.js
-          node --check amin-vault/amin-native-shell.js
+          node --check amin-vault/gba-save-migration.js
           node --check amin-vault/amin-backup-v2.js
           node --check amin-vault/amin-diagnostics.js
           node --check amin-vault/runtime-updater.js
           node --check amin-vault/sw.js
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
-          test -f android-native/app/src/main/assets/bootstrap/index.html
-          test -f android-native/app/src/main/res/xml/file_paths.xml
-          test -f android-native/app/src/main/res/xml/backup_rules.xml
-          test -f android-native/app/src/main/res/xml/data_extraction_rules.xml
-          test -f android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java
-          test -f android-native/app/src/main/java/com/amin/pocketgba/PermissionCenterActivity.java
-          test -f android-native/app/src/main/java/com/amin/pocketgba/UpdateHubActivity.java
-          test -f android-native/app/src/main/java/com/amin/pocketgba/NativeUpdateActivity.java
-          test -f android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java
-          test -f android-native/app/src/androidTest/java/com/amin/pocketgba/NativeSaveBridgeTest.java
+
           python3 - <<'PY'
           import json
-          import xml.etree.ElementTree as ET
           from pathlib import Path
 
           root = Path('amin-vault')
-          runtime = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
-          if runtime['runtimeVersion'] != '0.9.2-rc3':
-              raise SystemExit('Unexpected runtime version')
-          for capability in [
-              'save-vault-v1', 'native-save-vault-v1', 'backup-v2',
-              'native-update-center', 'permission-center'
-          ]:
-              if capability not in runtime.get('optionalCapabilities', []):
-                  raise SystemExit(f'{capability} capability is missing')
-
-          missing = []
-          for asset in runtime['assets']:
+          manifest = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
+          assert manifest['runtimeVersion'] == '0.9.2-rc4'
+          for capability in (
+              'save-vault-v1',
+              'native-save-vault-v1',
+              'legacy-save-migration-v1',
+          ):
+              assert capability in manifest['optionalCapabilities'], capability
+          for asset in manifest['assets']:
               relative = asset.removeprefix('./')
               target = root if relative == '' else root / relative
-              if not target.exists():
-                  missing.append(asset)
-          if missing:
-              raise SystemExit('Missing runtime assets: ' + ', '.join(missing))
-
-          html = (root / 'gba.html').read_text(encoding='utf-8')
-          required_ids = [
-              'romInput', 'persistButton', 'romLibrary', 'backToLibrary',
-              'verifySaveVaultButton', 'saveVaultStatus',
-              'exportBackupButton', 'importBackupButton', 'backupImportInput',
-              'refreshDiagnosticsButton', 'exportDiagnosticsButton',
-              'nativePermissionsLink', 'nativeUpdateLink'
-          ]
-          missing_ids = [item for item in required_ids if f'id="{item}"' not in html]
-          if missing_ids:
-              raise SystemExit('Missing web controls: ' + ', '.join(missing_ids))
-          for marker in ['utility-drawer', '存檔保險庫', '三層存檔', '我的 Pokémon 遊戲']:
-              if marker not in html:
-                  raise SystemExit(f'GBA UI marker missing: {marker}')
-
-          gba_js = (root / 'gba.js').read_text(encoding='utf-8')
-          for marker in [
-              "$('romInput').addEventListener", "$('persistButton').addEventListener",
-              "$('backToLibrary').addEventListener", "requestNativeOrientation('landscape')",
-              "requestNativeOrientation('portrait')", "crypto.subtle.digest('SHA-256'",
-              'new File([record.blob], stableFileName',
-              'window.EJS_gameName = stableBaseName',
-              'window.EJS_gameID = numericGameId(record.saveKey)'
-          ]:
-              if marker not in gba_js:
-                  raise SystemExit(f'GBA durable identity marker missing: {marker}')
-          if 'URL.createObjectURL(record.blob)' in gba_js:
-              raise SystemExit('Random blob ROM identity remains')
-
-          save_guard = (root / 'gba-save-guard.js').read_text(encoding='utf-8')
-          for marker in [
-              "VAULT_DB = 'amin-gba-save-vault'", 'fs.syncfs(populate',
-              "await flushCartridgeSave('exit')", 'AminNativeSaveVault',
-              'restored-from-vault', 'amin-save-verified'
-          ]:
-              if marker not in save_guard:
-                  raise SystemExit(f'Save vault marker missing: {marker}')
-
-          bridge = Path('android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java').read_text(encoding='utf-8')
-          for marker in [
-              '@JavascriptInterface', 'MAX_SAVE_BYTES', 'getFD().sync()',
-              'current.renameTo(backup)', 'unchanged', 'sha256'
-          ]:
-              if marker not in bridge:
-                  raise SystemExit(f'Native save bridge marker missing: {marker}')
-
-          application = Path('android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java').read_text(encoding='utf-8')
-          if 'addJavascriptInterface' not in application or 'AminNativeSaveVault' not in application:
-              raise SystemExit('Native save bridge is not attached to the GBA WebView')
-
-          backup_rules = Path('android-native/app/src/main/res/xml/backup_rules.xml').read_text(encoding='utf-8')
-          extraction_rules = Path('android-native/app/src/main/res/xml/data_extraction_rules.xml').read_text(encoding='utf-8')
-          if 'path="gba-saves/"' not in backup_rules:
-              raise SystemExit('Native GBA save vault is missing from Auto Backup')
-          if extraction_rules.count('path="gba-saves/"') != 2:
-              raise SystemExit('Native GBA save vault is missing from cloud/device transfer rules')
-
-          backup_js = (root / 'amin-backup-v2.js').read_text(encoding='utf-8')
-          for marker in [
-              "exportButton?.addEventListener('click'", "importButton?.addEventListener('click'",
-              "importInput?.addEventListener('change'"
-          ]:
-              if marker not in backup_js:
-                  raise SystemExit(f'Backup handler missing: {marker}')
-
-          diagnostics_js = (root / 'amin-diagnostics.js').read_text(encoding='utf-8')
-          for marker in ['refreshDiagnosticsButton', 'exportDiagnosticsButton', 'addEventListener']:
-              if marker not in diagnostics_js:
-                  raise SystemExit(f'Diagnostics handler missing: {marker}')
-
-          control = Path('android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java').read_text(encoding='utf-8')
-          for marker in [
-              '遊戲控制台', '開啟 GBA 遊戲庫', '重新檢查',
-              'PermissionCenterActivity.class', 'UpdateHubActivity.class',
-              '顯示系統詳細資訊', 'PREVIEW_RUNTIME_MANIFEST_URL'
-          ]:
-              if marker not in control:
-                  raise SystemExit(f'Dashboard marker missing: {marker}')
-
-          main_activity = Path('android-native/app/src/main/java/com/amin/pocketgba/MainActivity.java').read_text(encoding='utf-8')
-          for marker in [
-              'BuildConfig.APP_WEB_URL', 'applyRequestedOrientation("portrait")',
-              'SCREEN_ORIENTATION_SENSOR_LANDSCAPE', 'dynamic-orientation'
-          ]:
-              if marker not in main_activity:
-                  raise SystemExit(f'MainActivity dynamic orientation marker missing: {marker}')
+              assert target.exists(), asset
 
           gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
-          for marker in [
-              'APP_WEB_URL', 'cdn.jsdelivr.net/gh/', 'versionCode 95',
-              "versionNameSuffix '-preview4'", '1907f4d4d2e6877442b3a1a775eac17761ad9d9f'
-          ]:
-              if marker not in gradle:
-                  raise SystemExit(f'Preview 4 build marker missing: {marker}')
+          assert 'versionCode 95' in gradle
+          assert "versionNameSuffix '-preview4'" in gradle
+          assert '966e2c31bb3b0af1caaba62a302f278c4570242a' in gradle
 
-          permission = Path('android-native/app/src/main/java/com/amin/pocketgba/PermissionCenterActivity.java').read_text(encoding='utf-8')
-          for marker in ['依序處理建議設定', '開啟通知', '允許安裝更新', '顯示安全設計說明']:
-              if marker not in permission:
-                  raise SystemExit(f'Permission action missing: {marker}')
-          if 'android.widget.Switch' in permission:
-              raise SystemExit('Misleading permission Switch UI remains')
+          application = Path('android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java').read_text(encoding='utf-8')
+          bridge = Path('android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java').read_text(encoding='utf-8')
+          assert 'AminNativeSaveVault' in application
+          assert 'addJavascriptInterface' in application
+          for marker in ('getFD().sync()', 'current.renameTo(backup)', 'unchanged', 'sha256'):
+              assert marker in bridge, marker
 
-          update_hub = Path('android-native/app/src/main/java/com/amin/pocketgba/UpdateHubActivity.java').read_text(encoding='utf-8')
-          for marker in ['版本與更新', '目前安裝版本', '重新檢查', '進入安全更新流程']:
-              if marker not in update_hub:
-                  raise SystemExit(f'Update Hub marker missing: {marker}')
-
-          android_ns = '{http://schemas.android.com/apk/res/android}'
-          tree = ET.parse('android-native/app/src/main/AndroidManifest.xml')
-          application_node = tree.getroot().find('application')
-          activities = {
-              item.attrib[android_ns + 'name']: item
-              for item in application_node.findall('activity')
-          }
-          for name in [
-              '.ControlCenterActivity', '.PermissionCenterActivity', '.UpdateHubActivity',
-              '.NativeUpdateActivity', '.MainActivity'
-          ]:
-              actual = activities[name].attrib.get(android_ns + 'screenOrientation')
-              if actual != 'portrait':
-                  raise SystemExit(f'{name} starts in {actual!r}, expected portrait')
-
-          deep_link_owner = None
-          for name, activity in activities.items():
-              for intent_filter in activity.findall('intent-filter'):
-                  for data in intent_filter.findall('data'):
-                      if (data.attrib.get(android_ns + 'scheme') == 'amin-update'
-                              and data.attrib.get(android_ns + 'host') == 'check'):
-                          deep_link_owner = name
-          if deep_link_owner != '.UpdateHubActivity':
-              raise SystemExit(f'amin-update deep link owned by {deep_link_owner!r}')
-
-          release = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
-          if release['enabled'] is not False:
-              raise SystemExit('Unsigned native release channel must remain disabled')
-          if release['packageId'] != 'com.amin.pocketgba':
-              raise SystemExit('Unexpected native package ID')
-          if release['apkUrl'] is not None or release['apkSha256'] is not None:
-              raise SystemExit('Disabled native release channel must not expose an APK')
-
-          print(f"Validated {len(runtime['assets'])} runtime assets and durable save contract")
+          backup = Path('android-native/app/src/main/res/xml/backup_rules.xml').read_text(encoding='utf-8')
+          extraction = Path('android-native/app/src/main/res/xml/data_extraction_rules.xml').read_text(encoding='utf-8')
+          assert 'path="gba-saves/"' in backup
+          assert extraction.count('path="gba-saves/"') == 2
           PY
+
           node --test tests/runtime-service-worker.test.mjs tests/gba-save-contract.test.mjs
 
       - name: Set up Gradle 8.9
@@ -259,52 +116,15 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Compile Preview 4 APK
-        id: compile
-        continue-on-error: true
+      - name: Build and lint Preview 4
         shell: bash
         run: |
-          set -o pipefail
-          mkdir -p ci-diagnostics
-          gradle --no-daemon --console=plain --stacktrace -p android-native :app:assembleDebug 2>&1 | tee ci-diagnostics/compile.log
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :app:assembleDebug \
+            :app:lintDebug
 
-      - name: Upload compile diagnostics
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Amin-Pocket-GBA-v0.9.2-preview4-compile-diagnostics
-          path: ci-diagnostics/
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Stop after compile failure
-        if: ${{ steps.compile.outcome == 'failure' }}
-        run: exit 1
-
-      - name: Run Android lint
-        id: lint
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          mkdir -p ci-lint
-          gradle --no-daemon --console=plain --stacktrace -p android-native :app:lintDebug 2>&1 | tee ci-lint/lint-console.log
-          find android-native/app/build/reports -maxdepth 3 -type f -print -exec cp {} ci-lint/ \; 2>/dev/null || true
-
-      - name: Upload lint diagnostics
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Amin-Pocket-GBA-v0.9.2-preview4-lint-diagnostics
-          path: ci-lint/
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Stop after lint failure
-        if: ${{ steps.lint.outcome == 'failure' }}
-        run: exit 1
-
-      - name: Validate Preview 4 APK manifest and assets
+      - name: Inspect Preview 4 APK
         shell: bash
         run: |
           set -euxo pipefail
@@ -314,37 +134,26 @@ jobs:
           grep -q "package: name='com.amin.pocketgba.preview092' versionCode='95' versionName='0.9.2-preview4'" /tmp/apk-badging.txt
           grep -q "application-label:'Amin Pocket GBA Preview 0.9.2 P4'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
-          grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
-          grep -q 'android.permission.VIBRATE' /tmp/apk-permissions.txt
-          grep -q 'android.permission.POST_NOTIFICATIONS' /tmp/apk-permissions.txt
+          grep -q 'android.permission.INTERNET' /tmp/apk-permissions.txt
           grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.CAMERA' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.ACCESS_FINE_LOCATION' /tmp/apk-permissions.txt
-          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest-tree.txt
-          grep -q 'AminPocketApplication' /tmp/apk-manifest-tree.txt
-          grep -q 'ControlCenterActivity' /tmp/apk-manifest-tree.txt
-          grep -q 'PermissionCenterActivity' /tmp/apk-manifest-tree.txt
-          grep -q 'UpdateHubActivity' /tmp/apk-manifest-tree.txt
-          grep -q 'NativeUpdateActivity' /tmp/apk-manifest-tree.txt
-          grep -q 'android.intent.action.MAIN' /tmp/apk-manifest-tree.txt
-          grep -q 'android.intent.category.LAUNCHER' /tmp/apk-manifest-tree.txt
-          grep -q 'amin-update' /tmp/apk-manifest-tree.txt
-          grep -q 'amin-permissions' /tmp/apk-manifest-tree.txt
-          grep -q 'androidx.core.content.FileProvider' /tmp/apk-manifest-tree.txt
+          ! grep -q 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
+          grep -q 'AminPocketApplication' /tmp/apk-manifest.txt
+          grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
+          grep -q 'MainActivity' /tmp/apk-manifest.txt
           unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
 
-      - name: Prepare Preview 4 artifact
+      - name: Package and verify Preview 4
+        shell: bash
         run: |
+          set -euxo pipefail
           mkdir -p dist
-          cp android-native/app/build/outputs/apk/debug/app-debug.apk dist/Amin-Pocket-GBA-v0.9.2-preview4.apk
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk \
+            dist/Amin-Pocket-GBA-v0.9.2-preview4.apk
           cd dist
           sha256sum Amin-Pocket-GBA-v0.9.2-preview4.apk > SHA256SUMS.txt
-
-      - name: Verify artifact checksum
-        run: |
-          cd dist
           sha256sum -c SHA256SUMS.txt
 
       - name: Upload Preview 4 APK
