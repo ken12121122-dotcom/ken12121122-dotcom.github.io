@@ -72,7 +72,7 @@
               </div>
               <span class="core-badge">3 LAYERS</span>
             </div>
-            <p>遊戲內 SRAM 會同步到 EmulatorJS IDBFS、Amin IndexedDB，以及 Android App 私有雙版本副本。</p>
+            <p>遊戲內 SRAM 會同步到 EmulatorJS IDBFS、Amin IndexedDB，以及 Android App 私有雙版本副本。首次使用新版時，也會尋找並搬回舊名稱存檔。</p>
             <div class="save-layer-list">
               <span>① mGBA SRAM</span>
               <span>② IndexedDB 保險庫</span>
@@ -183,6 +183,7 @@
   <script src="./gba-native-input.js"></script>
   <script src="./gba-immersive.js"></script>
   <script src="./gba-save-guard.js"></script>
+  <script src="./gba-save-migration.js"></script>
   <script src="./gba-controller-runtime.js"></script>
   <script src="./gba.js"></script>
   <script src="./amin-backup-v2.js"></script>
