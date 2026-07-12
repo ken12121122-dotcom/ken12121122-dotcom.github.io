@@ -16,7 +16,7 @@ android {
         applicationId 'com.amin.pocketgba'
         minSdk 26
         targetSdk 35
-        versionCode 92
+        versionCode 93
         versionName '0.9.2'
         manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
@@ -45,8 +45,8 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix '.preview092'
-            versionNameSuffix '-preview'
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview 0.9.2']
+            versionNameSuffix '-preview2'
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Preview 0.9.2 P2']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"preview"'
         }
         release {
