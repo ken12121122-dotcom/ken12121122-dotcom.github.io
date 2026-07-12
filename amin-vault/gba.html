@@ -34,10 +34,47 @@
           </label>
           <button id="persistButton" class="secondary">保留本機資料</button>
         </div>
-        <a href="./gba-signal-lab.html?v=091" class="controller-settings-link">📡 收集手把原始訊號</a>
-        <a href="./gba-controller.html?v=091" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
+        <a href="./gba-signal-lab.html?v=092" class="controller-settings-link">📡 收集手把原始訊號</a>
+        <a href="./gba-controller.html?v=092" class="controller-settings-link">🎮 手把按鈕與搖桿設定</a>
         <p id="importStatus" class="storage-status">支援單一 `.gba`／`.bin`，以及內含多個個人備份的 `.zip`。</p>
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
+      </article>
+
+      <article class="notice-card tool-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">DATA SAFETY</p>
+            <h2>備份與搬家</h2>
+          </div>
+          <span class="core-badge">.agbbackup</span>
+        </div>
+        <p>快速備份會包含存檔、手把設定與此 App 網域下的 IndexedDB，但不包含 ROM 本體。勾選完整備份後，檔案可能非常大。</p>
+        <label class="check-row">
+          <input id="backupIncludeRoms" type="checkbox">
+          <span>完整備份，包含 ROM 本體</span>
+        </label>
+        <div class="tool-actions">
+          <button id="exportBackupButton">匯出備份</button>
+          <button id="importBackupButton" class="secondary">匯入備份</button>
+          <input id="backupImportInput" type="file" accept=".agbbackup,application/zip" hidden>
+        </div>
+        <p id="backupStatus" class="storage-status">尚未建立備份。匯入前會再次確認，並覆寫同名資料庫內容。</p>
+      </article>
+
+      <article class="notice-card tool-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">SYSTEM BLACK BOX</p>
+            <h2>系統診斷</h2>
+          </div>
+          <span class="core-badge">JSON</span>
+        </div>
+        <p>診斷報告會記錄 Runtime、Native Shell、網路、Service Worker、IndexedDB、ROM 數量與近期錯誤，不會匯出 ROM 內容。</p>
+        <div id="diagnosticSummary" class="diagnostic-summary">正在收集診斷資料…</div>
+        <div class="tool-actions">
+          <button id="refreshDiagnosticsButton">重新檢查</button>
+          <button id="exportDiagnosticsButton" class="secondary">匯出診斷報告</button>
+        </div>
       </article>
 
       <article class="notice-card">
@@ -63,7 +100,7 @@
 
       <article class="notice-card">
         <h3>保存與離線</h3>
-        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。請不要清除 App 或網站資料，目前存檔尚未同步到 Universal Vault。</p>
+        <p>遊戲內存檔會定期寫入瀏覽器；按「離開」時系統也會先強制保存再卸載核心。清除 App 或網站資料前，請先匯出 `.agbbackup`。</p>
       </article>
 
       <footer>
@@ -94,5 +131,7 @@
   <script src="./gba-save-guard.js"></script>
   <script src="./gba-controller-runtime.js"></script>
   <script src="./gba.js"></script>
+  <script src="./amin-backup.js"></script>
+  <script src="./amin-diagnostics.js"></script>
 </body>
 </html>
