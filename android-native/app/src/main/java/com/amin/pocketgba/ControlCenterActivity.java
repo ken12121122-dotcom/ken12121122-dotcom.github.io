@@ -2,6 +2,7 @@ package com.amin.pocketgba;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -40,16 +41,13 @@ public final class ControlCenterActivity extends Activity {
     private static final int COLOR_BORDER = 0xffd9e4de;
     private static final int COLOR_WARNING = 0xff9a5b00;
 
-    private static final String PREVIEW_RUNTIME_MANIFEST_URL =
-            "https://raw.githubusercontent.com/ken12121122-dotcom/ken12121122-dotcom.github.io/agent/amin-pocket-gba-rc092/amin-vault/runtime-manifest.json";
-    private static final String STABLE_RUNTIME_MANIFEST_URL =
+    private static final String LIVE_RUNTIME_MANIFEST_URL =
             "https://ken12121122-dotcom.github.io/amin-vault/runtime-manifest.json";
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private TextView networkValue;
     private TextView nativeValue;
-    private TextView previewRuntimeValue;
-    private TextView stableRuntimeValue;
+    private TextView runtimeValue;
     private TextView nativeUpdateValue;
     private TextView detectionSummary;
     private ProgressBar detectionProgress;
@@ -60,6 +58,7 @@ public final class ControlCenterActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         configureWindow();
         buildUi();
         detectEverything();
@@ -68,7 +67,7 @@ public final class ControlCenterActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        refreshNetwork();
+        if (networkValue != null) refreshNetwork();
     }
 
     private void configureWindow() {
@@ -90,8 +89,7 @@ public final class ControlCenterActivity extends Activity {
         content.setBackgroundColor(COLOR_BG);
         scroll.addView(content);
 
-        TextView eyebrow = text("AMIN POCKET GBA", 12f, true, COLOR_ACCENT);
-        content.addView(eyebrow, fullWidth());
+        content.addView(text("AMIN POCKET GBA", 12f, true, COLOR_ACCENT), fullWidth());
 
         LinearLayout titleRow = new LinearLayout(this);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -100,12 +98,14 @@ public final class ControlCenterActivity extends Activity {
         titleRowParams.topMargin = dp(4);
         content.addView(titleRow, titleRowParams);
 
-        TextView title = text("遊戲控制台", 30f, true, COLOR_TEXT);
-        titleRow.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        titleRow.addView(chip("PREVIEW 3"), wrapContent());
+        titleRow.addView(
+                text("遊戲控制台", 30f, true, COLOR_TEXT),
+                new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        );
+        titleRow.addView(chip("BRIDGE 1"), wrapContent());
 
         TextView intro = text(
-                "首頁保持直向，只有進入模擬器時切換橫向；離開遊戲後會回到這個直向控制台。",
+                "首頁保持直向；進入模擬器才切換橫向。Bridge 會從 GitHub Pages 接收新的遊戲 Runtime。",
                 14f,
                 false,
                 COLOR_MUTED
@@ -134,9 +134,10 @@ public final class ControlCenterActivity extends Activity {
         statusHeaderParams.topMargin = dp(26);
         content.addView(statusHeader, statusHeaderParams);
 
-        TextView statusTitle = text("目前狀態", 18f, true, COLOR_TEXT);
-        statusHeader.addView(statusTitle, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
+        statusHeader.addView(
+                text("目前狀態", 18f, true, COLOR_TEXT),
+                new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        );
         detectButton = compactButton("重新檢查");
         detectButton.setOnClickListener(view -> detectEverything());
         statusHeader.addView(detectButton, wrapContent());
@@ -148,7 +149,7 @@ public final class ControlCenterActivity extends Activity {
                 "App 版本",
                 BuildConfig.VERSION_NAME + " · code " + BuildConfig.VERSION_CODE
         );
-        previewRuntimeValue = addStatusRow(statusCard, "遊戲 Runtime", "檢查中…");
+        runtimeValue = addStatusRow(statusCard, "遊戲 Runtime", "檢查中…");
         nativeUpdateValue = addStatusRow(statusCard, "APK 更新", "檢查中…");
         content.addView(statusCard, cardParams());
 
@@ -163,7 +164,7 @@ public final class ControlCenterActivity extends Activity {
         content.addView(detectionProgress, progressParams);
 
         detectionSummary = text(
-                "啟動時會自動檢查網路、Runtime 與 APK 更新通道。",
+                "啟動時會檢查網路、Runtime 與 APK 更新通道。",
                 13f,
                 false,
                 COLOR_MUTED
@@ -197,18 +198,18 @@ public final class ControlCenterActivity extends Activity {
         content.addView(updateCard, cardParams());
 
         addSectionTitle(content, "進階");
-
         detailsButton = secondaryButton("顯示系統詳細資訊");
         detailsButton.setOnClickListener(view -> toggleTechnicalDetails());
         content.addView(detailsButton, cardParams());
 
         technicalDetails = surfaceCard();
         technicalDetails.setVisibility(View.GONE);
-        stableRuntimeValue = addStatusRow(technicalDetails, "Stable Runtime", "檢查中…");
-        addPlainRow(technicalDetails, "Preview 來源", "PR #4 測試通道");
-        addPlainRow(technicalDetails, "正式 APK", "安全鎖定中");
+        addPlainRow(technicalDetails, "Runtime 來源", "GitHub Pages Live Channel");
+        addPlainRow(technicalDetails, "原生套件", BuildConfig.APPLICATION_ID);
+        addPlainRow(technicalDetails, "發布通道", BuildConfig.RELEASE_CHANNEL);
+        addPlainRow(technicalDetails, "原生 APK", "永久簽章設定前保持停用");
         TextView technicalNote = text(
-                "Preview Runtime 只用於測試。正式發布前不會啟用 APK 自動下載，也不會靜默安裝。",
+                "Runtime 更新會先完整下載並驗證資源，再切換快取；失敗時保留上一個可用版本。",
                 12f,
                 false,
                 COLOR_MUTED
@@ -219,7 +220,7 @@ public final class ControlCenterActivity extends Activity {
         content.addView(technicalDetails, cardParams());
 
         TextView footer = text(
-                "v0.9.2 Preview 3 · 原生更新通道仍保持停用",
+                "v0.9.2 Bridge 1 · Runtime 可熱更新 · APK 通道待永久簽章",
                 12f,
                 false,
                 COLOR_WARNING
@@ -242,25 +243,21 @@ public final class ControlCenterActivity extends Activity {
         detectButton.setEnabled(false);
         detectionProgress.setVisibility(View.VISIBLE);
         detectionProgress.setIndeterminate(true);
-        previewRuntimeValue.setText("檢查中…");
-        stableRuntimeValue.setText("檢查中…");
+        runtimeValue.setText("檢查中…");
         nativeUpdateValue.setText("檢查中…");
-        detectionSummary.setText("正在偵測，這不會下載或安裝 APK。");
+        detectionSummary.setText("正在偵測；此動作不會下載或安裝 APK。");
         refreshNetwork();
 
         EXECUTOR.execute(() -> {
-            String previewRuntime = checkRuntime(PREVIEW_RUNTIME_MANIFEST_URL, "Preview");
-            String stableRuntime = checkRuntime(STABLE_RUNTIME_MANIFEST_URL, "Stable");
+            String runtime = checkRuntime();
             String nativeUpdate = checkNativeUpdate();
-
             runOnUiThread(() -> {
-                previewRuntimeValue.setText(previewRuntime);
-                stableRuntimeValue.setText(stableRuntime);
+                runtimeValue.setText(runtime);
                 nativeUpdateValue.setText(nativeUpdate);
                 detectionProgress.setVisibility(View.GONE);
                 detectButton.setEnabled(true);
                 detectionSummary.setText(
-                        "偵測完成。Runtime 可自動更新；APK 更新仍需 Android 安裝確認。"
+                        "偵測完成。Runtime 可由 GitHub 更新；APK 更新仍需簽章驗證與 Android 安裝確認。"
                 );
             });
         });
@@ -285,18 +282,16 @@ public final class ControlCenterActivity extends Activity {
         }
         networkValue.setText(connected
                 ? transport + (validated ? " · 正常" : " · 待驗證")
-                : "離線"
-        );
+                : "離線");
     }
 
-    private String checkRuntime(String url, String label) {
+    private String checkRuntime() {
         try {
-            JSONObject manifest = fetchJson(url);
+            JSONObject manifest = fetchJson(LIVE_RUNTIME_MANIFEST_URL);
             if (!"amin-runtime-manifest".equals(manifest.optString("format"))) {
-                return label + " 格式錯誤";
+                return "清單格式錯誤";
             }
-            String version = manifest.optString("runtimeVersion", "未知版本");
-            return version;
+            return manifest.optString("runtimeVersion", "未知版本");
         } catch (Exception error) {
             return "偵測失敗 · " + safeMessage(error);
         }
@@ -309,7 +304,7 @@ public final class ControlCenterActivity extends Activity {
                 return "清單格式錯誤";
             }
             if (!manifest.optBoolean("enabled", false)) {
-                return "正式通道停用";
+                return "原生通道待簽章";
             }
             long latestCode = manifest.optLong("latestVersionCode", 0L);
             if (latestCode <= BuildConfig.VERSION_CODE) return "目前已是最新";
@@ -320,7 +315,11 @@ public final class ControlCenterActivity extends Activity {
     }
 
     private JSONObject fetchJson(String urlText) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(urlText).openConnection();
+        URL url = new URL(urlText);
+        if (!"https".equalsIgnoreCase(url.getProtocol())) {
+            throw new SecurityException("只允許 HTTPS 清單");
+        }
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(12000);
         connection.setReadTimeout(15000);
         connection.setUseCaches(false);
@@ -370,12 +369,15 @@ public final class ControlCenterActivity extends Activity {
 
         TextView iconView = text(icon, 25f, false, primary ? Color.WHITE : COLOR_ACCENT);
         iconView.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
-        card.addView(iconView, iconParams);
+        card.addView(iconView, new LinearLayout.LayoutParams(dp(44), dp(44)));
 
         LinearLayout copy = new LinearLayout(this);
         copy.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams copyParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams copyParams = new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        );
         copyParams.leftMargin = dp(12);
         card.addView(copy, copyParams);
 
