@@ -1,12 +1,12 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "stable",
+  "channel": "bridge",
   "enabled": false,
   "packageId": "com.amin.pocketgba",
   "latestVersionName": null,
   "latestVersionCode": 0,
-  "minimumSupportedVersionCode": 92,
+  "minimumSupportedVersionCode": 97,
   "minimumAndroidSdk": 26,
   "apkUrl": null,
   "apkSha256": null,
@@ -15,7 +15,8 @@
   "publishedAt": null,
   "mandatory": false,
   "releaseNotes": [
-    "正式簽章金鑰與第一個穩定版 APK 尚未啟用。",
-    "在 enabled 變更為 true 前，Native Shell 不會下載或安裝 APK。"
+    "Bridge 版已固定套件識別碼與 GitHub Pages Runtime 入口。",
+    "永久簽章尚未設定，因此原生 APK 覆蓋更新仍保持停用。",
+    "Runtime rc6 可在 Bridge 安裝後透過 GitHub 更新，不需要重裝 APK。"
   ]
 }
