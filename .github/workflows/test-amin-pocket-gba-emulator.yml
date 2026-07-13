@@ -7,23 +7,25 @@ on:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.json'
       - '.github/workflows/test-amin-pocket-gba-emulator.yml'
   push:
     paths:
       - 'android-native/**'
       - 'amin-vault/gba*.js'
       - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.json'
       - '.github/workflows/test-amin-pocket-gba-emulator.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: amin-pocket-gba-emulator-v7-${{ github.ref }}
+  group: amin-pocket-gba-emulator-v8-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  android-35-preview5:
+  android-35-bridge1:
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -68,7 +70,7 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build Preview 5 and instrumentation tests
+      - name: Build Bridge 1 and instrumentation tests
         shell: bash
         run: |
           set -euxo pipefail
@@ -134,26 +136,26 @@ jobs:
           adb shell settings put global animator_duration_scale 0
           adb shell getprop ro.build.version.sdk | grep -Fx '35'
 
-      - name: Install Preview 4 and Preview 5 side by side
+      - name: Install Preview 4 and Bridge 1 side by side
         shell: bash
         run: |
           set -euxo pipefail
           P4='/tmp/amin-pocket-preview4/android-native/app/build/outputs/apk/debug/app-debug.apk'
-          P5="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
+          BRIDGE="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
           adb install -r "$P4"
-          adb install -r "$P5"
+          adb install -r "$BRIDGE"
           adb shell pm list packages | tee "$RUNNER_TEMP/packages.txt"
           grep -F 'package:com.amin.pocketgba.preview094' "$RUNNER_TEMP/packages.txt"
-          grep -F 'package:com.amin.pocketgba.preview095' "$RUNNER_TEMP/packages.txt"
-          adb shell dumpsys package com.amin.pocketgba.preview095 > "$RUNNER_TEMP/p5-package.txt"
-          grep -F 'versionName=0.9.2-preview5' "$RUNNER_TEMP/p5-package.txt"
-          grep -F 'versionCode=96' "$RUNNER_TEMP/p5-package.txt"
+          grep -F 'package:com.amin.pocketgba' "$RUNNER_TEMP/packages.txt"
+          adb shell dumpsys package com.amin.pocketgba > "$RUNNER_TEMP/bridge-package.txt"
+          grep -F 'versionName=0.9.2-bridge1' "$RUNNER_TEMP/bridge-package.txt"
+          grep -F 'versionCode=97' "$RUNNER_TEMP/bridge-package.txt"
 
-      - name: Verify Preview 5 launcher and routes
+      - name: Verify Bridge 1 launcher and routes
         shell: bash
         run: |
           set -euxo pipefail
-          PACKAGE='com.amin.pocketgba.preview095'
+          PACKAGE='com.amin.pocketgba'
           adb shell cmd package resolve-activity --brief \
             -a android.intent.action.MAIN \
             -c android.intent.category.LAUNCHER \
@@ -188,14 +190,14 @@ jobs:
           TEST_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
           adb install -r "$TEST_APK"
           adb shell pm list instrumentation | tee "$RUNNER_TEMP/instrumentation.txt"
-          grep -F 'com.amin.pocketgba.preview095.test/androidx.test.runner.AndroidJUnitRunner' \
+          grep -F 'com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner' \
             "$RUNNER_TEMP/instrumentation.txt"
 
       - name: Run Android acceptance tests
         shell: bash
         run: |
           set -euxo pipefail
-          RUNNER='com.amin.pocketgba.preview095.test/androidx.test.runner.AndroidJUnitRunner'
+          RUNNER='com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner'
           for TEST in \
             com.amin.pocketgba.ControlCenterActivityTest \
             com.amin.pocketgba.MainActivitySmokeTest \
@@ -223,7 +225,7 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-v0.9.2-preview5-emulator-diagnostics
+          name: Amin-Pocket-GBA-v0.9.2-bridge1-emulator-diagnostics
           path: emulator-diagnostics/
           if-no-files-found: warn
           retention-days: 30
