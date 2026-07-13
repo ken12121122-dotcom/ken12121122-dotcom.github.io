@@ -79,25 +79,31 @@ test('Preview migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /確認進度正確後，才移除 Preview 3/);
 });
 
-test('RC5 manifest includes launcher and save persistence capabilities', () => {
-  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc5"/);
+test('RC6 manifest includes launcher persistence and live-channel capabilities', () => {
+  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc6"/);
   assert.match(manifest, /"save-vault-v1"/);
   assert.match(manifest, /"native-save-vault-v1"/);
   assert.match(manifest, /"legacy-save-migration-v1"/);
   assert.match(manifest, /"rom-object-url-v2"/);
   assert.match(manifest, /"emulatorjs-pinned-4\.2\.3"/);
+  assert.match(manifest, /"live-runtime-channel-v1"/);
   assert.match(manifest, /"\.\/gba-save-migration\.js"/);
 });
 
-test('Preview 5 package installs beside broken Preview 4', () => {
+test('Bridge package establishes one fixed native update identity', () => {
   assert.match(gradle, /AMIN_VERSION_CODE/);
   assert.match(gradle, /versionCode aminVersionCode/);
-  assert.match(gradle, /applicationIdSuffix '\.preview095'/);
+  assert.match(gradle, /applicationId 'com\.amin\.pocketgba'/);
+  assert.doesNotMatch(gradle, /applicationIdSuffix/);
   assert.match(gradle, /versionNameSuffix aminPreviewSuffix/);
-  assert.match(gradle, /Amin Pocket GBA Preview 0\.9\.2 P5/);
+  assert.match(gradle, /Amin Pocket GBA Bridge 0\.9\.2 B1/);
+  assert.match(gradle, /'-bridge1'/);
+  assert.match(gradle, /'97'/);
 });
 
-test('Preview 5 is pinned to the RC5 launcher runtime', () => {
-  assert.match(gradle, /3984eb99cfe28789032abefd5cb1ce6d9329ac36/);
-  assert.match(gradle, /preview=5/);
+test('Bridge uses the live GitHub Pages Runtime channel instead of a commit pin', () => {
+  assert.match(gradle, /https:\/\/ken12121122-dotcom\.github\.io\/amin-vault\/gba\.html\?native=1&channel=bridge/);
+  assert.match(gradle, /RELEASE_CHANNEL', '"bridge"'/);
+  assert.doesNotMatch(gradle, /cdn\.jsdelivr\.net\/gh/);
+  assert.doesNotMatch(gradle, /preview=5/);
 });
