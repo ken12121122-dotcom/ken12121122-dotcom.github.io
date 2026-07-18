@@ -1,6 +1,11 @@
 name: Release Amin Pocket GBA Android
 
 on:
+  push:
+    branches:
+      - agent/amin-pocket-gba-update-bridge
+    paths:
+      - '.github/workflows/release-amin-pocket-gba-android.yml'
   workflow_dispatch:
     inputs:
       release_tag:
