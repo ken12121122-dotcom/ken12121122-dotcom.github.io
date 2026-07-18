@@ -6,6 +6,11 @@ on:
       - agent/amin-pocket-gba-update-bridge
     paths:
       - '.github/workflows/release-amin-pocket-gba-android.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/release-amin-pocket-gba-android.yml'
   workflow_dispatch:
     inputs:
       release_tag:
@@ -141,7 +146,7 @@ jobs:
           retention-days: 90
 
       - name: Publish draft GitHub Release
-        if: ${{ inputs.publish_github_release }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_github_release }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
