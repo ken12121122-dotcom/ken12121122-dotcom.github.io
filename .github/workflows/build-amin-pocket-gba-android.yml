@@ -76,44 +76,55 @@ jobs:
           node --check amin-vault/sw.js
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
+          grep -q 'class LaunchGateActivity' android-native/app/src/main/java/com/amin/pocketgba/LaunchGateActivity.java
+          grep -q 'android:name=".LaunchGateActivity"' android-native/app/src/main/AndroidManifest.xml
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build and lint Bridge 3
+      - name: Prepare Bridge 4 label
+        run: |
+          set -euxo pipefail
+          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B4/g' android-native/app/build.gradle
+
+      - name: Build and lint Bridge 4
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=100 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge4 \
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect Bridge 3 APK
+      - name: Inspect Bridge 4 APK
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='99' versionName='0.9.2-bridge3'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B3'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='100' versionName='0.9.2-bridge4'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B4'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION' /tmp/apk-permissions.txt
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
+          grep -q 'LaunchGateActivity' /tmp/apk-manifest.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package Bridge 3 artifact
+      - name: Package Bridge 4 artifact
         id: package
         run: |
           set -euxo pipefail
           mkdir -p dist
           if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge3.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge3'
-            STATUS='PERMANENT SIGNING ENABLED: carries the in-app PackageInstaller updater.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge4.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge4'
+            STATUS='PERMANENT SIGNING ENABLED: automatic launch update gate included.'
           else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge3-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge3-CI-ONLY-NOT-UPDATABLE'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge4-CI-ONLY.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge4-CI-ONLY-NOT-UPDATABLE'
             STATUS='CI DEBUG SIGNING ONLY.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
@@ -124,7 +135,7 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Bridge 3 APK
+      - name: Upload Bridge 4 APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.artifact_name }}
