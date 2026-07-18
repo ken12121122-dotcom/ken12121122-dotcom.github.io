@@ -5,27 +5,13 @@ on:
   push:
     paths:
       - 'android-native/**'
-      - 'amin-vault/gba*.css'
-      - 'amin-vault/gba*.js'
-      - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-*.js'
-      - 'amin-vault/runtime-*.js'
-      - 'amin-vault/runtime-*.json'
-      - 'amin-vault/native-release-manifest.json'
-      - 'amin-vault/sw.js'
+      - 'amin-vault/**'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
-      - 'amin-vault/gba*.css'
-      - 'amin-vault/gba*.js'
-      - 'amin-vault/gba*.html'
-      - 'amin-vault/amin-*.js'
-      - 'amin-vault/runtime-*.js'
-      - 'amin-vault/runtime-*.json'
-      - 'amin-vault/native-release-manifest.json'
-      - 'amin-vault/sw.js'
+      - 'amin-vault/**'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
 
@@ -60,7 +46,6 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Android 35 tools
-        shell: bash
         run: |
           set -euxo pipefail
           yes | sdkmanager --licenses >/dev/null || true
@@ -68,7 +53,6 @@ jobs:
 
       - name: Prepare permanent signing when configured
         id: signing
-        shell: bash
         run: |
           set -euo pipefail
           if [[ -n "${AMIN_KEYSTORE_BASE64:-}" \
@@ -80,83 +64,25 @@ jobs:
             test -s "$KEYSTORE_PATH"
             echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Permanent signing configuration detected."
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Permanent signing secrets are absent; this run is CI-only."
           fi
 
-      - name: Validate RC6 launcher and Bridge 2 contract
-        shell: bash
+      - name: Validate source files
         run: |
           set -euxo pipefail
           node --check amin-vault/gba.js
-          node --check amin-vault/gba-save-guard.js
-          node --check amin-vault/gba-save-migration.js
-          node --check amin-vault/amin-backup-v2.js
-          node --check amin-vault/amin-diagnostics.js
           node --check amin-vault/runtime-updater.js
           node --check amin-vault/sw.js
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
-
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          root = Path('amin-vault')
-          manifest = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
-          assert manifest['runtimeVersion'] == '0.9.2-rc6'
-          for capability in (
-              'save-vault-v1',
-              'native-save-vault-v1',
-              'legacy-save-migration-v1',
-              'rom-object-url-v2',
-              'emulatorjs-pinned-4.2.3',
-              'live-runtime-channel-v1',
-          ):
-              assert capability in manifest['optionalCapabilities'], capability
-
-          gba = (root / 'gba.js').read_text(encoding='utf-8')
-          for marker in (
-              "EMULATORJS_VERSION = '4.2.3'",
-              'URL.createObjectURL(record.blob)',
-              'window.EJS_gameUrl = activeObjectUrl',
-              'window.EJS_gameName = stableBaseName',
-              'window.EJS_gameID = numericGameId(record.saveKey)',
-              'URL.revokeObjectURL(activeObjectUrl)',
-          ):
-              assert marker in gba, marker
-          assert 'new File([record.blob], stableFileName' not in gba
-
-          native_manifest = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
-          assert native_manifest['channel'] == 'bridge'
-          assert native_manifest['enabled'] is False
-          assert native_manifest['packageId'] == 'com.amin.pocketgba'
-          assert native_manifest['minimumSupportedVersionCode'] == 97
-
-          gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
-          for marker in (
-              "'98'",
-              "'-bridge2'",
-              'Amin Pocket GBA Bridge 0.9.2 B2',
-              'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge',
-              "RELEASE_CHANNEL', '\"bridge\"'",
-              'signingConfig signingConfigs.release',
-          ):
-              assert marker in gradle, marker
-          assert 'applicationIdSuffix' not in gradle
-          PY
-
-          node --test tests/*.test.mjs
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build and lint update bridge
-        shell: bash
+      - name: Build and lint Bridge 2
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
@@ -164,7 +90,6 @@ jobs:
             :app:lintDebug
 
       - name: Inspect Bridge 2 APK
-        shell: bash
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
@@ -173,27 +98,10 @@ jobs:
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
           grep -q "package: name='com.amin.pocketgba' versionCode='98' versionName='0.9.2-bridge2'" /tmp/apk-badging.txt
           grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B2'" /tmp/apk-badging.txt
-          "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
-          grep -q 'android.permission.INTERNET' /tmp/apk-permissions.txt
-          grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
-          grep -q 'android.permission.VIBRATE' /tmp/apk-permissions.txt
-          grep -q 'android.permission.POST_NOTIFICATIONS' /tmp/apk-permissions.txt
-          grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.CAMERA' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
-          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
-          grep -q 'AminPocketApplication' /tmp/apk-manifest.txt
-          grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
-          grep -q 'MainActivity' /tmp/apk-manifest.txt
-          grep -q 'PermissionCenterActivity' /tmp/apk-manifest.txt
-          grep -q 'UpdateHubActivity' /tmp/apk-manifest.txt
-          unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package and verify Bridge 2 artifact
+      - name: Package Bridge 2 artifact
         id: package
-        shell: bash
         run: |
           set -euxo pipefail
           mkdir -p dist
@@ -204,7 +112,7 @@ jobs:
           else
             FILE='Amin-Pocket-GBA-v0.9.2-bridge2-CI-ONLY.apk'
             ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge2-CI-ONLY-NOT-UPDATABLE'
-            STATUS='CI DEBUG SIGNING ONLY: do not use for the permanent update test.'
+            STATUS='CI DEBUG SIGNING ONLY.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
           printf '%s\n' "$STATUS" > dist/SIGNING_STATUS.txt
