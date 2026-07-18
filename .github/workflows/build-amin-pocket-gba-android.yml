@@ -142,3 +142,43 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Build Play internal testing AAB code 102
+        if: steps.signing.outputs.ready == 'true'
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=102 \
+            :app:bundleRelease
+
+      - name: Package Play internal testing bundle
+        if: steps.signing.outputs.ready == 'true'
+        run: |
+          set -euxo pipefail
+          BUNDLE='android-native/app/build/outputs/bundle/release/app-release.aab'
+          test -s "$BUNDLE"
+          jarsigner -verify -verbose -certs "$BUNDLE" | tee /tmp/aab-signing.txt
+          mkdir -p dist-play
+          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code102-internal.aab
+          keytool -exportcert -rfc \
+            -keystore "$AMIN_KEYSTORE_PATH" \
+            -storepass "$AMIN_KEYSTORE_PASSWORD" \
+            -alias "$AMIN_KEY_ALIAS" \
+            -file dist-play/amin-app-signing-certificate.pem
+          keytool -list -v \
+            -keystore "$AMIN_KEYSTORE_PATH" \
+            -storepass "$AMIN_KEYSTORE_PASSWORD" \
+            -alias "$AMIN_KEY_ALIAS" > dist-play/amin-signing-fingerprints.txt
+          cp /tmp/aab-signing.txt dist-play/AAB_SIGNING_REPORT.txt
+          cd dist-play
+          sha256sum Amin-Pocket-GBA-v0.9.2-code102-internal.aab > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Upload Play internal testing package
+        if: steps.signing.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-Play-Internal-code102
+          path: dist-play/
+          if-no-files-found: error
+          retention-days: 30
