@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge3",
-  "latestVersionCode": 99,
-  "minimumSupportedVersionCode": 98,
+  "latestVersionName": "0.9.2-bridge4",
+  "latestVersionCode": 100,
+  "minimumSupportedVersionCode": 99,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge3.apk",
-  "apkSha256": "129346fdc6b17017e2a5914dc7bfe9337b48bf1ca94e1291ce0a4e63a2072705",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge4.apk",
+  "apkSha256": "de21df6c6eea3e613192b9ee5bdcb42b4a4ea9c683f9f08bdfdd45a69beb79e6",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2315700,
-  "publishedAt": "2026-07-18T23:20:00+08:00",
+  "sizeBytes": 2315724,
+  "publishedAt": "2026-07-18T23:40:00+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "Bridge 3 帶入手遊式 App 內更新器。",
-    "本次由 code 98 更新至 code 99，Android 仍可能要求最後一次確認。",
-    "安裝 code 99 後，下一版將測試 App 內進度條與 PackageInstaller 自動安裝。"
+    "Bridge 4 新增遊戲式啟動閘門。",
+    "每次開啟 App 都會先顯示進度條並自動檢查更新。",
+    "有新版時直接進入下載、驗證與安裝；無新版或離線時自動進入主畫面。"
   ]
 }
