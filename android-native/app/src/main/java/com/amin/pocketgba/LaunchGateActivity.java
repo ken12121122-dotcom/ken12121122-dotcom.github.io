@@ -3,7 +3,6 @@ package com.amin.pocketgba;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -133,6 +132,19 @@ public final class LaunchGateActivity extends Activity {
         progressBar.setProgress(progress);
         handler.post(pulse);
 
+        if (isPlayBuild()) {
+            statusView.setText("Google Play 安全啟動");
+            detailView.setText("App 更新由 Google Play 管理，正在載入遊戲資源");
+            handler.postDelayed(() -> {
+                progress = 76;
+                progressBar.setProgress(progress);
+                statusView.setText("資源檢查完成");
+                detailView.setText("正在進入遊戲");
+                finishLaunch(false);
+            }, 650L);
+            return;
+        }
+
         EXECUTOR.execute(() -> {
             try {
                 JSONObject manifest = fetchManifest();
@@ -161,6 +173,10 @@ public final class LaunchGateActivity extends Activity {
                 });
             }
         });
+    }
+
+    private boolean isPlayBuild() {
+        return "release".equals(BuildConfig.RELEASE_CHANNEL);
     }
 
     private JSONObject fetchManifest() throws Exception {
@@ -214,7 +230,7 @@ public final class LaunchGateActivity extends Activity {
         progress = offline ? 92 : 100;
         progressBar.setProgress(progress);
         long delay = offline ? 650L : 320L;
-        handler.postDelayed(() -> openMain(), delay);
+        handler.postDelayed(this::openMain, delay);
     }
 
     private void openUpdater() {
