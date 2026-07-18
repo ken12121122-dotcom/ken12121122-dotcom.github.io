@@ -9,9 +9,9 @@
   "minimumSupportedVersionCode": 97,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge2.apk",
-  "apkSha256": "0be2cc6bb215e184719fd40b25eeb44c16df5ec67a43ee299bc53379b56807ad",
+  "apkSha256": "edb0497a0e30edcbe664963409f2edbe40bc63f13e8441710246c7e75d13cd7d",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2308336,
+  "sizeBytes": 2309038,
   "publishedAt": "2026-07-18T23:00:00+08:00",
   "mandatory": false,
   "releaseNotes": [
