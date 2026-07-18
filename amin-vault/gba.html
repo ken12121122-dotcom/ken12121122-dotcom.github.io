@@ -38,6 +38,16 @@
         <p id="storageStatus" class="storage-status">正在讀取本機儲存空間…</p>
       </article>
 
+      <article id="runtimeProofCard" class="notice-card compact-note">
+        <p class="eyebrow">LIVE RUNTIME · 0.9.2-rc7</p>
+        <h3>Runtime 即時功能測試</h3>
+        <p>這張卡片與下面的計數功能，是在不更換 APK 外殼的情況下新增的。</p>
+        <div class="tool-actions">
+          <button id="runtimeProofButton" type="button">點我執行新功能</button>
+        </div>
+        <p id="runtimeProofResult" class="storage-status">等待第一次測試。</p>
+      </article>
+
       <section class="library-panel primary-library">
         <div class="section-head">
           <div>
@@ -183,6 +193,28 @@
     </section>
   </main>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const button = document.getElementById('runtimeProofButton');
+      const result = document.getElementById('runtimeProofResult');
+      if (!button || !result) return;
+
+      const storageKey = 'amin.runtime.proof.clicks';
+      const readCount = () => Number.parseInt(localStorage.getItem(storageKey) || '0', 10) || 0;
+      const savedCount = readCount();
+      if (savedCount > 0) {
+        result.textContent = `這個 Runtime 新功能已在本機成功執行 ${savedCount} 次。`;
+        button.textContent = '再次測試 Runtime';
+      }
+
+      button.addEventListener('click', () => {
+        const nextCount = readCount() + 1;
+        localStorage.setItem(storageKey, String(nextCount));
+        result.textContent = `成功！這是第 ${nextCount} 次執行，APK 外殼沒有重新安裝。`;
+        button.textContent = '再次測試 Runtime';
+      });
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./amin-native-shell.js"></script>
   <script src="./runtime-updater.js"></script>
