@@ -3,60 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My MES System</title>
+  <meta name="theme-color" content="#111827">
+  <title>阿民 OS</title>
   <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f17;
+      --panel: #151b26;
+      --line: #273244;
+      --text: #e8edf5;
+      --muted: #94a3b8;
+      --accent: #4fd1c5;
+      --warning: #fbbf24;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-      padding: 20px;
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    h1 {
-      color: #4fd1c5;
+
+    main {
+      width: min(760px, 100%);
+      margin: 0 auto;
     }
-    .task {
-      background: #222;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #333;
+
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; color: var(--accent); }
+    h2 { margin: 32px 0 12px; font-size: 1.15rem; }
+
+    .intro, .empty, .error, .loading {
+      color: var(--muted);
     }
-    .ok {
-      color: #90ee90;
+
+    .list {
+      display: grid;
+      gap: 12px;
     }
-    .ng {
-      color: #ff6b6b;
+
+    .card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .status {
+      flex: 0 0 auto;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--warning);
+      font-size: 0.78rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      gap: 10px;
+      margin-top: 7px;
+      line-height: 1.5;
+    }
+
+    .label, time { color: var(--muted); }
+
+    .task-status {
+      margin-left: 8px;
+      color: var(--muted);
+    }
+
+    .ok { color: #90ee90; }
+    .ng { color: #ff7b7b; }
+
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 70px 1fr; }
+      .card-header { display: block; }
+      .status { display: inline-block; margin-top: 8px; }
     }
   </style>
 </head>
 <body>
+  <main>
+    <h1>阿民 OS</h1>
+    <p class="intro">AI 自動工作會把商機進度寫進外部記憶，這裡只負責顯示。</p>
 
-  <h1>✔ 我的 MES 系統（Beta）</h1>
-  <p>你的專屬 MES 系統已成功運作。</p>
-
-  <div id="tasks"></div>
-
-<script>
-  // 這邊是你 MES 的資料
-  const tasks = [
-    { id: "AI-01", name: "AI 技術拆模組", status: "OK" },
-    { id: "AI-02", name: "AI 修仙技術盤點", status: "WIP" },
-    { id: "ISO-10", name: "ISO 法規比對", status: "NG" }
-  ];
-
-  const box = document.getElementById("tasks");
-
-  tasks.forEach(t => {
-    box.innerHTML += `
-      <div class="task">
-        <strong>${t.id}</strong> - ${t.name}  
-        <span class="${t.status === 'OK' ? 'ok' : t.status === 'NG' ? 'ng' : ''}">
-          (${t.status})
-        </span>
+    <section aria-labelledby="market-title">
+      <h2 id="market-title">市場商機</h2>
+      <div id="market-list" class="list">
+        <p class="loading">正在讀取商機…</p>
       </div>
-    `;
-  });
-</script>
+    </section>
 
+    <section aria-labelledby="tasks-title">
+      <h2 id="tasks-title">原有任務</h2>
+      <div id="tasks" class="list"></div>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://iqftezadvzugjcvuwmzw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZnRlemFkdnp1Z2pjdnV3bXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NTczODcsImV4cCI6MjA5OTMzMzM4N30.oNGP-iC1788qFznuvz17Kyt_pCXZ6v8MgYUgGu3MlBg";
+
+    const statusNames = {
+      discovered: "新發現",
+      watching: "觀察中",
+      need_evidence: "等待證據",
+      sourcing: "尋找貨源",
+      matching: "規格比對",
+      calculating: "成本計算",
+      human_review: "等待決策",
+      pilot: "試單中",
+      scale: "放大中",
+      hold: "暫停",
+      rejected: "已淘汰"
+    };
+
+    const marketList = document.getElementById("market-list");
+
+    function formatDate(value) {
+      if (!value) return "尚未更新";
+      return new Intl.DateTimeFormat("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function addTextRow(card, labelText, valueText) {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = labelText;
+
+      const value = document.createElement("span");
+      value.textContent = valueText || "尚未設定";
+
+      row.append(label, value);
+      card.appendChild(row);
+    }
+
+    function renderOpportunity(item) {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+
+      const title = document.createElement("div");
+      title.className = "title";
+      title.textContent = item.title;
+
+      const status = document.createElement("span");
+      status.className = "status";
+      status.textContent = statusNames[item.status] || item.status;
+
+      header.append(title, status);
+      card.appendChild(header);
+      addTextRow(card, "下一步", item.next_action);
+      addTextRow(card, "最後更新", formatDate(item.updated_at));
+      return card;
+    }
+
+    async function loadOpportunities() {
+      try {
+        const endpoint = `${SUPABASE_URL}/rest/v1/market_opportunity_feed?select=external_key,title,status,next_action,updated_at&order=updated_at.desc`;
+        const response = await fetch(endpoint, {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`讀取失敗：${response.status}`);
+        }
+
+        const items = await response.json();
+        marketList.replaceChildren();
+
+        if (!items.length) {
+          const empty = document.createElement("p");
+          empty.className = "empty";
+          empty.textContent = "目前還沒有商機資料。";
+          marketList.appendChild(empty);
+          return;
+        }
+
+        items.forEach(item => marketList.appendChild(renderOpportunity(item)));
+      } catch (error) {
+        const message = document.createElement("p");
+        message.className = "error";
+        message.textContent = "商機資料暫時無法讀取。";
+        marketList.replaceChildren(message);
+        console.error(error);
+      }
+    }
+
+    const tasks = [
+      { id: "AI-01", name: "AI 技術拆模組", status: "OK" },
+      { id: "AI-02", name: "AI 修仙技術盤點", status: "WIP" },
+      { id: "ISO-10", name: "ISO 法規比對", status: "NG" }
+    ];
+
+    const taskBox = document.getElementById("tasks");
+    tasks.forEach(task => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const name = document.createElement("strong");
+      name.textContent = `${task.id} - ${task.name}`;
+
+      const status = document.createElement("span");
+      status.className = `task-status ${task.status === "OK" ? "ok" : task.status === "NG" ? "ng" : ""}`;
+      status.textContent = `(${task.status})`;
+
+      card.append(name, status);
+      taskBox.appendChild(card);
+    });
+
+    loadOpportunities();
+  </script>
 </body>
 </html>
