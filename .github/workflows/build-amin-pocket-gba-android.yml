@@ -86,7 +86,7 @@ jobs:
             echo "Permanent signing secrets are absent; this run is CI-only."
           fi
 
-      - name: Validate RC6 launcher and bridge contract
+      - name: Validate RC6 launcher and Bridge 2 contract
         shell: bash
         run: |
           set -euxo pipefail
@@ -137,9 +137,9 @@ jobs:
 
           gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
           for marker in (
-              "'97'",
-              "'-bridge1'",
-              'Amin Pocket GBA Bridge 0.9.2 B1',
+              "'98'",
+              "'-bridge2'",
+              'Amin Pocket GBA Bridge 0.9.2 B2',
               'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge',
               "RELEASE_CHANNEL', '\"bridge\"'",
               'signingConfig signingConfigs.release',
@@ -163,7 +163,7 @@ jobs:
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect bridge APK
+      - name: Inspect Bridge 2 APK
         shell: bash
         run: |
           set -euxo pipefail
@@ -171,8 +171,8 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='97' versionName='0.9.2-bridge1'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B1'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='98' versionName='0.9.2-bridge2'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B2'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.INTERNET' /tmp/apk-permissions.txt
           grep -q 'android.permission.ACCESS_NETWORK_STATE' /tmp/apk-permissions.txt
@@ -191,20 +191,20 @@ jobs:
           unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package and verify bridge artifact
+      - name: Package and verify Bridge 2 artifact
         id: package
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p dist
           if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge1.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge1'
-            STATUS='PERMANENT SIGNING ENABLED: suitable for the fixed in-place update chain.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge2.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge2'
+            STATUS='PERMANENT SIGNING ENABLED: suitable for in-place update from code 97.'
           else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge1-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge1-CI-ONLY-NOT-UPDATABLE'
-            STATUS='CI DEBUG SIGNING ONLY: do not treat this APK as the permanent update bridge.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge2-CI-ONLY.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge2-CI-ONLY-NOT-UPDATABLE'
+            STATUS='CI DEBUG SIGNING ONLY: do not use for the permanent update test.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
           printf '%s\n' "$STATUS" > dist/SIGNING_STATUS.txt
@@ -214,7 +214,7 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload bridge APK
+      - name: Upload Bridge 2 APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.artifact_name }}
