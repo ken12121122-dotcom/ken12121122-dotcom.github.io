@@ -1,15 +1,19 @@
 package com.amin.pocketgba;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
@@ -18,9 +22,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import androidx.core.content.FileProvider;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +48,7 @@ import java.util.concurrent.Executors;
 public final class NativeUpdateActivity extends Activity {
     private static final long MAX_MANIFEST_BYTES = 512L * 1024L;
     private static final long MAX_APK_BYTES = 250L * 1024L * 1024L;
+    private static final String UPDATE_APK_NAME = "amin-update-verified.apk";
     private static final Set<String> ALLOWED_EXACT_HOSTS = new HashSet<>(Arrays.asList(
             "ken12121122-dotcom.github.io",
             "github.com"
@@ -59,12 +62,84 @@ public final class NativeUpdateActivity extends Activity {
     private Button retryButton;
     private JSONObject releaseManifest;
     private File verifiedApk;
+    private PackageInstaller packageInstaller;
+    private int activeSessionId = -1;
+    private boolean waitingForInstallSourcePermission;
+
+    private final PackageInstaller.SessionCallback sessionCallback =
+            new PackageInstaller.SessionCallback() {
+                @Override
+                public void onCreated(int sessionId) {
+                    // Session identity is recorded when createSession returns.
+                }
+
+                @Override
+                public void onBadgingChanged(int sessionId) {
+                    // No-op.
+                }
+
+                @Override
+                public void onActiveChanged(int sessionId, boolean active) {
+                    // No-op.
+                }
+
+                @Override
+                public void onProgressChanged(int sessionId, float progress) {
+                    if (sessionId != activeSessionId) return;
+                    int percent = 80 + Math.round(Math.max(0f, Math.min(1f, progress)) * 19f);
+                    runOnUiThread(() -> {
+                        progressBar.setIndeterminate(false);
+                        progressBar.setProgress(percent);
+                        statusView.setText("正在安裝更新…");
+                        detailView.setText("系統安裝進度 " + percent + "%\n請保持 App 開啟。完成後會自動重新啟動。");
+                    });
+                }
+
+                @Override
+                public void onFinished(int sessionId, boolean success) {
+                    if (sessionId != activeSessionId) return;
+                    runOnUiThread(() -> {
+                        if (success) {
+                            progressBar.setProgress(100);
+                            statusView.setText("更新完成，正在重新啟動…");
+                            detailView.setText("Android 已接受新版 APK。App 將切換至新版本。");
+                        }
+                    });
+                }
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        packageInstaller = getPackageManager().getPackageInstaller();
+        packageInstaller.registerSessionCallback(sessionCallback, new Handler(Looper.getMainLooper()));
         buildUi();
-        checkForUpdate();
+
+        String previousError = getIntent().getStringExtra("install_error");
+        if (previousError != null && !previousError.trim().isEmpty()) {
+            showResult("上次安裝未完成", previousError, true);
+        } else {
+            checkForUpdate();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (waitingForInstallSourcePermission
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && getPackageManager().canRequestPackageInstalls()) {
+            waitingForInstallSourcePermission = false;
+            installVerifiedApk();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (packageInstaller != null) {
+            packageInstaller.unregisterSessionCallback(sessionCallback);
+        }
+        super.onDestroy();
     }
 
     private void buildUi() {
@@ -74,22 +149,38 @@ public final class NativeUpdateActivity extends Activity {
         content.setPadding(padding, padding, padding, padding);
         content.setGravity(Gravity.CENTER_HORIZONTAL);
 
+        TextView eyebrow = new TextView(this);
+        eyebrow.setText("GAME-STYLE UPDATE");
+        eyebrow.setTextSize(12f);
+        eyebrow.setTypeface(Typeface.DEFAULT_BOLD);
+        content.addView(eyebrow, matchWrap());
+
         TextView title = new TextView(this);
-        title.setText("Amin Native Update Center");
-        title.setTextSize(24f);
+        title.setText("Amin 自動更新");
+        title.setTextSize(28f);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        content.addView(title, matchWrap());
+        LinearLayout.LayoutParams titleParams = matchWrap();
+        titleParams.topMargin = dp(8);
+        content.addView(title, titleParams);
+
+        TextView intro = new TextView(this);
+        intro.setText("新版會在這個畫面完成下載、四重驗證與安裝。只有 Android 強制要求時，才會出現系統確認。");
+        intro.setTextSize(14f);
+        intro.setLineSpacing(0f, 1.35f);
+        LinearLayout.LayoutParams introParams = matchWrap();
+        introParams.topMargin = dp(10);
+        content.addView(intro, introParams);
 
         statusView = new TextView(this);
-        statusView.setTextSize(18f);
+        statusView.setTextSize(20f);
         statusView.setTypeface(Typeface.DEFAULT_BOLD);
         LinearLayout.LayoutParams statusParams = matchWrap();
-        statusParams.topMargin = dp(22);
+        statusParams.topMargin = dp(26);
         content.addView(statusView, statusParams);
 
         detailView = new TextView(this);
         detailView.setTextSize(14f);
-        detailView.setLineSpacing(0f, 1.35f);
+        detailView.setLineSpacing(0f, 1.4f);
         LinearLayout.LayoutParams detailParams = matchWrap();
         detailParams.topMargin = dp(12);
         content.addView(detailView, detailParams);
@@ -98,26 +189,30 @@ public final class NativeUpdateActivity extends Activity {
         progressBar.setMax(100);
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(12)
+                dp(14)
         );
-        progressParams.topMargin = dp(22);
+        progressParams.topMargin = dp(24);
         content.addView(progressBar, progressParams);
 
         primaryButton = new Button(this);
-        primaryButton.setEnabled(false);
+        primaryButton.setVisibility(View.GONE);
+        primaryButton.setAllCaps(false);
         LinearLayout.LayoutParams primaryParams = matchWrap();
-        primaryParams.topMargin = dp(22);
+        primaryParams.topMargin = dp(20);
         content.addView(primaryButton, primaryParams);
 
         retryButton = new Button(this);
-        retryButton.setText("重新檢查");
+        retryButton.setText("重新開始更新");
+        retryButton.setAllCaps(false);
+        retryButton.setVisibility(View.GONE);
         retryButton.setOnClickListener(view -> checkForUpdate());
         LinearLayout.LayoutParams retryParams = matchWrap();
         retryParams.topMargin = dp(10);
         content.addView(retryButton, retryParams);
 
         Button closeButton = new Button(this);
-        closeButton.setText("關閉");
+        closeButton.setText("稍後再說");
+        closeButton.setAllCaps(false);
         closeButton.setOnClickListener(view -> finish());
         LinearLayout.LayoutParams closeParams = matchWrap();
         closeParams.topMargin = dp(10);
@@ -139,35 +234,36 @@ public final class NativeUpdateActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    private void setBusy(String status, String detail) {
+    private void setBusy(String status, String detail, boolean determinate, int progress) {
         runOnUiThread(() -> {
             statusView.setText(status);
             detailView.setText(detail);
             progressBar.setVisibility(View.VISIBLE);
-            progressBar.setIndeterminate(true);
-            primaryButton.setEnabled(false);
-            retryButton.setEnabled(false);
+            progressBar.setIndeterminate(!determinate);
+            if (determinate) progressBar.setProgress(progress);
+            primaryButton.setVisibility(View.GONE);
+            retryButton.setVisibility(View.GONE);
         });
     }
 
-    private void showResult(String status, String detail, boolean canDownload) {
+    private void showResult(String status, String detail, boolean canRetry) {
         runOnUiThread(() -> {
             statusView.setText(status);
             detailView.setText(detail);
             progressBar.setVisibility(View.GONE);
-            primaryButton.setEnabled(canDownload);
-            retryButton.setEnabled(true);
+            primaryButton.setVisibility(View.GONE);
+            retryButton.setVisibility(canRetry ? View.VISIBLE : View.GONE);
         });
     }
 
     private void checkForUpdate() {
-        verifiedApk = null;
         releaseManifest = null;
-        primaryButton.setText("下載並驗證更新");
-        primaryButton.setOnClickListener(view -> downloadAndVerify());
+        verifiedApk = null;
         setBusy(
-                "正在檢查原生版本…",
-                "目前版本：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）"
+                "正在檢查新版…",
+                "目前版本：" + BuildConfig.VERSION_NAME + " · code " + BuildConfig.VERSION_CODE,
+                false,
+                0
         );
 
         EXECUTOR.execute(() -> {
@@ -178,9 +274,9 @@ public final class NativeUpdateActivity extends Activity {
 
                 if (!manifest.optBoolean("enabled", false)) {
                     showResult(
-                            "正式更新通道尚未啟用",
-                            releaseNotes(manifest) + "\n\n安全鎖定中，不會下載 APK。",
-                            false
+                            "更新通道目前關閉",
+                            releaseNotes(manifest),
+                            true
                     );
                     return;
                 }
@@ -190,24 +286,23 @@ public final class NativeUpdateActivity extends Activity {
                 if (latestCode <= BuildConfig.VERSION_CODE) {
                     showResult(
                             "目前已是最新版本",
-                            "本機：" + BuildConfig.VERSION_NAME + "（" + BuildConfig.VERSION_CODE + "）\n"
-                                    + "線上：" + latestName + "（" + latestCode + "）\n\n"
-                                    + releaseNotes(manifest),
+                            "本機：" + BuildConfig.VERSION_NAME + " · code " + BuildConfig.VERSION_CODE
+                                    + "\n線上：" + latestName + " · code " + latestCode,
                             false
                     );
                     return;
                 }
 
-                showResult(
-                        "找到 Amin Pocket GBA " + latestName,
-                        "版本碼：" + latestCode
-                                + "\n檔案大小：" + formatBytes(manifest.optLong("sizeBytes", -1L))
-                                + "\n\n" + releaseNotes(manifest)
-                                + "\n\n下載後會驗證檔案、套件、版本與簽章。",
-                        true
+                setBusy(
+                        "發現 " + latestName,
+                        "正在自動下載並驗證。檔案大小："
+                                + formatBytes(manifest.optLong("sizeBytes", -1L)),
+                        true,
+                        0
                 );
+                downloadAndVerify();
             } catch (Exception error) {
-                showResult("更新檢查失敗", safeMessage(error), false);
+                showResult("更新檢查失敗", safeMessage(error), true);
             }
         });
     }
@@ -216,6 +311,7 @@ public final class NativeUpdateActivity extends Activity {
         HttpURLConnection connection = openTrustedConnection(urlText);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(20000);
+        connection.setUseCaches(false);
         connection.setRequestProperty("Accept", "application/json");
         connection.connect();
         verifyTrustedUrl(connection.getURL());
@@ -238,8 +334,7 @@ public final class NativeUpdateActivity extends Activity {
                 }
                 output.write(buffer, 0, read);
             }
-            String json = new String(output.toByteArray(), StandardCharsets.UTF_8);
-            return new JSONObject(json);
+            return new JSONObject(new String(output.toByteArray(), StandardCharsets.UTF_8));
         } finally {
             connection.disconnect();
         }
@@ -252,7 +347,7 @@ public final class NativeUpdateActivity extends Activity {
         if (manifest.optInt("manifestVersion") != 1) {
             throw new IllegalStateException("更新清單版本不相容。");
         }
-        if (!"com.amin.pocketgba".equals(manifest.optString("packageId"))) {
+        if (!getPackageName().equals(manifest.optString("packageId"))) {
             throw new SecurityException("更新套件識別碼不受信任。");
         }
         if (!manifest.optBoolean("enabled", false)) return;
@@ -291,20 +386,13 @@ public final class NativeUpdateActivity extends Activity {
     private void downloadAndVerify() {
         JSONObject manifest = releaseManifest;
         if (manifest == null || !manifest.optBoolean("enabled", false)) {
-            showResult("無可下載版本", "請重新檢查更新。", false);
+            showResult("沒有可下載版本", "請重新檢查更新。", true);
             return;
         }
 
-        primaryButton.setEnabled(false);
-        retryButton.setEnabled(false);
-        progressBar.setVisibility(View.VISIBLE);
-        progressBar.setIndeterminate(false);
-        progressBar.setProgress(0);
-        statusView.setText("正在下載更新…");
-
         EXECUTOR.execute(() -> {
             File partial = new File(getCacheDir(), "amin-update.partial.apk");
-            File completed = new File(getCacheDir(), "amin-update-verified.apk");
+            File completed = new File(getCacheDir(), UPDATE_APK_NAME);
             try {
                 deleteIfPresent(partial);
                 deleteIfPresent(completed);
@@ -312,6 +400,7 @@ public final class NativeUpdateActivity extends Activity {
                 HttpURLConnection connection = openTrustedConnection(manifest.getString("apkUrl"));
                 connection.setConnectTimeout(20000);
                 connection.setReadTimeout(30000);
+                connection.setUseCaches(false);
                 connection.connect();
                 verifyTrustedUrl(connection.getURL());
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
@@ -331,9 +420,11 @@ public final class NativeUpdateActivity extends Activity {
                     int read;
                     while ((read = input.read(buffer)) != -1) {
                         total += read;
-                        if (total > MAX_APK_BYTES) throw new SecurityException("APK 超過允許大小。");
+                        if (total > MAX_APK_BYTES) {
+                            throw new SecurityException("APK 超過允許大小。");
+                        }
                         output.write(buffer, 0, read);
-                        updateProgress(total, expectedLength);
+                        updateDownloadProgress(total, expectedLength);
                     }
                     output.flush();
                     if (expectedLength > 0 && total != expectedLength) {
@@ -343,37 +434,33 @@ public final class NativeUpdateActivity extends Activity {
                     connection.disconnect();
                 }
 
+                setBusy("正在執行四重驗證…", "比對檔案、套件、版本碼與永久簽章。", true, 72);
                 verifyApk(partial, manifest);
                 copyFile(partial, completed);
                 deleteIfPresent(partial);
                 verifiedApk = completed;
-                runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    statusView.setText("APK 驗證完成");
-                    detailView.setText("SHA-256、套件、版本碼與簽章憑證全部相符。\n\nAndroid 仍會要求確認安裝。");
-                    primaryButton.setText("開啟 Android 安裝畫面");
-                    primaryButton.setOnClickListener(view -> openInstaller());
-                    primaryButton.setEnabled(true);
-                    retryButton.setEnabled(true);
-                });
+                setBusy("驗證完成", "安全檢查全部通過，正在提交 Android 安裝工作階段。", true, 80);
+                installVerifiedApk();
             } catch (Exception error) {
                 try {
                     deleteIfPresent(partial);
                 } catch (Exception ignored) {
-                    // Keep the original verification failure as the user-facing error.
+                    // Preserve original error.
                 }
-                showResult("下載或驗證失敗", safeMessage(error), true);
+                showResult("更新失敗，舊版未受影響", safeMessage(error), true);
             }
         });
     }
 
-    private void updateProgress(long completed, long total) {
+    private void updateDownloadProgress(long completed, long total) {
         if (total <= 0) return;
-        int percent = (int) Math.min(100L, completed * 100L / total);
+        int percent = (int) Math.min(70L, completed * 70L / total);
         runOnUiThread(() -> {
+            progressBar.setIndeterminate(false);
             progressBar.setProgress(percent);
-            detailView.setText("下載進度：" + percent + "%\n"
-                    + formatBytes(completed) + " / " + formatBytes(total));
+            statusView.setText("正在下載更新… " + percent + "%");
+            detailView.setText(formatBytes(completed) + " / " + formatBytes(total)
+                    + "\n下載完成後會自動驗證與安裝。");
         });
     }
 
@@ -397,6 +484,9 @@ public final class NativeUpdateActivity extends Activity {
         if (archiveVersion != manifest.getLong("latestVersionCode")) {
             throw new SecurityException("APK 版本碼不一致。");
         }
+        if (archiveVersion <= BuildConfig.VERSION_CODE) {
+            throw new SecurityException("APK 版本碼沒有高於目前版本。");
+        }
 
         Signature[] signatures;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -416,38 +506,111 @@ public final class NativeUpdateActivity extends Activity {
         }
     }
 
-    private void openInstaller() {
-        if (verifiedApk == null || !verifiedApk.isFile()) {
-            showResult("找不到已驗證 APK", "請重新下載更新。", true);
+    private void installVerifiedApk() {
+        File apk = verifiedApk;
+        if (apk == null || !apk.isFile()) {
+            showResult("找不到已驗證 APK", "請重新開始更新。", true);
             return;
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && !getPackageManager().canRequestPackageInstalls()) {
-            try {
-                startActivity(new Intent(
-                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                        Uri.parse("package:" + getPackageName())
-                ));
-                Toast.makeText(this, "允許安裝更新後，返回再按一次安裝。", Toast.LENGTH_LONG).show();
-            } catch (ActivityNotFoundException error) {
-                showResult("無法開啟安裝權限", safeMessage(error), false);
-            }
+            waitingForInstallSourcePermission = true;
+            runOnUiThread(() -> {
+                statusView.setText("需要一次安裝來源授權");
+                detailView.setText("開啟「允許此來源」後返回，更新會自動繼續。這是 Android 對非商店 APK 的一次性保護。");
+                progressBar.setVisibility(View.GONE);
+                primaryButton.setText("開啟允許此來源");
+                primaryButton.setVisibility(View.VISIBLE);
+                primaryButton.setOnClickListener(view -> openInstallSourceSettings());
+            });
             return;
         }
 
-        Uri uri = FileProvider.getUriForFile(
-                this,
-                getPackageName() + ".fileprovider",
-                verifiedApk
-        );
-        Intent installIntent = new Intent(Intent.ACTION_VIEW);
-        installIntent.setDataAndType(uri, "application/vnd.android.package-archive");
-        installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        setBusy("正在準備安裝…", "已驗證 APK 正在寫入 Android 安裝工作階段。", true, 80);
+        EXECUTOR.execute(() -> {
+            try {
+                PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
+                        PackageInstaller.SessionParams.MODE_FULL_INSTALL
+                );
+                params.setAppPackageName(getPackageName());
+                params.setSize(apk.length());
+                params.setInstallReason(PackageManager.INSTALL_REASON_USER);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    params.setRequireUserAction(
+                            PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED
+                    );
+                    params.setInstallScenario(PackageManager.INSTALL_SCENARIO_FAST);
+                }
+
+                int sessionId = packageInstaller.createSession(params);
+                activeSessionId = sessionId;
+
+                try (PackageInstaller.Session session = packageInstaller.openSession(sessionId);
+                     InputStream input = new BufferedInputStream(new FileInputStream(apk));
+                     OutputStream output = session.openWrite("base.apk", 0, apk.length())) {
+                    byte[] buffer = new byte[64 * 1024];
+                    long total = 0;
+                    int read;
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, read);
+                        total += read;
+                        float staged = apk.length() <= 0 ? 0f : (float) total / (float) apk.length();
+                        session.setStagingProgress(staged);
+                        int percent = 80 + Math.round(Math.min(1f, staged) * 15f);
+                        runOnUiThread(() -> {
+                            progressBar.setProgress(percent);
+                            statusView.setText("正在準備安裝… " + percent + "%");
+                        });
+                    }
+                    session.fsync(output);
+
+                    Intent statusIntent = new Intent(
+                            this,
+                            PackageInstallResultReceiver.class
+                    );
+                    statusIntent.setAction(PackageInstallResultReceiver.ACTION_INSTALL_STATUS);
+                    statusIntent.putExtra("session_id", sessionId);
+                    int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        pendingFlags |= PendingIntent.FLAG_MUTABLE;
+                    }
+                    PendingIntent statusReceiver = PendingIntent.getBroadcast(
+                            this,
+                            sessionId,
+                            statusIntent,
+                            pendingFlags
+                    );
+
+                    runOnUiThread(() -> {
+                        progressBar.setProgress(96);
+                        statusView.setText("正在安裝更新…");
+                        detailView.setText("Android 正在切換至新版。正常情況不需要離開這個畫面。");
+                    });
+                    session.commit(statusReceiver.getIntentSender());
+                }
+            } catch (Exception error) {
+                if (activeSessionId != -1) {
+                    try {
+                        packageInstaller.abandonSession(activeSessionId);
+                    } catch (Exception ignored) {
+                        // Preserve the original error.
+                    }
+                }
+                showResult("安裝工作階段失敗", safeMessage(error), true);
+            }
+        });
+    }
+
+    private void openInstallSourceSettings() {
         try {
-            startActivity(installIntent);
+            Intent intent = new Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:" + getPackageName())
+            );
+            startActivity(intent);
         } catch (ActivityNotFoundException error) {
-            showResult("找不到 Android 安裝程式", safeMessage(error), false);
+            showResult("無法開啟安裝來源設定", safeMessage(error), true);
         }
     }
 
