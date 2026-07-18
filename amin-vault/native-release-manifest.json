@@ -2,21 +2,21 @@
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
   "channel": "bridge",
-  "enabled": false,
+  "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": null,
-  "latestVersionCode": 0,
+  "latestVersionName": "0.9.2-bridge2",
+  "latestVersionCode": 98,
   "minimumSupportedVersionCode": 97,
   "minimumAndroidSdk": 26,
-  "apkUrl": null,
-  "apkSha256": null,
-  "signerCertificateSha256": "aff1bab8f364e1d0f248c6242da1e07a7114778a7347b4390f179948290c256e",
-  "sizeBytes": null,
-  "publishedAt": null,
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge2.apk",
+  "apkSha256": "0be2cc6bb215e184719fd40b25eeb44c16df5ec67a43ee299bc53379b56807ad",
+  "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
+  "sizeBytes": 2308336,
+  "publishedAt": "2026-07-18T23:00:00+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "Bridge 版已固定套件識別碼與 GitHub Pages Runtime 入口。",
-    "永久簽章身份已建立並鎖定憑證 SHA-256；原生 APK 通道仍維持停用，直到 GitHub Secrets 完成設定與正式簽章建置通過。",
-    "Runtime rc6 可在 Bridge 安裝後透過 GitHub 更新，不需要重裝 APK。"
+    "Bridge 2 是第一個永久簽章原地更新測試版。",
+    "由 code 97 更新至 code 98，不需要解除安裝。",
+    "下載後會驗證 SHA-256、套件名稱、版本碼與簽章憑證。"
   ]
 }
