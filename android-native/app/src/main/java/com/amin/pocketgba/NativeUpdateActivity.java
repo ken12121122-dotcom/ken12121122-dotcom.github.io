@@ -546,24 +546,25 @@ public final class NativeUpdateActivity extends Activity {
                 int sessionId = packageInstaller.createSession(params);
                 activeSessionId = sessionId;
 
-                try (PackageInstaller.Session session = packageInstaller.openSession(sessionId);
-                     InputStream input = new BufferedInputStream(new FileInputStream(apk));
-                     OutputStream output = session.openWrite("base.apk", 0, apk.length())) {
-                    byte[] buffer = new byte[64 * 1024];
-                    long total = 0;
-                    int read;
-                    while ((read = input.read(buffer)) != -1) {
-                        output.write(buffer, 0, read);
-                        total += read;
-                        float staged = apk.length() <= 0 ? 0f : (float) total / (float) apk.length();
-                        session.setStagingProgress(staged);
-                        int percent = 80 + Math.round(Math.min(1f, staged) * 15f);
-                        runOnUiThread(() -> {
-                            progressBar.setProgress(percent);
-                            statusView.setText("正在準備安裝… " + percent + "%");
-                        });
+                try (PackageInstaller.Session session = packageInstaller.openSession(sessionId)) {
+                    try (InputStream input = new BufferedInputStream(new FileInputStream(apk));
+                         OutputStream output = session.openWrite("base.apk", 0, apk.length())) {
+                        byte[] buffer = new byte[64 * 1024];
+                        long total = 0;
+                        int read;
+                        while ((read = input.read(buffer)) != -1) {
+                            output.write(buffer, 0, read);
+                            total += read;
+                            float staged = apk.length() <= 0 ? 0f : (float) total / (float) apk.length();
+                            session.setStagingProgress(staged);
+                            int percent = 80 + Math.round(Math.min(1f, staged) * 15f);
+                            runOnUiThread(() -> {
+                                progressBar.setProgress(percent);
+                                statusView.setText("正在準備安裝… " + percent + "%");
+                            });
+                        }
+                        session.fsync(output);
                     }
-                    session.fsync(output);
 
                     Intent statusIntent = new Intent(
                             this,
