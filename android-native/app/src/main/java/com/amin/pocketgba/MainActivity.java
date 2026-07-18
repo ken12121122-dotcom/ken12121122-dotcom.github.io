@@ -51,9 +51,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class MainActivity extends Activity {
-    private static final String APP_URL =
-            "https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&v=091";
-    private static final String TRUSTED_HOST = "ken12121122-dotcom.github.io";
+    private static final String APP_URL = BuildConfig.APP_WEB_URL;
+    private static final String TRUSTED_HOST = Uri.parse(APP_URL).getHost();
     private static final String NATIVE_CARTRIDGE_PATH = "/__amin_native__/cartridge";
     private static final String OFFLINE_URL = "file:///android_asset/bootstrap/index.html";
     private static final int FILE_CHOOSER_REQUEST = 4107;
@@ -66,6 +65,7 @@ public final class MainActivity extends Activity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private boolean pageReady;
+    private boolean landscapeGameplay;
 
     private ConnectivityManager connectivityManager;
     private ConnectivityManager.NetworkCallback networkCallback;
@@ -75,7 +75,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+        applyRequestedOrientation("portrait");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
 
@@ -87,7 +87,7 @@ public final class MainActivity extends Activity {
         handleIncomingIntent(getIntent());
         configureWebView();
         registerNetworkMonitor();
-        hideSystemUi();
+        updateSystemUi();
         webView.loadUrl(APP_URL);
     }
 
@@ -140,7 +140,7 @@ public final class MainActivity extends Activity {
             injectNativeCapabilities();
             injectNetworkState();
             injectPendingCartridge();
-            hideSystemUi();
+            updateSystemUi();
         }
 
         @Override
@@ -158,6 +158,7 @@ public final class MainActivity extends Activity {
                     || "blob".equalsIgnoreCase(scheme)
                     || ("file".equalsIgnoreCase(scheme) && url.startsWith(OFFLINE_URL))
                     || ("https".equalsIgnoreCase(scheme)
+                    && TRUSTED_HOST != null
                     && TRUSTED_HOST.equalsIgnoreCase(uri.getHost()))) {
                 return false;
             }
@@ -178,6 +179,7 @@ public final class MainActivity extends Activity {
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
             if ("https".equalsIgnoreCase(uri.getScheme())
+                    && TRUSTED_HOST != null
                     && TRUSTED_HOST.equalsIgnoreCase(uri.getHost())
                     && NATIVE_CARTRIDGE_PATH.equals(uri.getPath())) {
                 return servePendingCartridge(uri);
@@ -247,7 +249,7 @@ public final class MainActivity extends Activity {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            hideSystemUi();
+            applyRequestedOrientation("landscape");
         }
 
         @Override
@@ -467,7 +469,9 @@ public final class MainActivity extends Activity {
             }
             Map<String, String> headers = new HashMap<>();
             headers.put("Cache-Control", "no-store");
-            headers.put("Access-Control-Allow-Origin", "https://" + TRUSTED_HOST);
+            if (TRUSTED_HOST != null) {
+                headers.put("Access-Control-Allow-Origin", "https://" + TRUSTED_HOST);
+            }
             if (cartridge.size >= 0) {
                 headers.put("Content-Length", String.valueOf(cartridge.size));
             }
@@ -501,12 +505,27 @@ public final class MainActivity extends Activity {
     private void handleNativeAction(Uri uri) {
         String action = uri.getHost();
         if ("retry".equalsIgnoreCase(action)) {
-            webView.loadUrl(APP_URL + "&retry=" + System.currentTimeMillis());
+            webView.loadUrl(APP_URL + (APP_URL.contains("?") ? "&" : "?")
+                    + "retry=" + System.currentTimeMillis());
             return;
         }
         if ("choose-cartridge".equalsIgnoreCase(action)) {
             launchCartridgePicker(OFFLINE_CARTRIDGE_REQUEST, false);
+            return;
         }
+        if ("orientation".equalsIgnoreCase(action)) {
+            applyRequestedOrientation(uri.getQueryParameter("mode"));
+        }
+    }
+
+    void applyRequestedOrientation(String mode) {
+        boolean landscape = "landscape".equalsIgnoreCase(mode);
+        landscapeGameplay = landscape;
+        setRequestedOrientation(landscape
+                ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        );
+        updateSystemUi();
     }
 
     private boolean isOfflineBootstrap(Uri uri) {
@@ -514,6 +533,7 @@ public final class MainActivity extends Activity {
     }
 
     private void showOfflineBootstrap(String reason) {
+        applyRequestedOrientation("portrait");
         String transport = lastNetworkPayload == null
                 ? "unknown"
                 : lastNetworkPayload.optString("transport", "unknown");
@@ -608,9 +628,12 @@ public final class MainActivity extends Activity {
         capabilities.put("native-file-picker");
         capabilities.put("network-status");
         capabilities.put("runtime-update-v1");
+        capabilities.put("native-update-center");
+        capabilities.put("permission-center");
         capabilities.put("open-cartridge");
         capabilities.put("offline-bootstrap");
         capabilities.put("save-flush");
+        capabilities.put("dynamic-orientation");
 
         try {
             payload.put("appId", BuildConfig.APPLICATION_ID);
@@ -635,7 +658,7 @@ public final class MainActivity extends Activity {
 
     private void injectPendingCartridge() {
         PendingCartridge cartridge = pendingCartridge;
-        if (cartridge == null) {
+        if (cartridge == null || TRUSTED_HOST == null) {
             return;
         }
         JSONObject payload = new JSONObject();
@@ -818,7 +841,15 @@ public final class MainActivity extends Activity {
             customViewCallback.onCustomViewHidden();
             customViewCallback = null;
         }
-        hideSystemUi();
+        updateSystemUi();
+    }
+
+    private void updateSystemUi() {
+        if (landscapeGameplay) {
+            hideSystemUi();
+        } else {
+            showSystemUi();
+        }
     }
 
     private void hideSystemUi() {
@@ -840,6 +871,18 @@ public final class MainActivity extends Activity {
                             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             );
+        }
+    }
+
+    private void showSystemUi() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(true);
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
         }
     }
 
@@ -865,6 +908,7 @@ public final class MainActivity extends Activity {
                     } else if (webView.canGoBack()) {
                         webView.goBack();
                     } else {
+                        applyRequestedOrientation("portrait");
                         MainActivity.super.onBackPressed();
                     }
                 }
@@ -874,7 +918,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        hideSystemUi();
+        updateSystemUi();
         updateNetworkState();
         if (webView != null) {
             webView.onResume();
@@ -899,7 +943,7 @@ public final class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            hideSystemUi();
+            updateSystemUi();
         }
     }
 

@@ -1,0 +1,231 @@
+name: Test Amin Pocket GBA Android Emulator
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'android-native/**'
+      - 'amin-vault/gba*.js'
+      - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.json'
+      - '.github/workflows/test-amin-pocket-gba-emulator.yml'
+  push:
+    paths:
+      - 'android-native/**'
+      - 'amin-vault/gba*.js'
+      - 'amin-vault/gba*.html'
+      - 'amin-vault/runtime-*.json'
+      - '.github/workflows/test-amin-pocket-gba-emulator.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: amin-pocket-gba-emulator-v8-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-35-bridge1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35 emulator image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            'platform-tools' \
+            'emulator' \
+            'platforms;android-35' \
+            'build-tools;35.0.0' \
+            'system-images;android-35;google_apis;x86_64'
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build Bridge 1 and instrumentation tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :app:assembleDebug \
+            :app:assembleDebugAndroidTest
+
+      - name: Build existing Preview 4 fixture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git worktree add --detach /tmp/amin-pocket-preview4 1b3d4f7e86eaa507fe15766899fbb88a33396400
+          gradle --no-daemon --console=plain -p /tmp/amin-pocket-preview4/android-native :app:assembleDebug
+          test -f /tmp/amin-pocket-preview4/android-native/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Create and boot Android 35 AVD
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd \
+            --force \
+            --name amin_api35 \
+            --package 'system-images;android-35;google_apis;x86_64' \
+            --device 'pixel_7'
+
+          EMULATOR_LOG="$RUNNER_TEMP/amin-emulator.log"
+          nohup env -u RUNNER_TRACKING_ID ANDROID_AVD_HOME="$ANDROID_AVD_HOME" \
+            "$ANDROID_HOME/emulator/emulator" \
+            -avd amin_api35 \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -accel on \
+            -cores 2 \
+            -memory 3072 \
+            -noaudio \
+            -no-boot-anim \
+            -no-snapshot \
+            -wipe-data \
+            -camera-back none \
+            > "$EMULATOR_LOG" 2>&1 &
+          EMULATOR_PID=$!
+          adb start-server
+          BOOTED=0
+          for attempt in $(seq 1 120); do
+            if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
+              cat "$EMULATOR_LOG"
+              exit 1
+            fi
+            DEVICE_STATE="$(adb get-state 2>/dev/null || true)"
+            BOOT_STATE="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+            if [ "$DEVICE_STATE" = 'device' ] && [ "$BOOT_STATE" = '1' ]; then
+              BOOTED=1
+              break
+            fi
+            sleep 5
+          done
+          test "$BOOTED" -eq 1
+          adb shell input keyevent 82 || true
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell getprop ro.build.version.sdk | grep -Fx '35'
+
+      - name: Install Preview 4 and Bridge 1 side by side
+        shell: bash
+        run: |
+          set -euxo pipefail
+          P4='/tmp/amin-pocket-preview4/android-native/app/build/outputs/apk/debug/app-debug.apk'
+          BRIDGE="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
+          adb install -r "$P4"
+          adb install -r "$BRIDGE"
+          adb shell pm list packages | tee "$RUNNER_TEMP/packages.txt"
+          grep -F 'package:com.amin.pocketgba.preview094' "$RUNNER_TEMP/packages.txt"
+          grep -F 'package:com.amin.pocketgba' "$RUNNER_TEMP/packages.txt"
+          adb shell dumpsys package com.amin.pocketgba > "$RUNNER_TEMP/bridge-package.txt"
+          grep -F 'versionName=0.9.2-bridge1' "$RUNNER_TEMP/bridge-package.txt"
+          grep -F 'versionCode=97' "$RUNNER_TEMP/bridge-package.txt"
+
+      - name: Verify Bridge 1 launcher and routes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PACKAGE='com.amin.pocketgba'
+          adb shell cmd package resolve-activity --brief \
+            -a android.intent.action.MAIN \
+            -c android.intent.category.LAUNCHER \
+            "$PACKAGE" | tee "$RUNNER_TEMP/launcher.txt"
+          grep -F 'ControlCenterActivity' "$RUNNER_TEMP/launcher.txt"
+
+          adb shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1
+          sleep 2
+          adb shell dumpsys activity activities | grep -F 'ControlCenterActivity'
+
+          adb shell am start -W -n "$PACKAGE/com.amin.pocketgba.MainActivity" \
+            | tee "$RUNNER_TEMP/library-launch.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/library-launch.txt"
+          adb shell input keyevent 4
+
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-permissions://open' -p "$PACKAGE" \
+            | tee "$RUNNER_TEMP/permission-link.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/permission-link.txt"
+          adb shell input keyevent 4
+
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-update://check' -p "$PACKAGE" \
+            | tee "$RUNNER_TEMP/update-link.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/update-link.txt"
+          adb shell input keyevent 4
+
+      - name: Install instrumentation APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          TEST_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+          adb install -r "$TEST_APK"
+          adb shell pm list instrumentation | tee "$RUNNER_TEMP/instrumentation.txt"
+          grep -F 'com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner' \
+            "$RUNNER_TEMP/instrumentation.txt"
+
+      - name: Run Android acceptance tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          RUNNER='com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner'
+          for TEST in \
+            com.amin.pocketgba.ControlCenterActivityTest \
+            com.amin.pocketgba.MainActivitySmokeTest \
+            com.amin.pocketgba.NativeSaveBridgeTest \
+            com.amin.pocketgba.PermissionCenterActivityTest \
+            com.amin.pocketgba.NativeUpdateActivityTest
+          do
+            OUT="$RUNNER_TEMP/$(echo "$TEST" | tr '.' '_').txt"
+            adb shell am instrument -w -e class "$TEST" "$RUNNER" > "$OUT"
+            cat "$OUT"
+            grep -F 'OK (' "$OUT"
+          done
+
+      - name: Collect emulator diagnostics
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          mkdir -p emulator-diagnostics
+          cp "$RUNNER_TEMP"/*.txt emulator-diagnostics/ 2>/dev/null || true
+          cp "$RUNNER_TEMP/amin-emulator.log" emulator-diagnostics/ 2>/dev/null || true
+          timeout 15 adb logcat -d > emulator-diagnostics/logcat.txt 2>/dev/null || true
+          timeout 15 adb exec-out screencap -p > emulator-diagnostics/final-screen.png 2>/dev/null || true
+
+      - name: Upload emulator diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-v0.9.2-bridge1-emulator-diagnostics
+          path: emulator-diagnostics/
+          if-no-files-found: warn
+          retention-days: 30

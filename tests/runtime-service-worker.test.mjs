@@ -123,7 +123,7 @@ async function activeCacheName() {
 
 await dispatchExtendable('install');
 await dispatchExtendable('activate');
-assert.equal(await activeCacheName(), 'amin-vault-runtime-bootstrap-v091');
+assert.equal(await activeCacheName(), 'amin-vault-runtime-bootstrap-v092');
 
 const client = {
   postMessage(message) {
@@ -147,15 +147,12 @@ assert.ok(posted.some(message => message.type === 'AMIN_RUNTIME_READY' && messag
 const v1Cache = await caches.open('amin-vault-runtime-1.0.0');
 assert.ok(await v1Cache.match(new URL('./gba.html', scope).href));
 
-// Online requests must still receive the active runtime. A server deployment is
-// not allowed to leak individual v2 files before the complete cache is staged.
 networkGeneration = 'v2-uncommitted';
 const fetchesBeforeActiveRead = networkFetches;
 const activeResponse = await dispatchFetch('./gba.html?online=1');
 assert.match(await activeResponse.text(), /asset:v1:\/amin-vault\/gba\.html/);
 assert.equal(networkFetches, fetchesBeforeActiveRead, 'active runtime unexpectedly fetched a newer network file');
 
-// The version manifest is the intentional exception and must check the network.
 const manifestResponse = await dispatchFetch('./runtime-manifest.json?check=1');
 assert.match(await manifestResponse.text(), /asset:v2-uncommitted:\/amin-vault\/runtime-manifest\.json/);
 

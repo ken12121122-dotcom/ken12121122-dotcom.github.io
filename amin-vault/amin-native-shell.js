@@ -22,6 +22,41 @@
     document.documentElement.dataset[name] = String(value);
   }
 
+  function parseVersion(value) {
+    return String(value || '')
+      .replace(/^[^0-9]*/, '')
+      .split(/[.+-]/)
+      .slice(0, 3)
+      .map(part => Number.parseInt(part, 10) || 0);
+  }
+
+  function versionAtLeast(value, minimum) {
+    const current = parseVersion(value);
+    const target = parseVersion(minimum);
+    for (let index = 0; index < 3; index += 1) {
+      if (current[index] > target[index]) return true;
+      if (current[index] < target[index]) return false;
+    }
+    return true;
+  }
+
+  function updateNativeControls(payload) {
+    const capabilities = Array.isArray(payload?.capabilities) ? payload.capabilities : [];
+    const compatibleVersion = versionAtLeast(payload?.nativeVersion, '0.9.2');
+
+    const updateLink = document.getElementById('nativeUpdateLink');
+    if (updateLink) {
+      const supported = capabilities.includes('native-update-center') || compatibleVersion;
+      updateLink.classList.toggle('hidden', !supported);
+    }
+
+    const permissionLink = document.getElementById('nativePermissionsLink');
+    if (permissionLink) {
+      const supported = capabilities.includes('permission-center') || compatibleVersion;
+      permissionLink.classList.toggle('hidden', !supported);
+    }
+  }
+
   async function waitForRomInput(timeoutMs = 15000) {
     const started = Date.now();
     while (Date.now() - started < timeoutMs) {
@@ -98,6 +133,7 @@
     receiveCapabilities(payload) {
       state.capabilities = payload || null;
       setDataset('nativeShell', payload?.nativeVersion || 'connected');
+      updateNativeControls(payload);
       emit('amin-native-capabilities', payload || {});
     },
 
