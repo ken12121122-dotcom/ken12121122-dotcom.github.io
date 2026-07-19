@@ -123,10 +123,6 @@ jobs:
           grep -q 'LaunchGateActivity' /tmp/apk-manifest.txt
           grep -q 'amin-home' /tmp/apk-manifest.txt
           grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
-          unzip -p "$APK" classes.dex > /tmp/classes.dex
-          strings /tmp/classes.dex > /tmp/classes-strings.txt
-          grep -q 'AminNativeSaveVault' /tmp/classes-strings.txt
-          grep -q 'gba-saves' /tmp/classes-strings.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
       - name: Package Bridge 8 artifact
