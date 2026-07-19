@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge5",
-  "latestVersionCode": 101,
-  "minimumSupportedVersionCode": 100,
+  "latestVersionName": "0.9.2-bridge6",
+  "latestVersionCode": 102,
+  "minimumSupportedVersionCode": 101,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge5.apk",
-  "apkSha256": "bf865bf44c36fb2e201b90dbee5c6bf4690a36a6c43937f1f15067052d26f5eb",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge6.apk",
+  "apkSha256": "fcabe7904e370c017835e79ddeee1367e35c29c53e23dab9887b8b2c01d3489a",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2316506,
-  "publishedAt": "2026-07-18T23:55:00+08:00",
+  "sizeBytes": 2316557,
+  "publishedAt": "2026-07-19T01:20:00+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "Bridge 5 是完整遊戲式自動更新實機測試版。",
-    "code 100 啟動時會自動發現、下載、驗證並提交 code 101 安裝。",
-    "用來確認 Samsung 是否允許免確認安裝，或仍要求最後一次系統確認。"
+    "Bridge 6 新增 GBA 返回白色原生控制中心的專用路由。",
+    "GBA、白色控制中心與黑色舊 Pocket OS 可同時保留，彼此不再導錯頁面。",
+    "返回控制中心會清除上層模擬器頁面，避免再次按返回時繞回 GBA。"
   ]
 }
