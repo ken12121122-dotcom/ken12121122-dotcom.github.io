@@ -31,6 +31,19 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <service
+            android:name=".UniversalControlAccessibilityService"
+            android:exported="true"
+            android:label="@string/universal_control_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/universal_control_accessibility_service" />
+        </service>
+
         <activity
             android:name=".ControlCenterActivity"
             android:exported="true"
@@ -40,6 +53,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".UniversalControlSetupActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".PermissionCenterActivity"
