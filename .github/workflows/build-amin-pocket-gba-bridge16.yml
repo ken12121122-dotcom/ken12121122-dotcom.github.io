@@ -8,6 +8,12 @@ on:
     paths:
       - 'android-native/**'
       - '.github/workflows/build-amin-pocket-gba-bridge16.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/build-amin-pocket-gba-bridge16.yml'
 
 permissions:
   contents: read
