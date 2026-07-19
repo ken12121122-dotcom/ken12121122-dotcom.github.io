@@ -7,8 +7,8 @@ def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').or
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
 def aminKeyPassword = providers.gradleProperty('AMIN_KEY_PASSWORD').orNull ?: System.getenv('AMIN_KEY_PASSWORD')
 def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, aminKeyPassword].every { value -> value }
-def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '97').toInteger()
-def aminPreviewSuffix = providers.gradleProperty('AMIN_PREVIEW_SUFFIX').orNull ?: '-bridge1'
+def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '99').toInteger()
+def aminPreviewSuffix = providers.gradleProperty('AMIN_PREVIEW_SUFFIX').orNull ?: '-bridge3'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
@@ -31,6 +31,10 @@ android {
         buildConfig true
     }
 
+    androidResources {
+        noCompress += ['wasm', 'data']
+    }
+
     signingConfigs {
         if (aminSigningReady) {
             release {
@@ -51,31 +55,25 @@ android {
             minifyEnabled false
             manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"release"'
-            if (aminSigningReady) {
-                signingConfig signingConfigs.release
-            }
+            if (aminSigningReady) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             versionNameSuffix aminPreviewSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B1']
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B3']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-            if (aminSigningReady) {
-                signingConfig signingConfigs.release
-            }
+            if (aminSigningReady) signingConfig signingConfigs.release
         }
         bridge {
             initWith release
             debuggable false
             minifyEnabled false
             versionNameSuffix aminPreviewSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B1']
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B3']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-            if (aminSigningReady) {
-                signingConfig signingConfigs.release
-            }
+            if (aminSigningReady) signingConfig signingConfigs.release
             matchingFallbacks = ['release']
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -98,7 +96,6 @@ android {
 
 dependencies {
     implementation 'androidx.core:core:1.15.0'
-
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:rules:1.6.1'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
