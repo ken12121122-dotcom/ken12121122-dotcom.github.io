@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge14.apk",
-  "apkSha256": "5591c1daace5827e8289ff30fdd6c94ed05cac80b12b2b80403ef77838403703",
+  "apkSha256": "779072d8a5f499f04f1237fba77ec66066f24e6164a0e6365f69726322d88e84",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 4174433,
-  "publishedAt": "2026-07-19T17:21:12+08:00",
+  "sizeBytes": 4174420,
+  "publishedAt": "2026-07-19T17:39:01+08:00",
   "mandatory": false,
   "releaseNotes": [
     "移除整塊控制面板，改成只有按鍵的 GBA 浮動配置。",
