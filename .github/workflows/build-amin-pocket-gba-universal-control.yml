@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-bridge11:
+  build-bridge12:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
@@ -108,29 +108,30 @@ jobs:
           grep -q 'android:canPerformGestures="true"' android-native/app/src/main/res/xml/universal_control_accessibility_service.xml
           grep -q 'android:name=".UniversalControlAccessibilityService"' android-native/app/src/main/AndroidManifest.xml
           grep -q 'android:name=".LaunchGateActivity"' android-native/app/src/main/AndroidManifest.xml
+          grep -q 'Math.min(4, content.getChildCount())' android-native/app/src/main/java/com/amin/pocketgba/AminPocketApplication.java
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Prepare Bridge 11 label
+      - name: Prepare Bridge 12 label
         shell: bash
         run: |
           set -euxo pipefail
-          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B11/g' android-native/app/build.gradle
+          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B12/g' android-native/app/build.gradle
 
-      - name: Build and lint Bridge 11
+      - name: Build and lint Bridge 12
         shell: bash
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=107 \
-            -PAMIN_PREVIEW_SUFFIX=-bridge11 \
+            -PAMIN_VERSION_CODE=108 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge12 \
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect Bridge 11 APK
+      - name: Inspect Bridge 12 APK
         shell: bash
         run: |
           set -euxo pipefail
@@ -138,8 +139,8 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='107' versionName='0.9.2-bridge11'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B11'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='108' versionName='0.9.2-bridge12'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B12'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.CAMERA' /tmp/apk-permissions.txt
@@ -153,19 +154,19 @@ jobs:
           grep -q 'assets/emulator/cores/mgba-wasm.data' /tmp/apk-files.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package Bridge 11 artifact
+      - name: Package Bridge 12 artifact
         id: package
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p dist
           if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge11.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge11'
-            STATUS='PERMANENT SIGNING ENABLED: Universal Control v0.1 plus Native Cartridge Vault v2.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge12.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge12'
+            STATUS='PERMANENT SIGNING ENABLED: fixed Universal Control entry plus Native Cartridge Vault v2.'
           else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge11-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge11-CI-ONLY-NOT-UPDATABLE'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge12-CI-ONLY.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge12-CI-ONLY-NOT-UPDATABLE'
             STATUS='CI DEBUG SIGNING ONLY.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
@@ -176,7 +177,7 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Bridge 11 APK
+      - name: Upload Bridge 12 APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.artifact_name }}
