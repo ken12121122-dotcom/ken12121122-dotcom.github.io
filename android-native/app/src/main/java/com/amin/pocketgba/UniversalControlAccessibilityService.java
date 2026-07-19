@@ -26,18 +26,29 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public final class UniversalControlAccessibilityService extends AccessibilityService {
+    public static final String MODE_CURSOR = "cursor";
+    public static final String MODE_SCROLL = "scroll";
+
     private static final String PREFS = "amin_universal_control";
     private static final String KEY_OVERLAY_ENABLED = "overlay_enabled";
     private static final String KEY_AUTO_HIDE_SECONDS = "auto_hide_seconds";
+    private static final String KEY_CURSOR_STEP_DP = "cursor_step_dp";
+    private static final String KEY_CONTROL_MODE = "control_mode";
     private static final String KEY_BUBBLE_X = "bubble_x";
     private static final String KEY_BUBBLE_Y = "bubble_y";
 
     private static final long LONG_PRESS_MS = 520L;
+    private static final long DIRECTION_REPEAT_START_MS = 320L;
+    private static final long CURSOR_REPEAT_INTERVAL_MS = 55L;
+    private static final long SCROLL_REPEAT_INTERVAL_MS = 430L;
     private static final long TAP_DURATION_MS = 70L;
     private static final long HOLD_DURATION_MS = 720L;
     private static final long SWIPE_DURATION_MS = 320L;
     private static final long BUBBLE_FADE_DELAY_MS = 2000L;
-    private static final int CURSOR_STEP_DP = 48;
+
+    private static final int DEFAULT_CURSOR_STEP_DP = 16;
+    private static final int MIN_CURSOR_STEP_DP = 2;
+    private static final int MAX_CURSOR_STEP_DP = 64;
     private static final int DPAD_KEY_DP = 54;
     private static final int DPAD_SIZE_DP = DPAD_KEY_DP * 3;
     private static final float BUBBLE_IDLE_ALPHA = 0.25f;
@@ -45,6 +56,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private static volatile UniversalControlAccessibilityService activeInstance;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable fadeBubbleTask = () -> {
+        if (bubbleOverlay != null) {
+            bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
+        }
+    };
+    private final Runnable autoHideControlsTask = this::hideControls;
 
     private WindowManager windowManager;
 
@@ -75,16 +92,9 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private float cursorY;
     private boolean controlsVisible;
 
-    private final Runnable fadeBubbleTask = () -> {
-        if (bubbleOverlay != null) {
-            bubbleOverlay.animate()
-                    .alpha(BUBBLE_IDLE_ALPHA)
-                    .setDuration(260L)
-                    .start();
-        }
-    };
-
-    private final Runnable autoHideControlsTask = this::hideControls;
+    private static SharedPreferences preferences(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
 
     public static boolean isOverlayEnabled(Context context) {
         return preferences(context).getBoolean(KEY_OVERLAY_ENABLED, true);
@@ -111,8 +121,50 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
-    private static SharedPreferences preferences(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    public static int getCursorStepDp(Context context) {
+        return Math.max(
+                MIN_CURSOR_STEP_DP,
+                Math.min(
+                        MAX_CURSOR_STEP_DP,
+                        preferences(context).getInt(KEY_CURSOR_STEP_DP, DEFAULT_CURSOR_STEP_DP)
+                )
+        );
+    }
+
+    public static void setCursorStepDp(Context context, int stepDp) {
+        int safeStep = Math.max(MIN_CURSOR_STEP_DP, Math.min(MAX_CURSOR_STEP_DP, stepDp));
+        preferences(context).edit().putInt(KEY_CURSOR_STEP_DP, safeStep).apply();
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance != null) {
+            instance.mainHandler.post(() -> instance.showStatusToast(
+                    "游標模式 · 每次 " + safeStep + " dp"
+            ));
+        }
+    }
+
+    public static String getControlMode(Context context) {
+        String mode = preferences(context).getString(KEY_CONTROL_MODE, MODE_CURSOR);
+        return MODE_SCROLL.equals(mode) ? MODE_SCROLL : MODE_CURSOR;
+    }
+
+    public static String getControlModeLabel(Context context) {
+        return MODE_SCROLL.equals(getControlMode(context)) ? "捲動模式" : "游標模式";
+    }
+
+    public static void setControlMode(Context context, String mode) {
+        String safeMode = MODE_SCROLL.equals(mode) ? MODE_SCROLL : MODE_CURSOR;
+        preferences(context).edit().putString(KEY_CONTROL_MODE, safeMode).apply();
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance != null) {
+            instance.mainHandler.post(() -> instance.onControlModeChanged(safeMode));
+        }
+    }
+
+    public static void toggleControlMode(Context context) {
+        setControlMode(
+                context,
+                MODE_SCROLL.equals(getControlMode(context)) ? MODE_CURSOR : MODE_SCROLL
+        );
     }
 
     @Override
@@ -124,17 +176,17 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         cursorX = screenWidth * 0.5f;
         cursorY = screenHeight * 0.5f;
         applyOverlayEnabled(isOverlayEnabled(this));
-        Toast.makeText(this, "GBA 全域控制已連線", Toast.LENGTH_SHORT).show();
+        showStatusToast("GBA 全域控制已連線");
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // This service intentionally does not inspect or read content from other apps.
+        // This service intentionally does not inspect content from other apps.
     }
 
     @Override
     public void onInterrupt() {
-        // There is no spoken or haptic feedback to interrupt.
+        // No spoken or haptic feedback to interrupt.
     }
 
     @Override
@@ -164,6 +216,19 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
         showBubble();
         hideControls();
+    }
+
+    private void onControlModeChanged(String mode) {
+        refreshModeVisuals();
+        if (MODE_SCROLL.equals(mode)) {
+            showStatusToast("捲動模式 · 方向鍵滑動畫面");
+        } else {
+            showStatusToast("游標模式 · 每次 " + getCursorStepDp(this) + " dp");
+        }
+    }
+
+    private boolean isScrollMode() {
+        return MODE_SCROLL.equals(getControlMode(this));
     }
 
     private void showBubble() {
@@ -253,7 +318,6 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         if (windowManager == null || dpadOverlay != null) {
             return;
         }
-
         createFixedDpadOverlay();
         createActionOverlay();
         createShoulderOverlays();
@@ -263,48 +327,27 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         setControlsVisibility(View.GONE);
     }
 
-    /**
-     * Uses a fixed 3 x 3 FrameLayout instead of nested wrap-content LinearLayouts.
-     * This prevents Android accessibility overlays from measuring the D-pad as a
-     * single narrow column and clipping the left/right keys on some Samsung builds.
-     */
     private void createFixedDpadOverlay() {
         dpadOverlay = new FrameLayout(this);
 
-        Button up = dpadButton("▲", "短按游標向上，長按頁面向上捲動");
-        bindShortLongPress(
-                up,
-                () -> moveCursor(0, -CURSOR_STEP_DP),
-                () -> swipeVertical(false)
-        );
+        Button up = dpadButton("▲", "游標向上或頁面向上捲動");
+        bindDirectionButton(up, 0, -1);
         dpadOverlay.addView(up, dpadCell(1, 0));
 
-        Button left = dpadButton("◀", "短按游標向左，長按切換上一個頁面");
-        bindShortLongPress(
-                left,
-                () -> moveCursor(-CURSOR_STEP_DP, 0),
-                () -> swipeHorizontal(false)
-        );
+        Button left = dpadButton("◀", "游標向左或頁面向左切換");
+        bindDirectionButton(left, -1, 0);
         dpadOverlay.addView(left, dpadCell(0, 1));
 
         View center = new View(this);
         center.setBackground(roundedBackground(0xb84a4a4a, 8f, 0x88ffffff, 1));
         dpadOverlay.addView(center, dpadCell(1, 1));
 
-        Button right = dpadButton("▶", "短按游標向右，長按切換下一個頁面");
-        bindShortLongPress(
-                right,
-                () -> moveCursor(CURSOR_STEP_DP, 0),
-                () -> swipeHorizontal(true)
-        );
+        Button right = dpadButton("▶", "游標向右或頁面向右切換");
+        bindDirectionButton(right, 1, 0);
         dpadOverlay.addView(right, dpadCell(2, 1));
 
-        Button down = dpadButton("▼", "短按游標向下，長按頁面向下捲動");
-        bindShortLongPress(
-                down,
-                () -> moveCursor(0, CURSOR_STEP_DP),
-                () -> swipeVertical(true)
-        );
+        Button down = dpadButton("▼", "游標向下或頁面向下捲動");
+        bindDirectionButton(down, 0, 1);
         dpadOverlay.addView(down, dpadCell(1, 2));
 
         dpadParams = baseOverlayParams(
@@ -371,8 +414,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         centerOverlay.setOrientation(LinearLayout.HORIZONTAL);
         centerOverlay.setGravity(Gravity.CENTER);
 
-        Button select = pillButton("Select", "開啟最近使用的應用程式");
-        bindClick(select, () -> performSystemAction(GLOBAL_ACTION_RECENTS, "無法開啟最近使用"));
+        Button select = pillButton("Select", "短按最近使用，長按切換控制模式");
+        bindShortLongPress(
+                select,
+                () -> performSystemAction(GLOBAL_ACTION_RECENTS, "無法開啟最近使用"),
+                () -> toggleControlMode(this)
+        );
         centerOverlay.addView(select, centerButtonParams());
 
         Button start = pillButton("Start", "短按回到桌面，長按收起全部按鍵");
@@ -396,13 +443,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         if (windowManager == null || cursorOverlay != null) {
             return;
         }
-
         cursorOverlay = new View(this);
-        GradientDrawable cursorBackground = new GradientDrawable();
-        cursorBackground.setShape(GradientDrawable.OVAL);
-        cursorBackground.setColor(0xff23a867);
-        cursorBackground.setStroke(dp(2), Color.WHITE);
-        cursorOverlay.setBackground(cursorBackground);
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.OVAL);
+        background.setColor(0xff23a867);
+        background.setStroke(dp(2), Color.WHITE);
+        cursorOverlay.setBackground(background);
         cursorOverlay.setContentDescription("全域控制游標");
 
         int size = dp(24);
@@ -459,8 +505,14 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         ensureGamepadControls();
         setControlsVisibility(View.VISIBLE);
         controlsVisible = true;
+        refreshModeVisuals();
         wakeBubble();
         scheduleControlsAutoHide();
+        showStatusToast(
+                isScrollMode()
+                        ? "捲動模式"
+                        : "游標模式 · 每次 " + getCursorStepDp(this) + " dp"
+        );
     }
 
     private void hideControls() {
@@ -478,13 +530,23 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
+    private void refreshModeVisuals() {
+        if (cursorOverlay != null) {
+            cursorOverlay.setVisibility(
+                    controlsVisible && !isScrollMode() ? View.VISIBLE : View.GONE
+            );
+        }
+    }
+
     private void setControlsVisibility(int visibility) {
         setVisibility(dpadOverlay, visibility);
         setVisibility(actionOverlay, visibility);
         setVisibility(leftShoulderOverlay, visibility);
         setVisibility(rightShoulderOverlay, visibility);
         setVisibility(centerOverlay, visibility);
-        setVisibility(cursorOverlay, visibility);
+        if (visibility == View.GONE) {
+            setVisibility(cursorOverlay, View.GONE);
+        }
     }
 
     private void setVisibility(View view, int visibility) {
@@ -523,6 +585,194 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         mainHandler.removeCallbacks(fadeBubbleTask);
         if (bubbleOverlay != null) {
             mainHandler.postDelayed(fadeBubbleTask, BUBBLE_FADE_DELAY_MS);
+        }
+    }
+
+    private void bindDirectionButton(View view, int dx, int dy) {
+        view.setOnTouchListener(new View.OnTouchListener() {
+            private final Runnable repeatTask = new Runnable() {
+                @Override
+                public void run() {
+                    performDirectionAction(dx, dy);
+                    markControlsActivity();
+                    mainHandler.postDelayed(
+                            this,
+                            isScrollMode() ? SCROLL_REPEAT_INTERVAL_MS : CURSOR_REPEAT_INTERVAL_MS
+                    );
+                }
+            };
+
+            @Override
+            public boolean onTouch(View touched, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        touched.setPressed(true);
+                        markControlsActivity();
+                        performDirectionAction(dx, dy);
+                        mainHandler.postDelayed(repeatTask, DIRECTION_REPEAT_START_MS);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        mainHandler.removeCallbacks(repeatTask);
+                        touched.setPressed(false);
+                        touched.performClick();
+                        markControlsActivity();
+                        return true;
+                    case MotionEvent.ACTION_CANCEL:
+                        mainHandler.removeCallbacks(repeatTask);
+                        touched.setPressed(false);
+                        markControlsActivity();
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+        });
+    }
+
+    private void performDirectionAction(int dx, int dy) {
+        if (isScrollMode()) {
+            if (dx < 0) {
+                swipeHorizontal(false);
+            } else if (dx > 0) {
+                swipeHorizontal(true);
+            } else if (dy < 0) {
+                swipeVertical(false);
+            } else if (dy > 0) {
+                swipeVertical(true);
+            }
+            return;
+        }
+        int step = getCursorStepDp(this);
+        moveCursor(dx * step, dy * step);
+    }
+
+    private void bindClick(View view, Runnable action) {
+        view.setOnClickListener(touched -> {
+            markControlsActivity();
+            action.run();
+            if (controlsVisible) {
+                scheduleControlsAutoHide();
+            }
+        });
+    }
+
+    private void bindShortLongPress(View view, Runnable shortAction, Runnable longAction) {
+        view.setOnTouchListener(new View.OnTouchListener() {
+            private boolean longTriggered;
+            private final Runnable longPressTask = () -> {
+                longTriggered = true;
+                longAction.run();
+                markControlsActivity();
+            };
+
+            @Override
+            public boolean onTouch(View touched, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        longTriggered = false;
+                        touched.setPressed(true);
+                        markControlsActivity();
+                        mainHandler.postDelayed(longPressTask, LONG_PRESS_MS);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        mainHandler.removeCallbacks(longPressTask);
+                        touched.setPressed(false);
+                        if (!longTriggered) {
+                            shortAction.run();
+                        }
+                        touched.performClick();
+                        markControlsActivity();
+                        return true;
+                    case MotionEvent.ACTION_CANCEL:
+                        mainHandler.removeCallbacks(longPressTask);
+                        touched.setPressed(false);
+                        markControlsActivity();
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+        });
+    }
+
+    private void moveCursor(int dxDp, int dyDp) {
+        cursorX = clamp(cursorX + dp(dxDp), dp(14), screenWidth - dp(14));
+        cursorY = clamp(cursorY + dp(dyDp), dp(14), screenHeight - dp(14));
+        updateCursorPosition();
+    }
+
+    private void updateCursorPosition() {
+        if (windowManager == null || cursorOverlay == null || cursorParams == null) {
+            return;
+        }
+        updateCursorCoordinates();
+        updateViewLayoutSafely(cursorOverlay, cursorParams);
+    }
+
+    private void updateCursorCoordinates() {
+        if (cursorParams == null) {
+            return;
+        }
+        int radius = dp(12);
+        cursorParams.x = Math.round(cursorX) - radius;
+        cursorParams.y = Math.round(cursorY) - radius;
+    }
+
+    private void tapCursor() {
+        Path path = new Path();
+        path.moveTo(cursorX, cursorY);
+        dispatchPath(path, TAP_DURATION_MS, "無法點擊目前位置");
+    }
+
+    private void holdCursor() {
+        Path path = new Path();
+        path.moveTo(cursorX, cursorY);
+        dispatchPath(path, HOLD_DURATION_MS, "無法長按目前位置");
+    }
+
+    private void swipeHorizontal(boolean nextPage) {
+        float y = screenHeight * 0.5f;
+        float startX = screenWidth * (nextPage ? 0.82f : 0.18f);
+        float endX = screenWidth * (nextPage ? 0.18f : 0.82f);
+        Path path = new Path();
+        path.moveTo(startX, y);
+        path.lineTo(endX, y);
+        dispatchPath(path, SWIPE_DURATION_MS, "無法水平切換頁面");
+    }
+
+    private void swipeVertical(boolean pageDown) {
+        float x = screenWidth * 0.55f;
+        float startY = screenHeight * (pageDown ? 0.76f : 0.28f);
+        float endY = screenHeight * (pageDown ? 0.28f : 0.76f);
+        Path path = new Path();
+        path.moveTo(x, startY);
+        path.lineTo(x, endY);
+        dispatchPath(path, SWIPE_DURATION_MS, "無法垂直捲動頁面");
+    }
+
+    private void dispatchPath(Path path, long durationMs, String failureMessage) {
+        GestureDescription gesture = new GestureDescription.Builder()
+                .addStroke(new GestureDescription.StrokeDescription(path, 0, durationMs))
+                .build();
+
+        boolean accepted = dispatchGesture(
+                gesture,
+                new GestureResultCallback() {
+                    @Override
+                    public void onCancelled(GestureDescription gestureDescription) {
+                        showStatusToast(failureMessage);
+                    }
+                },
+                null
+        );
+        if (!accepted) {
+            showStatusToast(failureMessage);
+        }
+    }
+
+    private void performSystemAction(int action, String failureMessage) {
+        if (!performGlobalAction(action)) {
+            showStatusToast(failureMessage);
         }
     }
 
@@ -620,148 +870,35 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         return params;
     }
 
-    private void bindClick(View view, Runnable action) {
-        view.setOnClickListener(touched -> {
-            markControlsActivity();
-            action.run();
-            if (controlsVisible) {
-                scheduleControlsAutoHide();
-            }
-        });
-    }
-
-    private void bindShortLongPress(View view, Runnable shortAction, Runnable longAction) {
-        view.setOnTouchListener(new View.OnTouchListener() {
-            private boolean longTriggered;
-            private final Runnable longPressTask = () -> {
-                longTriggered = true;
-                longAction.run();
-                markControlsActivity();
-            };
-
-            @Override
-            public boolean onTouch(View touched, MotionEvent event) {
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        longTriggered = false;
-                        touched.setPressed(true);
-                        markControlsActivity();
-                        mainHandler.postDelayed(longPressTask, LONG_PRESS_MS);
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        mainHandler.removeCallbacks(longPressTask);
-                        touched.setPressed(false);
-                        if (!longTriggered) {
-                            shortAction.run();
-                        }
-                        touched.performClick();
-                        markControlsActivity();
-                        return true;
-                    case MotionEvent.ACTION_CANCEL:
-                        mainHandler.removeCallbacks(longPressTask);
-                        touched.setPressed(false);
-                        markControlsActivity();
-                        return true;
-                    default:
-                        return true;
-                }
-            }
-        });
-    }
-
-    private void moveCursor(int dxDp, int dyDp) {
-        cursorX = clamp(cursorX + dp(dxDp), dp(14), screenWidth - dp(14));
-        cursorY = clamp(cursorY + dp(dyDp), dp(14), screenHeight - dp(14));
-        updateCursorPosition();
-    }
-
-    private void updateCursorPosition() {
-        if (windowManager == null || cursorOverlay == null || cursorParams == null) {
-            return;
+    private GradientDrawable roundedBackground(
+            int fill,
+            float radiusDp,
+            int stroke,
+            int strokeDp
+    ) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(fill);
+        drawable.setCornerRadius(dp(radiusDp));
+        if (strokeDp > 0) {
+            drawable.setStroke(dp(strokeDp), stroke);
         }
-        updateCursorCoordinates();
-        updateViewLayoutSafely(cursorOverlay, cursorParams);
+        return drawable;
     }
 
-    private void updateCursorCoordinates() {
-        if (cursorParams == null) {
-            return;
+    private GradientDrawable circleBackground(int fill, int stroke, int strokeDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.OVAL);
+        drawable.setColor(fill);
+        if (strokeDp > 0) {
+            drawable.setStroke(dp(strokeDp), stroke);
         }
-        int radius = dp(12);
-        cursorParams.x = Math.round(cursorX) - radius;
-        cursorParams.y = Math.round(cursorY) - radius;
-    }
-
-    private void tapCursor() {
-        Path path = new Path();
-        path.moveTo(cursorX, cursorY);
-        dispatchPath(path, TAP_DURATION_MS, "無法點擊目前位置");
-    }
-
-    private void holdCursor() {
-        Path path = new Path();
-        path.moveTo(cursorX, cursorY);
-        dispatchPath(path, HOLD_DURATION_MS, "無法長按目前位置");
-    }
-
-    private void swipeHorizontal(boolean nextPage) {
-        float y = screenHeight * 0.5f;
-        float startX = screenWidth * (nextPage ? 0.82f : 0.18f);
-        float endX = screenWidth * (nextPage ? 0.18f : 0.82f);
-
-        Path path = new Path();
-        path.moveTo(startX, y);
-        path.lineTo(endX, y);
-        dispatchPath(path, SWIPE_DURATION_MS, "無法水平切換頁面");
-    }
-
-    private void swipeVertical(boolean pageDown) {
-        float x = screenWidth * 0.55f;
-        float startY = screenHeight * (pageDown ? 0.76f : 0.28f);
-        float endY = screenHeight * (pageDown ? 0.28f : 0.76f);
-
-        Path path = new Path();
-        path.moveTo(x, startY);
-        path.lineTo(x, endY);
-        dispatchPath(path, SWIPE_DURATION_MS, "無法垂直捲動頁面");
-    }
-
-    private void dispatchPath(Path path, long durationMs, String failureMessage) {
-        GestureDescription gesture = new GestureDescription.Builder()
-                .addStroke(new GestureDescription.StrokeDescription(path, 0, durationMs))
-                .build();
-
-        boolean accepted = dispatchGesture(
-                gesture,
-                new GestureResultCallback() {
-                    @Override
-                    public void onCancelled(GestureDescription gestureDescription) {
-                        Toast.makeText(
-                                UniversalControlAccessibilityService.this,
-                                failureMessage,
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                },
-                null
-        );
-
-        if (!accepted) {
-            Toast.makeText(this, failureMessage, Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void performSystemAction(int action, String failureMessage) {
-        if (!performGlobalAction(action)) {
-            Toast.makeText(this, failureMessage, Toast.LENGTH_SHORT).show();
-        }
+        return drawable;
     }
 
     private void refreshScreenBounds() {
         if (windowManager == null) {
             return;
         }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Rect bounds = windowManager.getCurrentWindowMetrics().getBounds();
             screenWidth = bounds.width();
@@ -772,7 +909,6 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             screenWidth = metrics.widthPixels;
             screenHeight = metrics.heightPixels;
         }
-
         if (screenWidth <= 0) {
             screenWidth = getResources().getDisplayMetrics().widthPixels;
         }
@@ -788,14 +924,13 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         try {
             windowManager.updateViewLayout(view, params);
         } catch (IllegalArgumentException ignored) {
-            // The system may already be removing the accessibility overlay.
+            // The system may already be removing the overlay.
         }
     }
 
     private void removeOverlays() {
         mainHandler.removeCallbacks(fadeBubbleTask);
         mainHandler.removeCallbacks(autoHideControlsTask);
-
         removeViewSafely(dpadOverlay);
         removeViewSafely(actionOverlay);
         removeViewSafely(leftShoulderOverlay);
@@ -832,29 +967,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
-    private GradientDrawable roundedBackground(
-            int fill,
-            float radiusDp,
-            int stroke,
-            int strokeDp
-    ) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(fill);
-        drawable.setCornerRadius(dp(radiusDp));
-        if (strokeDp > 0) {
-            drawable.setStroke(dp(strokeDp), stroke);
-        }
-        return drawable;
-    }
-
-    private GradientDrawable circleBackground(int fill, int stroke, int strokeDp) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.OVAL);
-        drawable.setColor(fill);
-        if (strokeDp > 0) {
-            drawable.setStroke(dp(strokeDp), stroke);
-        }
-        return drawable;
+    private void showStatusToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private int dp(float value) {
