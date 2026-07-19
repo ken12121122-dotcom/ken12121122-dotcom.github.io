@@ -8,14 +8,16 @@
   const MIRROR_PATH = '/amin-vault/__amin_rom_vault__/';
   const PRIMARY_DATA_PATH = 'https://cdn.emulatorjs.org/4.2.3/data/';
   const FALLBACK_DATA_PATH = 'https://cdn.emulatorjs.org/stable/data/';
-  const LAUNCH_TIMEOUT_MS = 30000;
+  const LAUNCH_TIMEOUT_MS = 45000;
   const MIRROR_RELOAD_KEY = 'amin.rom.mirror.reload';
   const LAST_LAUNCH_KEY = 'amin.gba.lastLaunch';
+  const GBA_HEADER_SIZE = 0xC0;
+  const GBA_MAX_ROM_BYTES = 32 * 1024 * 1024;
 
   let launchBusy = false;
-  let activeObjectUrl = null;
   let mirrorTimer = null;
   let recoveryPromise = null;
+  let activeLaunch = null;
 
   const $ = id => document.getElementById(id);
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -58,12 +60,6 @@
     link.remove();
   }
 
-  function releaseObjectUrl() {
-    if (!activeObjectUrl) return;
-    URL.revokeObjectURL(activeObjectUrl);
-    activeObjectUrl = null;
-  }
-
   function requestToPromise(request) {
     return new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
@@ -76,12 +72,9 @@
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
-        let store;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        } else {
-          store = request.transaction.objectStore(STORE_NAME);
-        }
+        const store = db.objectStoreNames.contains(STORE_NAME)
+          ? request.transaction.objectStore(STORE_NAME)
+          : db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         if (!store.indexNames.contains('lastPlayedAt')) store.createIndex('lastPlayedAt', 'lastPlayedAt');
         if (!store.indexNames.contains('addedAt')) store.createIndex('addedAt', 'addedAt');
         if (!store.indexNames.contains('saveKey')) store.createIndex('saveKey', 'saveKey', { unique: false });
@@ -91,38 +84,26 @@
     });
   }
 
-  async function getAllRecords() {
+  async function withStore(mode, operation) {
     const db = await openDb();
     try {
-      return await requestToPromise(db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll());
-    } finally {
-      db.close();
-    }
-  }
-
-  async function getRecord(id) {
-    const db = await openDb();
-    try {
-      return await requestToPromise(db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(id));
-    } finally {
-      db.close();
-    }
-  }
-
-  async function putRecord(record) {
-    const db = await openDb();
-    try {
+      const transaction = db.transaction(STORE_NAME, mode);
+      const result = operation(transaction.objectStore(STORE_NAME), transaction);
+      if (mode === 'readonly') return await result;
       await new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        transaction.objectStore(STORE_NAME).put(record);
         transaction.oncomplete = resolve;
-        transaction.onerror = () => reject(transaction.error || new Error('無法修復遊戲資料。'));
-        transaction.onabort = () => reject(transaction.error || new Error('遊戲資料修復已中止。'));
+        transaction.onerror = () => reject(transaction.error || new Error('遊戲資料庫寫入失敗。'));
+        transaction.onabort = () => reject(transaction.error || new Error('遊戲資料庫作業中止。'));
       });
+      return result;
     } finally {
       db.close();
     }
   }
+
+  const getAllRecords = () => withStore('readonly', store => requestToPromise(store.getAll()));
+  const getRecord = id => withStore('readonly', store => requestToPromise(store.get(id)));
+  const putRecord = record => withStore('readwrite', store => store.put(record));
 
   function mirrorUrl(id) {
     return new URL(`${MIRROR_PATH}${encodeURIComponent(id)}`, location.origin).href;
@@ -134,7 +115,11 @@
 
   function decodeHeader(value, fallback = '') {
     if (!value) return fallback;
-    try { return decodeURIComponent(value); } catch { return fallback; }
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return fallback;
+    }
   }
 
   function recordHasBlob(record) {
@@ -187,13 +172,11 @@
     if (!('caches' in window)) return [];
     const cache = await caches.open(ROM_MIRROR_CACHE);
     const keys = await cache.keys();
-    return keys
-      .map(request => {
-        const url = new URL(request.url);
-        if (!url.pathname.startsWith(MIRROR_PATH)) return null;
-        return decodeURIComponent(url.pathname.slice(MIRROR_PATH.length));
-      })
-      .filter(Boolean);
+    return keys.map(request => {
+      const url = new URL(request.url);
+      if (!url.pathname.startsWith(MIRROR_PATH)) return null;
+      return decodeURIComponent(url.pathname.slice(MIRROR_PATH.length));
+    }).filter(Boolean);
   }
 
   async function deleteMirror(id) {
@@ -206,7 +189,7 @@
     if (recoveryPromise) return recoveryPromise;
     recoveryPromise = (async () => {
       const records = await getAllRecords();
-      const byId = new Map(records.map(record => [String(record.id), record]));
+      const knownIds = new Set(records.map(record => String(record.id)));
       let mirrored = 0;
       let recovered = 0;
 
@@ -222,9 +205,8 @@
         }
       }
 
-      const mirroredIds = await listMirroredIds().catch(() => []);
-      for (const id of mirroredIds) {
-        if (byId.has(String(id))) continue;
+      for (const id of await listMirroredIds().catch(() => [])) {
+        if (knownIds.has(String(id))) continue;
         const backup = await readMirror(id).catch(() => null);
         if (!backup) continue;
         await putRecord(backup);
@@ -243,9 +225,7 @@
   function scheduleMirror(delay = 900) {
     clearTimeout(mirrorTimer);
     mirrorTimer = setTimeout(() => {
-      recoverAndMirrorLibrary().catch(error => {
-        console.warn('[Amin ROM Vault]', error);
-      });
+      recoverAndMirrorLibrary().catch(error => console.warn('[Amin ROM Vault]', error));
     }, delay);
   }
 
@@ -259,7 +239,84 @@
   }
 
   function cleanName(name) {
-    return String(name || 'GBA Game').split('/').pop().split('\\').pop().replace(/\.(gba|bin)$/i, '') || 'GBA Game';
+    return String(name || 'GBA Game')
+      .split('/').pop()
+      .split('\\').pop()
+      .replace(/\.(gba|bin)$/i, '') || 'GBA Game';
+  }
+
+  function gbaHeaderChecksum(header) {
+    let checksum = 0;
+    for (let offset = 0xA0; offset <= 0xBC; offset += 1) {
+      checksum = (checksum - header[offset]) & 0xFF;
+    }
+    return (checksum - 0x19) & 0xFF;
+  }
+
+  async function createCompatibleRomFile(record, stableName) {
+    if (!recordHasBlob(record)) throw new Error('ROM 本體不存在。');
+    if (record.blob.size < GBA_HEADER_SIZE) throw new Error('ROM 檔案過小，不是完整的 GBA 映像。');
+    if (record.blob.size > GBA_MAX_ROM_BYTES) {
+      throw new Error(`ROM 大小 ${record.blob.size} bytes 超過標準 GBA 32 MiB 上限。`);
+    }
+
+    const header = new Uint8Array(await record.blob.slice(0, GBA_HEADER_SIZE).arrayBuffer());
+    const before = {
+      fixedValue: header[0xB2],
+      unitCode: header[0xB3],
+      deviceType: header[0xB4],
+      checksum: header[0xBD],
+      expectedChecksum: gbaHeaderChecksum(header)
+    };
+    let repaired = false;
+
+    if (header[0xB2] !== 0x96) {
+      header[0xB2] = 0x96;
+      repaired = true;
+    }
+    if (header[0xB3] !== 0) {
+      header[0xB3] = 0;
+      repaired = true;
+    }
+    if (header[0xB4] !== 0) {
+      header[0xB4] = 0;
+      repaired = true;
+    }
+    for (let offset = 0xB5; offset <= 0xBB; offset += 1) {
+      if (header[offset] !== 0) {
+        header[offset] = 0;
+        repaired = true;
+      }
+    }
+    if (header[0xBE] !== 0 || header[0xBF] !== 0) {
+      header[0xBE] = 0;
+      header[0xBF] = 0;
+      repaired = true;
+    }
+    const correctedChecksum = gbaHeaderChecksum(header);
+    if (header[0xBD] !== correctedChecksum) {
+      header[0xBD] = correctedChecksum;
+      repaired = true;
+    }
+
+    const parts = repaired
+      ? [header, record.blob.slice(GBA_HEADER_SIZE)]
+      : [record.blob];
+    const file = new File(parts, `${stableName}.gba`, {
+      type: 'application/octet-stream',
+      lastModified: Number(record.originalModifiedAt || record.addedAt || Date.now())
+    });
+    return {
+      file,
+      repaired,
+      before,
+      after: {
+        fixedValue: header[0xB2],
+        unitCode: header[0xB3],
+        deviceType: header[0xB4],
+        checksum: header[0xBD]
+      }
+    };
   }
 
   function showPlayer(record) {
@@ -273,7 +330,6 @@
 
   function showLibraryError(message) {
     requestNativeOrientation('portrait');
-    releaseObjectUrl();
     document.body.classList.remove('playing');
     $('playerView')?.classList.add('hidden');
     $('libraryView')?.classList.remove('hidden');
@@ -282,23 +338,41 @@
     setImportStatus(message, 'error');
   }
 
-  async function waitForEmulatorReady(timeoutMs) {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      const emulator = window.EJS_emulator;
-      if (emulator?.failedToStart) {
-        throw new Error('mGBA 核心回報啟動失敗。');
-      }
-      if (emulator?.started && emulator?.gameManager) return emulator;
-      if ($('game')?.querySelector('canvas') && emulator?.gameManager) return emulator;
-      await sleep(250);
-    }
-    throw new Error('mGBA 核心在 30 秒內沒有完成啟動。');
+  function currentEmulatorError() {
+    const emulator = window.EJS_emulator;
+    const text = emulator?.textElem?.innerText
+      || $('game')?.querySelector('.ejs_error_text')?.innerText
+      || $('game')?.querySelector('.ejs_loading_text')?.innerText
+      || '';
+    return String(text).trim();
+  }
+
+  function waitForEmulatorReady(timeoutMs, state) {
+    return new Promise((resolve, reject) => {
+      const startedAt = Date.now();
+      const timer = setInterval(() => {
+        const emulator = window.EJS_emulator;
+        if (state.started || (emulator?.started && emulator?.gameManager)) {
+          clearInterval(timer);
+          resolve(emulator);
+          return;
+        }
+        if (emulator?.failedToStart) {
+          clearInterval(timer);
+          const detail = currentEmulatorError();
+          reject(new Error(detail ? `EmulatorJS：${detail}` : 'EmulatorJS 在載入階段失敗。'));
+          return;
+        }
+        if (Date.now() - startedAt >= timeoutMs) {
+          clearInterval(timer);
+          reject(new Error(`mGBA 在 ${Math.round(timeoutMs / 1000)} 秒內沒有完成啟動。`));
+        }
+      }, 200);
+    });
   }
 
   function loaderChannel() {
-    const params = new URLSearchParams(location.search);
-    return params.get('ejs') === 'stable' ? 'stable' : 'pinned';
+    return new URLSearchParams(location.search).get('ejs') === 'stable' ? 'stable' : 'pinned';
   }
 
   async function retryWithStable(id, reason) {
@@ -309,6 +383,12 @@
     next.searchParams.set('ejs', 'stable');
     next.searchParams.set('retry', '1');
     location.replace(next.href);
+  }
+
+  function removePreviousLoader() {
+    document.getElementById('amin-reliable-emulatorjs-loader')?.remove();
+    delete window.EJS_emulator;
+    delete window.EJS_Runtime;
   }
 
   async function reliablePlay(id) {
@@ -337,9 +417,8 @@
       const channel = loaderChannel();
       const dataPath = channel === 'stable' ? FALLBACK_DATA_PATH : PRIMARY_DATA_PATH;
       const stableName = `amin-${record.saveKey || record.id}`;
+      const compatibleRom = await createCompatibleRomFile(record, stableName);
 
-      releaseObjectUrl();
-      activeObjectUrl = URL.createObjectURL(record.blob);
       window.AMIN_GBA_SAVE_GUARD?.setGame?.({
         saveKey: record.saveKey || record.id,
         romId: record.id,
@@ -349,12 +428,36 @@
 
       showPlayer(record);
       setStatus(channel === 'stable' ? '備援啟動中…' : '載入 mGBA…');
-      recordLaunch('starting', { romId: record.id, channel, dataPath });
+      setImportStatus(
+        compatibleRom.repaired
+          ? '已偵測到改版 ROM 標頭異常，正在使用記憶體修正版啟動；原始 ROM 不會被修改。'
+          : 'ROM 標頭檢查通過，正在啟動 mGBA。',
+        compatibleRom.repaired ? 'working' : ''
+      );
 
+      const launchState = { started: false, ready: false };
+      activeLaunch = launchState;
+      window.EJS_ready = () => {
+        launchState.ready = true;
+        recordLaunch('emulator-ready', {
+          romId: record.id,
+          channel,
+          headerRepaired: compatibleRom.repaired
+        });
+      };
+      window.EJS_onGameStart = () => {
+        launchState.started = true;
+        $('gameLoading')?.classList.add('hidden');
+      };
+      window.EJS_onExit = () => {
+        recordLaunch('emulator-exit', { romId: record.id, channel });
+      };
+
+      removePreviousLoader();
       window.EJS_player = '#game';
       window.EJS_core = 'gba';
       window.EJS_pathtodata = dataPath;
-      window.EJS_gameUrl = activeObjectUrl;
+      window.EJS_gameUrl = compatibleRom.file;
       window.EJS_gameName = stableName;
       window.EJS_gameID = numericGameId(record.saveKey || record.id);
       window.EJS_color = '#8da2ff';
@@ -362,40 +465,69 @@
       window.EJS_volume = 0.65;
       window.EJS_startOnLoaded = true;
       window.EJS_fullscreenOnLoaded = false;
-      window.EJS_browserMode = matchMedia('(pointer: coarse)').matches ? 'mobile' : 'desktop';
+      window.EJS_browserMode = 'mobile';
       window.EJS_askBeforeExit = true;
-      window.EJS_fixedSaveInterval = 5000;
+      window.EJS_fixedSaveInterval = 7000;
       window.EJS_disableAutoLang = true;
-      window.EJS_language = 'zh-TW';
-      window.EJS_DEBUG_XX = false;
+      window.EJS_language = 'zh-CN';
+      window.EJS_DEBUG_XX = true;
+      window.EJS_forceLegacyCores = false;
       delete window.EJS_dontExtractRom;
       delete window.EJS_cacheConfig;
+
+      recordLaunch('starting', {
+        romId: record.id,
+        channel,
+        dataPath,
+        transport: 'File',
+        fileSize: compatibleRom.file.size,
+        headerRepaired: compatibleRom.repaired,
+        headerBefore: compatibleRom.before,
+        headerAfter: compatibleRom.after
+      });
 
       const script = document.createElement('script');
       script.id = 'amin-reliable-emulatorjs-loader';
       script.src = `${dataPath}loader.js`;
       script.async = true;
       script.onerror = () => {
-        recordLaunch('loader-error', { romId: record.id, channel, src: script.src });
+        const message = `EmulatorJS loader 無法下載：${script.src}`;
+        recordLaunch('loader-error', { romId: record.id, channel, message });
       };
       document.body.appendChild(script);
 
-      await waitForEmulatorReady(LAUNCH_TIMEOUT_MS);
+      await waitForEmulatorReady(LAUNCH_TIMEOUT_MS, launchState);
       $('gameLoading')?.classList.add('hidden');
-      setStatus(`mGBA 4.2.3 運作中`, 'active');
-      setImportStatus(`已從 ${channel === 'stable' ? '官方穩定備援' : '固定 4.2.3'} 通道啟動。ROM 已建立雙層本機副本。`, 'success');
-      recordLaunch('started', { romId: record.id, channel });
+      setStatus('mGBA 運作中', 'active');
+      setImportStatus(
+        `${compatibleRom.repaired ? '已套用記憶體標頭修正；' : ''}遊戲已透過 File 模式啟動，ROM 原檔與存檔身分保持不變。`,
+        'success'
+      );
+      recordLaunch('started', {
+        romId: record.id,
+        channel,
+        transport: 'File',
+        headerRepaired: compatibleRom.repaired
+      });
     } catch (error) {
       const channel = loaderChannel();
       const message = error?.message || '遊戲啟動失敗。';
+      const emulatorMessage = currentEmulatorError();
       if (record?.id && channel === 'pinned') {
-        await retryWithStable(record.id, message);
+        await retryWithStable(record.id, emulatorMessage || message);
         return;
       }
-      recordLaunch('failed', { romId: record?.id || id, channel, message });
-      showLibraryError(`${message} 已保留 ROM 與存檔，可在「系統診斷」查看錯誤。`);
+      recordLaunch('failed', {
+        romId: record?.id || id,
+        channel,
+        message,
+        emulatorMessage,
+        transport: 'File'
+      });
+      showLibraryError(`${emulatorMessage || message} ROM 與存檔均已保留。`);
     } finally {
       launchBusy = false;
+      activeLaunch = null;
     }
   }
 
@@ -444,8 +576,7 @@
 
   function maybeAutoplay() {
     const id = new URLSearchParams(location.search).get('autoplay');
-    if (!id) return;
-    setTimeout(() => reliablePlay(id), 450);
+    if (id) setTimeout(() => reliablePlay(id), 450);
   }
 
   document.addEventListener('click', handlePlayClick, true);
@@ -457,18 +588,17 @@
   });
   addEventListener('amin-native-cartridge-imported', () => scheduleMirror(1800));
   addEventListener('amin-save-verified', () => scheduleMirror(300));
-  addEventListener('pagehide', releaseObjectUrl);
-  addEventListener('beforeunload', releaseObjectUrl);
 
   const libraryObserver = new MutationObserver(() => scheduleMirror(1400));
   if ($('romLibrary')) libraryObserver.observe($('romLibrary'), { childList: true, subtree: true });
 
   window.AMIN_ROM_VAULT = {
-    version: '1.0.0',
+    version: '1.1.0',
     recover: recoverAndMirrorLibrary,
     mirrorAll: recoverAndMirrorLibrary,
     readMirror,
     deleteMirror,
+    inspectAndPrepareRom: createCompatibleRomFile,
     play: reliablePlay
   };
 
