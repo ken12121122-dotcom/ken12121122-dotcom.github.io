@@ -61,10 +61,10 @@ public final class UniversalControlSetupActivity extends Activity {
         content.setPadding(dp(22), dp(26), dp(22), dp(34));
         scroll.addView(content);
 
-        content.addView(text("全域控制盤 v0.2", 30f, true, COLOR_TEXT), fullWidth());
+        content.addView(text("GBA 全域控制 v0.3", 30f, true, COLOR_TEXT), fullWidth());
 
         TextView intro = text(
-                "無障礙服務只需首次在 Android 設定啟用。之後由 App 暫停或恢復浮動控制，平常用喚醒球展開鍵盤。",
+                "控制介面改成純 GBA 按鍵浮層，不再顯示整塊面板。方向鍵、A/B、L/R、Select 與 Start 分散在螢幕邊緣，不會遮住中央內容。",
                 15f,
                 false,
                 COLOR_MUTED
@@ -86,7 +86,7 @@ public final class UniversalControlSetupActivity extends Activity {
         overlayValueParams.topMargin = dp(7);
         statusCard.addView(overlayValue, overlayValueParams);
 
-        autoHideValue = text("鍵盤自動收合：檢查中…", 14f, false, COLOR_MUTED);
+        autoHideValue = text("按鍵自動收合：檢查中…", 14f, false, COLOR_MUTED);
         LinearLayout.LayoutParams autoHideValueParams = fullWidth();
         autoHideValueParams.topMargin = dp(4);
         statusCard.addView(autoHideValue, autoHideValueParams);
@@ -103,7 +103,7 @@ public final class UniversalControlSetupActivity extends Activity {
         settingsParams.topMargin = dp(16);
         content.addView(settingsButton, settingsParams);
 
-        overlayButton = primaryButton("顯示浮動喚醒球");
+        overlayButton = primaryButton("顯示 GBA 浮動按鍵");
         overlayButton.setOnClickListener(view -> {
             if (!isUniversalControlEnabled()) {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
@@ -118,10 +118,10 @@ public final class UniversalControlSetupActivity extends Activity {
         content.addView(overlayButton, overlayParams);
 
         LinearLayout autoHideCard = surfaceCard();
-        autoHideCard.addView(text("鍵盤自動收合", 17f, true, COLOR_TEXT), fullWidth());
+        autoHideCard.addView(text("按鍵自動收合", 17f, true, COLOR_TEXT), fullWidth());
 
         TextView autoHideHint = text(
-                "控制盤展開後若沒有操作，到時間會自動收起；喚醒球仍會留在螢幕邊緣。",
+                "GBA 按鍵展開後若沒有操作，到時間會全部收起；喚醒球仍留在螢幕邊緣。",
                 13f,
                 false,
                 COLOR_MUTED
@@ -147,13 +147,18 @@ public final class UniversalControlSetupActivity extends Activity {
         content.addView(autoHideCard, autoHideCardParams);
 
         TextView instructions = text(
-                "操作方式\n\n"
-                        + "• 浮動喚醒球：點一下展開／收起，拖曳可移到左右邊緣\n"
-                        + "• 喚醒球 2 秒未碰：自動淡化，碰到立即恢復\n"
-                        + "• 方向鍵：移動游標；左右長按：水平切換頁面\n"
-                        + "• A：點擊游標；B：返回；B 長按：回桌面\n"
-                        + "• ⌂：首頁　▣：最近使用\n"
-                        + "• ⇧／⇩：頁面上下捲動　●：游標長按　—：立即收起",
+                "GBA 按鍵配置\n\n"
+                        + "• 左下十字鍵：移動游標\n"
+                        + "• 長按上下：頁面上下捲動；長按左右：水平切換頁面\n"
+                        + "• A：點擊游標；長按 A：長按游標位置\n"
+                        + "• B：返回；長按 B：回到桌面\n"
+                        + "• L／R：頁面向上／向下捲動\n"
+                        + "• Select：最近使用　Start：回到桌面\n"
+                        + "• 長按 Start：立即收起全部按鍵\n\n"
+                        + "喚醒球\n\n"
+                        + "• 點一下：展開或收起整套 GBA 按鍵\n"
+                        + "• 拖曳：移到螢幕左右邊緣\n"
+                        + "• 2 秒未碰：自動淡化，碰到立即恢復",
                 15f,
                 false,
                 COLOR_TEXT
@@ -164,7 +169,7 @@ public final class UniversalControlSetupActivity extends Activity {
         content.addView(instructions, instructionParams);
 
         TextView privacy = text(
-                "v0.2 不讀取其他 App 的文字、帳號或畫面內容，只送出系統動作、滑動、點擊與長按手勢。",
+                "v0.3 仍不讀取其他 App 的文字、帳號或畫面內容，只送出系統動作、滑動、點擊與長按手勢。",
                 13f,
                 false,
                 COLOR_MUTED
@@ -200,13 +205,13 @@ public final class UniversalControlSetupActivity extends Activity {
         statusValue.setTextColor(serviceEnabled ? COLOR_ACCENT : COLOR_WARNING);
         overlayValue.setText("浮動控制：" + (overlayEnabled ? "顯示中" : "已暫停"));
         autoHideValue.setText(
-                "鍵盤自動收合：" + (autoHideSeconds == 0 ? "關閉" : autoHideSeconds + " 秒")
+                "按鍵自動收合：" + (autoHideSeconds == 0 ? "關閉" : autoHideSeconds + " 秒")
         );
 
         settingsButton.setText(serviceEnabled ? "檢查或關閉無障礙服務" : "首次啟用無障礙服務");
         overlayButton.setEnabled(serviceEnabled);
         overlayButton.setAlpha(serviceEnabled ? 1f : 0.5f);
-        overlayButton.setText(overlayEnabled ? "暫停浮動控制" : "顯示浮動喚醒球");
+        overlayButton.setText(overlayEnabled ? "暫停 GBA 浮動按鍵" : "顯示 GBA 浮動按鍵");
     }
 
     private boolean isUniversalControlEnabled() {
