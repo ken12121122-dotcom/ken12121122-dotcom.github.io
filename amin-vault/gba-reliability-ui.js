@@ -21,6 +21,24 @@
     window.EJS_language = 'zh-CN';
   }
 
+  function updateReleaseCopy() {
+    const runtimeLabel = document.querySelector('#runtimeProofCard .eyebrow');
+    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc14';
+
+    const status = $('diagnosticReporterStatus');
+    const card = status?.closest('article');
+    if (!card) return;
+
+    const heading = card.querySelector('h2');
+    const badge = card.querySelector('.core-badge');
+    const description = card.querySelector('.section-head + p');
+    if (heading) heading.textContent = '系統診斷與錯誤收集';
+    if (badge) badge.textContent = 'ERROR LOG';
+    if (description) {
+      description.textContent = '遊戲啟動、JavaScript、存檔或原生崩潰時，會傳送去識別化診斷到錯誤收集站。需要排查時，我可以直接讀取最新回報；不再自動建立 GitHub Issue，也不傳送 ROM、存檔內容、檔名、Email 或裝置路徑。';
+    }
+  }
+
   function setVaultStatus(text, kind = '') {
     const target = $('romVaultStatus');
     if (!target) return;
@@ -55,7 +73,7 @@
     next.searchParams.set('native', '1');
     next.searchParams.set(
       'launchError',
-      detail.message || 'mGBA 啟動失敗，已回到乾淨的遊戲庫頁面。'
+      detail.emulatorMessage || detail.message || 'mGBA 啟動失敗，已回到乾淨的遊戲庫頁面。'
     );
     setTimeout(() => location.replace(next.href), 250);
   });
@@ -77,6 +95,8 @@
       button.disabled = false;
     }
   });
+
+  updateReleaseCopy();
 
   setTimeout(async () => {
     try {
