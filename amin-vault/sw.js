@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'amin-vault-runtime-';
-const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092-rc11`;
+const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092-rc12`;
 const META_CACHE = `${CACHE_PREFIX}meta`;
 const ACTIVE_KEY = new URL('__amin_runtime_active__', self.registration.scope).href;
 const MANIFEST_PATH = new URL('./runtime-manifest.json', self.registration.scope).pathname;
@@ -22,6 +22,7 @@ const BOOTSTRAP_ASSETS = [
   './gba-controller-native-addon.js',
   './gba-native-input.js',
   './amin-native-shell.js',
+  './amin-error-reporter.js',
   './amin-backup-v2.js',
   './amin-diagnostics.js',
   './gba-signal-lab.html',
