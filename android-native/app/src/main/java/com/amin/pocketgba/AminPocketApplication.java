@@ -45,12 +45,19 @@ public final class AminPocketApplication extends Application {
                 if (activity instanceof ControlCenterActivity) {
                     View root = activity.findViewById(android.R.id.content);
                     rewritePreviewLabels(root);
-                    attachUniversalControlEntry(activity, root);
+                    scheduleUniversalControlEntry(activity);
                 }
             }
 
             @Override public void onActivityStarted(Activity activity) {}
-            @Override public void onActivityResumed(Activity activity) {}
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+                if (activity instanceof ControlCenterActivity) {
+                    scheduleUniversalControlEntry(activity);
+                }
+            }
+
             @Override public void onActivityPaused(Activity activity) {}
             @Override public void onActivityStopped(Activity activity) {}
             @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
@@ -58,8 +65,18 @@ public final class AminPocketApplication extends Application {
         });
     }
 
+    private void scheduleUniversalControlEntry(Activity activity) {
+        View root = activity.findViewById(android.R.id.content);
+        if (root == null) {
+            return;
+        }
+        root.post(() -> attachUniversalControlEntry(activity, root));
+    }
+
     private void attachUniversalControlEntry(Activity activity, View root) {
-        if (root == null || root.findViewWithTag(UNIVERSAL_CONTROL_ENTRY_TAG) != null) {
+        if (activity.isFinishing()
+                || root == null
+                || root.findViewWithTag(UNIVERSAL_CONTROL_ENTRY_TAG) != null) {
             return;
         }
 
@@ -71,10 +88,11 @@ public final class AminPocketApplication extends Application {
         Button entry = new Button(activity);
         entry.setTag(UNIVERSAL_CONTROL_ENTRY_TAG);
         entry.setAllCaps(false);
-        entry.setText("🎮 全域控制盤（v0.1 測試）");
+        entry.setText("🎮 開啟全域控制盤");
         entry.setTextColor(Color.WHITE);
-        entry.setTextSize(16f);
-        entry.setMinHeight(dp(activity, 52));
+        entry.setTextSize(17f);
+        entry.setMinHeight(dp(activity, 58));
+        entry.setElevation(dp(activity, 5));
         entry.setBackgroundTintList(ColorStateList.valueOf(0xff19794b));
         entry.setContentDescription("開啟全域方向鍵、A B 鍵與游標設定");
         entry.setOnClickListener(view -> activity.startActivity(
@@ -85,8 +103,10 @@ public final class AminPocketApplication extends Application {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(0, dp(activity, 18), 0, 0);
-        content.addView(entry, params);
+        params.setMargins(0, dp(activity, 14), 0, dp(activity, 8));
+
+        int insertionIndex = Math.min(4, content.getChildCount());
+        content.addView(entry, insertionIndex, params);
     }
 
     private LinearLayout findScrollContent(View view) {
