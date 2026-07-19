@@ -1,0 +1,76 @@
+name: Fix Bridge 16 Forward Reference
+
+on:
+  push:
+    branches:
+      - agent/amin-pocket-gba-universal-control-v01
+    paths:
+      - '.github/workflows/fix-bridge16-forward-reference.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/amin-pocket-gba-universal-control-v01
+          fetch-depth: 0
+
+      - name: Patch Java initialization order
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+              private final Runnable fadeBubbleTask = () -> {
+                  if (bubbleOverlay != null) {
+                      bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
+                  }
+              };
+              private final Runnable autoHideControlsTask = this::hideControls;
+          '''
+          new = '''    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+              private final Runnable fadeBubbleTask = this::fadeBubble;
+              private final Runnable autoHideControlsTask = this::hideControls;
+          '''
+          if old not in text:
+              raise SystemExit('Expected forward-reference block was not found')
+          text = text.replace(old, new, 1)
+
+          anchor = '''    private void showBubble() {
+          '''
+          method = '''    private void fadeBubble() {
+                  if (bubbleOverlay != null) {
+                      bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
+                  }
+              }
+
+          '''
+          if anchor not in text:
+              raise SystemExit('showBubble anchor was not found')
+          text = text.replace(anchor, method + anchor, 1)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify patch
+        run: |
+          set -euxo pipefail
+          SERVICE='android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java'
+          grep -q 'fadeBubbleTask = this::fadeBubble' "$SERVICE"
+          grep -q 'private void fadeBubble()' "$SERVICE"
+          ! grep -q 'fadeBubbleTask = () ->' "$SERVICE"
+
+      - name: Commit patch
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java
+          git commit -m 'fix: avoid accessibility overlay forward reference'
+          git push origin HEAD:agent/amin-pocket-gba-universal-control-v01
