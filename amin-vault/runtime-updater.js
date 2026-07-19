@@ -9,6 +9,19 @@
 
   const badge = document.getElementById('gbaStatus');
 
+  function configureNativeHomeLink() {
+    const link = document.querySelector('.back-link');
+    if (!link) return;
+
+    const match = navigator.userAgent.match(/AminPocketGBA\/[^\s]*-bridge(\d+)/i);
+    const bridgeNumber = match ? Number.parseInt(match[1], 10) : 0;
+    if (!Number.isFinite(bridgeNumber) || bridgeNumber < 6) return;
+
+    link.href = 'amin-home://open';
+    link.textContent = '← 返回控制中心';
+    link.setAttribute('aria-label', '返回白色原生控制中心');
+  }
+
   function setBadge(text, kind = '') {
     if (!badge) return;
     badge.textContent = text;
@@ -159,6 +172,8 @@
   }
 
   async function start() {
+    configureNativeHomeLink();
+
     const installedVersion = localStorage.getItem(STORAGE_KEY);
     const initialBadge = badge?.textContent || '';
     if (!installedVersion && initialBadge === '初始化') setBadge('檢查更新…');
