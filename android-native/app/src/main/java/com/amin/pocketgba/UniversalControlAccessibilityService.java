@@ -56,11 +56,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private static volatile UniversalControlAccessibilityService activeInstance;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Runnable fadeBubbleTask = () -> {
-        if (bubbleOverlay != null) {
-            bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
-        }
-    };
+    private final Runnable fadeBubbleTask = this::fadeBubble;
     private final Runnable autoHideControlsTask = this::hideControls;
 
     private WindowManager windowManager;
@@ -229,6 +225,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
 
     private boolean isScrollMode() {
         return MODE_SCROLL.equals(getControlMode(this));
+    }
+
+    private void fadeBubble() {
+        if (bubbleOverlay != null) {
+            bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
+        }
     }
 
     private void showBubble() {
