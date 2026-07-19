@@ -38,6 +38,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private static final long SWIPE_DURATION_MS = 320L;
     private static final long BUBBLE_FADE_DELAY_MS = 2000L;
     private static final int CURSOR_STEP_DP = 48;
+    private static final int DPAD_KEY_DP = 54;
+    private static final int DPAD_SIZE_DP = DPAD_KEY_DP * 3;
     private static final float BUBBLE_IDLE_ALPHA = 0.25f;
 
     private static volatile UniversalControlAccessibilityService activeInstance;
@@ -49,7 +51,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private TextView bubbleOverlay;
     private WindowManager.LayoutParams bubbleParams;
 
-    private LinearLayout dpadOverlay;
+    private FrameLayout dpadOverlay;
     private WindowManager.LayoutParams dpadParams;
 
     private FrameLayout actionOverlay;
@@ -127,7 +129,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // v0.3 does not inspect or read content from other apps.
+        // This service intentionally does not inspect or read content from other apps.
     }
 
     @Override
@@ -252,7 +254,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             return;
         }
 
-        createDpadOverlay();
+        createFixedDpadOverlay();
         createActionOverlay();
         createShoulderOverlays();
         createCenterOverlay();
@@ -261,10 +263,13 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         setControlsVisibility(View.GONE);
     }
 
-    private void createDpadOverlay() {
-        dpadOverlay = new LinearLayout(this);
-        dpadOverlay.setOrientation(LinearLayout.VERTICAL);
-        dpadOverlay.setGravity(Gravity.CENTER);
+    /**
+     * Uses a fixed 3 x 3 FrameLayout instead of nested wrap-content LinearLayouts.
+     * This prevents Android accessibility overlays from measuring the D-pad as a
+     * single narrow column and clipping the left/right keys on some Samsung builds.
+     */
+    private void createFixedDpadOverlay() {
+        dpadOverlay = new FrameLayout(this);
 
         Button up = dpadButton("▲", "短按游標向上，長按頁面向上捲動");
         bindShortLongPress(
@@ -272,11 +277,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                 () -> moveCursor(0, -CURSOR_STEP_DP),
                 () -> swipeVertical(false)
         );
-        dpadOverlay.addView(up, dpadKeyParams());
-
-        LinearLayout middle = new LinearLayout(this);
-        middle.setOrientation(LinearLayout.HORIZONTAL);
-        middle.setGravity(Gravity.CENTER);
+        dpadOverlay.addView(up, dpadCell(1, 0));
 
         Button left = dpadButton("◀", "短按游標向左，長按切換上一個頁面");
         bindShortLongPress(
@@ -284,12 +285,11 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                 () -> moveCursor(-CURSOR_STEP_DP, 0),
                 () -> swipeHorizontal(false)
         );
-        middle.addView(left, dpadKeyParams());
+        dpadOverlay.addView(left, dpadCell(0, 1));
 
-        TextView center = new TextView(this);
-        center.setText("");
+        View center = new View(this);
         center.setBackground(roundedBackground(0xb84a4a4a, 8f, 0x88ffffff, 1));
-        middle.addView(center, dpadKeyParams());
+        dpadOverlay.addView(center, dpadCell(1, 1));
 
         Button right = dpadButton("▶", "短按游標向右，長按切換下一個頁面");
         bindShortLongPress(
@@ -297,8 +297,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                 () -> moveCursor(CURSOR_STEP_DP, 0),
                 () -> swipeHorizontal(true)
         );
-        middle.addView(right, dpadKeyParams());
-        dpadOverlay.addView(middle);
+        dpadOverlay.addView(right, dpadCell(2, 1));
 
         Button down = dpadButton("▼", "短按游標向下，長按頁面向下捲動");
         bindShortLongPress(
@@ -306,15 +305,25 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                 () -> moveCursor(0, CURSOR_STEP_DP),
                 () -> swipeVertical(true)
         );
-        dpadOverlay.addView(down, dpadKeyParams());
+        dpadOverlay.addView(down, dpadCell(1, 2));
 
         dpadParams = baseOverlayParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                "Amin GBA D-pad"
+                dp(DPAD_SIZE_DP),
+                dp(DPAD_SIZE_DP),
+                "Amin GBA Fixed D-pad"
         );
         dpadParams.gravity = Gravity.BOTTOM | Gravity.START;
         windowManager.addView(dpadOverlay, dpadParams);
+    }
+
+    private FrameLayout.LayoutParams dpadCell(int column, int row) {
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                dp(DPAD_KEY_DP),
+                dp(DPAD_KEY_DP)
+        );
+        params.leftMargin = dp(DPAD_KEY_DP * column);
+        params.topMargin = dp(DPAD_KEY_DP * row);
+        return params;
     }
 
     private void createActionOverlay() {
@@ -603,12 +612,6 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         button.setMinHeight(0);
         button.setContentDescription(description);
         return button;
-    }
-
-    private LinearLayout.LayoutParams dpadKeyParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(54), dp(54));
-        params.setMargins(0, 0, 0, 0);
-        return params;
     }
 
     private LinearLayout.LayoutParams centerButtonParams() {
