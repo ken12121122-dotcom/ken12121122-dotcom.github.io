@@ -7,3 +7,4 @@ Validation marker for the Bridge 16 Android build.
 - Hold D-pad: continuous movement
 - Hold Select: cursor/scroll mode toggle
 - PR validation base: native vault v2
+- Forward-reference compile fix applied
