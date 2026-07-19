@@ -3,6 +3,22 @@
 
   const $ = id => document.getElementById(id);
 
+  function loadSaveCompatibilityLayer() {
+    if (window.AMIN_GBA_SAVE_COMPAT || document.getElementById('aminGbaSaveCompatScript')) return;
+    const script = document.createElement('script');
+    script.id = 'aminGbaSaveCompatScript';
+    script.src = './gba-save-compat.js';
+    script.async = false;
+    script.onerror = () => {
+      const target = $('saveVaultStatus');
+      if (target) {
+        target.textContent = '4.2.3 存檔適配器載入失敗，請保持連線後重新開啟。';
+        target.className = 'storage-status error';
+      }
+    };
+    document.head.appendChild(script);
+  }
+
   // EmulatorJS 4.2.3 ships zh-CN but not zh-TW. Keep the Amin shell in
   // Traditional Chinese while mapping the embedded emulator to a real locale.
   let emulatorLanguage = 'zh-CN';
@@ -23,7 +39,7 @@
 
   function updateReleaseCopy() {
     const runtimeLabel = document.querySelector('#runtimeProofCard .eyebrow');
-    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc14';
+    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc15';
 
     const status = $('diagnosticReporterStatus');
     const card = status?.closest('article');
@@ -96,6 +112,7 @@
     }
   });
 
+  loadSaveCompatibilityLayer();
   updateReleaseCopy();
 
   setTimeout(async () => {
