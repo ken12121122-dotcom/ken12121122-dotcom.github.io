@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge11",
-  "latestVersionCode": 107,
-  "minimumSupportedVersionCode": 106,
+  "latestVersionName": "0.9.2-bridge12",
+  "latestVersionCode": 108,
+  "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge11.apk",
-  "apkSha256": "90cca47c48d5ae8e686f1ea36a3c27afb6a630ca840e88be02de2f37600e05e2",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge12.apk",
+  "apkSha256": "9969d84de9427b5425843bcb08051618b4b595ba9e9eb357b1db8f74f321849c",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 4166181,
-  "publishedAt": "2026-07-19T14:48:29+08:00",
+  "sizeBytes": 4166406,
+  "publishedAt": "2026-07-19T15:06:52+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "新增 Amin 全域控制盤 v0.1，可在其他 App 上方顯示方向鍵、A/B 與游標。",
-    "長按 B 回到桌面、長按左右切換桌面頁、A 點擊游標位置並開啟 App。",
-    "保留 Bridge 10 的 Native Cartridge Vault v2、Android .sav/.bak 與內建 EmulatorJS 4.2.3 mGBA。"
+    "修正全域控制盤入口未顯示：按鈕固定放在控制中心上方，回到頁面時會再次確認掛載。",
+    "保留長按 B 回桌面、長按左右切換桌面頁、方向鍵移動游標與 A 點擊功能。",
+    "保留 Native Cartridge Vault v2、Android .sav/.bak 與內建 EmulatorJS 4.2.3 mGBA。"
   ]
 }
