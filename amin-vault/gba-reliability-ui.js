@@ -3,6 +3,24 @@
 
   const $ = id => document.getElementById(id);
 
+  // EmulatorJS 4.2.3 ships zh-CN but not zh-TW. Keep the Amin shell in
+  // Traditional Chinese while mapping the embedded emulator to a real locale.
+  let emulatorLanguage = 'zh-CN';
+  try {
+    Object.defineProperty(window, 'EJS_language', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return emulatorLanguage;
+      },
+      set(value) {
+        emulatorLanguage = value === 'zh-TW' ? 'zh-CN' : String(value || 'zh-CN');
+      }
+    });
+  } catch {
+    window.EJS_language = 'zh-CN';
+  }
+
   function setVaultStatus(text, kind = '') {
     const target = $('romVaultStatus');
     if (!target) return;
@@ -26,6 +44,20 @@
   addEventListener('amin-rom-vault-ready', event => {
     const detail = event.detail || {};
     setVaultStatus(describe(detail), detail.recovered ? 'success' : '');
+  });
+
+  // A partially loaded EmulatorJS page is unsafe to reuse. After the stable
+  // fallback also fails, return to a fresh library document with the error shown.
+  addEventListener('amin-gba-launch-status', event => {
+    const detail = event.detail || {};
+    if (detail.status !== 'failed' || detail.channel !== 'stable') return;
+    const next = new URL('./gba.html', location.href);
+    next.searchParams.set('native', '1');
+    next.searchParams.set(
+      'launchError',
+      detail.message || 'mGBA 啟動失敗，已回到乾淨的遊戲庫頁面。'
+    );
+    setTimeout(() => location.replace(next.href), 250);
   });
 
   const button = $('repairRomLibraryButton');
