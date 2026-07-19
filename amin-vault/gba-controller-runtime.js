@@ -26,10 +26,10 @@
   const NATIVE_DEFAULTS = {
     A:['NATIVE_KEY:KEYCODE_BUTTON_2','NATIVE_KEY:KEYCODE_BUTTON_A'],
     B:['NATIVE_KEY:KEYCODE_BUTTON_3','NATIVE_KEY:KEYCODE_BUTTON_B'],
-    START:['NATIVE_KEY:KEYCODE_BUTTON_START'],
-    SELECT:['NATIVE_KEY:KEYCODE_BUTTON_SELECT'],
-    L:['NATIVE_KEY:KEYCODE_BUTTON_L1'],
-    R:['NATIVE_KEY:KEYCODE_BUTTON_R1'],
+    START:['NATIVE_KEY:KEYCODE_BUTTON_START','NATIVE_KEY:KEYCODE_BUTTON_10'],
+    SELECT:['NATIVE_KEY:KEYCODE_BUTTON_SELECT','NATIVE_KEY:KEYCODE_BUTTON_9'],
+    L:['NATIVE_KEY:KEYCODE_BUTTON_L1','NATIVE_KEY:KEYCODE_BUTTON_5'],
+    R:['NATIVE_KEY:KEYCODE_BUTTON_R1','NATIVE_KEY:KEYCODE_BUTTON_6'],
     UP:['NATIVE_KEY:KEYCODE_DPAD_UP','NATIVE_AXIS:AXIS_Y:-1','NATIVE_AXIS:AXIS_HAT_Y:-1'],
     DOWN:['NATIVE_KEY:KEYCODE_DPAD_DOWN','NATIVE_AXIS:AXIS_Y:+1','NATIVE_AXIS:AXIS_HAT_Y:+1'],
     LEFT:['NATIVE_KEY:KEYCODE_DPAD_LEFT','NATIVE_AXIS:AXIS_X:-1','NATIVE_AXIS:AXIS_HAT_X:-1'],
@@ -37,13 +37,14 @@
   };
 
   let animationFrame = 0;
-  const currentStates = new Map();
   let prepared = false;
+  let readySeen = false;
+  const currentStates = new Map();
 
   function fallbackProfile() {
     return {
       version:1,
-      nativeSchemaVersion:1,
+      nativeSchemaVersion:2,
       deadzone:0.55,
       actions:{
         A:['BUTTON_2',...NATIVE_DEFAULTS.A],
@@ -61,16 +62,17 @@
   }
 
   function ensureNativeDefaults(profile) {
-    if (!profile?.actions || profile.nativeSchemaVersion >= 1) return profile;
-    Object.entries(NATIVE_DEFAULTS).forEach(([actionId, bindings]) => {
+    if (!profile?.actions) return fallbackProfile();
+    if (profile.nativeSchemaVersion >= 2) return profile;
+    Object.entries(NATIVE_DEFAULTS).forEach(([actionId,bindings]) => {
       const current = Array.isArray(profile.actions[actionId]) ? profile.actions[actionId] : [];
       bindings.forEach(binding => {
         if (!current.includes(binding)) current.push(binding);
       });
       profile.actions[actionId] = current;
     });
-    profile.nativeSchemaVersion = 1;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch {}
+    profile.nativeSchemaVersion = 2;
+    try { localStorage.setItem(STORAGE_KEY,JSON.stringify(profile)); } catch {}
     return profile;
   }
 
@@ -88,8 +90,7 @@
 
   function bindingActive(binding,pad,deadzone) {
     if (binding.startsWith('NATIVE_KEY:')) {
-      const keyName = binding.slice('NATIVE_KEY:'.length);
-      return Boolean(window.AMIN_NATIVE_INPUT?.isKeyPressed?.(keyName));
+      return Boolean(window.AMIN_NATIVE_INPUT?.isKeyPressed?.(binding.slice(11)));
     }
 
     if (binding.startsWith('NATIVE_AXIS:')) {
@@ -114,37 +115,50 @@
     return match[3] === '+1' ? value >= deadzone : value <= -deadzone;
   }
 
-  function releaseAll() {
-    if (!window.EJS_emulator?.gameManager) return;
-    ACTIONS.forEach(action => {
-      try { window.EJS_emulator.gameManager.simulateInput(0,action.logicalIndex,0); } catch {}
-    });
-    currentStates.clear();
+  function emulatorReady() {
+    const manager = window.EJS_emulator?.gameManager;
+    return Boolean(manager && typeof manager.simulateInput === 'function');
   }
 
-  function poll() {
-    const emulator = window.EJS_emulator;
-    if (!emulator?.gameManager || !emulator.started) {
-      animationFrame = requestAnimationFrame(poll);
-      return;
-    }
-
+  function syncInputs() {
+    if (!emulatorReady()) return false;
     const pad = getPad();
     const profile = loadProfile();
     const deadzone = Number(profile.deadzone) || 0.55;
+    const manager = window.EJS_emulator.gameManager;
 
     ACTIONS.forEach(action => {
       const active = (profile.actions[action.id] || []).some(binding => bindingActive(binding,pad,deadzone));
       const previous = currentStates.get(action.id) || false;
-      if (active !== previous) {
-        try {
-          emulator.gameManager.simulateInput(0,action.logicalIndex,active ? 1 : 0);
-          currentStates.set(action.id,active);
-        } catch {}
+      if (active === previous) return;
+      try {
+        manager.simulateInput(0,action.logicalIndex,active ? 1 : 0);
+        currentStates.set(action.id,active);
+      } catch (error) {
+        console.warn('[Amin controller] simulateInput failed',action.id,error);
       }
     });
+    return true;
+  }
 
+  function poll() {
+    syncInputs();
     animationFrame = requestAnimationFrame(poll);
+  }
+
+  function startPolling() {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = requestAnimationFrame(poll);
+  }
+
+  function releaseAll() {
+    const manager = window.EJS_emulator?.gameManager;
+    if (manager && typeof manager.simulateInput === 'function') {
+      ACTIONS.forEach(action => {
+        try { manager.simulateInput(0,action.logicalIndex,0); } catch {}
+      });
+    }
+    currentStates.clear();
   }
 
   function disableBuiltInControllerBindings() {
@@ -153,7 +167,7 @@
     };
     const player = {};
     [0,2,3,4,5,6,7,8,10,11,16,17,18,19,20,21,22,23].forEach(index => {
-      player[index] = { value:keyboardValues[index] || '', value2:'' };
+      player[index] = { value:keyboardValues[index] || '',value2:'' };
     });
     window.EJS_defaultControls = { 0:player,1:{},2:{},3:{} };
   }
@@ -166,16 +180,35 @@
 
     const existingReady = window.EJS_ready;
     window.EJS_ready = (...args) => {
+      readySeen = true;
       if (typeof existingReady === 'function') existingReady(...args);
-      cancelAnimationFrame(animationFrame);
       currentStates.clear();
-      animationFrame = requestAnimationFrame(poll);
+      startPolling();
+      setTimeout(syncInputs,0);
+      setTimeout(syncInputs,120);
     };
+
+    startPolling();
   }
 
+  window.addEventListener('amin-native-key',() => {
+    syncInputs();
+    setTimeout(syncInputs,0);
+  });
+
+  window.addEventListener('amin-native-motion',() => {
+    syncInputs();
+    setTimeout(syncInputs,0);
+  });
+
+  window.addEventListener('gamepadconnected',syncInputs);
+  window.addEventListener('gamepaddisconnected',() => {
+    releaseAll();
+    syncInputs();
+  });
+
   document.addEventListener('click',event => {
-    if (!event.target.closest('[data-play]')) return;
-    prepareRuntime();
+    if (event.target.closest('[data-play]')) prepareRuntime();
   },true);
 
   addEventListener('pagehide',() => {
@@ -186,7 +219,12 @@
 
   window.AMIN_GBA_CONTROLLER_RUNTIME = {
     prepare:prepareRuntime,
+    sync:syncInputs,
     releaseAll,
-    version:'0.9.0'
+    get readySeen() { return readySeen; },
+    get emulatorReady() { return emulatorReady(); },
+    version:'0.9.1-native-hotfix'
   };
+
+  prepareRuntime();
 })();
