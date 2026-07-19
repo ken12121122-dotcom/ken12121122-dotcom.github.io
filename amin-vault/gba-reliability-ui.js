@@ -39,7 +39,7 @@
 
   function updateReleaseCopy() {
     const runtimeLabel = document.querySelector('#runtimeProofCard .eyebrow');
-    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc15';
+    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc16';
 
     const status = $('diagnosticReporterStatus');
     const card = status?.closest('article');
