@@ -13,33 +13,38 @@ import android.webkit.WebView;
  * the Activity field. Guarding at the View queue boundary prevents that stale callback
  * from dereferencing a destroyed WebView without changing emulator or save behavior.
  *
- * The same trusted WebView owns the narrow AminNativeSaveVault JavaScript bridge. The
- * bridge accepts only SHA-256 game identities and bounded save payloads, and can access
- * only the app-private gba-saves directory.
+ * The trusted WebView owns two narrow JavaScript bridges:
+ * - AminNativeSaveVault stores only bounded save payloads under SHA-256 game identities.
+ * - AminNativeDiagnostics exposes only sanitized pending crash data and device versions.
  */
 public final class LifecycleSafeWebView extends WebView {
     private volatile boolean destroyed;
 
     public LifecycleSafeWebView(Context context) {
         super(context);
-        installNativeSaveVault(context);
+        installNativeBridges(context);
     }
 
     public LifecycleSafeWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        installNativeSaveVault(context);
+        installNativeBridges(context);
     }
 
     public LifecycleSafeWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        installNativeSaveVault(context);
+        installNativeBridges(context);
     }
 
     @SuppressLint("AddJavascriptInterface")
-    private void installNativeSaveVault(Context context) {
+    private void installNativeBridges(Context context) {
+        Context appContext = context.getApplicationContext();
         addJavascriptInterface(
-                new NativeSaveVaultBridge(context.getApplicationContext()),
+                new NativeSaveVaultBridge(appContext),
                 "AminNativeSaveVault"
+        );
+        addJavascriptInterface(
+                new NativeDiagnosticsBridge(appContext),
+                "AminNativeDiagnostics"
         );
     }
 
@@ -63,6 +68,7 @@ public final class LifecycleSafeWebView extends WebView {
     public void destroy() {
         destroyed = true;
         removeJavascriptInterface("AminNativeSaveVault");
+        removeJavascriptInterface("AminNativeDiagnostics");
         super.destroy();
     }
 
