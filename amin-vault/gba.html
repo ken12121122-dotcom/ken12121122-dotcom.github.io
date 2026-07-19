@@ -39,7 +39,7 @@
       </article>
 
       <article id="runtimeProofCard" class="notice-card compact-note">
-        <p class="eyebrow">LIVE RUNTIME · 0.9.2-rc11</p>
+        <p class="eyebrow">LIVE RUNTIME · 0.9.2-rc12</p>
         <h3>Runtime 即時功能測試</h3>
         <p>這張卡片與下面的計數功能，是在不更換 APK 外殼的情況下新增的。</p>
         <div class="tool-actions">
@@ -148,16 +148,22 @@
             <div class="section-head">
               <div>
                 <p class="eyebrow">SYSTEM HEALTH</p>
-                <h2>系統診斷</h2>
+                <h2>系統診斷與自動回報</h2>
               </div>
-              <span class="core-badge">JSON</span>
+              <span class="core-badge">GITHUB</span>
             </div>
-            <p>只在排錯時使用。報告不會匯出 ROM 二進位內容。</p>
+            <p>遊戲啟動、JavaScript、存檔或原生崩潰時，自動傳送去識別化診斷，並由 GitHub Actions 建立或合併 Issue。不傳送 ROM、存檔內容、檔名、Email 或裝置路徑。</p>
+            <label class="check-row">
+              <input id="diagnosticReporterEnabled" type="checkbox" checked>
+              <span>啟用自動錯誤回報</span>
+            </label>
             <div id="diagnosticSummary" class="diagnostic-summary">正在收集診斷資料…</div>
             <div class="tool-actions">
               <button id="refreshDiagnosticsButton">重新檢查</button>
               <button id="exportDiagnosticsButton" class="secondary">匯出診斷報告</button>
+              <button id="sendDiagnosticTestButton" class="secondary">傳送測試回報</button>
             </div>
+            <p id="diagnosticReporterStatus" class="storage-status">正在準備自動回報器…</p>
           </article>
 
           <article class="notice-card tool-card compact-tool-card native-management-card">
@@ -227,6 +233,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="./amin-native-shell.js"></script>
+  <script src="./amin-error-reporter.js"></script>
   <script src="./runtime-updater.js"></script>
   <script src="./gba-native-input.js"></script>
   <script src="./gba-immersive.js"></script>
