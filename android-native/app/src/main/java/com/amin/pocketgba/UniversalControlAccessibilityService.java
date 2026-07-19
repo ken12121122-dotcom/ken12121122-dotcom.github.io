@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,10 +45,25 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private WindowManager windowManager;
+
     private TextView bubbleOverlay;
     private WindowManager.LayoutParams bubbleParams;
-    private LinearLayout controlOverlay;
-    private WindowManager.LayoutParams controlParams;
+
+    private LinearLayout dpadOverlay;
+    private WindowManager.LayoutParams dpadParams;
+
+    private FrameLayout actionOverlay;
+    private WindowManager.LayoutParams actionParams;
+
+    private Button leftShoulderOverlay;
+    private WindowManager.LayoutParams leftShoulderParams;
+
+    private Button rightShoulderOverlay;
+    private WindowManager.LayoutParams rightShoulderParams;
+
+    private LinearLayout centerOverlay;
+    private WindowManager.LayoutParams centerParams;
+
     private View cursorOverlay;
     private WindowManager.LayoutParams cursorParams;
 
@@ -55,7 +71,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     private int screenHeight;
     private float cursorX;
     private float cursorY;
-    private boolean panelVisible;
+    private boolean controlsVisible;
 
     private final Runnable fadeBubbleTask = () -> {
         if (bubbleOverlay != null) {
@@ -66,7 +82,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     };
 
-    private final Runnable autoHidePanelTask = this::hidePanel;
+    private final Runnable autoHideControlsTask = this::hideControls;
 
     public static boolean isOverlayEnabled(Context context) {
         return preferences(context).getBoolean(KEY_OVERLAY_ENABLED, true);
@@ -89,7 +105,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         preferences(context).edit().putInt(KEY_AUTO_HIDE_SECONDS, safeSeconds).apply();
         UniversalControlAccessibilityService instance = activeInstance;
         if (instance != null) {
-            instance.mainHandler.post(instance::schedulePanelAutoHide);
+            instance.mainHandler.post(instance::scheduleControlsAutoHide);
         }
     }
 
@@ -106,12 +122,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         cursorX = screenWidth * 0.5f;
         cursorY = screenHeight * 0.5f;
         applyOverlayEnabled(isOverlayEnabled(this));
-        Toast.makeText(this, "全域控制服務已連線", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "GBA 全域控制已連線", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // v0.2 does not inspect other apps or read their content.
+        // v0.3 does not inspect or read content from other apps.
     }
 
     @Override
@@ -127,6 +143,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         cursorY = clamp(cursorY, dp(14), screenHeight - dp(14));
         updateCursorPosition();
         clampAndUpdateBubble();
+        updateGamepadLayout();
     }
 
     @Override
@@ -144,7 +161,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             return;
         }
         showBubble();
-        hidePanel();
+        hideControls();
     }
 
     private void showBubble() {
@@ -157,24 +174,21 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         bubbleOverlay.setTextColor(Color.WHITE);
         bubbleOverlay.setTextSize(26f);
         bubbleOverlay.setGravity(Gravity.CENTER);
-        bubbleOverlay.setContentDescription("全域控制喚醒球，點擊展開或收起，拖曳可移動");
+        bubbleOverlay.setContentDescription("GBA 全域控制喚醒球，點擊展開或收起，拖曳可移動");
         bubbleOverlay.setBackground(circleBackground(0xe6192a20, Color.WHITE, 1));
         bubbleOverlay.setElevation(dp(8));
 
         int size = dp(56);
-        bubbleParams = new WindowManager.LayoutParams(
-                size,
-                size,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-        );
+        bubbleParams = baseOverlayParams(size, size, "Amin GBA Wake Bubble");
         bubbleParams.gravity = Gravity.TOP | Gravity.START;
-        bubbleParams.x = preferences(this).getInt(KEY_BUBBLE_X, Math.max(0, screenWidth - size - dp(8)));
-        bubbleParams.y = preferences(this).getInt(KEY_BUBBLE_Y, Math.max(dp(72), screenHeight / 3));
-        bubbleParams.setTitle("Amin Universal Control Wake Bubble");
+        bubbleParams.x = preferences(this).getInt(
+                KEY_BUBBLE_X,
+                Math.max(0, screenWidth - size - dp(8))
+        );
+        bubbleParams.y = preferences(this).getInt(
+                KEY_BUBBLE_Y,
+                Math.max(dp(72), screenHeight / 3)
+        );
         clampBubbleCoordinates();
 
         bubbleOverlay.setOnTouchListener(new View.OnTouchListener() {
@@ -189,7 +203,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         wakeBubble();
-                        markPanelActivity();
+                        markControlsActivity();
                         downRawX = event.getRawX();
                         downRawY = event.getRawY();
                         downWindowX = bubbleParams.x;
@@ -214,7 +228,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                         if (dragging) {
                             snapBubbleToEdge();
                         } else {
-                            togglePanel();
+                            toggleControls();
                             view.performClick();
                         }
                         scheduleBubbleFade();
@@ -233,137 +247,140 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         scheduleBubbleFade();
     }
 
-    private void ensureControlPanel() {
-        if (windowManager == null || controlOverlay != null) {
+    private void ensureGamepadControls() {
+        if (windowManager == null || dpadOverlay != null) {
             return;
         }
 
-        controlOverlay = new LinearLayout(this);
-        controlOverlay.setOrientation(LinearLayout.VERTICAL);
-        controlOverlay.setGravity(Gravity.CENTER);
-        controlOverlay.setPadding(dp(10), dp(8), dp(10), dp(8));
-        controlOverlay.setBackground(roundedBackground(0xe617231c, 20f));
-        controlOverlay.setElevation(dp(7));
+        createDpadOverlay();
+        createActionOverlay();
+        createShoulderOverlays();
+        createCenterOverlay();
+        ensureCursor();
+        updateGamepadLayout();
+        setControlsVisibility(View.GONE);
+    }
 
-        LinearLayout primaryRow = new LinearLayout(this);
-        primaryRow.setOrientation(LinearLayout.HORIZONTAL);
-        primaryRow.setGravity(Gravity.CENTER_VERTICAL);
+    private void createDpadOverlay() {
+        dpadOverlay = new LinearLayout(this);
+        dpadOverlay.setOrientation(LinearLayout.VERTICAL);
+        dpadOverlay.setGravity(Gravity.CENTER);
 
-        LinearLayout dpad = new LinearLayout(this);
-        dpad.setOrientation(LinearLayout.VERTICAL);
-        dpad.setGravity(Gravity.CENTER);
-
-        Button up = controlButton("▲", "游標向上");
-        bindClick(up, () -> moveCursor(0, -CURSOR_STEP_DP));
-        dpad.addView(up, dpadButtonParams());
+        Button up = dpadButton("▲", "短按游標向上，長按頁面向上捲動");
+        bindShortLongPress(
+                up,
+                () -> moveCursor(0, -CURSOR_STEP_DP),
+                () -> swipeVertical(false)
+        );
+        dpadOverlay.addView(up, dpadKeyParams());
 
         LinearLayout middle = new LinearLayout(this);
         middle.setOrientation(LinearLayout.HORIZONTAL);
         middle.setGravity(Gravity.CENTER);
 
-        Button left = controlButton("◀", "短按游標向左，長按切換上一個頁面");
+        Button left = dpadButton("◀", "短按游標向左，長按切換上一個頁面");
         bindShortLongPress(
                 left,
                 () -> moveCursor(-CURSOR_STEP_DP, 0),
                 () -> swipeHorizontal(false)
         );
-        middle.addView(left, dpadButtonParams());
+        middle.addView(left, dpadKeyParams());
 
         TextView center = new TextView(this);
-        center.setText("＋");
-        center.setTextColor(0xffa9bbb1);
-        center.setTextSize(18f);
-        center.setGravity(Gravity.CENTER);
-        middle.addView(center, dpadButtonParams());
+        center.setText("");
+        center.setBackground(roundedBackground(0xb84a4a4a, 8f, 0x88ffffff, 1));
+        middle.addView(center, dpadKeyParams());
 
-        Button right = controlButton("▶", "短按游標向右，長按切換下一個頁面");
+        Button right = dpadButton("▶", "短按游標向右，長按切換下一個頁面");
         bindShortLongPress(
                 right,
                 () -> moveCursor(CURSOR_STEP_DP, 0),
                 () -> swipeHorizontal(true)
         );
-        middle.addView(right, dpadButtonParams());
-        dpad.addView(middle);
+        middle.addView(right, dpadKeyParams());
+        dpadOverlay.addView(middle);
 
-        Button down = controlButton("▼", "游標向下");
-        bindClick(down, () -> moveCursor(0, CURSOR_STEP_DP));
-        dpad.addView(down, dpadButtonParams());
-
-        primaryRow.addView(dpad);
-
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.VERTICAL);
-        actions.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams actionGroupParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+        Button down = dpadButton("▼", "短按游標向下，長按頁面向下捲動");
+        bindShortLongPress(
+                down,
+                () -> moveCursor(0, CURSOR_STEP_DP),
+                () -> swipeVertical(true)
         );
-        actionGroupParams.leftMargin = dp(12);
+        dpadOverlay.addView(down, dpadKeyParams());
 
-        Button a = controlButton("A", "點擊游標位置");
-        bindClick(a, this::tapCursor);
-        actions.addView(a, actionButtonParams());
+        dpadParams = baseOverlayParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                "Amin GBA D-pad"
+        );
+        dpadParams.gravity = Gravity.BOTTOM | Gravity.START;
+        windowManager.addView(dpadOverlay, dpadParams);
+    }
 
-        Button b = controlButton("B", "短按返回，長按回到桌面");
+    private void createActionOverlay() {
+        actionOverlay = new FrameLayout(this);
+
+        Button b = roundActionButton("B", "短按返回，長按回到桌面");
         bindShortLongPress(
                 b,
                 () -> performSystemAction(GLOBAL_ACTION_BACK, "無法執行返回"),
                 () -> performSystemAction(GLOBAL_ACTION_HOME, "無法回到桌面")
         );
-        actions.addView(b, actionButtonParams());
+        FrameLayout.LayoutParams bParams = new FrameLayout.LayoutParams(dp(64), dp(64));
+        bParams.leftMargin = 0;
+        bParams.topMargin = dp(38);
+        actionOverlay.addView(b, bParams);
 
-        primaryRow.addView(actions, actionGroupParams);
-        controlOverlay.addView(primaryRow);
+        Button a = roundActionButton("A", "短按點擊游標，長按游標位置");
+        bindShortLongPress(a, this::tapCursor, this::holdCursor);
+        FrameLayout.LayoutParams aParams = new FrameLayout.LayoutParams(dp(64), dp(64));
+        aParams.leftMargin = dp(66);
+        aParams.topMargin = 0;
+        actionOverlay.addView(a, aParams);
 
-        LinearLayout functionRow = new LinearLayout(this);
-        functionRow.setOrientation(LinearLayout.HORIZONTAL);
-        functionRow.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams functionRowParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+        actionParams = baseOverlayParams(dp(130), dp(102), "Amin GBA A B Buttons");
+        actionParams.gravity = Gravity.BOTTOM | Gravity.END;
+        windowManager.addView(actionOverlay, actionParams);
+    }
+
+    private void createShoulderOverlays() {
+        leftShoulderOverlay = shoulderButton("L", "頁面向上捲動");
+        bindClick(leftShoulderOverlay, () -> swipeVertical(false));
+        leftShoulderParams = baseOverlayParams(dp(86), dp(52), "Amin GBA L Button");
+        leftShoulderParams.gravity = Gravity.TOP | Gravity.START;
+        windowManager.addView(leftShoulderOverlay, leftShoulderParams);
+
+        rightShoulderOverlay = shoulderButton("R", "頁面向下捲動");
+        bindClick(rightShoulderOverlay, () -> swipeVertical(true));
+        rightShoulderParams = baseOverlayParams(dp(86), dp(52), "Amin GBA R Button");
+        rightShoulderParams.gravity = Gravity.TOP | Gravity.END;
+        windowManager.addView(rightShoulderOverlay, rightShoulderParams);
+    }
+
+    private void createCenterOverlay() {
+        centerOverlay = new LinearLayout(this);
+        centerOverlay.setOrientation(LinearLayout.HORIZONTAL);
+        centerOverlay.setGravity(Gravity.CENTER);
+
+        Button select = pillButton("Select", "開啟最近使用的應用程式");
+        bindClick(select, () -> performSystemAction(GLOBAL_ACTION_RECENTS, "無法開啟最近使用"));
+        centerOverlay.addView(select, centerButtonParams());
+
+        Button start = pillButton("Start", "短按回到桌面，長按收起全部按鍵");
+        bindShortLongPress(
+                start,
+                () -> performSystemAction(GLOBAL_ACTION_HOME, "無法回到桌面"),
+                this::hideControls
         );
-        functionRowParams.topMargin = dp(7);
+        centerOverlay.addView(start, centerButtonParams());
 
-        Button home = functionButton("⌂", "回到桌面");
-        bindClick(home, () -> performSystemAction(GLOBAL_ACTION_HOME, "無法回到桌面"));
-        functionRow.addView(home, functionButtonParams());
-
-        Button recents = functionButton("▣", "開啟最近使用的應用程式");
-        bindClick(recents, () -> performSystemAction(GLOBAL_ACTION_RECENTS, "無法開啟最近使用"));
-        functionRow.addView(recents, functionButtonParams());
-
-        Button pageUp = functionButton("⇧", "頁面向上捲動");
-        bindClick(pageUp, () -> swipeVertical(false));
-        functionRow.addView(pageUp, functionButtonParams());
-
-        Button pageDown = functionButton("⇩", "頁面向下捲動");
-        bindClick(pageDown, () -> swipeVertical(true));
-        functionRow.addView(pageDown, functionButtonParams());
-
-        Button hold = functionButton("●", "長按游標位置");
-        bindClick(hold, this::holdCursor);
-        functionRow.addView(hold, functionButtonParams());
-
-        Button collapse = functionButton("—", "收起控制盤");
-        bindClick(collapse, this::hidePanel);
-        functionRow.addView(collapse, functionButtonParams());
-
-        controlOverlay.addView(functionRow, functionRowParams);
-
-        controlParams = new WindowManager.LayoutParams(
+        centerParams = baseOverlayParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
+                "Amin GBA Start Select"
         );
-        controlParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        controlParams.y = dp(18);
-        controlParams.setTitle("Amin Universal Control Pad v0.2");
-        windowManager.addView(controlOverlay, controlParams);
-        controlOverlay.setVisibility(View.GONE);
+        centerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        windowManager.addView(centerOverlay, centerParams);
     }
 
     private void ensureCursor() {
@@ -394,62 +411,94 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         cursorParams.setTitle("Amin Universal Control Cursor");
         updateCursorCoordinates();
         windowManager.addView(cursorOverlay, cursorParams);
-        cursorOverlay.setVisibility(View.GONE);
     }
 
-    private void showPanel() {
+    private void updateGamepadLayout() {
+        boolean landscape = screenWidth > screenHeight;
+
+        if (dpadParams != null) {
+            dpadParams.x = dp(landscape ? 18 : 10);
+            dpadParams.y = dp(landscape ? 28 : 62);
+            updateViewLayoutSafely(dpadOverlay, dpadParams);
+        }
+        if (actionParams != null) {
+            actionParams.x = dp(landscape ? 18 : 10);
+            actionParams.y = dp(landscape ? 30 : 66);
+            updateViewLayoutSafely(actionOverlay, actionParams);
+        }
+        if (leftShoulderParams != null) {
+            leftShoulderParams.x = dp(landscape ? 22 : 14);
+            leftShoulderParams.y = dp(landscape ? 58 : 86);
+            updateViewLayoutSafely(leftShoulderOverlay, leftShoulderParams);
+        }
+        if (rightShoulderParams != null) {
+            rightShoulderParams.x = dp(landscape ? 22 : 14);
+            rightShoulderParams.y = dp(landscape ? 58 : 86);
+            updateViewLayoutSafely(rightShoulderOverlay, rightShoulderParams);
+        }
+        if (centerParams != null) {
+            centerParams.y = dp(landscape ? 18 : 24);
+            updateViewLayoutSafely(centerOverlay, centerParams);
+        }
+    }
+
+    private void showControls() {
         if (!isOverlayEnabled(this)) {
             return;
         }
         showBubble();
-        ensureControlPanel();
-        ensureCursor();
-        if (controlOverlay != null) {
-            controlOverlay.setVisibility(View.VISIBLE);
-        }
-        if (cursorOverlay != null) {
-            cursorOverlay.setVisibility(View.VISIBLE);
-        }
-        panelVisible = true;
+        ensureGamepadControls();
+        setControlsVisibility(View.VISIBLE);
+        controlsVisible = true;
         wakeBubble();
-        schedulePanelAutoHide();
+        scheduleControlsAutoHide();
     }
 
-    private void hidePanel() {
-        mainHandler.removeCallbacks(autoHidePanelTask);
-        if (controlOverlay != null) {
-            controlOverlay.setVisibility(View.GONE);
-        }
-        if (cursorOverlay != null) {
-            cursorOverlay.setVisibility(View.GONE);
-        }
-        panelVisible = false;
+    private void hideControls() {
+        mainHandler.removeCallbacks(autoHideControlsTask);
+        setControlsVisibility(View.GONE);
+        controlsVisible = false;
         scheduleBubbleFade();
     }
 
-    private void togglePanel() {
-        if (panelVisible) {
-            hidePanel();
+    private void toggleControls() {
+        if (controlsVisible) {
+            hideControls();
         } else {
-            showPanel();
+            showControls();
         }
     }
 
-    private void markPanelActivity() {
+    private void setControlsVisibility(int visibility) {
+        setVisibility(dpadOverlay, visibility);
+        setVisibility(actionOverlay, visibility);
+        setVisibility(leftShoulderOverlay, visibility);
+        setVisibility(rightShoulderOverlay, visibility);
+        setVisibility(centerOverlay, visibility);
+        setVisibility(cursorOverlay, visibility);
+    }
+
+    private void setVisibility(View view, int visibility) {
+        if (view != null) {
+            view.setVisibility(visibility);
+        }
+    }
+
+    private void markControlsActivity() {
         wakeBubble();
-        if (panelVisible) {
-            schedulePanelAutoHide();
+        if (controlsVisible) {
+            scheduleControlsAutoHide();
         }
     }
 
-    private void schedulePanelAutoHide() {
-        mainHandler.removeCallbacks(autoHidePanelTask);
-        if (!panelVisible) {
+    private void scheduleControlsAutoHide() {
+        mainHandler.removeCallbacks(autoHideControlsTask);
+        if (!controlsVisible) {
             return;
         }
         int seconds = getAutoHideSeconds(this);
         if (seconds > 0) {
-            mainHandler.postDelayed(autoHidePanelTask, seconds * 1000L);
+            mainHandler.postDelayed(autoHideControlsTask, seconds * 1000L);
         }
     }
 
@@ -488,13 +537,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             return;
         }
         clampBubbleCoordinates();
-        if (windowManager != null && bubbleOverlay != null) {
-            try {
-                windowManager.updateViewLayout(bubbleOverlay, bubbleParams);
-            } catch (IllegalArgumentException ignored) {
-                // The system may already be removing the overlay.
-            }
-        }
+        updateViewLayoutSafely(bubbleOverlay, bubbleParams);
     }
 
     private void clampBubbleCoordinates() {
@@ -504,55 +547,82 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         int width = bubbleParams.width > 0 ? bubbleParams.width : dp(56);
         int height = bubbleParams.height > 0 ? bubbleParams.height : dp(56);
         bubbleParams.x = Math.max(0, Math.min(bubbleParams.x, Math.max(0, screenWidth - width)));
-        bubbleParams.y = Math.max(dp(24), Math.min(bubbleParams.y, Math.max(dp(24), screenHeight - height - dp(24))));
+        bubbleParams.y = Math.max(
+                dp(24),
+                Math.min(bubbleParams.y, Math.max(dp(24), screenHeight - height - dp(24)))
+        );
     }
 
-    private Button controlButton(String label, String description) {
+    private WindowManager.LayoutParams baseOverlayParams(int width, int height, String title) {
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                width,
+                height,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                        | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+        );
+        params.setTitle(title);
+        return params;
+    }
+
+    private Button dpadButton(String label, String description) {
+        Button button = baseButton(label, description, 20f);
+        button.setBackground(roundedBackground(0xb84a4a4a, 8f, 0x88ffffff, 1));
+        return button;
+    }
+
+    private Button roundActionButton(String label, String description) {
+        Button button = baseButton(label, description, 28f);
+        button.setBackground(circleBackground(0xc84d4d4d, 0xccffffff, 1));
+        return button;
+    }
+
+    private Button shoulderButton(String label, String description) {
+        Button button = baseButton(label, description, 28f);
+        button.setBackground(roundedBackground(0xc84d4d4d, 10f, 0xccffffff, 1));
+        return button;
+    }
+
+    private Button pillButton(String label, String description) {
+        Button button = baseButton(label, description, 14f);
+        button.setBackground(roundedBackground(0xc84d4d4d, 12f, 0xccffffff, 1));
+        return button;
+    }
+
+    private Button baseButton(String label, String description, float textSizeSp) {
         Button button = new Button(this);
         button.setAllCaps(false);
         button.setText(label);
         button.setTextColor(Color.WHITE);
-        button.setTextSize(17f);
+        button.setTextSize(textSizeSp);
         button.setGravity(Gravity.CENTER);
         button.setPadding(0, 0, 0, 0);
         button.setMinWidth(0);
         button.setMinHeight(0);
         button.setContentDescription(description);
-        button.setBackground(roundedBackground(0xee2a3b31, 16f));
         return button;
     }
 
-    private Button functionButton(String label, String description) {
-        Button button = controlButton(label, description);
-        button.setTextSize(16f);
-        button.setBackground(roundedBackground(0xee354a3e, 13f));
-        return button;
-    }
-
-    private LinearLayout.LayoutParams dpadButtonParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(48), dp(42));
-        params.setMargins(dp(2), dp(2), dp(2), dp(2));
+    private LinearLayout.LayoutParams dpadKeyParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(54), dp(54));
+        params.setMargins(0, 0, 0, 0);
         return params;
     }
 
-    private LinearLayout.LayoutParams actionButtonParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(56), dp(50));
-        params.setMargins(dp(2), dp(4), dp(2), dp(4));
-        return params;
-    }
-
-    private LinearLayout.LayoutParams functionButtonParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(44), dp(38));
-        params.setMargins(dp(3), dp(2), dp(3), dp(2));
+    private LinearLayout.LayoutParams centerButtonParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(78), dp(42));
+        params.setMargins(dp(4), 0, dp(4), 0);
         return params;
     }
 
     private void bindClick(View view, Runnable action) {
         view.setOnClickListener(touched -> {
-            markPanelActivity();
+            markControlsActivity();
             action.run();
-            if (panelVisible) {
-                schedulePanelAutoHide();
+            if (controlsVisible) {
+                scheduleControlsAutoHide();
             }
         });
     }
@@ -563,7 +633,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             private final Runnable longPressTask = () -> {
                 longTriggered = true;
                 longAction.run();
-                markPanelActivity();
+                markControlsActivity();
             };
 
             @Override
@@ -572,7 +642,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                     case MotionEvent.ACTION_DOWN:
                         longTriggered = false;
                         touched.setPressed(true);
-                        markPanelActivity();
+                        markControlsActivity();
                         mainHandler.postDelayed(longPressTask, LONG_PRESS_MS);
                         return true;
                     case MotionEvent.ACTION_UP:
@@ -582,12 +652,12 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                             shortAction.run();
                         }
                         touched.performClick();
-                        markPanelActivity();
+                        markControlsActivity();
                         return true;
                     case MotionEvent.ACTION_CANCEL:
                         mainHandler.removeCallbacks(longPressTask);
                         touched.setPressed(false);
-                        markPanelActivity();
+                        markControlsActivity();
                         return true;
                     default:
                         return true;
@@ -607,11 +677,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             return;
         }
         updateCursorCoordinates();
-        try {
-            windowManager.updateViewLayout(cursorOverlay, cursorParams);
-        } catch (IllegalArgumentException ignored) {
-            // The system may already be removing the accessibility overlay.
-        }
+        updateViewLayoutSafely(cursorOverlay, cursorParams);
     }
 
     private void updateCursorCoordinates() {
@@ -712,21 +778,44 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
+    private void updateViewLayoutSafely(View view, WindowManager.LayoutParams params) {
+        if (windowManager == null || view == null || params == null) {
+            return;
+        }
+        try {
+            windowManager.updateViewLayout(view, params);
+        } catch (IllegalArgumentException ignored) {
+            // The system may already be removing the accessibility overlay.
+        }
+    }
+
     private void removeOverlays() {
         mainHandler.removeCallbacks(fadeBubbleTask);
-        mainHandler.removeCallbacks(autoHidePanelTask);
+        mainHandler.removeCallbacks(autoHideControlsTask);
 
-        removeViewSafely(controlOverlay);
+        removeViewSafely(dpadOverlay);
+        removeViewSafely(actionOverlay);
+        removeViewSafely(leftShoulderOverlay);
+        removeViewSafely(rightShoulderOverlay);
+        removeViewSafely(centerOverlay);
         removeViewSafely(cursorOverlay);
         removeViewSafely(bubbleOverlay);
 
-        controlOverlay = null;
-        controlParams = null;
+        dpadOverlay = null;
+        dpadParams = null;
+        actionOverlay = null;
+        actionParams = null;
+        leftShoulderOverlay = null;
+        leftShoulderParams = null;
+        rightShoulderOverlay = null;
+        rightShoulderParams = null;
+        centerOverlay = null;
+        centerParams = null;
         cursorOverlay = null;
         cursorParams = null;
         bubbleOverlay = null;
         bubbleParams = null;
-        panelVisible = false;
+        controlsVisible = false;
     }
 
     private void removeViewSafely(View view) {
@@ -740,10 +829,18 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
-    private GradientDrawable roundedBackground(int color, float radiusDp) {
+    private GradientDrawable roundedBackground(
+            int fill,
+            float radiusDp,
+            int stroke,
+            int strokeDp
+    ) {
         GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(color);
+        drawable.setColor(fill);
         drawable.setCornerRadius(dp(radiusDp));
+        if (strokeDp > 0) {
+            drawable.setStroke(dp(strokeDp), stroke);
+        }
         return drawable;
     }
 
