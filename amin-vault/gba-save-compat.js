@@ -5,7 +5,7 @@
   const FLUSH_INTERVAL_MS = 10000;
   const RETRY_DELAY_MS = 900;
   const MAX_READY_WAIT_MS = 30000;
-  const COMPAT_VERSION = '1.0.0';
+  const COMPAT_VERSION = '1.0.1';
 
   let pumpTimer = null;
   let flushing = false;
@@ -137,7 +137,10 @@
       }
 
       if (saved) {
-        const summary = await saveGuard()?.getSummary?.().catch(() => null);
+        const guard = saveGuard();
+        const summary = guard?.getSummary
+          ? await guard.getSummary().catch(() => null)
+          : null;
         const bytes = Number(summary?.byteLength || lastVerifiedBytes || 0);
         const native = Boolean(summary?.native);
         lastVerifiedAt = Number(summary?.updatedAt || Date.now());
@@ -201,7 +204,8 @@
     if (!ready) return;
 
     try {
-      await saveGuard()?.restore?.();
+      const guard = saveGuard();
+      if (guard?.restore) await guard.restore();
     } catch (error) {
       console.warn('[Amin Save Compat] restore failed', error);
     }
