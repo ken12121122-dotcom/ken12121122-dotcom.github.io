@@ -6,3 +6,4 @@ Validation marker for the Bridge 16 Android build.
 - Presets: 8, 16, 32 dp
 - Hold D-pad: continuous movement
 - Hold Select: cursor/scroll mode toggle
+- PR validation: ready for Android compile and lint
