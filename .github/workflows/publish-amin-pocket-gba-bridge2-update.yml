@@ -15,7 +15,7 @@ jobs:
   publish-update-test:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'agent/amin-pocket-gba-bridge2-update-test'
+      github.event.workflow_run.head_branch == 'agent/amin-pocket-gba-native-vault-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -47,7 +47,6 @@ jobs:
           SHA="$(sha256sum "$SRC" | cut -d' ' -f1)"
           SIZE="$(stat -c '%s' "$SRC")"
           test "${#SHA}" -eq 64
-
           mkdir -p amin-vault/releases
           cp "$SRC" amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge10.apk
 
@@ -55,7 +54,6 @@ jobs:
           import json
           import sys
           from pathlib import Path
-
           sha, size = sys.argv[1], int(sys.argv[2])
           manifest = {
               "format": "amin-native-release-manifest",
