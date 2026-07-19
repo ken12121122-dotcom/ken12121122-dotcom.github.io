@@ -68,7 +68,7 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bundle official EmulatorJS 4.2.3 mGBA assets
+      - name: Bundle EmulatorJS 4.2.3 source and official mGBA core
         run: |
           set -euxo pipefail
           ARCHIVE="$RUNNER_TEMP/emulatorjs-v4.2.3.tar.gz"
@@ -82,22 +82,23 @@ jobs:
 
           TARGET='android-native/app/src/main/assets/emulator'
           rm -rf "$TARGET"
-          mkdir -p "$TARGET"
+          mkdir -p "$TARGET/cores"
           cp -a "$EXTRACT/data/." "$TARGET/"
           cp "$EXTRACT/LICENSE" "$TARGET/EMULATORJS-LICENSE.txt"
 
-          if [[ -d "$TARGET/cores" ]]; then
-            find "$TARGET/cores" -type f ! -iname '*mgba*' -delete
-            find "$TARGET/cores" -type d -empty -delete
-          fi
+          CORE_BASE='https://cdn.emulatorjs.org/4.2.3/data/cores'
+          for file in mgba-wasm.data mgba-wasm.js mgba-wasm.wasm; do
+            curl --fail --location --retry 4 --retry-delay 2 \
+              "$CORE_BASE/$file" \
+              --output "$TARGET/cores/$file"
+            test -s "$TARGET/cores/$file"
+          done
 
           test -s "$TARGET/loader.js"
-          test -s "$TARGET/emulator.min.js"
-          test -s "$TARGET/emulator.min.css"
-          MGBA_COUNT="$(find "$TARGET/cores" -type f -iname '*mgba*' | wc -l)"
-          test "$MGBA_COUNT" -gt 0
-          echo "Bundled mGBA core files: $MGBA_COUNT"
-          find "$TARGET/cores" -maxdepth 2 -type f -printf '%P %s bytes\n' | sort
+          test -s "$TARGET/src/emulator.js"
+          test -s "$TARGET/emulator.css"
+          echo 'Bundled mGBA core files:'
+          find "$TARGET/cores" -maxdepth 1 -type f -name 'mgba-wasm.*' -printf '%f %s bytes\n' | sort
           du -sh "$TARGET"
 
       - name: Validate source files
@@ -160,8 +161,10 @@ jobs:
           grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
           unzip -l "$APK" | tee /tmp/apk-files.txt
           grep -q 'assets/emulator/loader.js' /tmp/apk-files.txt
-          grep -q 'assets/emulator/emulator.min.js' /tmp/apk-files.txt
-          grep -Eq 'assets/emulator/cores/.*mgba' /tmp/apk-files.txt
+          grep -q 'assets/emulator/src/emulator.js' /tmp/apk-files.txt
+          grep -q 'assets/emulator/cores/mgba-wasm.data' /tmp/apk-files.txt
+          grep -q 'assets/emulator/cores/mgba-wasm.js' /tmp/apk-files.txt
+          grep -q 'assets/emulator/cores/mgba-wasm.wasm' /tmp/apk-files.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
           stat -c 'APK size: %s bytes' "$APK"
 
