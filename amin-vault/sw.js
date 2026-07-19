@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'amin-vault-runtime-';
-const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092`;
+const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092-rc10`;
 const META_CACHE = `${CACHE_PREFIX}meta`;
 const ACTIVE_KEY = new URL('__amin_runtime_active__', self.registration.scope).href;
 const MANIFEST_PATH = new URL('./runtime-manifest.json', self.registration.scope).pathname;
@@ -30,6 +30,9 @@ const BOOTSTRAP_ASSETS = [
   './gba-signal-native-addon.js',
   './gba-immersive.js',
   './gba-save-guard.js',
+  './gba-save-migration.js',
+  './gba-reliability.js',
+  './gba-reliability-ui.js',
   './gba-controller-runtime.js',
   './gba.js',
   './runtime-updater.js',
@@ -158,7 +161,9 @@ self.addEventListener('install', event => {
   event.waitUntil((async () => {
     await cacheAssetList(BOOTSTRAP_CACHE, BOOTSTRAP_ASSETS);
     const active = await getActiveCacheName();
-    if (!active || active === BOOTSTRAP_CACHE) await setActiveCacheName(BOOTSTRAP_CACHE);
+    if (!active || active.startsWith(`${CACHE_PREFIX}bootstrap-`)) {
+      await setActiveCacheName(BOOTSTRAP_CACHE);
+    }
     await self.skipWaiting();
   })());
 });
