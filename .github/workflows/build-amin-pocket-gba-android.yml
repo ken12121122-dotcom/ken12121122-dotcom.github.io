@@ -78,53 +78,57 @@ jobs:
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
           grep -q 'class LaunchGateActivity' android-native/app/src/main/java/com/amin/pocketgba/LaunchGateActivity.java
           grep -q 'android:name=".LaunchGateActivity"' android-native/app/src/main/AndroidManifest.xml
+          grep -q 'android:scheme="amin-home" android:host="open"' android-native/app/src/main/AndroidManifest.xml
+          grep -q 'android:launchMode="singleTask"' android-native/app/src/main/AndroidManifest.xml
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Prepare Bridge 5 label
+      - name: Prepare Bridge 6 label
         run: |
           set -euxo pipefail
-          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B5/g' android-native/app/build.gradle
+          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B6/g' android-native/app/build.gradle
 
-      - name: Build and lint Bridge 5
+      - name: Build and lint Bridge 6
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=101 \
-            -PAMIN_PREVIEW_SUFFIX=-bridge5 \
+            -PAMIN_VERSION_CODE=102 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge6 \
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect Bridge 5 APK
+      - name: Inspect Bridge 6 APK
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='101' versionName='0.9.2-bridge5'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B5'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='102' versionName='0.9.2-bridge6'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B6'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION' /tmp/apk-permissions.txt
           "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
           grep -q 'LaunchGateActivity' /tmp/apk-manifest.txt
+          grep -q 'amin-home' /tmp/apk-manifest.txt
+          grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package Bridge 5 artifact
+      - name: Package Bridge 6 artifact
         id: package
         run: |
           set -euxo pipefail
           mkdir -p dist
           if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge5.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge5'
-            STATUS='PERMANENT SIGNING ENABLED: full automatic update test.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge6.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge6'
+            STATUS='PERMANENT SIGNING ENABLED: control-center return route.'
           else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge5-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge5-CI-ONLY-NOT-UPDATABLE'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge6-CI-ONLY.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge6-CI-ONLY-NOT-UPDATABLE'
             STATUS='CI DEBUG SIGNING ONLY.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
@@ -135,7 +139,7 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Bridge 5 APK
+      - name: Upload Bridge 6 APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.artifact_name }}
@@ -143,12 +147,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Build Play internal testing AAB code 102
+      - name: Build Play internal testing AAB code 103
         if: steps.signing.outputs.ready == 'true'
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=102 \
+            -PAMIN_VERSION_CODE=103 \
             :app:bundleRelease
 
       - name: Package Play internal testing bundle
@@ -159,7 +163,7 @@ jobs:
           test -s "$BUNDLE"
           jarsigner -verify -verbose -certs "$BUNDLE" | tee /tmp/aab-signing.txt
           mkdir -p dist-play
-          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code102-internal.aab
+          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code103-internal.aab
           keytool -exportcert -rfc \
             -keystore "$AMIN_KEYSTORE_PATH" \
             -storepass "$AMIN_KEYSTORE_PASSWORD" \
@@ -171,14 +175,14 @@ jobs:
             -alias "$AMIN_KEY_ALIAS" > dist-play/amin-signing-fingerprints.txt
           cp /tmp/aab-signing.txt dist-play/AAB_SIGNING_REPORT.txt
           cd dist-play
-          sha256sum Amin-Pocket-GBA-v0.9.2-code102-internal.aab > SHA256SUMS.txt
+          sha256sum Amin-Pocket-GBA-v0.9.2-code103-internal.aab > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
 
       - name: Upload Play internal testing package
         if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-Play-Internal-code102
+          name: Amin-Pocket-GBA-Play-Internal-code103
           path: dist-play/
           if-no-files-found: error
           retention-days: 30
