@@ -2,6 +2,56 @@
   'use strict';
 
   const $ = id => document.getElementById(id);
+  let launchCompatReady = Boolean(window.AMIN_GBA_COMPAT_LAUNCHER);
+  let pendingPlayId = null;
+
+  function setImportStatus(text, kind = '') {
+    const target = $('importStatus');
+    if (!target) return;
+    target.textContent = text;
+    target.className = `storage-status ${kind}`.trim();
+  }
+
+  function earlyPlayGuard(event) {
+    const button = event.target.closest?.('[data-play]');
+    if (!button || launchCompatReady) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    pendingPlayId = button.dataset.play;
+    setImportStatus('正在準備乾淨的 Legacy mGBA 啟動器，完成後會自動開始。', 'working');
+  }
+
+  // Window capture executes before the older document-level launch listener.
+  window.addEventListener('click', earlyPlayGuard, true);
+
+  function finishLaunchCompatibilityLoad() {
+    launchCompatReady = Boolean(window.AMIN_GBA_COMPAT_LAUNCHER);
+    if (!launchCompatReady) return;
+    window.removeEventListener('click', earlyPlayGuard, true);
+    if (pendingPlayId) {
+      const id = pendingPlayId;
+      pendingPlayId = null;
+      setTimeout(() => window.AMIN_GBA_COMPAT_LAUNCHER.play(id), 80);
+    }
+  }
+
+  function loadLaunchCompatibilityLayer() {
+    if (window.AMIN_GBA_COMPAT_LAUNCHER) {
+      finishLaunchCompatibilityLoad();
+      return;
+    }
+    if (document.getElementById('aminGbaLaunchCompatScript')) return;
+    const script = document.createElement('script');
+    script.id = 'aminGbaLaunchCompatScript';
+    script.src = './gba-launch-compat.js';
+    script.async = true;
+    script.onload = finishLaunchCompatibilityLoad;
+    script.onerror = () => {
+      setImportStatus('Legacy mGBA 相容啟動器載入失敗，請保持網路連線後重新開啟 App。', 'error');
+    };
+    document.head.appendChild(script);
+  }
 
   function loadSaveCompatibilityLayer() {
     if (window.AMIN_GBA_SAVE_COMPAT || document.getElementById('aminGbaSaveCompatScript')) return;
@@ -39,7 +89,7 @@
 
   function updateReleaseCopy() {
     const runtimeLabel = document.querySelector('#runtimeProofCard .eyebrow');
-    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc16';
+    if (runtimeLabel) runtimeLabel.textContent = 'LIVE RUNTIME · 0.9.2-rc17';
 
     const status = $('diagnosticReporterStatus');
     const card = status?.closest('article');
@@ -80,20 +130,6 @@
     setVaultStatus(describe(detail), detail.recovered ? 'success' : '');
   });
 
-  // A partially loaded EmulatorJS page is unsafe to reuse. After the stable
-  // fallback also fails, return to a fresh library document with the error shown.
-  addEventListener('amin-gba-launch-status', event => {
-    const detail = event.detail || {};
-    if (detail.status !== 'failed' || detail.channel !== 'stable') return;
-    const next = new URL('./gba.html', location.href);
-    next.searchParams.set('native', '1');
-    next.searchParams.set(
-      'launchError',
-      detail.emulatorMessage || detail.message || 'mGBA 啟動失敗，已回到乾淨的遊戲庫頁面。'
-    );
-    setTimeout(() => location.replace(next.href), 250);
-  });
-
   const button = $('repairRomLibraryButton');
   button?.addEventListener('click', async () => {
     button.disabled = true;
@@ -112,6 +148,7 @@
     }
   });
 
+  loadLaunchCompatibilityLayer();
   loadSaveCompatibilityLayer();
   updateReleaseCopy();
 
