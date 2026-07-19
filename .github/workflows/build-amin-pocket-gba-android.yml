@@ -72,6 +72,8 @@ jobs:
         run: |
           set -euxo pipefail
           node --check amin-vault/gba.js
+          node --check amin-vault/gba-reliability.js
+          node --check amin-vault/gba-reliability-ui.js
           node --check amin-vault/runtime-updater.js
           node --check amin-vault/sw.js
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
@@ -80,6 +82,8 @@ jobs:
           grep -q '更新安裝完成' android-native/app/src/main/java/com/amin/pocketgba/LaunchGateActivity.java
           grep -q '進入遊戲控制台' android-native/app/src/main/java/com/amin/pocketgba/LaunchGateActivity.java
           grep -q 'postCompletionNotification' android-native/app/src/main/java/com/amin/pocketgba/PackageInstallResultReceiver.java
+          grep -q 'class NativeSaveVaultBridge' android-native/app/src/main/java/com/amin/pocketgba/NativeSaveVaultBridge.java
+          grep -q 'AminNativeSaveVault' android-native/app/src/main/java/com/amin/pocketgba/LifecycleSafeWebView.java
           grep -q 'android:name=".LaunchGateActivity"' android-native/app/src/main/AndroidManifest.xml
           grep -q 'android:scheme="amin-home" android:host="open"' android-native/app/src/main/AndroidManifest.xml
           grep -q 'android:launchMode="singleTask"' android-native/app/src/main/AndroidManifest.xml
@@ -89,29 +93,29 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Prepare Bridge 7 label
+      - name: Prepare Bridge 8 label
         run: |
           set -euxo pipefail
-          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B7/g' android-native/app/build.gradle
+          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B8/g' android-native/app/build.gradle
 
-      - name: Build and lint Bridge 7
+      - name: Build and lint Bridge 8
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=103 \
-            -PAMIN_PREVIEW_SUFFIX=-bridge7 \
+            -PAMIN_VERSION_CODE=104 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge8 \
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect Bridge 7 APK
+      - name: Inspect Bridge 8 APK
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='103' versionName='0.9.2-bridge7'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B7'" /tmp/apk-badging.txt
+          grep -q "package: name='com.amin.pocketgba' versionCode='104' versionName='0.9.2-bridge8'" /tmp/apk-badging.txt
+          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B8'" /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           grep -q 'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION' /tmp/apk-permissions.txt
           grep -q 'android.permission.POST_NOTIFICATIONS' /tmp/apk-permissions.txt
@@ -119,20 +123,22 @@ jobs:
           grep -q 'LaunchGateActivity' /tmp/apk-manifest.txt
           grep -q 'amin-home' /tmp/apk-manifest.txt
           grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
+          unzip -p "$APK" classes.dex | strings | grep -q 'AminNativeSaveVault'
+          unzip -p "$APK" classes.dex | strings | grep -q 'gba-saves'
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
 
-      - name: Package Bridge 7 artifact
+      - name: Package Bridge 8 artifact
         id: package
         run: |
           set -euxo pipefail
           mkdir -p dist
           if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge7.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge7'
-            STATUS='PERMANENT SIGNING ENABLED: persistent update receipt and notification.'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge8.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge8'
+            STATUS='PERMANENT SIGNING ENABLED: atomic native save vault and GBA reliability runtime.'
           else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge7-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge7-CI-ONLY-NOT-UPDATABLE'
+            FILE='Amin-Pocket-GBA-v0.9.2-bridge8-CI-ONLY.apk'
+            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge8-CI-ONLY-NOT-UPDATABLE'
             STATUS='CI DEBUG SIGNING ONLY.'
           fi
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
@@ -143,7 +149,7 @@ jobs:
           sha256sum -c SHA256SUMS.txt
           echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Bridge 7 APK
+      - name: Upload Bridge 8 APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.artifact_name }}
@@ -151,12 +157,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Build Play internal testing AAB code 104
+      - name: Build Play internal testing AAB code 105
         if: steps.signing.outputs.ready == 'true'
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=104 \
+            -PAMIN_VERSION_CODE=105 \
             :app:bundleRelease
 
       - name: Package Play internal testing bundle
@@ -167,7 +173,7 @@ jobs:
           test -s "$BUNDLE"
           jarsigner -verify -verbose -certs "$BUNDLE" | tee /tmp/aab-signing.txt
           mkdir -p dist-play
-          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code104-internal.aab
+          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code105-internal.aab
           keytool -exportcert -rfc \
             -keystore "$AMIN_KEYSTORE_PATH" \
             -storepass "$AMIN_KEYSTORE_PASSWORD" \
@@ -179,14 +185,14 @@ jobs:
             -alias "$AMIN_KEY_ALIAS" > dist-play/amin-signing-fingerprints.txt
           cp /tmp/aab-signing.txt dist-play/AAB_SIGNING_REPORT.txt
           cd dist-play
-          sha256sum Amin-Pocket-GBA-v0.9.2-code104-internal.aab > SHA256SUMS.txt
+          sha256sum Amin-Pocket-GBA-v0.9.2-code105-internal.aab > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
 
       - name: Upload Play internal testing package
         if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Amin-Pocket-GBA-Play-Internal-code104
+          name: Amin-Pocket-GBA-Play-Internal-code105
           path: dist-play/
           if-no-files-found: error
           retention-days: 30
