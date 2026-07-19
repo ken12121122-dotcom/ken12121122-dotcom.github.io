@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge6",
-  "latestVersionCode": 102,
-  "minimumSupportedVersionCode": 101,
+  "latestVersionName": "0.9.2-bridge7",
+  "latestVersionCode": 103,
+  "minimumSupportedVersionCode": 102,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge6.apk",
-  "apkSha256": "fcabe7904e370c017835e79ddeee1367e35c29c53e23dab9887b8b2c01d3489a",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge7.apk",
+  "apkSha256": "9cb8f6a26a2f2645783bb83175f8fee8d9fa76100ab9284114edc241d61d8d6d",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2316557,
-  "publishedAt": "2026-07-19T01:20:00+08:00",
+  "sizeBytes": 2320140,
+  "publishedAt": "2026-07-19T01:52:00+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "Bridge 6 新增 GBA 返回白色原生控制中心的專用路由。",
-    "GBA、白色控制中心與黑色舊 Pocket OS 可同時保留，彼此不再導錯頁面。",
-    "返回控制中心會清除上層模擬器頁面，避免再次按返回時繞回 GBA。"
+    "新增更新完成確認頁，明確顯示已安裝版本與完成狀態。",
+    "更新成功後會提供『進入遊戲控制台』按鈕，不再直接無聲跳過。",
+    "新增系統更新通知；若 Samsung 阻止背景開啟，下次手動開啟仍會顯示確認頁。"
   ]
 }
