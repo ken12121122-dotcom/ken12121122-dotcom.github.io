@@ -68,37 +68,40 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bundle EmulatorJS 4.2.3 source and official mGBA core
+      - name: Bundle official EmulatorJS 4.2.3 and mGBA core
         run: |
           set -euxo pipefail
           ARCHIVE="$RUNNER_TEMP/emulatorjs-v4.2.3.tar.gz"
           EXTRACT="$RUNNER_TEMP/emulatorjs-v4.2.3"
+          MIN_ZIP="$RUNNER_TEMP/emulator.min.zip"
+          TARGET='android-native/app/src/main/assets/emulator'
+
           curl --fail --location --retry 4 --retry-delay 2 \
             'https://codeload.github.com/EmulatorJS/EmulatorJS/tar.gz/refs/tags/v4.2.3' \
             --output "$ARCHIVE"
-          rm -rf "$EXTRACT"
-          mkdir -p "$EXTRACT"
+          rm -rf "$EXTRACT" "$TARGET"
+          mkdir -p "$EXTRACT" "$TARGET/cores"
           tar -xzf "$ARCHIVE" -C "$EXTRACT" --strip-components=1
-
-          TARGET='android-native/app/src/main/assets/emulator'
-          rm -rf "$TARGET"
-          mkdir -p "$TARGET/cores"
           cp -a "$EXTRACT/data/." "$TARGET/"
           cp "$EXTRACT/LICENSE" "$TARGET/EMULATORJS-LICENSE.txt"
 
-          CORE_BASE='https://cdn.emulatorjs.org/4.2.3/data/cores'
-          for file in mgba-wasm.data mgba-wasm.js mgba-wasm.wasm; do
-            curl --fail --location --retry 4 --retry-delay 2 \
-              "$CORE_BASE/$file" \
-              --output "$TARGET/cores/$file"
-            test -s "$TARGET/cores/$file"
-          done
+          curl --fail --location --retry 4 --retry-delay 2 \
+            'https://cdn.emulatorjs.org/4.2.3/data/emulator.min.zip' \
+            --output "$MIN_ZIP"
+          unzip -o "$MIN_ZIP" -d "$TARGET"
+
+          curl --fail --location --retry 4 --retry-delay 2 \
+            'https://cdn.emulatorjs.org/4.2.3/data/cores/mgba-wasm.data' \
+            --output "$TARGET/cores/mgba-wasm.data"
 
           test -s "$TARGET/loader.js"
-          test -s "$TARGET/src/emulator.js"
-          test -s "$TARGET/emulator.css"
-          echo 'Bundled mGBA core files:'
-          find "$TARGET/cores" -maxdepth 1 -type f -name 'mgba-wasm.*' -printf '%f %s bytes\n' | sort
+          test -s "$TARGET/emulator.min.js"
+          test -s "$TARGET/emulator.min.css"
+          test -s "$TARGET/cores/mgba-wasm.data"
+          stat -c '%n %s bytes' \
+            "$TARGET/emulator.min.js" \
+            "$TARGET/emulator.min.css" \
+            "$TARGET/cores/mgba-wasm.data"
           du -sh "$TARGET"
 
       - name: Validate source files
@@ -161,10 +164,9 @@ jobs:
           grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
           unzip -l "$APK" | tee /tmp/apk-files.txt
           grep -q 'assets/emulator/loader.js' /tmp/apk-files.txt
-          grep -q 'assets/emulator/src/emulator.js' /tmp/apk-files.txt
+          grep -q 'assets/emulator/emulator.min.js' /tmp/apk-files.txt
+          grep -q 'assets/emulator/emulator.min.css' /tmp/apk-files.txt
           grep -q 'assets/emulator/cores/mgba-wasm.data' /tmp/apk-files.txt
-          grep -q 'assets/emulator/cores/mgba-wasm.js' /tmp/apk-files.txt
-          grep -q 'assets/emulator/cores/mgba-wasm.wasm' /tmp/apk-files.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
           stat -c 'APK size: %s bytes' "$APK"
 
