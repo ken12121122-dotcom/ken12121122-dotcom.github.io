@@ -26,7 +26,7 @@
       <article class="intro-card compact-intro">
         <span class="kicker">LOCAL LIBRARY · mGBA</span>
         <h2>選一款遊戲，直接開始。</h2>
-        <p>ROM 只保存在這台裝置。相同 ROM 會以內容雜湊辨識，即使重新命名或重新匯入，仍會連回同一份存檔。</p>
+        <p>ROM 只保存在這台裝置，現在會同時保存於遊戲庫與獨立鏡像。相同 ROM 依內容雜湊辨識，即使重新命名或重新匯入，仍會連回同一份存檔。</p>
         <div class="import-row">
           <label class="import-button">
             ＋ 匯入 ROM 備份
@@ -39,13 +39,23 @@
       </article>
 
       <article id="runtimeProofCard" class="notice-card compact-note">
-        <p class="eyebrow">LIVE RUNTIME · 0.9.2-rc7</p>
+        <p class="eyebrow">LIVE RUNTIME · 0.9.2-rc10</p>
         <h3>Runtime 即時功能測試</h3>
         <p>這張卡片與下面的計數功能，是在不更換 APK 外殼的情況下新增的。</p>
         <div class="tool-actions">
           <button id="runtimeProofButton" type="button">點我執行新功能</button>
         </div>
         <p id="runtimeProofResult" class="storage-status">等待第一次測試。</p>
+      </article>
+
+      <article id="romReliabilityCard" class="notice-card compact-note save-vault-card">
+        <p class="eyebrow">ROM VAULT · SELF REPAIR</p>
+        <h3>遊戲檔可靠性保護</h3>
+        <p>每款 ROM 會建立第二份本機鏡像；如果 IndexedDB 記錄遺失或 Blob 損壞，系統會在啟動時自動修復。</p>
+        <div class="tool-actions">
+          <button id="repairRomLibraryButton" type="button">檢查並修復遊戲庫</button>
+        </div>
+        <p id="romVaultStatus" class="storage-status">正在檢查 ROM 雙層副本…</p>
       </article>
 
       <section class="library-panel primary-library">
@@ -86,9 +96,9 @@
                 <p class="eyebrow">SAVE VAULT</p>
                 <h2>存檔保險庫</h2>
               </div>
-              <span class="core-badge">3 LAYERS</span>
+              <span class="core-badge">MULTI-LAYER</span>
             </div>
-            <p>三層存檔保護會把遊戲內 SRAM 同步到 EmulatorJS IDBFS、Amin IndexedDB，以及 Android App 私有雙版本副本。首次使用新版時，也會尋找並搬回舊名稱存檔。</p>
+            <p>存檔保護會同步遊戲內 SRAM、Amin IndexedDB 保險庫；支援原生橋梁的 App 版本會再寫入 Android 私有雙版本副本。重新匯入相同 ROM 時，會依永久身分找回進度。</p>
             <div class="save-layer-list">
               <span>① mGBA SRAM</span>
               <span>② IndexedDB 保險庫</span>
@@ -170,7 +180,7 @@
 
       <article class="notice-card compact-note">
         <h3>保存與更新</h3>
-        <p>同套件、同簽章的正常覆蓋更新會保留原生存檔保險庫；清除 App 資料或解除安裝仍會刪除資料，因此必須先匯出 `.agbbackup`。</p>
+        <p>同套件、同簽章的正常覆蓋更新會保留本機資料；清除 App 資料或解除安裝仍會刪除資料，因此重要進度仍建議定期匯出 `.agbbackup`。</p>
       </article>
 
       <footer>
@@ -222,6 +232,7 @@
   <script src="./gba-immersive.js"></script>
   <script src="./gba-save-guard.js"></script>
   <script src="./gba-save-migration.js"></script>
+  <script src="./gba-reliability.js"></script>
   <script src="./gba-controller-runtime.js"></script>
   <script src="./gba.js"></script>
   <script src="./amin-backup-v2.js"></script>
