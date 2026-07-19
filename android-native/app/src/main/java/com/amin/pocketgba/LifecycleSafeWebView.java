@@ -1,30 +1,46 @@
 package com.amin.pocketgba;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
-/**
- * A WebView that refuses to execute callbacks queued before it was destroyed.
- *
- * MainActivity receives asynchronous network and controller events. A callback may be
- * posted while the WebView is alive but execute after Activity.onDestroy() has cleared
- * the Activity field. Guarding at the View queue boundary prevents that stale callback
- * from dereferencing a destroyed WebView without changing emulator or save behavior.
- */
 public final class LifecycleSafeWebView extends WebView {
     private volatile boolean destroyed;
+    private NativeLocalContentRouter localContentRouter;
 
     public LifecycleSafeWebView(Context context) {
         super(context);
+        initializeNativeLayer(context);
     }
 
     public LifecycleSafeWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        initializeNativeLayer(context);
     }
 
     public LifecycleSafeWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        initializeNativeLayer(context);
+    }
+
+    @SuppressLint("AddJavascriptInterface")
+    private void initializeNativeLayer(Context context) {
+        Context appContext = context.getApplicationContext();
+        localContentRouter = new NativeLocalContentRouter(appContext);
+        addJavascriptInterface(new NativeSaveVaultBridge(appContext), "AminNativeSaveVault");
+        addJavascriptInterface(new NativeCartridgeVaultBridge(appContext), "AminNativeCartridgeVault");
+        addJavascriptInterface(new NativeDiagnosticsBridge(appContext), "AminNativeDiagnostics");
+    }
+
+    @Override
+    public void setWebViewClient(WebViewClient client) {
+        if (client == null || localContentRouter == null) {
+            super.setWebViewClient(client);
+            return;
+        }
+        super.setWebViewClient(new NativeContentWebViewClient(client, localContentRouter));
     }
 
     @Override
@@ -46,6 +62,10 @@ public final class LifecycleSafeWebView extends WebView {
     @Override
     public void destroy() {
         destroyed = true;
+        removeJavascriptInterface("AminNativeSaveVault");
+        removeJavascriptInterface("AminNativeCartridgeVault");
+        removeJavascriptInterface("AminNativeDiagnostics");
+        localContentRouter = null;
         super.destroy();
     }
 
