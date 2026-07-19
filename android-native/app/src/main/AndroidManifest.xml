@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
     <application
@@ -31,13 +32,31 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <receiver
+            android:name=".PackageInstallResultReceiver"
+            android:exported="false" />
+
         <activity
-            android:name=".ControlCenterActivity"
+            android:name=".LaunchGateActivity"
             android:exported="true"
+            android:noHistory="true"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ControlCenterActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-home" android:host="open" />
             </intent-filter>
         </activity>
 

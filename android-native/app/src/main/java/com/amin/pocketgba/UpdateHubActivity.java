@@ -1,11 +1,13 @@
 package com.amin.pocketgba;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -34,7 +36,6 @@ public final class UpdateHubActivity extends Activity {
     private static final int COLOR_MUTED = 0xff68766e;
     private static final int COLOR_ACCENT = 0xff19794b;
     private static final int COLOR_BORDER = 0xffd9e4de;
-    private static final int COLOR_WARNING = 0xff9a5b00;
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private TextView statusView;
@@ -48,7 +49,15 @@ public final class UpdateHubActivity extends Activity {
         super.onCreate(savedInstanceState);
         configureWindow();
         buildUi();
-        checkForUpdate();
+        if (isPlayBuild()) {
+            showPlayManagedUpdate();
+        } else {
+            checkForUpdate();
+        }
+    }
+
+    private boolean isPlayBuild() {
+        return "release".equals(BuildConfig.RELEASE_CHANNEL);
     }
 
     private void configureWindow() {
@@ -85,7 +94,9 @@ public final class UpdateHubActivity extends Activity {
         content.addView(title, titleParams);
 
         TextView intro = text(
-                "這裡只顯示你現在需要知道的更新狀態。有新版時，才會出現安全下載與驗證入口。",
+                isPlayBuild()
+                        ? "Google Play 版本由 Play Store 驗證、下載與安裝；App 不會自行安裝外部 APK。"
+                        : "GitHub Bridge 版本會在下載後執行完整驗證，再交給 Android 安裝。",
                 14f,
                 false,
                 COLOR_MUTED
@@ -110,7 +121,7 @@ public final class UpdateHubActivity extends Activity {
         LinearLayout resultCard = surfaceCard(COLOR_SURFACE);
         statusView = text("正在檢查…", 19f, true, COLOR_TEXT);
         resultCard.addView(statusView, fullWidth());
-        detailView = text("正在讀取正式更新清單。", 13f, false, COLOR_MUTED);
+        detailView = text("正在讀取更新狀態。", 13f, false, COLOR_MUTED);
         LinearLayout.LayoutParams detailParams = fullWidth();
         detailParams.topMargin = dp(7);
         resultCard.addView(detailView, detailParams);
@@ -125,9 +136,15 @@ public final class UpdateHubActivity extends Activity {
         progressParams.topMargin = dp(14);
         resultCard.addView(progressBar, progressParams);
 
-        actionButton = primaryButton("進入安全更新流程");
+        actionButton = primaryButton(isPlayBuild() ? "開啟 Google Play" : "進入安全更新流程");
         actionButton.setVisibility(View.GONE);
-        actionButton.setOnClickListener(view -> startActivity(new Intent(this, NativeUpdateActivity.class)));
+        actionButton.setOnClickListener(view -> {
+            if (isPlayBuild()) {
+                openPlayStore();
+            } else {
+                startActivity(new Intent(this, NativeUpdateActivity.class));
+            }
+        });
         LinearLayout.LayoutParams actionParams = fullWidth();
         actionParams.topMargin = dp(14);
         resultCard.addView(actionButton, actionParams);
@@ -146,26 +163,34 @@ public final class UpdateHubActivity extends Activity {
         content.addView(securityTitle, securityTitleParams);
 
         LinearLayout securityCard = surfaceCard(COLOR_SURFACE);
-        addInfo(securityCard, "HTTPS 來源", "只接受核准網域的加密連線。");
-        addInfo(securityCard, "四重驗證", "下載後比對 SHA-256、套件名稱、版本碼與簽章憑證。");
-        addInfo(securityCard, "使用者確認", "驗證通過後仍交由 Android 顯示安裝確認畫面。");
+        if (isPlayBuild()) {
+            addInfo(securityCard, "Google Play 分發", "版本簽章、下載與安裝由 Google Play 管理。");
+            addInfo(securityCard, "相同永久簽章", "保留既有 App 資料與原地更新能力。");
+            addInfo(securityCard, "無外部 APK 安裝", "Play 版本移除未知來源安裝權限與自我更新入口。");
+        } else {
+            addInfo(securityCard, "HTTPS 來源", "只接受核准網域的加密連線。");
+            addInfo(securityCard, "四重驗證", "比對 SHA-256、套件名稱、版本碼與簽章憑證。");
+            addInfo(securityCard, "Android 安裝服務", "驗證通過後交由系統 PackageInstaller 處理。");
+        }
         content.addView(securityCard, cardParams());
-
-        TextView footer = text(
-                "Preview 階段正式通道保持停用，這是安全狀態。",
-                12f,
-                false,
-                COLOR_WARNING
-        );
-        footer.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams footerParams = fullWidth();
-        footerParams.topMargin = dp(24);
-        content.addView(footer, footerParams);
 
         setContentView(scroll);
     }
 
+    private void showPlayManagedUpdate() {
+        progressBar.setVisibility(View.GONE);
+        retryButton.setVisibility(View.GONE);
+        statusView.setText("更新由 Google Play 管理");
+        detailView.setText("Play Store 會驗證正式版本並依裝置的自動更新設定安裝。也可以手動開啟商店查看更新。");
+        actionButton.setVisibility(View.VISIBLE);
+    }
+
     private void checkForUpdate() {
+        if (isPlayBuild()) {
+            showPlayManagedUpdate();
+            return;
+        }
+
         retryButton.setEnabled(false);
         actionButton.setVisibility(View.GONE);
         progressBar.setVisibility(View.VISIBLE);
@@ -179,7 +204,7 @@ public final class UpdateHubActivity extends Activity {
                 if (!"amin-native-release-manifest".equals(manifest.optString("format"))) {
                     throw new IllegalStateException("更新清單格式不正確");
                 }
-                if (!"com.amin.pocketgba".equals(manifest.optString("packageId"))) {
+                if (!getPackageName().equals(manifest.optString("packageId"))) {
                     throw new SecurityException("更新套件識別碼不受信任");
                 }
 
@@ -191,8 +216,8 @@ public final class UpdateHubActivity extends Activity {
                     progressBar.setVisibility(View.GONE);
                     retryButton.setEnabled(true);
                     if (!enabled) {
-                        statusView.setText("正式更新通道尚未啟用");
-                        detailView.setText("目前是 Preview 測試階段，不會下載 APK，也不會顯示無效的下載按鈕。");
+                        statusView.setText("更新通道目前關閉");
+                        detailView.setText("目前沒有可下載的原生 APK 版本。");
                         return;
                     }
                     if (latestCode <= BuildConfig.VERSION_CODE) {
@@ -201,7 +226,7 @@ public final class UpdateHubActivity extends Activity {
                         return;
                     }
                     statusView.setText("發現可用更新 " + latestName);
-                    detailView.setText("版本碼：" + latestCode + "。進入下一步後才會下載並執行完整驗證。");
+                    detailView.setText("版本碼：" + latestCode + "。下一步會下載並執行完整驗證。");
                     actionButton.setVisibility(View.VISIBLE);
                 });
             } catch (Exception error) {
@@ -213,6 +238,20 @@ public final class UpdateHubActivity extends Activity {
                 });
             }
         });
+    }
+
+    private void openPlayStore() {
+        try {
+            startActivity(new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("market://details?id=" + getPackageName())
+            ));
+        } catch (ActivityNotFoundException error) {
+            startActivity(new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=" + getPackageName())
+            ));
+        }
     }
 
     private JSONObject fetchJson(String urlText) throws Exception {
