@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge10",
-  "latestVersionCode": 106,
-  "minimumSupportedVersionCode": 105,
+  "latestVersionName": "0.9.2-bridge11",
+  "latestVersionCode": 107,
+  "minimumSupportedVersionCode": 106,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge10.apk",
-  "apkSha256": "28f7f977bfad68e87e4e423eb65a74672432666ad68ec13b55b1368d708be6a8",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge11.apk",
+  "apkSha256": "90cca47c48d5ae8e686f1ea36a3c27afb6a630ca840e88be02de2f37600e05e2",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 4155353,
-  "publishedAt": "2026-07-19T13:22:00+08:00",
+  "sizeBytes": 4166181,
+  "publishedAt": "2026-07-19T14:48:29+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "新增 Native Cartridge Vault v2：ROM 搬入 Android App 私有檔案並以 SHA-256 驗證。",
-    "EmulatorJS 4.2.3 與 mGBA 核心直接封裝在 APK，不再依賴 CDN、Blob URL 或 Service Worker 核心快取。",
-    "存檔維持 Android .sav／.bak 雙版本保護，並停用會在核心半啟動時誤觸的舊週期存檔適配器。"
+    "新增 Amin 全域控制盤 v0.1，可在其他 App 上方顯示方向鍵、A/B 與游標。",
+    "長按 B 回到桌面、長按左右切換桌面頁、A 點擊游標位置並開啟 App。",
+    "保留 Bridge 10 的 Native Cartridge Vault v2、Android .sav/.bak 與內建 EmulatorJS 4.2.3 mGBA。"
   ]
 }
