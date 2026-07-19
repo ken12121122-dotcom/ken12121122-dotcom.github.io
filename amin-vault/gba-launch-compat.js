@@ -233,7 +233,8 @@
     const next = new URL('./gba.html', location.href);
     next.searchParams.set('native', '1');
     next.searchParams.set('compat', '4012');
-    next.searchParams.set('autoplay', record.id);
+    next.searchParams.set('compatAutoplay', record.id);
+    next.searchParams.delete('autoplay');
     next.searchParams.delete('ejs');
     next.searchParams.delete('retry');
     location.replace(next.href);
@@ -380,24 +381,26 @@
     await play(button.dataset.play);
   }
 
-  document.addEventListener('click', onPlayClick, true);
+  // Window capture runs before the older document-level reliability listener.
+  window.addEventListener('click', onPlayClick, true);
   addEventListener('pagehide', releaseObjectUrl);
   addEventListener('beforeunload', releaseObjectUrl);
 
   const params = new URLSearchParams(location.search);
-  const autoplay = params.get('autoplay');
-  if (autoplay) {
+  const compatAutoplay = params.get('compatAutoplay');
+  if (compatAutoplay) {
     const clean = new URL(location.href);
-    clean.searchParams.delete('autoplay');
+    clean.searchParams.delete('compatAutoplay');
     history.replaceState(null, '', clean.href);
-    setTimeout(() => play(autoplay), 650);
+    setTimeout(() => play(compatAutoplay), 650);
   }
 
   window.AMIN_GBA_COMPAT_LAUNCHER = {
-    version: '1.0.0',
+    version: '1.0.1',
     play,
     clearTransientCaches: clearTransientEmulatorCaches,
     primaryChannel: PRIMARY_CHANNEL,
     fallbackChannel: FALLBACK_CHANNEL
   };
+  dispatchEvent(new CustomEvent('amin-gba-compat-ready'));
 })();
