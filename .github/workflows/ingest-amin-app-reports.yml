@@ -1,4 +1,5 @@
 name: Ingest Amin App Error Reports
+# Commissioning trigger: 2026-07-19T10:50+08:00
 
 on:
   workflow_dispatch:
