@@ -117,14 +117,30 @@ jobs:
           set -euxo pipefail
           sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B16/g' android-native/app/build.gradle
 
-      - name: Build and lint
+      - name: Build APK
         run: |
-          set -euxo pipefail
+          set -o pipefail
           gradle --no-daemon --console=plain -p android-native \
             -PAMIN_VERSION_CODE=112 \
             -PAMIN_PREVIEW_SUFFIX=-bridge16 \
-            :app:assembleDebug \
-            :app:lintDebug
+            :app:assembleDebug 2>&1 | tee /tmp/gradle-assemble.log
+
+      - name: Run lint
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=112 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge16 \
+            :app:lintDebug 2>&1 | tee /tmp/gradle-lint.log
+
+      - name: Upload diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bridge16-build-logs
+          path: /tmp/gradle-*.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Inspect APK
         run: |
