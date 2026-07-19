@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'amin-vault-runtime-';
-const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092-rc15`;
+const BOOTSTRAP_CACHE = `${CACHE_PREFIX}bootstrap-v092-rc16`;
 const META_CACHE = `${CACHE_PREFIX}meta`;
 const ACTIVE_KEY = new URL('__amin_runtime_active__', self.registration.scope).href;
 const MANIFEST_PATH = new URL('./runtime-manifest.json', self.registration.scope).pathname;
