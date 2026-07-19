@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge14",
-  "latestVersionCode": 110,
+  "latestVersionName": "0.9.2-bridge15",
+  "latestVersionCode": 111,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge14.apk",
-  "apkSha256": "779072d8a5f499f04f1237fba77ec66066f24e6164a0e6365f69726322d88e84",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge15.apk",
+  "apkSha256": "a6f1cbef00780e3efe18661919d1abdfb721d5462090c520b7db75445905a05a",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 4174420,
-  "publishedAt": "2026-07-19T17:39:01+08:00",
+  "sizeBytes": 4174403,
+  "publishedAt": "2026-07-19T17:41:30+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "移除整塊控制面板，改成只有按鍵的 GBA 浮動配置。",
-    "左下十字鍵、右下 A/B、左右上方 L/R、下方中央 Select/Start，直向與橫向都會靠螢幕邊緣排列。",
-    "保留喚醒球、兩秒淡化、按鍵自動收合、游標點擊、長按、頁面滑動與系統返回功能。"
+    "修正 GBA 十字鍵在部分 Samsung 手機只顯示上下鍵的問題。",
+    "十字鍵改為固定 3×3 浮動容器，左、右鍵不再受到視窗量測裁切。",
+    "保留純按鍵配置、喚醒球、兩秒淡化、自動收合與游標操作。"
   ]
 }
