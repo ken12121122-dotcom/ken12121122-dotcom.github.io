@@ -1,71 +1,178 @@
 {
-  "name": "Amin Universal Vault",
-  "architecture_version": 2,
-  "pwa_version": "0.8.0",
+  "name": "Amin Universal Vault and Pocket GBA",
+  "architecture_version": 3,
+  "last_verified_at": "2026-07-19T20:55:00+08:00",
+  "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+  "default_branch": "main",
   "principle": "資料屬於 Vault，不屬於任何單一 App。",
-  "interface_shell": {
-    "engine": "Three.js r185",
-    "role": "3D desktop and navigation shell",
-    "interaction_model": "GBA console controls",
-    "modes": ["focus", "pointer"],
-    "inputs": ["touch controls", "keyboard", "Gamepad API"],
-    "boundary": "Three.js controls presentation and navigation; Supabase remains the canonical data core."
+  "release_state": {
+    "android": {
+      "package_id": "com.amin.pocketgba",
+      "version_name": "0.9.2-bridge16",
+      "version_code": 112,
+      "channel_enabled": true,
+      "minimum_supported_version_code": 107,
+      "source_branch": "agent/amin-pocket-gba-universal-control-v01",
+      "manifest": "/amin-vault/native-release-manifest.json",
+      "signer_certificate_sha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7"
+    },
+    "runtime": {
+      "version": "0.9.2-rc19",
+      "entry_point": "/amin-vault/gba.html",
+      "manifest": "/amin-vault/runtime-manifest.json",
+      "hot_update": true
+    }
+  },
+  "physical_verification": {
+    "device": "Samsung SM-A5560",
+    "android": "15",
+    "wired_controller_native_detection": true,
+    "controller_binding": true,
+    "controller_test_feedback": true,
+    "controller_in_game": true,
+    "universal_overlay": true
+  },
+  "product_surfaces": [
+    {
+      "name": "Android native control center",
+      "visual": "white",
+      "role": "canonical app entry and version management"
+    },
+    {
+      "name": "GBA Runtime",
+      "role": "ROM library, controller settings, EmulatorJS and mGBA"
+    },
+    {
+      "name": "Legacy Pocket OS",
+      "visual": "black",
+      "role": "archived or experimental entry, not the default return target"
+    }
+  ],
+  "gamepad_input": {
+    "authoritative_source": "Android native KeyEvent and MotionEvent bridge",
+    "web_gamepad_api_reliable": false,
+    "flow": [
+      "Android InputDevice",
+      "MainActivity.dispatchKeyEvent or dispatchGenericMotionEvent",
+      "gba-native-input.js / AMIN_NATIVE_INPUT",
+      "gba-controller-native-addon.js or gba-controller-runtime.js",
+      "EmulatorJS gameManager.simulateInput",
+      "mGBA"
+    ],
+    "observed_keys": [
+      "KEYCODE_BUTTON_1",
+      "KEYCODE_BUTTON_2",
+      "KEYCODE_BUTTON_3",
+      "KEYCODE_BUTTON_4",
+      "KEYCODE_BUTTON_5",
+      "KEYCODE_BUTTON_6",
+      "KEYCODE_BUTTON_7",
+      "KEYCODE_BUTTON_8",
+      "KEYCODE_BUTTON_9",
+      "KEYCODE_BUTTON_10"
+    ],
+    "observed_axes": [
+      "AXIS_X",
+      "AXIS_Y",
+      "AXIS_Z",
+      "AXIS_RZ",
+      "AXIS_HAT_X",
+      "AXIS_HAT_Y"
+    ],
+    "profile_storage_key": "amin-gba-controller-profile-v1",
+    "default_native_mapping": {
+      "A": ["KEYCODE_BUTTON_2", "KEYCODE_BUTTON_A"],
+      "B": ["KEYCODE_BUTTON_3", "KEYCODE_BUTTON_B"],
+      "START": ["KEYCODE_BUTTON_START", "KEYCODE_BUTTON_10"],
+      "SELECT": ["KEYCODE_BUTTON_SELECT", "KEYCODE_BUTTON_9"],
+      "L": ["KEYCODE_BUTTON_L1", "KEYCODE_BUTTON_5"],
+      "R": ["KEYCODE_BUTTON_R1", "KEYCODE_BUTTON_6"],
+      "DIRECTIONS": ["DPAD", "AXIS_X_Y", "AXIS_HAT_X_Y"]
+    }
+  },
+  "universal_control_overlay": {
+    "status": "active",
+    "service": "UniversalControlAccessibilityService",
+    "modes": ["cursor", "scroll"],
+    "cursor_step_dp": {
+      "minimum": 2,
+      "default": 16,
+      "maximum": 64,
+      "presets": [8, 16, 32]
+    },
+    "wake_bubble_fade_ms": 2000,
+    "reads_other_app_content": false,
+    "can_perform_gestures": true,
+    "can_retrieve_window_content": false
   },
   "emulation_center": {
     "status": "active",
     "system": "Game Boy Advance",
-    "frontend": "EmulatorJS stable",
+    "frontend": "EmulatorJS 4.2.3",
     "core": "mGBA",
     "rom_source": "user-selected local files",
-    "rom_storage": "browser IndexedDB only",
-    "accepted_formats": [".gba", ".zip"],
-    "bios": "optional",
-    "save_storage": "browser local storage managed by EmulatorJS",
-    "cloud_save_sync": false
+    "rom_storage": "IndexedDB and native vault adapters",
+    "accepted_formats": [".gba", ".bin", ".zip"],
+    "bios": "optional and not distributed",
+    "rom_distribution": false
   },
-  "layers": [
+  "vault_layers": [
     {
       "order": 1,
       "name": "Data Core",
-      "platform": "Supabase",
-      "components": ["workspaces", "objects", "relationships", "versions", "change_requests", "audit_logs", "clients", "sync_runs", "mirror_files", "public_content"]
+      "platform": "Supabase"
     },
     {
       "order": 2,
       "name": "Governance",
-      "flow": ["capture", "change_request", "review", "publish", "version_snapshot", "audit_log"],
-      "protections": ["RLS", "owner_binding", "optimistic_version_check", "version_conflict_block", "public_private_separation"]
+      "flow": ["capture", "change_request", "review", "publish", "version_snapshot", "audit_log"]
     },
     {
       "order": 3,
       "name": "Platform Adapters",
-      "clients": ["Three.js GBA PWA", "Local GBA Game Center", "ChatGPT", "Google Drive Mirror", "Obsidian Android", "Obsidian Windows", "Codex", "Future MCP"]
+      "clients": [
+        "Android native shell",
+        "GBA Runtime",
+        "Accessibility universal control overlay",
+        "Three.js PWA",
+        "ChatGPT",
+        "Codex",
+        "Google Drive Mirror",
+        "Obsidian"
+      ]
     },
     {
       "order": 4,
-      "name": "Mirror & Recovery",
-      "flow": ["Supabase", "Google Drive Markdown Mirror", "Obsidian"],
-      "schedule": "hourly",
-      "identity": "stable drive_file_id registry"
+      "name": "Mirror and Recovery",
+      "flow": ["Supabase", "Google Drive Markdown Mirror", "Obsidian"]
     }
   ],
-  "status": {
-    "active_objects": 5,
-    "draft_objects": 4,
-    "total_objects": 9,
-    "versions": 10,
-    "relationships": 6,
-    "mirror_registry": 10,
-    "security_warnings": 0,
-    "three_shell": true,
-    "gba_emulator": true
-  },
   "contracts": {
+    "ai_handoff": "/AGENTS.md",
+    "readme": "/README.md",
     "web": "/amin-vault/",
     "gba": "/amin-vault/gba.html",
-    "json": "/amin-vault/architecture.json",
-    "markdown": "/amin-vault/ARCHITECTURE.md",
-    "drive": "03_Knowledge/Universal Vault 核心架構.md"
+    "controller_setup": "/amin-vault/gba-controller.html",
+    "signal_lab": "/amin-vault/gba-signal-lab.html",
+    "architecture_json": "/amin-vault/architecture.json",
+    "architecture_markdown": "/amin-vault/ARCHITECTURE.md",
+    "native_manifest": "/amin-vault/native-release-manifest.json",
+    "runtime_manifest": "/amin-vault/runtime-manifest.json"
   },
-  "boundaries": ["GBA cloud save synchronization", "Android file-level automatic sync", "Vault MCP", "cross-app Android control", "automatic three-way merge"]
+  "known_limitations": [
+    "Web Gamepad API may return no devices inside Android WebView",
+    "Signal Lab download and share actions have failed on the physical phone while copy works",
+    "Controller naming and per-device VID PID descriptor profiles are not implemented",
+    "Multiple-controller switching is not implemented",
+    "In-app Bluetooth scanning and pairing are not implemented",
+    "Automatic Instagram and Facebook short-video mode is not implemented",
+    "Physical controllers and virtual overlay buttons do not yet share one common action core"
+  ],
+  "next_milestones": [
+    "Controller Lab with device naming and raw input monitoring",
+    "Per-controller profiles and automatic reconnect",
+    "Short-video mode",
+    "Repair Signal Lab Android JSON download and share",
+    "Unified action core for virtual buttons physical controllers and future remotes"
+  ]
 }
