@@ -31,6 +31,10 @@ android {
         buildConfig true
     }
 
+    androidResources {
+        noCompress += ['wasm', 'data']
+    }
+
     signingConfigs {
         if (aminSigningReady) {
             release {
