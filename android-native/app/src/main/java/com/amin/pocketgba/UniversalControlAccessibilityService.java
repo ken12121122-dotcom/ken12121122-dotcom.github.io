@@ -826,8 +826,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         float startY = screenHeight * (pageDown ? 0.76f : 0.28f);
         float endY = screenHeight * (pageDown ? 0.28f : 0.76f);
         Path path = new Path();
-        path.moveTo(startX, startY);
-        path.lineTo(startX, endY);
+        path.moveTo(x, startY);
+        path.lineTo(x, endY);
         dispatchPath(path, SWIPE_DURATION_MS, "無法垂直捲動頁面");
     }
 
