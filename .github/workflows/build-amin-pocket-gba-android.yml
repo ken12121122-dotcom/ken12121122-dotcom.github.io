@@ -37,7 +37,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  discover-js-tests:
+    name: Discover JavaScript tests
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: List test files
+        id: list
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          files = sorted(str(path) for path in Path('tests').glob('*.test.mjs'))
+          if not files:
+              raise SystemExit('No tests/*.test.mjs files found')
+          print('files=' + json.dumps(files, separators=(',', ':')))
+          PY
+
+  js-tests:
+    name: JS test · ${{ matrix.file }}
+    needs: discover-js-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJSON(needs.discover-js-tests.outputs.files) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Run ${{ matrix.file }}
+        run: node --test "${{ matrix.file }}"
+
   android-ci:
+    name: Android build, lint and APK inspection
+    needs: js-tests
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -100,7 +139,6 @@ jobs:
 
           assert runtime.get('runtimeVersion'), 'runtimeVersion is required'
           assert isinstance(runtime.get('optionalCapabilities', []), list), 'optionalCapabilities must be a list'
-
           assert native.get('format') == 'amin-native-release-manifest', 'invalid native manifest format'
           assert native.get('channel') == 'bridge', 'native channel must be bridge'
           assert native.get('packageId') == 'com.amin.pocketgba', 'unexpected packageId'
@@ -129,14 +167,6 @@ jobs:
               assert marker in gradle, f'missing Gradle contract: {marker}'
           assert 'applicationIdSuffix' not in gradle, 'production package must not use applicationIdSuffix'
           PY
-
-      - name: Run JavaScript tests
-        shell: bash
-        run: |
-          set -euxo pipefail
-          find tests -maxdepth 1 -type f -name '*.test.mjs' -print
-          test -n "$(find tests -maxdepth 1 -type f -name '*.test.mjs' -print -quit)"
-          node --test tests/*.test.mjs
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
