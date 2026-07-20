@@ -182,7 +182,7 @@ jobs:
           grep -F "versionName=$CURRENT_VERSION_NAME" "$RUNNER_TEMP/current-package.txt"
           grep -F "versionCode=$CURRENT_VERSION_CODE" "$RUNNER_TEMP/current-package.txt"
 
-      - name: Verify launcher and native routes
+      - name: Verify launcher route
         shell: bash
         run: |
           set -euxo pipefail
@@ -190,38 +190,63 @@ jobs:
             -a android.intent.action.MAIN \
             -c android.intent.category.LAUNCHER \
             "$CURRENT_PACKAGE" | tee "$RUNNER_TEMP/launcher.txt"
-          grep -F "$CURRENT_LAUNCHABLE_ACTIVITY" "$RUNNER_TEMP/launcher.txt"
+
+          RESOLVED_ACTIVITY="$(tail -n 1 "$RUNNER_TEMP/launcher.txt" | tr -d '\r')"
+          EXPECTED_SHORT=".${CURRENT_LAUNCHABLE_ACTIVITY##*.}"
+          case "$RESOLVED_ACTIVITY" in
+            "$CURRENT_PACKAGE/$EXPECTED_SHORT"|"$CURRENT_PACKAGE/$CURRENT_LAUNCHABLE_ACTIVITY"|"$CURRENT_LAUNCHABLE_ACTIVITY") ;;
+            *)
+              echo "Launcher mismatch: expected $CURRENT_LAUNCHABLE_ACTIVITY, resolved $RESOLVED_ACTIVITY" >&2
+              exit 1
+              ;;
+          esac
 
           adb shell monkey -p "$CURRENT_PACKAGE" -c android.intent.category.LAUNCHER 1
           sleep 2
           adb shell dumpsys activity activities > "$RUNNER_TEMP/activities-after-launch.txt"
           grep -F "$CURRENT_PACKAGE" "$RUNNER_TEMP/activities-after-launch.txt"
 
+      - name: Verify GBA library route
+        shell: bash
+        run: |
+          set -euxo pipefail
           adb shell am start -W -n "$CURRENT_PACKAGE/com.amin.pocketgba.MainActivity" \
             | tee "$RUNNER_TEMP/library-launch.txt"
           grep -F 'Status: ok' "$RUNNER_TEMP/library-launch.txt"
           adb shell input keyevent 4
 
+      - name: Verify permission center deep link
+        shell: bash
+        run: |
+          set -euxo pipefail
           adb shell am start -W -a android.intent.action.VIEW \
             -d 'amin-permissions://open' -p "$CURRENT_PACKAGE" \
             | tee "$RUNNER_TEMP/permission-link.txt"
           grep -F 'Status: ok' "$RUNNER_TEMP/permission-link.txt"
           adb shell input keyevent 4
 
+      - name: Verify update center deep link
+        shell: bash
+        run: |
+          set -euxo pipefail
           adb shell am start -W -a android.intent.action.VIEW \
             -d 'amin-update://check' -p "$CURRENT_PACKAGE" \
             | tee "$RUNNER_TEMP/update-link.txt"
           grep -F 'Status: ok' "$RUNNER_TEMP/update-link.txt"
           adb shell input keyevent 4
 
-          if [ "$CURRENT_HAS_VOICE" = 'true' ]; then
-            adb shell am start -W -a android.intent.action.VIEW \
-              -d 'amin-voice://open' -p "$CURRENT_PACKAGE" \
-              | tee "$RUNNER_TEMP/voice-link.txt"
-            grep -F 'Status: ok' "$RUNNER_TEMP/voice-link.txt"
-            adb shell dumpsys activity activities | grep -F 'VoiceCommandActivity'
-            adb shell input keyevent 4
-          fi
+      - name: Verify voice deep link
+        if: ${{ env.CURRENT_HAS_VOICE == 'true' }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-voice://open' -p "$CURRENT_PACKAGE" \
+            | tee "$RUNNER_TEMP/voice-link.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/voice-link.txt"
+          adb shell dumpsys activity activities > "$RUNNER_TEMP/voice-activities.txt"
+          grep -F 'VoiceCommandActivity' "$RUNNER_TEMP/voice-activities.txt"
+          adb shell input keyevent 4
 
       - name: Install instrumentation APK
         shell: bash
