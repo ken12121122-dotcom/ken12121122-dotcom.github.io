@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const [gba, guard, migration, html, manifest, gradle, backupRules, extractionRules, bridge] = await Promise.all([
+const [gba, guard, migration, html, manifestText, gradle, backupRules, extractionRules, bridge] = await Promise.all([
   readFile(new URL('../amin-vault/gba.js', import.meta.url), 'utf8'),
   readFile(new URL('../amin-vault/gba-save-guard.js', import.meta.url), 'utf8'),
   readFile(new URL('../amin-vault/gba-save-migration.js', import.meta.url), 'utf8'),
@@ -13,6 +13,8 @@ const [gba, guard, migration, html, manifest, gradle, backupRules, extractionRul
   readFile(new URL('../android-native/app/src/main/res/xml/data_extraction_rules.xml', import.meta.url), 'utf8'),
   readFile(new URL('../android-native/app/src/main/java/com/amin/pocketgba/NativeSaveBridge.java', import.meta.url), 'utf8')
 ]);
+
+const runtimeManifest = JSON.parse(manifestText);
 
 test('ROM identity stays stable while launch transport uses an object URL', () => {
   assert.match(gba, /crypto\.subtle\.digest\('SHA-256'/);
@@ -70,35 +72,43 @@ test('Android backup includes only the app-private save vault', () => {
   assert.equal((extractionRules.match(/path="gba-saves\/"/g) || []).length, 2);
 });
 
-test('Preview migration UI explains the safe side-by-side flow', () => {
+test('migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
   assert.match(html, /gba-save-migration\.js/);
   assert.match(html, /三層存檔保護/);
-  assert.match(html, /從 Preview 3 安全搬到 Preview 4/);
-  assert.match(html, /確認進度正確後，才移除 Preview 3/);
+  assert.match(html, /安全搬/);
+  assert.match(html, /確認進度正確後/);
 });
 
-test('RC6 manifest includes launcher persistence and live-channel capabilities', () => {
-  assert.match(manifest, /"runtimeVersion": "0\.9\.2-rc6"/);
-  assert.match(manifest, /"save-vault-v1"/);
-  assert.match(manifest, /"native-save-vault-v1"/);
-  assert.match(manifest, /"legacy-save-migration-v1"/);
-  assert.match(manifest, /"rom-object-url-v2"/);
-  assert.match(manifest, /"emulatorjs-pinned-4\.2\.3"/);
-  assert.match(manifest, /"live-runtime-channel-v1"/);
-  assert.match(manifest, /"\.\/gba-save-migration\.js"/);
+test('runtime manifest retains save, migration and live-channel capabilities', () => {
+  assert.equal(runtimeManifest.format, 'amin-runtime-manifest');
+  assert.match(runtimeManifest.runtimeVersion, /^0\.9\.2-rc\d+$/);
+  assert.ok(Array.isArray(runtimeManifest.assets) && runtimeManifest.assets.length > 0);
+  assert.ok(Array.isArray(runtimeManifest.optionalCapabilities));
+
+  for (const capability of [
+    'save-vault-v1',
+    'native-save-vault-v1',
+    'legacy-save-migration-v1',
+    'rom-object-url-v2',
+    'emulatorjs-pinned-4.2.3',
+    'live-runtime-channel-v1'
+  ]) {
+    assert.ok(runtimeManifest.optionalCapabilities.includes(capability), capability);
+  }
+  assert.ok(runtimeManifest.assets.includes('./gba-save-migration.js'));
 });
 
-test('Bridge package establishes one fixed native update identity', () => {
+test('Bridge package establishes one fixed native update identity without pinning an obsolete version', () => {
   assert.match(gradle, /AMIN_VERSION_CODE/);
   assert.match(gradle, /versionCode aminVersionCode/);
   assert.match(gradle, /applicationId 'com\.amin\.pocketgba'/);
   assert.doesNotMatch(gradle, /applicationIdSuffix/);
-  assert.match(gradle, /versionNameSuffix aminPreviewSuffix/);
-  assert.match(gradle, /Amin Pocket GBA Bridge 0\.9\.2 B1/);
-  assert.match(gradle, /'-bridge1'/);
-  assert.match(gradle, /'97'/);
+  assert.match(gradle, /versionNameSuffix (?:aminPreviewSuffix|aminBridgeSuffix)/);
+  assert.match(gradle, /manifestPlaceholders = \[appLabel: 'Amin Pocket GBA/);
+  assert.match(gradle, /buildTypes\s*\{/);
+  assert.match(gradle, /bridge\s*\{/);
 });
 
 test('Bridge uses the live GitHub Pages Runtime channel instead of a commit pin', () => {
