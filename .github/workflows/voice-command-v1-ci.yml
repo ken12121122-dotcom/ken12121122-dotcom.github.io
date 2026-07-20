@@ -1,6 +1,7 @@
 name: Voice Command v1 CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - ai/voice-command-v1
@@ -12,7 +13,7 @@ on:
       - '.github/workflows/voice-command-v1-ci.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android-voice-validation:
@@ -49,21 +50,47 @@ jobs:
         working-directory: android-native
         run: ./gradlew lintDebug --stacktrace
 
+      - name: Prepare APK file
+        if: success()
+        shell: bash
+        run: |
+          mkdir -p dist
+          APK_PATH="$(find android-native/app/build/outputs/apk/debug -name '*.apk' -type f | head -n 1)"
+          test -n "$APK_PATH"
+          cp "$APK_PATH" "dist/Amin-Voice-Preview-${GITHUB_RUN_NUMBER}.apk"
+          sha256sum "dist/Amin-Voice-Preview-${GITHUB_RUN_NUMBER}.apk" > "dist/Amin-Voice-Preview-${GITHUB_RUN_NUMBER}.apk.sha256"
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: voice-command-v1-test-reports
+          name: voice-command-v1-test-reports-${{ github.run_number }}
           if-no-files-found: ignore
+          retention-days: 14
           path: |
             android-native/app/build/reports/tests/
             android-native/app/build/reports/lint-results-debug.html
             android-native/app/build/test-results/
 
-      - name: Upload unsigned debug APK
+      - name: Upload installable preview APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: amin-voice-command-v1-debug-apk
+          name: amin-voice-preview-${{ github.run_number }}
           if-no-files-found: error
-          path: android-native/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+          path: dist/*
+
+      - name: Publish GitHub prerelease
+        if: success() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: voice-preview-${{ github.run_number }}
+        shell: bash
+        run: |
+          gh release create "$TAG_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Amin Voice Preview #${GITHUB_RUN_NUMBER}" \
+            --notes "Voice Command v1 測試版。可與正式 Amin 並存安裝。\n\nCommit: ${GITHUB_SHA}\nRun: ${GITHUB_RUN_NUMBER}\n\n此為 prerelease，不會更新 stable manifest，也不使用正式簽章。" \
+            --prerelease
