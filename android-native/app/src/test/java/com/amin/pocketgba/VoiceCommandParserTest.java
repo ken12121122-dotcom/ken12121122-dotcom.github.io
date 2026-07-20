@@ -23,11 +23,34 @@ public final class VoiceCommandParserTest {
     }
 
     @Test
+    public void keepsSameActionAliasesUnambiguousInsideNaturalSpeech() {
+        VoiceCommandParser.Result result = parser.parse("請幫我打開控制盤", 0.87d);
+        assertEquals(VoiceCommandParser.Result.Status.MATCHED, result.getStatus());
+        assertEquals("OVERLAY_OPEN", result.getAction().getAction());
+    }
+
+    @Test
     public void matchesCursorModeWithParameter() {
         VoiceCommandParser.Result result = parser.parse("切換游標模式", 0.96d);
         assertEquals(VoiceCommandParser.Result.Status.MATCHED, result.getStatus());
         assertEquals("CONTROL_MODE_SET", result.getAction().getAction());
         assertEquals("cursor", result.getAction().getParameters().optString("mode"));
+    }
+
+    @Test
+    public void matchesMovementAndTapActions() {
+        assertEquals(
+                "DIRECTION_LEFT",
+                parser.parse("請向左", 0.89d).getAction().getAction()
+        );
+        assertEquals(
+                "CURSOR_TAP",
+                parser.parse("按一下", 0.89d).getAction().getAction()
+        );
+        assertEquals(
+                "SYSTEM_HOME",
+                parser.parse("回到桌面", 0.89d).getAction().getAction()
+        );
     }
 
     @Test
