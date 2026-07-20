@@ -59,11 +59,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
+            applicationIdSuffix '.voicepreview'
             versionNameSuffix aminPreviewSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B3']
-            buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
+            manifestPlaceholders = [appLabel: 'Amin Voice Preview']
+            buildConfigField 'String', 'RELEASE_CHANNEL', '"voice-preview"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-            if (aminSigningReady) signingConfig signingConfigs.release
         }
         bridge {
             initWith release
