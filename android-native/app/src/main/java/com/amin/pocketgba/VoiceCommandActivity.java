@@ -10,7 +10,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.view.Gravity;
-import android.view.View;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -51,7 +51,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(title, matchWrap());
 
         TextView description = new TextView(this);
-        description.setText("按下按鈕後說出固定繁體中文指令。第一版不會在背景持續監聽。");
+        description.setText("按住麥克風說話，放開後辨識並執行。第一版不會在背景持續監聽。");
         description.setTextSize(15f);
         description.setTextColor(0xff68766e);
         description.setGravity(Gravity.CENTER);
@@ -60,10 +60,14 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(description, descriptionParams);
 
         listenButton = new Button(this);
-        listenButton.setText("🎤 開始聆聽");
+        listenButton.setText("🎤 按住說話");
         listenButton.setTextSize(18f);
         listenButton.setAllCaps(false);
-        listenButton.setOnClickListener(view -> toggleListening());
+        listenButton.setContentDescription("按住開始語音辨識，放開後執行指令");
+        listenButton.setOnClickListener(view -> {
+            // Touch handles push-to-talk. Click remains for accessibility semantics.
+        });
+        listenButton.setOnTouchListener((view, event) -> handleTalkTouch(event));
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(58)
@@ -81,7 +85,9 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(statusView, statusParams);
 
         transcriptView = new TextView(this);
-        transcriptView.setText("可說：開啟控制盤、游標模式、捲動模式、返回、回首頁、開啟遊戲");
+        transcriptView.setText(
+                "可說：開啟控制盤、游標模式、捲動模式、向左、向右、點擊、長按、返回、回首頁、開啟遊戲"
+        );
         transcriptView.setTextSize(16f);
         transcriptView.setTextColor(Color.DKGRAY);
         transcriptView.setGravity(Gravity.CENTER);
@@ -91,6 +97,31 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(transcriptView, transcriptParams);
 
         setContentView(root);
+    }
+
+    private boolean handleTalkTouch(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                listenButton.setPressed(true);
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    setStatus("請先允許麥克風權限", false);
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+                    return true;
+                }
+                startListening();
+                return true;
+            case MotionEvent.ACTION_UP:
+                listenButton.setPressed(false);
+                finishSpeechInput();
+                listenButton.performClick();
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                listenButton.setPressed(false);
+                cancelListening("已取消聆聽");
+                return true;
+            default:
+                return true;
+        }
     }
 
     private void prepareRecognizer() {
@@ -107,34 +138,37 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Locale.TAIWAN.toLanguageTag());
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
-        setStatus("準備完成", true);
-    }
-
-    private void toggleListening() {
-        if (listening) {
-            stopListening();
-            return;
-        }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
-            return;
-        }
-        startListening();
+        setStatus("準備完成，請按住麥克風", true);
     }
 
     private void startListening() {
         if (speechRecognizer == null || listening) return;
         listening = true;
-        listenButton.setText("停止聆聽");
+        listenButton.setText("放開後辨識");
         setStatus("正在聆聽…", true);
+        transcriptView.setText("請說出指令");
         speechRecognizer.startListening(recognizerIntent);
     }
 
-    private void stopListening() {
-        if (speechRecognizer != null) speechRecognizer.stopListening();
+    private void finishSpeechInput() {
+        if (speechRecognizer == null || !listening) {
+            resetTalkButton();
+            return;
+        }
+        speechRecognizer.stopListening();
+        resetTalkButton();
+        setStatus("正在辨識…", true);
+    }
+
+    private void cancelListening(String message) {
+        if (speechRecognizer != null && listening) speechRecognizer.cancel();
         listening = false;
-        listenButton.setText("🎤 開始聆聽");
-        setStatus("已停止聆聽", true);
+        resetTalkButton();
+        setStatus(message, true);
+    }
+
+    private void resetTalkButton() {
+        if (listenButton != null) listenButton.setText("🎤 按住說話");
     }
 
     @Override
@@ -142,7 +176,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode != REQUEST_RECORD_AUDIO) return;
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startListening();
+            setStatus("麥克風權限已開啟，請再次按住說話", true);
         } else {
             setStatus("未取得麥克風權限，語音功能不會啟動", false);
         }
@@ -157,14 +191,14 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     @Override
     public void onError(int error) {
         listening = false;
-        listenButton.setText("🎤 開始聆聽");
+        resetTalkButton();
         setStatus(errorMessage(error), false);
     }
 
     @Override
     public void onResults(Bundle results) {
         listening = false;
-        listenButton.setText("🎤 開始聆聽");
+        resetTalkButton();
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
         if (matches == null || matches.isEmpty()) {
@@ -218,7 +252,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     protected void onPause() {
         if (speechRecognizer != null && listening) speechRecognizer.cancel();
         listening = false;
-        if (listenButton != null) listenButton.setText("🎤 開始聆聽");
+        resetTalkButton();
         super.onPause();
     }
 
