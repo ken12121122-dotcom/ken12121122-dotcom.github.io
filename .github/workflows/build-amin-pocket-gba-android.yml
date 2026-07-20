@@ -248,11 +248,11 @@ jobs:
           set -euxo pipefail
           for component in \
             AminPocketApplication \
-            LaunchGateActivity \
             ControlCenterActivity \
-            MainActivity \
             PermissionCenterActivity \
-            UpdateHubActivity
+            UpdateHubActivity \
+            NativeUpdateActivity \
+            MainActivity
           do
             grep -Fq "$component" /tmp/apk-manifest.txt
           done
