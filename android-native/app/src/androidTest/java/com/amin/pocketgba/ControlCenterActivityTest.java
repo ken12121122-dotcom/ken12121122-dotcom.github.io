@@ -62,24 +62,36 @@ public final class ControlCenterActivityTest {
     }
 
     @Test
-    public void primaryCardsRouteToRealActivities() {
+    public void gbaCardRoutesToLibrary() {
         intending(hasComponent(MainActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-        intending(hasComponent(VoiceCommandActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-        intending(hasComponent(PermissionCenterActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-        intending(hasComponent(UpdateHubActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
         onView(withContentDescription("進入 Pokémon GBA 遊戲庫")).perform(scrollTo(), click());
         intended(hasComponent(MainActivity.class.getName()));
+    }
+
+    @Test
+    public void voiceCardRoutesToPressToTalk() {
+        intending(hasComponent(VoiceCommandActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
         onView(withContentDescription("開啟 Amin 語音指令")).perform(scrollTo(), click());
         intended(hasComponent(VoiceCommandActivity.class.getName()));
+    }
+
+    @Test
+    public void permissionCardRoutesToPermissionCenter() {
+        intending(hasComponent(PermissionCenterActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
         onView(withContentDescription("開啟權限控制中心")).perform(scrollTo(), click());
         intended(hasComponent(PermissionCenterActivity.class.getName()));
+    }
+
+    @Test
+    public void updateCardRoutesToUpdateCenter() {
+        intending(hasComponent(UpdateHubActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
         onView(withContentDescription("開啟原生 APK 更新中心")).perform(scrollTo(), click());
         intended(hasComponent(UpdateHubActivity.class.getName()));
