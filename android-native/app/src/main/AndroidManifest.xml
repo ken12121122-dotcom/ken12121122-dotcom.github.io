@@ -90,19 +90,6 @@
             </intent-filter>
         </activity>
 
-        <activity-alias
-            android:name=".VoiceCommandLauncher"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="Amin 語音指令"
-            android:targetActivity=".VoiceCommandActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
         <activity android:name=".UniversalControlSetupActivity" android:excludeFromRecents="true" android:exported="true" android:screenOrientation="portrait" />
 
         <activity
