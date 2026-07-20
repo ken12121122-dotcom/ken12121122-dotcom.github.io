@@ -3,6 +3,7 @@ package com.amin.pocketgba;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -163,6 +164,15 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         );
     }
 
+    public static boolean executeAminAction(AminAction action) {
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance == null || action == null) {
+            return false;
+        }
+        instance.mainHandler.post(() -> instance.executeAminActionInternal(action));
+        return true;
+    }
+
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
@@ -227,6 +237,55 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         return MODE_SCROLL.equals(getControlMode(this));
     }
 
+    private void executeAminActionInternal(AminAction action) {
+        switch (action.getAction()) {
+            case "SYSTEM_BACK":
+                performSystemAction(GLOBAL_ACTION_BACK, "無法執行全域返回");
+                return;
+            case "SYSTEM_HOME":
+                performSystemAction(GLOBAL_ACTION_HOME, "無法回到桌面");
+                return;
+            case "CURSOR_TAP":
+                prepareExternalControl(true);
+                tapCursor();
+                return;
+            case "CURSOR_LONG_PRESS":
+                prepareExternalControl(true);
+                holdCursor();
+                return;
+            case "DIRECTION_UP":
+                prepareExternalControl(false);
+                performDirectionAction(0, -1);
+                return;
+            case "DIRECTION_DOWN":
+                prepareExternalControl(false);
+                performDirectionAction(0, 1);
+                return;
+            case "DIRECTION_LEFT":
+                prepareExternalControl(false);
+                performDirectionAction(-1, 0);
+                return;
+            case "DIRECTION_RIGHT":
+                prepareExternalControl(false);
+                performDirectionAction(1, 0);
+                return;
+            default:
+                showStatusToast("尚未支援這個全域動作");
+        }
+    }
+
+    private void prepareExternalControl(boolean forceCursorMode) {
+        if (!isOverlayEnabled(this)) {
+            preferences(this).edit().putBoolean(KEY_OVERLAY_ENABLED, true).apply();
+        }
+        if (forceCursorMode && isScrollMode()) {
+            preferences(this).edit().putString(KEY_CONTROL_MODE, MODE_CURSOR).apply();
+            onControlModeChanged(MODE_CURSOR);
+        }
+        showControls();
+        markControlsActivity();
+    }
+
     private void fadeBubble() {
         if (bubbleOverlay != null) {
             bubbleOverlay.animate().alpha(BUBBLE_IDLE_ALPHA).setDuration(260L).start();
@@ -243,7 +302,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         bubbleOverlay.setTextColor(Color.WHITE);
         bubbleOverlay.setTextSize(26f);
         bubbleOverlay.setGravity(Gravity.CENTER);
-        bubbleOverlay.setContentDescription("GBA 全域控制喚醒球，點擊展開或收起，拖曳可移動");
+        bubbleOverlay.setContentDescription("GBA 全域控制喚醒球，點擊展開或收起，長按開啟語音，拖曳可移動");
         bubbleOverlay.setBackground(circleBackground(0xe6192a20, Color.WHITE, 1));
         bubbleOverlay.setElevation(dp(8));
 
@@ -266,6 +325,14 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
             private int downWindowX;
             private int downWindowY;
             private boolean dragging;
+            private boolean longTriggered;
+            private final Runnable voiceTask = () -> {
+                if (!dragging) {
+                    longTriggered = true;
+                    openVoiceCommand();
+                    markControlsActivity();
+                }
+            };
 
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -278,6 +345,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                         downWindowX = bubbleParams.x;
                         downWindowY = bubbleParams.y;
                         dragging = false;
+                        longTriggered = false;
+                        mainHandler.postDelayed(voiceTask, LONG_PRESS_MS);
                         view.setPressed(true);
                         return true;
                     case MotionEvent.ACTION_MOVE:
@@ -285,6 +354,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                         float dy = event.getRawY() - downRawY;
                         if (!dragging && (Math.abs(dx) > dp(7) || Math.abs(dy) > dp(7))) {
                             dragging = true;
+                            mainHandler.removeCallbacks(voiceTask);
                         }
                         if (dragging) {
                             bubbleParams.x = downWindowX + Math.round(dx);
@@ -293,16 +363,18 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
+                        mainHandler.removeCallbacks(voiceTask);
                         view.setPressed(false);
                         if (dragging) {
                             snapBubbleToEdge();
-                        } else {
+                        } else if (!longTriggered) {
                             toggleControls();
                             view.performClick();
                         }
                         scheduleBubbleFade();
                         return true;
                     case MotionEvent.ACTION_CANCEL:
+                        mainHandler.removeCallbacks(voiceTask);
                         view.setPressed(false);
                         scheduleBubbleFade();
                         return true;
@@ -314,6 +386,13 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
 
         windowManager.addView(bubbleOverlay, bubbleParams);
         scheduleBubbleFade();
+    }
+
+    private void openVoiceCommand() {
+        Intent intent = new Intent(this, VoiceCommandActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        showStatusToast("已開啟 Amin 語音指令");
     }
 
     private void ensureGamepadControls() {
@@ -747,8 +826,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         float startY = screenHeight * (pageDown ? 0.76f : 0.28f);
         float endY = screenHeight * (pageDown ? 0.28f : 0.76f);
         Path path = new Path();
-        path.moveTo(x, startY);
-        path.lineTo(x, endY);
+        path.moveTo(startX, startY);
+        path.lineTo(startX, endY);
         dispatchPath(path, SWIPE_DURATION_MS, "無法垂直捲動頁面");
     }
 
