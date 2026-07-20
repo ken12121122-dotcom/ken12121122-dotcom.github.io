@@ -72,13 +72,14 @@ test('Android backup includes only the app-private save vault', () => {
   assert.equal((extractionRules.match(/path="gba-saves\/"/g) || []).length, 2);
 });
 
-test('migration UI explains the safe side-by-side flow', () => {
+test('current UI exposes save verification, atomic replacement and backup guarantees', () => {
   assert.match(html, /id="saveVaultStatus"/);
   assert.match(html, /id="verifySaveVaultButton"/);
   assert.match(html, /gba-save-migration\.js/);
-  assert.match(html, /三層存檔保護/);
-  assert.match(html, /安全搬/);
-  assert.match(html, /確認進度正確後/);
+  assert.match(html, /Android 私有 `\.sav`/);
+  assert.match(html, /原子替換 `\.sav`/);
+  assert.match(html, /保留上一版 `\.bak`/);
+  assert.match(html, /正常覆蓋更新會保留 Android 私有 ROM 與存檔/);
 });
 
 test('runtime manifest retains current save, migration and live-channel capabilities', () => {
