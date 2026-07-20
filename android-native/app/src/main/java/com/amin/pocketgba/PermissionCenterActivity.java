@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat;
 
 public final class PermissionCenterActivity extends Activity {
     private static final int REQUEST_NOTIFICATIONS = 7201;
+    private static final int REQUEST_RECORD_AUDIO = 7202;
     private static final int COLOR_BG = 0xfff4f7f5;
     private static final int COLOR_SURFACE = 0xffffffff;
     private static final int COLOR_SURFACE_SOFT = 0xffeaf3ee;
@@ -38,9 +39,11 @@ public final class PermissionCenterActivity extends Activity {
     private static final int COLOR_WARNING = 0xff9a5b00;
 
     private Button notificationButton;
+    private Button microphoneButton;
     private Button installButton;
     private Button safetyToggle;
     private TextView notificationStatus;
+    private TextView microphoneStatus;
     private TextView installStatus;
     private TextView batteryStatus;
     private TextView summaryView;
@@ -130,6 +133,17 @@ public final class PermissionCenterActivity extends Activity {
         notificationButton = notificationCard.action;
         notificationButton.setOnClickListener(view -> requestNotifications());
 
+        PermissionCard microphoneCard = addPermissionCard(
+                content,
+                "🎤",
+                "麥克風",
+                "只在語音頁由你按住說話時使用；放開、離開頁面或取消後立即停止，不做背景持續監聽。",
+                "管理麥克風"
+        );
+        microphoneStatus = microphoneCard.status;
+        microphoneButton = microphoneCard.action;
+        microphoneButton.setOnClickListener(view -> requestMicrophone());
+
         PermissionCard installCard = addPermissionCard(
                 content,
                 "📦",
@@ -169,7 +183,8 @@ public final class PermissionCenterActivity extends Activity {
         safetyDetails.setVisibility(View.GONE);
         addInfo(safetyDetails, "ROM 與備份檔", "使用 Android 系統選檔器逐檔授權，不讀取整台手機。", "安全選檔器");
         addInfo(safetyDetails, "USB／藍牙手把", "已配對或連接的遊戲控制器不需要全域位置掃描權限。", "裝置級");
-        addInfo(safetyDetails, "刻意不索取", "不要求整機檔案、相機、麥克風、位置、聯絡人、電話、簡訊、懸浮窗或無障礙服務。", "最小權限");
+        addInfo(safetyDetails, "語音麥克風", "只有你在語音頁按住說話時才啟動，放開或離開頁面會停止。", "使用者觸發");
+        addInfo(safetyDetails, "刻意不索取", "不要求整機檔案、相機、位置、聯絡人、電話、簡訊、懸浮窗或自行開啟無障礙服務。", "最小權限");
         content.addView(safetyDetails, cardParams());
 
         TextView footer = text(
@@ -275,6 +290,7 @@ public final class PermissionCenterActivity extends Activity {
 
     private void refreshStatuses() {
         boolean notifications = notificationsGranted();
+        boolean microphone = microphoneGranted();
         boolean install = installPermissionGranted();
         boolean unrestricted = batteryUnrestricted();
 
@@ -283,6 +299,12 @@ public final class PermissionCenterActivity extends Activity {
                 : "狀態：未開啟，點下方按鈕由 Android 確認"
         );
         notificationButton.setText(notifications ? "管理通知設定" : "開啟通知");
+
+        microphoneStatus.setText(microphone
+                ? "狀態：已允許；只有按住說話時才會啟動"
+                : "狀態：未允許；語音頁不會啟動麥克風"
+        );
+        microphoneButton.setText(microphone ? "管理麥克風權限" : "允許按住說話");
 
         installStatus.setText(install
                 ? "狀態：已允許提交 APK，安裝時仍會再次確認"
@@ -295,14 +317,19 @@ public final class PermissionCenterActivity extends Activity {
                 : "電池狀態：由系統最佳化管理，前景遊戲不受影響"
         );
 
-        int enabled = (notifications ? 1 : 0) + (install ? 1 : 0);
-        summaryView.setText("建議設定已完成 " + enabled + " / 2。其他功能使用一般權限或系統選檔器。");
+        int enabled = (notifications ? 1 : 0) + (microphone ? 1 : 0) + (install ? 1 : 0);
+        summaryView.setText("建議設定已完成 " + enabled + " / 3。麥克風只在使用者按住說話時啟動。");
     }
 
     private boolean notificationsGranted() {
         if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) return false;
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean microphoneGranted() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED;
     }
 
@@ -320,6 +347,10 @@ public final class PermissionCenterActivity extends Activity {
         continueRecommendedFlow = true;
         if (!notificationsGranted()) {
             requestNotifications();
+            return;
+        }
+        if (!microphoneGranted()) {
+            requestMicrophone();
             return;
         }
         continueRecommendedFlow = false;
@@ -341,15 +372,42 @@ public final class PermissionCenterActivity extends Activity {
         openNotificationSettings();
     }
 
+    private void requestMicrophone() {
+        if (!microphoneGranted()) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{ Manifest.permission.RECORD_AUDIO },
+                    REQUEST_RECORD_AUDIO
+            );
+            return;
+        }
+        openAppDetails();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_NOTIFICATIONS) return;
+        if (requestCode != REQUEST_NOTIFICATIONS && requestCode != REQUEST_RECORD_AUDIO) return;
+
         refreshStatuses();
-        if (continueRecommendedFlow) {
+        if (!continueRecommendedFlow) return;
+
+        if (!notificationsGranted()) {
             continueRecommendedFlow = false;
-            if (!installPermissionGranted()) openUnknownSourcesSettings();
+            return;
         }
+        if (!microphoneGranted()) {
+            if (requestCode == REQUEST_NOTIFICATIONS) {
+                requestMicrophone();
+            } else {
+                continueRecommendedFlow = false;
+            }
+            return;
+        }
+
+        continueRecommendedFlow = false;
+        if (!installPermissionGranted()) openUnknownSourcesSettings();
+        else Toast.makeText(this, "建議設定已全部完成。", Toast.LENGTH_SHORT).show();
     }
 
     private void openUnknownSourcesSettings() {

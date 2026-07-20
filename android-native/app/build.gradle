@@ -2,13 +2,14 @@ plugins {
     id 'com.android.application'
 }
 
+// Bridge 17 release source: voice command v1 integrated into the official Amin package.
 def aminKeystorePath = providers.gradleProperty('AMIN_KEYSTORE_PATH').orNull ?: System.getenv('AMIN_KEYSTORE_PATH')
 def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').orNull ?: System.getenv('AMIN_KEYSTORE_PASSWORD')
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
 def aminKeyPassword = providers.gradleProperty('AMIN_KEY_PASSWORD').orNull ?: System.getenv('AMIN_KEY_PASSWORD')
 def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, aminKeyPassword].every { value -> value }
-def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '99').toInteger()
-def aminPreviewSuffix = providers.gradleProperty('AMIN_PREVIEW_SUFFIX').orNull ?: '-bridge3'
+def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '113').toInteger()
+def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge17'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
@@ -59,18 +60,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            versionNameSuffix aminPreviewSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B3']
-            buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']
+            buildConfigField 'String', 'RELEASE_CHANNEL', '"debug"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-            if (aminSigningReady) signingConfig signingConfigs.release
         }
         bridge {
             initWith release
             debuggable false
             minifyEnabled false
-            versionNameSuffix aminPreviewSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Bridge 0.9.2 B3']
+            versionNameSuffix aminBridgeSuffix
+            manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
             if (aminSigningReady) signingConfig signingConfigs.release
@@ -96,6 +95,8 @@ android {
 
 dependencies {
     implementation 'androidx.core:core:1.15.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:rules:1.6.1'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'

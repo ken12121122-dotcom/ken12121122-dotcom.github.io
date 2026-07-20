@@ -46,6 +46,8 @@ public final class PermissionCenterActivityTest {
             assertTrue(containsText(root, "權限與裝置"));
             assertTrue(containsText(root, "依序處理建議設定"));
             assertTrue(containsText(root, "通知"));
+            assertTrue(containsText(root, "麥克風"));
+            assertTrue(containsText(root, "按住說話"));
             assertTrue(containsText(root, "安裝 App 更新"));
             assertTrue(containsText(root, "App 完整設定"));
             assertTrue(containsText(root, "電池管理"));
@@ -69,10 +71,10 @@ public final class PermissionCenterActivityTest {
         assertTrue(requested.contains(Manifest.permission.VIBRATE));
         assertTrue(requested.contains(Manifest.permission.POST_NOTIFICATIONS));
         assertTrue(requested.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES));
+        assertTrue(requested.contains(Manifest.permission.RECORD_AUDIO));
 
         assertFalse(requested.contains(Manifest.permission.MANAGE_EXTERNAL_STORAGE));
         assertFalse(requested.contains(Manifest.permission.CAMERA));
-        assertFalse(requested.contains(Manifest.permission.RECORD_AUDIO));
         assertFalse(requested.contains(Manifest.permission.ACCESS_FINE_LOCATION));
         assertFalse(requested.contains(Manifest.permission.READ_CONTACTS));
         assertFalse(requested.contains(Manifest.permission.READ_SMS));
@@ -97,7 +99,7 @@ public final class PermissionCenterActivityTest {
     private boolean containsText(View view, String target) {
         if (view instanceof TextView) {
             CharSequence value = ((TextView) view).getText();
-            if (target.contentEquals(value)) return true;
+            if (value != null && value.toString().contains(target)) return true;
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;

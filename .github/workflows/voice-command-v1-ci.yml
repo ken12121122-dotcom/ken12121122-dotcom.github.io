@@ -1,0 +1,128 @@
+name: Voice Command v1 CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ai/voice-command-v1
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/voice-command-v1-ci.yml'
+  pull_request:
+    branches:
+      - agent/amin-pocket-gba-universal-control-v01
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/voice-command-v1-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-command-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-voice-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35 tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Run voice and shared-action unit tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :app:testDebugUnitTest \
+            :app:assembleDebug \
+            :app:lintDebug
+
+      - name: Inspect CI-only APK
+        id: inspect
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -s "$APK"
+
+          "$AAPT" dump badging "$APK" | tee /tmp/voice-apk-badging.txt
+          "$AAPT" dump permissions "$APK" | tee /tmp/voice-apk-permissions.txt
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/voice-apk-manifest.txt
+
+          grep -Fq "package: name='com.amin.pocketgba'" /tmp/voice-apk-badging.txt
+          grep -Fq 'VoiceCommandActivity' /tmp/voice-apk-manifest.txt
+          grep -Fq 'UniversalControlAccessibilityService' /tmp/voice-apk-manifest.txt
+          grep -Fq 'android.permission.RECORD_AUDIO' /tmp/voice-apk-permissions.txt
+          "$APKSIGNER" verify --verbose "$APK"
+
+          VERSION_NAME="$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" /tmp/voice-apk-badging.txt | head -n 1)"
+          VERSION_CODE="$(sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" /tmp/voice-apk-badging.txt | head -n 1)"
+          SAFE_VERSION="$(printf '%s' "$VERSION_NAME" | tr -cs 'A-Za-z0-9._-' '-')"
+          test -n "$VERSION_NAME"
+          test -n "$VERSION_CODE"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "safe_version=$SAFE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Package CI-only preview
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+          FILE="Amin-Voice-${{ steps.inspect.outputs.safe_version }}-CI-${GITHUB_RUN_ID}.apk"
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
+          printf '%s\n' \
+            'CI DEBUG ARTIFACT ONLY' \
+            'Not approved for production, release manifests, or permanent signing.' \
+            "Version: ${{ steps.inspect.outputs.version_name }} (${{ steps.inspect.outputs.version_code }})" \
+            > dist/SIGNING_STATUS.txt
+          cd dist
+          sha256sum "$FILE" > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-command-v1-test-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            android-native/app/build/reports/tests/
+            android-native/app/build/reports/lint-results-debug.html
+            android-native/app/build/test-results/
+
+      - name: Upload CI-only preview APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Voice-${{ steps.inspect.outputs.safe_version }}-CI-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 14
+          path: dist/
