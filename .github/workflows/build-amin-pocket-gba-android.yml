@@ -182,44 +182,70 @@ jobs:
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect current APK
+      - name: Prepare APK inspection data
         id: inspect
         shell: bash
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
-          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
 
           test -s "$APK"
           "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
           "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
+          unzip -Z1 "$APK" > /tmp/apk-files.txt
 
           PACKAGE_NAME="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
           VERSION_CODE="$(sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
           VERSION_NAME="$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
           LABEL="$(sed -n "s/^application-label:'\(.*\)'/\1/p" /tmp/apk-badging.txt | head -n 1)"
+          SAFE_VERSION="$(printf '%s' "$VERSION_NAME" | tr -cs 'A-Za-z0-9._-' '-')"
 
+          printf 'APK identity: package=%s versionName=%s versionCode=%s label=%s\n' \
+            "$PACKAGE_NAME" "$VERSION_NAME" "$VERSION_CODE" "$LABEL"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+          echo "safe_version=$SAFE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate APK identity
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.inspect.outputs.package_name }}
+          VERSION_CODE: ${{ steps.inspect.outputs.version_code }}
+          VERSION_NAME: ${{ steps.inspect.outputs.version_name }}
+          APP_LABEL: ${{ steps.inspect.outputs.label }}
+        run: |
+          set -euxo pipefail
           test "$PACKAGE_NAME" = 'com.amin.pocketgba'
           test -n "$VERSION_CODE"
           test -n "$VERSION_NAME"
-          case "$LABEL" in
+          case "$APP_LABEL" in
             'Amin Pocket GBA'*) ;;
-            *) echo "Unexpected application label: $LABEL" >&2; exit 1 ;;
+            *) echo "Unexpected application label: $APP_LABEL" >&2; exit 1 ;;
           esac
 
+      - name: Validate APK permissions
+        shell: bash
+        run: |
+          set -euxo pipefail
           for permission in \
             android.permission.INTERNET \
             android.permission.ACCESS_NETWORK_STATE \
             android.permission.VIBRATE \
             android.permission.REQUEST_INSTALL_PACKAGES
           do
-            grep -q "$permission" /tmp/apk-permissions.txt
+            grep -Fq "$permission" /tmp/apk-permissions.txt
           done
-          ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
-          ! grep -q 'android.permission.CAMERA' /tmp/apk-permissions.txt
+          ! grep -Fq 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
+          ! grep -Fq 'android.permission.CAMERA' /tmp/apk-permissions.txt
 
+      - name: Validate APK components
+        shell: bash
+        run: |
+          set -euxo pipefail
           for component in \
             AminPocketApplication \
             LaunchGateActivity \
@@ -228,22 +254,27 @@ jobs:
             PermissionCenterActivity \
             UpdateHubActivity
           do
-            grep -q "$component" /tmp/apk-manifest.txt
+            grep -Fq "$component" /tmp/apk-manifest.txt
           done
 
           if test -s android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandActivity.java; then
-            grep -q 'VoiceCommandActivity' /tmp/apk-manifest.txt
-            grep -q 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
+            grep -Fq 'VoiceCommandActivity' /tmp/apk-manifest.txt
+            grep -Fq 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
           fi
 
-          unzip -Z1 "$APK" > /tmp/apk-files.txt
+      - name: Validate APK assets
+        shell: bash
+        run: |
+          set -euxo pipefail
           grep -Fxq 'assets/bootstrap/index.html' /tmp/apk-files.txt
-          "$APKSIGNER" verify --verbose "$APK"
 
-          SAFE_VERSION="$(printf '%s' "$VERSION_NAME" | tr -cs 'A-Za-z0-9._-' '-')"
-          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "safe_version=$SAFE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+      - name: Verify APK signature
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" verify --verbose "$APK"
 
       - name: Package CI-only artifact
         shell: bash
