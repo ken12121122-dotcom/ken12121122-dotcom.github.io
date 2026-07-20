@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class VoiceCommandParser {
+    public static final double MIN_CONFIDENCE = 0.45d;
+
     public static final class Result {
         public enum Status { MATCHED, AMBIGUOUS, NO_MATCH }
 
@@ -58,6 +60,9 @@ public final class VoiceCommandParser {
         String normalized = normalize(transcript);
         if (normalized.isEmpty()) {
             return new Result(Result.Status.NO_MATCH, null, normalized, "沒有聽到可辨識的指令");
+        }
+        if (recognizerConfidence >= 0d && recognizerConfidence < MIN_CONFIDENCE) {
+            return new Result(Result.Status.NO_MATCH, null, normalized, "辨識信心不足，請再說一次");
         }
 
         Factory exact = aliases.get(normalized);
