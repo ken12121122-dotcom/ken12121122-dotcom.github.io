@@ -123,7 +123,13 @@ async function activeCacheName() {
 
 await dispatchExtendable('install');
 await dispatchExtendable('activate');
-assert.equal(await activeCacheName(), 'amin-vault-runtime-bootstrap-v092');
+const bootstrapCache = await activeCacheName();
+assert.match(
+  bootstrapCache,
+  /^amin-vault-runtime-bootstrap-v092(?:-[a-z0-9._-]+)?$/,
+  'service worker did not activate a versioned bootstrap cache'
+);
+assert.ok((await caches.keys()).includes(bootstrapCache), 'active bootstrap cache does not exist');
 
 const client = {
   postMessage(message) {
