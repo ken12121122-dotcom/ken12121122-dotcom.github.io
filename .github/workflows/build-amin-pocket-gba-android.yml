@@ -61,11 +61,10 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
-      - name: Validate source and release contracts
+      - name: Validate JavaScript and JSON syntax
         shell: bash
         run: |
           set -euxo pipefail
-
           for file in \
             amin-vault/gba.js \
             amin-vault/gba-save-guard.js \
@@ -75,13 +74,17 @@ jobs:
             amin-vault/runtime-updater.js \
             amin-vault/sw.js
           do
+            echo "Checking $file"
             test -s "$file"
             node --check "$file"
           done
-
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
 
+      - name: Validate manifest and Android contracts
+        shell: bash
+        run: |
+          set -euxo pipefail
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -92,26 +95,29 @@ jobs:
           native = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
           gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
 
-          assert runtime.get('runtimeVersion'), 'runtimeVersion is required'
-          assert isinstance(runtime.get('optionalCapabilities', []), list)
+          print('runtimeVersion:', runtime.get('runtimeVersion'))
+          print('native release:', native.get('latestVersionName'), native.get('latestVersionCode'))
 
-          assert native.get('format') == 'amin-native-release-manifest'
-          assert native.get('channel') == 'bridge'
-          assert native.get('packageId') == 'com.amin.pocketgba'
-          assert isinstance(native.get('enabled'), bool)
-          assert isinstance(native.get('latestVersionCode'), int)
-          assert native.get('latestVersionCode', 0) >= native.get('minimumSupportedVersionCode', 0)
-          assert native.get('minimumAndroidSdk', 0) >= 26
+          assert runtime.get('runtimeVersion'), 'runtimeVersion is required'
+          assert isinstance(runtime.get('optionalCapabilities', []), list), 'optionalCapabilities must be a list'
+
+          assert native.get('format') == 'amin-native-release-manifest', 'invalid native manifest format'
+          assert native.get('channel') == 'bridge', 'native channel must be bridge'
+          assert native.get('packageId') == 'com.amin.pocketgba', 'unexpected packageId'
+          assert isinstance(native.get('enabled'), bool), 'enabled must be boolean'
+          assert isinstance(native.get('latestVersionCode'), int), 'latestVersionCode must be integer'
+          assert native.get('latestVersionCode', 0) >= native.get('minimumSupportedVersionCode', 0), 'latestVersionCode is below minimumSupportedVersionCode'
+          assert native.get('minimumAndroidSdk', 0) >= 26, 'minimumAndroidSdk is below supported floor'
 
           if native['enabled']:
               version_name = native.get('latestVersionName', '')
               apk_url = native.get('apkUrl', '')
               apk_sha = native.get('apkSha256', '')
-              assert version_name.startswith('0.9.2-bridge')
-              assert urlparse(apk_url).scheme == 'https'
-              assert version_name in Path(urlparse(apk_url).path).name
-              assert len(apk_sha) == 64 and all(c in '0123456789abcdef' for c in apk_sha.lower())
-              assert native.get('sizeBytes', 0) > 0
+              assert version_name.startswith('0.9.2-bridge'), 'unexpected native version name'
+              assert urlparse(apk_url).scheme == 'https', 'APK URL must use HTTPS'
+              assert version_name in Path(urlparse(apk_url).path).name, 'APK filename does not contain version name'
+              assert len(apk_sha) == 64 and all(c in '0123456789abcdef' for c in apk_sha.lower()), 'invalid APK SHA-256'
+              assert native.get('sizeBytes', 0) > 0, 'APK size must be positive'
 
           for marker in (
               "applicationId 'com.amin.pocketgba'",
@@ -120,10 +126,16 @@ jobs:
               'bridge {',
               'signingConfig signingConfigs.release',
           ):
-              assert marker in gradle, marker
-          assert 'applicationIdSuffix' not in gradle
+              assert marker in gradle, f'missing Gradle contract: {marker}'
+          assert 'applicationIdSuffix' not in gradle, 'production package must not use applicationIdSuffix'
           PY
 
+      - name: Run JavaScript tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          find tests -maxdepth 1 -type f -name '*.test.mjs' -print
+          test -n "$(find tests -maxdepth 1 -type f -name '*.test.mjs' -print -quit)"
           node --test tests/*.test.mjs
 
       - name: Set up Gradle 8.9
