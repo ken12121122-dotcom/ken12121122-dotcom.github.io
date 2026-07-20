@@ -40,9 +40,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver
-            android:name=".PackageInstallResultReceiver"
-            android:exported="false" />
+        <receiver android:name=".PackageInstallResultReceiver" android:exported="false" />
 
         <service
             android:name=".UniversalControlAccessibilityService"
@@ -52,9 +50,7 @@
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/universal_control_accessibility_service" />
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/universal_control_accessibility_service" />
         </service>
 
         <activity
@@ -94,11 +90,20 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".UniversalControlSetupActivity"
-            android:excludeFromRecents="true"
+        <activity-alias
+            android:name=".VoiceCommandLauncher"
+            android:enabled="true"
             android:exported="true"
-            android:screenOrientation="portrait" />
+            android:icon="@mipmap/ic_launcher"
+            android:label="Amin 語音指令"
+            android:targetActivity=".VoiceCommandActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity android:name=".UniversalControlSetupActivity" android:excludeFromRecents="true" android:exported="true" android:screenOrientation="portrait" />
 
         <activity
             android:name=".PermissionCenterActivity"
@@ -124,10 +129,7 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".NativeUpdateActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+        <activity android:name=".NativeUpdateActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity
             android:name=".MainActivity"
