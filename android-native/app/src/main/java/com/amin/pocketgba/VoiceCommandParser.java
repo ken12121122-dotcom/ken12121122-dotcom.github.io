@@ -37,37 +37,21 @@ public final class VoiceCommandParser {
     private final Map<String, Factory> aliases = new LinkedHashMap<>();
 
     public VoiceCommandParser() {
-        register("開啟控制盤", simple("OVERLAY_OPEN"));
-        register("打開控制盤", simple("OVERLAY_OPEN"));
-        register("關閉控制盤", simple("OVERLAY_CLOSE"));
-        register("收起控制盤", simple("OVERLAY_CLOSE"));
-        register("游標模式", mode("cursor"));
-        register("切換游標模式", mode("cursor"));
-        register("捲動模式", mode("scroll"));
-        register("滾動模式", mode("scroll"));
-        register("切換捲動模式", mode("scroll"));
-        register("返回", simple("SYSTEM_BACK"));
-        register("回上一頁", simple("SYSTEM_BACK"));
-        register("回首頁", simple("SYSTEM_HOME"));
-        register("回到首頁", simple("SYSTEM_HOME"));
-        register("點一下", simple("CURSOR_TAP"));
-        register("點擊", simple("CURSOR_TAP"));
-        register("長按", simple("CURSOR_LONG_PRESS"));
-        register("往上", simple("DIRECTION_UP"));
-        register("向上", simple("DIRECTION_UP"));
-        register("往下", simple("DIRECTION_DOWN"));
-        register("向下", simple("DIRECTION_DOWN"));
-        register("往左", simple("DIRECTION_LEFT"));
-        register("向左", simple("DIRECTION_LEFT"));
-        register("往右", simple("DIRECTION_RIGHT"));
-        register("向右", simple("DIRECTION_RIGHT"));
-        register("開啟遊戲", simple("OPEN_GBA"));
-        register("打開遊戲", simple("OPEN_GBA"));
-        register("開啟遊戲庫", simple("OPEN_GBA"));
-        register("開啟控制器設定", simple("OPEN_CONTROLLER_SETTINGS"));
-        register("控制器設定", simple("OPEN_CONTROLLER_SETTINGS"));
-        register("停止聆聽", simple("VOICE_STOP"));
-        register("停止語音", simple("VOICE_STOP"));
+        registerAliases(simple("OVERLAY_OPEN"), "開啟控制盤", "打開控制盤", "顯示控制盤");
+        registerAliases(simple("OVERLAY_CLOSE"), "關閉控制盤", "收起控制盤", "隱藏控制盤");
+        registerAliases(mode("cursor"), "游標模式", "切換游標模式");
+        registerAliases(mode("scroll"), "捲動模式", "滾動模式", "切換捲動模式");
+        registerAliases(simple("SYSTEM_BACK"), "返回", "回上一頁", "上一頁");
+        registerAliases(simple("SYSTEM_HOME"), "回首頁", "回到首頁", "回桌面", "回到桌面");
+        registerAliases(simple("CURSOR_TAP"), "點一下", "點擊", "按一下");
+        registerAliases(simple("CURSOR_LONG_PRESS"), "長按", "按住");
+        registerAliases(simple("DIRECTION_UP"), "往上", "向上");
+        registerAliases(simple("DIRECTION_DOWN"), "往下", "向下");
+        registerAliases(simple("DIRECTION_LEFT"), "往左", "向左");
+        registerAliases(simple("DIRECTION_RIGHT"), "往右", "向右");
+        registerAliases(simple("OPEN_GBA"), "開啟遊戲", "打開遊戲", "開啟遊戲庫", "打開遊戲庫");
+        registerAliases(simple("OPEN_CONTROLLER_SETTINGS"), "開啟控制器設定", "控制器設定", "打開控制器設定");
+        registerAliases(simple("VOICE_STOP"), "停止聆聽", "停止語音");
     }
 
     public Result parse(String transcript, double recognizerConfidence) {
@@ -90,7 +74,9 @@ public final class VoiceCommandParser {
                     return new Result(Result.Status.AMBIGUOUS, null, normalized, "指令可能有多種意思，請再說一次");
                 }
                 candidate = entry.getValue();
-                candidateAlias = entry.getKey();
+                if (candidateAlias == null || entry.getKey().length() > candidateAlias.length()) {
+                    candidateAlias = entry.getKey();
+                }
             }
         }
 
@@ -106,15 +92,16 @@ public final class VoiceCommandParser {
 
     public static String normalize(String text) {
         if (text == null) return "";
-        String value = Normalizer.normalize(text, Normalizer.Form.NFKC)
+        return Normalizer.normalize(text, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.TAIWAN)
                 .replaceAll("[\\s，。！？、,.!?;；:：\"'「」『』（）()]", "")
                 .trim();
-        return value;
     }
 
-    private void register(String alias, Factory factory) {
-        aliases.put(normalize(alias), factory);
+    private void registerAliases(Factory factory, String... values) {
+        for (String value : values) {
+            aliases.put(normalize(value), factory);
+        }
     }
 
     private static Factory simple(String action) {
