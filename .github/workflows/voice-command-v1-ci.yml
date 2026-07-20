@@ -29,26 +29,26 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Make Gradle wrapper executable
-        working-directory: android-native
-        run: chmod +x gradlew
+      - name: Install Android 35 tools
+        run: yes | sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Run voice parser unit tests
-        working-directory: android-native
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: gradle -p android-native testDebugUnitTest --stacktrace
 
       - name: Compile debug APK
-        working-directory: android-native
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle -p android-native assembleDebug --stacktrace
 
       - name: Run Android lint
-        working-directory: android-native
-        run: ./gradlew lintDebug --stacktrace
+        run: gradle -p android-native lintDebug --stacktrace
 
       - name: Prepare APK file
         if: success()
