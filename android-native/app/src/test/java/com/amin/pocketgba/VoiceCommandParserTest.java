@@ -54,6 +54,20 @@ public final class VoiceCommandParserTest {
     }
 
     @Test
+    public void rejectsExplicitlyLowConfidenceRecognition() {
+        VoiceCommandParser.Result result = parser.parse("回首頁", 0.22d);
+        assertEquals(VoiceCommandParser.Result.Status.NO_MATCH, result.getStatus());
+        assertEquals(null, result.getAction());
+    }
+
+    @Test
+    public void acceptsUnknownConfidenceForOfflineRecognizers() {
+        VoiceCommandParser.Result result = parser.parse("回首頁", -1d);
+        assertEquals(VoiceCommandParser.Result.Status.MATCHED, result.getStatus());
+        assertEquals("SYSTEM_HOME", result.getAction().getAction());
+    }
+
+    @Test
     public void rejectsUnknownCommand() {
         VoiceCommandParser.Result result = parser.parse("幫我訂一杯咖啡", 0.99d);
         assertEquals(VoiceCommandParser.Result.Status.NO_MATCH, result.getStatus());
