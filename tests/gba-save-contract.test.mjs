@@ -81,7 +81,7 @@ test('migration UI explains the safe side-by-side flow', () => {
   assert.match(html, /確認進度正確後/);
 });
 
-test('runtime manifest retains save, migration and live-channel capabilities', () => {
+test('runtime manifest retains current save, migration and live-channel capabilities', () => {
   assert.equal(runtimeManifest.format, 'amin-runtime-manifest');
   assert.match(runtimeManifest.runtimeVersion, /^0\.9\.2-rc\d+$/);
   assert.ok(Array.isArray(runtimeManifest.assets) && runtimeManifest.assets.length > 0);
@@ -91,8 +91,7 @@ test('runtime manifest retains save, migration and live-channel capabilities', (
     'save-vault-v1',
     'native-save-vault-v1',
     'legacy-save-migration-v1',
-    'rom-object-url-v2',
-    'emulatorjs-pinned-4.2.3',
+    'apk-bundled-emulatorjs-4.2.3',
     'live-runtime-channel-v1'
   ]) {
     assert.ok(runtimeManifest.optionalCapabilities.includes(capability), capability);
