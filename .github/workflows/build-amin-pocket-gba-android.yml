@@ -236,7 +236,8 @@ jobs:
             grep -q 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
           fi
 
-          unzip -l "$APK" | grep -q 'assets/bootstrap/index.html'
+          unzip -Z1 "$APK" > /tmp/apk-files.txt
+          grep -Fxq 'assets/bootstrap/index.html' /tmp/apk-files.txt
           "$APKSIGNER" verify --verbose "$APK"
 
           SAFE_VERSION="$(printf '%s' "$VERSION_NAME" | tr -cs 'A-Za-z0-9._-' '-')"
