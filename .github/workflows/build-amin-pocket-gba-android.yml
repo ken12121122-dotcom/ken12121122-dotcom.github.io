@@ -5,13 +5,27 @@ on:
   push:
     paths:
       - 'android-native/**'
-      - 'amin-vault/**'
+      - 'amin-vault/gba*.css'
+      - 'amin-vault/gba*.js'
+      - 'amin-vault/gba*.html'
+      - 'amin-vault/amin-*.js'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/native-release-manifest.json'
+      - 'amin-vault/sw.js'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
   pull_request:
     paths:
       - 'android-native/**'
-      - 'amin-vault/**'
+      - 'amin-vault/gba*.css'
+      - 'amin-vault/gba*.js'
+      - 'amin-vault/gba*.html'
+      - 'amin-vault/amin-*.js'
+      - 'amin-vault/runtime-*.js'
+      - 'amin-vault/runtime-*.json'
+      - 'amin-vault/native-release-manifest.json'
+      - 'amin-vault/sw.js'
       - 'tests/*.mjs'
       - '.github/workflows/build-amin-pocket-gba-android.yml'
 
@@ -23,14 +37,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-update-bridge:
+  discover-js-tests:
+    name: Discover JavaScript tests
     runs-on: ubuntu-latest
-    timeout-minutes: 50
-    env:
-      AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
-      AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
-      AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
-      AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: List test files
+        id: list
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          files = sorted(str(path) for path in Path('tests').glob('*.test.mjs'))
+          if not files:
+              raise SystemExit('No tests/*.test.mjs files found')
+          print('files=' + json.dumps(files, separators=(',', ':')))
+          PY
+
+  js-tests:
+    name: JS test · ${{ matrix.file }}
+    needs: discover-js-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJSON(needs.discover-js-tests.outputs.files) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Run ${{ matrix.file }}
+        run: node --test "${{ matrix.file }}"
+
+  android-ci:
+    name: Android build, lint and APK inspection
+    needs: js-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -46,196 +94,208 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Android 35 tools
+        shell: bash
         run: |
           set -euxo pipefail
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 
-      - name: Prepare permanent signing when configured
-        id: signing
-        run: |
-          set -euo pipefail
-          if [[ -n "${AMIN_KEYSTORE_BASE64:-}" \
-             && -n "${AMIN_KEYSTORE_PASSWORD:-}" \
-             && -n "${AMIN_KEY_ALIAS:-}" \
-             && -n "${AMIN_KEY_PASSWORD:-}" ]]; then
-            KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
-            printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-            test -s "$KEYSTORE_PATH"
-            echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Bundle official EmulatorJS 4.2.3 and mGBA core
+      - name: Validate JavaScript and JSON syntax
+        shell: bash
         run: |
           set -euxo pipefail
-          ARCHIVE="$RUNNER_TEMP/emulatorjs-v4.2.3.tar.gz"
-          EXTRACT="$RUNNER_TEMP/emulatorjs-v4.2.3"
-          MIN_ZIP="$RUNNER_TEMP/emulator.min.zip"
-          TARGET='android-native/app/src/main/assets/emulator'
-
-          curl --fail --location --retry 4 --retry-delay 2 \
-            'https://codeload.github.com/EmulatorJS/EmulatorJS/tar.gz/refs/tags/v4.2.3' \
-            --output "$ARCHIVE"
-          rm -rf "$EXTRACT" "$TARGET"
-          mkdir -p "$EXTRACT" "$TARGET/cores"
-          tar -xzf "$ARCHIVE" -C "$EXTRACT" --strip-components=1
-          cp -a "$EXTRACT/data/." "$TARGET/"
-          cp "$EXTRACT/LICENSE" "$TARGET/EMULATORJS-LICENSE.txt"
-
-          curl --fail --location --retry 4 --retry-delay 2 \
-            'https://cdn.emulatorjs.org/4.2.3/data/emulator.min.zip' \
-            --output "$MIN_ZIP"
-          unzip -o "$MIN_ZIP" -d "$TARGET"
-
-          curl --fail --location --retry 4 --retry-delay 2 \
-            'https://cdn.emulatorjs.org/4.2.3/data/cores/mgba-wasm.data' \
-            --output "$TARGET/cores/mgba-wasm.data"
-
-          test -s "$TARGET/loader.js"
-          test -s "$TARGET/emulator.min.js"
-          test -s "$TARGET/emulator.min.css"
-          test -s "$TARGET/cores/mgba-wasm.data"
-          stat -c '%n %s bytes' \
-            "$TARGET/emulator.min.js" \
-            "$TARGET/emulator.min.css" \
-            "$TARGET/cores/mgba-wasm.data"
-          du -sh "$TARGET"
-
-      - name: Validate source files
-        run: |
-          set -euxo pipefail
-          node --check amin-vault/gba.js
-          node --check amin-vault/gba-native-vault-v2.js
-          node --check amin-vault/gba-reliability.js
-          node --check amin-vault/gba-reliability-ui.js
-          node --check amin-vault/amin-error-reporter.js
-          node --check amin-vault/runtime-updater.js
-          node --check amin-vault/sw.js
+          for file in \
+            amin-vault/gba.js \
+            amin-vault/gba-save-guard.js \
+            amin-vault/gba-save-migration.js \
+            amin-vault/amin-backup-v2.js \
+            amin-vault/amin-diagnostics.js \
+            amin-vault/runtime-updater.js \
+            amin-vault/sw.js
+          do
+            echo "Checking $file"
+            test -s "$file"
+            node --check "$file"
+          done
           python3 -m json.tool amin-vault/runtime-manifest.json >/dev/null
           python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
-          grep -q 'class LaunchGateActivity' android-native/app/src/main/java/com/amin/pocketgba/LaunchGateActivity.java
-          grep -q 'class NativeSaveVaultBridge' android-native/app/src/main/java/com/amin/pocketgba/NativeSaveVaultBridge.java
-          grep -q 'class NativeCartridgeVaultBridge' android-native/app/src/main/java/com/amin/pocketgba/NativeCartridgeVaultBridge.java
-          grep -q 'class NativeLocalContentRouter' android-native/app/src/main/java/com/amin/pocketgba/NativeLocalContentRouter.java
-          grep -q 'class NativeContentWebViewClient' android-native/app/src/main/java/com/amin/pocketgba/NativeContentWebViewClient.java
-          grep -q 'class NativeDiagnosticsBridge' android-native/app/src/main/java/com/amin/pocketgba/NativeDiagnosticsBridge.java
-          grep -q 'AminNativeCartridgeVault' android-native/app/src/main/java/com/amin/pocketgba/LifecycleSafeWebView.java
-          grep -q 'android:name=".LaunchGateActivity"' android-native/app/src/main/AndroidManifest.xml
-          grep -q 'android:scheme="amin-home" android:host="open"' android-native/app/src/main/AndroidManifest.xml
-          grep -q 'android:launchMode="singleTask"' android-native/app/src/main/AndroidManifest.xml
+
+      - name: Validate manifest and Android contracts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          root = Path('amin-vault')
+          runtime = json.loads((root / 'runtime-manifest.json').read_text(encoding='utf-8'))
+          native = json.loads((root / 'native-release-manifest.json').read_text(encoding='utf-8'))
+          gradle = Path('android-native/app/build.gradle').read_text(encoding='utf-8')
+
+          print('runtimeVersion:', runtime.get('runtimeVersion'))
+          print('native release:', native.get('latestVersionName'), native.get('latestVersionCode'))
+
+          assert runtime.get('runtimeVersion'), 'runtimeVersion is required'
+          assert isinstance(runtime.get('optionalCapabilities', []), list), 'optionalCapabilities must be a list'
+          assert native.get('format') == 'amin-native-release-manifest', 'invalid native manifest format'
+          assert native.get('channel') == 'bridge', 'native channel must be bridge'
+          assert native.get('packageId') == 'com.amin.pocketgba', 'unexpected packageId'
+          assert isinstance(native.get('enabled'), bool), 'enabled must be boolean'
+          assert isinstance(native.get('latestVersionCode'), int), 'latestVersionCode must be integer'
+          assert native.get('latestVersionCode', 0) >= native.get('minimumSupportedVersionCode', 0), 'latestVersionCode is below minimumSupportedVersionCode'
+          assert native.get('minimumAndroidSdk', 0) >= 26, 'minimumAndroidSdk is below supported floor'
+
+          if native['enabled']:
+              version_name = native.get('latestVersionName', '')
+              apk_url = native.get('apkUrl', '')
+              apk_sha = native.get('apkSha256', '')
+              assert version_name.startswith('0.9.2-bridge'), 'unexpected native version name'
+              assert urlparse(apk_url).scheme == 'https', 'APK URL must use HTTPS'
+              assert version_name in Path(urlparse(apk_url).path).name, 'APK filename does not contain version name'
+              assert len(apk_sha) == 64 and all(c in '0123456789abcdef' for c in apk_sha.lower()), 'invalid APK SHA-256'
+              assert native.get('sizeBytes', 0) > 0, 'APK size must be positive'
+
+          for marker in (
+              "applicationId 'com.amin.pocketgba'",
+              'compileSdk 35',
+              'targetSdk 35',
+              'bridge {',
+              'signingConfig signingConfigs.release',
+          ):
+              assert marker in gradle, f'missing Gradle contract: {marker}'
+          assert 'applicationIdSuffix' not in gradle, 'production package must not use applicationIdSuffix'
+          PY
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Prepare Bridge 10 label
-        run: |
-          set -euxo pipefail
-          sed -i 's/Amin Pocket GBA Bridge 0.9.2 B3/Amin Pocket GBA Bridge 0.9.2 B10/g' android-native/app/build.gradle
-
-      - name: Build and lint Bridge 10
+      - name: Run unit tests, build and lint
+        shell: bash
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=106 \
-            -PAMIN_PREVIEW_SUFFIX=-bridge10 \
+            :app:testDebugUnitTest \
             :app:assembleDebug \
             :app:lintDebug
 
-      - name: Inspect Bridge 10 APK
+      - name: Prepare APK inspection data
+        id: inspect
+        shell: bash
         run: |
           set -euxo pipefail
           APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
-          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
-          grep -q "package: name='com.amin.pocketgba' versionCode='106' versionName='0.9.2-bridge10'" /tmp/apk-badging.txt
-          grep -q "application-label:'Amin Pocket GBA Bridge 0.9.2 B10'" /tmp/apk-badging.txt
-          "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
-          grep -q 'android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION' /tmp/apk-permissions.txt
-          grep -q 'android.permission.POST_NOTIFICATIONS' /tmp/apk-permissions.txt
-          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
-          grep -q 'LaunchGateActivity' /tmp/apk-manifest.txt
-          grep -q 'amin-home' /tmp/apk-manifest.txt
-          grep -q 'ControlCenterActivity' /tmp/apk-manifest.txt
-          unzip -l "$APK" | tee /tmp/apk-files.txt
-          grep -q 'assets/emulator/loader.js' /tmp/apk-files.txt
-          grep -q 'assets/emulator/emulator.min.js' /tmp/apk-files.txt
-          grep -q 'assets/emulator/emulator.min.css' /tmp/apk-files.txt
-          grep -q 'assets/emulator/cores/mgba-wasm.data' /tmp/apk-files.txt
-          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/apk-signing.txt
-          stat -c 'APK size: %s bytes' "$APK"
 
-      - name: Package Bridge 10 artifact
-        id: package
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee /tmp/apk-badging.txt
+          "$AAPT" dump permissions "$APK" | tee /tmp/apk-permissions.txt
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee /tmp/apk-manifest.txt
+          unzip -Z1 "$APK" > /tmp/apk-files.txt
+
+          PACKAGE_NAME="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
+          VERSION_CODE="$(sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
+          VERSION_NAME="$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" /tmp/apk-badging.txt | head -n 1)"
+          LABEL="$(sed -n "s/^application-label:'\(.*\)'/\1/p" /tmp/apk-badging.txt | head -n 1)"
+          SAFE_VERSION="$(printf '%s' "$VERSION_NAME" | tr -cs 'A-Za-z0-9._-' '-')"
+
+          printf 'APK identity: package=%s versionName=%s versionCode=%s label=%s\n' \
+            "$PACKAGE_NAME" "$VERSION_NAME" "$VERSION_CODE" "$LABEL"
+          echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+          echo "safe_version=$SAFE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate APK identity
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.inspect.outputs.package_name }}
+          VERSION_CODE: ${{ steps.inspect.outputs.version_code }}
+          VERSION_NAME: ${{ steps.inspect.outputs.version_name }}
+          APP_LABEL: ${{ steps.inspect.outputs.label }}
+        run: |
+          set -euxo pipefail
+          test "$PACKAGE_NAME" = 'com.amin.pocketgba'
+          test -n "$VERSION_CODE"
+          test -n "$VERSION_NAME"
+          case "$APP_LABEL" in
+            'Amin Pocket GBA'*) ;;
+            *) echo "Unexpected application label: $APP_LABEL" >&2; exit 1 ;;
+          esac
+
+      - name: Validate APK permissions
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for permission in \
+            android.permission.INTERNET \
+            android.permission.ACCESS_NETWORK_STATE \
+            android.permission.VIBRATE \
+            android.permission.REQUEST_INSTALL_PACKAGES
+          do
+            grep -Fq "$permission" /tmp/apk-permissions.txt
+          done
+          ! grep -Fq 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
+          ! grep -Fq 'android.permission.CAMERA' /tmp/apk-permissions.txt
+
+      - name: Validate APK components
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for component in \
+            AminPocketApplication \
+            ControlCenterActivity \
+            PermissionCenterActivity \
+            UpdateHubActivity \
+            NativeUpdateActivity \
+            MainActivity
+          do
+            grep -Fq "$component" /tmp/apk-manifest.txt
+          done
+
+          if test -s android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandActivity.java; then
+            grep -Fq 'VoiceCommandActivity' /tmp/apk-manifest.txt
+            grep -Fq 'android.permission.RECORD_AUDIO' /tmp/apk-permissions.txt
+          fi
+
+      - name: Validate APK assets
+        shell: bash
+        run: |
+          set -euxo pipefail
+          grep -Fxq 'assets/bootstrap/index.html' /tmp/apk-files.txt
+
+      - name: Verify APK signature
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" verify --verbose "$APK"
+
+      - name: Package CI-only artifact
+        shell: bash
         run: |
           set -euxo pipefail
           mkdir -p dist
-          if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge10.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge10'
-            STATUS='PERMANENT SIGNING ENABLED: Native Cartridge Vault v2, Android .sav/.bak, and bundled EmulatorJS 4.2.3 mGBA.'
-          else
-            FILE='Amin-Pocket-GBA-v0.9.2-bridge10-CI-ONLY.apk'
-            ARTIFACT='Amin-Pocket-GBA-v0.9.2-bridge10-CI-ONLY-NOT-UPDATABLE'
-            STATUS='CI DEBUG SIGNING ONLY.'
-          fi
+          FILE="Amin-Pocket-GBA-${{ steps.inspect.outputs.safe_version }}-CI-${GITHUB_RUN_ID}.apk"
           cp android-native/app/build/outputs/apk/debug/app-debug.apk "dist/$FILE"
-          printf '%s\n' "$STATUS" > dist/SIGNING_STATUS.txt
-          cp /tmp/apk-signing.txt dist/APK_SIGNING_CERTIFICATE.txt
+          printf '%s\n' \
+            'CI DEBUG ARTIFACT ONLY' \
+            'This artifact is not approved for the native update manifest or production distribution.' \
+            "Version: ${{ steps.inspect.outputs.version_name }} (${{ steps.inspect.outputs.version_code }})" \
+            > dist/SIGNING_STATUS.txt
           cd dist
           sha256sum "$FILE" > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
-          echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Bridge 10 APK
+      - name: Upload CI APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.package.outputs.artifact_name }}
+          name: Amin-Pocket-GBA-${{ steps.inspect.outputs.safe_version }}-CI-${{ github.run_id }}
           path: dist/
           if-no-files-found: error
-          retention-days: 30
-
-      - name: Build Play internal testing AAB code 107
-        if: steps.signing.outputs.ready == 'true'
-        run: |
-          set -euxo pipefail
-          gradle --no-daemon --console=plain -p android-native \
-            -PAMIN_VERSION_CODE=107 \
-            :app:bundleRelease
-
-      - name: Package Play internal testing bundle
-        if: steps.signing.outputs.ready == 'true'
-        run: |
-          set -euxo pipefail
-          BUNDLE='android-native/app/build/outputs/bundle/release/app-release.aab'
-          test -s "$BUNDLE"
-          jarsigner -verify -verbose -certs "$BUNDLE" | tee /tmp/aab-signing.txt
-          mkdir -p dist-play
-          cp "$BUNDLE" dist-play/Amin-Pocket-GBA-v0.9.2-code107-internal.aab
-          keytool -exportcert -rfc \
-            -keystore "$AMIN_KEYSTORE_PATH" \
-            -storepass "$AMIN_KEYSTORE_PASSWORD" \
-            -alias "$AMIN_KEY_ALIAS" \
-            -file dist-play/amin-app-signing-certificate.pem
-          keytool -list -v \
-            -keystore "$AMIN_KEYSTORE_PATH" \
-            -storepass "$AMIN_KEYSTORE_PASSWORD" \
-            -alias "$AMIN_KEY_ALIAS" > dist-play/amin-signing-fingerprints.txt
-          cp /tmp/aab-signing.txt dist-play/AAB_SIGNING_REPORT.txt
-          cd dist-play
-          sha256sum Amin-Pocket-GBA-v0.9.2-code107-internal.aab > SHA256SUMS.txt
-          sha256sum -c SHA256SUMS.txt
-
-      - name: Upload Play internal testing package
-        if: steps.signing.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Amin-Pocket-GBA-Play-Internal-code107
-          path: dist-play/
-          if-no-files-found: error
-          retention-days: 30
+          retention-days: 14
