@@ -102,7 +102,7 @@ public final class ControlCenterActivity extends Activity {
                 text("遊戲控制台", 30f, true, COLOR_TEXT),
                 new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         );
-        titleRow.addView(chip("BRIDGE 1"), wrapContent());
+        titleRow.addView(chip(BuildConfig.VERSION_NAME), wrapContent());
 
         TextView intro = text(
                 "首頁保持直向；進入模擬器才切換橫向。Bridge 會從 GitHub Pages 接收新的遊戲 Runtime。",
@@ -126,6 +126,17 @@ public final class ControlCenterActivity extends Activity {
         LinearLayout.LayoutParams playParams = fullWidth();
         playParams.topMargin = dp(24);
         content.addView(playCard, playParams);
+
+        LinearLayout voiceCard = actionCard(
+                "🎤",
+                "Amin 語音指令",
+                "按住說話，控制首頁、游標、捲動與全域控制盤",
+                "開啟",
+                false
+        );
+        voiceCard.setContentDescription("開啟 Amin 語音指令");
+        voiceCard.setOnClickListener(view -> startActivity(new Intent(this, VoiceCommandActivity.class)));
+        content.addView(voiceCard, cardParams());
 
         LinearLayout statusHeader = new LinearLayout(this);
         statusHeader.setOrientation(LinearLayout.HORIZONTAL);
@@ -207,7 +218,7 @@ public final class ControlCenterActivity extends Activity {
         addPlainRow(technicalDetails, "Runtime 來源", "GitHub Pages Live Channel");
         addPlainRow(technicalDetails, "原生套件", BuildConfig.APPLICATION_ID);
         addPlainRow(technicalDetails, "發布通道", BuildConfig.RELEASE_CHANNEL);
-        addPlainRow(technicalDetails, "原生 APK", "永久簽章設定前保持停用");
+        addPlainRow(technicalDetails, "原生 APK", "由簽章與發布清單驗證");
         TextView technicalNote = text(
                 "Runtime 更新會先完整下載並驗證資源，再切換快取；失敗時保留上一個可用版本。",
                 12f,
@@ -220,7 +231,7 @@ public final class ControlCenterActivity extends Activity {
         content.addView(technicalDetails, cardParams());
 
         TextView footer = text(
-                "v0.9.2 Bridge 1 · Runtime 可熱更新 · APK 通道待永久簽章",
+                BuildConfig.VERSION_NAME + " · Runtime 可熱更新 · APK 更新需完整驗證",
                 12f,
                 false,
                 COLOR_WARNING
