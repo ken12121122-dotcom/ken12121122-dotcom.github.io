@@ -52,16 +52,20 @@ public final class ControlCenterActivityTest {
             View root = activity.findViewById(android.R.id.content);
             assertTrue(containsText(root, "遊戲控制台"));
             assertTrue(containsText(root, "開啟 GBA 遊戲庫"));
+            assertTrue(containsText(root, "Amin 語音指令"));
             assertTrue(containsText(root, "目前狀態"));
             assertTrue(containsText(root, "權限與裝置"));
             assertTrue(containsText(root, "版本與更新"));
             assertTrue(containsText(root, "顯示系統詳細資訊"));
+            assertTrue(containsText(root, BuildConfig.VERSION_NAME));
         });
     }
 
     @Test
     public void primaryCardsRouteToRealActivities() {
         intending(hasComponent(MainActivity.class.getName()))
+                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
+        intending(hasComponent(VoiceCommandActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
         intending(hasComponent(PermissionCenterActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
@@ -70,6 +74,9 @@ public final class ControlCenterActivityTest {
 
         onView(withContentDescription("進入 Pokémon GBA 遊戲庫")).perform(scrollTo(), click());
         intended(hasComponent(MainActivity.class.getName()));
+
+        onView(withContentDescription("開啟 Amin 語音指令")).perform(scrollTo(), click());
+        intended(hasComponent(VoiceCommandActivity.class.getName()));
 
         onView(withContentDescription("開啟權限控制中心")).perform(scrollTo(), click());
         intended(hasComponent(PermissionCenterActivity.class.getName()));
