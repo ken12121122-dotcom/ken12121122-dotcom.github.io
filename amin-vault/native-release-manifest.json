@@ -4,20 +4,20 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge17",
-  "latestVersionCode": 113,
+  "latestVersionName": "0.9.2-bridge16",
+  "latestVersionCode": 112,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge17.apk",
-  "apkSha256": "6c203fae26bae1609748db81f8e389e7c0eba273d88d777dda0e3cd6a9be008f",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge16.apk",
+  "apkSha256": "605ae4560a5cb2cf84019058527020cfbc4da0ae0f901c4611f210414dab1a3b",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 3489895,
-  "publishedAt": "2026-07-20T22:23:46+08:00",
+  "sizeBytes": 4177002,
+  "publishedAt": "2026-07-19T19:29:31+08:00",
   "mandatory": false,
   "releaseNotes": [
-    "新增 Amin 語音指令入口，採使用者主動啟動的按住說話流程。",
-    "支援開關控制盤、游標與捲動模式、返回、首頁、開啟 GBA 與控制器設定。",
-    "語音功能整合於原 Amin Pocket GBA，維持正式套件 com.amin.pocketgba。",
-    "Runtime 維持 0.9.2-rc19。"
+    "新增游標位移距離設定，範圍 2 至 64 dp，預設 16 dp，並提供 8、16、32 dp 快速選項。",
+    "方向鍵長按改為連續移動；在捲動模式下則會連續滑動畫面。",
+    "長按 Select 可在游標模式與捲動模式之間切換，切換時顯示短暫提示。",
+    "保留完整 GBA 十字鍵、喚醒球、自動淡化與按鍵自動收合。"
   ]
 }
