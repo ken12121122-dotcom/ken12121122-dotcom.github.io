@@ -30,61 +30,58 @@ jobs:
 
           path = Path('android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java')
           text = path.read_text(encoding='utf-8')
-          old = '''        ExecutionResult result = execute(parsed.getAction());
-          setPhase(
-                  result.success
-                          ? FloatingVoicePresentation.Phase.SUCCESS
-                          : FloatingVoicePresentation.Phase.ERROR
-          );
-          showPanel(
-                  result.success ? "辨識完成" : "指令未執行",
-                  FloatingVoicePresentation.heardText(transcript),
-                  FloatingVoicePresentation.resultText(result.message),
-                  result.success
-          );
-          scheduleFinishedState();'''
-          new = '''        AminAction parsedAction = parsed.getAction();
-          AminAction voiceAction = new AminAction(
-                  parsedAction.getAction(),
-                  parsedAction.getParameters(),
-                  "floating_voice",
-                  parsedAction.getConfidence(),
-                  parsedAction.getRequestId(),
-                  parsedAction.getCreatedAt()
-          );
-          AminInputGateway gateway = AminInputGateway.get(service);
-          if ("VOICE_BUBBLE_CLOSE".equals(voiceAction.getAction())) {
-              setPhase(FloatingVoicePresentation.Phase.SUCCESS);
-              showPanel(
-                      "辨識完成",
-                      FloatingVoicePresentation.heardText(transcript),
-                      FloatingVoicePresentation.resultText("已關閉語音浮動按鈕"),
-                      true
-              );
-              mainHandler.postDelayed(
-                      () -> gateway.execute(voiceAction, ignored -> { }),
-                      1200L
-              );
-              return;
-          }
-          gateway.execute(voiceAction, result -> mainHandler.post(() -> {
-              boolean success = result.isSuccess();
-              setPhase(
-                      success
-                              ? FloatingVoicePresentation.Phase.SUCCESS
-                              : FloatingVoicePresentation.Phase.ERROR
-              );
-              showPanel(
-                      success ? "辨識完成" : "指令未執行",
-                      FloatingVoicePresentation.heardText(transcript),
-                      FloatingVoicePresentation.resultText(result.getMessage()),
-                      success
-              );
-              scheduleFinishedState();
-          }));'''
-          if text.count(old) != 1:
-              raise SystemExit('Floating voice legacy execution block not found exactly once')
-          path.write_text(text.replace(old, new), encoding='utf-8')
+          pattern = re.compile(
+              r'        ExecutionResult result = execute\(parsed\.getAction\(\)\);\n'
+              r'        setPhase\(\n.*?\n'
+              r'        scheduleFinishedState\(\);',
+              re.S,
+          )
+          lines = [
+              '        AminAction parsedAction = parsed.getAction();',
+              '        AminAction voiceAction = new AminAction(',
+              '                parsedAction.getAction(),',
+              '                parsedAction.getParameters(),',
+              '                "floating_voice",',
+              '                parsedAction.getConfidence(),',
+              '                parsedAction.getRequestId(),',
+              '                parsedAction.getCreatedAt()',
+              '        );',
+              '        AminInputGateway gateway = AminInputGateway.get(service);',
+              '        if ("VOICE_BUBBLE_CLOSE".equals(voiceAction.getAction())) {',
+              '            setPhase(FloatingVoicePresentation.Phase.SUCCESS);',
+              '            showPanel(',
+              '                    "辨識完成",',
+              '                    FloatingVoicePresentation.heardText(transcript),',
+              '                    FloatingVoicePresentation.resultText("已關閉語音浮動按鈕"),',
+              '                    true',
+              '            );',
+              '            mainHandler.postDelayed(',
+              '                    () -> gateway.execute(voiceAction, ignored -> { }),',
+              '                    1200L',
+              '            );',
+              '            return;',
+              '        }',
+              '        gateway.execute(voiceAction, result -> mainHandler.post(() -> {',
+              '            boolean success = result.isSuccess();',
+              '            setPhase(',
+              '                    success',
+              '                            ? FloatingVoicePresentation.Phase.SUCCESS',
+              '                            : FloatingVoicePresentation.Phase.ERROR',
+              '            );',
+              '            showPanel(',
+              '                    success ? "辨識完成" : "指令未執行",',
+              '                    FloatingVoicePresentation.heardText(transcript),',
+              '                    FloatingVoicePresentation.resultText(result.getMessage()),',
+              '                    success',
+              '            );',
+              '            scheduleFinishedState();',
+              '        }));',
+          ]
+          replacement = '\n'.join(lines)
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Floating voice legacy execution block replacements: {count}')
+          path.write_text(text, encoding='utf-8')
 
           docs_path = Path('AMIN_CONTROL_API_V1.md')
           docs = docs_path.read_text(encoding='utf-8')
@@ -95,7 +92,7 @@ jobs:
               flags=re.S,
           )
           if count != 1:
-              raise SystemExit('Side-by-side documentation section not found exactly once')
+              raise SystemExit(f'Side-by-side documentation section replacements: {count}')
           docs, count = re.subn(
               r'\n可並存測試版的 explicit component 寫法：\n\n```bash\n.*?\n```\n',
               '\n',
@@ -103,7 +100,7 @@ jobs:
               flags=re.S,
           )
           if count != 1:
-              raise SystemExit('Side-by-side component example not found exactly once')
+              raise SystemExit(f'Side-by-side component example replacements: {count}')
           docs_path.write_text(docs, encoding='utf-8')
           PY
           grep -Fq 'AminInputGateway gateway = AminInputGateway.get(service)' android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
