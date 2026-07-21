@@ -1,8 +1,5 @@
 package com.amin.pocketgba;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.text.Normalizer;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -32,28 +29,20 @@ public final class VoiceCommandParser {
         public String getMessage() { return message; }
     }
 
-    private interface Factory {
-        AminAction create(double confidence);
-    }
-
-    private final Map<String, Factory> aliases = new LinkedHashMap<>();
+    private final Map<String, VoiceCommandCatalog.Command> aliases = new LinkedHashMap<>();
 
     public VoiceCommandParser() {
-        registerAliases(simple("OVERLAY_OPEN"), "開啟控制盤", "打開控制盤", "顯示控制盤");
-        registerAliases(simple("OVERLAY_CLOSE"), "關閉控制盤", "收起控制盤", "隱藏控制盤");
-        registerAliases(mode("cursor"), "游標模式", "切換游標模式");
-        registerAliases(mode("scroll"), "捲動模式", "滾動模式", "切換捲動模式");
-        registerAliases(simple("SYSTEM_BACK"), "返回", "回上一頁", "上一頁");
-        registerAliases(simple("SYSTEM_HOME"), "回首頁", "回到首頁", "回桌面", "回到桌面");
-        registerAliases(simple("CURSOR_TAP"), "點一下", "點擊", "按一下");
-        registerAliases(simple("CURSOR_LONG_PRESS"), "長按", "按住");
-        registerAliases(simple("DIRECTION_UP"), "往上", "向上");
-        registerAliases(simple("DIRECTION_DOWN"), "往下", "向下");
-        registerAliases(simple("DIRECTION_LEFT"), "往左", "向左");
-        registerAliases(simple("DIRECTION_RIGHT"), "往右", "向右");
-        registerAliases(simple("OPEN_GBA"), "開啟遊戲", "打開遊戲", "開啟遊戲庫", "打開遊戲庫");
-        registerAliases(simple("OPEN_CONTROLLER_SETTINGS"), "開啟控制器設定", "控制器設定", "打開控制器設定");
-        registerAliases(simple("VOICE_STOP"), "停止聆聽", "停止語音");
+        for (VoiceCommandCatalog.Command command : VoiceCommandCatalog.getCommands()) {
+            for (String phrase : command.getPhrases()) {
+                String normalized = normalize(phrase);
+                VoiceCommandCatalog.Command previous = aliases.put(normalized, command);
+                if (previous != null && !previous.getId().equals(command.getId())) {
+                    throw new IllegalStateException(
+                            "Duplicate voice phrase maps to multiple commands: " + phrase
+                    );
+                }
+            }
+        }
     }
 
     public Result parse(String transcript, double recognizerConfidence) {
@@ -65,17 +54,17 @@ public final class VoiceCommandParser {
             return new Result(Result.Status.NO_MATCH, null, normalized, "辨識信心不足，請再說一次");
         }
 
-        Factory exact = aliases.get(normalized);
+        VoiceCommandCatalog.Command exact = aliases.get(normalized);
         if (exact != null) {
             double confidence = recognizerConfidence < 0d ? 1d : recognizerConfidence;
-            return new Result(Result.Status.MATCHED, exact.create(confidence), normalized, "已辨識");
+            return new Result(Result.Status.MATCHED, exact.createAction(confidence), normalized, "已辨識");
         }
 
-        Factory candidate = null;
+        VoiceCommandCatalog.Command candidate = null;
         String candidateAlias = null;
-        for (Map.Entry<String, Factory> entry : aliases.entrySet()) {
+        for (Map.Entry<String, VoiceCommandCatalog.Command> entry : aliases.entrySet()) {
             if (normalized.contains(entry.getKey()) || entry.getKey().contains(normalized)) {
-                if (candidate != null && candidate != entry.getValue()) {
+                if (candidate != null && !candidate.getId().equals(entry.getValue().getId())) {
                     return new Result(Result.Status.AMBIGUOUS, null, normalized, "指令可能有多種意思，請再說一次");
                 }
                 candidate = entry.getValue();
@@ -88,8 +77,12 @@ public final class VoiceCommandParser {
         if (candidate != null) {
             double base = recognizerConfidence < 0d ? 0.82d : recognizerConfidence;
             double adjusted = Math.min(base, 0.88d);
-            return new Result(Result.Status.MATCHED, candidate.create(adjusted), normalized,
-                    "依照「" + candidateAlias + "」執行");
+            return new Result(
+                    Result.Status.MATCHED,
+                    candidate.createAction(adjusted),
+                    normalized,
+                    "依照「" + candidateAlias + "」執行"
+            );
         }
 
         return new Result(Result.Status.NO_MATCH, null, normalized, "目前不支援這個指令");
@@ -101,27 +94,5 @@ public final class VoiceCommandParser {
                 .toLowerCase(Locale.TAIWAN)
                 .replaceAll("[\\s，。！？、,.!?;；:：\"'「」『』（）()]", "")
                 .trim();
-    }
-
-    private void registerAliases(Factory factory, String... values) {
-        for (String value : values) {
-            aliases.put(normalize(value), factory);
-        }
-    }
-
-    private static Factory simple(String action) {
-        return confidence -> new AminAction(action, new JSONObject(), "voice", confidence);
-    }
-
-    private static Factory mode(String mode) {
-        return confidence -> {
-            JSONObject parameters = new JSONObject();
-            try {
-                parameters.put("mode", mode);
-            } catch (JSONException error) {
-                throw new IllegalStateException(error);
-            }
-            return new AminAction("CONTROL_MODE_SET", parameters, "voice", confidence);
-        };
     }
 }
