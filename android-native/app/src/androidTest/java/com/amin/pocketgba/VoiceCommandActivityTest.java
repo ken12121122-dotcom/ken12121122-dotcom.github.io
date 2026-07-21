@@ -26,7 +26,7 @@ import java.util.Collection;
 @LargeTest
 public final class VoiceCommandActivityTest {
     @Test
-    public void rendersPressToTalkSurfaceWithoutStartingBackgroundListening() {
+    public void rendersPressToTalkAndIndependentFloatingControls() {
         ActivityScenario<VoiceCommandActivity> scenario =
                 ActivityScenario.launch(VoiceCommandActivity.class);
         try {
@@ -34,7 +34,9 @@ public final class VoiceCommandActivityTest {
                 View root = activity.findViewById(android.R.id.content);
                 assertTrue(containsText(root, "Amin 語音指令"));
                 assertTrue(containsText(root, "按住說話"));
-                assertTrue(containsText(root, "第一版不會在背景持續監聽"));
+                assertTrue(containsText(root, "不會在背景持續監聽"));
+                assertTrue(containsText(root, "浮動按鈕"));
+                assertTrue(containsText(root, "個別開啟或關閉"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));
                 assertNotNull(findByContentDescription(
@@ -42,6 +44,8 @@ public final class VoiceCommandActivityTest {
                         "按住開始語音辨識，放開後執行指令"
                 ));
                 assertNotNull(findByContentDescription(root, "查看全部語音指令"));
+                assertNotNull(findByContentDescription(root, "切換語音浮動按鈕"));
+                assertNotNull(findByContentDescription(root, "切換鍵盤浮動按鈕"));
             });
         } finally {
             scenario.close();
@@ -58,7 +62,8 @@ public final class VoiceCommandActivityTest {
                 assertTrue(containsText(root, "語音指令庫"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));
-                assertTrue(containsText(root, "開啟控制盤"));
+                assertTrue(containsText(root, "開啟鍵盤控制"));
+                assertTrue(containsText(root, "關閉語音浮動按鈕"));
                 assertTrue(containsText(root, "回到首頁"));
                 assertTrue(containsText(root, "開啟遊戲庫"));
                 assertTrue(containsText(root, "需全域控制"));
