@@ -1,0 +1,156 @@
+name: Apply separate floating voice controls
+
+on:
+  pull_request:
+    branches:
+      - release/bridge20-floating-voice-fix
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-service:
+    if: github.head_ref == 'feature/separate-floating-voice-control' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Connect separate keyboard and voice overlays
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java')
+          source = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global source
+              if source.count(old) != 1:
+                  raise SystemExit(f'{label}: expected one match, found {source.count(old)}')
+              source = source.replace(old, new, 1)
+
+          replace_once(
+              "    private TextView bubbleOverlay;\n    private WindowManager.LayoutParams bubbleParams;\n",
+              "    private TextView bubbleOverlay;\n    private WindowManager.LayoutParams bubbleParams;\n    private FloatingVoiceController floatingVoiceController;\n",
+              'voice controller field'
+          )
+
+          replace_once(
+              "        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);\n        refreshScreenBounds();\n        cursorX = screenWidth * 0.5f;\n",
+              "        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);\n        refreshScreenBounds();\n        floatingVoiceController = new FloatingVoiceController(this, windowManager);\n        cursorX = screenWidth * 0.5f;\n",
+              'service initialization'
+          )
+
+          replace_once(
+              "        clampAndUpdateBubble();\n        updateGamepadLayout();\n",
+              "        clampAndUpdateBubble();\n        if (floatingVoiceController != null) {\n            floatingVoiceController.onConfigurationChanged();\n        }\n        updateGamepadLayout();\n",
+              'configuration update'
+          )
+
+          replace_once(
+              "        removeOverlays();\n        super.onDestroy();\n",
+              "        if (floatingVoiceController != null) {\n            floatingVoiceController.destroy();\n            floatingVoiceController = null;\n        }\n        removeOverlays();\n        super.onDestroy();\n",
+              'service destroy'
+          )
+
+          replace_once(
+              "    private void applyOverlayEnabled(boolean enabled) {\n        if (!enabled) {\n            removeOverlays();\n            return;\n        }\n        showBubble();\n        hideControls();\n    }\n",
+              "    private void applyOverlayEnabled(boolean enabled) {\n        if (!enabled) {\n            if (floatingVoiceController != null) {\n                floatingVoiceController.hide();\n            }\n            removeOverlays();\n            return;\n        }\n        showBubble();\n        if (floatingVoiceController == null && windowManager != null) {\n            floatingVoiceController = new FloatingVoiceController(this, windowManager);\n        }\n        if (floatingVoiceController != null) {\n            floatingVoiceController.show();\n        }\n        hideControls();\n    }\n",
+              'overlay enabled lifecycle'
+          )
+
+          replace_once(
+              "        bubbleOverlay.setText(\"☰\");\n",
+              "        bubbleOverlay.setText(\"⌨\");\n",
+              'keyboard icon'
+          )
+          replace_once(
+              "        bubbleOverlay.setContentDescription(\"GBA 全域控制喚醒球，點擊展開或收起，長按開啟語音，拖曳可移動\");\n",
+              "        bubbleOverlay.setContentDescription(\"Amin 鍵盤控制浮動按鈕，點一下展開或收起控制盤，拖曳可移動\");\n",
+              'keyboard description'
+          )
+
+          touch_start = source.index("        bubbleOverlay.setOnTouchListener(new View.OnTouchListener() {")
+          touch_end = source.index("\n\n        windowManager.addView(bubbleOverlay, bubbleParams);", touch_start)
+          new_touch = '''        bubbleOverlay.setOnTouchListener(new View.OnTouchListener() {
+              private float downRawX;
+              private float downRawY;
+              private int downWindowX;
+              private int downWindowY;
+              private boolean dragging;
+
+              @Override
+              public boolean onTouch(View view, MotionEvent event) {
+                  switch (event.getActionMasked()) {
+                      case MotionEvent.ACTION_DOWN:
+                          wakeBubble();
+                          markControlsActivity();
+                          downRawX = event.getRawX();
+                          downRawY = event.getRawY();
+                          downWindowX = bubbleParams.x;
+                          downWindowY = bubbleParams.y;
+                          dragging = false;
+                          view.setPressed(true);
+                          return true;
+                      case MotionEvent.ACTION_MOVE:
+                          float dx = event.getRawX() - downRawX;
+                          float dy = event.getRawY() - downRawY;
+                          if (!dragging && (Math.abs(dx) > dp(7) || Math.abs(dy) > dp(7))) {
+                              dragging = true;
+                          }
+                          if (dragging) {
+                              bubbleParams.x = downWindowX + Math.round(dx);
+                              bubbleParams.y = downWindowY + Math.round(dy);
+                              clampAndUpdateBubble();
+                          }
+                          return true;
+                      case MotionEvent.ACTION_UP:
+                          view.setPressed(false);
+                          if (dragging) {
+                              snapBubbleToEdge();
+                          } else {
+                              toggleControls();
+                              view.performClick();
+                          }
+                          scheduleBubbleFade();
+                          return true;
+                      case MotionEvent.ACTION_CANCEL:
+                          view.setPressed(false);
+                          scheduleBubbleFade();
+                          return true;
+                      default:
+                          return true;
+                  }
+              }
+          });'''
+          source = source[:touch_start] + new_touch + source[touch_end:]
+
+          voice_start = source.index("    private void openVoiceCommand() {")
+          voice_end = source.index("    private void ensureGamepadControls() {", voice_start)
+          source = source[:voice_start] + source[voice_end:]
+
+          replace_once(
+              "    private void toggleControls() {\n        if (controlsVisible) {\n            hideControls();\n        } else {\n            showControls();\n        }\n    }\n\n    private void refreshModeVisuals() {\n",
+              "    private void toggleControls() {\n        if (controlsVisible) {\n            hideControls();\n        } else {\n            showControls();\n        }\n    }\n\n    boolean showControlsFromVoice() {\n        showControls();\n        return controlsVisible;\n    }\n\n    boolean hideControlsFromVoice() {\n        hideControls();\n        return !controlsVisible;\n    }\n\n    private void refreshModeVisuals() {\n",
+              'voice control panel bridge'
+          )
+
+          path.write_text(source, encoding='utf-8')
+          PY
+
+      - name: Commit connected service
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java
+          git commit -m 'feat: separate keyboard and tap-to-listen voice overlays'
+          git push origin HEAD:${{ github.head_ref }}
