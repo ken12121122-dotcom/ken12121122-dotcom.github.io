@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/amin-control-api-v1
+  pull_request:
+    branches:
+      - release/bridge22-independent-floating-toggles
   workflow_dispatch:
 
 permissions:
