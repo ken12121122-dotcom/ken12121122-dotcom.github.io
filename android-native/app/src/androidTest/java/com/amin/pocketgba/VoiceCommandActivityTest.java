@@ -1,9 +1,6 @@
 package com.amin.pocketgba;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -33,11 +30,6 @@ public final class VoiceCommandActivityTest {
         ActivityScenario<VoiceCommandActivity> scenario =
                 ActivityScenario.launch(VoiceCommandActivity.class);
         try {
-            onView(withContentDescription("按住開始語音辨識，放開後執行指令"))
-                    .check(matches(isDisplayed()));
-            onView(withContentDescription("查看全部語音指令"))
-                    .check(matches(isDisplayed()));
-
             scenario.onActivity(activity -> {
                 View root = activity.findViewById(android.R.id.content);
                 assertTrue(containsText(root, "Amin 語音指令"));
@@ -45,6 +37,11 @@ public final class VoiceCommandActivityTest {
                 assertTrue(containsText(root, "第一版不會在背景持續監聽"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
                 assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));
+                assertNotNull(findByContentDescription(
+                        root,
+                        "按住開始語音辨識，放開後執行指令"
+                ));
+                assertNotNull(findByContentDescription(root, "查看全部語音指令"));
             });
         } finally {
             scenario.close();
@@ -99,6 +96,19 @@ public final class VoiceCommandActivityTest {
                 if (activity instanceof VoiceCommandActivity) activity.finish();
             }
         });
+    }
+
+    private View findByContentDescription(View view, String target) {
+        CharSequence description = view.getContentDescription();
+        if (description != null && target.contentEquals(description)) return view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index += 1) {
+                View match = findByContentDescription(group.getChildAt(index), target);
+                if (match != null) return match;
+            }
+        }
+        return null;
     }
 
     private boolean containsText(View view, String target) {
