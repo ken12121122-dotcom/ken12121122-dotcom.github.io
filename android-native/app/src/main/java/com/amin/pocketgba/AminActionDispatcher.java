@@ -18,7 +18,6 @@ public final class AminActionDispatcher {
 
         public boolean isSuccess() { return success; }
         public String getMessage() { return message; }
-
         public static DispatchResult ok(String message) { return new DispatchResult(true, message); }
         public static DispatchResult fail(String message) { return new DispatchResult(false, message); }
     }
@@ -37,53 +36,41 @@ public final class AminActionDispatcher {
     private AminActionDispatcher() {}
 
     public static DispatchResult dispatch(Activity activity, AminAction action) {
-        if (activity == null || action == null) {
-            return DispatchResult.fail("缺少可執行的指令");
-        }
-        return dispatch(action, new AndroidActionTarget(activity));
+        if (activity == null || action == null) return DispatchResult.fail("缺少可執行的指令");
+        ExecutionResult result = AminInputGateway.get(activity).executeBlocking(action, 6000L);
+        return result.isSuccess()
+                ? DispatchResult.ok(result.getMessage())
+                : DispatchResult.fail(result.getMessage());
+    }
+
+    public static DispatchResult dispatch(Context context, AminAction action) {
+        if (context == null || action == null) return DispatchResult.fail("缺少可執行的指令");
+        return dispatch(action, new AndroidActionTarget(context));
     }
 
     static DispatchResult dispatch(AminAction action, ActionTarget target) {
-        if (action == null || target == null) {
-            return DispatchResult.fail("缺少可執行的指令");
-        }
-
+        if (action == null || target == null) return DispatchResult.fail("缺少可執行的指令");
         switch (action.getAction()) {
             case "OPEN_GBA":
                 return result(target.openGba(), "已開啟 GBA 遊戲庫", "無法開啟 GBA 遊戲庫");
             case "OPEN_CONTROLLER_SETTINGS":
                 return result(target.openControllerSettings(), "已開啟控制器設定", "無法開啟控制器設定");
             case "OVERLAY_OPEN":
-                return result(
-                        target.openOverlay(),
-                        "已開啟鍵盤浮動按鈕與控制盤",
-                        "請先啟用 Amin 全域控制服務"
-                );
+                return result(target.openOverlay(), "已開啟鍵盤浮動按鈕與控制盤", "請先啟用 Amin 全域控制服務");
             case "OVERLAY_CLOSE":
-                return result(
-                        target.closeOverlay(),
-                        "已關閉控制盤與鍵盤浮動按鈕",
-                        "無法關閉鍵盤控制"
-                );
+                return result(target.closeOverlay(), "已關閉控制盤與鍵盤浮動按鈕", "無法關閉鍵盤控制");
             case "VOICE_BUBBLE_OPEN":
-                return result(
-                        target.openVoiceBubble(),
-                        "已開啟語音浮動按鈕",
-                        "請先啟用 Amin 全域控制服務"
-                );
+                return result(target.openVoiceBubble(), "已開啟語音浮動按鈕", "請先啟用 Amin 全域控制服務");
             case "VOICE_BUBBLE_CLOSE":
-                return result(
-                        target.closeVoiceBubble(),
-                        "已關閉語音浮動按鈕",
-                        "無法關閉語音浮動按鈕"
-                );
+                return result(target.closeVoiceBubble(), "已關閉語音浮動按鈕", "無法關閉語音浮動按鈕");
             case "CONTROL_MODE_SET":
                 String mode = action.getParameters().optString("mode", UniversalControlAccessibilityService.MODE_CURSOR);
-                boolean modeChanged = target.setControlMode(mode);
-                String modeLabel = UniversalControlAccessibilityService.MODE_SCROLL.equals(mode)
-                        ? "已切換捲動模式"
-                        : "已切換游標模式";
-                return result(modeChanged, modeLabel, "無法切換控制模式");
+                return result(
+                        target.setControlMode(mode),
+                        UniversalControlAccessibilityService.MODE_SCROLL.equals(mode)
+                                ? "已切換捲動模式" : "已切換游標模式",
+                        "無法切換控制模式"
+                );
             case "SYSTEM_BACK":
                 return result(target.executeSharedAction(action), "已執行全域返回", "請先啟用 Amin 全域控制服務");
             case "SYSTEM_HOME":
@@ -112,49 +99,46 @@ public final class AminActionDispatcher {
     }
 
     private static final class AndroidActionTarget implements ActionTarget {
-        private final Activity activity;
+        private final Context context;
 
-        private AndroidActionTarget(Activity activity) {
-            this.activity = activity;
+        private AndroidActionTarget(Context context) {
+            this.context = context;
         }
 
         @Override
         public boolean openGba() {
-            activity.startActivity(new Intent(activity, MainActivity.class));
-            return true;
+            return start(new Intent(context, MainActivity.class));
         }
 
         @Override
         public boolean openControllerSettings() {
-            Intent controller = new Intent(Intent.ACTION_VIEW, Uri.parse(
+            return start(new Intent(Intent.ACTION_VIEW, Uri.parse(
                     "https://ken12121122-dotcom.github.io/amin-vault/gba-controller.html"
-            ));
-            activity.startActivity(controller);
-            return true;
+            )));
         }
 
         @Override
         public boolean openOverlay() {
-            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(activity, true);
-            if (!isAccessibilityEnabled(activity)) {
-                activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(context, true);
+            if (!isAccessibilityEnabled(context)) {
+                start(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
                 return false;
             }
-            UniversalControlAccessibilityService.showKeyboardControls(activity);
+            UniversalControlAccessibilityService.showKeyboardControls(context);
             return true;
         }
 
         @Override
         public boolean closeOverlay() {
-            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(activity, false);
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(context, false);
             return true;
         }
 
         @Override
         public boolean openVoiceBubble() {
-            UniversalControlAccessibilityService.setVoiceBubbleEnabled(activity, true);
-            if (!isAccessibilityEnabled(activity)) {
-                activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, true);
+            if (!isAccessibilityEnabled(context)) {
+                start(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
                 return false;
             }
             return true;
@@ -162,29 +146,35 @@ public final class AminActionDispatcher {
 
         @Override
         public boolean closeVoiceBubble() {
-            UniversalControlAccessibilityService.setVoiceBubbleEnabled(activity, false);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, false);
             return true;
         }
 
         @Override
         public boolean setControlMode(String mode) {
-            UniversalControlAccessibilityService.setControlMode(activity, mode);
+            UniversalControlAccessibilityService.setControlMode(context, mode);
             return true;
         }
 
         @Override
         public boolean executeSharedAction(AminAction action) {
-            if (UniversalControlAccessibilityService.executeAminAction(action)) {
-                return true;
-            }
+            if (UniversalControlAccessibilityService.executeAminAction(action)) return true;
             if ("SYSTEM_HOME".equals(action.getAction())) {
                 Intent home = new Intent(Intent.ACTION_MAIN);
                 home.addCategory(Intent.CATEGORY_HOME);
-                home.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                activity.startActivity(home);
-                return true;
+                return start(home);
             }
             return false;
+        }
+
+        private boolean start(Intent intent) {
+            try {
+                if (!(context instanceof Activity)) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                return true;
+            } catch (RuntimeException error) {
+                return false;
+            }
         }
     }
 
