@@ -64,6 +64,15 @@ android {
             buildConfigField 'String', 'RELEASE_CHANNEL', '"debug"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
         }
+        apiTest {
+            initWith debug
+            applicationIdSuffix '.api1test'
+            versionNameSuffix '-api1test'
+            manifestPlaceholders = [appLabel: 'Amin Control API v1 Test']
+            buildConfigField 'String', 'RELEASE_CHANNEL', '"api-test"'
+            buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
+            matchingFallbacks = ['debug']
+        }
         bridge {
             initWith release
             debuggable false
