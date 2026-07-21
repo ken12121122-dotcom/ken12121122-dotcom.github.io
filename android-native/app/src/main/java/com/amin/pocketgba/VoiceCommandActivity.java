@@ -13,6 +13,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -37,11 +38,16 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     }
 
     private void buildUi() {
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(0xfff4f7f5);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setPadding(dp(24), dp(40), dp(24), dp(40));
         root.setBackgroundColor(0xfff4f7f5);
+        scroll.addView(root, matchWrap());
 
         TextView title = new TextView(this);
         title.setText("Amin 語音指令");
@@ -59,6 +65,33 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         descriptionParams.topMargin = dp(12);
         root.addView(description, descriptionParams);
 
+        TextView commandSummary = new TextView(this);
+        commandSummary.setText(
+                "目前支援 " + VoiceCommandCatalog.getCommandCount() + " 個動作 · "
+                        + VoiceCommandCatalog.getPhraseCount() + " 種可說法"
+        );
+        commandSummary.setTextSize(16f);
+        commandSummary.setTextColor(0xff19794b);
+        commandSummary.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams commandSummaryParams = matchWrap();
+        commandSummaryParams.topMargin = dp(16);
+        root.addView(commandSummary, commandSummaryParams);
+
+        Button catalogButton = new Button(this);
+        catalogButton.setText("📖 查看全部 " + VoiceCommandCatalog.getCommandCount() + " 個指令");
+        catalogButton.setTextSize(16f);
+        catalogButton.setAllCaps(false);
+        catalogButton.setContentDescription("查看全部語音指令");
+        catalogButton.setOnClickListener(
+                view -> startActivity(new Intent(this, VoiceCommandCatalogActivity.class))
+        );
+        LinearLayout.LayoutParams catalogParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(54)
+        );
+        catalogParams.topMargin = dp(14);
+        root.addView(catalogButton, catalogParams);
+
         listenButton = new Button(this);
         listenButton.setText("🎤 按住說話");
         listenButton.setTextSize(18f);
@@ -72,7 +105,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(58)
         );
-        buttonParams.topMargin = dp(28);
+        buttonParams.topMargin = dp(18);
         root.addView(listenButton, buttonParams);
 
         statusView = new TextView(this);
@@ -86,7 +119,8 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
 
         transcriptView = new TextView(this);
         transcriptView.setText(
-                "可說：開啟控制盤、游標模式、捲動模式、向左、向右、點擊、長按、返回、回首頁、開啟遊戲"
+                "可以先試：" + VoiceCommandCatalog.getQuickExamples(9)
+                        + "\n完整清單與其他說法請點上方「查看全部指令」。"
         );
         transcriptView.setTextSize(16f);
         transcriptView.setTextColor(Color.DKGRAY);
@@ -96,7 +130,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         transcriptParams.topMargin = dp(16);
         root.addView(transcriptView, transcriptParams);
 
-        setContentView(root);
+        setContentView(scroll);
     }
 
     private boolean handleTalkTouch(MotionEvent event) {
