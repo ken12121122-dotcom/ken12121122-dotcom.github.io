@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class AminAction {
@@ -19,31 +20,22 @@ public final class AminAction {
     }
 
     AminAction(String action, JSONObject parameters, String source, double confidence, String requestId, String createdAt) {
-        this.action = action;
+        this.action = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);
         this.parameters = parameters == null ? new JSONObject() : parameters;
-        this.source = source;
+        this.source = source == null ? "unknown" : source;
         this.confidence = Math.max(0d, Math.min(1d, confidence));
-        this.requestId = requestId;
-        this.createdAt = createdAt;
+        this.requestId = requestId == null || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+        this.createdAt = createdAt == null || createdAt.isBlank() ? Instant.now().toString() : createdAt;
     }
 
-    public String getAction() {
-        return action;
-    }
+    public String getAction() { return action; }
+    public JSONObject getParameters() { return parameters; }
+    public String getSource() { return source; }
+    public double getConfidence() { return confidence; }
+    public String getRequestId() { return requestId; }
+    public String getCreatedAt() { return createdAt; }
 
-    public JSONObject getParameters() {
-        return parameters;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public double getConfidence() {
-        return confidence;
-    }
-
-    public String toJson() {
+    public JSONObject toJsonObject() {
         JSONObject payload = new JSONObject();
         try {
             payload.put("action", action);
@@ -55,6 +47,10 @@ public final class AminAction {
         } catch (JSONException error) {
             throw new IllegalStateException("Unable to serialize Amin action", error);
         }
-        return payload.toString();
+        return payload;
+    }
+
+    public String toJson() {
+        return toJsonObject().toString();
     }
 }
