@@ -1,6 +1,5 @@
 package com.amin.pocketgba;
 
-import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static org.junit.Assert.assertEquals;
@@ -9,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.app.Instrumentation.ActivityResult;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -60,38 +62,52 @@ public final class ControlCenterActivityTest {
 
     @Test
     public void gbaCardRoutesToLibrary() {
-        intending(hasComponent(MainActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-
-        clickCard("進入 Pokémon GBA 遊戲庫");
-        intended(hasComponent(MainActivity.class.getName()));
+        assertCardRoutesTo(
+                "進入 Pokémon GBA 遊戲庫",
+                MainActivity.class.getName()
+        );
     }
 
     @Test
     public void voiceCardRoutesToPressToTalk() {
-        intending(hasComponent(VoiceCommandActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-
-        clickCard("開啟 Amin 語音指令");
-        intended(hasComponent(VoiceCommandActivity.class.getName()));
+        assertCardRoutesTo(
+                "開啟 Amin 語音指令",
+                VoiceCommandActivity.class.getName()
+        );
     }
 
     @Test
     public void permissionCardRoutesToPermissionCenter() {
-        intending(hasComponent(PermissionCenterActivity.class.getName()))
-                .respondWith(new ActivityResult(Activity.RESULT_OK, null));
-
-        clickCard("開啟權限控制中心");
-        intended(hasComponent(PermissionCenterActivity.class.getName()));
+        assertCardRoutesTo(
+                "開啟權限控制中心",
+                PermissionCenterActivity.class.getName()
+        );
     }
 
     @Test
     public void updateCardRoutesToUpdateCenter() {
-        intending(hasComponent(UpdateHubActivity.class.getName()))
+        assertCardRoutesTo(
+                "開啟原生 APK 更新中心",
+                UpdateHubActivity.class.getName()
+        );
+    }
+
+    private void assertCardRoutesTo(String contentDescription, String componentName) {
+        intending(hasComponent(componentName))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
-        clickCard("開啟原生 APK 更新中心");
-        intended(hasComponent(UpdateHubActivity.class.getName()));
+        clickCard(contentDescription);
+
+        List<Intent> recorded = Intents.getIntents();
+        boolean found = false;
+        for (Intent intent : recorded) {
+            if (intent.getComponent() != null
+                    && componentName.equals(intent.getComponent().getClassName())) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue("Expected route was not recorded: " + componentName, found);
     }
 
     private void clickCard(String contentDescription) {
