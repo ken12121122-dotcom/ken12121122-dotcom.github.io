@@ -30,6 +30,22 @@ public final class VoiceCommandParserTest {
     }
 
     @Test
+    public void matchesIndependentFloatingButtonCommands() {
+        assertEquals(
+                "OVERLAY_CLOSE",
+                parser.parse("關閉鍵盤浮動按鈕", 0.93d).getAction().getAction()
+        );
+        assertEquals(
+                "VOICE_BUBBLE_OPEN",
+                parser.parse("開啟語音浮球", 0.93d).getAction().getAction()
+        );
+        assertEquals(
+                "VOICE_BUBBLE_CLOSE",
+                parser.parse("請關閉語音浮動按鈕", 0.93d).getAction().getAction()
+        );
+    }
+
+    @Test
     public void matchesCursorModeWithParameter() {
         VoiceCommandParser.Result result = parser.parse("切換游標模式", 0.96d);
         assertEquals(VoiceCommandParser.Result.Status.MATCHED, result.getStatus());
