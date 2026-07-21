@@ -417,19 +417,45 @@ final class FloatingVoiceController implements RecognitionListener {
             return;
         }
 
-        ExecutionResult result = execute(parsed.getAction());
-        setPhase(
-                result.success
-                        ? FloatingVoicePresentation.Phase.SUCCESS
-                        : FloatingVoicePresentation.Phase.ERROR
+        AminAction parsedAction = parsed.getAction();
+        AminAction voiceAction = new AminAction(
+                parsedAction.getAction(),
+                parsedAction.getParameters(),
+                "floating_voice",
+                parsedAction.getConfidence(),
+                parsedAction.getRequestId(),
+                parsedAction.getCreatedAt()
         );
-        showPanel(
-                result.success ? "辨識完成" : "指令未執行",
-                FloatingVoicePresentation.heardText(transcript),
-                FloatingVoicePresentation.resultText(result.message),
-                result.success
-        );
-        scheduleFinishedState();
+        AminInputGateway gateway = AminInputGateway.get(service);
+        if ("VOICE_BUBBLE_CLOSE".equals(voiceAction.getAction())) {
+            setPhase(FloatingVoicePresentation.Phase.SUCCESS);
+            showPanel(
+                    "辨識完成",
+                    FloatingVoicePresentation.heardText(transcript),
+                    FloatingVoicePresentation.resultText("已關閉語音浮動按鈕"),
+                    true
+            );
+            mainHandler.postDelayed(
+                    () -> gateway.execute(voiceAction, ignored -> { }),
+                    1200L
+            );
+            return;
+        }
+        gateway.execute(voiceAction, result -> mainHandler.post(() -> {
+            boolean success = result.isSuccess();
+            setPhase(
+                    success
+                            ? FloatingVoicePresentation.Phase.SUCCESS
+                            : FloatingVoicePresentation.Phase.ERROR
+            );
+            showPanel(
+                    success ? "辨識完成" : "指令未執行",
+                    FloatingVoicePresentation.heardText(transcript),
+                    FloatingVoicePresentation.resultText(result.getMessage()),
+                    success
+            );
+            scheduleFinishedState();
+        }));
     }
 
     @Override
