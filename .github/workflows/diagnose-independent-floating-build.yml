@@ -1,0 +1,52 @@
+name: Diagnose independent floating build
+
+on:
+  push:
+    branches:
+      - feature/independent-floating-toggles
+    paths:
+      - '.github/workflows/diagnose-independent-floating-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Capture complete Gradle output
+        id: gradle
+        shell: bash
+        run: |
+          set +e
+          gradle --no-daemon --console=plain -p android-native :app:testDebugUnitTest > "$RUNNER_TEMP/independent-floating-gradle.log" 2>&1
+          STATUS=$?
+          cat "$RUNNER_TEMP/independent-floating-gradle.log"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload complete diagnostic log
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-floating-gradle-log
+          if-no-files-found: error
+          retention-days: 7
+          path: ${{ runner.temp }}/independent-floating-gradle.log
+
+      - name: Preserve Gradle result
+        if: steps.gradle.outputs.status != '0'
+        run: exit 1
