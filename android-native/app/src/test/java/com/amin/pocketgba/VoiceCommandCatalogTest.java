@@ -12,8 +12,8 @@ import org.junit.Test;
 public final class VoiceCommandCatalogTest {
     @Test
     public void exposesCurrentCountsFromOneSource() {
-        assertEquals(15, VoiceCommandCatalog.getCommandCount());
-        assertEquals(40, VoiceCommandCatalog.getPhraseCount());
+        assertEquals(17, VoiceCommandCatalog.getCommandCount());
+        assertEquals(54, VoiceCommandCatalog.getPhraseCount());
         assertTrue(VoiceCommandCatalog.getQuickExamples(5).contains("開啟控制盤"));
     }
 
