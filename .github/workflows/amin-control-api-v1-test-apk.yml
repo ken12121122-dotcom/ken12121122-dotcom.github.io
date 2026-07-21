@@ -85,12 +85,16 @@ jobs:
 
           path = Path('android-native/app/build.gradle')
           text = path.read_text(encoding='utf-8')
-          needle = """        debug {
-              manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']"""
-          replacement = """        debug {
-              applicationIdSuffix '.api1test'
-              versionNameSuffix '-api1test'
-              manifestPlaceholders = [appLabel: 'Amin Control API v1 Test']"""
+          needle = (
+              ' ' * 8 + 'debug {\n'
+              + ' ' * 12 + "manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']"
+          )
+          replacement = (
+              ' ' * 8 + 'debug {\n'
+              + ' ' * 12 + "applicationIdSuffix '.api1test'\n"
+              + ' ' * 12 + "versionNameSuffix '-api1test'\n"
+              + ' ' * 12 + "manifestPlaceholders = [appLabel: 'Amin Control API v1 Test']"
+          )
           if text.count(needle) != 1:
               raise SystemExit('Debug build block contract not found exactly once')
           path.write_text(text.replace(needle, replacement), encoding='utf-8')
