@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -29,13 +30,38 @@ public final class VoiceCommandActivityTest {
     public void rendersPressToTalkSurfaceWithoutStartingBackgroundListening() {
         onView(withContentDescription("按住開始語音辨識，放開後執行指令"))
                 .check(matches(isDisplayed()));
+        onView(withContentDescription("查看全部語音指令"))
+                .check(matches(isDisplayed()));
 
         activityRule.getScenario().onActivity(activity -> {
             View root = activity.findViewById(android.R.id.content);
             assertTrue(containsText(root, "Amin 語音指令"));
             assertTrue(containsText(root, "按住說話"));
             assertTrue(containsText(root, "第一版不會在背景持續監聽"));
+            assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
+            assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));
         });
+    }
+
+    @Test
+    public void rendersSynchronizedSearchableCommandCatalog() {
+        ActivityScenario<VoiceCommandCatalogActivity> scenario =
+                ActivityScenario.launch(VoiceCommandCatalogActivity.class);
+        try {
+            scenario.onActivity(activity -> {
+                View root = activity.findViewById(android.R.id.content);
+                assertTrue(containsText(root, "語音指令庫"));
+                assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
+                assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));
+                assertTrue(containsText(root, "開啟控制盤"));
+                assertTrue(containsText(root, "回到首頁"));
+                assertTrue(containsText(root, "開啟遊戲庫"));
+                assertTrue(containsText(root, "需全域控制"));
+                assertTrue(containsText(root, "可直接使用"));
+            });
+        } finally {
+            scenario.close();
+        }
     }
 
     private boolean containsText(View view, String target) {
