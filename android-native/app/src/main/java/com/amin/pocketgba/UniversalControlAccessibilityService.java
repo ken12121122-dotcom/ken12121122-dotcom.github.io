@@ -64,6 +64,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
 
     private TextView bubbleOverlay;
     private WindowManager.LayoutParams bubbleParams;
+    private FloatingVoiceController floatingVoiceController;
 
     private FrameLayout dpadOverlay;
     private WindowManager.LayoutParams dpadParams;
@@ -179,6 +180,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         activeInstance = this;
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         refreshScreenBounds();
+        floatingVoiceController = new FloatingVoiceController(this, windowManager);
         cursorX = screenWidth * 0.5f;
         cursorY = screenHeight * 0.5f;
         applyOverlayEnabled(isOverlayEnabled(this));
@@ -203,6 +205,9 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         cursorY = clamp(cursorY, dp(14), screenHeight - dp(14));
         updateCursorPosition();
         clampAndUpdateBubble();
+        if (floatingVoiceController != null) {
+            floatingVoiceController.onConfigurationChanged();
+        }
         updateGamepadLayout();
     }
 
@@ -211,16 +216,29 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         if (activeInstance == this) {
             activeInstance = null;
         }
+        if (floatingVoiceController != null) {
+            floatingVoiceController.destroy();
+            floatingVoiceController = null;
+        }
         removeOverlays();
         super.onDestroy();
     }
 
     private void applyOverlayEnabled(boolean enabled) {
         if (!enabled) {
+            if (floatingVoiceController != null) {
+                floatingVoiceController.hide();
+            }
             removeOverlays();
             return;
         }
         showBubble();
+        if (floatingVoiceController == null && windowManager != null) {
+            floatingVoiceController = new FloatingVoiceController(this, windowManager);
+        }
+        if (floatingVoiceController != null) {
+            floatingVoiceController.show();
+        }
         hideControls();
     }
 
@@ -298,11 +316,11 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
 
         bubbleOverlay = new TextView(this);
-        bubbleOverlay.setText("☰");
+        bubbleOverlay.setText("⌨");
         bubbleOverlay.setTextColor(Color.WHITE);
         bubbleOverlay.setTextSize(26f);
         bubbleOverlay.setGravity(Gravity.CENTER);
-        bubbleOverlay.setContentDescription("GBA 全域控制喚醒球，點擊展開或收起，長按開啟語音，拖曳可移動");
+        bubbleOverlay.setContentDescription("Amin 鍵盤控制浮動按鈕，點一下展開或收起控制盤，拖曳可移動");
         bubbleOverlay.setBackground(circleBackground(0xe6192a20, Color.WHITE, 1));
         bubbleOverlay.setElevation(dp(8));
 
@@ -320,86 +338,59 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         clampBubbleCoordinates();
 
         bubbleOverlay.setOnTouchListener(new View.OnTouchListener() {
-            private float downRawX;
-            private float downRawY;
-            private int downWindowX;
-            private int downWindowY;
-            private boolean dragging;
-            private boolean longTriggered;
-            private final Runnable voiceTask = () -> {
-                if (!dragging) {
-                    longTriggered = true;
-                    openVoiceCommand();
-                    markControlsActivity();
-                }
-            };
+    private float downRawX;
+    private float downRawY;
+    private int downWindowX;
+    private int downWindowY;
+    private boolean dragging;
 
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        wakeBubble();
-                        markControlsActivity();
-                        downRawX = event.getRawX();
-                        downRawY = event.getRawY();
-                        downWindowX = bubbleParams.x;
-                        downWindowY = bubbleParams.y;
-                        dragging = false;
-                        longTriggered = false;
-                        mainHandler.postDelayed(voiceTask, LONG_PRESS_MS);
-                        view.setPressed(true);
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
-                        float dx = event.getRawX() - downRawX;
-                        float dy = event.getRawY() - downRawY;
-                        if (!dragging && (Math.abs(dx) > dp(7) || Math.abs(dy) > dp(7))) {
-                            dragging = true;
-                            mainHandler.removeCallbacks(voiceTask);
-                        }
-                        if (dragging) {
-                            bubbleParams.x = downWindowX + Math.round(dx);
-                            bubbleParams.y = downWindowY + Math.round(dy);
-                            clampAndUpdateBubble();
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        mainHandler.removeCallbacks(voiceTask);
-                        view.setPressed(false);
-                        if (dragging) {
-                            snapBubbleToEdge();
-                        } else if (!longTriggered) {
-                            toggleControls();
-                            view.performClick();
-                        }
-                        scheduleBubbleFade();
-                        return true;
-                    case MotionEvent.ACTION_CANCEL:
-                        mainHandler.removeCallbacks(voiceTask);
-                        view.setPressed(false);
-                        scheduleBubbleFade();
-                        return true;
-                    default:
-                        return true;
+    @Override
+    public boolean onTouch(View view, MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                wakeBubble();
+                markControlsActivity();
+                downRawX = event.getRawX();
+                downRawY = event.getRawY();
+                downWindowX = bubbleParams.x;
+                downWindowY = bubbleParams.y;
+                dragging = false;
+                view.setPressed(true);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                float dx = event.getRawX() - downRawX;
+                float dy = event.getRawY() - downRawY;
+                if (!dragging && (Math.abs(dx) > dp(7) || Math.abs(dy) > dp(7))) {
+                    dragging = true;
                 }
-            }
-        });
+                if (dragging) {
+                    bubbleParams.x = downWindowX + Math.round(dx);
+                    bubbleParams.y = downWindowY + Math.round(dy);
+                    clampAndUpdateBubble();
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                view.setPressed(false);
+                if (dragging) {
+                    snapBubbleToEdge();
+                } else {
+                    toggleControls();
+                    view.performClick();
+                }
+                scheduleBubbleFade();
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                view.setPressed(false);
+                scheduleBubbleFade();
+                return true;
+            default:
+                return true;
+        }
+    }
+});
 
         windowManager.addView(bubbleOverlay, bubbleParams);
         scheduleBubbleFade();
-    }
-
-    private void openVoiceCommand() {
-        VoiceCommandActivityLauncher.LaunchResult result =
-                VoiceCommandActivityLauncher.openFromFloatingBubble(this);
-        if (!result.isSuccess()) {
-            showStatusToast(result.getMessage());
-            return;
-        }
-        mainHandler.postDelayed(() -> {
-            if (!VoiceCommandActivityLauncher.wasAcknowledged(result.getToken())) {
-                showStatusToast("語音頁未能開啟，請再長按一次");
-            }
-        }, 1500L);
     }
 
     private void ensureGamepadControls() {
@@ -616,6 +607,16 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         } else {
             showControls();
         }
+    }
+
+    boolean showControlsFromVoice() {
+        showControls();
+        return controlsVisible;
+    }
+
+    boolean hideControlsFromVoice() {
+        hideControls();
+        return !controlsVisible;
     }
 
     private void refreshModeVisuals() {
