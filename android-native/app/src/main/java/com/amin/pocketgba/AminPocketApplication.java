@@ -16,15 +16,15 @@ import android.widget.TextView;
 
 public final class AminPocketApplication extends Application {
     private static final String UNIVERSAL_CONTROL_ENTRY_TAG = "amin-universal-control-entry";
+    private static final String CONTROL_API_ENTRY_TAG = "amin-control-api-entry";
 
     @Override
     public void onCreate() {
         super.onCreate();
+        AminInputGateway.get(this);
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityPreCreated(Activity activity, Bundle savedInstanceState) {
-                // Android 11+ can expose a null WindowInsetsController until the DecorView exists.
-                // MainActivity changes orientation before drawing, so prepare the window first.
                 activity.getWindow().getDecorView();
             }
 
@@ -33,19 +33,16 @@ public final class AminPocketApplication extends Application {
                 if (activity instanceof MainActivity) {
                     WebView webView = activity.findViewById(R.id.webView);
                     if (webView != null) {
-                        // The bridge exposes only bounded GBA SRAM reads/writes inside app-private storage.
-                        // It cannot browse arbitrary files, execute commands, or access other app data.
                         webView.addJavascriptInterface(
                                 new NativeSaveBridge(activity),
                                 "AminNativeSaveVault"
                         );
                     }
                 }
-
                 if (activity instanceof ControlCenterActivity) {
                     View root = activity.findViewById(android.R.id.content);
                     rewritePreviewLabels(root);
-                    scheduleUniversalControlEntry(activity);
+                    scheduleControlEntries(activity);
                 }
             }
 
@@ -53,9 +50,7 @@ public final class AminPocketApplication extends Application {
 
             @Override
             public void onActivityResumed(Activity activity) {
-                if (activity instanceof ControlCenterActivity) {
-                    scheduleUniversalControlEntry(activity);
-                }
+                if (activity instanceof ControlCenterActivity) scheduleControlEntries(activity);
             }
 
             @Override public void onActivityPaused(Activity activity) {}
@@ -65,48 +60,72 @@ public final class AminPocketApplication extends Application {
         });
     }
 
-    private void scheduleUniversalControlEntry(Activity activity) {
+    private void scheduleControlEntries(Activity activity) {
         View root = activity.findViewById(android.R.id.content);
-        if (root == null) {
-            return;
-        }
-        root.post(() -> attachUniversalControlEntry(activity, root));
+        if (root != null) root.post(() -> attachControlEntries(activity, root));
     }
 
-    private void attachUniversalControlEntry(Activity activity, View root) {
-        if (activity.isFinishing()
-                || root == null
-                || root.findViewWithTag(UNIVERSAL_CONTROL_ENTRY_TAG) != null) {
-            return;
-        }
-
+    private void attachControlEntries(Activity activity, View root) {
+        if (activity.isFinishing() || root == null) return;
         LinearLayout content = findScrollContent(root);
-        if (content == null) {
-            return;
+        if (content == null) return;
+
+        if (root.findViewWithTag(UNIVERSAL_CONTROL_ENTRY_TAG) == null) {
+            Button entry = createEntryButton(
+                    activity,
+                    UNIVERSAL_CONTROL_ENTRY_TAG,
+                    "🎮 開啟全域控制盤",
+                    "開啟全域方向鍵、A B 鍵與游標設定",
+                    0xff19794b
+            );
+            entry.setOnClickListener(view -> activity.startActivity(
+                    new Intent(activity, UniversalControlSetupActivity.class)
+            ));
+            content.addView(entry, Math.min(4, content.getChildCount()), entryParams(activity));
         }
 
+        if (root.findViewWithTag(CONTROL_API_ENTRY_TAG) == null) {
+            Button entry = createEntryButton(
+                    activity,
+                    CONTROL_API_ENTRY_TAG,
+                    "🌐 Amin Control API",
+                    "開啟 localhost、LAN、WebSocket 與自動化控制設定",
+                    0xff105f39
+            );
+            entry.setOnClickListener(view -> activity.startActivity(
+                    new Intent(activity, AminControlApiActivity.class)
+            ));
+            content.addView(entry, Math.min(5, content.getChildCount()), entryParams(activity));
+        }
+    }
+
+    private Button createEntryButton(
+            Activity activity,
+            String tag,
+            String label,
+            String description,
+            int color
+    ) {
         Button entry = new Button(activity);
-        entry.setTag(UNIVERSAL_CONTROL_ENTRY_TAG);
+        entry.setTag(tag);
         entry.setAllCaps(false);
-        entry.setText("🎮 開啟全域控制盤");
+        entry.setText(label);
         entry.setTextColor(Color.WHITE);
         entry.setTextSize(17f);
         entry.setMinHeight(dp(activity, 58));
         entry.setElevation(dp(activity, 5));
-        entry.setBackgroundTintList(ColorStateList.valueOf(0xff19794b));
-        entry.setContentDescription("開啟全域方向鍵、A B 鍵與游標設定");
-        entry.setOnClickListener(view -> activity.startActivity(
-                new Intent(activity, UniversalControlSetupActivity.class)
-        ));
+        entry.setBackgroundTintList(ColorStateList.valueOf(color));
+        entry.setContentDescription(description);
+        return entry;
+    }
 
+    private LinearLayout.LayoutParams entryParams(Activity activity) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(0, dp(activity, 14), 0, dp(activity, 8));
-
-        int insertionIndex = Math.min(4, content.getChildCount());
-        content.addView(entry, insertionIndex, params);
+        params.setMargins(0, dp(activity, 10), 0, dp(activity, 6));
+        return params;
     }
 
     private LinearLayout findScrollContent(View view) {
@@ -116,14 +135,11 @@ public final class AminPocketApplication extends Application {
                 return (LinearLayout) scrollView.getChildAt(0);
             }
         }
-
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index += 1) {
                 LinearLayout result = findScrollContent(group.getChildAt(index));
-                if (result != null) {
-                    return result;
-                }
+                if (result != null) return result;
             }
         }
         return null;

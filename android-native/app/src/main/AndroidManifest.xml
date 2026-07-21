@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
@@ -42,6 +44,23 @@
 
         <receiver android:name=".PackageInstallResultReceiver" android:exported="false" />
 
+        <receiver
+            android:name=".AminAutomationReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.amin.pocketgba.ACTION_EXECUTE" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".AminControlApiService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-enabled localhost and LAN phone control API" />
+        </service>
+
         <service
             android:name=".UniversalControlAccessibilityService"
             android:exported="true"
@@ -74,6 +93,37 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="amin-home" android:host="open" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AminControlApiActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-api" android:host="settings" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AminAutomationActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:noHistory="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="com.amin.pocketgba.ACTION_EXECUTE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-control" android:host="execute" />
             </intent-filter>
         </activity>
 
