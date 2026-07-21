@@ -90,6 +90,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".VoiceCommandCatalogActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-voice" android:host="commands" />
+            </intent-filter>
+        </activity>
+
         <activity android:name=".UniversalControlSetupActivity" android:excludeFromRecents="true" android:exported="true" android:screenOrientation="portrait" />
 
         <activity
