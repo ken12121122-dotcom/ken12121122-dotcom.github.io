@@ -33,6 +33,8 @@ jobs:
           set -euxo pipefail
           grep -Fq "def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '118').toInteger()" android-native/app/build.gradle
           grep -Fq "def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge22'" android-native/app/build.gradle
+          grep -Fq "applicationId 'com.amin.pocketgba'" android-native/app/build.gradle
+          ! grep -Fq 'applicationIdSuffix' android-native/app/build.gradle
           git diff --exit-code origin/release/bridge22-independent-floating-toggles -- amin-vault/native-release-manifest.json
 
       - name: Set up JDK 17
@@ -74,21 +76,42 @@ jobs:
           unzip -o "$MIN_ZIP" -d "$TARGET"
           curl --fail --location --retry 4 --retry-delay 2 'https://cdn.emulatorjs.org/4.2.3/data/cores/mgba-wasm.data' --output "$TARGET/cores/mgba-wasm.data"
 
+      - name: Inject temporary side-by-side identity
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('android-native/app/build.gradle')
+          text = path.read_text(encoding='utf-8')
+          needle = """        debug {
+              manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']"""
+          replacement = """        debug {
+              applicationIdSuffix '.api1test'
+              versionNameSuffix '-api1test'
+              manifestPlaceholders = [appLabel: 'Amin Control API v1 Test']"""
+          if text.count(needle) != 1:
+              raise SystemExit('Debug build block contract not found exactly once')
+          path.write_text(text.replace(needle, replacement), encoding='utf-8')
+          PY
+          grep -Fq "applicationIdSuffix '.api1test'" android-native/app/build.gradle
+          git diff -- android-native/app/build.gradle
+
       - name: Build and lint side-by-side test variant
         shell: bash
         run: |
           set -euxo pipefail
           gradle --no-daemon --console=plain -p android-native \
             :app:testDebugUnitTest \
-            :app:assembleApiTest \
-            :app:lintApiTest
+            :app:assembleDebug \
+            :app:lintDebug
 
       - name: Inspect and package test APK
         shell: bash
         run: |
           set -euxo pipefail
-          APK="$(find android-native/app/build/outputs/apk -type f -name '*.apk' -path '*apiTest*' | head -n 1)"
-          test -n "$APK"
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           test -s "$APK"
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/api-test-badging.txt"
