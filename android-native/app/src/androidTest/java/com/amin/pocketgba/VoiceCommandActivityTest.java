@@ -37,6 +37,7 @@ public final class VoiceCommandActivityTest {
             View root = activity.findViewById(android.R.id.content);
             assertTrue(containsText(root, "Amin 語音指令"));
             assertTrue(containsText(root, "按住說話"));
+            assertTrue(containsText(root, "浮動按鈕長按會自動開始聆聽"));
             assertTrue(containsText(root, "第一版不會在背景持續監聽"));
             assertTrue(containsText(root, VoiceCommandCatalog.getCommandCount() + " 個動作"));
             assertTrue(containsText(root, VoiceCommandCatalog.getPhraseCount() + " 種可說法"));

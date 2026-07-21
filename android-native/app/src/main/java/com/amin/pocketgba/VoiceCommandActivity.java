@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -21,6 +22,8 @@ import java.util.Locale;
 
 public final class VoiceCommandActivity extends Activity implements RecognitionListener {
     private static final int REQUEST_RECORD_AUDIO = 6401;
+    private static final long FLOATING_COMPLETE_SILENCE_MS = 900L;
+    private static final long FLOATING_POSSIBLE_SILENCE_MS = 650L;
 
     private SpeechRecognizer speechRecognizer;
     private Intent recognizerIntent;
@@ -28,6 +31,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     private TextView statusView;
     private TextView transcriptView;
     private boolean listening;
+    private boolean floatingVoiceSession;
     private final VoiceCommandParser parser = new VoiceCommandParser();
 
     @Override
@@ -35,6 +39,50 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         super.onCreate(savedInstanceState);
         buildUi();
         prepareRecognizer();
+        maybeStartFloatingVoice(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        maybeStartFloatingVoice(intent);
+    }
+
+    static boolean shouldAutoStartFloatingVoice(int flags, String dataString) {
+        int requiredFlags = Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP;
+        return dataString == null && (flags & requiredFlags) == requiredFlags;
+    }
+
+    private void maybeStartFloatingVoice(Intent intent) {
+        if (intent == null) return;
+        Uri data = intent.getData();
+        if (!shouldAutoStartFloatingVoice(intent.getFlags(), data == null ? null : data.toString())) {
+            return;
+        }
+        listenButton.post(this::startFloatingVoiceSession);
+    }
+
+    private void startFloatingVoiceSession() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            floatingVoiceSession = false;
+            setStatus("浮動語音需要麥克風權限", false);
+            transcriptView.setText("允許權限後，請再次長按浮動按鈕開始說話。");
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+            return;
+        }
+        if (speechRecognizer == null) {
+            floatingVoiceSession = false;
+            setStatus("此裝置沒有可用的語音辨識服務", false);
+            return;
+        }
+        if (listening) {
+            speechRecognizer.cancel();
+            listening = false;
+        }
+        startListening(true);
     }
 
     private void buildUi() {
@@ -57,7 +105,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(title, matchWrap());
 
         TextView description = new TextView(this);
-        description.setText("按住麥克風說話，放開後辨識並執行。第一版不會在背景持續監聽。");
+        description.setText("按住麥克風說話，放開後辨識並執行。浮動按鈕長按會自動開始聆聽。第一版不會在背景持續監聽。");
         description.setTextSize(15f);
         description.setTextColor(0xff68766e);
         description.setGravity(Gravity.CENTER);
@@ -137,12 +185,13 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 listenButton.setPressed(true);
+                floatingVoiceSession = false;
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     setStatus("請先允許麥克風權限", false);
                     requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
                     return true;
                 }
-                startListening();
+                startListening(false);
                 return true;
             case MotionEvent.ACTION_UP:
                 listenButton.setPressed(false);
@@ -172,24 +221,40 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Locale.TAIWAN.toLanguageTag());
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+        recognizerIntent.putExtra(
+                RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
+                FLOATING_COMPLETE_SILENCE_MS
+        );
+        recognizerIntent.putExtra(
+                RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
+                FLOATING_POSSIBLE_SILENCE_MS
+        );
         setStatus("準備完成，請按住麥克風", true);
     }
 
-    private void startListening() {
+    private void startListening(boolean fromFloatingButton) {
         if (speechRecognizer == null || listening) return;
+        floatingVoiceSession = fromFloatingButton;
         listening = true;
-        listenButton.setText("放開後辨識");
-        setStatus("正在聆聽…", true);
-        transcriptView.setText("請說出指令");
+        listenButton.setText(fromFloatingButton ? "🎤 浮動語音聆聽中" : "放開後辨識");
+        setStatus(fromFloatingButton ? "浮動按鈕已啟動，請直接說話" : "正在聆聽…", true);
+        transcriptView.setText(
+                fromFloatingButton
+                        ? "請直接說出指令，說完停頓後會自動辨識並執行。"
+                        : "請說出指令"
+        );
         speechRecognizer.startListening(recognizerIntent);
     }
 
     private void finishSpeechInput() {
         if (speechRecognizer == null || !listening) {
+            floatingVoiceSession = false;
             resetTalkButton();
             return;
         }
         speechRecognizer.stopListening();
+        listening = false;
+        floatingVoiceSession = false;
         resetTalkButton();
         setStatus("正在辨識…", true);
     }
@@ -197,6 +262,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     private void cancelListening(String message) {
         if (speechRecognizer != null && listening) speechRecognizer.cancel();
         listening = false;
+        floatingVoiceSession = false;
         resetTalkButton();
         setStatus(message, true);
     }
@@ -210,13 +276,15 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode != REQUEST_RECORD_AUDIO) return;
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            setStatus("麥克風權限已開啟，請再次按住說話", true);
+            setStatus("麥克風權限已開啟，請再次長按浮動按鈕或按住頁面麥克風", true);
         } else {
             setStatus("未取得麥克風權限，語音功能不會啟動", false);
         }
     }
 
-    @Override public void onReadyForSpeech(Bundle params) { setStatus("請說出指令", true); }
+    @Override public void onReadyForSpeech(Bundle params) {
+        setStatus(floatingVoiceSession ? "浮動語音正在聆聽" : "請說出指令", true);
+    }
     @Override public void onBeginningOfSpeech() { setStatus("已聽到聲音", true); }
     @Override public void onRmsChanged(float rmsdB) { }
     @Override public void onBufferReceived(byte[] buffer) { }
@@ -225,6 +293,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     @Override
     public void onError(int error) {
         listening = false;
+        floatingVoiceSession = false;
         resetTalkButton();
         setStatus(errorMessage(error), false);
     }
@@ -232,6 +301,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     @Override
     public void onResults(Bundle results) {
         listening = false;
+        floatingVoiceSession = false;
         resetTalkButton();
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -286,6 +356,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     protected void onPause() {
         if (speechRecognizer != null && listening) speechRecognizer.cancel();
         listening = false;
+        floatingVoiceSession = false;
         resetTalkButton();
         super.onPause();
     }
