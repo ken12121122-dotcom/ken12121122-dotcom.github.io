@@ -62,11 +62,7 @@ public final class AminActionDispatcher {
             case "VOICE_BUBBLE_OPEN":
                 return result(target.openVoiceBubble(), "已開啟語音浮動按鈕", "請先啟用 Amin 全域控制服務");
             case "VOICE_BUBBLE_CLOSE":
-                boolean closed = target instanceof AndroidActionTarget
-                        && "floating_voice".equals(action.getSource())
-                        ? ((AndroidActionTarget) target).closeVoiceBubbleAfterFeedback()
-                        : target.closeVoiceBubble();
-                return result(closed, "已關閉語音浮動按鈕", "無法關閉語音浮動按鈕");
+                return result(target.closeVoiceBubble(), "已關閉語音浮動按鈕", "無法關閉語音浮動按鈕");
             case "CONTROL_MODE_SET":
                 String mode = action.getParameters().optString("mode", UniversalControlAccessibilityService.MODE_CURSOR);
                 return result(
@@ -151,15 +147,6 @@ public final class AminActionDispatcher {
         @Override
         public boolean closeVoiceBubble() {
             UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, false);
-            return true;
-        }
-
-        private boolean closeVoiceBubbleAfterFeedback() {
-            UniversalControlAccessibilityService.setVoiceBubbleEnabledAfterDelay(
-                    context,
-                    false,
-                    1200L
-            );
             return true;
         }
 
