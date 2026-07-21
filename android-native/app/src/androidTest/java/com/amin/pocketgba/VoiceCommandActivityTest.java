@@ -1,5 +1,6 @@
 package com.amin.pocketgba;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -49,6 +50,29 @@ public final class VoiceCommandActivityTest {
             });
         } finally {
             scenario.close();
+        }
+    }
+
+    @Test
+    public void keyboardAndVoiceFloatingPreferencesAreIndependent() {
+        Context context = ApplicationProvider.getApplicationContext();
+        boolean originalKeyboard =
+                UniversalControlAccessibilityService.isKeyboardBubbleEnabled(context);
+        boolean originalVoice =
+                UniversalControlAccessibilityService.isVoiceBubbleEnabled(context);
+        try {
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(context, false);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, true);
+            assertFalse(UniversalControlAccessibilityService.isKeyboardBubbleEnabled(context));
+            assertTrue(UniversalControlAccessibilityService.isVoiceBubbleEnabled(context));
+
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(context, true);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, false);
+            assertTrue(UniversalControlAccessibilityService.isKeyboardBubbleEnabled(context));
+            assertFalse(UniversalControlAccessibilityService.isVoiceBubbleEnabled(context));
+        } finally {
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(context, originalKeyboard);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(context, originalVoice);
         }
     }
 
