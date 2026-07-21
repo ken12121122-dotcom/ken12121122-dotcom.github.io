@@ -71,13 +71,25 @@ public final class VoiceCommandCatalog {
         List<Command> commands = new ArrayList<>();
         commands.add(command(
                 "overlay_open", "OVERLAY_OPEN", null,
-                "控制盤", "開啟控制盤", "顯示 Amin 浮動控制盤。", true,
-                "開啟控制盤", "打開控制盤", "顯示控制盤"
+                "浮動按鈕", "開啟鍵盤控制", "顯示鍵盤浮動按鈕並展開 Amin 控制盤。", true,
+                "開啟控制盤", "打開控制盤", "顯示控制盤",
+                "開啟鍵盤浮動按鈕", "開啟鍵盤浮球", "顯示鍵盤浮球"
         ));
         commands.add(command(
                 "overlay_close", "OVERLAY_CLOSE", null,
-                "控制盤", "關閉控制盤", "收起 Amin 浮動控制盤。", true,
-                "關閉控制盤", "收起控制盤", "隱藏控制盤"
+                "浮動按鈕", "關閉鍵盤控制", "收起控制盤並關閉鍵盤浮動按鈕。", true,
+                "關閉控制盤", "收起控制盤", "隱藏控制盤",
+                "關閉鍵盤浮動按鈕", "關閉鍵盤浮球", "隱藏鍵盤浮球"
+        ));
+        commands.add(command(
+                "voice_bubble_open", "VOICE_BUBBLE_OPEN", null,
+                "浮動按鈕", "開啟語音浮動按鈕", "顯示可點擊的 Amin 語音浮動按鈕。", true,
+                "開啟語音按鈕", "開啟語音浮動按鈕", "開啟語音浮球", "顯示語音浮球"
+        ));
+        commands.add(command(
+                "voice_bubble_close", "VOICE_BUBBLE_CLOSE", null,
+                "浮動按鈕", "關閉語音浮動按鈕", "停止目前語音流程並關閉語音浮動按鈕。", true,
+                "關閉語音按鈕", "關閉語音浮動按鈕", "關閉語音浮球", "隱藏語音浮球"
         ));
         commands.add(command(
                 "mode_cursor", "CONTROL_MODE_SET", UniversalControlAccessibilityService.MODE_CURSOR,
@@ -141,7 +153,7 @@ public final class VoiceCommandCatalog {
         ));
         commands.add(command(
                 "voice_stop", "VOICE_STOP", null,
-                "語音", "停止語音", "結束目前語音指令流程。", false,
+                "語音", "停止語音", "結束目前語音指令流程，但保留語音浮動按鈕。", false,
                 "停止聆聽", "停止語音"
         ));
         COMMANDS = Collections.unmodifiableList(commands);
