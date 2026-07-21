@@ -1,13 +1,10 @@
 package com.amin.pocketgba;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -66,7 +63,7 @@ public final class ControlCenterActivityTest {
         intending(hasComponent(MainActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
-        onView(withContentDescription("進入 Pokémon GBA 遊戲庫")).perform(scrollTo(), click());
+        clickCard("進入 Pokémon GBA 遊戲庫");
         intended(hasComponent(MainActivity.class.getName()));
     }
 
@@ -75,7 +72,7 @@ public final class ControlCenterActivityTest {
         intending(hasComponent(VoiceCommandActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
-        onView(withContentDescription("開啟 Amin 語音指令")).perform(scrollTo(), click());
+        clickCard("開啟 Amin 語音指令");
         intended(hasComponent(VoiceCommandActivity.class.getName()));
     }
 
@@ -84,7 +81,7 @@ public final class ControlCenterActivityTest {
         intending(hasComponent(PermissionCenterActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
-        onView(withContentDescription("開啟權限控制中心")).perform(scrollTo(), click());
+        clickCard("開啟權限控制中心");
         intended(hasComponent(PermissionCenterActivity.class.getName()));
     }
 
@@ -93,8 +90,32 @@ public final class ControlCenterActivityTest {
         intending(hasComponent(UpdateHubActivity.class.getName()))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));
 
-        onView(withContentDescription("開啟原生 APK 更新中心")).perform(scrollTo(), click());
+        clickCard("開啟原生 APK 更新中心");
         intended(hasComponent(UpdateHubActivity.class.getName()));
+    }
+
+    private void clickCard(String contentDescription) {
+        activityRule.getScenario().onActivity(activity -> {
+            View root = activity.findViewById(android.R.id.content);
+            View target = findByContentDescription(root, contentDescription);
+            assertNotNull("Missing card: " + contentDescription, target);
+            assertTrue("Card did not accept click: " + contentDescription, target.performClick());
+        });
+    }
+
+    private View findByContentDescription(View view, String target) {
+        CharSequence description = view.getContentDescription();
+        if (description != null && target.contentEquals(description)) {
+            return view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index += 1) {
+                View match = findByContentDescription(group.getChildAt(index), target);
+                if (match != null) return match;
+            }
+        }
+        return null;
     }
 
     private boolean containsText(View view, String target) {
