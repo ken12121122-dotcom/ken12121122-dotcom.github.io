@@ -2,14 +2,14 @@ plugins {
     id 'com.android.application'
 }
 
-// Bridge 18 release source: verified Voice Command v1 integrated into the official Amin package.
+// Bridge 19 release source: synchronized searchable Voice Command catalog.
 def aminKeystorePath = providers.gradleProperty('AMIN_KEYSTORE_PATH').orNull ?: System.getenv('AMIN_KEYSTORE_PATH')
 def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').orNull ?: System.getenv('AMIN_KEYSTORE_PASSWORD')
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
 def aminKeyPassword = providers.gradleProperty('AMIN_KEY_PASSWORD').orNull ?: System.getenv('AMIN_KEY_PASSWORD')
 def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, aminKeyPassword].every { value -> value }
-def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '114').toInteger()
-def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge18'
+def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '115').toInteger()
+def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge19'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
