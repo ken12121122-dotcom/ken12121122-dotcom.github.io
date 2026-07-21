@@ -3,3 +3,5 @@
 Version Code: 119
 
 Bridge 23 is the single formal `com.amin.pocketgba` update that adds Amin Control API v1 while retaining the permanent signing identity, existing settings, and GBA save storage.
+
+Android 35 API closed-loop diagnostics are part of the release gate.
