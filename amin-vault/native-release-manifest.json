@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge18",
-  "latestVersionCode": 114,
+  "latestVersionName": "0.9.2-bridge19",
+  "latestVersionCode": 115,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge18.apk",
-  "apkSha256": "f7c0a643d4c1b9d0be339746d759c6bf801c3db4af20640eb417092a8c04f71d",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge19.apk",
+  "apkSha256": "73e1f9adf133c7424de43be5d4a06c3703f54cf39cc5e2b1e1c2c0caca4d135f",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 3492090,
-  "publishedAt": "2026-07-21T05:33:27Z",
+  "sizeBytes": 3497448,
+  "publishedAt": "2026-07-21T09:47:29Z",
   "mandatory": false,
   "releaseNotes": [
-    "新增 Amin 語音指令入口，支援按住說話，放開後辨識與執行。",
-    "語音、浮動控制盤與游標動作共用 Action Core，可執行方向、點擊、長按、返回與回首頁。",
-    "浮動喚醒球長按可開啟語音頁，控制中心新增可見麥克風卡片。",
-    "麥克風只在使用者按住說話時啟動，離開頁面立即停止，不做背景持續監聽。",
-    "保留 Bridge 16 的 GBA、存檔保護、手把與全域控制能力。"
+    "新增可搜尋的語音指令庫，顯示目前 15 個動作與 40 種可說法。",
+    "指令依控制盤、控制模式、系統、游標與捲動、遊戲與設定、語音分類。",
+    "每張指令卡標示可直接使用或需要 Amin 全域控制服務。",
+    "語音解析器與查詢畫面改用同一份指令資料，未來新增指令時會自動同步總數與內容。",
+    "新增同步測試，逐條驗證所有可說法都能被語音解析器辨識。"
   ]
 }
