@@ -33,8 +33,16 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        VoiceCommandActivityLauncher.acknowledgeLaunch(getIntent());
         buildUi();
         prepareRecognizer();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        VoiceCommandActivityLauncher.acknowledgeLaunch(intent);
     }
 
     private void buildUi() {

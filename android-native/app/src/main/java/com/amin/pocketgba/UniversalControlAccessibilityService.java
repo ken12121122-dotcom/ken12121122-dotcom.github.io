@@ -389,10 +389,17 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     }
 
     private void openVoiceCommand() {
-        Intent intent = new Intent(this, VoiceCommandActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
-        showStatusToast("已開啟 Amin 語音指令");
+        VoiceCommandActivityLauncher.LaunchResult result =
+                VoiceCommandActivityLauncher.openFromFloatingBubble(this);
+        if (!result.isSuccess()) {
+            showStatusToast(result.getMessage());
+            return;
+        }
+        mainHandler.postDelayed(() -> {
+            if (!VoiceCommandActivityLauncher.wasAcknowledged(result.getToken())) {
+                showStatusToast("語音頁未能開啟，請再長按一次");
+            }
+        }, 1500L);
     }
 
     private void ensureGamepadControls() {
