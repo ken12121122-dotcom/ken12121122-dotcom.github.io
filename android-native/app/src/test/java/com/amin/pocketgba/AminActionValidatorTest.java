@@ -32,7 +32,8 @@ public final class AminActionValidatorTest {
     }
 
     @Test
-    public void catalogDefinesSeventeenActions() {
-        assertEquals(17, AminActionValidator.getSupportedActions().size());
+    public void catalogDefinesSeventeenCommandsAndSixteenUniqueActions() {
+        assertEquals(17, VoiceCommandCatalog.getCommandCount());
+        assertEquals(16, AminActionValidator.getSupportedActions().size());
     }
 }
