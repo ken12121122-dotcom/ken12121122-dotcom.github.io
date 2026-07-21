@@ -28,6 +28,8 @@ public final class AminActionDispatcher {
         boolean openControllerSettings();
         boolean openOverlay();
         boolean closeOverlay();
+        boolean openVoiceBubble();
+        boolean closeVoiceBubble();
         boolean setControlMode(String mode);
         boolean executeSharedAction(AminAction action);
     }
@@ -52,9 +54,29 @@ public final class AminActionDispatcher {
             case "OPEN_CONTROLLER_SETTINGS":
                 return result(target.openControllerSettings(), "已開啟控制器設定", "無法開啟控制器設定");
             case "OVERLAY_OPEN":
-                return result(target.openOverlay(), "已開啟控制盤", "請先啟用 Amin 全域控制服務");
+                return result(
+                        target.openOverlay(),
+                        "已開啟鍵盤浮動按鈕與控制盤",
+                        "請先啟用 Amin 全域控制服務"
+                );
             case "OVERLAY_CLOSE":
-                return result(target.closeOverlay(), "已關閉控制盤", "無法關閉控制盤");
+                return result(
+                        target.closeOverlay(),
+                        "已關閉控制盤與鍵盤浮動按鈕",
+                        "無法關閉鍵盤控制"
+                );
+            case "VOICE_BUBBLE_OPEN":
+                return result(
+                        target.openVoiceBubble(),
+                        "已開啟語音浮動按鈕",
+                        "請先啟用 Amin 全域控制服務"
+                );
+            case "VOICE_BUBBLE_CLOSE":
+                return result(
+                        target.closeVoiceBubble(),
+                        "已關閉語音浮動按鈕",
+                        "無法關閉語音浮動按鈕"
+                );
             case "CONTROL_MODE_SET":
                 String mode = action.getParameters().optString("mode", UniversalControlAccessibilityService.MODE_CURSOR);
                 boolean modeChanged = target.setControlMode(mode);
@@ -113,7 +135,24 @@ public final class AminActionDispatcher {
 
         @Override
         public boolean openOverlay() {
-            UniversalControlAccessibilityService.setOverlayEnabled(activity, true);
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(activity, true);
+            if (!isAccessibilityEnabled(activity)) {
+                activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                return false;
+            }
+            UniversalControlAccessibilityService.showKeyboardControls(activity);
+            return true;
+        }
+
+        @Override
+        public boolean closeOverlay() {
+            UniversalControlAccessibilityService.setKeyboardBubbleEnabled(activity, false);
+            return true;
+        }
+
+        @Override
+        public boolean openVoiceBubble() {
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(activity, true);
             if (!isAccessibilityEnabled(activity)) {
                 activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
                 return false;
@@ -122,8 +161,8 @@ public final class AminActionDispatcher {
         }
 
         @Override
-        public boolean closeOverlay() {
-            UniversalControlAccessibilityService.setOverlayEnabled(activity, false);
+        public boolean closeVoiceBubble() {
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(activity, false);
             return true;
         }
 
@@ -149,7 +188,7 @@ public final class AminActionDispatcher {
         }
     }
 
-    private static boolean isAccessibilityEnabled(Context context) {
+    static boolean isAccessibilityEnabled(Context context) {
         String enabled = Settings.Secure.getString(
                 context.getContentResolver(),
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
