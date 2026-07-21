@@ -1,0 +1,163 @@
+name: Apply Bridge 23 gateway fixups
+
+on:
+  push:
+    branches:
+      - release/bridge23-amin-control-api-v1
+    paths:
+      - '.github/workflows/bridge23-gateway-fixup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixups:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v6
+        with:
+          ref: release/bridge23-amin-control-api-v1
+          fetch-depth: 0
+
+      - name: Route floating voice through AminInputGateway
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          floating_path = Path('android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java')
+          floating = floating_path.read_text(encoding='utf-8')
+          for line in (
+              'import android.app.ActivityOptions;\n',
+              'import android.app.PendingIntent;\n',
+              'import android.net.Uri;\n',
+          ):
+              floating = floating.replace(line, '')
+
+          old_result = '''        ExecutionResult result = execute(parsed.getAction());
+          setPhase(
+                  result.success
+                          ? FloatingVoicePresentation.Phase.SUCCESS
+                          : FloatingVoicePresentation.Phase.ERROR
+          );
+          showPanel(
+                  result.success ? "辨識完成" : "指令未執行",
+                  FloatingVoicePresentation.heardText(transcript),
+                  FloatingVoicePresentation.resultText(result.message),
+                  result.success
+          );
+          scheduleFinishedState();'''
+          new_result = '''        AminAction parsedAction = parsed.getAction();
+          AminAction voiceAction = new AminAction(
+                  parsedAction.getAction(),
+                  parsedAction.getParameters(),
+                  "floating_voice",
+                  parsedAction.getConfidence(),
+                  parsedAction.getRequestId(),
+                  parsedAction.getCreatedAt()
+          );
+          AminInputGateway.get(service).execute(voiceAction, result -> mainHandler.post(() -> {
+              boolean success = result.isSuccess();
+              setPhase(
+                      success
+                              ? FloatingVoicePresentation.Phase.SUCCESS
+                              : FloatingVoicePresentation.Phase.ERROR
+              );
+              showPanel(
+                      success ? "辨識完成" : "指令未執行",
+                      FloatingVoicePresentation.heardText(transcript),
+                      FloatingVoicePresentation.resultText(result.getMessage()),
+                      success
+              );
+              scheduleFinishedState();
+          }));'''
+          if floating.count(old_result) != 1:
+              raise SystemExit('Floating voice result block not found exactly once')
+          floating = floating.replace(old_result, new_result)
+          floating, removed_execute = re.subn(
+              r'\n    private ExecutionResult execute\(AminAction action\) \{.*?\n    private String errorMessage',
+              '\n    private String errorMessage',
+              floating,
+              flags=re.S,
+          )
+          if removed_execute != 1:
+              raise SystemExit(f'Expected one legacy floating execute block, removed {removed_execute}')
+          floating, removed_inner = re.subn(
+              r'\n    private static final class ExecutionResult \{.*?\n    \}\n\}',
+              '\n}',
+              floating,
+              flags=re.S,
+          )
+          if removed_inner != 1:
+              raise SystemExit(f'Expected one legacy inner ExecutionResult, removed {removed_inner}')
+          floating_path.write_text(floating, encoding='utf-8')
+
+          service_path = Path('android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java')
+          service = service_path.read_text(encoding='utf-8')
+          marker = '''    public static void setVoiceBubbleEnabled(Context context, boolean enabled) {
+              preferences(context).edit().putBoolean(KEY_VOICE_BUBBLE_ENABLED, enabled).apply();
+              UniversalControlAccessibilityService instance = activeInstance;
+              if (instance != null) {
+                  instance.mainHandler.post(() -> instance.applyVoiceBubbleEnabled(enabled));
+              }
+          }
+          '''
+          addition = marker + '''
+          public static void setVoiceBubbleEnabledAfterDelay(
+                  Context context,
+                  boolean enabled,
+                  long delayMs
+          ) {
+              preferences(context).edit().putBoolean(KEY_VOICE_BUBBLE_ENABLED, enabled).apply();
+              UniversalControlAccessibilityService instance = activeInstance;
+              if (instance != null) {
+                  instance.mainHandler.postDelayed(
+                          () -> instance.applyVoiceBubbleEnabled(enabled),
+                          Math.max(0L, delayMs)
+                  );
+              }
+          }
+          '''
+          if service.count(marker) != 1:
+              raise SystemExit('Voice bubble setter marker not found exactly once')
+          service_path.write_text(service.replace(marker, addition), encoding='utf-8')
+
+          docs_path = Path('AMIN_CONTROL_API_V1.md')
+          docs = docs_path.read_text(encoding='utf-8')
+          docs, removed_section = re.subn(
+              r'\n## 可並存測試版\n.*?\n## 設定頁',
+              '\n## 正式更新版\n\nBridge 23 使用正式套件 `com.amin.pocketgba` 與永久簽章，直接覆蓋更新原本的 Amin Pocket GBA，保留既有設定與 GBA 存檔。\n\n## 設定頁',
+              docs,
+              flags=re.S,
+          )
+          if removed_section != 1:
+              raise SystemExit('Side-by-side documentation section not found exactly once')
+          docs, removed_example = re.subn(
+              r'\n可並存測試版的 explicit component 寫法：\n\n```bash\n.*?\n```\n',
+              '\n',
+              docs,
+              flags=re.S,
+          )
+          if removed_example != 1:
+              raise SystemExit('Side-by-side broadcast example not found exactly once')
+          docs_path.write_text(docs, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/bridge23-gateway-fixup.yml
+          grep -Fq 'AminInputGateway.get(service).execute' android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+          grep -Fq 'setVoiceBubbleEnabledAfterDelay' android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java
+          ! grep -Fq 'api1test' AMIN_CONTROL_API_V1.md
+
+      - name: Commit source fixups
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: route floating voice through AminInputGateway'
+          git push origin HEAD:release/bridge23-amin-control-api-v1
