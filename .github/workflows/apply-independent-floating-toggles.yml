@@ -1,23 +1,22 @@
 name: Apply independent floating toggles
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/independent-floating-toggles
-    paths:
-      - '.github/workflows/apply-independent-floating-toggles.yml'
+      - release/bridge21-separate-floating-voice
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   patch-source:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'feature/independent-floating-toggles' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: feature/independent-floating-toggles
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Separate keyboard and voice preferences
@@ -224,13 +223,6 @@ jobs:
           controller_path = Path('android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java')
           controller = controller_path.read_text(encoding='utf-8')
 
-          def controller_replace(old, new, label):
-              nonlocal_controller = None
-              count = controller.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected one match, found {count}')
-              return controller.replace(old, new, 1)
-
           old_show = '''    void show() {
               if (windowManager == null || bubble != null) return;
               refreshScreenBounds();
@@ -297,4 +289,4 @@ jobs:
             android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java \
             android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
           git commit -m 'feat: separate keyboard and voice floating lifecycles'
-          git push origin HEAD:feature/independent-floating-toggles
+          git push origin HEAD:${{ github.head_ref }}
