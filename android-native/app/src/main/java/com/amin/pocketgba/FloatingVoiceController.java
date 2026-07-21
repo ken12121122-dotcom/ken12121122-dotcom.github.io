@@ -77,6 +77,10 @@ final class FloatingVoiceController implements RecognitionListener {
         createVoiceBubble();
     }
 
+    boolean isVisible() {
+        return bubble != null;
+    }
+
     void hide() {
         stopRecognizer(true);
         removeViewSafely(panel);
@@ -462,12 +466,20 @@ final class FloatingVoiceController implements RecognitionListener {
                         : ExecutionResult.fail("無法開啟控制器設定");
             case "OVERLAY_OPEN":
                 return service.showControlsFromVoice()
-                        ? ExecutionResult.ok("已開啟鍵盤控制盤")
-                        : ExecutionResult.fail("無法開啟鍵盤控制盤");
+                        ? ExecutionResult.ok("已開啟鍵盤浮動按鈕與控制盤")
+                        : ExecutionResult.fail("無法開啟鍵盤控制");
             case "OVERLAY_CLOSE":
                 return service.hideControlsFromVoice()
-                        ? ExecutionResult.ok("已收起鍵盤控制盤")
-                        : ExecutionResult.fail("無法收起鍵盤控制盤");
+                        ? ExecutionResult.ok("已關閉控制盤與鍵盤浮動按鈕")
+                        : ExecutionResult.fail("無法關閉鍵盤控制");
+            case "VOICE_BUBBLE_OPEN":
+                return service.showVoiceBubbleFromVoice()
+                        ? ExecutionResult.ok("已開啟語音浮動按鈕")
+                        : ExecutionResult.fail("無法開啟語音浮動按鈕");
+            case "VOICE_BUBBLE_CLOSE":
+                return service.hideVoiceBubbleFromVoice()
+                        ? ExecutionResult.ok("已關閉語音浮動按鈕")
+                        : ExecutionResult.fail("無法關閉語音浮動按鈕");
             case "CONTROL_MODE_SET":
                 String mode = action.getParameters().optString(
                         "mode",

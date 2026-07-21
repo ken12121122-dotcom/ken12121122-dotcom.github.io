@@ -31,7 +31,9 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     public static final String MODE_SCROLL = "scroll";
 
     private static final String PREFS = "amin_universal_control";
-    private static final String KEY_OVERLAY_ENABLED = "overlay_enabled";
+    private static final String KEY_OVERLAY_ENABLED_LEGACY = "overlay_enabled";
+    private static final String KEY_KEYBOARD_BUBBLE_ENABLED = "keyboard_bubble_enabled";
+    private static final String KEY_VOICE_BUBBLE_ENABLED = "voice_bubble_enabled";
     private static final String KEY_AUTO_HIDE_SECONDS = "auto_hide_seconds";
     private static final String KEY_CURSOR_STEP_DP = "cursor_step_dp";
     private static final String KEY_CONTROL_MODE = "control_mode";
@@ -94,16 +96,59 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    public static boolean isOverlayEnabled(Context context) {
-        return preferences(context).getBoolean(KEY_OVERLAY_ENABLED, true);
+    private static boolean legacyOverlayDefault(Context context) {
+        return preferences(context).getBoolean(KEY_OVERLAY_ENABLED_LEGACY, true);
     }
 
-    public static void setOverlayEnabled(Context context, boolean enabled) {
-        preferences(context).edit().putBoolean(KEY_OVERLAY_ENABLED, enabled).apply();
+    public static boolean isKeyboardBubbleEnabled(Context context) {
+        return preferences(context).getBoolean(
+                KEY_KEYBOARD_BUBBLE_ENABLED,
+                legacyOverlayDefault(context)
+        );
+    }
+
+    public static void setKeyboardBubbleEnabled(Context context, boolean enabled) {
+        preferences(context).edit().putBoolean(KEY_KEYBOARD_BUBBLE_ENABLED, enabled).apply();
         UniversalControlAccessibilityService instance = activeInstance;
         if (instance != null) {
-            instance.mainHandler.post(() -> instance.applyOverlayEnabled(enabled));
+            instance.mainHandler.post(() -> instance.applyKeyboardBubbleEnabled(enabled));
         }
+    }
+
+    public static boolean isVoiceBubbleEnabled(Context context) {
+        return preferences(context).getBoolean(
+                KEY_VOICE_BUBBLE_ENABLED,
+                legacyOverlayDefault(context)
+        );
+    }
+
+    public static void setVoiceBubbleEnabled(Context context, boolean enabled) {
+        preferences(context).edit().putBoolean(KEY_VOICE_BUBBLE_ENABLED, enabled).apply();
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance != null) {
+            instance.mainHandler.post(() -> instance.applyVoiceBubbleEnabled(enabled));
+        }
+    }
+
+    @Deprecated
+    public static boolean isOverlayEnabled(Context context) {
+        return isKeyboardBubbleEnabled(context);
+    }
+
+    @Deprecated
+    public static void setOverlayEnabled(Context context, boolean enabled) {
+        setKeyboardBubbleEnabled(context, enabled);
+    }
+
+    public static boolean showKeyboardControls(Context context) {
+        preferences(context).edit().putBoolean(KEY_KEYBOARD_BUBBLE_ENABLED, true).apply();
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance == null) return false;
+        instance.mainHandler.post(() -> {
+            instance.applyKeyboardBubbleEnabled(true);
+            instance.showControls();
+        });
+        return true;
     }
 
     public static int getAutoHideSeconds(Context context) {
@@ -183,7 +228,8 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         floatingVoiceController = new FloatingVoiceController(this, windowManager);
         cursorX = screenWidth * 0.5f;
         cursorY = screenHeight * 0.5f;
-        applyOverlayEnabled(isOverlayEnabled(this));
+        applyKeyboardBubbleEnabled(isKeyboardBubbleEnabled(this));
+        applyVoiceBubbleEnabled(isVoiceBubbleEnabled(this));
         showStatusToast("GBA 全域控制已連線");
     }
 
@@ -224,22 +270,26 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         super.onDestroy();
     }
 
-    private void applyOverlayEnabled(boolean enabled) {
+    private void applyKeyboardBubbleEnabled(boolean enabled) {
         if (!enabled) {
-            if (floatingVoiceController != null) {
-                floatingVoiceController.hide();
-            }
+            hideControls();
             removeOverlays();
             return;
         }
         showBubble();
+        hideControls();
+    }
+
+    private void applyVoiceBubbleEnabled(boolean enabled) {
         if (floatingVoiceController == null && windowManager != null) {
             floatingVoiceController = new FloatingVoiceController(this, windowManager);
         }
-        if (floatingVoiceController != null) {
+        if (floatingVoiceController == null) return;
+        if (enabled) {
             floatingVoiceController.show();
+        } else {
+            floatingVoiceController.hide();
         }
-        hideControls();
     }
 
     private void onControlModeChanged(String mode) {
@@ -293,8 +343,9 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     }
 
     private void prepareExternalControl(boolean forceCursorMode) {
-        if (!isOverlayEnabled(this)) {
-            preferences(this).edit().putBoolean(KEY_OVERLAY_ENABLED, true).apply();
+        if (!isKeyboardBubbleEnabled(this)) {
+            preferences(this).edit().putBoolean(KEY_KEYBOARD_BUBBLE_ENABLED, true).apply();
+            applyKeyboardBubbleEnabled(true);
         }
         if (forceCursorMode && isScrollMode()) {
             preferences(this).edit().putString(KEY_CONTROL_MODE, MODE_CURSOR).apply();
@@ -577,7 +628,7 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     }
 
     private void showControls() {
-        if (!isOverlayEnabled(this)) {
+        if (!isKeyboardBubbleEnabled(this)) {
             return;
         }
         showBubble();
@@ -610,13 +661,28 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
     }
 
     boolean showControlsFromVoice() {
+        preferences(this).edit().putBoolean(KEY_KEYBOARD_BUBBLE_ENABLED, true).apply();
+        applyKeyboardBubbleEnabled(true);
         showControls();
-        return controlsVisible;
+        return bubbleOverlay != null && controlsVisible;
     }
 
     boolean hideControlsFromVoice() {
-        hideControls();
-        return !controlsVisible;
+        preferences(this).edit().putBoolean(KEY_KEYBOARD_BUBBLE_ENABLED, false).apply();
+        applyKeyboardBubbleEnabled(false);
+        return bubbleOverlay == null && !controlsVisible;
+    }
+
+    boolean showVoiceBubbleFromVoice() {
+        preferences(this).edit().putBoolean(KEY_VOICE_BUBBLE_ENABLED, true).apply();
+        applyVoiceBubbleEnabled(true);
+        return floatingVoiceController != null && floatingVoiceController.isVisible();
+    }
+
+    boolean hideVoiceBubbleFromVoice() {
+        preferences(this).edit().putBoolean(KEY_VOICE_BUBBLE_ENABLED, false).apply();
+        mainHandler.postDelayed(() -> applyVoiceBubbleEnabled(false), 850L);
+        return true;
     }
 
     private void refreshModeVisuals() {
