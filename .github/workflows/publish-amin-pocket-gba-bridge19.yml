@@ -1,0 +1,354 @@
+name: Publish Amin Pocket GBA Bridge 19
+
+on:
+  push:
+    branches:
+      - release/bridge19-voice-catalog
+    paths:
+      - 'android-native/**'
+      - 'tests/**'
+      - '.github/workflows/publish-amin-pocket-gba-bridge19.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-amin-pocket-gba-bridge19
+  cancel-in-progress: false
+
+jobs:
+  validate-build-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+      AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+      AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+      AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify pinned release identity
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test "${GITHUB_REF_NAME}" = 'release/bridge19-voice-catalog'
+          grep -Fq "'115'" android-native/app/build.gradle
+          grep -Fq "'-bridge19'" android-native/app/build.gradle
+          test -s android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandActivity.java
+          test -s android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandCatalog.java
+          test -s android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandCatalogActivity.java
+          test -s android-native/app/src/test/java/com/amin/pocketgba/VoiceCommandCatalogTest.java
+          grep -Fq 'VoiceCommandCatalogActivity' android-native/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.RECORD_AUDIO' android-native/app/src/main/AndroidManifest.xml
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build and emulator tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            'platform-tools' \
+            'emulator' \
+            'platforms;android-35' \
+            'build-tools;35.0.0' \
+            'system-images;android-35;google_apis;x86_64'
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Validate Runtime tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          node --test tests/*.test.mjs
+
+      - name: Bundle EmulatorJS and mGBA
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ARCHIVE="$RUNNER_TEMP/emulatorjs-v4.2.3.tar.gz"
+          EXTRACT="$RUNNER_TEMP/emulatorjs-v4.2.3"
+          MIN_ZIP="$RUNNER_TEMP/emulator.min.zip"
+          TARGET='android-native/app/src/main/assets/emulator'
+          curl --fail --location --retry 4 --retry-delay 2 'https://codeload.github.com/EmulatorJS/EmulatorJS/tar.gz/refs/tags/v4.2.3' --output "$ARCHIVE"
+          rm -rf "$EXTRACT" "$TARGET"
+          mkdir -p "$EXTRACT" "$TARGET/cores"
+          tar -xzf "$ARCHIVE" -C "$EXTRACT" --strip-components=1
+          cp -a "$EXTRACT/data/." "$TARGET/"
+          cp "$EXTRACT/LICENSE" "$TARGET/EMULATORJS-LICENSE.txt"
+          curl --fail --location --retry 4 --retry-delay 2 'https://cdn.emulatorjs.org/4.2.3/data/emulator.min.zip' --output "$MIN_ZIP"
+          unzip -o "$MIN_ZIP" -d "$TARGET"
+          curl --fail --location --retry 4 --retry-delay 2 'https://cdn.emulatorjs.org/4.2.3/data/cores/mgba-wasm.data' --output "$TARGET/cores/mgba-wasm.data"
+          test -s "$TARGET/loader.js"
+          test -s "$TARGET/emulator.min.js"
+          test -s "$TARGET/emulator.min.css"
+          test -s "$TARGET/cores/mgba-wasm.data"
+
+      - name: Run unit tests build lint and instrumentation build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :app:testDebugUnitTest \
+            :app:assembleDebug \
+            :app:lintDebug \
+            :app:assembleDebugAndroidTest
+
+      - name: Read debug APK identity
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/debug-badging.txt"
+          PACKAGE_NAME="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$RUNNER_TEMP/debug-badging.txt" | head -n 1)"
+          LAUNCHABLE_ACTIVITY="$(sed -n "s/^launchable-activity: name='\([^']*\)'.*/\1/p" "$RUNNER_TEMP/debug-badging.txt" | head -n 1)"
+          test "$PACKAGE_NAME" = 'com.amin.pocketgba'
+          test -n "$LAUNCHABLE_ACTIVITY"
+          echo "CURRENT_PACKAGE=$PACKAGE_NAME" >> "$GITHUB_ENV"
+          echo "CURRENT_LAUNCHABLE_ACTIVITY=$LAUNCHABLE_ACTIVITY" >> "$GITHUB_ENV"
+
+      - name: Create and boot Android 35 emulator
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd \
+            --force \
+            --name amin_bridge19_api35 \
+            --package 'system-images;android-35;google_apis;x86_64' \
+            --device 'pixel_7'
+          EMULATOR_LOG="$RUNNER_TEMP/bridge19-emulator.log"
+          nohup env -u RUNNER_TRACKING_ID ANDROID_AVD_HOME="$ANDROID_AVD_HOME" \
+            "$ANDROID_HOME/emulator/emulator" \
+            -avd amin_bridge19_api35 \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -accel on \
+            -cores 2 \
+            -memory 3072 \
+            -noaudio \
+            -no-boot-anim \
+            -no-snapshot \
+            -wipe-data \
+            -camera-back none \
+            > "$EMULATOR_LOG" 2>&1 &
+          EMULATOR_PID=$!
+          adb start-server
+          BOOTED=0
+          for attempt in $(seq 1 120); do
+            if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
+              cat "$EMULATOR_LOG"
+              exit 1
+            fi
+            DEVICE_STATE="$(adb get-state 2>/dev/null || true)"
+            BOOT_STATE="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+            if [ "$DEVICE_STATE" = 'device' ] && [ "$BOOT_STATE" = '1' ]; then
+              BOOTED=1
+              break
+            fi
+            sleep 5
+          done
+          test "$BOOTED" -eq 1
+          adb shell input keyevent 82 || true
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell getprop ro.build.version.sdk | grep -Fx '35'
+
+      - name: Install debug and instrumentation APKs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APP_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/debug/app-debug.apk"
+          TEST_APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+          adb install -r "$APP_APK"
+          adb install -r "$TEST_APK"
+          RUNNER="$CURRENT_PACKAGE.test/androidx.test.runner.AndroidJUnitRunner"
+          adb shell pm list packages | grep -Fx "package:$CURRENT_PACKAGE"
+          adb shell pm list instrumentation | grep -F "$RUNNER"
+          echo "CURRENT_TEST_RUNNER=$RUNNER" >> "$GITHUB_ENV"
+
+      - name: Verify launcher and native routes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell cmd package resolve-activity --brief \
+            -a android.intent.action.MAIN \
+            -c android.intent.category.LAUNCHER \
+            "$CURRENT_PACKAGE" | tee "$RUNNER_TEMP/launcher.txt"
+          adb shell monkey -p "$CURRENT_PACKAGE" -c android.intent.category.LAUNCHER 1
+          sleep 2
+          adb shell am start -W -n "$CURRENT_PACKAGE/com.amin.pocketgba.MainActivity" | grep -F 'Status: ok'
+          adb shell input keyevent 4
+          adb shell am start -W -a android.intent.action.VIEW -d 'amin-permissions://open' -p "$CURRENT_PACKAGE" | grep -F 'Status: ok'
+          adb shell input keyevent 4
+          adb shell am start -W -a android.intent.action.VIEW -d 'amin-update://check' -p "$CURRENT_PACKAGE" | grep -F 'Status: ok'
+          adb shell input keyevent 4
+          adb shell am start -W -a android.intent.action.VIEW -d 'amin-voice://open' -p "$CURRENT_PACKAGE" | grep -F 'Status: ok'
+          adb shell dumpsys activity activities | grep -F 'VoiceCommandActivity'
+          adb shell input keyevent 4
+          adb shell am start -W -a android.intent.action.VIEW -d 'amin-voice://commands' -p "$CURRENT_PACKAGE" | grep -F 'Status: ok'
+          adb shell dumpsys activity activities | grep -F 'VoiceCommandCatalogActivity'
+          adb shell input keyevent 4
+
+      - name: Run Android acceptance tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          TESTS=(
+            com.amin.pocketgba.ControlCenterActivityTest
+            com.amin.pocketgba.MainActivitySmokeTest
+            com.amin.pocketgba.NativeSaveBridgeTest
+            com.amin.pocketgba.PermissionCenterActivityTest
+            com.amin.pocketgba.NativeUpdateActivityTest
+            com.amin.pocketgba.VoiceCommandActivityTest
+          )
+          for TEST in "${TESTS[@]}"; do
+            OUT="$RUNNER_TEMP/$(echo "$TEST" | tr '.' '_').txt"
+            adb shell am instrument -w -e class "$TEST" "$CURRENT_TEST_RUNNER" > "$OUT"
+            cat "$OUT"
+            grep -F 'OK (' "$OUT"
+          done
+
+      - name: Prepare permanent signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${AMIN_KEYSTORE_BASE64:-}"
+          test -n "${AMIN_KEYSTORE_PASSWORD:-}"
+          test -n "${AMIN_KEY_ALIAS:-}"
+          test -n "${AMIN_KEY_PASSWORD:-}"
+          KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
+          printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Build signed Bridge 19
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=115 \
+            -PAMIN_BRIDGE_SUFFIX=-bridge19 \
+            :app:testBridgeUnitTest \
+            :app:assembleBridge \
+            :app:lintBridge
+
+      - name: Inspect signed Bridge 19 APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/bridge/app-bridge.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/bridge19-badging.txt"
+          grep -Fq "package: name='com.amin.pocketgba' versionCode='115' versionName='0.9.2-bridge19'" "$RUNNER_TEMP/bridge19-badging.txt"
+          grep -Fq "application-label:'Amin Pocket GBA'" "$RUNNER_TEMP/bridge19-badging.txt"
+          "$AAPT" dump permissions "$APK" | tee "$RUNNER_TEMP/bridge19-permissions.txt"
+          grep -Fq 'android.permission.RECORD_AUDIO' "$RUNNER_TEMP/bridge19-permissions.txt"
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" | tee "$RUNNER_TEMP/bridge19-manifest.txt"
+          grep -Fq 'VoiceCommandActivity' "$RUNNER_TEMP/bridge19-manifest.txt"
+          grep -Fq 'VoiceCommandCatalogActivity' "$RUNNER_TEMP/bridge19-manifest.txt"
+          grep -Fq 'UniversalControlAccessibilityService' "$RUNNER_TEMP/bridge19-manifest.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/bridge19-signing.txt"
+          grep -Fqi '3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7' "$RUNNER_TEMP/bridge19-signing.txt"
+
+      - name: Publish APK and manifest to main
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK="$GITHUB_WORKSPACE/android-native/app/build/outputs/apk/bridge/app-bridge.apk"
+          git fetch origin main
+          rm -rf "$RUNNER_TEMP/amin-main"
+          git worktree add --detach "$RUNNER_TEMP/amin-main" origin/main
+          MAIN="$RUNNER_TEMP/amin-main"
+          mkdir -p "$MAIN/amin-vault/releases"
+          RELEASE_FILE="$MAIN/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge19.apk"
+          cp "$APK" "$RELEASE_FILE"
+          APK_SHA="$(sha256sum "$RELEASE_FILE" | awk '{print $1}')"
+          APK_SIZE="$(stat -c '%s' "$RELEASE_FILE")"
+          PUBLISHED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          export APK_SHA APK_SIZE PUBLISHED_AT
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          main = Path(os.environ['RUNNER_TEMP']) / 'amin-main'
+          manifest = {
+              'format': 'amin-native-release-manifest',
+              'manifestVersion': 1,
+              'channel': 'bridge',
+              'enabled': True,
+              'packageId': 'com.amin.pocketgba',
+              'latestVersionName': '0.9.2-bridge19',
+              'latestVersionCode': 115,
+              'minimumSupportedVersionCode': 107,
+              'minimumAndroidSdk': 26,
+              'apkUrl': 'https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge19.apk',
+              'apkSha256': os.environ['APK_SHA'],
+              'signerCertificateSha256': '3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7',
+              'sizeBytes': int(os.environ['APK_SIZE']),
+              'publishedAt': os.environ['PUBLISHED_AT'],
+              'mandatory': False,
+              'releaseNotes': [
+                  '新增可搜尋的語音指令庫，顯示目前 15 個動作與 40 種可說法。',
+                  '指令依控制盤、控制模式、系統、游標與捲動、遊戲與設定、語音分類。',
+                  '每張指令卡標示可直接使用或需要 Amin 全域控制服務。',
+                  '語音解析器與查詢畫面改用同一份指令資料，未來新增指令時會自動同步總數與內容。',
+                  '新增同步測試，逐條驗證所有可說法都能被語音解析器辨識。'
+              ]
+          }
+          path = main / 'amin-vault' / 'native-release-manifest.json'
+          path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          cd "$MAIN"
+          python3 -m json.tool amin-vault/native-release-manifest.json >/dev/null
+          sha256sum -c <(printf '%s  %s\n' "$APK_SHA" 'amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge19.apk')
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add amin-vault/native-release-manifest.json amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge19.apk
+          git commit -m 'release: publish verified Bridge 19 voice command catalog'
+          git push origin HEAD:main
+
+      - name: Upload signed release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-v0.9.2-bridge19-signed
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            android-native/app/build/outputs/apk/bridge/app-bridge.apk
+            ${{ runner.temp }}/bridge19-badging.txt
+            ${{ runner.temp }}/bridge19-permissions.txt
+            ${{ runner.temp }}/bridge19-manifest.txt
+            ${{ runner.temp }}/bridge19-signing.txt
