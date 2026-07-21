@@ -1,22 +1,23 @@
 name: Apply independent floating toggles
 
 on:
-  pull_request:
+  push:
     branches:
-      - release/bridge21-separate-floating-voice
-    types: [opened, synchronize, reopened]
+      - feature/independent-floating-toggles
+    paths:
+      - 'release/independent-floating-toggle-trigger.txt'
 
 permissions:
   contents: write
 
 jobs:
   patch-source:
-    if: github.head_ref == 'feature/independent-floating-toggles' && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
+          ref: feature/independent-floating-toggles
           fetch-depth: 0
 
       - name: Separate keyboard and voice preferences
@@ -283,10 +284,12 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          rm -f release/independent-floating-toggle-trigger.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             android-native/app/src/main/java/com/amin/pocketgba/UniversalControlAccessibilityService.java \
-            android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+            android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java \
+            release/independent-floating-toggle-trigger.txt
           git commit -m 'feat: separate keyboard and voice floating lifecycles'
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:feature/independent-floating-toggles
