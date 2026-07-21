@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -25,6 +26,8 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     private SpeechRecognizer speechRecognizer;
     private Intent recognizerIntent;
     private Button listenButton;
+    private Button voiceBubbleToggleButton;
+    private Button keyboardBubbleToggleButton;
     private TextView statusView;
     private TextView transcriptView;
     private boolean listening;
@@ -43,6 +46,12 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         super.onNewIntent(intent);
         setIntent(intent);
         VoiceCommandActivityLauncher.acknowledgeLaunch(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshFloatingToggleLabels();
     }
 
     private void buildUi() {
@@ -65,7 +74,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(title, matchWrap());
 
         TextView description = new TextView(this);
-        description.setText("按住麥克風說話，放開後辨識並執行。第一版不會在背景持續監聽。");
+        description.setText("按住麥克風說話，放開後辨識並執行。語音測試頁不會在背景持續監聽。");
         description.setTextSize(15f);
         description.setTextColor(0xff68766e);
         description.setGravity(Gravity.CENTER);
@@ -100,6 +109,48 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         catalogParams.topMargin = dp(14);
         root.addView(catalogButton, catalogParams);
 
+        TextView floatingTitle = new TextView(this);
+        floatingTitle.setText("浮動按鈕");
+        floatingTitle.setTextSize(20f);
+        floatingTitle.setTextColor(0xff16231b);
+        floatingTitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams floatingTitleParams = matchWrap();
+        floatingTitleParams.topMargin = dp(24);
+        root.addView(floatingTitle, floatingTitleParams);
+
+        TextView floatingDescription = new TextView(this);
+        floatingDescription.setText("語音與鍵盤控制已分開，可在這裡個別開啟或關閉。");
+        floatingDescription.setTextSize(14f);
+        floatingDescription.setTextColor(0xff68766e);
+        floatingDescription.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams floatingDescriptionParams = matchWrap();
+        floatingDescriptionParams.topMargin = dp(6);
+        root.addView(floatingDescription, floatingDescriptionParams);
+
+        voiceBubbleToggleButton = new Button(this);
+        voiceBubbleToggleButton.setTextSize(16f);
+        voiceBubbleToggleButton.setAllCaps(false);
+        voiceBubbleToggleButton.setContentDescription("切換語音浮動按鈕");
+        voiceBubbleToggleButton.setOnClickListener(view -> toggleVoiceBubble());
+        LinearLayout.LayoutParams voiceToggleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(54)
+        );
+        voiceToggleParams.topMargin = dp(12);
+        root.addView(voiceBubbleToggleButton, voiceToggleParams);
+
+        keyboardBubbleToggleButton = new Button(this);
+        keyboardBubbleToggleButton.setTextSize(16f);
+        keyboardBubbleToggleButton.setAllCaps(false);
+        keyboardBubbleToggleButton.setContentDescription("切換鍵盤浮動按鈕");
+        keyboardBubbleToggleButton.setOnClickListener(view -> toggleKeyboardBubble());
+        LinearLayout.LayoutParams keyboardToggleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(54)
+        );
+        keyboardToggleParams.topMargin = dp(8);
+        root.addView(keyboardBubbleToggleButton, keyboardToggleParams);
+
         listenButton = new Button(this);
         listenButton.setText("🎤 按住說話");
         listenButton.setTextSize(18f);
@@ -113,7 +164,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(58)
         );
-        buttonParams.topMargin = dp(18);
+        buttonParams.topMargin = dp(20);
         root.addView(listenButton, buttonParams);
 
         statusView = new TextView(this);
@@ -139,6 +190,51 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         root.addView(transcriptView, transcriptParams);
 
         setContentView(scroll);
+        refreshFloatingToggleLabels();
+    }
+
+    private void toggleVoiceBubble() {
+        boolean enabled = !UniversalControlAccessibilityService.isVoiceBubbleEnabled(this);
+        UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, enabled);
+        refreshFloatingToggleLabels();
+        if (enabled && !AminActionDispatcher.isAccessibilityEnabled(this)) {
+            setStatus("已設定開啟語音浮動按鈕，請先啟用 Amin 全域控制服務", false);
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            return;
+        }
+        setStatus(enabled ? "已開啟語音浮動按鈕" : "已關閉語音浮動按鈕", true);
+    }
+
+    private void toggleKeyboardBubble() {
+        boolean enabled = !UniversalControlAccessibilityService.isKeyboardBubbleEnabled(this);
+        UniversalControlAccessibilityService.setKeyboardBubbleEnabled(this, enabled);
+        refreshFloatingToggleLabels();
+        if (enabled && !AminActionDispatcher.isAccessibilityEnabled(this)) {
+            setStatus("已設定開啟鍵盤浮動按鈕，請先啟用 Amin 全域控制服務", false);
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            return;
+        }
+        setStatus(
+                enabled
+                        ? "已開啟鍵盤浮動按鈕，可點擊展開控制盤"
+                        : "已關閉控制盤與鍵盤浮動按鈕",
+                true
+        );
+    }
+
+    private void refreshFloatingToggleLabels() {
+        if (voiceBubbleToggleButton != null) {
+            boolean enabled = UniversalControlAccessibilityService.isVoiceBubbleEnabled(this);
+            voiceBubbleToggleButton.setText(
+                    enabled ? "🎤 關閉語音浮動按鈕" : "🎤 開啟語音浮動按鈕"
+            );
+        }
+        if (keyboardBubbleToggleButton != null) {
+            boolean enabled = UniversalControlAccessibilityService.isKeyboardBubbleEnabled(this);
+            keyboardBubbleToggleButton.setText(
+                    enabled ? "⌨ 關閉鍵盤浮動按鈕" : "⌨ 開啟鍵盤浮動按鈕"
+            );
+        }
     }
 
     private boolean handleTalkTouch(MotionEvent event) {
@@ -268,6 +364,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
         }
         AminActionDispatcher.DispatchResult result = AminActionDispatcher.dispatch(this, parsed.getAction());
         setStatus(result.getMessage(), result.isSuccess());
+        refreshFloatingToggleLabels();
     }
 
     private String errorMessage(int error) {
@@ -286,6 +383,7 @@ public final class VoiceCommandActivity extends Activity implements RecognitionL
     }
 
     private void setStatus(String message, boolean success) {
+        if (statusView == null) return;
         statusView.setText(message);
         statusView.setTextColor(success ? 0xff19794b : 0xff9a3d25);
     }
