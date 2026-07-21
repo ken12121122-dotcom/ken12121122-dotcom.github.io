@@ -1,4 +1,5 @@
 name: Apply Bridge 23 gateway fixups
+# One-shot source migration. The workflow removes itself after committing the fix.
 
 on:
   push:
