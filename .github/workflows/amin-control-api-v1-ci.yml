@@ -6,7 +6,8 @@ on:
       - feature/amin-control-api-v1
   pull_request:
     branches:
-      - main
+      - release/bridge22-independent-floating-toggles
+      - ci/amin-control-api-v1-validation-base
   workflow_dispatch:
 
 permissions:
@@ -24,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Protect release identity
         shell: bash
@@ -31,7 +34,7 @@ jobs:
           set -euxo pipefail
           grep -Fq "'118'" android-native/app/build.gradle
           grep -Fq "'-bridge22'" android-native/app/build.gradle
-          git diff --exit-code HEAD -- amin-vault/native-release-manifest.json
+          git diff --exit-code origin/release/bridge22-independent-floating-toggles -- amin-vault/native-release-manifest.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -92,12 +95,26 @@ jobs:
       - name: Unit tests build lint and instrumentation build
         shell: bash
         run: |
-          set -euxo pipefail
+          set +e
+          set -o pipefail
           gradle --no-daemon --console=plain -p android-native \
             :app:testDebugUnitTest \
             :app:assembleDebug \
             :app:lintDebug \
-            :app:assembleDebugAndroidTest
+            :app:assembleDebugAndroidTest \
+            2>&1 | tee "$RUNNER_TEMP/amin-gradle-build.log"
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          exit "$STATUS"
+
+      - name: Upload complete Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amin-control-api-v1-gradle-log
+          path: ${{ runner.temp }}/amin-gradle-build.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Inspect debug APK
         shell: bash
