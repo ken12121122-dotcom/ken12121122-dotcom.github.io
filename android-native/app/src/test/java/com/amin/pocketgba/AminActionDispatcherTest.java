@@ -28,6 +28,25 @@ public final class AminActionDispatcherTest {
     }
 
     @Test
+    public void routesIndependentFloatingControls() {
+        FakeTarget target = new FakeTarget();
+
+        AminActionDispatcher.DispatchResult closeKeyboard = AminActionDispatcher.dispatch(
+                new AminAction("OVERLAY_CLOSE", new JSONObject(), "voice", 0.9d),
+                target
+        );
+        assertTrue(closeKeyboard.isSuccess());
+        assertEquals("keyboard_close", target.lastFloatingAction);
+
+        AminActionDispatcher.DispatchResult closeVoice = AminActionDispatcher.dispatch(
+                new AminAction("VOICE_BUBBLE_CLOSE", new JSONObject(), "voice", 0.9d),
+                target
+        );
+        assertTrue(closeVoice.isSuccess());
+        assertEquals("voice_close", target.lastFloatingAction);
+    }
+
+    @Test
     public void routesModeParameterWithoutLosingValue() throws Exception {
         FakeTarget target = new FakeTarget();
         JSONObject parameters = new JSONObject();
@@ -69,12 +88,15 @@ public final class AminActionDispatcherTest {
     private static final class FakeTarget implements AminActionDispatcher.ActionTarget {
         private String lastMode;
         private String lastSharedAction;
+        private String lastFloatingAction;
         private boolean sharedActionResult = true;
 
         @Override public boolean openGba() { return true; }
         @Override public boolean openControllerSettings() { return true; }
-        @Override public boolean openOverlay() { return true; }
-        @Override public boolean closeOverlay() { return true; }
+        @Override public boolean openOverlay() { lastFloatingAction = "keyboard_open"; return true; }
+        @Override public boolean closeOverlay() { lastFloatingAction = "keyboard_close"; return true; }
+        @Override public boolean openVoiceBubble() { lastFloatingAction = "voice_open"; return true; }
+        @Override public boolean closeVoiceBubble() { lastFloatingAction = "voice_close"; return true; }
 
         @Override
         public boolean setControlMode(String mode) {
