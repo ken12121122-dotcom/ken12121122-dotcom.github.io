@@ -1,7 +1,9 @@
 package com.amin.pocketgba;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.BroadcastReceiver;
@@ -25,9 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.Socket;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -45,15 +45,7 @@ public final class AminControlApiInstrumentedTest {
     public void setUp() {
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         config = new AminControlApiConfig(context);
-        config.save(
-                true,
-                false,
-                true,
-                PORT,
-                120,
-                "",
-                AminControlApiConfig.DEFAULT_ALLOWLIST
-        );
+        config.save(true, false, true, PORT, 120, "", AminControlApiConfig.DEFAULT_ALLOWLIST);
     }
 
     @After
@@ -84,66 +76,65 @@ public final class AminControlApiInstrumentedTest {
         });
         server.start();
         assertTrue("API server did not start", started.await(5, TimeUnit.SECONDS));
-        assertEquals(null, startupError.get());
+        assertNull(startupError.get());
 
         JSONObject status = requestJson("GET", "/v1/status", null);
         assertEquals("amin-control-api-v1", status.getString("service"));
         assertTrue(status.getBoolean("running"));
         assertEquals("127.0.0.1", status.getString("bindHost"));
         assertEquals(PORT, status.getInt("port"));
-        assertTrue(!status.getBoolean("lanMode"));
+        assertFalse(status.getBoolean("lanMode"));
 
         JSONObject actions = requestJson("GET", "/v1/actions", null);
         assertEquals(17, actions.getInt("count"));
         assertEquals(17, actions.getJSONArray("actions").length());
 
-        JSONObject restBody = new JSONObject();
-        restBody.put("requestId", "rest-instrumented-001");
+        JSONObject body = new JSONObject().put("requestId", "rest-instrumented-001");
         JSONObject restResult = requestJson(
                 "POST",
                 "/v1/actions/SYSTEM_HOME",
-                restBody.toString()
+                body.toString()
         );
         assertTrue(restResult.getBoolean("success"));
         assertEquals("rest-instrumented-001", restResult.getString("requestId"));
         assertEquals("rest", restResult.getString("source"));
-
-        JSONObject recent = requestJson("GET", "/v1/events?limit=100", null);
-        assertTrue(containsRequestId(recent.getJSONArray("events"), "rest-instrumented-001"));
+        assertTrue(containsRequestId(
+                requestJson("GET", "/v1/events?limit=100", null).getJSONArray("events"),
+                "rest-instrumented-001"
+        ));
 
         try (Socket socket = new Socket("127.0.0.1", PORT)) {
             socket.setSoTimeout(5000);
             OutputStream output = socket.getOutputStream();
             InputStream input = socket.getInputStream();
-            String request = "GET /v1/events HTTP/1.1\r\n"
-                    + "Host: 127.0.0.1:" + PORT + "\r\n"
-                    + "Upgrade: websocket\r\n"
-                    + "Connection: Upgrade\r\n"
-                    + "Sec-WebSocket-Version: 13\r\n"
-                    + "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n";
-            output.write(request.getBytes(StandardCharsets.ISO_8859_1));
+            output.write((
+                    "GET /v1/events HTTP/1.1\r\n"
+                            + "Host: 127.0.0.1:" + PORT + "\r\n"
+                            + "Upgrade: websocket\r\n"
+                            + "Connection: Upgrade\r\n"
+                            + "Sec-WebSocket-Version: 13\r\n"
+                            + "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n"
+            ).getBytes(StandardCharsets.ISO_8859_1));
             output.flush();
-            String responseHeaders = readHeaders(input);
-            assertTrue(responseHeaders.startsWith("HTTP/1.1 101"));
+            assertTrue(readHeaders(input).startsWith("HTTP/1.1 101"));
+            assertEquals("connected", new JSONObject(readTextFrame(input)).getString("type"));
 
-            JSONObject connected = new JSONObject(readServerTextFrame(input));
-            assertEquals("connected", connected.getString("type"));
-
-            JSONObject command = new JSONObject();
-            command.put("action", "SYSTEM_HOME");
-            command.put("requestId", "ws-instrumented-001");
-            command.put("parameters", new JSONObject());
+            JSONObject command = new JSONObject()
+                    .put("action", "SYSTEM_HOME")
+                    .put("requestId", "ws-instrumented-001")
+                    .put("parameters", new JSONObject());
             sendMaskedTextFrame(output, command.toString());
 
             boolean received = false;
             for (int attempt = 0; attempt < 6; attempt += 1) {
-                String frame = readServerTextFrame(input);
-                if (frame.contains("ws-instrumented-001") && frame.contains("\"success\":true")) {
+                String frame = readTextFrame(input);
+                if (frame.contains("ws-instrumented-001")
+                        && frame.contains("\"success\":true")) {
                     received = true;
                     break;
                 }
             }
-            assertTrue("WebSocket did not return the execution result", received);
+            assertTrue("WebSocket execution result was not received", received);
         }
     }
 
@@ -152,7 +143,6 @@ public final class AminControlApiInstrumentedTest {
         CountDownLatch completed = new CountDownLatch(1);
         AtomicReference<String> resultJson = new AtomicReference<>();
         AtomicReference<String> resultMessage = new AtomicReference<>();
-
         Intent command = new Intent(context, AminAutomationReceiver.class)
                 .setAction(AminAutomationReceiver.ACTION_EXECUTE)
                 .putExtra(AminAutomationReceiver.EXTRA_ACTION, "SYSTEM_HOME")
@@ -188,35 +178,39 @@ public final class AminControlApiInstrumentedTest {
     }
 
     private JSONObject requestJson(String method, String path, String body) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(
-                "http://127.0.0.1:" + PORT + path
-        ).openConnection();
-        connection.setRequestMethod(method);
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(7000);
-        connection.setRequestProperty("Accept", "application/json");
-        if (body != null) {
-            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            connection.setFixedLengthStreamingMode(bytes.length);
-            try (OutputStream output = connection.getOutputStream()) {
-                output.write(bytes);
+        byte[] payload = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        try (Socket socket = new Socket("127.0.0.1", PORT)) {
+            socket.setSoTimeout(7000);
+            OutputStream output = socket.getOutputStream();
+            InputStream input = socket.getInputStream();
+            StringBuilder request = new StringBuilder()
+                    .append(method).append(' ').append(path).append(" HTTP/1.1\r\n")
+                    .append("Host: 127.0.0.1:").append(PORT).append("\r\n")
+                    .append("Accept: application/json\r\n")
+                    .append("Connection: close\r\n");
+            if (payload.length > 0) {
+                request.append("Content-Type: application/json; charset=utf-8\r\n")
+                        .append("Content-Length: ").append(payload.length).append("\r\n");
             }
+            request.append("\r\n");
+            output.write(request.toString().getBytes(StandardCharsets.ISO_8859_1));
+            output.write(payload);
+            output.flush();
+
+            String headers = readHeaders(input);
+            String[] statusLine = headers.substring(0, headers.indexOf("\r\n")).split(" ", 3);
+            assertTrue("Invalid HTTP response", statusLine.length >= 2);
+            int status = Integer.parseInt(statusLine[1]);
+            String response = readToEnd(input);
+            assertTrue("HTTP " + status + ": " + response, status >= 200 && status < 300);
+            return new JSONObject(response);
         }
-        int status = connection.getResponseCode();
-        InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
-        String response = readAll(stream);
-        connection.disconnect();
-        assertTrue("Unexpected HTTP status " + status + ": " + response, status >= 200 && status < 300);
-        return new JSONObject(response);
     }
 
     private static boolean containsRequestId(JSONArray events, String requestId) {
         for (int index = 0; index < events.length(); index += 1) {
             JSONObject event = events.optJSONObject(index);
-            if (event == null) continue;
-            JSONObject payload = event.optJSONObject("payload");
+            JSONObject payload = event == null ? null : event.optJSONObject("payload");
             if (payload != null && requestId.equals(payload.optString("requestId"))) return true;
         }
         return false;
@@ -227,7 +221,7 @@ public final class AminControlApiInstrumentedTest {
         int state = 0;
         while (output.size() < 32768) {
             int value = input.read();
-            if (value < 0) throw new EOFException("WebSocket handshake ended early");
+            if (value < 0) throw new EOFException("HTTP headers ended early");
             output.write(value);
             if ((state == 0 || state == 2) && value == '\r') state += 1;
             else if ((state == 1 || state == 3) && value == '\n') state += 1;
@@ -237,12 +231,10 @@ public final class AminControlApiInstrumentedTest {
         return output.toString(StandardCharsets.ISO_8859_1.name());
     }
 
-    private static String readServerTextFrame(InputStream input) throws Exception {
-        int first = input.read();
-        int second = input.read();
-        if (first < 0 || second < 0) throw new EOFException("Incomplete WebSocket frame");
-        int opcode = first & 0x0f;
-        assertEquals(1, opcode);
+    private static String readTextFrame(InputStream input) throws Exception {
+        int first = readByte(input);
+        int second = readByte(input);
+        assertEquals(1, first & 0x0f);
         int length = second & 0x7f;
         if (length == 126) {
             length = (readByte(input) << 8) | readByte(input);
@@ -254,8 +246,7 @@ public final class AminControlApiInstrumentedTest {
             assertTrue(longLength <= 65536L);
             length = (int) longLength;
         }
-        byte[] payload = readExactly(input, length);
-        return new String(payload, StandardCharsets.UTF_8);
+        return new String(readExactly(input, length), StandardCharsets.UTF_8);
     }
 
     private static void sendMaskedTextFrame(OutputStream output, String text) throws Exception {
@@ -278,7 +269,7 @@ public final class AminControlApiInstrumentedTest {
 
     private static int readByte(InputStream input) throws Exception {
         int value = input.read();
-        if (value < 0) throw new EOFException("Unexpected WebSocket EOF");
+        if (value < 0) throw new EOFException("Unexpected end of stream");
         return value;
     }
 
@@ -287,21 +278,17 @@ public final class AminControlApiInstrumentedTest {
         int offset = 0;
         while (offset < length) {
             int count = input.read(result, offset, length - offset);
-            if (count < 0) throw new EOFException("Unexpected WebSocket EOF");
+            if (count < 0) throw new EOFException("Unexpected end of stream");
             offset += count;
         }
         return result;
     }
 
-    private static String readAll(InputStream input) throws Exception {
-        if (input == null) return "";
-        try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[4096];
-            int count;
-            while ((count = stream.read(buffer)) >= 0) {
-                output.write(buffer, 0, count);
-            }
-            return output.toString(StandardCharsets.UTF_8.name());
-        }
+    private static String readToEnd(InputStream input) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int count;
+        while ((count = input.read(buffer)) >= 0) output.write(buffer, 0, count);
+        return output.toString(StandardCharsets.UTF_8.name());
     }
 }
