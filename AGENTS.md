@@ -6,6 +6,12 @@
 Repository：`ken12121122-dotcom/ken12121122-dotcom.github.io`  
 Default branch：`main`
 
+## 先讀：2026-08-03 repo 完整性稽核
+
+在動任何程式碼之前，先讀 [`REPO_AUDIT_2026-08-03.md`](./REPO_AUDIT_2026-08-03.md)。
+
+重點：`main` 分支目前缺少 Bridge 18～23（語音控制、全域控制盤、Amin Control API 等）的原始碼，這些檔案實際只存在於 `release/bridge18-voice` 到 `release/bridge23-amin-control-api-v1` 等孤立分支上，從未合併進 `main`，但簽好名的 APK 已直接被推上 `main` 當作正式版。下面「關鍵檔案」清單中列出的 `UniversalControlAccessibilityService.java`、`UniversalControlSetupActivity.java` 等檔案，在 `main` 上其實找不到——這是文件與現實脫節，不是清單寫錯路徑。在使用者明確要求前，不要自行把 `release/bridge*` 分支合併進 `main`。
+
 ## 不可違反的發布閘門
 
 以下規則高於任何單一功能任務、版本號、工作流或「先發再修」要求：

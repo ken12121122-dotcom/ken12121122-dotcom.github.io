@@ -12,6 +12,7 @@ Amin Pocket GBA combines an Android native shell, a GitHub Pages hot-update Runt
 
 ## Start here
 
+- Repo integrity audit (read first): [`REPO_AUDIT_2026-08-03.md`](./REPO_AUDIT_2026-08-03.md)
 - AI / developer handoff: [`AGENTS.md`](./AGENTS.md)
 - Human-readable architecture: [`amin-vault/ARCHITECTURE.md`](./amin-vault/ARCHITECTURE.md)
 - Machine-readable architecture: [`amin-vault/architecture.json`](./amin-vault/architecture.json)
