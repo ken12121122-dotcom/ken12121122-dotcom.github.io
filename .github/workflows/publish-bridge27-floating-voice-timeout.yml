@@ -11,6 +11,7 @@ on:
       - release/bridge23-amin-control-api-v1
     paths:
       - '.github/workflows/publish-bridge27-floating-voice-timeout.yml'
+      - 'android-native/BRIDGE27_RELEASE_TRIGGER.md'
   workflow_dispatch:
 
 permissions:
