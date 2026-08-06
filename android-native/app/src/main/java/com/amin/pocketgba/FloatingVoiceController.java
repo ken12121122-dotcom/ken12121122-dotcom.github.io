@@ -37,6 +37,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final String KEY_Y = "voice_bubble_y";
     private static final long PANEL_HIDE_DELAY_MS = 5000L;
     private static final long BUBBLE_RESET_DELAY_MS = 1400L;
+    private static final long LISTENING_IDLE_TIMEOUT_MS = 8000L;
 
     private final UniversalControlAccessibilityService service;
     private final WindowManager windowManager;
@@ -44,6 +45,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private final VoiceCommandParser parser = new VoiceCommandParser();
     private final Runnable hidePanelTask = this::hidePanel;
     private final Runnable resetBubbleTask = () -> setPhase(FloatingVoicePresentation.Phase.IDLE);
+    private final Runnable listeningTimeoutTask = this::collapseListeningToIdle;
 
     private TextView bubble;
     private WindowManager.LayoutParams bubbleParams;
@@ -269,6 +271,8 @@ final class FloatingVoiceController implements RecognitionListener {
                 true
         );
         try {
+            mainHandler.removeCallbacks(listeningTimeoutTask);
+            mainHandler.postDelayed(listeningTimeoutTask, LISTENING_IDLE_TIMEOUT_MS);
             speechRecognizer.startListening(recognizerIntent);
         } catch (RuntimeException error) {
             listening = false;
@@ -329,6 +333,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private void stopRecognizer(boolean destroy) {
         mainHandler.removeCallbacks(hidePanelTask);
         mainHandler.removeCallbacks(resetBubbleTask);
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         if (speechRecognizer != null) {
             ignoreNextError = true;
             speechRecognizer.cancel();
@@ -349,6 +354,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onBeginningOfSpeech() {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         showPanel("辨識中", "已聽到聲音，請繼續說", "正在接收語音…", true);
     }
 
@@ -360,6 +366,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onEndOfSpeech() {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         listening = false;
         processing = true;
         setPhase(FloatingVoicePresentation.Phase.PROCESSING);
@@ -373,6 +380,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onError(int error) {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         if (ignoreNextError) {
             ignoreNextError = false;
             return;
@@ -391,6 +399,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onResults(Bundle results) {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         listening = false;
         processing = false;
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
@@ -460,6 +469,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onPartialResults(Bundle partialResults) {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
         ArrayList<String> matches = partialResults.getStringArrayList(
                 SpeechRecognizer.RESULTS_RECOGNITION
         );
@@ -579,6 +589,13 @@ final class FloatingVoiceController implements RecognitionListener {
             case "DIRECTION_RIGHT": return "已向右執行";
             default: return "已執行語音指令";
         }
+    }
+
+    private void collapseListeningToIdle() {
+        if (!listening || processing) return;
+        stopRecognizer(false);
+        setPhase(FloatingVoicePresentation.Phase.IDLE);
+        hidePanel();
     }
 
     private String errorMessage(int error) {
