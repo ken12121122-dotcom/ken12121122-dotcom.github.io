@@ -1,6 +1,6 @@
 # Amin Prompt Keyboard v0.1
 
-Status: candidate implementation on `agent/amin-prompt-keyboard-v01`.
+Status: signed Bridge 24 candidate on `release/bridge24-prompt-keyboard-v1`; formal manifest publication remains gated by physical-device acceptance.
 
 ## Verified product contract
 
@@ -35,7 +35,7 @@ Select text in another Android app
 
 This is an Android native feature. It requires a new Bridge APK and cannot ship through the Runtime hot-update channel. The formal native release manifest must not change until CI, emulator acceptance, physical-device acceptance, and explicit release approval are complete.
 
-The `promptPreview` build type uses package `com.amin.pocketgba.promptpreview` and the normal Android debug signer. It can be installed beside Bridge 23 for acceptance testing and is never a formal update source.
+Bridge 24 uses the existing package `com.amin.pocketgba`, version code `120`, and the existing permanent signing identity. The release workflow first produces a signed in-place-upgrade candidate and proves Bridge 23 → Bridge 24 replacement on Android 35. It does not update the formal manifest until physical-device acceptance is recorded.
 
 ## Acceptance cases
 
