@@ -7,6 +7,12 @@ on:
     paths:
       - 'android-native/**'
       - '.github/workflows/build-amin-pocket-gba-bridge24-candidate.yml'
+  pull_request:
+    branches:
+      - release/bridge23-amin-control-api-v1
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/build-amin-pocket-gba-bridge24-candidate.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,13 +32,13 @@ jobs:
       - name: Checkout Bridge 26 source
         uses: actions/checkout@v6
         with:
+          ref: release/bridge24-prompt-keyboard-v1
           fetch-depth: 0
 
       - name: Verify Bridge 26 identity
         shell: bash
         run: |
           set -euxo pipefail
-          test "$GITHUB_REF_NAME" = 'release/bridge24-prompt-keyboard-v1'
           grep -Fq "'122'" android-native/app/build.gradle
           grep -Fq "'-bridge26'" android-native/app/build.gradle
           grep -Fq "versionName '0.9.4'" android-native/app/build.gradle
