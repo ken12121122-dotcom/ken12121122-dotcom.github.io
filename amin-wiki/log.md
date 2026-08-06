@@ -14,11 +14,6 @@ Append-only。格式：`## [YYYY-MM-DD] ingest|query|lint | 標題`。查最近�
 
 `AGENTS.md`／`ARCHITECTURE.md`／`README.md`（均標註 2026-07-19）都說正式版本停在 Bridge 16，且 `AGENTS.md` 明確要求「未經使用者批准前必須維持 Bridge 16」；但 `native-release-manifest.json`（`publishedAt: 2026-07-22`）已經是 Bridge 23，git log 也有 Bridge 17-23 的發布提交。詳見 [`pages/release-process.md`](./pages/release-process.md) 的 ⚠️ 矛盾段落。未修改任何 raw 來源或 manifest —— 這屬於發布流程決策，留給使用者處理。
 
-## [2026-08-06] lint | 修正 codex review 指出的問題（PR #29）
-
-1. `raw/index.md` 的「已過時」交叉引用指錯位置（原指向 `pages/known-issues.md`，實際討論在 `pages/controller-input.md` 的「⚠️ 已過時」段落）——已改指向正確頁面。
-2. `pages/release-process.md` 對 Bridge 16/23 矛盾的解讀原本標了「最可能」，等於預先認定 manifest 更新是合法的，但沒有任何 raw 來源證明 Bridge 17-23 真的完成使用者實機驗收與批准——已移除偏頗用語，改為明確寫出兩種解讀都缺乏證據佐證。
-
 ## [2026-08-06] lint | 過時內容標註
 
 `AMIN_POCKET_GBA_HANDOFF.md`（v0.9.0，2026-07-12）的「已驗證/未驗證分界表」把按鈕映射、Start/Select/L/R 標成未驗證，但這些項目在後續 Bridge 16 文件中已標記為已驗證。已在 [`pages/controller-input.md`](./pages/controller-input.md) 加上 ⚠️ 已過時標註，避免未來誤讀成現況。
