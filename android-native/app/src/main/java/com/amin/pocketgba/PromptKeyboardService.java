@@ -1,6 +1,9 @@
 package com.amin.pocketgba;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
@@ -18,27 +21,119 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.List;
 
 public final class PromptKeyboardService extends InputMethodService {
     private PromptStore store;
+    private LinearLayout root;
     private LinearLayout categoryRow;
     private LinearLayout promptList;
     private TextView status;
     private String selectedCategoryId = PromptStore.DEFAULT_CATEGORY_ID;
+    private boolean sessionUnlocked;
+    private boolean receiverRegistered;
+
+    private final BroadcastReceiver unlockReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!PromptUnlockActivity.ACTION_PROMPT_UNLOCKED.equals(intent.getAction())) return;
+            sessionUnlocked = true;
+            renderPromptHome();
+        }
+    };
 
     @Override
     public void onCreate() {
         super.onCreate();
         store = new PromptStore(this);
+        IntentFilter filter = new IntentFilter(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED);
+        ContextCompat.registerReceiver(
+                this,
+                unlockReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+        receiverRegistered = true;
     }
 
     @Override
     public View onCreateInputView() {
-        LinearLayout root = new LinearLayout(this);
+        root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(10), dp(8), dp(10), dp(8));
         root.setBackgroundColor(0xfff4f7f5);
+        renderCurrentState();
+        return root;
+    }
+
+    @Override
+    public void onStartInputView(EditorInfo info, boolean restarting) {
+        super.onStartInputView(info, restarting);
+        if (root != null) renderCurrentState();
+    }
+
+    @Override
+    public void onFinishInputView(boolean finishingInput) {
+        lockSession();
+        super.onFinishInputView(finishingInput);
+    }
+
+    private void renderCurrentState() {
+        if (root == null) return;
+        if (sessionUnlocked) renderPromptHome();
+        else renderLockScreen();
+    }
+
+    private void renderLockScreen() {
+        root.removeAllViews();
+
+        TextView title = text("Amin 提示詞已鎖定", 17f, true, 0xff16231b);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(54)
+        ));
+
+        TextView message = text("使用手機原本的螢幕鎖驗證後即可開啟", 13f, false, 0xff68766e);
+        message.setGravity(Gravity.CENTER);
+        root.addView(message, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(46)
+        ));
+
+        Button unlock = new Button(this);
+        unlock.setAllCaps(false);
+        unlock.setText("使用手機鎖解鎖");
+        unlock.setTextSize(16f);
+        unlock.setTextColor(Color.WHITE);
+        unlock.setBackgroundColor(0xff19794b);
+        unlock.setOnClickListener(view -> launchSystemUnlock());
+        LinearLayout.LayoutParams unlockParams = fullWidth();
+        unlockParams.topMargin = dp(12);
+        root.addView(unlock, unlockParams);
+
+        Button switchKeyboard = compactButton("切換鍵盤");
+        switchKeyboard.setOnClickListener(view -> switchKeyboard());
+        LinearLayout.LayoutParams switchParams = fullWidth();
+        switchParams.topMargin = dp(10);
+        root.addView(switchKeyboard, switchParams);
+    }
+
+    private void launchSystemUnlock() {
+        try {
+            Intent intent = new Intent(this, PromptUnlockActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            startActivity(intent);
+        } catch (RuntimeException error) {
+            Toast.makeText(this, "無法開啟手機驗證", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void renderPromptHome() {
+        if (root == null) return;
+        root.removeAllViews();
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -46,6 +141,13 @@ public final class PromptKeyboardService extends InputMethodService {
 
         TextView title = text("Amin 提示詞", 16f, true, 0xff16231b);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(42), 1f));
+
+        Button lock = compactButton("鎖定");
+        lock.setOnClickListener(view -> {
+            lockSession();
+            renderLockScreen();
+        });
+        header.addView(lock);
 
         Button refresh = compactButton("重新整理");
         refresh.setOnClickListener(view -> reload());
@@ -78,17 +180,10 @@ public final class PromptKeyboardService extends InputMethodService {
                 dp(190)
         ));
         reload();
-        return root;
-    }
-
-    @Override
-    public void onStartInputView(EditorInfo info, boolean restarting) {
-        super.onStartInputView(info, restarting);
-        reload();
     }
 
     private void reload() {
-        if (categoryRow == null || promptList == null) return;
+        if (!sessionUnlocked || categoryRow == null || promptList == null) return;
         List<PromptStore.Category> categories = store.listCategories();
         boolean selectedExists = false;
         for (PromptStore.Category category : categories) {
@@ -148,7 +243,12 @@ public final class PromptKeyboardService extends InputMethodService {
         connection.commitText(content, 1);
     }
 
+    private void lockSession() {
+        sessionUnlocked = false;
+    }
+
     private void switchKeyboard() {
+        lockSession();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && switchToNextInputMethod(false)) return;
         InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (manager != null) manager.showInputMethodPicker();
@@ -169,6 +269,8 @@ public final class PromptKeyboardService extends InputMethodService {
 
     @Override
     public void onDestroy() {
+        lockSession();
+        if (receiverRegistered) unregisterReceiver(unlockReceiver);
         if (store != null) store.close();
         super.onDestroy();
     }
