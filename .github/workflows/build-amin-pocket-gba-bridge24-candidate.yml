@@ -1,12 +1,6 @@
 name: Publish Amin Pocket GBA Bridge 26
 
 on:
-  push:
-    branches:
-      - release/bridge24-prompt-keyboard-v1
-    paths:
-      - 'android-native/**'
-      - '.github/workflows/build-amin-pocket-gba-bridge24-candidate.yml'
   pull_request:
     branches:
       - release/bridge23-amin-control-api-v1
@@ -26,6 +20,7 @@ env:
 
 jobs:
   build-sign-publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'release/bridge24-prompt-keyboard-v1'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
