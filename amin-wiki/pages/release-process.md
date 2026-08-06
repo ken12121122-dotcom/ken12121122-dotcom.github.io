@@ -29,9 +29,11 @@
 | `amin-vault/native-release-manifest.json` | `publishedAt: 2026-07-22` | `latestVersionName: "0.9.2-bridge23"`，`latestVersionCode: 119`，release notes 提到新增 Amin Control API v1 |
 | `git log`（`main` 分支提交） | 到 2026-08-06 為止 | 已有 `Bridge 17` 到 `Bridge 23` 的「release: publish signed/verified Bridge N」提交 |
 
-可能的解讀（不確定，需要使用者或下一次 ingest 確認）：
-- 要嘛是 Bridge 17-23 已經完成使用者實機驗收與批准，只是 `AGENTS.md`／`ARCHITECTURE.md`／`README.md` 這三份文件的「最後人工驗證」欄位沒有跟著更新（最可能）；
+可能的解讀（兩者都沒有證據佐證，不預設哪個比較可能，需要使用者或下一次 ingest 確認）：
+- 要嘛是 Bridge 17-23 已經完成使用者實機驗收與批准，只是 `AGENTS.md`／`ARCHITECTURE.md`／`README.md` 這三份文件的「最後人工驗證」欄位沒有跟著更新；
 - 要嘛是 manifest 在沒有完整走過 `AGENTS.md` 規則 5-8 的情況下被更新了，違反了發布閘門。
+
+目前 raw 來源裡沒有任何一份 —— 包括 manifest 本身、release notes、commit 標題 —— 證明 Bridge 17-23 真的完成了規則 7-8 要求的使用者實機驗收與明確批准。`AGENTS.md` 目前仍白紙黑字要求「未經使用者完成新的實機驗收並明確批准前，正式 manifest 必須維持 Bridge 16」，所以在拿到那個證據之前，不應該把「manifest 已合法更新」當成預設立場。
 
 **行動建議**：下次有人力核對時，先確認 Bridge 17-23 是否真的完成了 `AGENTS.md` 規則 7-8 要求的測試與實機驗證，再決定是把三份文件更新到 Bridge 23，還是回滾 manifest。這不是 wiki 能單方面決定的事。
 

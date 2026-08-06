@@ -7,7 +7,7 @@
 | AI 交接主檔 | [`/AGENTS.md`](../../AGENTS.md) | 2026-07-19 | 發布閘門、完成定義、手把輸入路徑、關鍵檔案清單；任何 AI 改程式前必讀。 |
 | 架構文件（人讀） | [`/amin-vault/ARCHITECTURE.md`](../../amin-vault/ARCHITECTURE.md) | 2026-07-19 | Vault 分層、Runtime/原生拆分、手把輸入架構、全域控制盤、GBA 模擬中心、已知限制與下一步。 |
 | 架構文件（機讀） | [`/amin-vault/architecture.json`](../../amin-vault/architecture.json) | 對應 ARCHITECTURE.md | JSON 版架構描述，供 CI/工具讀取。 |
-| v0.9.0 交接檔 | [`/AMIN_POCKET_GBA_HANDOFF.md`](../../AMIN_POCKET_GBA_HANDOFF.md) | 2026-07-12 | 手把訊號診斷起點、PWA→原生橋接的轉折、v0.9.0 當時的已驗證/未驗證分界表。**已過時**：現況已到 Bridge 23，本檔案許多「未驗證」項目後續文件顯示已完成，見 [`pages/known-issues.md`](../pages/known-issues.md)。 |
+| v0.9.0 交接檔 | [`/AMIN_POCKET_GBA_HANDOFF.md`](../../AMIN_POCKET_GBA_HANDOFF.md) | 2026-07-12 | 手把訊號診斷起點、PWA→原生橋接的轉折、v0.9.0 當時的已驗證/未驗證分界表。**已過時**：現況已到 Bridge 23，本檔案許多「未驗證」項目後續文件顯示已完成，見 [`pages/controller-input.md`](../pages/controller-input.md) 的「⚠️ 已過時」段落。 |
 | 原生外殼 v0.9.1 預覽說明 | [`/README-NATIVE-SHELL-v0.9.1.md`](../../README-NATIVE-SHELL-v0.9.1.md) | 無標註日期，內容對應 v0.9.1 preview | 網路狀態橋接、cartridge streaming、離線復原頁；強調 preview 簽章非正式管道。 |
 | 專案入口 README | [`/README.md`](../../README.md) | 對應 Bridge 16 | 專案一句話介紹、目前驗證版本號、關鍵文件連結。 |
 | APK 發布 manifest | [`/amin-vault/native-release-manifest.json`](../../amin-vault/native-release-manifest.json) | `publishedAt: 2026-07-22` | 機器可讀的 APK 正式版本來源：`latestVersionName`、簽章 SHA-256、release notes。 |
