@@ -1,6 +1,6 @@
 # Release process
 
-來源：[`AGENTS.md`](../../AGENTS.md)、[`amin-vault/native-release-manifest.json`](../../amin-vault/native-release-manifest.json)、[`amin-vault/runtime-manifest.json`](../../amin-vault/runtime-manifest.json)、`git log`
+來源：[`AGENTS.md`](../AGENTS.md)、[`amin-vault/native-release-manifest.json`](../amin-vault/native-release-manifest.json)、[`amin-vault/runtime-manifest.json`](../amin-vault/runtime-manifest.json)、`git log`
 
 ## 發布閘門（`AGENTS.md` 不可違反規則，摘要）
 
@@ -19,7 +19,7 @@
 
 ## ⚠️ 矛盾：文件標註的「正式版本」跟 manifest 內容不一致
 
-這是本 wiki 建立時（見 [`log.md`](../log.md)）第一次 lint 就抓到的問題，記錄下來但**不要自行修正 raw 來源或 manifest**，這屬於發布流程，只能由使用者核准的發布動作處理：
+這是本 wiki 建立時（見 [`log.md`](./log.md)）第一次 lint 就抓到的問題，記錄下來但**不要自行修正 raw 來源或 manifest**，這屬於發布流程，只能由使用者核准的發布動作處理：
 
 | 來源 | 標註日期 | 說法 |
 |---|---|---|
@@ -37,7 +37,7 @@
 
 ## 簽章與正式發布驗收（`android-native/` 文件）
 
-來源：[`android-native/RELEASE_SIGNING.md`](../../android-native/RELEASE_SIGNING.md)、[`android-native/PERMANENT_SIGNING_IDENTITY.md`](../../android-native/PERMANENT_SIGNING_IDENTITY.md)、[`android-native/UPDATE_BRIDGE_SIGNING.md`](../../android-native/UPDATE_BRIDGE_SIGNING.md)、[`android-native/RC092_DEVICE_ACCEPTANCE.md`](../../android-native/RC092_DEVICE_ACCEPTANCE.md)
+來源：[`android-native/RELEASE_SIGNING.md`](../android-native/RELEASE_SIGNING.md)、[`android-native/PERMANENT_SIGNING_IDENTITY.md`](../android-native/PERMANENT_SIGNING_IDENTITY.md)、[`android-native/UPDATE_BRIDGE_SIGNING.md`](../android-native/UPDATE_BRIDGE_SIGNING.md)、[`android-native/RC092_DEVICE_ACCEPTANCE.md`](../android-native/RC092_DEVICE_ACCEPTANCE.md)
 
 這四份文件全部最後一次改動都在初始提交 `1a9c84d`（2026-07-19），之後沒有再更新，內容對應到 Bridge 1 / rc2-rc6 那個時期，比 `AGENTS.md`／`ARCHITECTURE.md` 標註的 Bridge 16 現況還早。
 

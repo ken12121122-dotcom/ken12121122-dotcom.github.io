@@ -61,4 +61,4 @@ node_config (dict)
 
 ## 這篇筆記跟 Amin 專案的關係
 
-目前**沒有**已確認的關係——這是使用者主動要求收錄的獨立參考資料，不是 Amin Pocket GBA 專案的 raw source。如果之後要拿這個架構套在 Amin Control API v1（Bridge 23 新增的語音/REST/WebSocket/自動化統一入口）上做類似「節點化」的動作編排，可以回來這篇當參考，但目前 `amin-wiki` 其他頁面（尤其 [`pages/known-issues.md`](./known-issues.md) 待確認的 Action Core 共用問題）不應該假設兩者已經有關聯。
+目前**沒有**已確認的關係——這是使用者主動要求收錄的獨立參考資料，不是 Amin Pocket GBA 專案的 raw source。如果之後要拿這個架構套在 Amin Control API v1（Bridge 23 新增的語音/REST/WebSocket/自動化統一入口）上做類似「節點化」的動作編排，可以回來這篇當參考，但目前 `amin-wiki` 其他頁面（尤其 [`known-issues.md`](./known-issues.md) 待確認的 Action Core 共用問題）不應該假設兩者已經有關聯。

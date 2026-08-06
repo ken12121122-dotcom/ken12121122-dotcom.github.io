@@ -5,30 +5,36 @@
 - `amin-vault/` — 正式部署的產物（HTML/JS/CSS、簽章 APK、`native-release-manifest.json`、`runtime-manifest.json`）。修改它必須遵守根目錄 `AGENTS.md` 的發布閘門，任何 AI 助理都不得為了維護 wiki 而改動這裡的檔案。
 - `amin-wiki/`（本目錄）— 純文件，沒有發布流程，不影響任何正式版本號、簽章或 manifest。
 
-## 三層結構
+> **2026-08-06 對照原始 gist 後的修正**：早期版本把這個目錄拆成 `raw/` 與 `pages/` 兩層子資料夾，但原文只講「Raw sources — a curated collection of source documents」和「the wiki — a directory of LLM-generated markdown files」，沒有要求額外的子目錄分層。已扁平化：現在所有 wiki 頁面和 `sources.md` 都直接放在 `amin-wiki/` 底下，不再有 `raw/`、`pages/` 子目錄。
 
-1. **raw/** — 原始來源清單。這裡不重複貼原始文件全文，而是用 `raw/index.md` 指向 repo 裡既有的權威文件（`AGENTS.md`、`amin-vault/ARCHITECTURE.md`、`AMIN_POCKET_GBA_HANDOFF.md`、`README-NATIVE-SHELL-v0.9.1.md`、兩份 manifest）。這些來源本身仍是唯讀的（除非使用者或既有發布流程更新它們），wiki 不改寫它們。
-2. **pages/** — LLM 維護的知識頁面，整合多個 raw 來源、標註矛盾與過時內容。
-3. **index.md** — 全站目錄，列出每個 raw 來源與每個 wiki 頁面，附一行摘要。
-4. **log.md** — 時間軸紀錄，格式為 `## [YYYY-MM-DD] ingest|query|lint | 標題`，方便用 `grep "^## \[" amin-wiki/log.md | tail -5` 查最近動態。
+## 結構
+
+1. **`sources.md`** — 原始來源清單。這裡不重複貼原始文件全文，而是指向 repo 裡既有的權威文件（`AGENTS.md`、`amin-vault/ARCHITECTURE.md`、`AMIN_POCKET_GBA_HANDOFF.md`、`README-NATIVE-SHELL-v0.9.1.md`、兩份 manifest、`android-native/` 下的簽章與驗收文件等）。這些來源本身仍是唯讀的（除非使用者或既有發布流程更新它們），wiki 不改寫它們。
+2. **其餘 `*.md` 頁面**（例如 `architecture.md`、`controller-input.md`、`release-process.md`、`known-issues.md`）— LLM 維護的知識頁面，整合多個來源、標註矛盾與過時內容。
+3. **`index.md`** — 全站目錄，列出每個來源與每個 wiki 頁面，附一行摘要。
+4. **`log.md`** — 時間軸紀錄，格式為 `## [YYYY-MM-DD] ingest|query|lint | 標題`，方便用 `grep "^## \[" amin-wiki/log.md | tail -5` 查最近動態。
 
 ## 三種操作
 
-**Ingest（收錄新來源）**：當 repo 新增或更新文件（例如新的 Bridge 版本說明、新的 handoff 檔）時：
+**Ingest（收錄新來源）**：當 repo 新增或更新文件（例如新的 Bridge 版本說明、新的 handoff 檔），或使用者直接提供新資料時：
 1. 讀取新來源，摘要重點。
-2. 在 `raw/index.md` 加一筆條目（連結 + 一行摘要 + 日期）。
-3. 更新受影響的 `pages/*.md`（例如版本號變了要同步 `pages/release-process.md`）。
-4. 更新 `index.md`。
-5. 在 `log.md` 追加一筆 `ingest` 紀錄。
+2. **跟使用者討論這份來源的重點**——這是原始 gist 明講的步驟（"reads the source, discusses key takeaways with you"），不是自己讀完就悶頭寫。摘要完先跟使用者對一輪，確認理解對不對、有沒有要特別標註的地方，再落筆。
+3. 在 `sources.md` 加一筆條目（連結 + 一行摘要 + 日期）。
+4. 更新受影響的 `*.md` 頁面（例如版本號變了要同步 `release-process.md`）。原始 gist 提到「一份來源可能牽動 10-15 個頁面」——這是在描述一個成熟、頁面彼此高度交叉引用的 wiki；目前 amin-wiki 頁面數還不多，通常一次只會動到 1-3 頁，這是正常的，不用為了湊數硬修改不相關頁面。
+5. 更新 `index.md`。
+6. 在 `log.md` 追加一筆 `ingest` 紀錄。
 
-**Query（查詢）**：先讀 `index.md` 找相關頁面，再深入 `pages/` 或 `raw/` 回答問題，附引用來源路徑。若答案本身有價值（例如一份比較表），可以寫成新的 `pages/*.md` 存回 wiki，並在 `log.md` 記一筆 `query`。
+**Query（查詢）**：先讀 `index.md` 找相關頁面，再深入其他 `*.md` 頁面或 `sources.md` 回答問題，附引用來源路徑。若答案本身有價值（例如一份比較表），可以寫成新的頁面存回 wiki，並在 `log.md` 記一筆 `query`。
 
 **Lint（健檢）**：定期檢查：
-- `pages/` 之間或 `pages/` 與 `raw/` 來源之間是否矛盾（例如某文件說版本停在 Bridge 16，另一份 manifest 卻顯示 Bridge 23）。
+- 頁面之間、或頁面與 `sources.md` 來源之間是否矛盾（例如某文件說版本停在 Bridge 16，另一份 manifest 卻顯示 Bridge 23）。
 - 有沒有孤兒頁面（`index.md` 沒連到的頁面）。
 - 有沒有明顯過時但未標註的內容（例如 `AMIN_POCKET_GBA_HANDOFF.md` 是 v0.9.0 時期的快照，現況已經到 Bridge 23）。
 - 有沒有值得寫成頁面但還沒寫的重要主題。
-發現問題時，在對應 `pages/*.md` 用「⚠️ 矛盾」或「⚠️ 已過時」標註，並在 `log.md` 記一筆 `lint`。**絕不**為了消除矛盾去竄改 raw 來源或正式 manifest —— 那是發布流程的事，不是 wiki 的事。
+- **缺失的交叉參照**：某個概念在 A 頁面被提到，但 A 沒有連到已經存在、講這個概念更完整的 B 頁面。
+- **資料缺口**：某個問題目前所有來源都答不出來，應該明確記下「這裡缺資料」，而不是留白讓人以為沒人查過。
+
+發現問題時，在對應頁面用「⚠️ 矛盾」或「⚠️ 已過時」標註，並在 `log.md` 記一筆 `lint`。**絕不**為了消除矛盾去竄改 raw 來源或正式 manifest —— 那是發布流程的事，不是 wiki 的事。
 
 ## 如何正確請 AI 執行維護任務
 

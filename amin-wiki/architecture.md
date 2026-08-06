@@ -1,6 +1,6 @@
 # Architecture overview
 
-來源：[`AGENTS.md`](../../AGENTS.md)、[`amin-vault/ARCHITECTURE.md`](../../amin-vault/ARCHITECTURE.md)、[`amin-vault/architecture.json`](../../amin-vault/architecture.json)、[`README.md`](../../README.md)
+來源：[`AGENTS.md`](../AGENTS.md)、[`amin-vault/ARCHITECTURE.md`](../amin-vault/ARCHITECTURE.md)、[`amin-vault/architecture.json`](../amin-vault/architecture.json)、[`README.md`](../README.md)
 
 ## 一句話
 
@@ -47,12 +47,12 @@ GitHub Pages Runtime（amin-vault/，JS/HTML/CSS，熱更新不需重裝 APK）
 
 ## 手把輸入架構
 
-見 [`pages/controller-input.md`](./controller-input.md)（整合了 `ARCHITECTURE.md` 目前狀態與 `AMIN_POCKET_GBA_HANDOFF.md` 的歷史診斷過程）。
+見 [`controller-input.md`](./controller-input.md)（整合了 `ARCHITECTURE.md` 目前狀態與 `AMIN_POCKET_GBA_HANDOFF.md` 的歷史診斷過程）。
 
 ## 版本狀態
 
-見 [`pages/release-process.md`](./release-process.md)（含 raw 來源之間的版本號矛盾標註）。
+見 [`release-process.md`](./release-process.md)（含 raw 來源之間的版本號矛盾標註）。
 
 ## 已知限制與下一步
 
-見 [`pages/known-issues.md`](./known-issues.md)。
+見 [`known-issues.md`](./known-issues.md)。

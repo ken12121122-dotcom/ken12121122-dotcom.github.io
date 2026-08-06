@@ -1,6 +1,6 @@
 # Controller input
 
-來源：[`amin-vault/ARCHITECTURE.md`](../../amin-vault/ARCHITECTURE.md)、[`AGENTS.md`](../../AGENTS.md)、[`AMIN_POCKET_GBA_HANDOFF.md`](../../AMIN_POCKET_GBA_HANDOFF.md)（歷史，v0.9.0）
+來源：[`amin-vault/ARCHITECTURE.md`](../amin-vault/ARCHITECTURE.md)、[`AGENTS.md`](../AGENTS.md)、[`AMIN_POCKET_GBA_HANDOFF.md`](../AMIN_POCKET_GBA_HANDOFF.md)（歷史，v0.9.0）
 
 ## 現況（Bridge 16 / rc19，2026-07-19 標註）
 
@@ -41,4 +41,4 @@ USB / 2.4G receiver / 系統已配對藍牙手把
 - App 內藍牙掃描配對未實作（目前靠 Android 系統配對）。
 - 實體控制器與全域控制盤尚未共用同一個 Action Core（`ARCHITECTURE.md` 下一步 milestone #5）。
 
-Bridge 23 的 release notes（見 [`pages/release-process.md`](./release-process.md)）提到新增了 Amin Control API v1（語音、REST、WebSocket、Android 自動化統一入口），可能跟上面「共用 Action Core」的目標有關，但目前沒有 raw 來源明確說這個 milestone 已完成 —— 需要下次 ingest 新文件時確認，不要在這裡先下結論。
+Bridge 23 的 release notes（見 [`release-process.md`](./release-process.md)）提到新增了 Amin Control API v1（語音、REST、WebSocket、Android 自動化統一入口），可能跟上面「共用 Action Core」的目標有關，但目前沒有 raw 來源明確說這個 milestone 已完成 —— 需要下次 ingest 新文件時確認，不要在這裡先下結論。
