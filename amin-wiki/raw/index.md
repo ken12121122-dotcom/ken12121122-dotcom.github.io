@@ -13,6 +13,7 @@
 | APK 發布 manifest | [`/amin-vault/native-release-manifest.json`](../../amin-vault/native-release-manifest.json) | `publishedAt: 2026-07-22` | 機器可讀的 APK 正式版本來源：`latestVersionName`、簽章 SHA-256、release notes。 |
 | Runtime 發布 manifest | [`/amin-vault/runtime-manifest.json`](../../amin-vault/runtime-manifest.json) | `publishedAt: 2026-07-19` | 機器可讀的 Runtime 版本、entry point、資產清單、capability 清單。 |
 | Git 提交歷史 | `git log` | 持續更新 | Bridge 2 → Bridge 23 的實際發布提交序列，是版本演進最原始的紀錄。 |
+| （外部）Dify repo | [`github.com/langgenius/dify`](https://github.com/langgenius/dify) | 讀取當下的 default branch | LLM 應用開發平台。收錄目的是研究它的節點-連結（node-link）workflow 架構，見 [`pages/reference-dify-node-architecture.md`](../pages/reference-dify-node-architecture.md)。跟 Amin 專案目前**沒有**已確認的關聯，純參考資料。 |
 
 ## 已知：來源之間的日期落差
 

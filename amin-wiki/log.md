@@ -14,6 +14,10 @@ Append-only。格式：`## [YYYY-MM-DD] ingest|query|lint | 標題`。查最近�
 
 `AGENTS.md`／`ARCHITECTURE.md`／`README.md`（均標註 2026-07-19）都說正式版本停在 Bridge 16，且 `AGENTS.md` 明確要求「未經使用者批准前必須維持 Bridge 16」；但 `native-release-manifest.json`（`publishedAt: 2026-07-22`）已經是 Bridge 23，git log 也有 Bridge 17-23 的發布提交。詳見 [`pages/release-process.md`](./pages/release-process.md) 的 ⚠️ 矛盾段落。未修改任何 raw 來源或 manifest —— 這屬於發布流程決策，留給使用者處理。
 
+## [2026-08-06] ingest | Dify workflow 節點-連結架構（外部參考）
+
+使用者要求研究 `github.com/langgenius/dify` 的節點連結架構並收錄進知識庫。實際 clone repo 讀取原始碼（`node_factory.py`、`workflow_entry.py`、trigger constants、前端 `workflow/` 元件），寫成 [`pages/reference-dify-node-architecture.md`](./pages/reference-dify-node-architecture.md)：重點包括視覺執行圖（React Flow）與資料流圖（VariablePool + selector）分離、圖引擎已抽成外部套件 `graphon`、NodeFactory 依賴注入模式、GraphEngine + 可插拔 Layer 執行模型。已在 `raw/index.md` 與 `index.md` 加註：這是獨立參考資料，跟 Amin 專案**沒有**已確認關聯，不預設會用在 Amin Control API 上。
+
 ## [2026-08-06] lint | 過時內容標註
 
 `AMIN_POCKET_GBA_HANDOFF.md`（v0.9.0，2026-07-12）的「已驗證/未驗證分界表」把按鈕映射、Start/Select/L/R 標成未驗證，但這些項目在後續 Bridge 16 文件中已標記為已驗證。已在 [`pages/controller-input.md`](./pages/controller-input.md) 加上 ⚠️ 已過時標註，避免未來誤讀成現況。
