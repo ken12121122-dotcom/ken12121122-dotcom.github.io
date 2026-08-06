@@ -33,3 +33,7 @@ Append-only。格式：`## [YYYY-MM-DD] ingest|query|lint | 標題`。查最近�
 ## [2026-08-06] ingest | 使用者個人背景（明確跳脫專案範圍）
 
 使用者在對話中口述自我介紹，並在確認過這跟 Amin Pocket GBA 專案無關後，仍要求收錄進 `amin-wiki`。內容：嘉義人、志願役空軍 5 年（3 年消防兵、2 年氣象室）、退伍後歷任建築師助理／生產線儲備幹部／倉庫管理員、現職職業安全衛生主管。寫成獨立頁面 [`pages/user-profile.md`](./pages/user-profile.md)，開頭即標註範圍警告，不連結進任何 Amin 專案頁面（`architecture.md`／`controller-input.md`／`release-process.md`／`known-issues.md`），避免污染專案知識查詢。已在 [`raw/index.md`](./raw/index.md) 與 [`index.md`](./index.md) 加註來源與範圍警告。
+
+## [2026-08-06] ingest | CLAUDE.md 補上「如何正確請 AI 執行維護任務」
+
+本次維護一開始就因為指令沒有指名 `amin-wiki/` 所在分支而繞了一圈（`amin-wiki/` 起初只存在於 `claude/llm-tokenizer-impl-6iod8c`，不在當時的工作分支）。使用者請求把這個教訓寫回 `CLAUDE.md`，加了「如何正確請 AI 執行維護任務」段落：說明常見誤解、建議的指令寫法（明講分支＋要求先把資料夾帶進工作分支）、以及找不到時該怎麼查而不是誤判成不存在。屬於 schema 文件本身的 meta 維護，不影響任何 raw 來源或 manifest。
