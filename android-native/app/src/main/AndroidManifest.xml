@@ -86,6 +86,13 @@
         </service>
 
         <activity
+            android:name=".PromptUnlockActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:theme="@style/Theme.AminPromptDialog" />
+
+        <activity
             android:name=".PromptCaptureActivity"
             android:excludeFromRecents="true"
             android:exported="true"
