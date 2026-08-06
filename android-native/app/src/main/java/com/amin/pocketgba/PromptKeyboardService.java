@@ -1,12 +1,13 @@
 package com.amin.pocketgba;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -20,34 +21,24 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 public final class PromptKeyboardService extends InputMethodService {
     private PromptStore store;
-    private PromptAccessLock accessLock;
     private LinearLayout root;
     private LinearLayout categoryRow;
     private LinearLayout promptList;
     private TextView status;
-    private TextView pinDisplay;
-    private TextView lockMessage;
     private String selectedCategoryId = PromptStore.DEFAULT_CATEGORY_ID;
-    private final StringBuilder enteredPin = new StringBuilder();
-    private char[] pendingSetupPin;
     private boolean sessionUnlocked;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable countdownRunnable = new Runnable() {
+    private boolean receiverRegistered;
+
+    private final BroadcastReceiver unlockReceiver = new BroadcastReceiver() {
         @Override
-        public void run() {
-            if (sessionUnlocked || root == null) return;
-            long remaining = accessLock.getRemainingDelayMillis(System.currentTimeMillis());
-            if (remaining <= 0L) {
-                renderLockScreen();
-                return;
-            }
-            updateLockMessage(remaining);
-            handler.postDelayed(this, 1000L);
+        public void onReceive(Context context, Intent intent) {
+            if (!PromptUnlockActivity.ACTION_PROMPT_UNLOCKED.equals(intent.getAction())) return;
+            sessionUnlocked = true;
+            renderPromptHome();
         }
     };
 
@@ -55,7 +46,13 @@ public final class PromptKeyboardService extends InputMethodService {
     public void onCreate() {
         super.onCreate();
         store = new PromptStore(this);
-        accessLock = new PromptAccessLock(this);
+        IntentFilter filter = new IntentFilter(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(unlockReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(unlockReceiver, filter);
+        }
+        receiverRegistered = true;
     }
 
     @Override
@@ -87,186 +84,52 @@ public final class PromptKeyboardService extends InputMethodService {
     }
 
     private void renderLockScreen() {
-        handler.removeCallbacks(countdownRunnable);
-        enteredPin.setLength(0);
         root.removeAllViews();
 
-        TextView title = text(accessLock.isConfigured() ? "解鎖 Amin 提示詞" : "建立 Amin 提示詞 PIN", 17f, true, 0xff16231b);
+        TextView title = text("Amin 提示詞已鎖定", 17f, true, 0xff16231b);
         title.setGravity(Gravity.CENTER);
         root.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(42)
+                dp(54)
         ));
 
-        pinDisplay = text("○ ○ ○ ○ ○ ○", 22f, true, 0xff105f39);
-        pinDisplay.setGravity(Gravity.CENTER);
-        root.addView(pinDisplay, new LinearLayout.LayoutParams(
+        TextView message = text("使用手機原本的螢幕鎖驗證後即可開啟", 13f, false, 0xff68766e);
+        message.setGravity(Gravity.CENTER);
+        root.addView(message, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(40)
+                dp(46)
         ));
 
-        lockMessage = text(initialLockMessage(), 12f, false, 0xff68766e);
-        lockMessage.setGravity(Gravity.CENTER);
-        root.addView(lockMessage, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(30)
-        ));
-
-        long remaining = accessLock.getRemainingDelayMillis(System.currentTimeMillis());
-        boolean blocked = remaining > 0L;
-        LinearLayout keypad = new LinearLayout(this);
-        keypad.setOrientation(LinearLayout.VERTICAL);
-        for (int row = 0; row < 4; row++) {
-            LinearLayout rowView = new LinearLayout(this);
-            rowView.setOrientation(LinearLayout.HORIZONTAL);
-            rowView.setGravity(Gravity.CENTER);
-            if (row < 3) {
-                for (int column = 0; column < 3; column++) {
-                    int digit = row * 3 + column + 1;
-                    rowView.addView(pinButton(String.valueOf(digit), blocked), weightedKey());
-                }
-            } else {
-                rowView.addView(actionButton("清除", blocked, view -> clearEnteredPin()), weightedKey());
-                rowView.addView(pinButton("0", blocked), weightedKey());
-                rowView.addView(actionButton("⌫", blocked, view -> removeLastDigit()), weightedKey());
-            }
-            keypad.addView(rowView, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(48)
-            ));
-        }
-        root.addView(keypad, fullWidth());
+        Button unlock = new Button(this);
+        unlock.setAllCaps(false);
+        unlock.setText("使用手機鎖解鎖");
+        unlock.setTextSize(16f);
+        unlock.setTextColor(Color.WHITE);
+        unlock.setBackgroundColor(0xff19794b);
+        unlock.setOnClickListener(view -> launchSystemUnlock());
+        LinearLayout.LayoutParams unlockParams = fullWidth();
+        unlockParams.topMargin = dp(12);
+        root.addView(unlock, unlockParams);
 
         Button switchKeyboard = compactButton("切換鍵盤");
         switchKeyboard.setOnClickListener(view -> switchKeyboard());
         LinearLayout.LayoutParams switchParams = fullWidth();
-        switchParams.topMargin = dp(4);
+        switchParams.topMargin = dp(10);
         root.addView(switchKeyboard, switchParams);
-
-        if (blocked) {
-            updateLockMessage(remaining);
-            handler.postDelayed(countdownRunnable, 1000L);
-        }
     }
 
-    private String initialLockMessage() {
-        if (!accessLock.isConfigured()) {
-            return pendingSetupPin == null ? "請設定 6 位數 PIN" : "請再次輸入相同 PIN";
-        }
-        return "請輸入 6 位數 PIN";
-    }
-
-    private Button pinButton(String digit, boolean disabled) {
-        return actionButton(digit, disabled, view -> appendDigit(digit.charAt(0)));
-    }
-
-    private Button actionButton(String label, boolean disabled, View.OnClickListener listener) {
-        Button button = new Button(this);
-        button.setAllCaps(false);
-        button.setText(label);
-        button.setTextSize(18f);
-        button.setTextColor(disabled ? 0xffaeb8b2 : 0xff105f39);
-        button.setEnabled(!disabled);
-        button.setOnClickListener(listener);
-        return button;
-    }
-
-    private LinearLayout.LayoutParams weightedKey() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        params.leftMargin = dp(2);
-        params.rightMargin = dp(2);
-        return params;
-    }
-
-    private void appendDigit(char digit) {
-        if (enteredPin.length() >= accessLock.getPinLength()) return;
-        enteredPin.append(digit);
-        updatePinDisplay();
-        if (enteredPin.length() == accessLock.getPinLength()) submitPin();
-    }
-
-    private void removeLastDigit() {
-        if (enteredPin.length() > 0) enteredPin.deleteCharAt(enteredPin.length() - 1);
-        updatePinDisplay();
-    }
-
-    private void clearEnteredPin() {
-        enteredPin.setLength(0);
-        updatePinDisplay();
-    }
-
-    private void updatePinDisplay() {
-        if (pinDisplay == null) return;
-        StringBuilder display = new StringBuilder();
-        for (int index = 0; index < accessLock.getPinLength(); index++) {
-            if (index > 0) display.append(' ');
-            display.append(index < enteredPin.length() ? '●' : '○');
-        }
-        pinDisplay.setText(display.toString());
-    }
-
-    private void submitPin() {
-        char[] pin = enteredPin.toString().toCharArray();
-        enteredPin.setLength(0);
-        updatePinDisplay();
+    private void launchSystemUnlock() {
         try {
-            if (!accessLock.isConfigured()) {
-                handlePinSetup(pin);
-                return;
-            }
-            PromptAccessLock.VerifyResult result = accessLock.verify(pin, System.currentTimeMillis());
-            if (result.success) {
-                sessionUnlocked = true;
-                renderPromptHome();
-            } else {
-                long delay = result.retryAfterMillis;
-                lockMessage.setText("PIN 錯誤；第 " + result.failureCount + " 次失敗，" + formatDelay(delay) + "後可再試");
-                renderLockScreen();
-            }
-        } catch (GeneralSecurityException | IllegalArgumentException error) {
-            Toast.makeText(this, "無法驗證 PIN，請稍後再試", Toast.LENGTH_SHORT).show();
-        } finally {
-            PromptAccessLock.clear(pin);
+            Intent intent = new Intent(this, PromptUnlockActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            startActivity(intent);
+        } catch (RuntimeException error) {
+            Toast.makeText(this, "無法開啟手機驗證", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void handlePinSetup(char[] pin) throws GeneralSecurityException {
-        if (pendingSetupPin == null) {
-            pendingSetupPin = pin.clone();
-            lockMessage.setText("請再次輸入相同 PIN");
-            return;
-        }
-        boolean matches = java.security.MessageDigest.isEqual(
-                new String(pendingSetupPin).getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                new String(pin).getBytes(java.nio.charset.StandardCharsets.UTF_8)
-        );
-        if (!matches) {
-            PromptAccessLock.clear(pendingSetupPin);
-            pendingSetupPin = null;
-            lockMessage.setText("兩次 PIN 不一致，請重新設定");
-            return;
-        }
-        accessLock.configure(pin);
-        PromptAccessLock.clear(pendingSetupPin);
-        pendingSetupPin = null;
-        sessionUnlocked = true;
-        Toast.makeText(this, "PIN 已建立", Toast.LENGTH_SHORT).show();
-        renderPromptHome();
-    }
-
-    private void updateLockMessage(long remainingMillis) {
-        if (lockMessage != null) lockMessage.setText("嘗試次數過多，" + formatDelay(remainingMillis) + "後可再試");
-    }
-
-    private String formatDelay(long millis) {
-        long seconds = Math.max(1L, (millis + 999L) / 1000L);
-        if (seconds < 60L) return seconds + " 秒";
-        long minutes = (seconds + 59L) / 60L;
-        return minutes + " 分鐘";
     }
 
     private void renderPromptHome() {
-        handler.removeCallbacks(countdownRunnable);
+        if (root == null) return;
         root.removeAllViews();
 
         LinearLayout header = new LinearLayout(this);
@@ -379,12 +242,6 @@ public final class PromptKeyboardService extends InputMethodService {
 
     private void lockSession() {
         sessionUnlocked = false;
-        enteredPin.setLength(0);
-        if (pendingSetupPin != null) {
-            PromptAccessLock.clear(pendingSetupPin);
-            pendingSetupPin = null;
-        }
-        handler.removeCallbacks(countdownRunnable);
     }
 
     private void switchKeyboard() {
@@ -410,6 +267,7 @@ public final class PromptKeyboardService extends InputMethodService {
     @Override
     public void onDestroy() {
         lockSession();
+        if (receiverRegistered) unregisterReceiver(unlockReceiver);
         if (store != null) store.close();
         super.onDestroy();
     }
