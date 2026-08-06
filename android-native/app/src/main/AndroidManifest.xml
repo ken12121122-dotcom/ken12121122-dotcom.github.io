@@ -142,6 +142,12 @@
         </activity>
 
         <activity
+            android:name=".WikiGraphActivity"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".AminControlApiActivity"
             android:exported="true"
             android:launchMode="singleTop"

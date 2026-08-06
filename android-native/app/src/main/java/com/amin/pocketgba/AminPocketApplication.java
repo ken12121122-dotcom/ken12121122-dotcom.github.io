@@ -18,6 +18,7 @@ public final class AminPocketApplication extends Application {
     private static final String UNIVERSAL_CONTROL_ENTRY_TAG = "amin-universal-control-entry";
     private static final String CONTROL_API_ENTRY_TAG = "amin-control-api-entry";
     private static final String PROMPT_KEYBOARD_ENTRY_TAG = "amin-prompt-keyboard-entry";
+    private static final String WIKI_GRAPH_ENTRY_TAG = "amin-wiki-graph-entry";
 
     @Override
     public void onCreate() {
@@ -111,6 +112,20 @@ public final class AminPocketApplication extends Application {
                     new Intent(activity, PromptKeyboardSetupActivity.class)
             ));
             content.addView(entry, Math.min(6, content.getChildCount()), entryParams(activity));
+        }
+
+        if (root.findViewWithTag(WIKI_GRAPH_ENTRY_TAG) == null) {
+            Button entry = createEntryButton(
+                    activity,
+                    WIKI_GRAPH_ENTRY_TAG,
+                    "◉ Amin Wiki 關聯圖",
+                    "只讀取 amin-wiki/pages，顯示 MD 節點與關聯線",
+                    0xff105f39
+            );
+            entry.setOnClickListener(view -> activity.startActivity(
+                    new Intent(activity, WikiGraphActivity.class)
+            ));
+            content.addView(entry, Math.min(7, content.getChildCount()), entryParams(activity));
         }
     }
 
