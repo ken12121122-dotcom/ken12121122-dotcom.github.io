@@ -29,3 +29,7 @@ Append-only。格式：`## [YYYY-MM-DD] ingest|query|lint | 標題`。查最近�
 ## [2026-08-06] lint | 新發現：簽章指紋矛盾
 
 比對上述新收錄文件時發現 `android-native/PERMANENT_SIGNING_IDENTITY.md` 記錄的簽章 SHA-256（`aff1bab8...`）跟其餘所有來源（`AGENTS.md`、`ARCHITECTURE.md`、`architecture.json`、`native-release-manifest.json`、四個 CI workflow 檔）記的 `3b9a3125...` 不一致——後者是唯一被 CI 實際拿去 `grep` 驗證簽章的值。已在 [`pages/release-process.md`](./pages/release-process.md) 新增 ⚠️ 矛盾段落並列出完整來源對照表，同時更新 [`index.md`](./index.md) 的待辦清單。未修改任何 raw 來源、manifest 或簽章相關檔案——這是需要使用者確認「文件錯誤」還是「未記錄的金鑰更替」的問題，不是 wiki 能自行判定的事。
+
+## [2026-08-06] ingest | 使用者個人背景（明確跳脫專案範圍）
+
+使用者在對話中口述自我介紹，並在確認過這跟 Amin Pocket GBA 專案無關後，仍要求收錄進 `amin-wiki`。內容：嘉義人、志願役空軍 5 年（3 年消防兵、2 年氣象室）、退伍後歷任建築師助理／生產線儲備幹部／倉庫管理員、現職職業安全衛生主管。寫成獨立頁面 [`pages/user-profile.md`](./pages/user-profile.md)，開頭即標註範圍警告，不連結進任何 Amin 專案頁面（`architecture.md`／`controller-input.md`／`release-process.md`／`known-issues.md`），避免污染專案知識查詢。已在 [`raw/index.md`](./raw/index.md) 與 [`index.md`](./index.md) 加註來源與範圍警告。

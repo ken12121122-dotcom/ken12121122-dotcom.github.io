@@ -19,6 +19,7 @@
 | Update Bridge 簽章操作說明 | [`/android-native/UPDATE_BRIDGE_SIGNING.md`](../../android-native/UPDATE_BRIDGE_SIGNING.md) | 同上 | 建立永久 keystore、GitHub Secrets、驗收流程的操作步驟；驗收序列提到 `0.9.2-bridge1`／`rc6`，是 Bridge 1 當時的基準點。 |
 | v0.9.2 RC 實機驗收清單 | [`/android-native/RC092_DEVICE_ACCEPTANCE.md`](../../android-native/RC092_DEVICE_ACCEPTANCE.md) | 同上，內容對應 rc2/bridge1 時期 | 逐項勾選的實機驗收表（安裝並存、Runtime 更新、手把回歸、卡匣、備份還原、診斷、離線救援、Update Center、簽章復原、權限中心）；多數 `[ ]` 未勾選，明文寫「全部通過前 release manifest 保持 `enabled: false`」。 |
 | Android 原生殼 README（v0.9.0 時期） | [`/android-native/README.md`](../../android-native/README.md) | 同上，內容對應 app version 0.9.0 | 說明原生殼存在原因（Web Gamepad API 收不到面板按鍵）、當時的實作清單與待驗證項目。**已過時**：內容早於 Bridge 16/23，實體控制器驗證等項目後續文件已標記完成。 |
+| （對話口述）使用者個人背景 | 無檔案，使用者對話口述 | 2026-08-06 | 使用者自我介紹（嘉義人、志願役空軍 5 年含消防兵與氣象室、之後歷任建築師助理／生產線儲備幹部／倉庫管理員／現職職安主管）。**跟 Amin Pocket GBA 專案本身無關**，使用者要求仍收錄進本 wiki，見 [`pages/user-profile.md`](../pages/user-profile.md)（獨立成頁，不連進任何專案頁面）。 |
 
 ## 已知：來源之間的日期落差
 

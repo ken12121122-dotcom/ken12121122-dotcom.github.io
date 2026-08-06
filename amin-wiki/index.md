@@ -11,6 +11,7 @@ Amin Pocket GBA 專案知識庫索引。結構與維護規則見 [`CLAUDE.md`](.
 | [`pages/release-process.md`](./pages/release-process.md) | 發布閘門規則、簽章契約與實機驗收清單、Bridge 2→23 版本時間軸、**⚠️ 正式版本號矛盾**、**⚠️ 簽章指紋矛盾**。 |
 | [`pages/known-issues.md`](./pages/known-issues.md) | 已知限制、建議下一步、**⚠️ Bridge 23 新功能與既有 milestone 對應關係待確認**。 |
 | [`pages/reference-dify-node-architecture.md`](./pages/reference-dify-node-architecture.md) | 外部參考資料：Dify 的節點-連結 workflow 架構（graphon 圖引擎、NodeFactory、GraphEngine layers、React Flow 前端）。跟 Amin 專案目前無已確認關聯。 |
+| [`pages/user-profile.md`](./pages/user-profile.md) | ⚠️ 跳脫專案範圍：使用者個人背景（軍旅、消防兵、氣象室、建築師助理、產線儲備幹部、倉管、現職職安主管）。跟 Amin Pocket GBA 專案無關，應使用者要求獨立收錄。 |
 
 ## Raw sources（原始來源索引，不重複內容）
 
