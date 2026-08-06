@@ -114,18 +114,15 @@ jobs:
               method_marker = '    private String errorMessage(int error) {'
               if method_marker not in text:
                   raise SystemExit('Timeout method insertion marker missing')
-              text = text.replace(
-                  method_marker,
-                  '''    private void collapseListeningToIdle() {
-        if (!listening || processing) return;
-        stopRecognizer(false);
-        setPhase(FloatingVoicePresentation.Phase.IDLE);
-        hidePanel();
-    }
-
-''' + method_marker,
-                  1,
+              method = (
+                  '    private void collapseListeningToIdle() {\n'
+                  '        if (!listening || processing) return;\n'
+                  '        stopRecognizer(false);\n'
+                  '        setPhase(FloatingVoicePresentation.Phase.IDLE);\n'
+                  '        hidePanel();\n'
+                  '    }\n\n'
               )
+              text = text.replace(method_marker, method + method_marker, 1)
               voice_path.write_text(text, encoding='utf-8')
 
           gradle_path = Path('android-native/app/build.gradle')
