@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.2-bridge23",
-  "latestVersionCode": 119,
+  "latestVersionName": "0.9.4-bridge26",
+  "latestVersionCode": 122,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.2-bridge23.apk",
-  "apkSha256": "de1032253317ac0364bdc324331d591b274dc819ba9ffb96bf996019d61fc6d0",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.4-bridge26.apk",
+  "apkSha256": "e60e55f9cbcd521ea686a9b5d34194bdab893c8af4abefa091a798bac3791164",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 3527655,
-  "publishedAt": "2026-07-22T00:09:41Z",
+  "sizeBytes": 1806374,
+  "publishedAt": "2026-08-06T15:38:12Z",
   "mandatory": false,
   "releaseNotes": [
-    "新增 Amin Control API v1，語音、REST、WebSocket 與 Android 自動化入口統一進入 AminInputGateway。",
-    "新增 localhost REST API、雙向 WebSocket、ExecutionResult、事件推送與稽核紀錄。",
-    "新增使用者主動開啟的 LAN 模式，包含權杖、CIDR 允許清單與速率限制。",
-    "新增 Broadcast Intent、Explicit Intent、Deep Link、Tasker、MacroDroid、Automate 與 ADB 控制。",
-    "使用原套件與永久簽章直接升級，保留 GBA 存檔及既有設定。"
+    "新增 Amin Wiki 關聯圖入口，固定只讀取 amin-wiki/pages。",
+    "每個 Markdown 檔顯示為可拖曳節點，並依檔案連結產生關聯線。",
+    "支援縮放、平移、點擊閱讀全文及警告節點。",
+    "新增熱更新按鈕，可重新下載 Markdown 並重建圖譜。",
+    "沿用原套件與永久簽章，可直接覆蓋既有版本。"
   ]
 }
