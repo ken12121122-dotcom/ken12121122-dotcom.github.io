@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
+import android.os.Build;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -148,10 +149,9 @@ public final class PromptKeyboardService extends InputMethodService {
     }
 
     private void switchKeyboard() {
-        if (!switchToNextInputMethod(false)) {
-            InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (manager != null) manager.showInputMethodPicker();
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && switchToNextInputMethod(false)) return;
+        InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (manager != null) manager.showInputMethodPicker();
     }
 
     private boolean isPasswordField(EditorInfo info) {
