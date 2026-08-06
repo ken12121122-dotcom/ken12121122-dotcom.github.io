@@ -1,6 +1,11 @@
-name: Dispatch Bridge 27 publisher
+name: Publish Amin Pocket GBA Bridge 27
 
 on:
+  push:
+    branches:
+      - release/bridge24-prompt-keyboard-v1
+    paths:
+      - '.github/workflows/publish-bridge27-floating-voice-timeout.yml'
   pull_request:
     branches:
       - release/bridge23-amin-control-api-v1
@@ -10,19 +15,290 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: read
+  contents: write
+
+concurrency:
+  group: publish-bridge27-floating-voice-timeout
+  cancel-in-progress: false
+
+env:
+  AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+  AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+  AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+  AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
 
 jobs:
-  dispatch-bridge27:
-    if: github.event_name == 'pull_request' && github.head_ref == 'release/bridge24-prompt-keyboard-v1'
-    runs-on: ubuntu-latest
+  patch-build-sign-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+
     steps:
-      - name: Dispatch formal Bridge 27 workflow from release source
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Checkout formal release source
+        uses: actions/checkout@v6
+        with:
+          ref: release/bridge24-prompt-keyboard-v1
+          fetch-depth: 0
+
+      - name: Patch floating voice timeout and Bridge 27 identity
+        shell: bash
         run: |
           set -euxo pipefail
-          gh workflow run publish-bridge27-floating-voice-timeout.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref release/bridge24-prompt-keyboard-v1
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              '    private static final long BUBBLE_RESET_DELAY_MS = 1400L;\n',
+              '    private static final long BUBBLE_RESET_DELAY_MS = 1400L;\n'
+              '    private static final long LISTENING_IDLE_TIMEOUT_MS = 8000L;\n',
+              'timeout constant'
+          )
+          replace_once(
+              '    private final Runnable resetBubbleTask = () -> setPhase(FloatingVoicePresentation.Phase.IDLE);\n',
+              '    private final Runnable resetBubbleTask = () -> setPhase(FloatingVoicePresentation.Phase.IDLE);\n'
+              '    private final Runnable listeningTimeoutTask = this::collapseListeningToIdle;\n',
+              'timeout runnable'
+          )
+          replace_once(
+              '        mainHandler.removeCallbacks(resetBubbleTask);\n    }\n\n    void destroy()',
+              '        mainHandler.removeCallbacks(resetBubbleTask);\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '    }\n\n    void destroy()',
+              'hide timeout cleanup'
+          )
+          replace_once(
+              '        try {\n            speechRecognizer.startListening(recognizerIntent);\n',
+              '        try {\n'
+              '            mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '            mainHandler.postDelayed(listeningTimeoutTask, LISTENING_IDLE_TIMEOUT_MS);\n'
+              '            speechRecognizer.startListening(recognizerIntent);\n',
+              'listening timeout schedule'
+          )
+          replace_once(
+              '        mainHandler.removeCallbacks(resetBubbleTask);\n        if (speechRecognizer != null) {',
+              '        mainHandler.removeCallbacks(resetBubbleTask);\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        if (speechRecognizer != null) {',
+              'recognizer timeout cleanup'
+          )
+          replace_once(
+              '    public void onBeginningOfSpeech() {\n        showPanel(',
+              '    public void onBeginningOfSpeech() {\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        showPanel(',
+              'speech begins timeout cancel'
+          )
+          replace_once(
+              '    public void onEndOfSpeech() {\n        listening = false;',
+              '    public void onEndOfSpeech() {\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        listening = false;',
+              'speech end timeout cancel'
+          )
+          replace_once(
+              '    public void onError(int error) {\n        if (ignoreNextError) {',
+              '    public void onError(int error) {\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        if (ignoreNextError) {',
+              'error timeout cancel'
+          )
+          replace_once(
+              '    public void onResults(Bundle results) {\n        listening = false;',
+              '    public void onResults(Bundle results) {\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        listening = false;',
+              'results timeout cancel'
+          )
+          replace_once(
+              '    public void onPartialResults(Bundle partialResults) {\n        ArrayList<String> matches = partialResults.getStringArrayList(',
+              '    public void onPartialResults(Bundle partialResults) {\n'
+              '        mainHandler.removeCallbacks(listeningTimeoutTask);\n'
+              '        ArrayList<String> matches = partialResults.getStringArrayList(',
+              'partial timeout cancel'
+          )
+
+          marker = '    private String errorMessage(int error) {'
+          if marker not in text:
+              raise SystemExit('collapse method insertion marker not found')
+          method = '''    private void collapseListeningToIdle() {
+        if (!listening || processing) return;
+        stopRecognizer(false);
+        setPhase(FloatingVoicePresentation.Phase.IDLE);
+        hidePanel();
+    }
+
+'''
+          text = text.replace(marker, method + marker, 1)
+          path.write_text(text, encoding='utf-8')
+
+          gradle = Path('android-native/app/build.gradle')
+          g = gradle.read_text(encoding='utf-8')
+          replacements = [
+              ("?: '122'", "?: '123'"),
+              ("?: '-bridge26'", "?: '-bridge27'"),
+              ("versionName '0.9.4'", "versionName '0.9.5'"),
+              ('Bridge 26 candidate source', 'Bridge 27 formal source'),
+          ]
+          for old, new in replacements:
+              if old not in g:
+                  raise SystemExit(f'build.gradle marker missing: {old}')
+              g = g.replace(old, new, 1)
+          gradle.write_text(g, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/publish-bridge27-floating-voice-timeout.yml
+          grep -Fq 'LISTENING_IDLE_TIMEOUT_MS = 8000L' android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+          grep -Fq 'collapseListeningToIdle' android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+          grep -Fq "'123'" android-native/app/build.gradle
+          grep -Fq "'-bridge27'" android-native/app/build.gradle
+          grep -Fq "versionName '0.9.5'" android-native/app/build.gradle
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Prepare permanent signing
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -n "$AMIN_KEYSTORE_BASE64"
+          test -n "$AMIN_KEYSTORE_PASSWORD"
+          test -n "$AMIN_KEY_ALIAS"
+          test -n "$AMIN_KEY_PASSWORD"
+          KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
+          printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Test lint and build signed Bridge 27
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=123 \
+            -PAMIN_BRIDGE_SUFFIX=-bridge27 \
+            :app:testDebugUnitTest \
+            :app:testBridgeUnitTest \
+            :app:lintBridge \
+            :app:assembleBridge
+
+      - name: Verify permanent signer and APK identity
+        id: apk
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/bridge/app-bridge.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/bridge27-badging.txt"
+          grep -Fq "package: name='com.amin.pocketgba' versionCode='123' versionName='0.9.5-bridge27'" "$RUNNER_TEMP/bridge27-badging.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/bridge27-signing.txt"
+          grep -Fqi '3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7' "$RUNNER_TEMP/bridge27-signing.txt"
+          echo "apk=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Create formal Bridge 27 release manifest
+        shell: bash
+        env:
+          APK: ${{ steps.apk.outputs.apk }}
+        run: |
+          set -euxo pipefail
+          RELEASE_NAME='Amin-Pocket-GBA-v0.9.5-bridge27.apk'
+          RELEASE_PATH="amin-vault/releases/$RELEASE_NAME"
+          mkdir -p amin-vault/releases
+          cp "$APK" "$RELEASE_PATH"
+          SHA256="$(sha256sum "$RELEASE_PATH" | awk '{print $1}')"
+          SIZE="$(stat -c '%s' "$RELEASE_PATH")"
+          PUBLISHED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          python3 - "$SHA256" "$SIZE" "$PUBLISHED_AT" <<'PY'
+          import json, sys
+          sha256, size, published_at = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+          manifest = {
+            'format': 'amin-native-release-manifest',
+            'manifestVersion': 1,
+            'channel': 'bridge',
+            'enabled': True,
+            'packageId': 'com.amin.pocketgba',
+            'latestVersionName': '0.9.5-bridge27',
+            'latestVersionCode': 123,
+            'minimumSupportedVersionCode': 107,
+            'minimumAndroidSdk': 26,
+            'apkUrl': 'https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.5-bridge27.apk',
+            'apkSha256': sha256,
+            'signerCertificateSha256': '3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7',
+            'sizeBytes': size,
+            'publishedAt': published_at,
+            'mandatory': False,
+            'releaseNotes': [
+              '語音浮球開始監聽後，連續 8 秒沒有收到語音會自動停止收音並收回待命浮動按鈕。',
+              '偵測到使用者開始說話、局部辨識、辨識完成或錯誤時會取消逾時計時，避免操作中途被收合。',
+              '沿用既有 FloatingVoiceController、AminInputGateway、17 個語音動作與 54 種可說法。',
+              '維持單次主動辨識，不在背景持續監聽。',
+              '沿用原套件與永久簽章，可直接覆蓋 Bridge 26 並保留既有資料。'
+            ]
+          }
+          with open('amin-vault/native-release-manifest.json', 'w', encoding='utf-8') as f:
+              json.dump(manifest, f, ensure_ascii=False, indent=2)
+              f.write('\n')
+          PY
+
+      - name: Commit formal source and signed release to release branch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'release: publish signed Bridge 27 voice timeout'
+          git push origin HEAD:release/bridge24-prompt-keyboard-v1
+
+      - name: Promote signed Bridge 27 artifact and manifest to main
+        shell: bash
+        run: |
+          set -euxo pipefail
+          RELEASE_COMMIT="$(git rev-parse HEAD)"
+          git fetch origin main
+          git checkout -B main origin/main
+          git checkout "$RELEASE_COMMIT" -- \
+            amin-vault/releases/Amin-Pocket-GBA-v0.9.5-bridge27.apk \
+            amin-vault/native-release-manifest.json
+          git add amin-vault/releases/Amin-Pocket-GBA-v0.9.5-bridge27.apk amin-vault/native-release-manifest.json
+          git commit -m 'release: publish signed Bridge 27 to main'
+          git push origin HEAD:main
+
+      - name: Upload signed Bridge 27 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Pocket-GBA-Bridge27-signed
+          path: |
+            amin-vault/releases/Amin-Pocket-GBA-v0.9.5-bridge27.apk
+            amin-vault/native-release-manifest.json
+            ${{ runner.temp }}/bridge27-badging.txt
+            ${{ runner.temp }}/bridge27-signing.txt
+          if-no-files-found: error
