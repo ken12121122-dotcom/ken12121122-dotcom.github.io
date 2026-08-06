@@ -5,4 +5,6 @@
     <string name="file_picker_failed">無法開啟檔案選擇器。</string>
     <string name="universal_control_service_label">Amin 全域控制盤</string>
     <string name="universal_control_service_description">在所有 App 上方顯示方向鍵、A/B 與游標，用於回到桌面、切換桌面頁及點擊 App。v0.1 不讀取其他 App 內容。</string>
+    <string name="prompt_keyboard_label">Amin 提示詞鍵盤</string>
+    <string name="prompt_keyboard_subtype_label">提示詞</string>
 </resources>

@@ -11,4 +11,10 @@
         <item name="android:statusBarColor">@color/amin_black</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+
+    <style name="Theme.AminPromptDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:colorAccent">@color/amin_mint</item>
+    </style>
 </resources>

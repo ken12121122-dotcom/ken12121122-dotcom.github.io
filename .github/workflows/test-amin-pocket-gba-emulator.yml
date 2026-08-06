@@ -248,6 +248,26 @@ jobs:
           grep -F 'VoiceCommandActivity' "$RUNNER_TEMP/voice-activities.txt"
           adb shell input keyevent 4
 
+      - name: Verify prompt keyboard routes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell am start -W -a android.intent.action.VIEW \
+            -d 'amin-prompts://setup' -p "$CURRENT_PACKAGE" \
+            | tee "$RUNNER_TEMP/prompt-setup-link.txt"
+          grep -F 'Status: ok' "$RUNNER_TEMP/prompt-setup-link.txt"
+          adb shell input keyevent 4
+
+          adb shell cmd package query-activities \
+            -a android.intent.action.PROCESS_TEXT \
+            -t text/plain \
+            | tee "$RUNNER_TEMP/prompt-process-text.txt"
+          grep -F 'PromptCaptureActivity' "$RUNNER_TEMP/prompt-process-text.txt"
+
+          adb shell dumpsys package "$CURRENT_PACKAGE" \
+            | tee "$RUNNER_TEMP/prompt-package.txt"
+          grep -F 'PromptKeyboardService' "$RUNNER_TEMP/prompt-package.txt"
+
       - name: Install instrumentation APK
         shell: bash
         run: |
@@ -272,6 +292,9 @@ jobs:
           )
           if test -s android-native/app/src/androidTest/java/com/amin/pocketgba/VoiceCommandActivityTest.java; then
             TESTS+=(com.amin.pocketgba.VoiceCommandActivityTest)
+          fi
+          if test -s android-native/app/src/androidTest/java/com/amin/pocketgba/PromptStoreInstrumentedTest.java; then
+            TESTS+=(com.amin.pocketgba.PromptStoreInstrumentedTest)
           fi
           for TEST in "${TESTS[@]}"; do
             OUT="$RUNNER_TEMP/$(echo "$TEST" | tr '.' '_').txt"
