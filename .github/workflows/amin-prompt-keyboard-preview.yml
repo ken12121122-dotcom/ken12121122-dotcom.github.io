@@ -1,0 +1,107 @@
+name: Amin Prompt Keyboard Preview
+
+on:
+  push:
+    branches:
+      - agent/amin-prompt-keyboard-v01
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/amin-prompt-keyboard-preview.yml'
+  pull_request:
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/amin-prompt-keyboard-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: amin-prompt-keyboard-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ci-only-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v6
+
+      - name: Verify release boundary
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git diff --exit-code origin/release/bridge23-amin-control-api-v1 \
+            -- amin-vault/native-release-manifest.json
+          grep -Fq "applicationIdSuffix '.promptpreview'" android-native/app/build.gradle
+          grep -Fq 'android.intent.action.PROCESS_TEXT' android-native/app/src/main/AndroidManifest.xml
+          grep -Fq 'android.permission.BIND_INPUT_METHOD' android-native/app/src/main/AndroidManifest.xml
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35 build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Unit test lint and build side-by-side APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :app:testDebugUnitTest \
+            :app:lintPromptPreview \
+            :app:assemblePromptPreview
+
+      - name: Verify preview identity and native routes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/promptPreview/app-promptPreview.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/prompt-preview-badging.txt"
+          "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" \
+            | tee "$RUNNER_TEMP/prompt-preview-manifest.txt"
+          grep -Fq "package: name='com.amin.pocketgba.promptpreview'" "$RUNNER_TEMP/prompt-preview-badging.txt"
+          grep -Fq 'PromptCaptureActivity' "$RUNNER_TEMP/prompt-preview-manifest.txt"
+          grep -Fq 'PromptKeyboardService' "$RUNNER_TEMP/prompt-preview-manifest.txt"
+          grep -Fq 'android.intent.action.PROCESS_TEXT' "$RUNNER_TEMP/prompt-preview-manifest.txt"
+          grep -Fq 'android.permission.BIND_INPUT_METHOD' "$RUNNER_TEMP/prompt-preview-manifest.txt"
+
+      - name: Mark CI-only artifact
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p prompt-preview-artifact
+          cp android-native/app/build/outputs/apk/promptPreview/app-promptPreview.apk \
+            prompt-preview-artifact/Amin-Prompt-Keyboard-CI-ONLY.apk
+          cat > prompt-preview-artifact/README.txt <<'EOF'
+          CI DEBUG ARTIFACT ONLY
+          Package: com.amin.pocketgba.promptpreview
+          This side-by-side preview does not replace or update the formal Amin Pocket GBA app.
+          EOF
+
+      - name: Upload CI-only preview APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Prompt-Keyboard-CI-ONLY-${{ github.run_id }}
+          path: prompt-preview-artifact/
+          if-no-files-found: error
+          retention-days: 14
