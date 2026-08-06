@@ -1,0 +1,55 @@
+name: Promote Bridge 26 to Main
+
+on:
+  pull_request:
+    branches:
+      - release/bridge23-amin-control-api-v1
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/promote-bridge26-to-main.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'release/bridge24-prompt-keyboard-v1'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v6
+        with:
+          ref: release/bridge24-prompt-keyboard-v1
+          fetch-depth: 0
+
+      - name: Verify signed Bridge 26 release files
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='amin-vault/releases/Amin-Pocket-GBA-v0.9.4-bridge26.apk'
+          MANIFEST='amin-vault/native-release-manifest.json'
+          test -s "$APK"
+          test -s "$MANIFEST"
+          grep -Fq '"latestVersionName": "0.9.4-bridge26"' "$MANIFEST"
+          grep -Fq '"latestVersionCode": 122' "$MANIFEST"
+          echo 'e60e55f9cbcd521ea686a9b5d34194bdab893c8af4abefa091a798bac3791164  amin-vault/releases/Amin-Pocket-GBA-v0.9.4-bridge26.apk' | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bridge26-public/amin-vault/releases"
+          cp "$APK" "$RUNNER_TEMP/bridge26-public/amin-vault/releases/"
+          cp "$MANIFEST" "$RUNNER_TEMP/bridge26-public/amin-vault/"
+
+      - name: Publish only APK and manifest to main
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
+          mkdir -p amin-vault/releases
+          cp "$RUNNER_TEMP/bridge26-public/amin-vault/releases/Amin-Pocket-GBA-v0.9.4-bridge26.apk" amin-vault/releases/
+          cp "$RUNNER_TEMP/bridge26-public/amin-vault/native-release-manifest.json" amin-vault/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add amin-vault/releases/Amin-Pocket-GBA-v0.9.4-bridge26.apk amin-vault/native-release-manifest.json
+          git diff --cached --stat
+          git commit -m 'release: publish signed Bridge 26 to main'
+          git push origin main
