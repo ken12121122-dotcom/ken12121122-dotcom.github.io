@@ -2,14 +2,14 @@ plugins {
     id 'com.android.application'
 }
 
-// Bridge 23 release source: Amin Control API v1 and Android automation inputs.
+// Bridge 24 release source: prompt capture and prompt keyboard.
 def aminKeystorePath = providers.gradleProperty('AMIN_KEYSTORE_PATH').orNull ?: System.getenv('AMIN_KEYSTORE_PATH')
 def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').orNull ?: System.getenv('AMIN_KEYSTORE_PASSWORD')
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
 def aminKeyPassword = providers.gradleProperty('AMIN_KEY_PASSWORD').orNull ?: System.getenv('AMIN_KEY_PASSWORD')
 def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, aminKeyPassword].every { value -> value }
-def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '119').toInteger()
-def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge23'
+def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '120').toInteger()
+def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge24'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
@@ -63,15 +63,6 @@ android {
             manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"debug"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-        }
-        promptPreview {
-            initWith debug
-            applicationIdSuffix '.promptpreview'
-            versionNameSuffix '-prompt-preview1'
-            manifestPlaceholders = [appLabel: 'Amin Prompt Preview']
-            buildConfigField 'String', 'RELEASE_CHANNEL', '"prompt-preview"'
-            buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
-            matchingFallbacks = ['debug']
         }
         bridge {
             initWith release
