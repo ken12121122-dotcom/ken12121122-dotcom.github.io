@@ -1,0 +1,28 @@
+name: Dispatch Bridge 27 publisher
+
+on:
+  pull_request:
+    branches:
+      - release/bridge23-amin-control-api-v1
+    paths:
+      - '.github/workflows/publish-bridge27-floating-voice-timeout.yml'
+      - 'android-native/BRIDGE27_RELEASE_TRIGGER.md'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-bridge27:
+    if: github.event_name == 'pull_request' && github.head_ref == 'release/bridge24-prompt-keyboard-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch formal Bridge 27 workflow from release source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          gh workflow run publish-bridge27-floating-voice-timeout.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref release/bridge24-prompt-keyboard-v1
