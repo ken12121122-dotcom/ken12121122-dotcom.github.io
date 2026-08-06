@@ -1,3 +1,3 @@
 # Bridge 27 formal release trigger
 
-This marker exists only to synchronize PR #31 after the Bridge 27 dispatcher was registered on its base branch.
+Registered publisher upgraded to Bridge 27. This synchronization commit triggers the permanent-signature build and publication flow.
