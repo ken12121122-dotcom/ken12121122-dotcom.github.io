@@ -21,6 +21,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.List;
 
 public final class PromptKeyboardService extends InputMethodService {
@@ -47,11 +49,12 @@ public final class PromptKeyboardService extends InputMethodService {
         super.onCreate();
         store = new PromptStore(this);
         IntentFilter filter = new IntentFilter(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(unlockReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(unlockReceiver, filter);
-        }
+        ContextCompat.registerReceiver(
+                this,
+                unlockReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
         receiverRegistered = true;
     }
 
