@@ -2,13 +2,14 @@ plugins {
     id 'com.android.application'
 }
 
-// Bridge 26 candidate source: prompt keyboard system lock and Amin Wiki relationship graph.
+// Android release source. Version identity is supplied from android-native/release-version.json by CI.
 def aminKeystorePath = providers.gradleProperty('AMIN_KEYSTORE_PATH').orNull ?: System.getenv('AMIN_KEYSTORE_PATH')
 def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').orNull ?: System.getenv('AMIN_KEYSTORE_PASSWORD')
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
 def aminKeyPassword = providers.gradleProperty('AMIN_KEY_PASSWORD').orNull ?: System.getenv('AMIN_KEY_PASSWORD')
 def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, aminKeyPassword].every { value -> value }
 def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '123').toInteger()
+def aminVersionName = providers.gradleProperty('AMIN_VERSION_NAME').orNull ?: '0.9.5'
 def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge27'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
@@ -21,7 +22,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode aminVersionCode
-        versionName '0.9.5'
+        versionName aminVersionName
         manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
         buildConfigField 'String', 'APP_WEB_URL', '"https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1"'
