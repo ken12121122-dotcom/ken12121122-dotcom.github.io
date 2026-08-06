@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
 }
 
-// Bridge 25 candidate source: prompt capture, prompt keyboard, and PIN access lock.
+// Bridge 25 candidate source: prompt capture, prompt keyboard, and Android system unlock gate.
 def aminKeystorePath = providers.gradleProperty('AMIN_KEYSTORE_PATH').orNull ?: System.getenv('AMIN_KEYSTORE_PATH')
 def aminKeystorePassword = providers.gradleProperty('AMIN_KEYSTORE_PASSWORD').orNull ?: System.getenv('AMIN_KEYSTORE_PASSWORD')
 def aminKeyAlias = providers.gradleProperty('AMIN_KEY_ALIAS').orNull ?: System.getenv('AMIN_KEY_ALIAS')
