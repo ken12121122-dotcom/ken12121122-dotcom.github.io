@@ -14,10 +14,18 @@ import android.widget.Toast;
 public final class PromptUnlockActivity extends Activity {
     public static final String ACTION_PROMPT_UNLOCKED = "com.amin.pocketgba.ACTION_PROMPT_UNLOCKED";
     private static final int REQUEST_CONFIRM_DEVICE = 2401;
+    private boolean confirmationStarted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            confirmationStarted = savedInstanceState.getBoolean("confirmation_started", false);
+        }
+        if (!confirmationStarted) startSystemConfirmation();
+    }
+
+    private void startSystemConfirmation() {
         KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (keyguardManager == null || !keyguardManager.isDeviceSecure()) {
             Toast.makeText(this, "請先在手機設定螢幕鎖定", Toast.LENGTH_LONG).show();
@@ -34,7 +42,14 @@ public final class PromptUnlockActivity extends Activity {
             finish();
             return;
         }
+        confirmationStarted = true;
         startActivityForResult(intent, REQUEST_CONFIRM_DEVICE);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean("confirmation_started", confirmationStarted);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
