@@ -1,0 +1,15 @@
+{
+  "versionCode": 123,
+  "versionName": "0.9.5",
+  "channel": "bridge",
+  "bridge": 27,
+  "minimumSupportedVersionCode": 107,
+  "minimumAndroidSdk": 26,
+  "packageId": "com.amin.pocketgba",
+  "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
+  "releaseNotes": [
+    "語音浮球連續 8 秒未收到語音時，自動停止收音並回到待命浮動按鈕。",
+    "偵測到開始說話、局部辨識、辨識完成或錯誤時取消逾時計時。",
+    "沿用既有 FloatingVoiceController、AminInputGateway 與語音指令路由。"
+  ]
+}
