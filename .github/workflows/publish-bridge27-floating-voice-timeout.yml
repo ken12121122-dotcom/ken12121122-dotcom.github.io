@@ -6,6 +6,11 @@ on:
       - release/bridge24-prompt-keyboard-v1
     paths:
       - '.github/workflows/publish-bridge27-floating-voice-timeout.yml'
+  pull_request:
+    branches:
+      - release/bridge23-amin-control-api-v1
+    paths:
+      - '.github/workflows/publish-bridge27-floating-voice-timeout.yml'
   workflow_dispatch:
 
 permissions:
