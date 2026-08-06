@@ -5,6 +5,10 @@
 - `amin-vault/` — 正式部署的產物（HTML/JS/CSS、簽章 APK、`native-release-manifest.json`、`runtime-manifest.json`）。修改它必須遵守根目錄 `AGENTS.md` 的發布閘門，任何 AI 助理都不得為了維護 wiki 而改動這裡的檔案。
 - `amin-wiki/`（本目錄）— 純文件，沒有發布流程，不影響任何正式版本號、簽章或 manifest。
 
+## 這個 repo 不是只有 amin-wiki
+
+這個 repo 是使用者的整合工作環境，`amin-wiki/` 只是裡面「Amin Pocket GBA 專案技術文件」這一塊，範圍維持不變（見下面三層結構）。使用者可能會在同一個 repo 裡開其他跟 GBA 無關的節點（例如他個人職涯知識：軍旅、消防、氣象、建築、產線管理、倉管、職安等領域），這是預期內、合理的行為，**不是誤用 `amin-wiki/` 或問錯地方**，不要因為內容跟 GBA 無關就質疑使用者或拒絕協助。看到這類需求時，直接協助他開一個新的平行節點/資料夾（比照 `amin-wiki/` 的 raw/pages/index/log 模式即可），不要塞進 `amin-wiki/` 本身、也不要表示困惑。
+
 ## 三層結構
 
 1. **raw/** — 原始來源清單。這裡不重複貼原始文件全文，而是用 `raw/index.md` 指向 repo 裡既有的權威文件（`AGENTS.md`、`amin-vault/ARCHITECTURE.md`、`AMIN_POCKET_GBA_HANDOFF.md`、`README-NATIVE-SHELL-v0.9.1.md`、兩份 manifest）。這些來源本身仍是唯讀的（除非使用者或既有發布流程更新它們），wiki 不改寫它們。
