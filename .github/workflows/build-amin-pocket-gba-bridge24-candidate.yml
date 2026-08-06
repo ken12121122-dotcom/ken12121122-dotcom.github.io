@@ -8,6 +8,13 @@ on:
       - 'android-native/**'
       - 'tests/**'
       - '.github/workflows/build-amin-pocket-gba-bridge24-candidate.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'android-native/**'
+      - 'tests/**'
+      - '.github/workflows/build-amin-pocket-gba-bridge24-candidate.yml'
   workflow_dispatch:
 
 permissions:
@@ -37,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          test "$GITHUB_REF_NAME" = 'release/bridge24-prompt-keyboard-v1'
+          test "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" = 'release/bridge24-prompt-keyboard-v1'
           grep -Fq "'120'" android-native/app/build.gradle
           grep -Fq "'-bridge24'" android-native/app/build.gradle
           grep -Fq "applicationId 'com.amin.pocketgba'" android-native/app/build.gradle
