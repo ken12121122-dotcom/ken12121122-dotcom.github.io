@@ -51,12 +51,11 @@ public final class WikiGraphActivity extends Activity {
     }
 
     private void openExternal(String rawUrl){
+        if(!ExternalResourcePolicy.isAllowedHttps(rawUrl)){
+            Toast.makeText(this,"僅允許開啟 HTTPS 外部資源",Toast.LENGTH_SHORT).show();return;
+        }
         try{
-            Uri uri=Uri.parse(rawUrl==null?"":rawUrl.trim());
-            if(!"https".equalsIgnoreCase(uri.getScheme())||uri.getHost()==null||uri.getHost().trim().isEmpty()){
-                Toast.makeText(this,"僅允許開啟 HTTPS 外部資源",Toast.LENGTH_SHORT).show();return;
-            }
-            startActivity(new Intent(Intent.ACTION_VIEW,uri));
+            startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(rawUrl.trim())));
         }catch(ActivityNotFoundException e){Toast.makeText(this,"找不到可開啟此資源的 App",Toast.LENGTH_SHORT).show();}
         catch(RuntimeException e){Toast.makeText(this,"外部資源連結無效",Toast.LENGTH_SHORT).show();}
     }
