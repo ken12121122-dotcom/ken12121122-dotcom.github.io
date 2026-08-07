@@ -2,6 +2,11 @@ name: Android Production Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - release/android
+    paths:
+      - 'android-native/**'
 
 permissions:
   contents: write
