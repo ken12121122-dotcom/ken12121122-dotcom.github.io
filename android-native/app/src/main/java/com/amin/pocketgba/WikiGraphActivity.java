@@ -2,7 +2,10 @@ package com.amin.pocketgba;
 
 import android.app.Activity;
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -10,6 +13,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 public final class WikiGraphActivity extends Activity {
     private WebView webView;
@@ -38,7 +42,24 @@ public final class WikiGraphActivity extends Activity {
     }
     private String hex(int color){return String.format("#%06X",0xFFFFFF & color);}
 
-    @Override public void onBackPressed(){if(webView!=null){webView.evaluateJavascript("document.getElementById('article').classList.contains('open')?(document.getElementById('article').classList.remove('open'),true):false",v->{if(!"true".equals(v))WikiGraphActivity.super.onBackPressed();});return;}super.onBackPressed();}
+    @Override public void onBackPressed(){
+        if(webView!=null){
+            webView.evaluateJavascript("window.AminGraphBack?AminGraphBack():false",v->{if(!"true".equals(v))WikiGraphActivity.super.onBackPressed();});
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    private void openExternal(String rawUrl){
+        if(!ExternalResourcePolicy.isAllowedHttps(rawUrl)){
+            Toast.makeText(this,"僅允許開啟 HTTPS 外部資源",Toast.LENGTH_SHORT).show();return;
+        }
+        try{
+            startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(rawUrl.trim())));
+        }catch(ActivityNotFoundException e){Toast.makeText(this,"找不到可開啟此資源的 App",Toast.LENGTH_SHORT).show();}
+        catch(RuntimeException e){Toast.makeText(this,"外部資源連結無效",Toast.LENGTH_SHORT).show();}
+    }
+
     @Override protected void onDestroy(){if(webView!=null){webView.removeJavascriptInterface("AminWiki");webView.stopLoading();webView.loadUrl("about:blank");webView.destroy();webView=null;}if(promptStore!=null)promptStore.close();super.onDestroy();}
 
     private final class WikiBridge {
@@ -47,6 +68,7 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getGraphMode(){return graphMode;}
         @JavascriptInterface public String getFocusNode(){return focusNode;}
         @JavascriptInterface public String getThemeName(){return AminTheme.current(WikiGraphActivity.this);}
-        @JavascriptInterface public void openPrompt(String rawId){try{long id=Long.parseLong(rawId);android.content.Intent i=new android.content.Intent(WikiGraphActivity.this,PromptEditorActivity.class);i.putExtra("prompt_id",id);runOnUiThread(()->startActivity(i));}catch(NumberFormatException ignored){}}
+        @JavascriptInterface public void openExternalResource(String url){runOnUiThread(()->openExternal(url));}
+        @JavascriptInterface public void openPrompt(String rawId){try{long id=Long.parseLong(rawId);Intent i=new Intent(WikiGraphActivity.this,PromptEditorActivity.class);i.putExtra("prompt_id",id);runOnUiThread(()->startActivity(i));}catch(NumberFormatException ignored){}}
     }
 }
