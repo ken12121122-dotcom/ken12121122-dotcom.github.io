@@ -1,0 +1,74 @@
+{
+  "format": "amin-hierarchical-graph",
+  "version": 1,
+  "graphId": "life-erp",
+  "title": "Life ERP",
+  "status": "candidate",
+  "updatedAt": "2026-08-07",
+  "nodes": [
+    {"id":"life-erp-me","title":"我","trunkOrder":0},
+    {"id":"life-erp-data-entry","title":"① 資料進入","trunkOrder":1,"document":"life-erp-architecture"},
+    {"id":"life-erp-data-contract","title":"② 資料契約","trunkOrder":2,"document":"life-erp-data-contract"},
+    {"id":"life-erp-contract-review","title":"③ 契約審查","trunkOrder":3,"document":"life-erp-wf001"},
+    {"id":"life-erp-approved-contract","title":"④ 正式契約","trunkOrder":4},
+    {"id":"life-erp-claude","title":"⑤ Claude 實作","trunkOrder":5,"document":"life-erp-architecture"},
+    {"id":"life-erp-n8n","title":"⑥ n8n 執行","trunkOrder":6,"document":"life-erp-n8n"},
+    {"id":"life-erp-usage","title":"⑦ 資料使用與累積","trunkOrder":7,"document":"life-erp-knowledge-base"},
+
+    {"id":"contract-universal","title":"通用資料契約","parentId":"life-erp-data-contract"},
+    {"id":"contract-node-types","title":"節點類別","parentId":"life-erp-data-contract"},
+    {"id":"contract-relation-types","title":"關聯類別","parentId":"life-erp-data-contract"},
+    {"id":"contract-domains","title":"領域分類","parentId":"life-erp-data-contract"},
+    {"id":"contract-status-rules","title":"狀態規則","parentId":"life-erp-data-contract"},
+
+    {"id":"universal-identity","title":"身分資料","parentId":"contract-universal"},
+    {"id":"universal-classification","title":"分類資料","parentId":"contract-universal"},
+    {"id":"universal-content","title":"內容","parentId":"contract-universal"},
+    {"id":"universal-status","title":"狀態","parentId":"contract-universal"},
+    {"id":"universal-relations","title":"關聯","parentId":"contract-universal"},
+    {"id":"universal-source","title":"來源","parentId":"contract-universal"},
+    {"id":"universal-governance","title":"治理","parentId":"contract-universal"},
+    {"id":"source-record","title":"來源紀錄","parentId":"universal-source"},
+    {"id":"source-location","title":"來源位置","parentId":"universal-source"},
+    {"id":"source-created-at","title":"建立時間","parentId":"universal-source"},
+    {"id":"source-traceability","title":"可追溯資訊","parentId":"universal-source"},
+
+    {"id":"review-read-candidate","title":"讀取候選","parentId":"life-erp-contract-review"},
+    {"id":"review-validate-data","title":"驗證資料","parentId":"life-erp-contract-review"},
+    {"id":"review-compare-version","title":"比較版本","parentId":"life-erp-contract-review"},
+    {"id":"review-change-set","title":"產生變更","parentId":"life-erp-contract-review"},
+    {"id":"review-human-approval","title":"人工核准","parentId":"life-erp-contract-review"},
+
+    {"id":"n8n-contract-governance","title":"契約治理流程","parentId":"life-erp-n8n"},
+    {"id":"n8n-knowledge-read","title":"知識讀取流程","parentId":"life-erp-n8n"},
+    {"id":"n8n-knowledge-write","title":"知識寫入流程","parentId":"life-erp-n8n"},
+    {"id":"n8n-task","title":"任務處理流程","parentId":"life-erp-n8n"},
+    {"id":"n8n-schedule","title":"行程處理流程","parentId":"life-erp-n8n"},
+
+    {"id":"n8n-gov-start","title":"開始","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-read","title":"讀取資料","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-normalize","title":"整理資料","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-validate","title":"驗證","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-condition","title":"條件判斷","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-change","title":"產生變更","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-human","title":"人工核准","parentId":"n8n-contract-governance"},
+    {"id":"n8n-gov-output","title":"輸出結果","parentId":"n8n-contract-governance"},
+
+    {"id":"n8n-validate-required","title":"必填檢查","parentId":"n8n-gov-validate"},
+    {"id":"n8n-validate-format","title":"格式檢查","parentId":"n8n-gov-validate"},
+    {"id":"n8n-validate-source","title":"來源檢查","parentId":"n8n-gov-validate"},
+    {"id":"n8n-validate-version","title":"版本檢查","parentId":"n8n-gov-validate"}
+  ],
+  "relations": [
+    {"source":"life-erp-contract-review","target":"contract-universal","class":"cross_relation","type":"uses"},
+    {"source":"n8n-contract-governance","target":"contract-universal","class":"cross_relation","type":"uses"},
+    {"source":"review-human-approval","target":"life-erp-approved-contract","class":"cross_relation","type":"approves_to"}
+  ],
+  "governance": {
+    "approvedContractsImmutable": true,
+    "changesRequireCandidate": true,
+    "humanApprovalRequired": true,
+    "preservePreviousVersions": true,
+    "aiCanApprove": false
+  }
+}
