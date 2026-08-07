@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.0-bridge32",
-  "latestVersionCode": 128,
+  "latestVersionName": "0.10.1-bridge33",
+  "latestVersionCode": 129,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.0-bridge32.apk",
-  "apkSha256": "55437a5f5be7b020db5427502f792ef055e97730855e4a85187d68523366ef12",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.1-bridge33.apk",
+  "apkSha256": "7278fe47dc8ac97a9fc0c78f626e79bb48f5b88e4a9d03c2e543ab87bd3b3d73",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1827016,
-  "publishedAt": "2026-08-07T06:06:51Z",
+  "sizeBytes": 1830923,
+  "publishedAt": "2026-08-07T06:42:13Z",
   "mandatory": false,
   "releaseNotes": [
-    "提示詞系統升級為 App 管理、鍵盤快速叫用、單一 PromptStore 資料來源；舊提示詞會原地遷移並保留。",
-    "App 新增提示詞管理中心，支援新增、編輯、收藏、置頂、封存、Soft Delete、垃圾桶復原與二次確認永久刪除。",
-    "提示詞鍵盤新增搜尋、收藏、置頂、最近使用與管理／新增入口；插入提示詞會記錄使用次數與最後使用時間。",
-    "既有 Amin Wiki 關聯圖升級為 Unified Graph，可切換知識、提示詞、全部，並支援 Prompt↔Prompt 與 Prompt↔Knowledge 關聯及 focus node。",
-    "維持既有手機鎖保護、密碼欄位隱藏提示詞、語音球與正式發布流程。"
+    "修正提示詞管理頁封存與垃圾桶因單列寬度不足被裁切的問題，狀態列改為可橫向捲動，垃圾桶可正常進入。",
+    "修正舊提示詞遷移後 title 與內容預覽重複顯示造成同一句出現兩次的問題；不修改原始 Prompt 內容，只修正列表呈現。",
+    "新增全域 App Theme System，可在外觀設定一鍵切換 Clean Light、Soft Green、Dark、Minimal 四種風格。",
+    "全域主題會套用原生 App 頁面、提示詞鍵盤與 Unified Graph；控制中心新增外觀設定入口。",
+    "維持 Bridge32 Prompt 資料、垃圾桶復原、關聯圖、手機鎖與既有正式發布流程。"
   ]
 }
