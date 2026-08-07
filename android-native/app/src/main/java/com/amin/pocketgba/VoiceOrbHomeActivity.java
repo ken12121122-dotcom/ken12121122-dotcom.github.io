@@ -13,7 +13,6 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -28,7 +27,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final VoiceCommandParser parser = new VoiceCommandParser();
-    private final Runnable silenceTimeout = this::collapseToFloatingButton;
+    private final Runnable silenceTimeout = this::enterIdleState;
 
     private VoiceOrbView orbView;
     private TextView statusView;
@@ -182,7 +181,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
             recognizer.startListening(recognizerIntent);
         } catch (RuntimeException error) {
             listening = false;
-            status("語音啟動失敗", VoiceOrbView.Phase.ERROR);
+            enterIdleState();
         }
     }
 
@@ -198,6 +197,12 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         handler.removeCallbacks(silenceTimeout);
         if (recognizer != null && listening) recognizer.cancel();
         listening = false;
+    }
+
+    private void enterIdleState() {
+        stopListeningQuietly();
+        status("待命中", VoiceOrbView.Phase.IDLE);
+        transcriptView.setText("點一下語音球重新開始監聽");
     }
 
     private void collapseToFloatingButton() {
@@ -222,7 +227,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         VoiceCommandParser.Result parsed = parser.parse(normalized, confidence);
         if (parsed.getStatus() != VoiceCommandParser.Result.Status.MATCHED) {
             status(parsed.getMessage(), VoiceOrbView.Phase.ERROR);
-            handler.postDelayed(this::startListeningWithPermission, 1300L);
+            handler.postDelayed(this::enterIdleState, 1300L);
             return;
         }
         status("正在開啟功能", VoiceOrbView.Phase.PROCESSING);
@@ -232,7 +237,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
             status(result.getMessage(), VoiceOrbView.Phase.SUCCESS);
         } else {
             status(result.getMessage(), VoiceOrbView.Phase.ERROR);
-            handler.postDelayed(this::startListeningWithPermission, 1300L);
+            handler.postDelayed(this::enterIdleState, 1300L);
         }
     }
 
@@ -263,11 +268,11 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         handler.removeCallbacks(silenceTimeout);
         listening = false;
         if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_NO_MATCH) {
-            collapseToFloatingButton();
+            enterIdleState();
             return;
         }
         status("語音辨識失敗", VoiceOrbView.Phase.ERROR);
-        handler.postDelayed(this::startListeningWithPermission, 1300L);
+        handler.postDelayed(this::enterIdleState, 1300L);
     }
 
     @Override
@@ -277,7 +282,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
         if (matches == null || matches.isEmpty()) {
-            collapseToFloatingButton();
+            enterIdleState();
             return;
         }
         double confidence = confidences != null && confidences.length > 0 ? confidences[0] : -1d;
