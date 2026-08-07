@@ -1,15 +1,18 @@
 {
-  "versionCode": 123,
-  "versionName": "0.9.5",
+  "versionCode": 124,
+  "versionName": "0.9.6",
   "channel": "bridge",
-  "bridge": 27,
+  "bridge": 28,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音浮球連續 8 秒未收到語音時，自動停止收音並回到待命浮動按鈕。",
-    "偵測到開始說話、局部辨識、辨識完成或錯誤時取消逾時計時。",
-    "沿用既有 FloatingVoiceController、AminInputGateway 與語音指令路由。"
+    "App 啟動後直接進入全螢幕動態語音球，並自動開始短暫監聽。",
+    "語音球會依麥克風音量產生波紋與縮放反應，並顯示即時辨識文字。",
+    "新增功能節點地圖，可前往原始首頁、Pocket GBA、提示詞鍵盤、知識網路、全域控制與權限設定。",
+    "原始首頁不再是預設入口，改由功能節點地圖中的節點開啟。",
+    "功能返回時回到上一層；原始首頁返回節點地圖，節點地圖返回動態語音球。",
+    "動態語音球 8 秒沒有收到指令時，收合為既有語音浮動按鈕。"
   ]
 }
