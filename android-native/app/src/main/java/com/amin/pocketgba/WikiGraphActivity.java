@@ -53,7 +53,23 @@ public final class WikiGraphActivity extends Activity {
     private void inspectAppRoute(String rawRoute){JSONObject node=NodeRegistry.findByRoute(this,nodeMetadataStore,rawRoute);if(node==null){directOpenAppRoute(rawRoute);return;}Intent i=new Intent(this,NodeInspectorActivity.class);i.putExtra(NodeInspectorActivity.EXTRA_NODE_ID,node.optString("node_id",node.optString("nodeId","")));i.putExtra(NodeInspectorActivity.EXTRA_ROUTE,rawRoute);startActivity(i);}
     private void directOpenAppRoute(String rawRoute){try{Uri uri=Uri.parse(rawRoute==null?"":rawRoute.trim());String scheme=uri.getScheme();if(scheme==null||!scheme.startsWith("amin-")){Toast.makeText(this,"不允許的 App Route",Toast.LENGTH_SHORT).show();return;}startActivity(new Intent(Intent.ACTION_VIEW,uri).setPackage(getPackageName()));}catch(RuntimeException e){Toast.makeText(this,"App Route 無效",Toast.LENGTH_SHORT).show();}}
 
-    private String appNavigationJson(){return NodeRegistry.navigationJson(this);}
+    /** Applies editable Inspector projection without mutating Manifest authority or capability identity. */
+    private String appNavigationJson(){
+        String raw=NodeRegistry.navigationJson(this);
+        try{
+            JSONObject root=new JSONObject(raw);JSONArray pages=root.optJSONArray("pages");
+            if(pages==null)return raw;
+            for(int i=0;i<pages.length();i++){
+                JSONObject page=pages.optJSONObject(i);if(page==null)continue;
+                String rawId=page.optString("id","");if(rawId.isEmpty())continue;
+                JSONObject override=nodeMetadataStore.overrideFor(GraphContract.nodeId(GraphContract.APP_ORIGIN,rawId));
+                String name=override.optString("name","").trim();if(!name.isEmpty())page.put("title",name);
+                String parent=override.optString("parent_id","").trim();
+                if(!parent.isEmpty()){if(parent.startsWith("app:"))parent=parent.substring(4);page.put("parent",parent);}
+            }
+            return root.toString();
+        }catch(Exception ignored){return raw;}
+    }
     private String promptGraphJson(){try{JSONObject root=new JSONObject(promptStore.graphJson());JSONArray links=root.optJSONArray("links");if(links!=null)for(int i=0;i<links.length();i++){JSONObject l=links.optJSONObject(i);if(l==null)continue;String a=l.optString("a","");String b=l.optString("b","");if(a.startsWith("prompt:"))l.put("a",a.substring(7));if(b.startsWith("prompt:"))l.put("b",b.substring(7));}return root.toString();}catch(Exception ignored){return "{\"nodes\":[],\"links\":[]}";}}
 
     @Override protected void onDestroy(){if(webView!=null){webView.removeJavascriptInterface("AminWiki");webView.stopLoading();webView.loadUrl("about:blank");webView.destroy();webView=null;}if(promptStore!=null)promptStore.close();super.onDestroy();}
