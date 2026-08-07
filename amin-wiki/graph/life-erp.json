@@ -5,10 +5,15 @@
   "title": "Life ERP",
   "status": "candidate",
   "updatedAt": "2026-08-07",
+  "projection": {
+    "governanceContract": "amin-wiki/governance/vault-projection.json",
+    "hierarchyAuthority": "approved_contract",
+    "vaultRole": "materialized_projection"
+  },
   "nodes": [
     {"id":"life-erp-me","title":"我","trunkOrder":0},
     {"id":"life-erp-data-entry","title":"① 資料進入","trunkOrder":1,"document":"life-erp-architecture"},
-    {"id":"life-erp-data-contract","title":"② 資料契約","trunkOrder":2,"document":"life-erp-data-contract"},
+    {"id":"life-erp-data-contract","title":"② 資料契約","trunkOrder":2,"document":"life-erp-data-contract","resources":["LIFE_ERP_CONTRACT_GOVERNANCE_WORKBOOK"]},
     {"id":"life-erp-contract-review","title":"③ 契約審查","trunkOrder":3,"document":"life-erp-wf001"},
     {"id":"life-erp-approved-contract","title":"④ 正式契約","trunkOrder":4},
     {"id":"life-erp-claude","title":"⑤ Claude 實作","trunkOrder":5,"document":"life-erp-architecture"},
@@ -69,6 +74,7 @@
     "changesRequireCandidate": true,
     "humanApprovalRequired": true,
     "preservePreviousVersions": true,
-    "aiCanApprove": false
+    "aiCanApprove": false,
+    "folderStructureIsAuthority": false
   }
 }
