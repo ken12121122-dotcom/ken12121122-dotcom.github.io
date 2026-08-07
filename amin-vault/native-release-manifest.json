@@ -4,21 +4,22 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.5-bridge27",
-  "latestVersionCode": 123,
+  "latestVersionName": "0.9.6-bridge28",
+  "latestVersionCode": 124,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.5-bridge27.apk",
-  "apkSha256": "6c077b53699d823ff08677614aecf308f091c25e7fcb6516fc5484eebaa230dd",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.6-bridge28.apk",
+  "apkSha256": "a8c5e364cde274381d50c4d4454b866734019c90f7f21245cd62c83075ec8dcc",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1806654,
-  "publishedAt": "2026-08-06T17:05:20Z",
+  "sizeBytes": 1814242,
+  "publishedAt": "2026-08-07T01:01:50Z",
   "mandatory": false,
   "releaseNotes": [
-    "語音浮球開始監聽後，連續 8 秒沒有收到語音會自動停止收音並回到待命浮動按鈕。",
-    "偵測到開始說話、局部辨識、辨識完成或錯誤時取消逾時計時。",
-    "沿用既有 FloatingVoiceController、AminInputGateway、17 個語音動作與 54 種可說法。",
-    "維持使用者主動啟動的單次辨識，不在背景持續監聽。",
-    "沿用原套件與永久簽章，可直接覆蓋 Bridge 26 並保留資料。"
+    "App 啟動後直接進入全螢幕動態語音球，並自動開始短暫監聽。",
+    "語音球會依麥克風音量產生波紋與縮放反應，並顯示即時辨識文字。",
+    "新增功能節點地圖，可前往原始首頁、Pocket GBA、提示詞鍵盤、知識網路、全域控制與權限設定。",
+    "原始首頁不再是預設入口，改由功能節點地圖中的節點開啟。",
+    "功能返回時回到上一層；原始首頁返回節點地圖，節點地圖返回動態語音球。",
+    "動態語音球 8 秒沒有收到指令時，收合為既有語音浮動按鈕。"
   ]
 }
