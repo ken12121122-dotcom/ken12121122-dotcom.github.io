@@ -31,7 +31,7 @@ public final class SystemGraphActivity extends Activity {
         ));
 
         TextView hint = new TextView(this);
-        hint.setText("功能節點地圖 · 點選節點開啟");
+        hint.setText("功能節點地圖 · 點選節點開啟 · 返回鍵回到語音球");
         hint.setTextColor(0xffb9c9c0);
         hint.setTextSize(14f);
         hint.setGravity(android.view.Gravity.CENTER);
