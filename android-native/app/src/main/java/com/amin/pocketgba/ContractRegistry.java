@@ -36,12 +36,22 @@ final class ContractRegistry {
         try {
             JSONArray fields = new JSONArray();
             fields.put(field("date", "日期", "date", true, null));
-            fields.put(field("amount", "金額", "number", true, null));
+            fields.put(field("type", "收支類型", "select", true,
+                    new JSONArray().put("expense").put("income").put("transfer")));
             fields.put(field("category", "分類", "select", true,
-                    new JSONArray().put("food").put("transport").put("subscription").put("entertainment")));
-            fields.put(field("merchant", "商家", "text", false, null));
+                    new JSONArray().put("food").put("transport").put("subscription").put("entertainment").put("salary").put("transfer")));
+            fields.put(field("item", "品項", "text", true, null));
+            fields.put(field("amount", "金額", "number", true, null));
+            fields.put(field("account", "帳戶", "text", false, null));
+            fields.put(field("merchant", "商家／來源", "text", false, null));
             fields.put(field("note", "備註", "text", false, null));
-            return new JSONObject().put("contract_id", "transaction_v1").put("version", 1).put("fields", fields);
+            return new JSONObject()
+                    .put("contract_id", "transaction_v1")
+                    .put("version", 2)
+                    .put("storage_headers", new JSONArray()
+                            .put("transaction_id").put("date").put("type").put("category").put("item")
+                            .put("amount").put("account").put("merchant").put("note").put("created_at"))
+                    .put("fields", fields);
         } catch (Exception e) { return new JSONObject(); }
     }
 
