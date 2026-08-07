@@ -31,6 +31,7 @@ final class AminTheme {
     }
 
     static void applyBeforeCreate(Activity activity) {
+        if (activity instanceof PromptUnlockActivity || activity instanceof PromptCaptureActivity) return;
         switch (current(activity)) {
             case CLEAN_LIGHT: activity.setTheme(R.style.Theme_Amin_CleanLight); break;
             case DARK: activity.setTheme(R.style.Theme_Amin_Dark); break;
