@@ -1,17 +1,19 @@
 {
-  "versionCode": 139,
-  "versionName": "0.10.11",
+  "versionCode": 140,
+  "versionName": "0.10.12",
   "channel": "bridge",
-  "bridge": 43,
+  "bridge": 44,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "恢復語音首頁『功能地圖』按鈕至原本 SystemGraphActivity，重新提供原始首頁、Pocket GBA、提示詞鍵盤、知識網路、全域控制與權限設定等既有功能入口。",
-    "語音說『功能地圖』或『節點地圖』同樣恢復開啟 SystemGraphActivity，不再直接進入 Wiki 關聯圖。",
-    "保留 bridge42 已新增的 Capability Platform、Node Inspector、Voice Registry、Schema-driven Form、Google Sheets Adapter、Data View 與 Markdown Preview，不刪除既有實作。",
-    "Capability 語音匹配仍可使用 Wiki Graph 的 focus/open 流程；本次只修正功能地圖與關聯圖的入口職責。"
+    "Integration Pass：將財務、finance.expense.create、全部交易與 Transactions 以正式 Capability Projection 加入同一 Node Registry 與關聯圖，不要求每個能力都先建立 Android Activity。",
+    "建立完整財務 Typed Edge：新增支出 writes_to Transactions、opens 全部交易；全部交易與餐飲 Data View reads_from Transactions。",
+    "Node Inspector 的 Generated Form 現在可直接形成 Form → Contract Record → Google Sheets Storage Adapter 寫入鏈；缺少 Sheets 連線時會先完成連線再續寫。",
+    "新增支出寫入成功後可直接進入全部交易 Data View；Data View 每筆 Record 均可獨立點擊查看，不再固定開啟第一筆。",
+    "新增全部交易 Data View amin-data://transactions，餐飲 Data View 改掛在財務群組下；原始 SystemGraph 功能地圖仍維持獨立入口。",
+    "Capability 語音命中後由 Wiki Graph 進入同一 Node Inspector，不再嘗試直接開啟虛擬 amin-node route。"
   ]
 }
