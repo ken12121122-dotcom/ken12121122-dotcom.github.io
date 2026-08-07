@@ -1,18 +1,18 @@
 {
-  "versionCode": 133,
-  "versionName": "0.10.5",
+  "versionCode": 134,
+  "versionName": "0.10.6",
   "channel": "bridge",
-  "bridge": 37,
+  "bridge": 38,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "Unified Graph 改為單一整合視圖：App、Vault、Prompt 同圖呈現，以藍、綠、紫區分來源，原三模式改為顯示篩選器。",
-    "Graph 視覺改為 Cyber Radial / Mechanical 風格；App 固定骨架使用較粗折角線，Vault 與 Prompt 保留互動、縮放、平移與資料節點三槽 Hub。",
-    "Android App 頁面改由 Manifest amin.graph metadata 自動登錄；新增正式功能只要宣告 graph metadata 即可自動成為 App Node，並可直接從節點開啟對應頁面。",
-    "新增 Visual App Architecture Editor v1：長按 App Node 後可搬移整個分支或單一節點、改 Parent、改上下左右方向、交換既有 slot，並即時重畫機械式架構線。",
-    "新增 Navigation Candidate 編輯：可建立候選導航線、Undo、Redo、原架構/候選架構切換、儲存與清除候選；本版不直接修改正式 Android 導航程式。"
+    "App 架構編輯改為直接拖曳模型：進入編輯模式後直接拖藍色 App 節點，不再需要整個分支/單點、導航線、Undo/Redo、原架構/候選架構等工具列。",
+    "拖到有子節點的 App Node 時，該節點與全部子孫分支會一起浮起並跟手移動；葉節點則只浮起自己。",
+    "拖曳中的節點/分支以半透明與陰影顯示，原位置保留淡色 ghost，便於辨識搬移來源。",
+    "拖曳時自動偵測最近合法 App Node；進入吸附距離後先以半透明虛線與目標外框顯示預覽，放手才正式改變候選 parent 並重新排版。",
+    "成功放下後 Navigation Candidate 自動儲存在本機；未偵測到合法掛接點則整個分支自動回原位。"
   ]
 }
