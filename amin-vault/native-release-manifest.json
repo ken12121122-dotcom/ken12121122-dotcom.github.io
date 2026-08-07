@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.7-bridge29.apk",
-  "apkSha256": "849d1ffeb34355478078aa31b87be8c3329867c584aed55a800d8b3a5fab6fe7",
+  "apkSha256": "c6ee644e93a6f9dd9cf3ae42d14273ed61ad42ad0f131182fe035c9bec7857c8",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 1814319,
-  "publishedAt": "2026-08-07T02:19:35Z",
+  "publishedAt": "2026-08-07T02:21:53Z",
   "mandatory": false,
   "releaseNotes": [
     "語音辨識逾時、無匹配或空結果時，不再退出 App，改為停留在動態語音球首頁的待命狀態。",
