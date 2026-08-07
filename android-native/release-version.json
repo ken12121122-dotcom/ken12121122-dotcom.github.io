@@ -1,17 +1,16 @@
 {
-  "versionCode": 125,
-  "versionName": "0.9.7",
+  "versionCode": 126,
+  "versionName": "0.9.8",
   "channel": "bridge",
-  "bridge": 29,
+  "bridge": 30,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音辨識逾時、無匹配或空結果時，不再退出 App，改為停留在動態語音球首頁的待命狀態。",
-    "待命狀態顯示提示文字，點一下語音球即可重新開始監聽。",
-    "只有主動按下收合，或說出收合／關閉語音球指令時，才退出主畫面並保留語音浮動按鈕。",
-    "功能地圖與既有 Bridge 28 導航保持不變。"
+    "語音球收合後仍會保留既有語音浮動按鈕，方便從其他畫面重新叫回語音功能。",
+    "重新開啟或回到 App 的語音球首頁時，語音浮動按鈕會自動關閉，避免浮動按鈕與 App 主畫面同時顯示。",
+    "Bridge 29 的待命狀態、語音辨識與功能地圖行為維持不變。"
   ]
 }
