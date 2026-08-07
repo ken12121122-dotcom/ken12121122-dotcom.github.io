@@ -27,5 +27,52 @@
             android:name=".SystemGraphActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".NodeInspectorActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".SchemaFormActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".GoogleSheetsConnectionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".DataViewActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <meta-data android:name="amin.graph.visible" android:value="true" />
+            <meta-data android:name="amin.graph.id" android:value="finance-food" />
+            <meta-data android:name="amin.graph.capability_id" android:value="finance.expense.food.view" />
+            <meta-data android:name="amin.graph.title" android:value="餐飲" />
+            <meta-data android:name="amin.graph.description" android:value="顯示 Transactions 中 category=food 的餐飲資料，並以相同 Context 新增支出。" />
+            <meta-data android:name="amin.graph.parent" android:value="control-center" />
+            <meta-data android:name="amin.graph.route" android:value="amin-data://food" />
+            <meta-data android:name="amin.graph.direction" android:value="right" />
+            <meta-data android:name="amin.graph.slot" android:value="4" />
+            <meta-data android:name="amin.graph.node_type" android:value="data_view" />
+            <meta-data android:name="amin.graph.actions" android:value="open,create,refresh" />
+            <meta-data android:name="amin.graph.input_contract" android:value="transaction_v1" />
+            <meta-data android:name="amin.graph.output_contract" android:value="transaction_v1" />
+            <meta-data android:name="amin.graph.voice_enabled" android:value="true" />
+            <meta-data android:name="amin.graph.voice_aliases" android:value="餐飲,餐飲支出,吃飯支出" />
+            <meta-data android:name="amin.graph.storage_adapter" android:value="google_sheets" />
+            <meta-data android:name="amin.graph.storage_source_id" android:value="personal_finance" />
+            <meta-data android:name="amin.graph.storage_table" android:value="Transactions" />
+            <meta-data android:name="amin.graph.filter_json" android:value="{&quot;category&quot;:&quot;food&quot;}" />
+            <meta-data android:name="amin.graph.input_context_json" android:value="{&quot;category&quot;:&quot;food&quot;}" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-data" android:host="food" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
