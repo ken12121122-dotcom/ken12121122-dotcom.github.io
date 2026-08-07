@@ -7,6 +7,11 @@ on:
       - release/android
     paths:
       - 'android-native/**'
+  pull_request:
+    branches:
+      - release/android
+    paths:
+      - 'android-native/RELEASE_REQUEST.md'
 
 permissions:
   contents: write
@@ -17,6 +22,7 @@ concurrency:
 
 jobs:
   release:
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'release/publish-')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
 
