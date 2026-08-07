@@ -1,18 +1,18 @@
 {
-  "versionCode": 130,
-  "versionName": "0.10.2",
+  "versionCode": 131,
+  "versionName": "0.10.3",
   "channel": "bridge",
-  "bridge": 34,
+  "bridge": 35,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音球的新版提示不再直接以瀏覽器下載 APK，統一導回既有版本與更新頁；若確認有新版會自動進入 Native Update 安全更新流程。",
-    "正式 APK 仍只由既有 Native Update 下載至 App cache，完成 SHA-256、套件名稱、版本碼與簽章驗證後才交給 Android 安裝，避免 Downloads 出現重複 APK。",
-    "Unified Graph 新增手機雙指縮放、單指平移、節點拖曳、加減縮放、Fit All 與 Reset View。",
-    "Knowledge Graph 新增 hierarchy metadata：Life ERP 固定主幹永遠顯示，節點可逐層展開與收合，支援無限層級與各節點獨立展開狀態。",
-    "上下層關係與橫向關聯分離；點節點只控制展開收合，短暫出現的 ⋯ 才開 Markdown／Prompt 內容，不解析 Markdown 純文字樹為階層。"
+    "Unified Graph 升級為 Governed Vault 模型：GitHub/Obsidian 共用同一份 Markdown Vault，GitHub 是儲存與版本後端，不取得正式契約治理主權。",
+    "Graph Engine 可遞迴讀取 amin-wiki/pages；含 index.md 的資料夾會成為正式 Folder Node，Markdown 為內容節點，資料夾階層與橫向關聯正式分離。",
+    "Node Resolver 採 Children / Content / Resources 三槽模型，同一節點可同時展開子節點、閱讀 Markdown、連到外部 Source of Truth，不再需要判斷固定底層。",
+    "新增 External Resource Registry 與安全 HTTPS 開啟橋接；Life ERP 資料契約節點目前可直接連到既有 Google Sheets 契約治理工作簿。",
+    "Governance projection contract 明確標示 Approved Contract 為治理 authority，Vault Folder 只作 materialized projection；保留 Bridge34 的縮放、平移、Fit All、Reset、逐層展開與 Prompt/Knowledge/All 模式。"
   ]
 }
