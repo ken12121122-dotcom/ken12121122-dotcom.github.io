@@ -20,8 +20,8 @@ public final class WikiGraphActivity extends Activity {
     @SuppressLint({"SetJavaScriptEnabled","AddJavascriptInterface"})
     @Override protected void onCreate(Bundle b){
         super.onCreate(b);graphMode=getIntent().getStringExtra("graph_mode");if(graphMode==null)graphMode="knowledge";focusNode=getIntent().getStringExtra("focus_node");if(focusNode==null)focusNode="";promptStore=new PromptStore(this);
-        getWindow().setStatusBarColor(Color.TRANSPARENT);getWindow().setNavigationBarColor(Color.BLACK);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-        webView=new WebView(this);webView.setBackgroundColor(Color.TRANSPARENT);WebSettings s=webView.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(false);s.setDatabaseEnabled(false);s.setAllowFileAccess(true);s.setAllowContentAccess(false);s.setAllowFileAccessFromFileURLs(false);s.setAllowUniversalAccessFromFileURLs(true);s.setCacheMode(WebSettings.LOAD_NO_CACHE);s.setBuiltInZoomControls(false);s.setDisplayZoomControls(false);s.setSupportZoom(false);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        AminTheme.Palette p=AminTheme.palette(this);getWindow().setStatusBarColor(p.background);getWindow().setNavigationBarColor(p.background);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        webView=new WebView(this);webView.setBackgroundColor(p.background);WebSettings s=webView.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(false);s.setDatabaseEnabled(false);s.setAllowFileAccess(true);s.setAllowContentAccess(false);s.setAllowFileAccessFromFileURLs(false);s.setAllowUniversalAccessFromFileURLs(true);s.setCacheMode(WebSettings.LOAD_NO_CACHE);s.setBuiltInZoomControls(false);s.setDisplayZoomControls(false);s.setSupportZoom(false);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.setWebViewClient(new WebViewClient());webView.setWebChromeClient(new WebChromeClient());webView.addJavascriptInterface(new WikiBridge(),"AminWiki");setContentView(webView);webView.loadUrl("file:///android_asset/amin-wiki-graph/index.html");
     }
 
@@ -33,6 +33,7 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getPromptGraphJson(){return promptStore.graphJson();}
         @JavascriptInterface public String getGraphMode(){return graphMode;}
         @JavascriptInterface public String getFocusNode(){return focusNode;}
+        @JavascriptInterface public String getThemeName(){return AminTheme.current(WikiGraphActivity.this);}
         @JavascriptInterface public void openPrompt(String rawId){try{long id=Long.parseLong(rawId);android.content.Intent i=new android.content.Intent(WikiGraphActivity.this,PromptEditorActivity.class);i.putExtra("prompt_id",id);runOnUiThread(()->startActivity(i));}catch(NumberFormatException ignored){}}
     }
 }
