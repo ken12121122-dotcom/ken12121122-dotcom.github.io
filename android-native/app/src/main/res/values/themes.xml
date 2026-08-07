@@ -1,20 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.AminPocketGBA" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">@color/amin_black</item>
-        <item name="android:colorAccent">@color/amin_mint</item>
-        <item name="android:navigationBarColor">@color/amin_black</item>
-        <item name="android:statusBarColor">@color/amin_black</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
-
-    <style name="Theme.AminPromptDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:colorAccent">@color/amin_mint</item>
-    </style>
+    <style name="Theme.AminPocketGBA" parent="@android:style/Theme.Material.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:windowFullscreen">true</item><item name="android:windowActionModeOverlay">true</item><item name="android:windowBackground">@color/amin_black</item><item name="android:colorAccent">@color/amin_mint</item><item name="android:navigationBarColor">@color/amin_black</item><item name="android:statusBarColor">@color/amin_black</item><item name="android:windowLightStatusBar">false</item></style>
+    <style name="Theme.AminPromptDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:colorAccent">@color/amin_mint</item></style>
+    <style name="Theme.Amin.CleanLight" parent="@android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:windowFullscreen">true</item><item name="android:windowBackground">#FAFBFA</item><item name="android:colorAccent">#176B45</item><item name="android:navigationBarColor">#FAFBFA</item><item name="android:statusBarColor">#FAFBFA</item><item name="android:windowLightStatusBar">true</item></style>
+    <style name="Theme.Amin.SoftGreen" parent="@android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:windowFullscreen">true</item><item name="android:windowBackground">#F3F8F5</item><item name="android:colorAccent">#19794B</item><item name="android:navigationBarColor">#F3F8F5</item><item name="android:statusBarColor">#F3F8F5</item><item name="android:windowLightStatusBar">true</item></style>
+    <style name="Theme.Amin.Dark" parent="@android:style/Theme.Material.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:windowFullscreen">true</item><item name="android:windowBackground">#0D1110</item><item name="android:colorAccent">#5EE3B2</item><item name="android:navigationBarColor">#0D1110</item><item name="android:statusBarColor">#0D1110</item><item name="android:windowLightStatusBar">false</item></style>
+    <style name="Theme.Amin.Minimal" parent="@android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:windowNoTitle">true</item><item name="android:windowFullscreen">true</item><item name="android:windowBackground">#FFFFFF</item><item name="android:colorAccent">#1F6F4A</item><item name="android:navigationBarColor">#FFFFFF</item><item name="android:statusBarColor">#FFFFFF</item><item name="android:windowLightStatusBar">true</item></style>
 </resources>
