@@ -1,18 +1,17 @@
 {
-  "versionCode": 136,
-  "versionName": "0.10.8",
+  "versionCode": 137,
+  "versionName": "0.10.9",
   "channel": "bridge",
-  "bridge": 40,
+  "bridge": 41,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "修正 App 分支拖曳集合：只依 Android 原生 parent/children 結構往下抓子孫，橫向關聯、候選重新掛接與其他 relation 不再擴大被提起範圍。",
-    "保留新 Parent 的自由放手定位：接到不同父節點時仍以使用者放手座標固定整個分支。",
-    "新增 Home Snap：若分支重新拖回 Android Manifest 定義的原父節點，系統會辨識回到原生結構並恢復標準父子距離與兄弟節點間距。",
-    "Home Snap 會清除該原生分支的自由 x/y 覆寫與根節點 parent/direction/slot 候選，回到既有 1 對多機械式排版。",
-    "吸附預覽文字會區分『新 Parent 自由定位』與『原 Parent 恢復原生間距』兩種落點。"
+    "新增穩定 Capability ID：App Graph 節點預設以 app:<graph-id> 作為 capability identity，重新掛接 parent 或移動位置不會改變識別。",
+    "新增 Node Registry contract，集中輸出 nodeId、capabilityId、route、activity、parentNodeId 與來源權威，供後續 Inspector、Voice、Search 與 Workflow 共用。",
+    "新增 Typed Edge contract：Android Manifest parent/child 關係輸出為 relationshipType=contains、relationshipClass=hierarchy，並標記 android_manifest 為 hierarchy authority。",
+    "保留既有 amin.graph.id、拖曳、Home Snap 與候選重新掛接行為，不以新 Contract 改寫目前 Graph 排版。"
   ]
 }
