@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.4-bridge36",
-  "latestVersionCode": 132,
+  "latestVersionName": "0.10.5-bridge37",
+  "latestVersionCode": 133,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.4-bridge36.apk",
-  "apkSha256": "1952ed2b3fca5ae90242239ec89bcb6a64fca588cbacfed073eafa351da12d15",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.5-bridge37.apk",
+  "apkSha256": "866e71baad40195947a62f0e8434d6c0a6c9ba31fc728383aad80bb220bc6fa1",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1838120,
-  "publishedAt": "2026-08-07T09:37:10Z",
+  "sizeBytes": 1844241,
+  "publishedAt": "2026-08-07T11:55:48Z",
   "mandatory": false,
   "releaseNotes": [
-    "Graph 節點的 ⋯ 不再直接跳 Markdown，永遠先開 Children / Content / Resources 三合一 Node Action Hub。",
-    "三合一選單固定顯示結構、內容、資源三區，即使某槽目前未設定也會明確顯示，方便判斷節點能力與 Resource Resolver 狀態。",
-    "新增 External Resource Mapping Manager v1，可為節點保存 Google Sheets、n8n、GitHub、Calendar 或一般 HTTPS 資源，支援 candidate / active、修改、解除與測試連結。",
-    "手機新增的 Mapping 儲存在本機 Local Mapping，不直接改寫正式 GitHub Registry 或 Approved Contract；Graph 會即時合併 Local Mapping。",
-    "Graph 狀態列顯示 Graph Engine v36，保留 Folder Projection、Knowledge/Prompt/All、縮放、平移、Fit、Reset 與 Bridge35 Governed Vault 行為。"
+    "Unified Graph 改為單一整合視圖：App、Vault、Prompt 同圖呈現，以藍、綠、紫區分來源，原三模式改為顯示篩選器。",
+    "Graph 視覺改為 Cyber Radial / Mechanical 風格；App 固定骨架使用較粗折角線，Vault 與 Prompt 保留互動、縮放、平移與資料節點三槽 Hub。",
+    "Android App 頁面改由 Manifest amin.graph metadata 自動登錄；新增正式功能只要宣告 graph metadata 即可自動成為 App Node，並可直接從節點開啟對應頁面。",
+    "新增 Visual App Architecture Editor v1：長按 App Node 後可搬移整個分支或單一節點、改 Parent、改上下左右方向、交換既有 slot，並即時重畫機械式架構線。",
+    "新增 Navigation Candidate 編輯：可建立候選導航線、Undo、Redo、原架構/候選架構切換、儲存與清除候選；本版不直接修改正式 Android 導航程式。"
   ]
 }
