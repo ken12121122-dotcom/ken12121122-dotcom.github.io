@@ -78,7 +78,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         transcriptView=text("請說出功能名稱或既有語音指令",15,false,0xffb9c8c0);transcriptView.setGravity(Gravity.CENTER);transcriptView.setMaxLines(4);content.addView(transcriptView,wrap());
 
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams ap=wrap();ap.topMargin=dp(18);content.addView(actions,ap);
-        Button graph=button("功能地圖");graph.setOnClickListener(v->{stopListeningQuietly();launchedFeature=true;startActivity(new Intent(this,WikiGraphActivity.class));});actions.addView(graph,new LinearLayout.LayoutParams(0,dp(52),1));
+        Button graph=button("功能地圖");graph.setOnClickListener(v->openSystemFeatureMap());actions.addView(graph,new LinearLayout.LayoutParams(0,dp(52),1));
         Button collapse=button("收合");collapse.setOnClickListener(v->collapseToFloatingButton());LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(52),1);cp.leftMargin=dp(10);actions.addView(collapse,cp);
         setContentView(root);
     }
@@ -102,7 +102,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
 
     private void handleTranscript(String transcript,double confidence){
         String spoken=transcript==null?"":transcript.trim();transcriptView.setText("你說：「"+spoken+"」");
-        if(spoken.contains("功能地圖")||spoken.contains("節點地圖")){openGraph(null,null);return;}
+        if(spoken.contains("功能地圖")||spoken.contains("節點地圖")){openSystemFeatureMap();return;}
         if(spoken.equals("關閉")||spoken.equals("收合")||spoken.contains("關閉語音球")){collapseToFloatingButton();return;}
 
         NodeRegistry.Match nodeMatch=NodeRegistry.matchVoice(this,nodeMetadataStore,spoken);
@@ -119,6 +119,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         if(result.isSuccess()){launchedFeature=true;status(result.getMessage(),VoiceOrbView.Phase.SUCCESS);}else{status(result.getMessage(),VoiceOrbView.Phase.ERROR);handler.postDelayed(this::enterIdleState,1300L);}
     }
 
+    private void openSystemFeatureMap(){stopListeningQuietly();launchedFeature=true;startActivity(new Intent(this,SystemGraphActivity.class));}
     private void openGraph(String focusRawId,String route){stopListeningQuietly();Intent i=new Intent(this,WikiGraphActivity.class);if(focusRawId!=null&&!focusRawId.isEmpty())i.putExtra("focus_node",focusRawId);if(route!=null&&!route.isEmpty())i.putExtra("voice_open_route",route);launchedFeature=true;startActivity(i);}
     private void status(String value,VoiceOrbView.Phase phase){if(statusView!=null)statusView.setText(value);if(orbView!=null)orbView.setPhase(phase);}
 
