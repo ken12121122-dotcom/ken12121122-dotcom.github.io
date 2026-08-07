@@ -1,0 +1,15 @@
+{
+  "format": "amin-resource-registry",
+  "version": 1,
+  "resources": [
+    {
+      "id": "LIFE_ERP_CONTRACT_GOVERNANCE_WORKBOOK",
+      "provider": "google_sheets",
+      "resourceType": "google_spreadsheet",
+      "title": "Life ERP 節點契約治理工作簿 v0.3",
+      "url": "https://docs.google.com/spreadsheets/d/15TUU4zO4C3bs5bAPznYs7X6_6MjtKup0z7GlimbWnZY/edit",
+      "status": "candidate",
+      "authorityRole": "candidate_governance_interface"
+    }
+  ]
+}
