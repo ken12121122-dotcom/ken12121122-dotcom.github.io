@@ -4,4 +4,5 @@
 - Version code: 124
 - Source: release/android
 - Validation: Android PR Validation passed
+- Publish attempt: 2
 - Requested action: build, permanently sign, verify, and publish APK plus manifest
