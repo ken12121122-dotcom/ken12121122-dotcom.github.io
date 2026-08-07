@@ -3,6 +3,7 @@
   "versionName": "0.9.6",
   "channel": "bridge",
   "bridge": 28,
+  "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
