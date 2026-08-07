@@ -3,59 +3,35 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
-        <activity
-            android:name=".LaunchGateActivity"
-            android:exported="true">
+        <activity android:name=".LaunchGateActivity" android:exported="true">
             <intent-filter tools:node="remove">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".VoiceOrbHomeActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait">
+        <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".SystemGraphActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+        <activity android:name=".SystemGraphActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".NodeInspectorActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SchemaFormActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".GoogleSheetsConnectionActivity" android:exported="false" android:screenOrientation="portrait" />
 
-        <activity
-            android:name=".NodeInspectorActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".SchemaFormActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".GoogleSheetsConnectionActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".DataViewActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
+        <activity android:name=".DataViewActivity" android:exported="true" android:screenOrientation="portrait">
             <meta-data android:name="amin.graph.visible" android:value="true" />
             <meta-data android:name="amin.graph.id" android:value="finance-food" />
             <meta-data android:name="amin.graph.capability_id" android:value="finance.expense.food.view" />
             <meta-data android:name="amin.graph.title" android:value="餐飲" />
             <meta-data android:name="amin.graph.description" android:value="顯示 Transactions 中 category=food 的餐飲資料，並以相同 Context 新增支出。" />
-            <meta-data android:name="amin.graph.parent" android:value="control-center" />
+            <meta-data android:name="amin.graph.parent" android:value="finance" />
             <meta-data android:name="amin.graph.route" android:value="amin-data://food" />
             <meta-data android:name="amin.graph.direction" android:value="right" />
-            <meta-data android:name="amin.graph.slot" android:value="4" />
+            <meta-data android:name="amin.graph.slot" android:value="3" />
             <meta-data android:name="amin.graph.node_type" android:value="data_view" />
             <meta-data android:name="amin.graph.actions" android:value="open,create,refresh" />
             <meta-data android:name="amin.graph.input_contract" android:value="transaction_v1" />
@@ -72,6 +48,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="amin-data" android:host="food" />
+                <data android:scheme="amin-data" android:host="transactions" />
             </intent-filter>
         </activity>
     </application>
