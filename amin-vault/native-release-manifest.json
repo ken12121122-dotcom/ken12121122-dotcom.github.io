@@ -4,19 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.8-bridge30",
-  "latestVersionCode": 126,
+  "latestVersionName": "0.9.9-bridge31",
+  "latestVersionCode": 127,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.8-bridge30.apk",
-  "apkSha256": "aa3cd537527fdd5cc2b9d08ede7cb399d305d0257ed12ccc76426a61884ee449",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.9-bridge31.apk",
+  "apkSha256": "b3c3f9dd1c0a06a0fca4142be75c0b088c9bc3db491cacba199cb18bd231e05c",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1814282,
-  "publishedAt": "2026-08-07T04:24:29Z",
+  "sizeBytes": 1817139,
+  "publishedAt": "2026-08-07T04:37:33Z",
   "mandatory": false,
   "releaseNotes": [
-    "語音球收合後仍會保留既有語音浮動按鈕，方便從其他畫面重新叫回語音功能。",
-    "重新開啟或回到 App 的語音球首頁時，語音浮動按鈕會自動關閉，避免浮動按鈕與 App 主畫面同時顯示。",
-    "Bridge 29 的待命狀態、語音辨識與功能地圖行為維持不變。"
+    "語音球首頁會檢查正式發布 manifest；只有偵測到比目前版本新的版本時，右上角才顯示下載更新連結。",
+    "點擊下載更新後會先進入確認更新畫面，顯示目前版本、最新版本與更新內容，再由使用者確認是否下載。",
+    "沒有新版、網路檢查失敗或 manifest 無效時，不顯示更新連結；Bridge 30 的浮動按鈕行為維持不變。"
   ]
 }
