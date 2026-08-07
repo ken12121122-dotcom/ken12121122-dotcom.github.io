@@ -48,8 +48,8 @@ public final class FinanceActivity extends Activity {
         assets.setOnClickListener(v -> open("amin-finance://assets"));
         root.addView(assets, params());
 
-        Button sheet = action("開啟 Google Sheets", "直接查看四個財務分頁與實際寫入結果");
-        sheet.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(FinanceStorageConfig.SPREADSHEET_URL))));
+        Button sheet = action("開啟 Transactions Sheet", "直接查看新增收支實際寫入的 Google Sheets 分頁");
+        sheet.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(FinanceStorageConfig.tabUrl(FinanceStorageConfig.TRANSACTIONS_SHEET_ID)))));
         root.addView(sheet, params());
 
         Button graph = action("查看財務節點", "開啟關聯圖並聚焦 finance");
