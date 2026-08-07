@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.9-bridge31.apk",
-  "apkSha256": "b3c3f9dd1c0a06a0fca4142be75c0b088c9bc3db491cacba199cb18bd231e05c",
+  "apkSha256": "b7c05c94fb835e961d4fcb476425dfe686f155bc077ea390678b621fcb6a4087",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 1817139,
-  "publishedAt": "2026-08-07T04:37:33Z",
+  "publishedAt": "2026-08-07T04:39:54Z",
   "mandatory": false,
   "releaseNotes": [
     "語音球首頁會檢查正式發布 manifest；只有偵測到比目前版本新的版本時，右上角才顯示下載更新連結。",
