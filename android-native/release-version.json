@@ -1,16 +1,16 @@
 {
-  "versionCode": 126,
-  "versionName": "0.9.8",
+  "versionCode": 127,
+  "versionName": "0.9.9",
   "channel": "bridge",
-  "bridge": 30,
+  "bridge": 31,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音球收合後仍會保留既有語音浮動按鈕，方便從其他畫面重新叫回語音功能。",
-    "重新開啟或回到 App 的語音球首頁時，語音浮動按鈕會自動關閉，避免浮動按鈕與 App 主畫面同時顯示。",
-    "Bridge 29 的待命狀態、語音辨識與功能地圖行為維持不變。"
+    "語音球首頁會檢查正式發布 manifest；只有偵測到比目前版本新的版本時，右上角才顯示下載更新連結。",
+    "點擊下載更新後會先進入確認更新畫面，顯示目前版本、最新版本與更新內容，再由使用者確認是否下載。",
+    "沒有新版、網路檢查失敗或 manifest 無效時，不顯示更新連結；Bridge 30 的浮動按鈕行為維持不變。"
   ]
 }
