@@ -1,0 +1,182 @@
+name: Android Production Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/android
+    paths:
+      - 'android-native/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    env:
+      AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+      AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+      AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+      AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout immutable release source
+        uses: actions/checkout@v6
+        with:
+          ref: release/android
+          fetch-depth: 0
+
+      - name: Read and validate release metadata
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json
+          from pathlib import Path
+          p = Path('android-native/release-version.json')
+          data = json.loads(p.read_text())
+          required = ['versionCode','versionName','bridge','packageId','signerCertificateSha256','releaseNotes']
+          missing = [k for k in required if k not in data]
+          if missing:
+              raise SystemExit(f'Missing release fields: {missing}')
+          print(f"AMIN_VERSION_CODE={data['versionCode']}")
+          print(f"AMIN_VERSION_NAME={data['versionName']}")
+          print(f"AMIN_BRIDGE={data['bridge']}")
+          print(f"AMIN_BRIDGE_SUFFIX=-bridge{data['bridge']}")
+          print(f"AMIN_PACKAGE_ID={data['packageId']}")
+          print(f"AMIN_SIGNER_SHA256={data['signerCertificateSha256']}")
+          print(f"AMIN_RELEASE_NAME=Amin-Pocket-GBA-v{data['versionName']}-bridge{data['bridge']}.apk")
+          PY
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Prepare permanent signing
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -n "$AMIN_KEYSTORE_BASE64"
+          test -n "$AMIN_KEYSTORE_PASSWORD"
+          test -n "$AMIN_KEY_ALIAS"
+          test -n "$AMIN_KEY_PASSWORD"
+          KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
+          printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Test lint and build signed APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE="$AMIN_VERSION_CODE" \
+            -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
+            -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
+            :app:testDebugUnitTest \
+            :app:testBridgeUnitTest \
+            :app:lintBridge \
+            :app:assembleBridge
+
+      - name: Verify APK identity and permanent signer
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/bridge/app-bridge.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -s "$APK"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/android-release-badging.txt"
+          EXPECTED="package: name='$AMIN_PACKAGE_ID' versionCode='$AMIN_VERSION_CODE' versionName='$AMIN_VERSION_NAME$AMIN_BRIDGE_SUFFIX'"
+          grep -Fq "$EXPECTED" "$RUNNER_TEMP/android-release-badging.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/android-release-signing.txt"
+          grep -Fqi "$AMIN_SIGNER_SHA256" "$RUNNER_TEMP/android-release-signing.txt"
+
+      - name: Create release artifact and manifest
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/bridge/app-bridge.apk'
+          RELEASE_PATH="amin-vault/releases/$AMIN_RELEASE_NAME"
+          mkdir -p amin-vault/releases
+          cp "$APK" "$RELEASE_PATH"
+          SHA256="$(sha256sum "$RELEASE_PATH" | awk '{print $1}')"
+          SIZE="$(stat -c '%s' "$RELEASE_PATH")"
+          PUBLISHED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          python3 - "$SHA256" "$SIZE" "$PUBLISHED_AT" "$AMIN_RELEASE_NAME" <<'PY'
+          import json, sys
+          from pathlib import Path
+          sha256, size, published_at, release_name = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+          v = json.loads(Path('android-native/release-version.json').read_text())
+          manifest = {
+            'format': 'amin-native-release-manifest',
+            'manifestVersion': 1,
+            'channel': v['channel'],
+            'enabled': True,
+            'packageId': v['packageId'],
+            'latestVersionName': f"{v['versionName']}-bridge{v['bridge']}",
+            'latestVersionCode': v['versionCode'],
+            'minimumSupportedVersionCode': v['minimumSupportedVersionCode'],
+            'minimumAndroidSdk': v['minimumAndroidSdk'],
+            'apkUrl': f'https://ken12121122-dotcom.github.io/amin-vault/releases/{release_name}',
+            'apkSha256': sha256,
+            'signerCertificateSha256': v['signerCertificateSha256'],
+            'sizeBytes': size,
+            'publishedAt': published_at,
+            'mandatory': False,
+            'releaseNotes': v['releaseNotes'],
+          }
+          Path('amin-vault/native-release-manifest.json').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + '\n'
+          )
+          PY
+
+      - name: Publish only APK and manifest to main
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SOURCE_COMMIT="$(git rev-parse HEAD)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git checkout -B main origin/main
+          git checkout "$SOURCE_COMMIT" -- "amin-vault/releases/$AMIN_RELEASE_NAME" amin-vault/native-release-manifest.json
+          git add "amin-vault/releases/$AMIN_RELEASE_NAME" amin-vault/native-release-manifest.json
+          git diff --cached --quiet && { echo 'Release already published'; exit 0; }
+          git commit -m "release: publish $AMIN_VERSION_NAME$AMIN_BRIDGE_SUFFIX"
+          git push origin HEAD:main
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amin-Android-${{ env.AMIN_VERSION_NAME }}${{ env.AMIN_BRIDGE_SUFFIX }}
+          path: |
+            amin-vault/releases/${{ env.AMIN_RELEASE_NAME }}
+            amin-vault/native-release-manifest.json
+            ${{ runner.temp }}/android-release-badging.txt
+            ${{ runner.temp }}/android-release-signing.txt
+          if-no-files-found: error
