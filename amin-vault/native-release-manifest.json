@@ -4,20 +4,22 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.11-bridge43",
-  "latestVersionCode": 139,
+  "latestVersionName": "0.10.12-bridge44",
+  "latestVersionCode": 140,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.11-bridge43.apk",
-  "apkSha256": "e9dce9d23763b75403ce3c17f7fa7a10b56fb04503057fcd2739d7b362ecb38b",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.12-bridge44.apk",
+  "apkSha256": "a3976911c976c0a00206dd5e6c6674ca01ceace75da53ac9f4c4c40f8fd5d8bd",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1864578,
-  "publishedAt": "2026-08-07T15:38:43Z",
+  "sizeBytes": 2706159,
+  "publishedAt": "2026-08-07T23:15:03Z",
   "mandatory": false,
   "releaseNotes": [
-    "恢復語音首頁『功能地圖』按鈕至原本 SystemGraphActivity，重新提供原始首頁、Pocket GBA、提示詞鍵盤、知識網路、全域控制與權限設定等既有功能入口。",
-    "語音說『功能地圖』或『節點地圖』同樣恢復開啟 SystemGraphActivity，不再直接進入 Wiki 關聯圖。",
-    "保留 bridge42 已新增的 Capability Platform、Node Inspector、Voice Registry、Schema-driven Form、Google Sheets Adapter、Data View 與 Markdown Preview，不刪除既有實作。",
-    "Capability 語音匹配仍可使用 Wiki Graph 的 focus/open 流程；本次只修正功能地圖與關聯圖的入口職責。"
+    "新增真正的財務功能頁：控制中心可直接進入財務首頁，包含新增收支、收支明細、分類、帳戶與資產入口。",
+    "建立專用 Google Sheets 財務資料庫 Amin Pocket｜個人財務資料庫，固定對應 Transactions、Accounts、Categories、Assets 四個分頁與實際 Sheet ID。",
+    "transaction_v1 已與 Transactions Header 對齊：date、type、category、item、amount、account、merchant、note，並自動補 transaction_id 與 created_at。",
+    "新增收支頁會透過 GoogleSheetsAdapter 寫入 Transactions；收支明細、分類、帳戶與資產均有對應功能頁、Graph Node 與明確 Google Sheets 分頁。",
+    "Node Registry 改為產品頁面優先：財務首頁與新增收支使用正式 Activity Node，其餘共享資料頁以 route projection 對應，不再用虛擬財務節點取代功能頁。",
+    "保留 Typed Edge、Node Inspector、Voice Registry、Schema Form、Storage Adapter、Data View 與 MD Preview；原始 SystemGraph 功能地圖仍維持獨立入口。"
   ]
 }
