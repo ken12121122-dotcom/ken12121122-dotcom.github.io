@@ -4,23 +4,20 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.10-bridge42",
-  "latestVersionCode": 138,
+  "latestVersionName": "0.10.11-bridge43",
+  "latestVersionCode": 139,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.10-bridge42.apk",
-  "apkSha256": "aa6d2b85be5e2f34d41f2f131cf6977e1d7ead0b543eac08e6a5fa2389b617e3",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.11-bridge43.apk",
+  "apkSha256": "e9dce9d23763b75403ce3c17f7fa7a10b56fb04503057fcd2739d7b362ecb38b",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1864694,
-  "publishedAt": "2026-08-07T15:20:27Z",
+  "sizeBytes": 1864578,
+  "publishedAt": "2026-08-07T15:38:43Z",
   "mandatory": false,
   "releaseNotes": [
-    "擴充 Capability Platform：Node Registry 現在統一輸出完整節點 Metadata，Typed Edge 支援 contains、opens、uses、reads_from、writes_to、executes 與 depends_on。",
-    "新增 Node Inspector：可查看固定 Capability ID、編輯名稱/說明/Parent、管理候選 Edge、檢視 Contract/Voice/版本狀態，並直接產生 Markdown Preview。",
-    "語音球改為 Node Registry 優先匹配：Voice aliases 直接來自 Node Metadata，命中後聚焦 Graph 並開啟對應 Capability；既有 VoiceCommandParser 保留為舊指令 fallback。",
-    "新增 Schema-driven Form 與 transaction_v1 Contract，支援 text、number、date、select、boolean，以及 Data View 的 Filter/Input Context 自動預填。",
-    "新增 StorageAdapter 與 Google Sheets Adapter：依 Sheet Header 自動 mapping 與 append，不在 Node 內保存固定欄位位置或 Credential。",
-    "新增 data_view 節點能力：提供資料列表、新增、單筆預覽、重新整理與 Filter 狀態；Bridge 內含餐飲 category=food 範例節點。",
-    "新增 Markdown Preview Generator：由 Node、Capability、Contract、Typed Edge、Voice 與 Storage Metadata 即時投影 Markdown，只提供 Preview / Copy，不覆蓋外部文件。"
+    "恢復語音首頁『功能地圖』按鈕至原本 SystemGraphActivity，重新提供原始首頁、Pocket GBA、提示詞鍵盤、知識網路、全域控制與權限設定等既有功能入口。",
+    "語音說『功能地圖』或『節點地圖』同樣恢復開啟 SystemGraphActivity，不再直接進入 Wiki 關聯圖。",
+    "保留 bridge42 已新增的 Capability Platform、Node Inspector、Voice Registry、Schema-driven Form、Google Sheets Adapter、Data View 與 Markdown Preview，不刪除既有實作。",
+    "Capability 語音匹配仍可使用 Wiki Graph 的 focus/open 流程；本次只修正功能地圖與關聯圖的入口職責。"
   ]
 }
