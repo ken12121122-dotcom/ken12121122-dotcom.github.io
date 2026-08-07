@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
-        <activity android:name=".LaunchGateActivity">
+        <activity
+            android:name=".LaunchGateActivity"
+            android:exported="true">
             <intent-filter tools:node="remove">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
