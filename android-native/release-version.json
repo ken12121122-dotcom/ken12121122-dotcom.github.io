@@ -9,11 +9,11 @@
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "Integration Pass：將財務、finance.expense.create、全部交易與 Transactions 以正式 Capability Projection 加入同一 Node Registry 與關聯圖，不要求每個能力都先建立 Android Activity。",
-    "建立完整財務 Typed Edge：新增支出 writes_to Transactions、opens 全部交易；全部交易與餐飲 Data View reads_from Transactions。",
-    "Node Inspector 的 Generated Form 現在可直接形成 Form → Contract Record → Google Sheets Storage Adapter 寫入鏈；缺少 Sheets 連線時會先完成連線再續寫。",
-    "新增支出寫入成功後可直接進入全部交易 Data View；Data View 每筆 Record 均可獨立點擊查看，不再固定開啟第一筆。",
-    "新增全部交易 Data View amin-data://transactions，餐飲 Data View 改掛在財務群組下；原始 SystemGraph 功能地圖仍維持獨立入口。",
-    "Capability 語音命中後由 Wiki Graph 進入同一 Node Inspector，不再嘗試直接開啟虛擬 amin-node route。"
+    "新增真正的財務功能頁：控制中心可直接進入財務首頁，包含新增收支、收支明細、分類、帳戶與資產入口。",
+    "建立專用 Google Sheets 財務資料庫 Amin Pocket｜個人財務資料庫，固定對應 Transactions、Accounts、Categories、Assets 四個分頁與實際 Sheet ID。",
+    "transaction_v1 已與 Transactions Header 對齊：date、type、category、item、amount、account、merchant、note，並自動補 transaction_id 與 created_at。",
+    "新增收支頁會透過 GoogleSheetsAdapter 寫入 Transactions；收支明細、分類、帳戶與資產均有對應功能頁、Graph Node 與明確 Google Sheets 分頁。",
+    "Node Registry 改為產品頁面優先：財務首頁與新增收支使用正式 Activity Node，其餘共享資料頁以 route projection 對應，不再用虛擬財務節點取代功能頁。",
+    "保留 Typed Edge、Node Inspector、Voice Registry、Schema Form、Storage Adapter、Data View 與 MD Preview；原始 SystemGraph 功能地圖仍維持獨立入口。"
   ]
 }
