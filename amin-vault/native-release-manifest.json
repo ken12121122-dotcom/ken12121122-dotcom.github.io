@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.7-bridge39",
-  "latestVersionCode": 135,
+  "latestVersionName": "0.10.8-bridge40",
+  "latestVersionCode": 136,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.7-bridge39.apk",
-  "apkSha256": "d67a9024af180d6c6139ab65c64050cf1582bf5e2cf057309c1c2d151bc20379",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.8-bridge40.apk",
+  "apkSha256": "33419f6b60640d48ff91aec8d51556d5c29b7677152e8155285706a9542e8db7",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1843938,
-  "publishedAt": "2026-08-07T12:53:34Z",
+  "sizeBytes": 1844188,
+  "publishedAt": "2026-08-07T13:22:06Z",
   "mandatory": false,
   "releaseNotes": [
-    "修正 App 分支拖曳選取範圍：命中判斷改為觸點範圍內階層最深且距離最近的實際節點，拖動節點只會帶起該節點與其下子孫，不再誤帶父節點。",
-    "分支放下後不再套用固定上方/slot 自動排版；吸附只決定新的 Parent，節點實際位置以使用者放手位置為準。",
-    "成功掛接時會保存被拖分支每一個節點的實際 x/y 座標，因此整個分支形狀與相對位置在放下後保持不變。",
-    "機械式連線會依新的 Parent 與固定座標直接重畫，允許同一 Parent 的多個分支分散在上下左右不同位置。",
-    "保留 Bridge38 的半透明浮起、原位 ghost、最近合法節點吸附與虛線預覽。"
+    "修正 App 分支拖曳集合：只依 Android 原生 parent/children 結構往下抓子孫，橫向關聯、候選重新掛接與其他 relation 不再擴大被提起範圍。",
+    "保留新 Parent 的自由放手定位：接到不同父節點時仍以使用者放手座標固定整個分支。",
+    "新增 Home Snap：若分支重新拖回 Android Manifest 定義的原父節點，系統會辨識回到原生結構並恢復標準父子距離與兄弟節點間距。",
+    "Home Snap 會清除該原生分支的自由 x/y 覆寫與根節點 parent/direction/slot 候選，回到既有 1 對多機械式排版。",
+    "吸附預覽文字會區分『新 Parent 自由定位』與『原 Parent 恢復原生間距』兩種落點。"
   ]
 }
