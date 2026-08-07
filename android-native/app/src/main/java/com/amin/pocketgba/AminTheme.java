@@ -2,7 +2,6 @@ package com.amin.pocketgba;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.View;
@@ -17,6 +16,7 @@ final class AminTheme {
     static final String SOFT_GREEN = "soft_green";
     static final String DARK = "dark";
     static final String MINIMAL = "minimal";
+    static final String PRESERVE_TAG = "amin-theme-preserve";
     private static final String PREFS = "amin_global_theme";
     private static final String KEY = "theme";
 
@@ -50,6 +50,7 @@ final class AminTheme {
 
     static void applyToViewTree(Context context, View view) {
         if (view == null || view instanceof WebView) return;
+        if (PRESERVE_TAG.equals(view.getTag())) return;
         Palette p = palette(context);
         if (view instanceof EditText) {
             EditText e = (EditText) view;
