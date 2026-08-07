@@ -2,10 +2,13 @@ package com.amin.pocketgba;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,17 +16,28 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public final class VoiceOrbHomeActivity extends Activity implements RecognitionListener {
     private static final int REQUEST_RECORD_AUDIO = 6501;
     private static final long SILENCE_TIMEOUT_MS = 8000L;
+    private static final String RELEASE_MANIFEST_URL =
+            "https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final VoiceCommandParser parser = new VoiceCommandParser();
@@ -32,11 +46,14 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     private VoiceOrbView orbView;
     private TextView statusView;
     private TextView transcriptView;
+    private TextView updateLink;
     private SpeechRecognizer recognizer;
     private Intent recognizerIntent;
     private boolean listening;
     private boolean launchedFeature;
     private boolean firstResume = true;
+    private volatile boolean destroyed;
+    private UpdateInfo availableUpdate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +68,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     protected void onResume() {
         super.onResume();
         UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, false);
+        checkForUpdate();
         if (firstResume) {
             firstResume = false;
             handler.postDelayed(this::startListeningWithPermission, 280L);
@@ -70,6 +88,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
 
     @Override
     protected void onDestroy() {
+        destroyed = true;
         handler.removeCallbacksAndMessages(null);
         if (recognizer != null) {
             recognizer.destroy();
@@ -90,6 +109,20 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
+
+        updateLink = text("下載更新", 14f, true, 0xff59e39b);
+        updateLink.setGravity(Gravity.CENTER);
+        updateLink.setPadding(dp(10), dp(8), dp(10), dp(8));
+        updateLink.setVisibility(View.GONE);
+        updateLink.setOnClickListener(view -> showUpdateConfirmation());
+        FrameLayout.LayoutParams updateParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        updateParams.gravity = Gravity.TOP | Gravity.END;
+        updateParams.topMargin = dp(14);
+        updateParams.rightMargin = dp(14);
+        root.addView(updateLink, updateParams);
 
         TextView brand = text("AMIN", 13f, true, 0xff59e39b);
         brand.setGravity(Gravity.CENTER);
@@ -146,6 +179,103 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         actions.addView(collapse, collapseParams);
 
         setContentView(root);
+    }
+
+    private void checkForUpdate() {
+        availableUpdate = null;
+        if (updateLink != null) updateLink.setVisibility(View.GONE);
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(RELEASE_MANIFEST_URL + "?t=" + System.currentTimeMillis());
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Accept", "application/json");
+
+                StringBuilder json = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) json.append(line);
+                }
+
+                JSONObject manifest = new JSONObject(json.toString());
+                boolean enabled = manifest.optBoolean("enabled", false);
+                String packageId = manifest.optString("packageId", "");
+                int latestCode = manifest.optInt("latestVersionCode", 0);
+                String latestName = manifest.optString("latestVersionName", "");
+                String apkUrl = manifest.optString("apkUrl", "");
+                JSONArray notes = manifest.optJSONArray("releaseNotes");
+
+                if (!enabled
+                        || !getPackageName().equals(packageId)
+                        || latestCode <= BuildConfig.VERSION_CODE
+                        || latestName.isBlank()
+                        || !apkUrl.startsWith("https://")) {
+                    return;
+                }
+
+                StringBuilder noteText = new StringBuilder();
+                if (notes != null) {
+                    for (int index = 0; index < notes.length(); index++) {
+                        String note = notes.optString(index, "").trim();
+                        if (!note.isEmpty()) {
+                            if (noteText.length() > 0) noteText.append('\n');
+                            noteText.append("• ").append(note);
+                        }
+                    }
+                }
+
+                UpdateInfo update = new UpdateInfo(latestCode, latestName, apkUrl, noteText.toString());
+                handler.post(() -> {
+                    if (destroyed || isFinishing()) return;
+                    availableUpdate = update;
+                    updateLink.setText("下載更新");
+                    updateLink.setVisibility(View.VISIBLE);
+                });
+            } catch (Exception ignored) {
+                // Update discovery is optional. Network or malformed-manifest failures stay silent.
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "amin-update-check").start();
+    }
+
+    private void showUpdateConfirmation() {
+        UpdateInfo update = availableUpdate;
+        if (update == null) {
+            if (updateLink != null) updateLink.setVisibility(View.GONE);
+            return;
+        }
+
+        stopListeningQuietly();
+        StringBuilder message = new StringBuilder();
+        message.append("目前版本：").append(BuildConfig.VERSION_NAME)
+                .append("\n最新版本：").append(update.versionName);
+        if (!update.releaseNotes.isBlank()) {
+            message.append("\n\n更新內容\n").append(update.releaseNotes);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("確認更新")
+                .setMessage(message.toString())
+                .setNegativeButton("取消", (dialog, which) -> enterIdleState())
+                .setPositiveButton("下載更新", (dialog, which) -> openUpdateDownload(update))
+                .show();
+    }
+
+    private void openUpdateDownload(UpdateInfo update) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(update.apkUrl));
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(intent);
+        } catch (ActivityNotFoundException error) {
+            Toast.makeText(this, "無法開啟更新下載頁面", Toast.LENGTH_LONG).show();
+            enterIdleState();
+        }
     }
 
     private void prepareRecognizer() {
@@ -332,5 +462,19 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private static final class UpdateInfo {
+        final int versionCode;
+        final String versionName;
+        final String apkUrl;
+        final String releaseNotes;
+
+        UpdateInfo(int versionCode, String versionName, String apkUrl, String releaseNotes) {
+            this.versionCode = versionCode;
+            this.versionName = versionName;
+            this.apkUrl = apkUrl;
+            this.releaseNotes = releaseNotes;
+        }
     }
 }
