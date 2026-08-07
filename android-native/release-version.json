@@ -1,18 +1,18 @@
 {
-  "versionCode": 134,
-  "versionName": "0.10.6",
+  "versionCode": 135,
+  "versionName": "0.10.7",
   "channel": "bridge",
-  "bridge": 38,
+  "bridge": 39,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "App 架構編輯改為直接拖曳模型：進入編輯模式後直接拖藍色 App 節點，不再需要整個分支/單點、導航線、Undo/Redo、原架構/候選架構等工具列。",
-    "拖到有子節點的 App Node 時，該節點與全部子孫分支會一起浮起並跟手移動；葉節點則只浮起自己。",
-    "拖曳中的節點/分支以半透明與陰影顯示，原位置保留淡色 ghost，便於辨識搬移來源。",
-    "拖曳時自動偵測最近合法 App Node；進入吸附距離後先以半透明虛線與目標外框顯示預覽，放手才正式改變候選 parent 並重新排版。",
-    "成功放下後 Navigation Candidate 自動儲存在本機；未偵測到合法掛接點則整個分支自動回原位。"
+    "修正 App 分支拖曳選取範圍：命中判斷改為觸點範圍內階層最深且距離最近的實際節點，拖動節點只會帶起該節點與其下子孫，不再誤帶父節點。",
+    "分支放下後不再套用固定上方/slot 自動排版；吸附只決定新的 Parent，節點實際位置以使用者放手位置為準。",
+    "成功掛接時會保存被拖分支每一個節點的實際 x/y 座標，因此整個分支形狀與相對位置在放下後保持不變。",
+    "機械式連線會依新的 Parent 與固定座標直接重畫，允許同一 Parent 的多個分支分散在上下左右不同位置。",
+    "保留 Bridge38 的半透明浮起、原位 ghost、最近合法節點吸附與虛線預覽。"
   ]
 }
