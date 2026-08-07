@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.3-bridge35",
-  "latestVersionCode": 131,
+  "latestVersionName": "0.10.4-bridge36",
+  "latestVersionCode": 132,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.3-bridge35.apk",
-  "apkSha256": "925f93a5971ab29318437c2707e93e13bb5f2ca85ddf2d9b09ec26b8ca03502d",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.4-bridge36.apk",
+  "apkSha256": "1952ed2b3fca5ae90242239ec89bcb6a64fca588cbacfed073eafa351da12d15",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1836816,
-  "publishedAt": "2026-08-07T09:09:26Z",
+  "sizeBytes": 1838120,
+  "publishedAt": "2026-08-07T09:37:10Z",
   "mandatory": false,
   "releaseNotes": [
-    "Unified Graph 升級為 Governed Vault 模型：GitHub/Obsidian 共用同一份 Markdown Vault，GitHub 是儲存與版本後端，不取得正式契約治理主權。",
-    "Graph Engine 可遞迴讀取 amin-wiki/pages；含 index.md 的資料夾會成為正式 Folder Node，Markdown 為內容節點，資料夾階層與橫向關聯正式分離。",
-    "Node Resolver 採 Children / Content / Resources 三槽模型，同一節點可同時展開子節點、閱讀 Markdown、連到外部 Source of Truth，不再需要判斷固定底層。",
-    "新增 External Resource Registry 與安全 HTTPS 開啟橋接；Life ERP 資料契約節點目前可直接連到既有 Google Sheets 契約治理工作簿。",
-    "Governance projection contract 明確標示 Approved Contract 為治理 authority，Vault Folder 只作 materialized projection；保留 Bridge34 的縮放、平移、Fit All、Reset、逐層展開與 Prompt/Knowledge/All 模式。"
+    "Graph 節點的 ⋯ 不再直接跳 Markdown，永遠先開 Children / Content / Resources 三合一 Node Action Hub。",
+    "三合一選單固定顯示結構、內容、資源三區，即使某槽目前未設定也會明確顯示，方便判斷節點能力與 Resource Resolver 狀態。",
+    "新增 External Resource Mapping Manager v1，可為節點保存 Google Sheets、n8n、GitHub、Calendar 或一般 HTTPS 資源，支援 candidate / active、修改、解除與測試連結。",
+    "手機新增的 Mapping 儲存在本機 Local Mapping，不直接改寫正式 GitHub Registry 或 Approved Contract；Graph 會即時合併 Local Mapping。",
+    "Graph 狀態列顯示 Graph Engine v36，保留 Folder Projection、Knowledge/Prompt/All、縮放、平移、Fit、Reset 與 Bridge35 Governed Vault 行為。"
   ]
 }
