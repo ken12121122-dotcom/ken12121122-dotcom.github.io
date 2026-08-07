@@ -18,16 +18,19 @@ import android.widget.Toast;
 public final class WikiGraphActivity extends Activity {
     private WebView webView;
     private PromptStore promptStore;
+    private ResourceMappingStore resourceMappingStore;
     private String graphMode="knowledge";
     private String focusNode="";
 
     @SuppressLint({"SetJavaScriptEnabled","AddJavascriptInterface"})
     @Override protected void onCreate(Bundle b){
-        super.onCreate(b);graphMode=getIntent().getStringExtra("graph_mode");if(graphMode==null)graphMode="knowledge";focusNode=getIntent().getStringExtra("focus_node");if(focusNode==null)focusNode="";promptStore=new PromptStore(this);
+        super.onCreate(b);graphMode=getIntent().getStringExtra("graph_mode");if(graphMode==null)graphMode="knowledge";focusNode=getIntent().getStringExtra("focus_node");if(focusNode==null)focusNode="";promptStore=new PromptStore(this);resourceMappingStore=new ResourceMappingStore(this);
         AminTheme.Palette p=AminTheme.palette(this);getWindow().setStatusBarColor(p.background);getWindow().setNavigationBarColor(p.background);getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
         webView=new WebView(this);webView.setBackgroundColor(p.background);WebSettings s=webView.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(false);s.setDatabaseEnabled(false);s.setAllowFileAccess(true);s.setAllowContentAccess(false);s.setAllowFileAccessFromFileURLs(false);s.setAllowUniversalAccessFromFileURLs(true);s.setCacheMode(WebSettings.LOAD_NO_CACHE);s.setBuiltInZoomControls(false);s.setDisplayZoomControls(false);s.setSupportZoom(false);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.setWebViewClient(new WebViewClient(){@Override public void onPageFinished(WebView view,String url){super.onPageFinished(view,url);applyWebTheme();}});webView.setWebChromeClient(new WebChromeClient());webView.addJavascriptInterface(new WikiBridge(),"AminWiki");setContentView(webView);webView.loadUrl("file:///android_asset/amin-wiki-graph/index.html");
     }
+
+    @Override protected void onResume(){super.onResume();if(webView!=null)webView.evaluateJavascript("window.AminReloadLocalMappings?AminReloadLocalMappings():false",null);}
 
     private void applyWebTheme(){
         if(webView==null)return;AminTheme.Palette p=AminTheme.palette(this);
@@ -43,22 +46,16 @@ public final class WikiGraphActivity extends Activity {
     private String hex(int color){return String.format("#%06X",0xFFFFFF & color);}
 
     @Override public void onBackPressed(){
-        if(webView!=null){
-            webView.evaluateJavascript("window.AminGraphBack?AminGraphBack():false",v->{if(!"true".equals(v))WikiGraphActivity.super.onBackPressed();});
-            return;
-        }
+        if(webView!=null){webView.evaluateJavascript("window.AminGraphBack?AminGraphBack():false",v->{if(!"true".equals(v))WikiGraphActivity.super.onBackPressed();});return;}
         super.onBackPressed();
     }
 
     private void openExternal(String rawUrl){
-        if(!ExternalResourcePolicy.isAllowedHttps(rawUrl)){
-            Toast.makeText(this,"僅允許開啟 HTTPS 外部資源",Toast.LENGTH_SHORT).show();return;
-        }
-        try{
-            startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(rawUrl.trim())));
-        }catch(ActivityNotFoundException e){Toast.makeText(this,"找不到可開啟此資源的 App",Toast.LENGTH_SHORT).show();}
-        catch(RuntimeException e){Toast.makeText(this,"外部資源連結無效",Toast.LENGTH_SHORT).show();}
+        if(!ExternalResourcePolicy.isAllowedHttps(rawUrl)){Toast.makeText(this,"僅允許開啟 HTTPS 外部資源",Toast.LENGTH_SHORT).show();return;}
+        try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(rawUrl.trim())));}catch(ActivityNotFoundException e){Toast.makeText(this,"找不到可開啟此資源的 App",Toast.LENGTH_SHORT).show();}catch(RuntimeException e){Toast.makeText(this,"外部資源連結無效",Toast.LENGTH_SHORT).show();}
     }
+
+    private void openResourceManager(String nodeId,String nodeTitle){Intent i=new Intent(this,ResourceMappingManagerActivity.class);i.putExtra("node_id",nodeId);i.putExtra("node_title",nodeTitle);startActivity(i);}
 
     @Override protected void onDestroy(){if(webView!=null){webView.removeJavascriptInterface("AminWiki");webView.stopLoading();webView.loadUrl("about:blank");webView.destroy();webView=null;}if(promptStore!=null)promptStore.close();super.onDestroy();}
 
@@ -68,6 +65,8 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getGraphMode(){return graphMode;}
         @JavascriptInterface public String getFocusNode(){return focusNode;}
         @JavascriptInterface public String getThemeName(){return AminTheme.current(WikiGraphActivity.this);}
+        @JavascriptInterface public String getLocalResourceMappingsJson(){return resourceMappingStore.allJson();}
+        @JavascriptInterface public void openResourceManager(String nodeId,String nodeTitle){runOnUiThread(()->WikiGraphActivity.this.openResourceManager(nodeId,nodeTitle));}
         @JavascriptInterface public void openExternalResource(String url){runOnUiThread(()->openExternal(url));}
         @JavascriptInterface public void openPrompt(String rawId){try{long id=Long.parseLong(rawId);Intent i=new Intent(WikiGraphActivity.this,PromptEditorActivity.class);i.putExtra("prompt_id",id);runOnUiThread(()->startActivity(i));}catch(NumberFormatException ignored){}}
     }
