@@ -1,0 +1,33 @@
+{
+  "format": "amin-governed-vault-projection",
+  "version": 1,
+  "status": "candidate",
+  "authority": {
+    "candidateInterface": "google_sheets",
+    "approvalWorkflow": "WF-001",
+    "approvedContractRole": "governance_authority",
+    "vaultRole": "materialized_projection",
+    "graphRole": "read_navigation_projection"
+  },
+  "vault": {
+    "root": "amin-wiki/pages",
+    "storageBackend": "github",
+    "contentProvider": "vault_markdown",
+    "folderNodeRule": "index.md",
+    "editorClients": ["obsidian", "claude_code", "codex"],
+    "folderStructureIsAuthority": false
+  },
+  "nodeSlots": {
+    "children": "governed_vault",
+    "content": "vault_markdown",
+    "resources": "resource_registry"
+  },
+  "resourceRegistry": "amin-wiki/resources/resources.json",
+  "rules": [
+    "Approved contract semantics remain the governance authority.",
+    "GitHub folders are a materialized hierarchy projection, not a second source of truth.",
+    "A folder becomes a graph node only when it contains index.md.",
+    "Markdown content and external resources are independent from hierarchy.",
+    "Cross-relations never imply parent-child hierarchy."
+  ]
+}
