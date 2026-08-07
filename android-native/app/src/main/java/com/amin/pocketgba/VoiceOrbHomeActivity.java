@@ -50,6 +50,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     @Override
     protected void onResume() {
         super.onResume();
+        UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, false);
         if (firstResume) {
             firstResume = false;
             handler.postDelayed(this::startListeningWithPermission, 280L);
