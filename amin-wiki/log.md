@@ -21,3 +21,9 @@ Append-only。格式：`## [YYYY-MM-DD] ingest|query|lint | 標題`。查最近�
 ## [2026-08-06] lint | 過時內容標註
 
 `AMIN_POCKET_GBA_HANDOFF.md`（v0.9.0，2026-07-12）的「已驗證/未驗證分界表」把按鈕映射、Start/Select/L/R 標成未驗證，但這些項目在後續 Bridge 16 文件中已標記為已驗證。已在 [`pages/controller-input.md`](./pages/controller-input.md) 加上 ⚠️ 已過時標註，避免未來誤讀成現況。
+
+## [2026-08-07] ingest | Life ERP 資料契約、WF-001、n8n、Knowledge Base 架構節點
+
+依使用者明確要求，為了讓目前固定只讀 `amin-wiki/pages` 的 Android Wiki 關聯圖能透過熱更新直接顯示 Life ERP 架構，新增 5 個跨領域節點：`life-erp-architecture.md`、`life-erp-data-contract.md`、`life-erp-wf001.md`、`life-erp-n8n.md`、`life-erp-knowledge-base.md`。
+
+這些頁面目前皆標示為 `generated / candidate`，內容描述目前討論中的治理主線：Google Sheets Source of Truth → Data Contract / Registry → WF-001 → Approved Contract → Claude Implementation → n8n Execution → Knowledge Base / ERP State / 外部服務。未修改 `amin-vault/`、APK、Runtime manifest 或正式發布設定。
