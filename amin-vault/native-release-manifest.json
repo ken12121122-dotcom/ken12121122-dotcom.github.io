@@ -4,20 +4,19 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.9.7-bridge29",
-  "latestVersionCode": 125,
+  "latestVersionName": "0.9.8-bridge30",
+  "latestVersionCode": 126,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.7-bridge29.apk",
-  "apkSha256": "c6ee644e93a6f9dd9cf3ae42d14273ed61ad42ad0f131182fe035c9bec7857c8",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.9.8-bridge30.apk",
+  "apkSha256": "bf8e8ea2c347ab8c320922cefb355a024b083746d0f55c72a42c4a1e1444c846",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 1814319,
-  "publishedAt": "2026-08-07T02:21:53Z",
+  "sizeBytes": 1814282,
+  "publishedAt": "2026-08-07T04:22:16Z",
   "mandatory": false,
   "releaseNotes": [
-    "語音辨識逾時、無匹配或空結果時，不再退出 App，改為停留在動態語音球首頁的待命狀態。",
-    "待命狀態顯示提示文字，點一下語音球即可重新開始監聽。",
-    "只有主動按下收合，或說出收合／關閉語音球指令時，才退出主畫面並保留語音浮動按鈕。",
-    "功能地圖與既有 Bridge 28 導航保持不變。"
+    "語音球收合後仍會保留既有語音浮動按鈕，方便從其他畫面重新叫回語音功能。",
+    "重新開啟或回到 App 的語音球首頁時，語音浮動按鈕會自動關閉，避免浮動按鈕與 App 主畫面同時顯示。",
+    "Bridge 29 的待命狀態、語音辨識與功能地圖行為維持不變。"
   ]
 }
