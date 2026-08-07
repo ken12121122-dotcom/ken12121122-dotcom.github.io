@@ -138,6 +138,17 @@ public final class ControlCenterActivity extends Activity {
         voiceCard.setOnClickListener(view -> startActivity(new Intent(this, VoiceCommandActivity.class)));
         content.addView(voiceCard, cardParams());
 
+        LinearLayout financeCard = actionCard(
+                "💰",
+                "財務",
+                "新增收支、收支明細、分類、帳戶與資產",
+                "開啟",
+                false
+        );
+        financeCard.setContentDescription("開啟財務首頁");
+        financeCard.setOnClickListener(view -> startActivity(new Intent(this, FinanceActivity.class)));
+        content.addView(financeCard, cardParams());
+
         LinearLayout statusHeader = new LinearLayout(this);
         statusHeader.setOrientation(LinearLayout.HORIZONTAL);
         statusHeader.setGravity(Gravity.CENTER_VERTICAL);
