@@ -1,18 +1,18 @@
 {
-  "versionCode": 129,
-  "versionName": "0.10.1",
+  "versionCode": 130,
+  "versionName": "0.10.2",
   "channel": "bridge",
-  "bridge": 33,
+  "bridge": 34,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "修正提示詞管理頁封存與垃圾桶因單列寬度不足被裁切的問題，狀態列改為可橫向捲動，垃圾桶可正常進入。",
-    "修正舊提示詞遷移後 title 與內容預覽重複顯示造成同一句出現兩次的問題；不修改原始 Prompt 內容，只修正列表呈現。",
-    "新增全域 App Theme System，可在外觀設定一鍵切換 Clean Light、Soft Green、Dark、Minimal 四種風格。",
-    "全域主題會套用原生 App 頁面、提示詞鍵盤與 Unified Graph；控制中心新增外觀設定入口。",
-    "維持 Bridge32 Prompt 資料、垃圾桶復原、關聯圖、手機鎖與既有正式發布流程。"
+    "語音球的新版提示不再直接以瀏覽器下載 APK，統一導回既有版本與更新頁；若確認有新版會自動進入 Native Update 安全更新流程。",
+    "正式 APK 仍只由既有 Native Update 下載至 App cache，完成 SHA-256、套件名稱、版本碼與簽章驗證後才交給 Android 安裝，避免 Downloads 出現重複 APK。",
+    "Unified Graph 新增手機雙指縮放、單指平移、節點拖曳、加減縮放、Fit All 與 Reset View。",
+    "Knowledge Graph 新增 hierarchy metadata：Life ERP 固定主幹永遠顯示，節點可逐層展開與收合，支援無限層級與各節點獨立展開狀態。",
+    "上下層關係與橫向關聯分離；點節點只控制展開收合，短暫出現的 ⋯ 才開 Markdown／Prompt 內容，不解析 Markdown 純文字樹為階層。"
   ]
 }
