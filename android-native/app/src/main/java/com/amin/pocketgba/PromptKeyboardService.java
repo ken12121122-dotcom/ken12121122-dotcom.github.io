@@ -8,13 +8,16 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -27,284 +30,46 @@ import java.util.List;
 
 public final class PromptKeyboardService extends InputMethodService {
     private PromptStore store;
-    private LinearLayout root;
-    private LinearLayout categoryRow;
-    private LinearLayout promptList;
+    private LinearLayout root,filterRow,promptList;
     private TextView status;
-    private String selectedCategoryId = PromptStore.DEFAULT_CATEGORY_ID;
-    private boolean sessionUnlocked;
-    private boolean receiverRegistered;
+    private EditText search;
+    private String filter="all";
+    private boolean sessionUnlocked,receiverRegistered;
 
-    private final BroadcastReceiver unlockReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!PromptUnlockActivity.ACTION_PROMPT_UNLOCKED.equals(intent.getAction())) return;
-            sessionUnlocked = true;
-            renderPromptHome();
-        }
-    };
+    private final BroadcastReceiver unlockReceiver=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){if(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED.equals(i.getAction())){sessionUnlocked=true;renderHome();}}};
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        store = new PromptStore(this);
-        IntentFilter filter = new IntentFilter(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED);
-        ContextCompat.registerReceiver(
-                this,
-                unlockReceiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-        );
-        receiverRegistered = true;
+    @Override public void onCreate(){super.onCreate();store=new PromptStore(this);IntentFilter f=new IntentFilter(PromptUnlockActivity.ACTION_PROMPT_UNLOCKED);ContextCompat.registerReceiver(this,unlockReceiver,f,ContextCompat.RECEIVER_NOT_EXPORTED);receiverRegistered=true;}
+    @Override public View onCreateInputView(){root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(8),dp(6),dp(8),dp(6));root.setBackgroundColor(0xfff4f7f5);renderState();return root;}
+    @Override public void onStartInputView(EditorInfo info,boolean restarting){super.onStartInputView(info,restarting);if(root!=null)renderState();}
+    @Override public void onFinishInputView(boolean finishing){lockSession();super.onFinishInputView(finishing);}
+
+    private void renderState(){if(sessionUnlocked)renderHome();else renderLock();}
+    private void renderLock(){root.removeAllViews();TextView t=text("Amin 提示詞已鎖定",17,true,0xff16231b);t.setGravity(Gravity.CENTER);root.addView(t,new LinearLayout.LayoutParams(-1,dp(52)));TextView m=text("使用手機原本的螢幕鎖驗證後即可開啟",13,false,0xff68766e);m.setGravity(Gravity.CENTER);root.addView(m,new LinearLayout.LayoutParams(-1,dp(42)));Button u=button("使用手機鎖解鎖");u.setTextColor(Color.WHITE);u.setBackgroundColor(0xff19794b);u.setOnClickListener(v->launchUnlock());root.addView(u,full());Button s=button("切換鍵盤");s.setOnClickListener(v->switchKeyboard());root.addView(s,full());}
+    private void launchUnlock(){try{Intent i=new Intent(this,PromptUnlockActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);startActivity(i);}catch(RuntimeException e){Toast.makeText(this,"無法開啟手機驗證",Toast.LENGTH_SHORT).show();}}
+
+    private void renderHome(){
+        if(root==null)return;root.removeAllViews();
+        LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);TextView title=text("Amin 提示詞",16,true,0xff16231b);head.addView(title,new LinearLayout.LayoutParams(0,dp(40),1));
+        Button add=button("＋");add.setOnClickListener(v->openManager(true));head.addView(add);Button manage=button("管理");manage.setOnClickListener(v->openManager(false));head.addView(manage);Button lock=button("鎖定");lock.setOnClickListener(v->{lockSession();renderLock();});head.addView(lock);Button sw=button("切換");sw.setOnClickListener(v->switchKeyboard());head.addView(sw);root.addView(head,full());
+        search=new EditText(this);search.setSingleLine(true);search.setHint("搜尋提示詞");search.setTextSize(13);search.setBackgroundColor(Color.WHITE);search.setPadding(dp(10),0,dp(10),0);search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int before,int count){renderPrompts();}public void afterTextChanged(Editable e){}});root.addView(search,new LinearLayout.LayoutParams(-1,dp(42)));
+        HorizontalScrollView fs=new HorizontalScrollView(this);fs.setHorizontalScrollBarEnabled(false);filterRow=new LinearLayout(this);filterRow.setOrientation(LinearLayout.HORIZONTAL);fs.addView(filterRow);root.addView(fs,new LinearLayout.LayoutParams(-1,dp(44)));String[][] defs={{"all","全部"},{"favorite","收藏"},{"pinned","置頂"},{"recent","最近"}};for(String[] d:defs)addFilter(d[0],d[1]);for(PromptStore.Category c:store.listCategories())addFilter("cat:"+c.id,c.name);
+        status=text("",12,false,0xff68766e);root.addView(status,full());ScrollView ps=new ScrollView(this);promptList=new LinearLayout(this);promptList.setOrientation(LinearLayout.VERTICAL);ps.addView(promptList);root.addView(ps,new LinearLayout.LayoutParams(-1,dp(185)));renderPrompts();
     }
 
-    @Override
-    public View onCreateInputView() {
-        root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(10), dp(8), dp(10), dp(8));
-        root.setBackgroundColor(0xfff4f7f5);
-        renderCurrentState();
-        return root;
-    }
+    private void addFilter(String id,String label){Button b=button(label);boolean selected=id.equals(filter);b.setTextColor(selected?Color.WHITE:0xff105f39);b.setBackgroundColor(selected?0xff19794b:0xffeaf3ee);b.setOnClickListener(v->{filter=id;renderHome();});LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-2,dp(40));p.rightMargin=dp(5);filterRow.addView(b,p);}
 
-    @Override
-    public void onStartInputView(EditorInfo info, boolean restarting) {
-        super.onStartInputView(info, restarting);
-        if (root != null) renderCurrentState();
-    }
+    private void renderPrompts(){if(promptList==null)return;promptList.removeAllViews();if(isPasswordField(getCurrentInputEditorInfo())){status.setText("密碼欄位不顯示提示詞");return;}String q=search==null?"":search.getText().toString().trim();List<PromptStore.Prompt> rows;if(!q.isEmpty())rows=store.searchActive(q);else if("favorite".equals(filter))rows=store.listFavorites();else if("pinned".equals(filter))rows=store.listPinned();else if("recent".equals(filter))rows=store.listRecent();else if(filter.startsWith("cat:"))rows=store.listPrompts(filter.substring(4));else rows=store.listActive();status.setText(rows.isEmpty()?"沒有符合的提示詞":"共 "+rows.size()+" 筆");for(PromptStore.Prompt p:rows){Button b=new Button(this);b.setAllCaps(false);b.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);b.setText((p.pinned?"📌 ":"")+(p.favorite?"⭐ ":"")+p.title+"\n"+PromptText.preview(p.content,70));b.setTextSize(13);b.setTextColor(0xff16231b);b.setBackgroundColor(Color.WHITE);b.setOnClickListener(v->commit(p));b.setOnLongClickListener(v->{showQuickActions(p);return true;});LinearLayout.LayoutParams lp=full();lp.topMargin=dp(4);promptList.addView(b,lp);}}
 
-    @Override
-    public void onFinishInputView(boolean finishingInput) {
-        lockSession();
-        super.onFinishInputView(finishingInput);
-    }
-
-    private void renderCurrentState() {
-        if (root == null) return;
-        if (sessionUnlocked) renderPromptHome();
-        else renderLockScreen();
-    }
-
-    private void renderLockScreen() {
-        root.removeAllViews();
-
-        TextView title = text("Amin 提示詞已鎖定", 17f, true, 0xff16231b);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(54)
-        ));
-
-        TextView message = text("使用手機原本的螢幕鎖驗證後即可開啟", 13f, false, 0xff68766e);
-        message.setGravity(Gravity.CENTER);
-        root.addView(message, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(46)
-        ));
-
-        Button unlock = new Button(this);
-        unlock.setAllCaps(false);
-        unlock.setText("使用手機鎖解鎖");
-        unlock.setTextSize(16f);
-        unlock.setTextColor(Color.WHITE);
-        unlock.setBackgroundColor(0xff19794b);
-        unlock.setOnClickListener(view -> launchSystemUnlock());
-        LinearLayout.LayoutParams unlockParams = fullWidth();
-        unlockParams.topMargin = dp(12);
-        root.addView(unlock, unlockParams);
-
-        Button switchKeyboard = compactButton("切換鍵盤");
-        switchKeyboard.setOnClickListener(view -> switchKeyboard());
-        LinearLayout.LayoutParams switchParams = fullWidth();
-        switchParams.topMargin = dp(10);
-        root.addView(switchKeyboard, switchParams);
-    }
-
-    private void launchSystemUnlock() {
-        try {
-            Intent intent = new Intent(this, PromptUnlockActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-            startActivity(intent);
-        } catch (RuntimeException error) {
-            Toast.makeText(this, "無法開啟手機驗證", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void renderPromptHome() {
-        if (root == null) return;
-        root.removeAllViews();
-
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-
-        TextView title = text("Amin 提示詞", 16f, true, 0xff16231b);
-        header.addView(title, new LinearLayout.LayoutParams(0, dp(42), 1f));
-
-        Button lock = compactButton("鎖定");
-        lock.setOnClickListener(view -> {
-            lockSession();
-            renderLockScreen();
-        });
-        header.addView(lock);
-
-        Button refresh = compactButton("重新整理");
-        refresh.setOnClickListener(view -> reload());
-        header.addView(refresh);
-
-        Button switchKeyboard = compactButton("切換鍵盤");
-        switchKeyboard.setOnClickListener(view -> switchKeyboard());
-        header.addView(switchKeyboard);
-        root.addView(header, fullWidth());
-
-        HorizontalScrollView categoryScroll = new HorizontalScrollView(this);
-        categoryScroll.setHorizontalScrollBarEnabled(false);
-        categoryRow = new LinearLayout(this);
-        categoryRow.setOrientation(LinearLayout.HORIZONTAL);
-        categoryScroll.addView(categoryRow);
-        root.addView(categoryScroll, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(48)
-        ));
-
-        status = text("讀取提示詞…", 12f, false, 0xff68766e);
-        root.addView(status, fullWidth());
-
-        ScrollView promptScroll = new ScrollView(this);
-        promptList = new LinearLayout(this);
-        promptList.setOrientation(LinearLayout.VERTICAL);
-        promptScroll.addView(promptList);
-        root.addView(promptScroll, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(190)
-        ));
-        reload();
-    }
-
-    private void reload() {
-        if (!sessionUnlocked || categoryRow == null || promptList == null) return;
-        List<PromptStore.Category> categories = store.listCategories();
-        boolean selectedExists = false;
-        for (PromptStore.Category category : categories) {
-            if (category.id.equals(selectedCategoryId)) selectedExists = true;
-        }
-        if (!selectedExists && !categories.isEmpty()) selectedCategoryId = categories.get(0).id;
-
-        categoryRow.removeAllViews();
-        for (PromptStore.Category category : categories) {
-            Button button = compactButton(category.name);
-            boolean selected = category.id.equals(selectedCategoryId);
-            button.setTextColor(selected ? Color.WHITE : 0xff105f39);
-            button.setBackgroundColor(selected ? 0xff19794b : 0xffeaf3ee);
-            button.setOnClickListener(view -> {
-                selectedCategoryId = category.id;
-                reload();
-            });
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    dp(42)
-            );
-            params.rightMargin = dp(6);
-            categoryRow.addView(button, params);
-        }
-        renderPrompts();
-    }
-
-    private void renderPrompts() {
-        promptList.removeAllViews();
-        if (isPasswordField(getCurrentInputEditorInfo())) {
-            status.setText("密碼欄位不顯示提示詞");
-            return;
-        }
-        List<PromptStore.Prompt> prompts = store.listPrompts(selectedCategoryId);
-        status.setText(prompts.isEmpty() ? "這個分類還沒有提示詞" : "共 " + prompts.size() + " 筆");
-        for (PromptStore.Prompt prompt : prompts) {
-            Button button = new Button(this);
-            button.setAllCaps(false);
-            button.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-            button.setText(PromptText.preview(prompt.content, 90));
-            button.setTextColor(0xff16231b);
-            button.setTextSize(14f);
-            button.setBackgroundColor(Color.WHITE);
-            button.setOnClickListener(view -> commit(prompt.content));
-            LinearLayout.LayoutParams params = fullWidth();
-            params.topMargin = dp(5);
-            promptList.addView(button, params);
-        }
-    }
-
-    private void commit(String content) {
-        InputConnection connection = getCurrentInputConnection();
-        if (connection == null) {
-            Toast.makeText(this, "目前沒有可輸入的文字框", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        connection.commitText(content, 1);
-    }
-
-    private void lockSession() {
-        sessionUnlocked = false;
-    }
-
-    private void switchKeyboard() {
-        lockSession();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && switchToNextInputMethod(false)) return;
-        InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (manager != null) manager.showInputMethodPicker();
-    }
-
-    private boolean isPasswordField(EditorInfo info) {
-        if (info == null) return false;
-        int inputClass = info.inputType & InputType.TYPE_MASK_CLASS;
-        int variation = info.inputType & InputType.TYPE_MASK_VARIATION;
-        if (inputClass == InputType.TYPE_CLASS_NUMBER) {
-            return variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD;
-        }
-        if (inputClass != InputType.TYPE_CLASS_TEXT) return false;
-        return variation == InputType.TYPE_TEXT_VARIATION_PASSWORD
-                || variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                || variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD;
-    }
-
-    @Override
-    public void onDestroy() {
-        lockSession();
-        if (receiverRegistered) unregisterReceiver(unlockReceiver);
-        if (store != null) store.close();
-        super.onDestroy();
-    }
-
-    private Button compactButton(String label) {
-        Button button = new Button(this);
-        button.setAllCaps(false);
-        button.setText(label);
-        button.setTextSize(12f);
-        button.setTextColor(0xff105f39);
-        button.setMinHeight(0);
-        button.setMinimumHeight(0);
-        button.setPadding(dp(10), dp(5), dp(10), dp(5));
-        return button;
-    }
-
-    private TextView text(String value, float size, boolean bold, int color) {
-        TextView view = new TextView(this);
-        view.setText(value);
-        view.setTextSize(size);
-        view.setTextColor(color);
-        view.setGravity(Gravity.CENTER_VERTICAL);
-        if (bold) view.setTypeface(Typeface.DEFAULT_BOLD);
-        return view;
-    }
-
-    private LinearLayout.LayoutParams fullWidth() {
-        return new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
+    private void showQuickActions(PromptStore.Prompt p){String[] items={p.favorite?"取消收藏":"收藏",p.pinned?"取消置頂":"置頂","查看／管理"};new android.app.AlertDialog.Builder(this).setTitle(p.title).setItems(items,(d,w)->{if(w==0)store.setFavorite(p.id,!p.favorite);else if(w==1)store.setPinned(p.id,!p.pinned);else openPrompt(p.id);renderPrompts();}).show();}
+    private void commit(PromptStore.Prompt p){InputConnection c=getCurrentInputConnection();if(c==null){Toast.makeText(this,"目前沒有可輸入的文字框",Toast.LENGTH_SHORT).show();return;}c.commitText(p.content,1);store.recordUsage(p.id);}
+    private void openManager(boolean create){Intent i=new Intent(this,create?PromptEditorActivity.class:PromptManagerActivity.class);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
+    private void openPrompt(long id){Intent i=new Intent(this,PromptEditorActivity.class);i.putExtra("prompt_id",id);i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(i);}
+    private void lockSession(){sessionUnlocked=false;}
+    private void switchKeyboard(){lockSession();if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P&&switchToNextInputMethod(false))return;InputMethodManager m=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);if(m!=null)m.showInputMethodPicker();}
+    private boolean isPasswordField(EditorInfo i){if(i==null)return false;int c=i.inputType&InputType.TYPE_MASK_CLASS,v=i.inputType&InputType.TYPE_MASK_VARIATION;if(c==InputType.TYPE_CLASS_NUMBER)return v==InputType.TYPE_NUMBER_VARIATION_PASSWORD;if(c!=InputType.TYPE_CLASS_TEXT)return false;return v==InputType.TYPE_TEXT_VARIATION_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD||v==InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD;}
+    @Override public void onDestroy(){lockSession();if(receiverRegistered)unregisterReceiver(unlockReceiver);if(store!=null)store.close();super.onDestroy();}
+    private Button button(String s){Button b=new Button(this);b.setAllCaps(false);b.setText(s);b.setTextSize(12);b.setTextColor(0xff105f39);b.setMinHeight(0);b.setMinimumHeight(0);b.setPadding(dp(9),dp(4),dp(9),dp(4));return b;}
+    private TextView text(String s,float z,boolean bold,int color){TextView t=new TextView(this);t.setText(s);t.setTextSize(z);t.setTextColor(color);t.setGravity(Gravity.CENTER_VERTICAL);if(bold)t.setTypeface(Typeface.DEFAULT_BOLD);return t;}
+    private LinearLayout.LayoutParams full(){return new LinearLayout.LayoutParams(-1,-2);}
+    private int dp(int v){return Math.round(v*getResources().getDisplayMetrics().density);}
 }

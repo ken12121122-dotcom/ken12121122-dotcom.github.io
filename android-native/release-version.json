@@ -1,16 +1,18 @@
 {
-  "versionCode": 127,
-  "versionName": "0.9.9",
+  "versionCode": 128,
+  "versionName": "0.10.0",
   "channel": "bridge",
-  "bridge": 31,
+  "bridge": 32,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音球首頁會檢查正式發布 manifest；只有偵測到比目前版本新的版本時，右上角才顯示下載更新連結。",
-    "點擊下載更新後會先進入確認更新畫面，顯示目前版本、最新版本與更新內容，再由使用者確認是否下載。",
-    "沒有新版、網路檢查失敗或 manifest 無效時，不顯示更新連結；Bridge 30 的浮動按鈕行為維持不變。"
+    "提示詞系統升級為 App 管理、鍵盤快速叫用、單一 PromptStore 資料來源；舊提示詞會原地遷移並保留。",
+    "App 新增提示詞管理中心，支援新增、編輯、收藏、置頂、封存、Soft Delete、垃圾桶復原與二次確認永久刪除。",
+    "提示詞鍵盤新增搜尋、收藏、置頂、最近使用與管理／新增入口；插入提示詞會記錄使用次數與最後使用時間。",
+    "既有 Amin Wiki 關聯圖升級為 Unified Graph，可切換知識、提示詞、全部，並支援 Prompt↔Prompt 與 Prompt↔Knowledge 關聯及 focus node。",
+    "維持既有手機鎖保護、密碼欄位隱藏提示詞、語音球與正式發布流程。"
   ]
 }

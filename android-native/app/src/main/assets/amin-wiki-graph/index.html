@@ -1,97 +1,25 @@
 <!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>Amin Wiki Graph</title>
-  <style>
-    :root{color-scheme:light dark;--bg:#f6f8f7;--text:#17211b;--muted:#66736b;--line:#9eaaa3;--node:#19794b;--nodeText:#fff;--panel:#fff;--border:#d9e2dd;--warn:#b56a00}
-    @media(prefers-color-scheme:dark){:root{--bg:#101512;--text:#eef4f0;--muted:#9caaa2;--line:#657168;--node:#43a871;--nodeText:#07120b;--panel:#171d19;--border:#2c3931;--warn:#ffb24a}}
-    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text)}
-    #stage{position:fixed;inset:0;touch-action:none}canvas{display:block;width:100%;height:100%}
-    .toolbar{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:3;display:flex;justify-content:space-between;pointer-events:none}
-    .toolbar button{pointer-events:auto;border:1px solid var(--border);background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text);border-radius:999px;padding:10px 14px;font-size:14px;font-weight:600;backdrop-filter:blur(10px)}
-    .status{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted);max-width:85%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(10px)}
-    .article{position:fixed;inset:0;z-index:5;background:var(--bg);display:none;overflow:auto;padding:calc(max(14px,env(safe-area-inset-top)) + 52px) 20px calc(24px + env(safe-area-inset-bottom))}
-    .article.open{display:block}.article-close{position:fixed;top:max(10px,env(safe-area-inset-top));right:12px;z-index:6;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:999px;padding:10px 14px;font-weight:600}
-    article{max-width:760px;margin:0 auto;line-height:1.72;font-size:16px}article h1{font-size:28px;line-height:1.25;margin:0 0 22px}article h2{font-size:21px;margin:30px 0 12px}article h3{font-size:18px;margin:24px 0 10px}article pre{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}article code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}article table{width:100%;border-collapse:collapse;display:block;overflow:auto}article th,article td{border:1px solid var(--border);padding:8px 10px;text-align:left}article a{color:var(--node)}article blockquote{margin:16px 0;padding:10px 14px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent)}
-    .warning{border:1px solid var(--warn);border-radius:12px;padding:12px;background:color-mix(in srgb,var(--warn) 10%,transparent)}
-  </style>
-</head>
-<body>
-  <div id="stage"><canvas id="graph"></canvas></div>
-  <div class="toolbar"><button id="back">返回</button><button id="reload">熱更新</button></div>
-  <div id="status" class="status">準備讀取 amin-wiki/pages/</div>
-  <section id="article" class="article"><button id="closeArticle" class="article-close">關閉</button><article id="articleBody"></article></section>
-<script>
-(() => {
-  'use strict';
-  const OWNER='ken12121122-dotcom';
-  const REPO='ken12121122-dotcom.github.io';
-  const REF='main';
-  const PATH='amin-wiki/pages';
-  const API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?ref=${encodeURIComponent(REF)}`;
-  const canvas=document.getElementById('graph');
-  const ctx=canvas.getContext('2d');
-  const status=document.getElementById('status');
-  const article=document.getElementById('article');
-  const articleBody=document.getElementById('articleBody');
-  let nodes=[],links=[],scale=1,offsetX=0,offsetY=0,dragNode=null,panning=false,lastX=0,lastY=0,moved=false,raf=0;
-
-  function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=innerWidth*dpr;canvas.height=innerHeight*dpr;canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
-  addEventListener('resize',resize);resize();
-  const setStatus=t=>status.textContent=t;
-  const escapeHtml=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const baseName=p=>p.split('/').pop().replace(/\.md$/i,'');
-  function normalizeTarget(href){let t=href.split('#')[0].split('?')[0];try{t=decodeURIComponent(t)}catch(e){}t=t.replace(/^\.\//,'').replace(/^pages\//,'').replace(/^.*\/pages\//,'');return baseName(t);}
-  function extractTargets(md){const found=new Set();let m;const normal=/\[[^\]]*\]\(([^)]+\.md(?:#[^)]+)?)\)/g;while((m=normal.exec(md)))found.add(normalizeTarget(m[1]));const wiki=/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g;while((m=wiki.exec(md)))found.add(baseName(m[1].trim()));return [...found];}
-
-  async function loadGraph(){
-    setStatus('熱更新中：重新掃描 pages/');
-    try{
-      const listRes=await fetch(API+'&_='+Date.now(),{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
-      if(!listRes.ok)throw new Error(`GitHub API ${listRes.status}`);
-      const files=(await listRes.json()).filter(x=>x.type==='file'&&/\.md$/i.test(x.name));
-      const docs=await Promise.all(files.map(async f=>{const r=await fetch(f.download_url+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error(`${f.name} ${r.status}`);return {name:f.name,id:baseName(f.name),text:await r.text()};}));
-      const old=new Map(nodes.map(n=>[n.id,n]));
-      nodes=docs.map((d,i)=>{const prev=old.get(d.id);const a=(i/docs.length)*Math.PI*2;return {...d,x:prev?.x??innerWidth/2+Math.cos(a)*Math.min(innerWidth,innerHeight)*.27,y:prev?.y??innerHeight/2+Math.sin(a)*Math.min(innerWidth,innerHeight)*.27,vx:0,vy:0,warn:d.text.includes('⚠️')};});
-      const ids=new Set(nodes.map(n=>n.id));links=[];for(const n of nodes){for(const target of extractTargets(n.text)){if(ids.has(target)&&target!==n.id&&!links.some(l=>l.a===n.id&&l.b===target||l.a===target&&l.b===n.id))links.push({a:n.id,b:target});}}
-      setStatus(`${nodes.length} 個 MD 節點 · ${links.length} 條關聯`);startSimulation();
-    }catch(e){setStatus('熱更新失敗：'+(e.message||e));nodes=[];links=[];draw();}
-  }
-
-  function startSimulation(){cancelAnimationFrame(raf);let ticks=0;const step=()=>{simulate();draw();if(ticks++<360)raf=requestAnimationFrame(step);};step();}
-  function simulate(){
-    const byId=new Map(nodes.map(n=>[n.id,n]));
-    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=b.x-a.x,dy=b.y-a.y,d2=Math.max(dx*dx+dy*dy,100),f=9000/d2,inv=1/Math.sqrt(d2);a.vx-=dx*inv*f;a.vy-=dy*inv*f;b.vx+=dx*inv*f;b.vy+=dy*inv*f;}
-    for(const l of links){const a=byId.get(l.a),b=byId.get(l.b);if(!a||!b)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.max(Math.hypot(dx,dy),1),f=(d-145)*.003;a.vx+=dx/d*f;a.vy+=dy/d*f;b.vx-=dx/d*f;b.vy-=dy/d*f;}
-    const cx=innerWidth/2,cy=innerHeight/2;for(const n of nodes){if(n===dragNode)continue;n.vx+=(cx-n.x)*.0008;n.vy+=(cy-n.y)*.0008;n.vx*=.86;n.vy*=.86;n.x+=n.vx;n.y+=n.vy;}
-  }
-  function screen(n){return{x:n.x*scale+offsetX,y:n.y*scale+offsetY};}
-  function draw(){ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();const byId=new Map(nodes.map(n=>[n.id,n]));ctx.lineWidth=1.2;ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line').trim();ctx.globalAlpha=.72;for(const l of links){const a=screen(byId.get(l.a)),b=screen(byId.get(l.b));ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.globalAlpha=1;for(const n of nodes){const p=screen(n),r=(n.warn?9:7)*Math.max(.75,Math.min(scale,1.35));ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=n.warn?getComputedStyle(document.documentElement).getPropertyValue('--warn').trim():getComputedStyle(document.documentElement).getPropertyValue('--node').trim();ctx.fill();ctx.font=`${Math.max(11,13*scale)}px -apple-system,BlinkMacSystemFont,'Noto Sans TC',sans-serif`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();ctx.fillText(n.name,p.x,p.y+r+5);}ctx.restore();}
-  function findNode(x,y){for(let i=nodes.length-1;i>=0;i--){const p=screen(nodes[i]);if(Math.hypot(x-p.x,y-p.y)<28)return nodes[i];}return null;}
-  function point(e){const t=e.touches?.[0]||e.changedTouches?.[0]||e;return{x:t.clientX,y:t.clientY};}
-  function down(e){const p=point(e);lastX=p.x;lastY=p.y;moved=false;dragNode=findNode(p.x,p.y);panning=!dragNode;if(dragNode){dragNode.vx=dragNode.vy=0;}e.preventDefault();}
-  function move(e){if(!dragNode&&!panning)return;const p=point(e),dx=p.x-lastX,dy=p.y-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(dragNode){dragNode.x+=dx/scale;dragNode.y+=dy/scale;}else{offsetX+=dx;offsetY+=dy;}lastX=p.x;lastY=p.y;draw();e.preventDefault();}
-  function up(e){if(dragNode&&!moved)openArticle(dragNode);dragNode=null;panning=false;e.preventDefault();}
-  canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
-  canvas.addEventListener('wheel',e=>{e.preventDefault();const factor=e.deltaY<0?1.1:.9;const ns=Math.max(.45,Math.min(2.8,scale*factor));offsetX=e.clientX-(e.clientX-offsetX)*(ns/scale);offsetY=e.clientY-(e.clientY-offsetY)*(ns/scale);scale=ns;draw();},{passive:false});
-  let pinch=0;canvas.addEventListener('touchstart',e=>{if(e.touches.length===2)pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:false});canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinch){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),f=d/pinch;scale=Math.max(.45,Math.min(2.8,scale*f));pinch=d;draw();e.preventDefault();}},{passive:false});
-
-  function renderMarkdown(md){
-    let s=escapeHtml(md).replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>');
-    s=s.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>');
-    s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
-    s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="#">$1</a>');
-    const blocks=s.split(/\n{2,}/).map(b=>/^<(h\d|pre|table|blockquote)/.test(b.trim())?b:`<p${b.includes('⚠️')?' class="warning"':''}>${b.replace(/\n/g,'<br>')}</p>`);
-    return blocks.join('');
-  }
-  function openArticle(n){articleBody.innerHTML=renderMarkdown(n.text);article.classList.add('open');}
-  document.getElementById('closeArticle').addEventListener('click',()=>article.classList.remove('open'));
-  document.getElementById('reload').addEventListener('click',()=>{scale=1;offsetX=offsetY=0;loadGraph();});
-  document.getElementById('back').addEventListener('click',()=>{if(article.classList.contains('open'))article.classList.remove('open');else if(window.AminWiki)window.AminWiki.close();else history.back();});
-  loadGraph();
-})();
-</script>
-</body>
-</html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Amin Unified Graph</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f8f7;--text:#17211b;--muted:#66736b;--line:#9eaaa3;--knowledge:#19794b;--prompt:#6b4fb3;--panel:#fff;--border:#d9e2dd;--warn:#b56a00;--focus:#d45719}@media(prefers-color-scheme:dark){:root{--bg:#101512;--text:#eef4f0;--muted:#9caaa2;--line:#657168;--knowledge:#43a871;--prompt:#ad8cff;--panel:#171d19;--border:#2c3931;--warn:#ffb24a;--focus:#ff8b4a}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text)}#stage{position:fixed;inset:0;touch-action:none}canvas{display:block;width:100%;height:100%}.toolbar{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:3;display:flex;gap:7px;align-items:center;pointer-events:none}.toolbar button{pointer-events:auto;border:1px solid var(--border);background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text);border-radius:999px;padding:9px 12px;font-size:13px;font-weight:600}.toolbar .modes{display:flex;gap:4px;flex:1;justify-content:center}.toolbar button.active{background:var(--knowledge);color:white}.status{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted);max-width:88%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.article{position:fixed;inset:0;z-index:5;background:var(--bg);display:none;overflow:auto;padding:calc(max(14px,env(safe-area-inset-top)) + 52px) 20px calc(24px + env(safe-area-inset-bottom))}.article.open{display:block}.article-close{position:fixed;top:max(10px,env(safe-area-inset-top));right:12px;z-index:6;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:999px;padding:10px 14px;font-weight:600}article{max-width:760px;margin:0 auto;line-height:1.72;font-size:16px}article h1{font-size:28px}article h2{font-size:21px;margin-top:28px}article pre{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}article code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.warning{border:1px solid var(--warn);border-radius:12px;padding:12px}
+</style></head><body>
+<div id="stage"><canvas id="graph"></canvas></div><div class="toolbar"><button id="back">返回</button><div class="modes"><button data-mode="knowledge">知識</button><button data-mode="prompt">提示詞</button><button data-mode="all">全部</button></div><button id="reload">熱更新</button></div><div id="status" class="status">準備載入</div><section id="article" class="article"><button id="closeArticle" class="article-close">關閉</button><article id="articleBody"></article></section>
+<script>(()=>{'use strict';
+const OWNER='ken12121122-dotcom',REPO='ken12121122-dotcom.github.io',REF='main',PATH='amin-wiki/pages';const API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?ref=${encodeURIComponent(REF)}`;const canvas=document.getElementById('graph'),ctx=canvas.getContext('2d'),status=document.getElementById('status'),article=document.getElementById('article'),articleBody=document.getElementById('articleBody');
+let knowledgeNodes=[],knowledgeLinks=[],promptNodes=[],promptLinks=[],nodes=[],links=[],mode='knowledge',focus='',scale=1,offsetX=0,offsetY=0,dragNode=null,panning=false,lastX=0,lastY=0,moved=false,raf=0;
+try{if(window.AminWiki){mode=window.AminWiki.getGraphMode()||'knowledge';focus=window.AminWiki.getFocusNode()||'';}}catch(e){}
+function resize(){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=innerWidth*dpr;canvas.height=innerHeight*dpr;canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const baseName=p=>p.split('/').pop().replace(/\.md$/i,'');function target(h){let t=h.split('#')[0].split('?')[0];try{t=decodeURIComponent(t)}catch(e){}t=t.replace(/^\.\//,'').replace(/^pages\//,'').replace(/^.*\/pages\//,'');return baseName(t)}function extract(md){const f=new Set();let m;const normal=/\[[^\]]*\]\(([^)]+\.md(?:#[^)]+)?)\)/g;while((m=normal.exec(md)))f.add(target(m[1]));const wiki=/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g;while((m=wiki.exec(md)))f.add(baseName(m[1].trim()));return[...f]}
+async function loadKnowledge(){try{const r=await fetch(API+'&_='+Date.now(),{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw new Error(`GitHub ${r.status}`);const files=(await r.json()).filter(x=>x.type==='file'&&/\.md$/i.test(x.name));const docs=await Promise.all(files.map(async f=>{const x=await fetch(f.download_url+'?v='+Date.now(),{cache:'no-store'});if(!x.ok)throw new Error(`${f.name} ${x.status}`);return{name:f.name,id:baseName(f.name),text:await x.text()}}));knowledgeNodes=docs.map(d=>({id:'knowledge:'+d.id,rawId:d.id,type:'knowledge',name:d.name,text:d.text,warn:d.text.includes('⚠️')}));const ids=new Set(docs.map(d=>d.id));knowledgeLinks=[];for(const d of docs)for(const t of extract(d.text))if(ids.has(t)&&t!==d.id)knowledgeLinks.push({a:'knowledge:'+d.id,b:'knowledge:'+t,type:'related_to'});}catch(e){knowledgeNodes=[];knowledgeLinks=[];status.textContent='知識熱更新失敗：'+e.message}}
+function loadPrompts(){try{const raw=window.AminWiki?window.AminWiki.getPromptGraphJson():'{"nodes":[],"links":[]}';const g=JSON.parse(raw||'{}');promptNodes=(g.nodes||[]).map(n=>({...n,warn:false}));promptLinks=g.links||[];}catch(e){promptNodes=[];promptLinks=[]}}
+async function loadAll(){status.textContent='熱更新中…';await loadKnowledge();loadPrompts();applyMode(true)}
+function applyMode(reset){document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));nodes=mode==='knowledge'?[...knowledgeNodes]:mode==='prompt'?[...promptNodes]:[...knowledgeNodes,...promptNodes];const ids=new Set(nodes.map(n=>n.id));const all=[...knowledgeLinks,...promptLinks];links=all.filter(l=>ids.has(l.a)&&ids.has(l.b));seedPositions(reset);status.textContent=`${mode==='knowledge'?'知識':mode==='prompt'?'提示詞':'全部'} · ${nodes.length} 節點 · ${links.length} 關聯`;startSimulation()}
+function seedPositions(reset){const old=new Map(nodes.map(n=>[n.id,n]));nodes.forEach((n,i)=>{const a=i/Math.max(nodes.length,1)*Math.PI*2;if(reset||!Number.isFinite(n.x)){n.x=innerWidth/2+Math.cos(a)*Math.min(innerWidth,innerHeight)*.27;n.y=innerHeight/2+Math.sin(a)*Math.min(innerWidth,innerHeight)*.27}n.vx=0;n.vy=0});if(focus){const f=nodes.find(n=>n.id===focus);if(f){f.x=innerWidth/2;f.y=innerHeight/2}}}
+function startSimulation(){cancelAnimationFrame(raf);let ticks=0;const step=()=>{simulate();draw();if(ticks++<320)raf=requestAnimationFrame(step)};step()}function simulate(){const by=new Map(nodes.map(n=>[n.id,n]));for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=b.x-a.x,dy=b.y-a.y,d2=Math.max(dx*dx+dy*dy,100),f=8500/d2,inv=1/Math.sqrt(d2);a.vx-=dx*inv*f;a.vy-=dy*inv*f;b.vx+=dx*inv*f;b.vy+=dy*inv*f}for(const l of links){const a=by.get(l.a),b=by.get(l.b);if(!a||!b)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.max(Math.hypot(dx,dy),1),f=(d-150)*.003;a.vx+=dx/d*f;a.vy+=dy/d*f;b.vx-=dx/d*f;b.vy-=dy/d*f}const cx=innerWidth/2,cy=innerHeight/2;for(const n of nodes){if(n===dragNode)continue;n.vx+=(cx-n.x)*.0007;n.vy+=(cy-n.y)*.0007;n.vx*=.86;n.vy*=.86;n.x+=n.vx;n.y+=n.vy}}
+function screen(n){return{x:n.x*scale+offsetX,y:n.y*scale+offsetY}}function draw(){ctx.clearRect(0,0,innerWidth,innerHeight);const css=getComputedStyle(document.documentElement),by=new Map(nodes.map(n=>[n.id,n]));ctx.lineWidth=1.2;ctx.strokeStyle=css.getPropertyValue('--line').trim();ctx.globalAlpha=.68;for(const l of links){const aa=by.get(l.a),bb=by.get(l.b);if(!aa||!bb)continue;const a=screen(aa),b=screen(bb);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1;for(const n of nodes){const p=screen(n),isFocus=n.id===focus,r=(isFocus?11:n.warn?9:7)*Math.max(.75,Math.min(scale,1.35));ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=isFocus?css.getPropertyValue('--focus').trim():n.warn?css.getPropertyValue('--warn').trim():n.type==='prompt'?css.getPropertyValue('--prompt').trim():css.getPropertyValue('--knowledge').trim();ctx.fill();ctx.font=`${Math.max(11,13*scale)}px -apple-system,BlinkMacSystemFont,'Noto Sans TC',sans-serif`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle=css.getPropertyValue('--text').trim();ctx.fillText(n.name,p.x,p.y+r+5)}}
+function findNode(x,y){for(let i=nodes.length-1;i>=0;i--){const p=screen(nodes[i]);if(Math.hypot(x-p.x,y-p.y)<30)return nodes[i]}return null}function point(e){const t=e.touches?.[0]||e.changedTouches?.[0]||e;return{x:t.clientX,y:t.clientY}}function down(e){const p=point(e);lastX=p.x;lastY=p.y;moved=false;dragNode=findNode(p.x,p.y);panning=!dragNode;if(dragNode)dragNode.vx=dragNode.vy=0;e.preventDefault()}function move(e){if(!dragNode&&!panning)return;const p=point(e),dx=p.x-lastX,dy=p.y-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(dragNode){dragNode.x+=dx/scale;dragNode.y+=dy/scale}else{offsetX+=dx;offsetY+=dy}lastX=p.x;lastY=p.y;draw();e.preventDefault()}function up(e){if(dragNode&&!moved)openNode(dragNode);dragNode=null;panning=false;e.preventDefault()}canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('wheel',e=>{e.preventDefault();const ns=Math.max(.45,Math.min(2.8,scale*(e.deltaY<0?1.1:.9)));offsetX=e.clientX-(e.clientX-offsetX)*(ns/scale);offsetY=e.clientY-(e.clientY-offsetY)*(ns/scale);scale=ns;draw()},{passive:false});
+function renderMarkdown(md){let s=esc(md).replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>');s=s.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');return s.split(/\n{2,}/).map(b=>/^<(h\d|pre)/.test(b.trim())?b:`<p${b.includes('⚠️')?' class="warning"':''}>${b.replace(/\n/g,'<br>')}</p>`).join('')}
+function openNode(n){if(n.type==='prompt'){try{window.AminWiki.openPrompt(n.rawId)}catch(e){}return}articleBody.innerHTML=renderMarkdown(n.text);article.classList.add('open')}
+document.getElementById('closeArticle').onclick=()=>article.classList.remove('open');document.getElementById('reload').onclick=()=>{scale=1;offsetX=offsetY=0;loadAll()};document.getElementById('back').onclick=()=>{if(article.classList.contains('open'))article.classList.remove('open');else if(window.AminWiki)window.AminWiki.close();else history.back()};document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;focus='';scale=1;offsetX=offsetY=0;applyMode(true)});loadAll();
+})();</script></body></html>

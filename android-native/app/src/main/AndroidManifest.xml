@@ -13,255 +13,34 @@
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
-    <queries>
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
-    </queries>
+    <queries><intent><action android:name="android.speech.RecognitionService" /></intent></queries>
 
-    <application
-        android:name=".AminPocketApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="${appLabel}"
-        android:networkSecurityConfig="@xml/network_security_config"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AminPocketGBA"
-        android:usesCleartextTraffic="false">
+    <application android:name=".AminPocketApplication" android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="${appLabel}" android:networkSecurityConfig="@xml/network_security_config" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.AminPocketGBA" android:usesCleartextTraffic="false">
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
-
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>
         <receiver android:name=".PackageInstallResultReceiver" android:exported="false" />
+        <receiver android:name=".AminAutomationReceiver" android:exported="true"><intent-filter><action android:name="com.amin.pocketgba.ACTION_EXECUTE" /></intent-filter></receiver>
+        <service android:name=".AminControlApiService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled localhost and LAN phone control API" /></service>
+        <service android:name=".UniversalControlAccessibilityService" android:exported="true" android:label="@string/universal_control_service_label" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/universal_control_accessibility_service" /></service>
+        <service android:name=".PromptKeyboardService" android:exported="true" android:label="@string/prompt_keyboard_label" android:permission="android.permission.BIND_INPUT_METHOD"><intent-filter><action android:name="android.view.InputMethod" /></intent-filter><meta-data android:name="android.view.im" android:resource="@xml/prompt_input_method" /></service>
 
-        <receiver
-            android:name=".AminAutomationReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.amin.pocketgba.ACTION_EXECUTE" />
-            </intent-filter>
-        </receiver>
+        <activity android:name=".PromptUnlockActivity" android:excludeFromRecents="true" android:exported="false" android:noHistory="true" android:theme="@style/Theme.AminPromptDialog" />
+        <activity android:name=".PromptCaptureActivity" android:excludeFromRecents="true" android:exported="true" android:label="存到提示詞" android:theme="@style/Theme.AminPromptDialog"><intent-filter><action android:name="android.intent.action.PROCESS_TEXT" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="text/plain" /></intent-filter></activity>
+        <activity android:name=".PromptKeyboardSetupActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-prompts" android:host="setup" /></intent-filter></activity>
+        <activity android:name=".PromptManagerActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-prompts" android:host="manage" /></intent-filter></activity>
+        <activity android:name=".PromptEditorActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-prompts" android:host="new" /></intent-filter></activity>
 
-        <service
-            android:name=".AminControlApiService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="User-enabled localhost and LAN phone control API" />
-        </service>
-
-        <service
-            android:name=".UniversalControlAccessibilityService"
-            android:exported="true"
-            android:label="@string/universal_control_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data android:name="android.accessibilityservice" android:resource="@xml/universal_control_accessibility_service" />
-        </service>
-
-        <service
-            android:name=".PromptKeyboardService"
-            android:exported="true"
-            android:label="@string/prompt_keyboard_label"
-            android:permission="android.permission.BIND_INPUT_METHOD">
-            <intent-filter>
-                <action android:name="android.view.InputMethod" />
-            </intent-filter>
-            <meta-data
-                android:name="android.view.im"
-                android:resource="@xml/prompt_input_method" />
-        </service>
-
-        <activity
-            android:name=".PromptUnlockActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:theme="@style/Theme.AminPromptDialog" />
-
-        <activity
-            android:name=".PromptCaptureActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:label="存到提示詞"
-            android:theme="@style/Theme.AminPromptDialog">
-            <intent-filter>
-                <action android:name="android.intent.action.PROCESS_TEXT" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".PromptKeyboardSetupActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-prompts" android:host="setup" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".LaunchGateActivity"
-            android:exported="true"
-            android:noHistory="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".ControlCenterActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-home" android:host="open" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".WikiGraphActivity"
-            android:exported="false"
-            android:hardwareAccelerated="true"
-            android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".AminControlApiActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-api" android:host="settings" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".AminAutomationActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:noHistory="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="com.amin.pocketgba.ACTION_EXECUTE" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-control" android:host="execute" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".VoiceCommandActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-voice" android:host="open" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".VoiceCommandCatalogActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-voice" android:host="commands" />
-            </intent-filter>
-        </activity>
-
+        <activity android:name=".LaunchGateActivity" android:exported="true" android:noHistory="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+        <activity android:name=".ControlCenterActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-home" android:host="open" /></intent-filter></activity>
+        <activity android:name=".WikiGraphActivity" android:exported="true" android:hardwareAccelerated="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-graph" android:host="open" /></intent-filter></activity>
+        <activity android:name=".AminControlApiActivity" android:exported="true" android:launchMode="singleTop" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-api" android:host="settings" /></intent-filter></activity>
+        <activity android:name=".AminAutomationActivity" android:exported="true" android:launchMode="singleTop" android:noHistory="true" android:screenOrientation="portrait"><intent-filter><action android:name="com.amin.pocketgba.ACTION_EXECUTE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-control" android:host="execute" /></intent-filter></activity>
+        <activity android:name=".VoiceCommandActivity" android:exported="true" android:launchMode="singleTop" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-voice" android:host="open" /></intent-filter></activity>
+        <activity android:name=".VoiceCommandCatalogActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-voice" android:host="commands" /></intent-filter></activity>
         <activity android:name=".UniversalControlSetupActivity" android:excludeFromRecents="true" android:exported="true" android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".PermissionCenterActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-permissions" android:host="open" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".UpdateHubActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="amin-update" android:host="check" />
-            </intent-filter>
-        </activity>
-
+        <activity android:name=".PermissionCenterActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-permissions" android:host="open" /></intent-filter></activity>
+        <activity android:name=".UpdateHubActivity" android:exported="true" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="amin-update" android:host="check" /></intent-filter></activity>
         <activity android:name=".NativeUpdateActivity" android:exported="false" android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|smallestScreenSize|uiMode"
-            android:exported="true"
-            android:hardwareAccelerated="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:mimeType="application/octet-stream" />
-                <data android:mimeType="application/zip" />
-                <data android:mimeType="application/x-gba-rom" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/octet-stream" />
-                <data android:mimeType="application/zip" />
-                <data android:mimeType="application/x-gba-rom" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/octet-stream" />
-                <data android:mimeType="application/zip" />
-                <data android:mimeType="application/x-gba-rom" />
-            </intent-filter>
-        </activity>
+        <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|smallestScreenSize|uiMode" android:exported="true" android:hardwareAccelerated="true" android:launchMode="singleTask" android:screenOrientation="portrait"><intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="content" /><data android:scheme="file" /><data android:mimeType="application/octet-stream" /><data android:mimeType="application/zip" /><data android:mimeType="application/x-gba-rom" /></intent-filter><intent-filter><action android:name="android.intent.action.SEND" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="application/octet-stream" /><data android:mimeType="application/zip" /><data android:mimeType="application/x-gba-rom" /></intent-filter><intent-filter><action android:name="android.intent.action.SEND_MULTIPLE" /><category android:name="android.intent.category.DEFAULT" /><data android:mimeType="application/octet-stream" /><data android:mimeType="application/zip" /><data android:mimeType="application/x-gba-rom" /></intent-filter></activity>
     </application>
 </manifest>
