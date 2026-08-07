@@ -40,20 +40,45 @@ public final class AminPocketApplication extends Application {
                     scheduleControlEntries(activity);
                 }
                 View root = activity.findViewById(android.R.id.content);
-                if (root != null) root.post(() -> AminTheme.applyToViewTree(activity, root));
+                if (root != null) {
+                    root.post(() -> {
+                        AminTheme.applyToViewTree(activity, root);
+                        if (activity instanceof VoiceOrbHomeActivity) routeLegacyUpdateEntry(activity, root);
+                    });
+                }
             }
 
             @Override public void onActivityStarted(Activity activity) {}
             @Override public void onActivityResumed(Activity activity) {
                 if (activity instanceof ControlCenterActivity) scheduleControlEntries(activity);
+                if (activity instanceof UpdateHubActivity) NativeUpdateRouter.maybeAutoAdvance((UpdateHubActivity) activity);
                 View root = activity.findViewById(android.R.id.content);
-                if (root != null) root.post(() -> AminTheme.applyToViewTree(activity, root));
+                if (root != null) root.post(() -> {
+                    AminTheme.applyToViewTree(activity, root);
+                    if (activity instanceof VoiceOrbHomeActivity) routeLegacyUpdateEntry(activity, root);
+                });
             }
             @Override public void onActivityPaused(Activity activity) {}
             @Override public void onActivityStopped(Activity activity) {}
             @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
             @Override public void onActivityDestroyed(Activity activity) {}
         });
+    }
+
+    private void routeLegacyUpdateEntry(Activity activity, View view) {
+        if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+            CharSequence value = textView.getText();
+            if (value != null && "下載更新".contentEquals(value)) {
+                textView.setText("版本更新");
+                textView.setContentDescription("進入版本與更新安全流程");
+                textView.setOnClickListener(v -> NativeUpdateRouter.openExistingUpdateFlow(activity));
+            }
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) routeLegacyUpdateEntry(activity, group.getChildAt(i));
+        }
     }
 
     private void scheduleControlEntries(Activity activity) {
