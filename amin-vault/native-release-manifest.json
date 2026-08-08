@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.15-bridge47.apk",
-  "apkSha256": "58127cbadf300bc3bde01b5bb30b166ea25c602ba12c8fd1f62a53d4c352f741",
+  "apkSha256": "7302ed08efc2abf9a4db8fe474f5c8ba3d6832e098875d5769351416b765a159",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2709304,
-  "publishedAt": "2026-08-08T16:55:02Z",
+  "sizeBytes": 2709542,
+  "publishedAt": "2026-08-08T17:10:39Z",
   "mandatory": false,
   "releaseNotes": [
     "新增 App 啟動問候引擎：啟動時使用 Android TTS 自動說話，並在問候結束後自動進入語音聆聽。",
