@@ -6,6 +6,7 @@ import android.content.IntentSender;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.widget.Button;
@@ -32,7 +33,6 @@ public final class GoogleSheetsConnectionActivity extends Activity {
     private GoogleSheetsConnectionStore store;
     private String sourceId;
     private TextView status;
-    private TextView diagnostics;
     private Button authorizeButton;
 
     @Override protected void onCreate(Bundle b){
@@ -46,11 +46,11 @@ public final class GoogleSheetsConnectionActivity extends Activity {
 
     private void buildUi(){
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(20),dp(28),dp(20),dp(28));
-        TextView title=text("Google Sheets 授權",26);root.addView(title);
+        root.addView(text("Google Sheets 授權",26));
         root.addView(text("Source ID\n"+sourceId,14));
         root.addView(text("Spreadsheet ID\n"+store.spreadsheetId(sourceId),14));
         root.addView(text("權限用途\n讀寫 Amin Pocket 財務資料庫。OAuth access token 只保留在本次 App process，不寫入 Node、GitHub 或永久儲存。",14));
-        diagnostics=text("Android OAuth 身分\nPackage: "+getPackageName()+"\nSHA-1: "+signingSha1(),13);root.addView(diagnostics);
+        root.addView(text("Android OAuth 身分\nPackage: "+getPackageName()+"\nSHA-1: "+signingSha1(),13));
         status=text(store.isReady(sourceId)?"狀態：本次工作階段已授權":"狀態：尚未授權",15);root.addView(status);
         authorizeButton=new Button(this);authorizeButton.setAllCaps(false);authorizeButton.setText(store.isReady(sourceId)?"重新取得 Google 授權":"使用 Google 帳號授權");authorizeButton.setOnClickListener(v->authorize());root.addView(authorizeButton,new LinearLayout.LayoutParams(-1,dp(56)));
         Button cancel=new Button(this);cancel.setAllCaps(false);cancel.setText("取消");cancel.setOnClickListener(v->finish());root.addView(cancel,new LinearLayout.LayoutParams(-1,dp(52)));
@@ -66,12 +66,9 @@ public final class GoogleSheetsConnectionActivity extends Activity {
         Identity.getAuthorizationClient(this).authorize(request)
                 .addOnSuccessListener(result->{
                     if(result.hasResolution()){
-                        try{
-                            startIntentSenderForResult(result.getPendingIntent().getIntentSender(),REQUEST_AUTHORIZE,null,0,0,0,null);
-                        }catch(IntentSender.SendIntentException e){fail("無法開啟 Google 授權畫面："+safe(e));}
-                    }else{
-                        accept(result);
-                    }
+                        try{startIntentSenderForResult(result.getPendingIntent().getIntentSender(),REQUEST_AUTHORIZE,null,0,0,0,null);}
+                        catch(IntentSender.SendIntentException e){fail("無法開啟 Google 授權畫面："+safe(e));}
+                    }else accept(result);
                 })
                 .addOnFailureListener(this::handleFailure);
     }
@@ -80,10 +77,8 @@ public final class GoogleSheetsConnectionActivity extends Activity {
         super.onActivityResult(requestCode,resultCode,data);
         if(requestCode!=REQUEST_AUTHORIZE)return;
         if(resultCode!=RESULT_OK||data==null){fail("未完成 Google 授權");return;}
-        try{
-            AuthorizationResult result=Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data);
-            accept(result);
-        }catch(ApiException e){handleFailure(e);}
+        try{accept(Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data));}
+        catch(ApiException e){handleFailure(e);}
     }
 
     private void accept(AuthorizationResult result){
@@ -92,34 +87,34 @@ public final class GoogleSheetsConnectionActivity extends Activity {
         store.setSessionToken(sourceId,token);
         status.setText("狀態：已取得 Google Sheets 授權");
         Toast.makeText(this,"Google Sheets 已連線",Toast.LENGTH_SHORT).show();
-        setResult(RESULT_OK);
-        finish();
+        setResult(RESULT_OK);finish();
     }
 
     private void handleFailure(Throwable error){
         if(error instanceof ApiException){
-            ApiException api=(ApiException)error;
-            int code=api.getStatusCode();
+            ApiException api=(ApiException)error;int code=api.getStatusCode();
             if(code==CommonStatusCodes.DEVELOPER_ERROR){
-                fail("Google DEVELOPER_ERROR (10)\n請在 Google Cloud 建立 Android OAuth Client，Package 必須是 "+getPackageName()+"，SHA-1 必須是 "+signingSha1()+"。建立後重新按授權即可。");
-                return;
+                fail("Google DEVELOPER_ERROR (10)\n請在 Google Cloud 建立 Android OAuth Client，Package 必須是 "+getPackageName()+"，SHA-1 必須是 "+signingSha1()+"。建立後重新按授權即可。");return;
             }
-            fail("Google 授權失敗，status="+code+" ("+CommonStatusCodes.getStatusCodeString(code)+") · "+safe(api));
-            return;
+            fail("Google 授權失敗，status="+code+" ("+CommonStatusCodes.getStatusCodeString(code)+") · "+safe(api));return;
         }
         fail("Google 授權失敗："+safe(error));
     }
 
+    @SuppressWarnings("deprecation")
     private String signingSha1(){
         try{
-            PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),PackageManager.GET_SIGNING_CERTIFICATES);
             Signature[] signatures;
-            if(info.signingInfo!=null){
+            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){
+                PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),PackageManager.GET_SIGNING_CERTIFICATES);
+                if(info.signingInfo==null)return "unavailable";
                 signatures=info.signingInfo.hasMultipleSigners()?info.signingInfo.getApkContentsSigners():info.signingInfo.getSigningCertificateHistory();
-            }else return "unavailable";
+            }else{
+                PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),PackageManager.GET_SIGNATURES);
+                signatures=info.signatures;
+            }
             if(signatures==null||signatures.length==0)return "unavailable";
-            MessageDigest digest=MessageDigest.getInstance("SHA-1");
-            byte[] bytes=digest.digest(signatures[0].toByteArray());
+            byte[] bytes=MessageDigest.getInstance("SHA-1").digest(signatures[0].toByteArray());
             StringBuilder out=new StringBuilder();
             for(int i=0;i<bytes.length;i++){if(i>0)out.append(':');out.append(String.format("%02X",bytes[i]));}
             return out.toString();
