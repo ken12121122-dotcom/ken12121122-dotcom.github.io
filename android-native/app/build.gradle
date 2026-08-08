@@ -23,7 +23,7 @@ android {
         targetSdk 35
         versionCode aminVersionCode
         versionName aminVersionName
-        manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
+        manifestPlaceholders = [appLabel: '我是最棒的']
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
         buildConfigField 'String', 'APP_WEB_URL', '"https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1"'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -55,13 +55,13 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
+            manifestPlaceholders = [appLabel: '我是最棒的']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"release"'
             if (aminSigningReady) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA Debug']
+            manifestPlaceholders = [appLabel: '我是最棒的 Debug']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"debug"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
         }
@@ -70,7 +70,7 @@ android {
             debuggable false
             minifyEnabled false
             versionNameSuffix aminBridgeSuffix
-            manifestPlaceholders = [appLabel: 'Amin Pocket GBA']
+            manifestPlaceholders = [appLabel: '我是最棒的']
             buildConfigField 'String', 'RELEASE_CHANNEL', '"bridge"'
             buildConfigField 'String', 'APP_WEB_URL', '"' + aminBridgeUrl + '"'
             if (aminSigningReady) signingConfig signingConfigs.release
