@@ -1,0 +1,14 @@
+{
+  "name": "amin-node-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Amin PC-side Node.js core for controlling the Android client over the Amin Control API.",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/android-client.js && node --check src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
