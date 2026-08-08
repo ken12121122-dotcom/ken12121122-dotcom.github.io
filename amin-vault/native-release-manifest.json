@@ -4,20 +4,20 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.15-bridge47",
-  "latestVersionCode": 143,
+  "latestVersionName": "0.10.16-bridge48",
+  "latestVersionCode": 144,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.15-bridge47.apk",
-  "apkSha256": "7be86a2489e955ff9da6f0fe35c1641622e7fbf75aff2df64037867faf532a1e",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.16-bridge48.apk",
+  "apkSha256": "0125397ac32eb08e928031e32136ae7dd4a62be7c84aaeccfb17d3ffb32fbeb5",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2709304,
-  "publishedAt": "2026-08-08T17:12:10Z",
+  "sizeBytes": 2715962,
+  "publishedAt": "2026-08-08T17:16:04Z",
   "mandatory": false,
   "releaseNotes": [
-    "新增 App 啟動問候引擎：啟動時使用 Android TTS 自動說話，並在問候結束後自動進入語音聆聽。",
-    "問候語支援早上、下午、晚上、深夜四個時段；70% 使用時段語句、30% 使用通用語句並隨機抽取。",
-    "10 分鐘內重新開啟時改用簡短『我在』，避免反覆播放完整問候。",
-    "保留既有語音核心、Node Registry、Control API、更新流程、packageId 與簽章。"
+    "加入使用者提供音樂的短版啟動片段，App 啟動與語音核心進入時可播放約 1.6 秒的低音量音樂。",
+    "啟動音樂採本機資產播放，不需要網路；5 秒內重複進入不會重複播放。",
+    "保留 0.10.15 的時段隨機 TTS 問候與自動語音聆聽流程。",
+    "保留既有 packageId、簽章、Control API、Node Registry 與正式更新流程。"
   ]
 }
