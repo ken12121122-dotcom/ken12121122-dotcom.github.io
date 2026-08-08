@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.13-bridge45.apk",
-  "apkSha256": "eadbfab8f91a3ac72b0991ab8cabd2d4843241ea8197136b1e99167bf766fd19",
+  "apkSha256": "abcf1f76b16ea04697eefb2907f491243facb043713432b2329985918f544ff1",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2707452,
-  "publishedAt": "2026-08-08T00:39:17Z",
+  "sizeBytes": 2707453,
+  "publishedAt": "2026-08-08T16:30:42Z",
   "mandatory": false,
   "releaseNotes": [
     "Google Sheets 授權頁新增正式 Android OAuth 診斷：直接顯示 com.amin.pocketgba 與目前安裝 APK 的 SHA-1 簽章指紋。",
