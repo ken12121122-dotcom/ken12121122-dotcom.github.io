@@ -3,6 +3,7 @@ package com.amin.pocketgba;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -12,6 +13,8 @@ import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -20,13 +23,42 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
 
 /** Bridge launcher and voice core. Node voice aliases are derived from Node Registry metadata. */
 public final class VoiceOrbHomeActivity extends Activity implements RecognitionListener {
     private static final int REQUEST_RECORD_AUDIO = 6501;
     private static final long SILENCE_TIMEOUT_MS = 8000L;
+    private static final long QUICK_REOPEN_MS = 10L * 60L * 1000L;
+    private static final String PREFS_GREETING = "amin_startup_greeting";
+    private static final String PREF_LAST_GREETING_AT = "last_greeting_at";
+    private static final String GREETING_UTTERANCE_ID = "amin_startup_greeting";
+
+    private static final String[] MORNING_GREETINGS = {
+            "早安，今天需要我協助什麼？",
+            "早安，我已經準備好了。",
+            "早上好，請告訴我今天要處理什麼。"
+    };
+    private static final String[] AFTERNOON_GREETINGS = {
+            "午安，請問需要我協助什麼？",
+            "下午好，我已經準備好了。"
+    };
+    private static final String[] EVENING_GREETINGS = {
+            "晚上好，請問需要我協助什麼？",
+            "晚安前還有什麼需要我處理的嗎？"
+    };
+    private static final String[] LATE_NIGHT_GREETINGS = {
+            "這麼晚了，還有什麼需要我協助？",
+            "我還在線，請告訴我要處理什麼。"
+    };
+    private static final String[] GENERAL_GREETINGS = {
+            "您好，請問有什麼需要為您協助的？",
+            "我是最棒的已準備完成。",
+            "好的，我在，請下達指令。"
+    };
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final VoiceCommandParser parser = new VoiceCommandParser();
@@ -36,9 +68,11 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     private TextView transcriptView;
     private SpeechRecognizer recognizer;
     private Intent recognizerIntent;
+    private TextToSpeech textToSpeech;
     private boolean listening;
     private boolean launchedFeature;
     private boolean firstResume = true;
+    private boolean greetingInProgress;
     private NodeMetadataStore nodeMetadataStore;
 
     @Override protected void onCreate(Bundle state) {
@@ -53,12 +87,28 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     @Override protected void onResume() {
         super.onResume();
         UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, false);
-        if (firstResume) { firstResume=false; handler.postDelayed(this::startListeningWithPermission,280L); }
-        else if (launchedFeature) { launchedFeature=false; handler.postDelayed(this::startListeningWithPermission,320L); }
+        if (firstResume) {
+            firstResume=false;
+            handler.postDelayed(this::speakStartupGreetingThenListen,180L);
+        } else if (launchedFeature) {
+            launchedFeature=false;
+            handler.postDelayed(this::startListeningWithPermission,320L);
+        }
     }
 
-    @Override protected void onPause() { stopListeningQuietly(); super.onPause(); }
-    @Override protected void onDestroy() { handler.removeCallbacksAndMessages(null); if(recognizer!=null){recognizer.destroy();recognizer=null;} super.onDestroy(); }
+    @Override protected void onPause() {
+        stopListeningQuietly();
+        if(textToSpeech!=null && greetingInProgress) textToSpeech.stop();
+        greetingInProgress=false;
+        super.onPause();
+    }
+
+    @Override protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        if(recognizer!=null){recognizer.destroy();recognizer=null;}
+        if(textToSpeech!=null){textToSpeech.stop();textToSpeech.shutdown();textToSpeech=null;}
+        super.onDestroy();
+    }
 
     private void buildUi() {
         FrameLayout root=new FrameLayout(this); root.setBackgroundColor(0xff08130e);
@@ -83,6 +133,66 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         setContentView(root);
     }
 
+    private void speakStartupGreetingThenListen() {
+        if(isFinishing() || isDestroyed()) return;
+        final String greeting=selectStartupGreeting();
+        status("向您問候",VoiceOrbView.Phase.IDLE);
+        transcriptView.setText(greeting);
+        greetingInProgress=true;
+
+        textToSpeech=new TextToSpeech(this,status->{
+            if(status!=TextToSpeech.SUCCESS){
+                greetingInProgress=false;
+                handler.postDelayed(this::startListeningWithPermission,120L);
+                return;
+            }
+            textToSpeech.setLanguage(Locale.TAIWAN);
+            textToSpeech.setSpeechRate(0.95f);
+            textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener(){
+                @Override public void onStart(String utteranceId) {}
+                @Override public void onDone(String utteranceId) {
+                    if(!GREETING_UTTERANCE_ID.equals(utteranceId)) return;
+                    handler.post(()->{
+                        greetingInProgress=false;
+                        if(!isFinishing()&&!isDestroyed()) handler.postDelayed(VoiceOrbHomeActivity.this::startListeningWithPermission,150L);
+                    });
+                }
+                @Override public void onError(String utteranceId) {
+                    handler.post(()->{
+                        greetingInProgress=false;
+                        if(!isFinishing()&&!isDestroyed()) startListeningWithPermission();
+                    });
+                }
+            });
+            int result=textToSpeech.speak(greeting,TextToSpeech.QUEUE_FLUSH,null,GREETING_UTTERANCE_ID);
+            if(result==TextToSpeech.ERROR){
+                greetingInProgress=false;
+                handler.postDelayed(this::startListeningWithPermission,120L);
+            }
+        });
+    }
+
+    private String selectStartupGreeting() {
+        SharedPreferences prefs=getSharedPreferences(PREFS_GREETING,MODE_PRIVATE);
+        long now=System.currentTimeMillis();
+        long last=prefs.getLong(PREF_LAST_GREETING_AT,0L);
+        prefs.edit().putLong(PREF_LAST_GREETING_AT,now).apply();
+        if(last>0L && now-last<QUICK_REOPEN_MS) return "我在。";
+
+        // 70% 使用目前時段語句；30% 從通用問候隨機抽取。
+        if(ThreadLocalRandom.current().nextDouble()>=0.70d) return randomFrom(GENERAL_GREETINGS);
+        int hour=LocalTime.now().getHour();
+        if(hour>=5 && hour<12) return randomFrom(MORNING_GREETINGS);
+        if(hour>=12 && hour<18) return randomFrom(AFTERNOON_GREETINGS);
+        if(hour>=18) return randomFrom(EVENING_GREETINGS);
+        return randomFrom(LATE_NIGHT_GREETINGS);
+    }
+
+    private String randomFrom(String[] values) {
+        if(values==null || values.length==0) return "您好，請問有什麼需要為您協助的？";
+        return values[ThreadLocalRandom.current().nextInt(values.length)];
+    }
+
     private void prepareRecognizer() {
         if(!SpeechRecognizer.isRecognitionAvailable(this)){status("沒有可用的語音服務",VoiceOrbView.Phase.ERROR);return;}
         recognizer=SpeechRecognizer.createSpeechRecognizer(this);recognizer.setRecognitionListener(this);
@@ -94,7 +204,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     }
 
     private void startListeningWithPermission(){if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},REQUEST_RECORD_AUDIO);return;}startListening();}
-    private void startListening(){if(recognizer==null||listening)return;listening=true;status("正在聆聽",VoiceOrbView.Phase.LISTENING);transcriptView.setText("請說出功能名稱或指令");handler.removeCallbacks(silenceTimeout);handler.postDelayed(silenceTimeout,SILENCE_TIMEOUT_MS);try{recognizer.startListening(recognizerIntent);}catch(RuntimeException e){enterIdleState();}}
+    private void startListening(){if(recognizer==null||listening||greetingInProgress)return;listening=true;status("正在聆聽",VoiceOrbView.Phase.LISTENING);transcriptView.setText("請說出功能名稱或指令");handler.removeCallbacks(silenceTimeout);handler.postDelayed(silenceTimeout,SILENCE_TIMEOUT_MS);try{recognizer.startListening(recognizerIntent);}catch(RuntimeException e){enterIdleState();}}
     private void stopAndProcess(){if(!listening||recognizer==null)return;handler.removeCallbacks(silenceTimeout);listening=false;status("正在理解",VoiceOrbView.Phase.PROCESSING);recognizer.stopListening();}
     private void stopListeningQuietly(){handler.removeCallbacks(silenceTimeout);if(recognizer!=null&&listening)recognizer.cancel();listening=false;}
     private void enterIdleState(){stopListeningQuietly();status("待命中",VoiceOrbView.Phase.IDLE);transcriptView.setText("點一下語音球重新開始監聽");}
