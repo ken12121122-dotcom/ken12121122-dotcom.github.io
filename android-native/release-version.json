@@ -1,19 +1,16 @@
 {
-  "versionCode": 140,
-  "versionName": "0.10.12",
+  "versionCode": 141,
+  "versionName": "0.10.13",
   "channel": "bridge",
-  "bridge": 44,
+  "bridge": 45,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "新增真正的財務功能頁：控制中心可直接進入財務首頁，包含新增收支、收支明細、分類、帳戶與資產入口。",
-    "建立專用 Google Sheets 財務資料庫 Amin Pocket｜個人財務資料庫，固定對應 Transactions、Accounts、Categories、Assets 四個分頁與實際 Sheet ID。",
-    "transaction_v1 已與 Transactions Header 對齊：date、type、category、item、amount、account、merchant、note，並自動補 transaction_id 與 created_at。",
-    "新增收支頁會透過 GoogleSheetsAdapter 寫入 Transactions；收支明細、分類、帳戶與資產均有對應功能頁、Graph Node 與明確 Google Sheets 分頁。",
-    "Node Registry 改為產品頁面優先：財務首頁與新增收支使用正式 Activity Node，其餘共享資料頁以 route projection 對應，不再用虛擬財務節點取代功能頁。",
-    "保留 Typed Edge、Node Inspector、Voice Registry、Schema Form、Storage Adapter、Data View 與 MD Preview；原始 SystemGraph 功能地圖仍維持獨立入口。"
+    "Google Sheets 授權頁新增正式 Android OAuth 診斷：直接顯示 com.amin.pocketgba 與目前安裝 APK 的 SHA-1 簽章指紋。",
+    "Google 授權失敗時顯示實際 ApiException status code；若為 DEVELOPER_ERROR (10)，會直接指出需建立對應 Package + SHA-1 的 Android OAuth Client。",
+    "保留 bridge44 財務首頁、五個子功能、Google Sheets 四分頁、transaction_v1、Storage Adapter 與資料寫入流程，不回退任何財務功能。"
   ]
 }
