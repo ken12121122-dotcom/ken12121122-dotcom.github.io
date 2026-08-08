@@ -4,18 +4,20 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.14-bridge46",
-  "latestVersionCode": 142,
+  "latestVersionName": "0.10.15-bridge47",
+  "latestVersionCode": 143,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.14-bridge46.apk",
-  "apkSha256": "9e4ff933306fd35713d85f26e30dd6fb26cf6c85857bb3ea2d326dd73a2961e5",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.15-bridge47.apk",
+  "apkSha256": "58127cbadf300bc3bde01b5bb30b166ea25c602ba12c8fd1f62a53d4c352f741",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2707450,
-  "publishedAt": "2026-08-08T16:37:45Z",
+  "sizeBytes": 2709304,
+  "publishedAt": "2026-08-08T16:55:02Z",
   "mandatory": false,
   "releaseNotes": [
-    "Android App 顯示名稱由 Amin Pocket GBA 更新為『我是最棒的』，方便透過系統語音助理直接開啟。",
-    "保留既有 packageId、簽章、Control API、語音入口、更新流程與既有功能，不變更資料與權限架構。"
+    "新增 App 啟動問候引擎：啟動時使用 Android TTS 自動說話，並在問候結束後自動進入語音聆聽。",
+    "問候語支援早上、下午、晚上、深夜四個時段；70% 使用時段語句、30% 使用通用語句並隨機抽取。",
+    "10 分鐘內重新開啟時改用簡短『我在』，避免反覆播放完整問候。",
+    "保留既有語音核心、Node Registry、Control API、更新流程、packageId 與簽章。"
   ]
 }
