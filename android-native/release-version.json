@@ -1,15 +1,17 @@
 {
-  "versionCode": 142,
-  "versionName": "0.10.14",
+  "versionCode": 143,
+  "versionName": "0.10.15",
   "channel": "bridge",
-  "bridge": 46,
+  "bridge": 47,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "Android App 顯示名稱由 Amin Pocket GBA 更新為『我是最棒的』，方便透過系統語音助理直接開啟。",
-    "保留既有 packageId、簽章、Control API、語音入口、更新流程與既有功能，不變更資料與權限架構。"
+    "新增 App 啟動問候引擎：啟動時使用 Android TTS 自動說話，並在問候結束後自動進入語音聆聽。",
+    "問候語支援早上、下午、晚上、深夜四個時段；70% 使用時段語句、30% 使用通用語句並隨機抽取。",
+    "10 分鐘內重新開啟時改用簡短『我在』，避免反覆播放完整問候。",
+    "保留既有語音核心、Node Registry、Control API、更新流程、packageId 與簽章。"
   ]
 }
