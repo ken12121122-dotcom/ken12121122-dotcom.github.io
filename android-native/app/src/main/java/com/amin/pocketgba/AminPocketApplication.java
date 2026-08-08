@@ -30,6 +30,9 @@ public final class AminPocketApplication extends Application {
             }
 
             @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+                if (activity instanceof LaunchGateActivity || activity instanceof VoiceOrbHomeActivity) {
+                    StartupMusicPlayer.play(activity);
+                }
                 if (activity instanceof MainActivity) {
                     WebView webView = activity.findViewById(R.id.webView);
                     if (webView != null) webView.addJavascriptInterface(new NativeSaveBridge(activity), "AminNativeSaveVault");
