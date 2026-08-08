@@ -4,19 +4,18 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.13-bridge45",
-  "latestVersionCode": 141,
+  "latestVersionName": "0.10.14-bridge46",
+  "latestVersionCode": 142,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.13-bridge45.apk",
-  "apkSha256": "abcf1f76b16ea04697eefb2907f491243facb043713432b2329985918f544ff1",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.14-bridge46.apk",
+  "apkSha256": "9e4ff933306fd35713d85f26e30dd6fb26cf6c85857bb3ea2d326dd73a2961e5",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2707453,
-  "publishedAt": "2026-08-08T16:30:42Z",
+  "sizeBytes": 2707450,
+  "publishedAt": "2026-08-08T16:37:45Z",
   "mandatory": false,
   "releaseNotes": [
-    "Google Sheets 授權頁新增正式 Android OAuth 診斷：直接顯示 com.amin.pocketgba 與目前安裝 APK 的 SHA-1 簽章指紋。",
-    "Google 授權失敗時顯示實際 ApiException status code；若為 DEVELOPER_ERROR (10)，會直接指出需建立對應 Package + SHA-1 的 Android OAuth Client。",
-    "保留 bridge44 財務首頁、五個子功能、Google Sheets 四分頁、transaction_v1、Storage Adapter 與資料寫入流程，不回退任何財務功能。"
+    "Android App 顯示名稱由 Amin Pocket GBA 更新為『我是最棒的』，方便透過系統語音助理直接開啟。",
+    "保留既有 packageId、簽章、Control API、語音入口、更新流程與既有功能，不變更資料與權限架構。"
   ]
 }
