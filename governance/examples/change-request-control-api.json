@@ -1,0 +1,12 @@
+{
+  "change_id": "EXAMPLE-CONTROL-API-001",
+  "changed_node_ids": ["AMIN-3110"],
+  "change_type": "integration",
+  "changed_paths": [
+    "android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java"
+  ],
+  "interface_changes": true,
+  "data_schema_changes": false,
+  "permission_changes": false,
+  "release_path_changes": false
+}
