@@ -1,17 +1,11 @@
 registry_meta:
   registry_id: AMIN-NODE-REGISTRY
-  version: 0.2.0-draft
+  version: 0.3.0-draft
   status: generated
   review_status: generated
   inventory_issue: 74
-  authoritative_for:
-    - node_identity
-    - parent_child_structure
-    - dependency_links
-    - source_traceability
-  not_authoritative_for:
-    - legal_compliance
-    - production_release_approval
+  authoritative_for: [node_identity, parent_child_structure, dependency_links, source_traceability]
+  not_authoritative_for: [legal_compliance, production_release_approval]
 
 schema:
   required_fields: [node_id, name, node_type, lifecycle_status, review_status, verification_status, source_records]
@@ -31,11 +25,8 @@ records:
     dependencies: []
     children: [AMIN-1000, AMIN-2000, AMIN-3000, AMIN-4000, AMIN-5000, AMIN-6000]
     source_records:
-      - source_id: SRC-REPO-001
-        source_type: github_repository
-        reference: ken12121122-dotcom/ken12121122-dotcom.github.io
-    unresolved_gaps:
-      - Full repository inventory remains iterative; AI-agent runtime and some voice/control implementation files are not yet fully mapped.
+      - {source_id: SRC-REPO-001, source_type: github_repository, reference: ken12121122-dotcom/ken12121122-dotcom.github.io}
+    unresolved_gaps: [n8n and local PowerShell source linkage remain external/local]
 
   - node_id: AMIN-1000
     parent_id: AMIN-0000
@@ -47,14 +38,8 @@ records:
     dependencies: [AMIN-5000]
     children: [AMIN-1100, AMIN-1200, AMIN-1300, AMIN-1400, AMIN-1500]
     source_records:
-      - source_id: SRC-ANDROID-MANIFEST-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
-      - source_id: SRC-ANDROID-RELEASE-001
-        source_type: github_file
-        ref: release/android
-        reference: android-native/release-version.json
+      - {source_id: SRC-ANDROID-MANIFEST-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml}
+      - {source_id: SRC-ANDROID-RELEASE-001, source_type: github_file, ref: release/android, reference: android-native/release-version.json}
 
   - node_id: AMIN-1100
     parent_id: AMIN-1000
@@ -62,16 +47,12 @@ records:
     node_type: capability_group
     lifecycle_status: active
     review_status: generated
-    verification_status: partial
-    dependencies: [AMIN-1500]
-    children: [AMIN-1110, AMIN-1120]
+    verification_status: confirmed
+    dependencies: [AMIN-1500, AMIN-3120]
+    children: [AMIN-1110, AMIN-1120, AMIN-1130, AMIN-1140]
     source_records:
-      - source_id: SRC-VOICE-MANIFEST-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
-    unresolved_gaps:
-      - Dedicated voice recognition, voice orb, PTT, and background-service file ownership remains to be mapped.
+      - {source_id: SRC-VOICE-MANIFEST-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml}
+      - {source_id: SRC-VOICE-EVIDENCE-002, source_type: github_file, ref: feature/master-bom-governance-v1, reference: governance/inventory/evidence-pass-2.yaml}
 
   - node_id: AMIN-1110
     parent_id: AMIN-1100
@@ -82,11 +63,7 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1500]
     source_records:
-      - source_id: SRC-VOICE-ENTRY-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
-        evidence: VoiceCommandActivity and amin-voice://open
+      - {source_id: SRC-VOICE-ENTRY-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml, evidence: VoiceCommandActivity and amin-voice://open}
 
   - node_id: AMIN-1120
     parent_id: AMIN-1100
@@ -97,11 +74,41 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1110]
     source_records:
-      - source_id: SRC-VOICE-CATALOG-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
-        evidence: VoiceCommandCatalogActivity and amin-voice://commands
+      - {source_id: SRC-VOICE-CATALOG-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml, evidence: VoiceCommandCatalogActivity and amin-voice://commands}
+
+  - node_id: AMIN-1130
+    parent_id: AMIN-1100
+    name: Floating Voice Controller
+    node_type: capability
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: [AMIN-3120]
+    source_records:
+      - {source_id: SRC-FLOAT-VOICE-001, source_type: github_pull_request, pr: 21, reference: floating voice controls}
+      - {source_id: SRC-FLOAT-VOICE-002, source_type: github_pull_request, pr: 25, reference: android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java}
+      - {source_id: SRC-FLOAT-VOICE-003, source_type: github_pull_request, pr: 40, reference: floating voice timeout}
+    interface_contract:
+      interaction: tap_start_tap_stop
+      input_gateway: AMIN-3120
+      silence_timeout_ms: 8000
+
+  - node_id: AMIN-1140
+    parent_id: AMIN-1100
+    name: Voice Orb Home and Startup Greeting
+    node_type: capability
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: [AMIN-1110]
+    source_records:
+      - {source_id: SRC-VOICE-ORB-001, source_type: github_pull_request, pr: 69, reference: android-native/app/src/main/java/com/amin/pocketgba/VoiceOrbHomeActivity.java}
+    interface_contract:
+      startup_tts: true
+      locale: zh-TW
+      time_aware_greetings: true
+      auto_listen_after_tts: true
+      quick_reopen_window_ms: 600000
 
   - node_id: AMIN-1200
     parent_id: AMIN-1000
@@ -112,10 +119,7 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1500]
     children: [AMIN-1210, AMIN-1220, AMIN-1230, AMIN-1240]
-    source_records:
-      - source_id: SRC-PROMPT-PR-001
-        source_type: github_pull_request
-        reference: PR-53
+    source_records: [{source_id: SRC-PROMPT-PR-001, source_type: github_pull_request, reference: PR-53}]
 
   - node_id: AMIN-1210
     parent_id: AMIN-1200
@@ -125,18 +129,8 @@ records:
     review_status: generated
     verification_status: confirmed
     dependencies: []
-    source_records:
-      - source_id: SRC-PROMPT-STORE-001
-        source_type: github_pr_file
-        pr: 53
-        reference: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
-    interface_contract:
-      database_name: amin_prompts.db
-      database_version: 2
-      statuses: [active, archived, deleted]
-      graph_relation_types: [prompt, knowledge]
-      graph_relation_table: graph_relations
-    unresolved_gaps: []
+    source_records: [{source_id: SRC-PROMPT-STORE-001, source_type: github_pr_file, pr: 53, reference: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java}]
+    interface_contract: {database_name: amin_prompts.db, database_version: 2, statuses: [active, archived, deleted], graph_relation_table: graph_relations}
 
   - node_id: AMIN-1220
     parent_id: AMIN-1200
@@ -147,18 +141,8 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1210]
     source_records:
-      - source_id: SRC-PROMPT-IME-001
-        source_type: github_pr_file
-        pr: 53
-        reference: android-native/app/src/main/java/com/amin/pocketgba/PromptKeyboardService.java
-      - source_id: SRC-PROMPT-IME-MANIFEST-001
-        source_type: github_pr_file
-        pr: 53
-        reference: android-native/app/src/main/AndroidManifest.xml
-    interface_contract:
-      android_component: InputMethodService
-      protects_password_fields: true
-      records_prompt_usage: true
+      - {source_id: SRC-PROMPT-IME-001, source_type: github_pr_file, pr: 53, reference: android-native/app/src/main/java/com/amin/pocketgba/PromptKeyboardService.java}
+      - {source_id: SRC-PROMPT-IME-MANIFEST-001, source_type: github_pr_file, pr: 53, reference: android-native/app/src/main/AndroidManifest.xml}
 
   - node_id: AMIN-1230
     parent_id: AMIN-1200
@@ -172,9 +156,7 @@ records:
       - source_id: SRC-PROMPT-MANAGER-001
         source_type: github_pr_changed_files
         pr: 53
-        reference:
-          - android-native/app/src/main/java/com/amin/pocketgba/PromptManagerActivity.java
-          - android-native/app/src/main/java/com/amin/pocketgba/PromptEditorActivity.java
+        reference: [android-native/app/src/main/java/com/amin/pocketgba/PromptManagerActivity.java, android-native/app/src/main/java/com/amin/pocketgba/PromptEditorActivity.java]
 
   - node_id: AMIN-1240
     parent_id: AMIN-1200
@@ -185,16 +167,8 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1210, AMIN-1310, AMIN-2100]
     source_records:
-      - source_id: SRC-PROMPT-REL-001
-        source_type: github_pr_file
-        pr: 53
-        reference: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
-      - source_id: SRC-PROMPT-REL-002
-        source_type: github_pr_changed_files
-        pr: 53
-        reference:
-          - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-          - android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - {source_id: SRC-PROMPT-REL-001, source_type: github_pr_file, pr: 53, reference: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java}
+      - {source_id: SRC-PROMPT-REL-002, source_type: github_pr_file, pr: 53, reference: android-native/app/src/main/assets/amin-wiki-graph/index.html}
 
   - node_id: AMIN-1300
     parent_id: AMIN-1000
@@ -205,10 +179,7 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1500]
     children: [AMIN-1310, AMIN-1320, AMIN-1330]
-    source_records:
-      - source_id: SRC-GRAPH-PR-001
-        source_type: github_pull_request
-        reference: PR-58
+    source_records: [{source_id: SRC-GRAPH-PR-001, source_type: github_pull_request, reference: PR-58}]
 
   - node_id: AMIN-1310
     parent_id: AMIN-1300
@@ -219,17 +190,9 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1240, AMIN-2100]
     source_records:
-      - source_id: SRC-GRAPH-WEB-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/assets/amin-wiki-graph/index.html
-      - source_id: SRC-GRAPH-ACTIVITY-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-    interface_contract:
-      origins: [app, vault, prompt]
-      webview_bridge: AminWiki
+      - {source_id: SRC-GRAPH-WEB-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/assets/amin-wiki-graph/index.html}
+      - {source_id: SRC-GRAPH-ACTIVITY-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java}
+    interface_contract: {origins: [app, vault, prompt], webview_bridge: AminWiki}
 
   - node_id: AMIN-1320
     parent_id: AMIN-1300
@@ -240,17 +203,9 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1500, AMIN-1310]
     source_records:
-      - source_id: SRC-APP-NAV-META-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
-      - source_id: SRC-APP-NAV-DISCOVERY-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-    interface_contract:
-      metadata_prefix: amin.graph
-      fields: [visible, id, title, parent, route, direction, slot]
+      - {source_id: SRC-APP-NAV-META-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml}
+      - {source_id: SRC-APP-NAV-DISCOVERY-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java}
+    interface_contract: {metadata_prefix: amin.graph, fields: [visible, id, title, parent, route, direction, slot]}
 
   - node_id: AMIN-1330
     parent_id: AMIN-1300
@@ -261,18 +216,17 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1310, AMIN-1320]
     source_records:
-      - source_id: SRC-NAV-CANDIDATE-001
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/java/com/amin/pocketgba/AppNavigationCandidateStore.java
-      - source_id: SRC-NAV-CANDIDATE-002
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - {source_id: SRC-NAV-CANDIDATE-001, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/java/com/amin/pocketgba/AppNavigationCandidateStore.java}
+      - {source_id: SRC-NAV-CANDIDATE-038, source_type: github_pull_request, pr: 59, reference: Bridge 38 direct branch drag}
+      - {source_id: SRC-NAV-CANDIDATE-039, source_type: github_pull_request, pr: 60, reference: Bridge 39 precise subtree selection and free-position drop}
+      - {source_id: SRC-NAV-CANDIDATE-040, source_type: github_pull_request, pr: 61, reference: Bridge 40 structural subtree drag and native home snap}
     interface_contract:
       persistence: SharedPreferences
       direct_formal_navigation_write: false
-      capabilities: [move_branch, move_single_node, change_parent, change_direction, candidate_edge, undo, redo]
+      current_confirmed_behavior: structural_subtree_drag_with_native_home_snap
+      released_evolution: [bridge37, bridge38, bridge39, bridge40]
+    unresolved_gaps:
+      - feature/bridge41-exact-branch-drag exists but inspected release metadata still reports Bridge 40; it is not registered as a distinct released capability.
 
   - node_id: AMIN-1400
     parent_id: AMIN-1000
@@ -283,22 +237,9 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-5000]
     source_records:
-      - source_id: SRC-REL-001
-        source_type: github_file
-        ref: main
-        reference: amin-vault/native-release-manifest.json
-      - source_id: SRC-REL-002
-        source_type: github_file
-        ref: release/android
-        reference: android-native/release-version.json
-    interface_contract:
-      package_id: com.amin.pocketgba
-      release_channel: bridge
-      observed_version_code: 146
-      observed_version_name: 0.10.18
-      observed_bridge: 50
-      observed_production_version_name: 0.10.18-bridge50
-    unresolved_gaps: []
+      - {source_id: SRC-REL-001, source_type: github_file, ref: main, reference: amin-vault/native-release-manifest.json}
+      - {source_id: SRC-REL-002, source_type: github_file, ref: release/android, reference: android-native/release-version.json}
+    interface_contract: {package_id: com.amin.pocketgba, release_channel: bridge, observed_version_code: 146, observed_version_name: 0.10.18, observed_bridge: 50, observed_production_version_name: 0.10.18-bridge50}
 
   - node_id: AMIN-1500
     parent_id: AMIN-1000
@@ -308,23 +249,9 @@ records:
     review_status: generated
     verification_status: confirmed
     dependencies: []
-    source_records:
-      - source_id: SRC-ANDROID-MANIFEST-002
-        source_type: github_pr_file
-        pr: 58
-        reference: android-native/app/src/main/AndroidManifest.xml
+    source_records: [{source_id: SRC-ANDROID-MANIFEST-002, source_type: github_pr_file, pr: 58, reference: android-native/app/src/main/AndroidManifest.xml}]
     interface_contract:
-      graph_visible_entries:
-        - {id: control-center, route: amin-home://open}
-        - {id: graph, route: amin-graph://open}
-        - {id: control-api, route: amin-api://settings}
-        - {id: prompt-keyboard, route: amin-prompts://setup}
-        - {id: prompt-manager, route: amin-prompts://manage}
-        - {id: appearance, route: amin-appearance://settings}
-        - {id: voice, route: amin-voice://open}
-        - {id: voice-catalog, route: amin-voice://commands}
-        - {id: permissions, route: amin-permissions://open}
-        - {id: update, route: amin-update://check}
+      graph_visible_entries: [control-center, graph, control-api, prompt-keyboard, prompt-manager, appearance, voice, voice-catalog, permissions, update]
 
   - node_id: AMIN-2000
     parent_id: AMIN-0000
@@ -335,10 +262,7 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1000]
     children: [AMIN-2100]
-    source_records:
-      - source_id: SRC-WIKI-PR-001
-        source_type: github_pull_request
-        reference: PR-35
+    source_records: [{source_id: SRC-WIKI-PR-001, source_type: github_pull_request, reference: PR-35}]
 
   - node_id: AMIN-2100
     parent_id: AMIN-2000
@@ -349,19 +273,9 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1310]
     source_records:
-      - source_id: SRC-WIKI-WEB-001
-        source_type: github_pr_file
-        pr: 35
-        reference: android-native/app/src/main/assets/amin-wiki-graph/index.html
-      - source_id: SRC-WIKI-ACTIVITY-001
-        source_type: github_pr_file
-        pr: 35
-        reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-    interface_contract:
-      content_ref: main
-      content_path: amin-wiki/pages/
-      supported_links: [markdown_md_link, wiki_link]
-      hot_reload: true
+      - {source_id: SRC-WIKI-WEB-001, source_type: github_pr_file, pr: 35, reference: android-native/app/src/main/assets/amin-wiki-graph/index.html}
+      - {source_id: SRC-WIKI-ACTIVITY-001, source_type: github_pr_file, pr: 35, reference: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java}
+    interface_contract: {content_ref: main, content_path: amin-wiki/pages/, hot_reload: true}
 
   - node_id: AMIN-3000
     parent_id: AMIN-0000
@@ -372,35 +286,57 @@ records:
     verification_status: partial
     dependencies: [AMIN-1000]
     children: [AMIN-3100, AMIN-3200]
-    source_records:
-      - source_id: SRC-CONTROL-GROUP-001
-        source_type: github_pull_request
-        reference: PR-26
-      - source_id: SRC-CONTROL-GROUP-002
-        source_type: github_pull_request
-        reference: PR-67
+    source_records: [{source_id: SRC-CONTROL-GROUP-001, source_type: github_pull_request, reference: PR-26}, {source_id: SRC-CONTROL-GROUP-002, source_type: github_pull_request, reference: PR-67}]
 
   - node_id: AMIN-3100
     parent_id: AMIN-3000
     name: Android Control API
+    node_type: capability_group
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: [AMIN-1500]
+    children: [AMIN-3110, AMIN-3120, AMIN-3130]
+    source_records: [{source_id: SRC-CONTROL-REL-001, source_type: github_pull_request, pr: 26, reference: Bridge 23 Amin Control API v1}]
+
+  - node_id: AMIN-3110
+    parent_id: AMIN-3100
+    name: Android Control HTTP and WebSocket Server
     node_type: capability
     lifecycle_status: active
     review_status: generated
-    verification_status: partial
-    dependencies: [AMIN-1500]
-    source_records:
-      - source_id: SRC-CONTROL-REL-001
-        source_type: github_pull_request
-        pr: 26
-        reference: Bridge 23 Amin Control API v1
-      - source_id: SRC-CONTROL-MANIFEST-001
-        source_type: github_pr_file
-        pr: 53
-        reference: android-native/app/src/main/AndroidManifest.xml
+    verification_status: confirmed
+    dependencies: [AMIN-3120, AMIN-3130]
+    source_records: [{source_id: SRC-CONTROL-HTTP-001, source_type: github_pr_file, pr: 26, reference: android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java}]
     interface_contract:
-      manifest_components: [AminControlApiService, AminControlApiActivity, AminAutomationActivity, AminAutomationReceiver]
-    unresolved_gaps:
-      - REST/WebSocket implementation class paths are not yet attached to this record.
+      rest_endpoints: [GET /v1/status, GET /v1/actions, GET /v1/events, POST /v1/actions, POST /v1/actions/:action]
+      websocket_endpoint: /v1/events
+      lan_token_authentication: true
+      rate_limiting: true
+
+  - node_id: AMIN-3120
+    parent_id: AMIN-3100
+    name: Amin Input Gateway and Action Execution
+    node_type: capability
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: []
+    source_records:
+      - source_id: SRC-CONTROL-GATEWAY-001
+        source_type: github_pr_changed_files
+        pr: 26
+        reference: [android-native/app/src/main/java/com/amin/pocketgba/AminInputGateway.java, android-native/app/src/main/java/com/amin/pocketgba/AminActionDispatcher.java, android-native/app/src/main/java/com/amin/pocketgba/AminActionValidator.java, android-native/app/src/main/java/com/amin/pocketgba/AminAction.java, android-native/app/src/main/java/com/amin/pocketgba/ExecutionResult.java]
+
+  - node_id: AMIN-3130
+    parent_id: AMIN-3100
+    name: Control Event and Audit Store
+    node_type: capability
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: []
+    source_records: [{source_id: SRC-CONTROL-EVENT-001, source_type: github_pr_file, pr: 26, reference: android-native/app/src/main/java/com/amin/pocketgba/AminEventStore.java}]
 
   - node_id: AMIN-3200
     parent_id: AMIN-3000
@@ -409,28 +345,16 @@ records:
     lifecycle_status: active
     review_status: generated
     verification_status: confirmed
-    dependencies: [AMIN-3100]
+    dependencies: [AMIN-3110]
     source_records:
-      - source_id: SRC-NODE-SERVER-001
-        source_type: github_pr_file
-        pr: 67
-        reference: amin-server/src/server.js
-      - source_id: SRC-NODE-CLIENT-001
-        source_type: github_pr_file
-        pr: 67
-        reference: amin-server/src/android-client.js
-      - source_id: SRC-NODE-README-001
-        source_type: github_pr_file
-        pr: 67
-        reference: amin-server/README.md
+      - {source_id: SRC-NODE-SERVER-001, source_type: github_pr_file, pr: 67, reference: amin-server/src/server.js}
+      - {source_id: SRC-NODE-CLIENT-001, source_type: github_pr_file, pr: 67, reference: amin-server/src/android-client.js}
     interface_contract:
       local_listen_default: http://127.0.0.1:3000
       local_endpoints: [GET /health, GET /android/status, GET /android/actions, POST /android/actions/:action]
       android_upstream: [GET /v1/status, GET /v1/actions, POST /v1/actions/:action]
       authentication: Bearer token from AMIN_PHONE_TOKEN
-      android_target: AMIN_PHONE_URL
-    unresolved_gaps:
-      - n8n and PowerShell orchestration remain external/local until repository-backed source records are added.
+    unresolved_gaps: [n8n and PowerShell orchestration remain external/local until repository-backed]
 
   - node_id: AMIN-4000
     parent_id: AMIN-0000
@@ -440,12 +364,28 @@ records:
     review_status: generated
     verification_status: partial
     dependencies: [AMIN-3000, AMIN-6000]
+    children: [AMIN-4100]
+    source_records: [{source_id: SRC-AGENT-BRANCHES-001, source_type: github_branch_inventory, reference: [ai/amin-mcp-v0-1, ai/voice-command-v1, agent/android-phase2-7-capability-platform]}]
+    unresolved_gaps: [general agent runtime orchestration remains partially inventoried]
+
+  - node_id: AMIN-4100
+    parent_id: AMIN-4000
+    name: Amin Read-only MCP v0.1
+    node_type: integration
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies: []
     source_records:
-      - source_id: SRC-AGENT-BRANCHES-001
-        source_type: github_branch_inventory
-        reference: [ai/amin-mcp-v0-1, ai/voice-command-v1, agent/android-phase2-7-capability-platform]
-    unresolved_gaps:
-      - Runtime agent orchestration and MCP contracts require a dedicated source-backed inventory pass.
+      - source_id: SRC-MCP-001
+        source_type: github_pull_request
+        pr: 10
+        reference: [amin-mcp/src/index.ts, amin-mcp/src/server.ts, amin-mcp/src/github.ts, amin-mcp/test/server.test.ts, .github/workflows/amin-mcp-ci.yml]
+    interface_contract:
+      tools: [get_project_status, get_latest_version, get_recent_changes, create_test_plan]
+      github_write: false
+      apk_publish: false
+      device_access: false
 
   - node_id: AMIN-5000
     parent_id: AMIN-0000
@@ -456,22 +396,9 @@ records:
     verification_status: confirmed
     dependencies: [AMIN-1000]
     source_records:
-      - source_id: SRC-CI-BRANCHES-001
-        source_type: github_branch_inventory
-        reference: [ci/android-pr-validation-smoke, ci/android-release-pipeline-v2, ci/register-android-pr-validation, refactor/android-release-v2, release/android]
-      - source_id: SRC-PROD-MANIFEST-001
-        source_type: github_file
-        ref: main
-        reference: amin-vault/native-release-manifest.json
-      - source_id: SRC-DEV-RELEASE-001
-        source_type: github_file
-        ref: release/android
-        reference: android-native/release-version.json
-    interface_contract:
-      development_source: release/android
-      production_manifest: main/amin-vault/native-release-manifest.json
-      production_artifacts: main/amin-vault/releases/
-      human_approval_required: true
+      - {source_id: SRC-PROD-MANIFEST-001, source_type: github_file, ref: main, reference: amin-vault/native-release-manifest.json}
+      - {source_id: SRC-DEV-RELEASE-001, source_type: github_file, ref: release/android, reference: android-native/release-version.json}
+    interface_contract: {development_source: release/android, production_manifest: main/amin-vault/native-release-manifest.json, production_artifacts: main/amin-vault/releases/, human_approval_required: true}
 
   - node_id: AMIN-6000
     parent_id: AMIN-0000
@@ -482,23 +409,15 @@ records:
     verification_status: partial
     dependencies: [AMIN-0000]
     source_records:
-      - source_id: SRC-PROJECT-001
-        source_type: user_confirmed_github_project
-        reference: Amin Platform Development
-      - source_id: SRC-GOV-BOM-001
-        source_type: github_file
-        ref: feature/master-bom-governance-v1
-        reference: governance/master-bom.yaml
-      - source_id: SRC-GOV-POLICY-001
-        source_type: github_file
-        ref: feature/master-bom-governance-v1
-        reference: governance/agent-integration-policy.md
+      - {source_id: SRC-PROJECT-001, source_type: user_confirmed_github_project, reference: Amin Platform Development}
+      - {source_id: SRC-GOV-BOM-001, source_type: github_file, ref: feature/master-bom-governance-v1, reference: governance/master-bom.yaml}
+      - {source_id: SRC-GOV-POLICY-001, source_type: github_file, ref: feature/master-bom-governance-v1, reference: governance/agent-integration-policy.md}
+      - {source_id: SRC-GOV-IMPACT-001, source_type: github_file, ref: feature/master-bom-governance-v1, reference: governance/dependency-impact-rules.yaml}
     interface_contract:
       project_auto_add_filter: is:open
       tracked_item_types: [issue, pull_request]
-      governed_flow: Master BOM -> Issue -> Agent -> Branch -> PR -> Validation -> Integration -> Release
-    unresolved_gaps:
-      - Current connector cannot read GitHub Projects directly; Project membership is verified through user UI evidence.
+      governed_flow: Master BOM -> Issue -> Impact Calculation -> Agent -> Branch -> PR -> Validation -> Integration -> Release
+    unresolved_gaps: [Current connector cannot directly verify GitHub Project membership]
 
 record_template:
   node_id: AMIN-XXXX
@@ -514,6 +433,4 @@ record_template:
   interface_contract: {}
   unresolved_gaps: []
   change_log:
-    - version: 0.2.0-draft
-      change: inventory_update
-      actor: generated
+    - {version: 0.3.0-draft, change: inventory_pass_2_and_impact_model, actor: generated}
