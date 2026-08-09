@@ -1,0 +1,148 @@
+workflow_meta:
+  document_id: AMIN-MASTER-BOM
+  title: Amin Platform Master Functional BOM
+  version: 0.1.0-draft
+  status: generated
+  source_of_truth: governance/node-registry.yaml
+  can_modify_source: false
+  human_approval_required: true
+  notes:
+    - This is a governance inventory, not a legal or production-release authority.
+    - Unknown implementation details remain unresolved instead of being inferred.
+
+root:
+  node_id: AMIN-0000
+  name: Amin Platform
+  type: platform
+  children:
+    - AMIN-1000
+    - AMIN-2000
+    - AMIN-3000
+    - AMIN-4000
+    - AMIN-5000
+    - AMIN-6000
+
+nodes:
+  - node_id: AMIN-1000
+    parent_id: AMIN-0000
+    name: Android Application
+    type: system
+    status: active
+    children: [AMIN-1100, AMIN-1200, AMIN-1300, AMIN-1400]
+
+  - node_id: AMIN-1100
+    parent_id: AMIN-1000
+    name: Voice System
+    type: capability_group
+    status: active
+    observed_branches:
+      - ai/voice-command-v1
+      - feature/voice-command-catalog-v1
+      - feature/bridge28-voice-orb-home
+      - feature/floating-voice-ptt-v1
+    unresolved_gaps:
+      - Exact source-file ownership is pending repository-tree inventory.
+
+  - node_id: AMIN-1200
+    parent_id: AMIN-1000
+    name: Prompt and Keyboard System
+    type: capability_group
+    status: active
+    observed_branches:
+      - agent/amin-prompt-keyboard-v01
+      - feature/prompt-system-unified-graph-v1
+      - feature/bridge25-prompt-lock-v1
+
+  - node_id: AMIN-1300
+    parent_id: AMIN-1000
+    name: Visual Node and Architecture System
+    type: capability_group
+    status: active
+    observed_branches:
+      - feature/bridge36-node-three-slot-menu
+      - feature/bridge37-visual-app-architecture-editor
+      - feature/bridge38-direct-branch-drag-editor
+      - feature/bridge39-precise-branch-drop
+      - feature/bridge40-structural-subtree-home-snap
+      - feature/bridge41-exact-branch-drag
+
+  - node_id: AMIN-1400
+    parent_id: AMIN-1000
+    name: Runtime and Update System
+    type: capability_group
+    status: active
+    source_records:
+      - source_id: SRC-REL-001
+        ref: main
+        path: amin-vault/native-release-manifest.json
+        observed_version: 0.10.18-bridge50
+      - source_id: SRC-REL-002
+        ref: release/android
+        path: android-native/release-version.json
+        observed_version: 0.10.18
+        observed_bridge: 50
+
+  - node_id: AMIN-2000
+    parent_id: AMIN-0000
+    name: Knowledge and Wiki
+    type: system
+    status: active
+    observed_branches:
+      - amin-wiki-vault
+      - feature/bridge26-amin-wiki-graph
+      - claude/knowledge-base-maintenance-p6rpq9
+      - docs/amin-wiki-workflow-extension
+
+  - node_id: AMIN-3000
+    parent_id: AMIN-0000
+    name: Control and Automation
+    type: system
+    status: active
+    observed_branches:
+      - feature/amin-control-api-v1
+      - feature/node-android-bridge
+      - ci/amin-control-api-v1-validation-base
+    unresolved_gaps:
+      - n8n and local PowerShell components may exist outside this repository; source linkage is pending.
+
+  - node_id: AMIN-4000
+    parent_id: AMIN-0000
+    name: AI and Agent Layer
+    type: system
+    status: active
+    observed_branches:
+      - ai/amin-mcp-v0-1
+      - ai/voice-command-v1
+      - agent/android-phase2-7-capability-platform
+    governance_rule: Agent branches are temporary execution workspaces and are not the authoritative product structure.
+
+  - node_id: AMIN-5000
+    parent_id: AMIN-0000
+    name: CI Validation and Release
+    type: system
+    status: active
+    observed_branches:
+      - ci/android-pr-validation-smoke
+      - ci/android-release-pipeline-v2
+      - ci/register-android-pr-validation
+      - refactor/android-release-v2
+      - release/android
+    release_authority:
+      development_source: release/android
+      production_manifest: main/amin-vault/native-release-manifest.json
+      production_artifacts: main/amin-vault/releases/
+      human_approval_required: true
+
+  - node_id: AMIN-6000
+    parent_id: AMIN-0000
+    name: Work Governance
+    type: governance_system
+    status: draft
+    components:
+      - Master BOM
+      - Node Registry
+      - GitHub Project
+      - Issue-to-Agent-to-PR workflow
+      - Integration validation
+    project_name: Amin Platform Development
+    project_read_access_from_current_connector: unavailable
