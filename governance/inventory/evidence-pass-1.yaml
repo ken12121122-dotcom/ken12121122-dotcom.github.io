@@ -1,0 +1,153 @@
+inventory_meta:
+  inventory_id: AMIN-BOM-INVENTORY-PASS-1
+  version: 0.1.0-draft
+  status: generated
+  issue: 74
+  source_branch: feature/master-bom-governance-v1
+  production_source_modified: false
+  rule: Missing evidence remains unresolved; no source path is invented.
+
+verified_evidence:
+  - evidence_id: EV-GRAPH-58
+    pr: 58
+    title: Bridge 37 cyber radial unified graph and visual app architecture editor
+    verifies_nodes: [AMIN-1310, AMIN-1320, AMIN-1330, AMIN-1500]
+    files:
+      - android-native/app/src/main/AndroidManifest.xml
+      - android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - android-native/app/src/main/java/com/amin/pocketgba/AppNavigationCandidateStore.java
+      - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+      - android-native/release-version.json
+    findings:
+      - AndroidManifest amin.graph metadata registers graph-visible App pages.
+      - WikiGraphActivity reads App navigation metadata and exposes it to the WebView bridge.
+      - Candidate navigation is persisted through AppNavigationCandidateStore using SharedPreferences.
+      - Unified Graph combines app, vault, and prompt origins.
+      - Candidate edits do not directly rewrite formal Android navigation code.
+
+  - evidence_id: EV-PROMPT-53
+    pr: 53
+    title: Bridge 32 Prompt System + Keyboard + Unified Graph
+    verifies_nodes: [AMIN-1210, AMIN-1220, AMIN-1230, AMIN-1240]
+    files:
+      - android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
+      - android-native/app/src/main/java/com/amin/pocketgba/PromptKeyboardService.java
+      - android-native/app/src/main/java/com/amin/pocketgba/PromptManagerActivity.java
+      - android-native/app/src/main/java/com/amin/pocketgba/PromptEditorActivity.java
+      - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+      - android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - android-native/app/src/main/AndroidManifest.xml
+    findings:
+      - PromptStore uses amin_prompts.db schema version 2.
+      - Prompt lifecycle includes active, archived, and deleted states.
+      - graph_relations provides typed prompt and knowledge relations.
+      - PromptKeyboardService is the IME-facing prompt consumer and records usage.
+      - Prompt management and Unified Graph share the same PromptStore instead of a second prompt database.
+
+  - evidence_id: EV-WIKI-35
+    pr: 35
+    title: Bridge 26 add Amin Wiki force graph with hot reload
+    verifies_nodes: [AMIN-2100]
+    files:
+      - android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+      - android-native/app/src/main/AndroidManifest.xml
+    findings:
+      - Wiki graph loads Markdown content from main/amin-wiki/pages/.
+      - Hot reload re-scans content without requiring an APK update.
+      - Markdown links and wiki links are converted into graph relations.
+
+  - evidence_id: EV-CONTROL-26
+    pr: 26
+    title: Bridge 23 Amin Control API v1
+    verifies_nodes: [AMIN-3100]
+    files:
+      - android-native/app/src/main/java/com/amin/pocketgba/AminControlApiService.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminControlApiConfig.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminInputGateway.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminActionDispatcher.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminActionValidator.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminEventStore.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminAutomationActivity.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminAutomationReceiver.java
+      - AMIN_CONTROL_API_V1.md
+    findings:
+      - GET /v1/status exposes service state.
+      - GET /v1/actions exposes available actions.
+      - GET /v1/events exposes recent events.
+      - POST /v1/actions and POST /v1/actions/:action execute through AminInputGateway.
+      - WebSocket /v1/events supports event delivery and commands.
+      - LAN mode supports bearer or X-Amin-Token authentication and rate limiting.
+
+  - evidence_id: EV-NODE-67
+    pr: 67
+    title: Add Node.js Android control bridge
+    verifies_nodes: [AMIN-3200]
+    files:
+      - amin-server/src/server.js
+      - amin-server/src/android-client.js
+      - amin-server/README.md
+      - amin-server/.env.example
+    findings:
+      - PC-side server is the orchestration boundary above Android native capabilities.
+      - Local endpoints proxy Android status, action discovery, and action execution.
+      - Android upstream authentication uses a bearer token from local environment variables.
+      - n8n, AI, and other tools are intended to sit above this bridge rather than duplicate device logic.
+
+  - evidence_id: EV-VOICE-69
+    pr: 69
+    title: Startup greeting engine
+    verifies_nodes: [AMIN-1100, AMIN-1130]
+    files:
+      - android-native/app/src/main/java/com/amin/pocketgba/VoiceOrbHomeActivity.java
+      - android-native/release-version.json
+    findings:
+      - VoiceOrbHomeActivity integrates SpeechRecognizer and Android TextToSpeech.
+      - Startup greeting completes before automatic voice listening begins.
+      - Greeting selection is time-aware with a quick-reopen short greeting.
+
+  - evidence_id: EV-MCP-10
+    pr: 10
+    title: Amin read-only MCP v0.1
+    verifies_nodes: [AMIN-4100]
+    files:
+      - amin-mcp/src/server.ts
+      - amin-mcp/src/index.ts
+      - amin-mcp/src/github.ts
+      - amin-mcp/README.md
+      - .github/workflows/amin-mcp-ci.yml
+    findings:
+      - Initial MCP is read-only.
+      - Tools include project status, latest version, recent changes, and test-plan generation.
+      - No GitHub write, APK publish, signer, phone, Accessibility, or file-access capability is part of v0.1.
+
+release_evidence:
+  development_version:
+    ref: release/android
+    path: android-native/release-version.json
+    version_name: 0.10.18
+    version_code: 146
+    bridge: 50
+  production_manifest:
+    ref: main
+    path: amin-vault/native-release-manifest.json
+    latest_version_name: 0.10.18-bridge50
+    latest_version_code: 146
+
+remaining_gaps:
+  - Full floating voice/orb/PTT capability chain beyond the startup greeting evidence.
+  - Exact n8n workflow sources, because the currently discussed n8n workspace is outside this repository inventory.
+  - PowerShell orchestration scripts if they are stored only on the local PC.
+  - Newer bridge38-41 architecture-editor refinements should be mapped as child capabilities or revisions in a later pass.
+
+next_routes:
+  - route_id: INVENTORY-VOICE
+    target: AMIN-1100
+    action: Map floating voice/orb/PTT implementation and dependencies.
+  - route_id: INVENTORY-AI
+    target: AMIN-4000
+    action: Promote confirmed read-only MCP into a dedicated AMIN-4100 record and inventory later agent execution contracts separately.
+  - route_id: INVENTORY-EXTERNAL-AUTOMATION
+    target: AMIN-3000
+    action: Link n8n and local PowerShell only when source locations are available.
