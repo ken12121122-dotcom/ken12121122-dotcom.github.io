@@ -32,12 +32,12 @@ import java.util.concurrent.ThreadLocalRandom;
 /** Bridge launcher and voice core. Node voice aliases are derived from Node Registry metadata. */
 public final class VoiceOrbHomeActivity extends Activity implements RecognitionListener {
     private static final int REQUEST_RECORD_AUDIO = 6501;
+    private static final int REQUEST_PICK_MUSIC = 6502;
     private static final long SILENCE_TIMEOUT_MS = 8000L;
     private static final long QUICK_REOPEN_MS = 10L * 60L * 1000L;
     private static final String PREFS_GREETING = "amin_startup_greeting";
     private static final String PREF_LAST_GREETING_AT = "last_greeting_at";
     private static final String GREETING_UTTERANCE_ID = "amin_startup_greeting";
-    private static final String FULL_MUSIC_URL = "https://drive.google.com/file/d/1s5kJQQitBFfA-IK59lBm34RW7EEUcN4m/view?usp=drivesdk";
 
     private static final String[] MORNING_GREETINGS = {
             "早安，今天需要我協助什麼？",
@@ -102,6 +102,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         stopListeningQuietly();
         if(textToSpeech!=null && greetingInProgress) textToSpeech.stop();
         greetingInProgress=false;
+        unduckBackgroundMusic();
         super.onPause();
     }
 
@@ -110,6 +111,23 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         if(recognizer!=null){recognizer.destroy();recognizer=null;}
         if(textToSpeech!=null){textToSpeech.stop();textToSpeech.shutdown();textToSpeech=null;}
         super.onDestroy();
+    }
+
+    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        if(requestCode!=REQUEST_PICK_MUSIC || resultCode!=RESULT_OK || data==null || data.getData()==null) return;
+        Uri uri=data.getData();
+        try{
+            if((data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0){
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+        }catch(Exception ignored){}
+        getSharedPreferences(BackgroundMusicService.PREFS,MODE_PRIVATE).edit()
+                .putString(BackgroundMusicService.KEY_URI,uri.toString())
+                .putString(BackgroundMusicService.KEY_TITLE,"Wonders of the Earth")
+                .apply();
+        transcriptView.setText("背景音樂已選擇，按播放後可切到其他 App 或鎖定螢幕。");
+        startBackgroundMusic();
     }
 
     private void buildUi() {
@@ -129,14 +147,46 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         statusView=text("準備中",18,true,Color.WHITE);statusView.setGravity(Gravity.CENTER);content.addView(statusView,wrap());
         transcriptView=text("請說出功能名稱或既有語音指令",15,false,0xffb9c8c0);transcriptView.setGravity(Gravity.CENTER);transcriptView.setMaxLines(4);content.addView(transcriptView,wrap());
 
-        Button music=button("♫ 播放整首音樂");
-        music.setOnClickListener(v->openFullMusic());
-        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(52));mp.topMargin=dp(14);content.addView(music,mp);
+        LinearLayout musicActions=new LinearLayout(this);musicActions.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams map=wrap();map.topMargin=dp(12);content.addView(musicActions,map);
+        Button chooseMusic=button("♫ 選擇音樂");chooseMusic.setOnClickListener(v->pickBackgroundMusic());musicActions.addView(chooseMusic,new LinearLayout.LayoutParams(0,dp(50),1));
+        Button playMusic=button("▶ 背景播放");playMusic.setOnClickListener(v->startBackgroundMusic());LinearLayout.LayoutParams pmp=new LinearLayout.LayoutParams(0,dp(50),1);pmp.leftMargin=dp(8);musicActions.addView(playMusic,pmp);
+
+        LinearLayout musicControls=new LinearLayout(this);musicControls.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams mcp=wrap();mcp.topMargin=dp(8);content.addView(musicControls,mcp);
+        Button pauseMusic=button("⏸ 暫停");pauseMusic.setOnClickListener(v->BackgroundMusicService.start(this,BackgroundMusicService.ACTION_PAUSE));musicControls.addView(pauseMusic,new LinearLayout.LayoutParams(0,dp(46),1));
+        Button stopMusic=button("■ 停止");stopMusic.setOnClickListener(v->BackgroundMusicService.start(this,BackgroundMusicService.ACTION_STOP));LinearLayout.LayoutParams smp=new LinearLayout.LayoutParams(0,dp(46),1);smp.leftMargin=dp(8);musicControls.addView(stopMusic,smp);
 
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams ap=wrap();ap.topMargin=dp(10);content.addView(actions,ap);
         Button graph=button("功能地圖");graph.setOnClickListener(v->openSystemFeatureMap());actions.addView(graph,new LinearLayout.LayoutParams(0,dp(52),1));
         Button collapse=button("收合");collapse.setOnClickListener(v->collapseToFloatingButton());LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(52),1);cp.leftMargin=dp(10);actions.addView(collapse,cp);
         setContentView(root);
+    }
+
+    private void pickBackgroundMusic(){
+        stopListeningQuietly();
+        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("audio/*");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        launchedFeature=true;
+        startActivityForResult(intent,REQUEST_PICK_MUSIC);
+    }
+
+    private void startBackgroundMusic(){
+        String uri=getSharedPreferences(BackgroundMusicService.PREFS,MODE_PRIVATE).getString(BackgroundMusicService.KEY_URI,"");
+        if(uri==null || uri.isEmpty()){
+            transcriptView.setText("請先按『選擇音樂』，選一次後 App 會記住它。");
+            pickBackgroundMusic();
+            return;
+        }
+        BackgroundMusicService.start(this,BackgroundMusicService.ACTION_PLAY);
+        transcriptView.setText("背景音樂已開始，可切換 App 或鎖定螢幕。通知列可暫停或停止。");
+    }
+
+    private void duckBackgroundMusic(){
+        try{BackgroundMusicService.start(this,BackgroundMusicService.ACTION_DUCK);}catch(Exception ignored){}
+    }
+    private void unduckBackgroundMusic(){
+        try{BackgroundMusicService.start(this,BackgroundMusicService.ACTION_UNDUCK);}catch(Exception ignored){}
     }
 
     private void speakStartupGreetingThenListen() {
@@ -145,10 +195,12 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         status("向您問候",VoiceOrbView.Phase.IDLE);
         transcriptView.setText(greeting);
         greetingInProgress=true;
+        duckBackgroundMusic();
 
         textToSpeech=new TextToSpeech(this,status->{
             if(status!=TextToSpeech.SUCCESS){
                 greetingInProgress=false;
+                unduckBackgroundMusic();
                 handler.postDelayed(this::startListeningWithPermission,120L);
                 return;
             }
@@ -166,6 +218,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
                 @Override public void onError(String utteranceId) {
                     handler.post(()->{
                         greetingInProgress=false;
+                        unduckBackgroundMusic();
                         if(!isFinishing()&&!isDestroyed()) startListeningWithPermission();
                     });
                 }
@@ -173,6 +226,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
             int result=textToSpeech.speak(greeting,TextToSpeech.QUEUE_FLUSH,null,GREETING_UTTERANCE_ID);
             if(result==TextToSpeech.ERROR){
                 greetingInProgress=false;
+                unduckBackgroundMusic();
                 handler.postDelayed(this::startListeningWithPermission,120L);
             }
         });
@@ -209,26 +263,14 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     }
 
     private void startListeningWithPermission(){if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},REQUEST_RECORD_AUDIO);return;}startListening();}
-    private void startListening(){if(recognizer==null||listening||greetingInProgress)return;listening=true;status("正在聆聽",VoiceOrbView.Phase.LISTENING);transcriptView.setText("請說出功能名稱或指令");handler.removeCallbacks(silenceTimeout);handler.postDelayed(silenceTimeout,SILENCE_TIMEOUT_MS);try{recognizer.startListening(recognizerIntent);}catch(RuntimeException e){enterIdleState();}}
+    private void startListening(){if(recognizer==null||listening||greetingInProgress)return;duckBackgroundMusic();listening=true;status("正在聆聽",VoiceOrbView.Phase.LISTENING);transcriptView.setText("請說出功能名稱或指令");handler.removeCallbacks(silenceTimeout);handler.postDelayed(silenceTimeout,SILENCE_TIMEOUT_MS);try{recognizer.startListening(recognizerIntent);}catch(RuntimeException e){unduckBackgroundMusic();enterIdleState();}}
     private void stopAndProcess(){if(!listening||recognizer==null)return;handler.removeCallbacks(silenceTimeout);listening=false;status("正在理解",VoiceOrbView.Phase.PROCESSING);recognizer.stopListening();}
-    private void stopListeningQuietly(){handler.removeCallbacks(silenceTimeout);if(recognizer!=null&&listening)recognizer.cancel();listening=false;}
+    private void stopListeningQuietly(){handler.removeCallbacks(silenceTimeout);if(recognizer!=null&&listening)recognizer.cancel();listening=false;unduckBackgroundMusic();}
     private void enterIdleState(){stopListeningQuietly();status("待命中",VoiceOrbView.Phase.IDLE);transcriptView.setText("點一下語音球重新開始監聽");}
     private void collapseToFloatingButton(){stopListeningQuietly();UniversalControlAccessibilityService.setVoiceBubbleEnabled(this,true);finishAndRemoveTask();}
 
-    private void openFullMusic(){
-        stopListeningQuietly();
-        try{
-            Intent intent=new Intent(Intent.ACTION_VIEW, Uri.parse(FULL_MUSIC_URL));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
-            launchedFeature=true;
-            startActivity(intent);
-        }catch(Exception e){
-            status("無法開啟完整音樂",VoiceOrbView.Phase.ERROR);
-            handler.postDelayed(this::enterIdleState,1300L);
-        }
-    }
-
     private void handleTranscript(String transcript,double confidence){
+        unduckBackgroundMusic();
         String spoken=transcript==null?"":transcript.trim();transcriptView.setText("你說：「"+spoken+"」");
         if(spoken.contains("功能地圖")||spoken.contains("節點地圖")){openSystemFeatureMap();return;}
         if(spoken.equals("關閉")||spoken.equals("收合")||spoken.contains("關閉語音球")){collapseToFloatingButton();return;}
@@ -257,8 +299,8 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     @Override public void onRmsChanged(float rmsdB){if(orbView!=null)orbView.setAmplitude(rmsdB);}
     @Override public void onBufferReceived(byte[] buffer){}
     @Override public void onEndOfSpeech(){handler.removeCallbacks(silenceTimeout);listening=false;status("正在理解",VoiceOrbView.Phase.PROCESSING);}
-    @Override public void onError(int error){handler.removeCallbacks(silenceTimeout);listening=false;if(error==SpeechRecognizer.ERROR_SPEECH_TIMEOUT||error==SpeechRecognizer.ERROR_NO_MATCH){enterIdleState();return;}status("語音辨識失敗",VoiceOrbView.Phase.ERROR);handler.postDelayed(this::enterIdleState,1300L);}
-    @Override public void onResults(Bundle results){handler.removeCallbacks(silenceTimeout);listening=false;ArrayList<String> matches=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);float[] c=results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);if(matches==null||matches.isEmpty()){enterIdleState();return;}handleTranscript(matches.get(0),c!=null&&c.length>0?c[0]:-1d);}
+    @Override public void onError(int error){handler.removeCallbacks(silenceTimeout);listening=false;unduckBackgroundMusic();if(error==SpeechRecognizer.ERROR_SPEECH_TIMEOUT||error==SpeechRecognizer.ERROR_NO_MATCH){enterIdleState();return;}status("語音辨識失敗",VoiceOrbView.Phase.ERROR);handler.postDelayed(this::enterIdleState,1300L);}
+    @Override public void onResults(Bundle results){handler.removeCallbacks(silenceTimeout);listening=false;unduckBackgroundMusic();ArrayList<String> matches=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);float[] c=results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);if(matches==null||matches.isEmpty()){enterIdleState();return;}handleTranscript(matches.get(0),c!=null&&c.length>0?c[0]:-1d);}
     @Override public void onPartialResults(Bundle partialResults){handler.removeCallbacks(silenceTimeout);ArrayList<String> matches=partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);if(matches!=null&&!matches.isEmpty())transcriptView.setText(matches.get(0));handler.postDelayed(silenceTimeout,SILENCE_TIMEOUT_MS);}
     @Override public void onEvent(int eventType,Bundle params){}
 
