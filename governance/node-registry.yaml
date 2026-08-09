@@ -1,0 +1,128 @@
+registry_meta:
+  registry_id: AMIN-NODE-REGISTRY
+  version: 0.1.0-draft
+  status: generated
+  review_status: generated
+  authoritative_for:
+    - node_identity
+    - parent_child_structure
+    - dependency_links
+    - source_traceability
+  not_authoritative_for:
+    - legal_compliance
+    - production_release_approval
+
+schema:
+  required_fields:
+    - node_id
+    - name
+    - node_type
+    - lifecycle_status
+    - review_status
+    - source_records
+  lifecycle_status_enum:
+    - proposed
+    - active
+    - deprecated
+    - blocked
+    - unknown
+  review_status_enum:
+    - generated
+    - reviewed
+    - approved
+    - rejected
+    - deprecated
+  node_type_enum:
+    - platform
+    - system
+    - module
+    - capability_group
+    - capability
+    - workflow
+    - integration
+    - release_asset
+    - governance_system
+  verification_status_enum:
+    - confirmed
+    - partial
+    - unverified
+
+records:
+  - node_id: AMIN-0000
+    parent_id: null
+    name: Amin Platform
+    node_type: platform
+    lifecycle_status: active
+    review_status: generated
+    verification_status: partial
+    dependencies: []
+    source_records:
+      - source_id: SRC-REPO-001
+        source_type: github_repository
+        reference: ken12121122-dotcom/ken12121122-dotcom.github.io
+    unresolved_gaps:
+      - Full recursive repository tree has not yet been inventoried.
+
+  - node_id: AMIN-1400
+    parent_id: AMIN-1000
+    name: Runtime and Update System
+    node_type: capability_group
+    lifecycle_status: active
+    review_status: generated
+    verification_status: confirmed
+    dependencies:
+      - AMIN-5000
+    source_records:
+      - source_id: SRC-REL-001
+        source_type: github_file
+        ref: main
+        reference: amin-vault/native-release-manifest.json
+      - source_id: SRC-REL-002
+        source_type: github_file
+        ref: release/android
+        reference: android-native/release-version.json
+    interface_contract:
+      package_id: com.amin.pocketgba
+      release_channel: bridge
+      observed_version_code: 146
+      observed_bridge: 50
+    unresolved_gaps: []
+
+  - node_id: AMIN-6000
+    parent_id: AMIN-0000
+    name: Work Governance
+    node_type: governance_system
+    lifecycle_status: proposed
+    review_status: generated
+    verification_status: partial
+    dependencies:
+      - AMIN-0000
+    source_records:
+      - source_id: SRC-PROJECT-001
+        source_type: user_confirmed_github_project
+        reference: Amin Platform Development
+    interface_contract:
+      project_auto_add_filter: is:open
+      tracked_item_types:
+        - issue
+        - pull_request
+    unresolved_gaps:
+      - Current connector cannot read GitHub Projects directly, so project membership must be verified through UI or future API access.
+
+record_template:
+  node_id: AMIN-XXXX
+  parent_id: AMIN-XXXX
+  name: ""
+  node_type: capability
+  lifecycle_status: unknown
+  review_status: generated
+  verification_status: unverified
+  dependencies: []
+  children: []
+  source_records: []
+  interface_contract: {}
+  unresolved_gaps: []
+  change_log:
+    - version: 0.1.0-draft
+      change: initial_record
+      actor: generated
