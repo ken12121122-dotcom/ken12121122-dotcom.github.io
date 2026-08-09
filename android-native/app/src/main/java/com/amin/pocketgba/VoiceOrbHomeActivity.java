@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +37,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     private static final String PREFS_GREETING = "amin_startup_greeting";
     private static final String PREF_LAST_GREETING_AT = "last_greeting_at";
     private static final String GREETING_UTTERANCE_ID = "amin_startup_greeting";
+    private static final String FULL_MUSIC_URL = "https://drive.google.com/file/d/1s5kJQQitBFfA-IK59lBm34RW7EEUcN4m/view?usp=drivesdk";
 
     private static final String[] MORNING_GREETINGS = {
             "早安，今天需要我協助什麼？",
@@ -127,7 +129,11 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         statusView=text("準備中",18,true,Color.WHITE);statusView.setGravity(Gravity.CENTER);content.addView(statusView,wrap());
         transcriptView=text("請說出功能名稱或既有語音指令",15,false,0xffb9c8c0);transcriptView.setGravity(Gravity.CENTER);transcriptView.setMaxLines(4);content.addView(transcriptView,wrap());
 
-        LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams ap=wrap();ap.topMargin=dp(18);content.addView(actions,ap);
+        Button music=button("♫ 播放整首音樂");
+        music.setOnClickListener(v->openFullMusic());
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(52));mp.topMargin=dp(14);content.addView(music,mp);
+
+        LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);LinearLayout.LayoutParams ap=wrap();ap.topMargin=dp(10);content.addView(actions,ap);
         Button graph=button("功能地圖");graph.setOnClickListener(v->openSystemFeatureMap());actions.addView(graph,new LinearLayout.LayoutParams(0,dp(52),1));
         Button collapse=button("收合");collapse.setOnClickListener(v->collapseToFloatingButton());LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(52),1);cp.leftMargin=dp(10);actions.addView(collapse,cp);
         setContentView(root);
@@ -179,7 +185,6 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         prefs.edit().putLong(PREF_LAST_GREETING_AT,now).apply();
         if(last>0L && now-last<QUICK_REOPEN_MS) return "我在。";
 
-        // 70% 使用目前時段語句；30% 從通用問候隨機抽取。
         if(ThreadLocalRandom.current().nextDouble()>=0.70d) return randomFrom(GENERAL_GREETINGS);
         int hour=LocalTime.now().getHour();
         if(hour>=5 && hour<12) return randomFrom(MORNING_GREETINGS);
@@ -209,6 +214,19 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
     private void stopListeningQuietly(){handler.removeCallbacks(silenceTimeout);if(recognizer!=null&&listening)recognizer.cancel();listening=false;}
     private void enterIdleState(){stopListeningQuietly();status("待命中",VoiceOrbView.Phase.IDLE);transcriptView.setText("點一下語音球重新開始監聽");}
     private void collapseToFloatingButton(){stopListeningQuietly();UniversalControlAccessibilityService.setVoiceBubbleEnabled(this,true);finishAndRemoveTask();}
+
+    private void openFullMusic(){
+        stopListeningQuietly();
+        try{
+            Intent intent=new Intent(Intent.ACTION_VIEW, Uri.parse(FULL_MUSIC_URL));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+            launchedFeature=true;
+            startActivity(intent);
+        }catch(Exception e){
+            status("無法開啟完整音樂",VoiceOrbView.Phase.ERROR);
+            handler.postDelayed(this::enterIdleState,1300L);
+        }
+    }
 
     private void handleTranscript(String transcript,double confidence){
         String spoken=transcript==null?"":transcript.trim();transcriptView.setText("你說：「"+spoken+"」");
