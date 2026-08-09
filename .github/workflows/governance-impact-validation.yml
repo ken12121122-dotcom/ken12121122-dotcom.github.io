@@ -1,0 +1,73 @@
+name: Governance Impact Validation
+
+on:
+  pull_request:
+    paths:
+      - 'governance/**'
+      - '.github/workflows/governance-impact-validation.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  impact-resolver-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run known-node impact example
+        run: |
+          python governance/tools/impact_resolver.py \
+            governance/examples/change-request-control-api.json \
+            --output governance-impact-result.json
+          cat governance-impact-result.json
+
+      - name: Validate expected impact fields
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('governance-impact-result.json', encoding='utf-8'))
+          assert p['valid'] is True
+          assert 'AMIN-3110' in p['changed_nodes']
+          assert 'AMIN-3200' in p['impacted_nodes'], p
+          assert p['risk_level'] in {'medium','high'}
+          assert 'governance/node-registry.yaml' in p['source_records']
+          print('known-node impact validation passed')
+          PY
+
+      - name: Unknown node must fail closed
+        run: |
+          cat > /tmp/unknown-node.json <<'JSON'
+          {
+            "change_id": "CI-UNKNOWN-NODE",
+            "changed_node_ids": ["AMIN-999999"],
+            "change_type": "feature",
+            "changed_paths": []
+          }
+          JSON
+          set +e
+          python governance/tools/impact_resolver.py /tmp/unknown-node.json >/tmp/unknown-result.json
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/unknown-result.json', encoding='utf-8'))
+          assert p['valid'] is False
+          assert p['block_release'] is True
+          assert p['requires_human_review'] is True
+          print('unknown-node fail-closed validation passed')
+          PY
+
+      - name: Verify governance source remains read-only
+        run: |
+          git diff --exit-code -- governance/node-registry.yaml governance/dependency-impact-rules.yaml
