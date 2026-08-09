@@ -118,8 +118,9 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         if(requestCode!=REQUEST_PICK_MUSIC || resultCode!=RESULT_OK || data==null || data.getData()==null) return;
         Uri uri=data.getData();
         try{
-            int flags=data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            getContentResolver().takePersistableUriPermission(uri, flags & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            if((data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0){
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
         }catch(Exception ignored){}
         getSharedPreferences(BackgroundMusicService.PREFS,MODE_PRIVATE).edit()
                 .putString(BackgroundMusicService.KEY_URI,uri.toString())
