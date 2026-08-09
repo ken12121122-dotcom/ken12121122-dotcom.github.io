@@ -1,0 +1,76 @@
+name: Governed change request
+description: Create a change request that can be resolved against the Amin Node Registry.
+title: "[Change] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form feeds the Amin governance workflow. Unknown facts must remain gaps; do not invent node IDs or source paths.
+
+  - type: input
+    id: node_ids
+    attributes:
+      label: Changed node IDs
+      description: Comma-separated Node Registry IDs, for example AMIN-3110, AMIN-3200.
+      placeholder: AMIN-XXXX
+    validations:
+      required: true
+
+  - type: dropdown
+    id: change_type
+    attributes:
+      label: Change type
+      options:
+        - feature
+        - fix
+        - integration
+        - refactor
+        - validation
+        - docs
+        - release
+        - governance
+    validations:
+      required: true
+
+  - type: textarea
+    id: changed_paths
+    attributes:
+      label: Expected changed paths
+      description: One repository path per line. Leave unknown paths explicitly marked as pending.
+      placeholder: android-native/...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contract_flags
+    attributes:
+      label: Contract / risk flags
+      options:
+        - label: Interface or external contract changes
+        - label: Data schema or migration changes
+        - label: Permission or credential changes
+        - label: Release path or release authority changes
+        - label: Destructive data change
+        - label: Security boundary change
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: State what must be verifiably true before this work is considered complete.
+    validations:
+      required: true
+
+  - type: textarea
+    id: gaps
+    attributes:
+      label: Known gaps / unresolved facts
+      description: Do not guess missing dependencies or source ownership.
+
+  - type: checkboxes
+    id: governance_ack
+    attributes:
+      label: Governance acknowledgement
+      options:
+        - label: I understand production release, permissions, destructive changes, and high-risk exceptions require human approval.
+          required: true
