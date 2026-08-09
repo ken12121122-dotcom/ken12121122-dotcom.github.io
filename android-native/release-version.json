@@ -1,17 +1,17 @@
 {
-  "versionCode": 144,
-  "versionName": "0.10.16",
+  "versionCode": 145,
+  "versionName": "0.10.17",
   "channel": "bridge",
-  "bridge": 48,
+  "bridge": 49,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "加入使用者提供音樂的短版啟動片段，App 啟動與語音核心進入時可播放約 1.6 秒的低音量音樂。",
-    "啟動音樂採本機資產播放，不需要網路；5 秒內重複進入不會重複播放。",
-    "保留 0.10.15 的時段隨機 TTS 問候與自動語音聆聽流程。",
+    "語音球首頁新增『播放整首音樂』按鈕，可由使用者手動開啟完整 Wonders of the Earth 音樂。",
+    "完整音樂保留原始 2 分 29 秒版本；啟動時仍使用短版提示音，避免阻塞 TTS 問候與自動語音聆聽。",
+    "完整音樂目前由使用者 Google Drive 檔案開啟，以避免將約 4.6 MB 音檔直接塞入 APK；回到 App 後會恢復語音聆聽。",
     "保留既有 packageId、簽章、Control API、Node Registry 與正式更新流程。"
   ]
 }
