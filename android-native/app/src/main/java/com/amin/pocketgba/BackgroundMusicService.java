@@ -52,7 +52,7 @@ public final class BackgroundMusicService extends Service {
         }
         if (ACTION_PAUSE.equals(action)) {
             if (player != null && player.isPlaying()) player.pause();
-            startForeground(NOTIFICATION_ID, buildNotification(false));
+            if (player != null) startForeground(NOTIFICATION_ID, buildNotification(false));
             return START_STICKY;
         }
         if (ACTION_DUCK.equals(action)) {
@@ -91,8 +91,8 @@ public final class BackgroundMusicService extends Service {
                 });
                 player.prepare();
             }
-            player.start();
             startForeground(NOTIFICATION_ID, buildNotification(true));
+            player.start();
         } catch (Exception error) {
             stopPlayback();
             stopForeground(true);
@@ -171,6 +171,12 @@ public final class BackgroundMusicService extends Service {
 
     public static void start(Context context, String action) {
         Intent intent = new Intent(context, BackgroundMusicService.class).setAction(action);
-        ContextCompat.startForegroundService(context, intent);
+        if (ACTION_PLAY.equals(action)) {
+            String uriValue = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_URI, "");
+            if (uriValue == null || uriValue.isEmpty()) return;
+            ContextCompat.startForegroundService(context, intent);
+        } else {
+            try { context.startService(intent); } catch (Exception ignored) {}
+        }
     }
 }
