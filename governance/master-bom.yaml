@@ -1,16 +1,20 @@
 workflow_meta:
   document_id: AMIN-MASTER-BOM
   title: Amin Platform Master Functional BOM
-  version: 0.2.0-draft
+  version: 0.3.0-draft
   status: generated
   source_of_truth: governance/node-registry.yaml
   can_modify_source: false
   human_approval_required: true
   inventory_issue: 74
+  impact_rules: governance/dependency-impact-rules.yaml
+  evidence_files:
+    - governance/inventory/evidence-pass-1.yaml
+    - governance/inventory/evidence-pass-2.yaml
   notes:
-    - This is a governance inventory, not a legal or production-release authority.
+    - This is a governance inventory, not legal or production-release authority.
     - Unknown implementation details remain unresolved instead of being inferred.
-    - PR evidence is used to identify capability ownership when repository-wide code search is unavailable.
+    - Branch existence alone does not establish a released capability.
 
 root:
   node_id: AMIN-0000
@@ -31,24 +35,8 @@ nodes:
     name: Voice System
     type: capability_group
     status: active
-    verification_status: partial
-    children: [AMIN-1110, AMIN-1120]
-    observed_branches:
-      - ai/voice-command-v1
-      - feature/voice-command-catalog-v1
-      - feature/bridge28-voice-orb-home
-      - feature/floating-voice-ptt-v1
-    source_records:
-      - source_id: SRC-VOICE-MANIFEST-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/AndroidManifest.xml
-        confirms:
-          - VoiceCommandActivity
-          - VoiceCommandCatalogActivity
-          - amin-voice deep links
-    unresolved_gaps:
-      - Voice recognition and floating-orb implementation files require a dedicated inventory pass.
+    verification_status: confirmed
+    children: [AMIN-1110, AMIN-1120, AMIN-1130, AMIN-1140]
 
   - node_id: AMIN-1110
     parent_id: AMIN-1100
@@ -56,12 +44,7 @@ nodes:
     type: capability
     status: active
     verification_status: confirmed
-    source_records:
-      - source_id: SRC-VOICE-ENTRY-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/AndroidManifest.xml
-        route: amin-voice://open
+    source_records: [{pr: 58, path: android-native/app/src/main/AndroidManifest.xml}]
 
   - node_id: AMIN-1120
     parent_id: AMIN-1100
@@ -69,12 +52,29 @@ nodes:
     type: capability
     status: active
     verification_status: confirmed
+    dependencies: [AMIN-1110]
+    source_records: [{pr: 58, path: android-native/app/src/main/AndroidManifest.xml}]
+
+  - node_id: AMIN-1130
+    parent_id: AMIN-1100
+    name: Floating Voice Controller
+    type: capability
+    status: active
+    verification_status: confirmed
+    dependencies: [AMIN-3120]
     source_records:
-      - source_id: SRC-VOICE-CATALOG-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/AndroidManifest.xml
-        route: amin-voice://commands
+      - {pr: 21, evidence: floating voice controls}
+      - {pr: 25, path: android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java}
+      - {pr: 40, evidence: 8-second no-speech timeout}
+
+  - node_id: AMIN-1140
+    parent_id: AMIN-1100
+    name: Voice Orb Home and Startup Greeting
+    type: capability
+    status: active
+    verification_status: confirmed
+    dependencies: [AMIN-1110]
+    source_records: [{pr: 69, path: android-native/app/src/main/java/com/amin/pocketgba/VoiceOrbHomeActivity.java}]
 
   - node_id: AMIN-1200
     parent_id: AMIN-1000
@@ -83,11 +83,6 @@ nodes:
     status: active
     verification_status: confirmed
     children: [AMIN-1210, AMIN-1220, AMIN-1230, AMIN-1240]
-    source_records:
-      - source_id: SRC-PROMPT-PR-001
-        source_type: github_pull_request
-        pr: 53
-        title: Bridge 32 Prompt System + Keyboard + Unified Graph
 
   - node_id: AMIN-1210
     parent_id: AMIN-1200
@@ -95,16 +90,7 @@ nodes:
     type: capability
     status: active
     verification_status: confirmed
-    source_records:
-      - source_id: SRC-PROMPT-STORE-001
-        source_type: github_pr_file
-        pr: 53
-        path: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
-    interface_contract:
-      database: amin_prompts.db
-      schema_version: 2
-      statuses: [active, archived, deleted]
-      relation_table: graph_relations
+    source_records: [{pr: 53, path: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java}]
 
   - node_id: AMIN-1220
     parent_id: AMIN-1200
@@ -113,15 +99,7 @@ nodes:
     status: active
     verification_status: confirmed
     dependencies: [AMIN-1210]
-    source_records:
-      - source_id: SRC-PROMPT-IME-001
-        source_type: github_pr_file
-        pr: 53
-        path: android-native/app/src/main/java/com/amin/pocketgba/PromptKeyboardService.java
-      - source_id: SRC-PROMPT-MANIFEST-001
-        source_type: github_pr_file
-        pr: 53
-        path: android-native/app/src/main/AndroidManifest.xml
+    source_records: [{pr: 53, path: android-native/app/src/main/java/com/amin/pocketgba/PromptKeyboardService.java}]
 
   - node_id: AMIN-1230
     parent_id: AMIN-1200
@@ -130,13 +108,7 @@ nodes:
     status: active
     verification_status: confirmed
     dependencies: [AMIN-1210]
-    source_records:
-      - source_id: SRC-PROMPT-MANAGER-001
-        source_type: github_pr_changed_files
-        pr: 53
-        paths:
-          - android-native/app/src/main/java/com/amin/pocketgba/PromptManagerActivity.java
-          - android-native/app/src/main/java/com/amin/pocketgba/PromptEditorActivity.java
+    source_records: [{pr: 53, paths: [android-native/app/src/main/java/com/amin/pocketgba/PromptManagerActivity.java, android-native/app/src/main/java/com/amin/pocketgba/PromptEditorActivity.java]}]
 
   - node_id: AMIN-1240
     parent_id: AMIN-1200
@@ -144,18 +116,7 @@ nodes:
     type: integration
     status: active
     verification_status: confirmed
-    dependencies: [AMIN-1210, AMIN-2100, AMIN-1310]
-    source_records:
-      - source_id: SRC-PROMPT-GRAPH-001
-        source_type: github_pr_file
-        pr: 53
-        path: android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
-      - source_id: SRC-PROMPT-GRAPH-002
-        source_type: github_pr_changed_files
-        pr: 53
-        paths:
-          - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-          - android-native/app/src/main/assets/amin-wiki-graph/index.html
+    dependencies: [AMIN-1210, AMIN-1310, AMIN-2100]
 
   - node_id: AMIN-1300
     parent_id: AMIN-1000
@@ -164,11 +125,6 @@ nodes:
     status: active
     verification_status: confirmed
     children: [AMIN-1310, AMIN-1320, AMIN-1330]
-    source_records:
-      - source_id: SRC-GRAPH-PR-001
-        source_type: github_pull_request
-        pr: 58
-        title: Bridge 37 cyber radial unified graph and visual app architecture editor
 
   - node_id: AMIN-1310
     parent_id: AMIN-1300
@@ -176,16 +132,8 @@ nodes:
     type: capability
     status: active
     verification_status: confirmed
-    dependencies: [AMIN-2100, AMIN-1240]
-    source_records:
-      - source_id: SRC-GRAPH-WEB-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/assets/amin-wiki-graph/index.html
-      - source_id: SRC-GRAPH-ACTIVITY-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+    dependencies: [AMIN-1240, AMIN-2100]
+    source_records: [{pr: 58, path: android-native/app/src/main/assets/amin-wiki-graph/index.html}, {pr: 58, path: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java}]
 
   - node_id: AMIN-1320
     parent_id: AMIN-1300
@@ -193,17 +141,8 @@ nodes:
     type: capability
     status: active
     verification_status: confirmed
-    dependencies: [AMIN-1500]
-    source_records:
-      - source_id: SRC-APP-GRAPH-META-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/AndroidManifest.xml
-        metadata_prefix: amin.graph
-      - source_id: SRC-APP-GRAPH-BRIDGE-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+    dependencies: [AMIN-1500, AMIN-1310]
+    source_records: [{pr: 58, path: android-native/app/src/main/AndroidManifest.xml}]
 
   - node_id: AMIN-1330
     parent_id: AMIN-1300
@@ -212,16 +151,13 @@ nodes:
     status: active
     verification_status: confirmed
     dependencies: [AMIN-1310, AMIN-1320]
-    source_records:
-      - source_id: SRC-NAV-CANDIDATE-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/java/com/amin/pocketgba/AppNavigationCandidateStore.java
-      - source_id: SRC-NAV-CANDIDATE-002
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/assets/amin-wiki-graph/index.html
-    governance_boundary: Candidate edits persist locally and do not directly rewrite formal Android navigation code.
+    released_evolution:
+      - {bridge: 37, pr: 58, capability: candidate editor v1}
+      - {bridge: 38, pr: 59, capability: direct branch drag}
+      - {bridge: 39, pr: 60, capability: precise subtree and free-position drop}
+      - {bridge: 40, pr: 61, capability: structural subtree and native Home Snap}
+    unresolved_gaps:
+      - feature/bridge41-exact-branch-drag exists but inspected release metadata still reports Bridge 40; do not classify it as a released capability.
 
   - node_id: AMIN-1400
     parent_id: AMIN-1000
@@ -231,17 +167,8 @@ nodes:
     verification_status: confirmed
     dependencies: [AMIN-5000]
     source_records:
-      - source_id: SRC-REL-001
-        source_type: github_file
-        ref: main
-        path: amin-vault/native-release-manifest.json
-        observed_version: 0.10.18-bridge50
-      - source_id: SRC-REL-002
-        source_type: github_file
-        ref: release/android
-        path: android-native/release-version.json
-        observed_version: 0.10.18
-        observed_bridge: 50
+      - {ref: main, path: amin-vault/native-release-manifest.json, observed_version: 0.10.18-bridge50}
+      - {ref: release/android, path: android-native/release-version.json, observed_version: 0.10.18, observed_bridge: 50}
 
   - node_id: AMIN-1500
     parent_id: AMIN-1000
@@ -249,22 +176,7 @@ nodes:
     type: module
     status: active
     verification_status: confirmed
-    source_records:
-      - source_id: SRC-ANDROID-MANIFEST-001
-        source_type: github_pr_file
-        pr: 58
-        path: android-native/app/src/main/AndroidManifest.xml
-    confirmed_entries:
-      - control-center
-      - graph
-      - control-api
-      - prompt-keyboard
-      - prompt-manager
-      - appearance
-      - voice
-      - voice-catalog
-      - permissions
-      - update
+    source_records: [{pr: 58, path: android-native/app/src/main/AndroidManifest.xml}]
 
   - node_id: AMIN-2000
     parent_id: AMIN-0000
@@ -281,22 +193,8 @@ nodes:
     status: active
     verification_status: confirmed
     dependencies: [AMIN-1310]
-    source_records:
-      - source_id: SRC-WIKI-PR-001
-        source_type: github_pull_request
-        pr: 35
-        title: Bridge 26 add Amin Wiki force graph with hot reload
-      - source_id: SRC-WIKI-WEB-001
-        source_type: github_pr_file
-        pr: 35
-        path: android-native/app/src/main/assets/amin-wiki-graph/index.html
-      - source_id: SRC-WIKI-ACTIVITY-001
-        source_type: github_pr_file
-        pr: 35
-        path: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
-    content_source:
-      ref: main
-      path: amin-wiki/pages/
+    source_records: [{pr: 35, path: android-native/app/src/main/assets/amin-wiki-graph/index.html}, {pr: 35, path: android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java}]
+    content_source: {ref: main, path: amin-wiki/pages/}
 
   - node_id: AMIN-3000
     parent_id: AMIN-0000
@@ -309,24 +207,35 @@ nodes:
   - node_id: AMIN-3100
     parent_id: AMIN-3000
     name: Android Control API
+    type: capability_group
+    status: active
+    verification_status: confirmed
+    children: [AMIN-3110, AMIN-3120, AMIN-3130]
+
+  - node_id: AMIN-3110
+    parent_id: AMIN-3100
+    name: Android Control HTTP and WebSocket Server
     type: capability
     status: active
-    verification_status: partial
-    source_records:
-      - source_id: SRC-CONTROL-PR-001
-        source_type: github_pull_request
-        pr: 26
-        title: release Bridge 23 Amin Control API v1
-      - source_id: SRC-CONTROL-MANIFEST-001
-        source_type: github_pr_file
-        pr: 53
-        path: android-native/app/src/main/AndroidManifest.xml
-        confirms:
-          - AminControlApiService
-          - AminControlApiActivity
-          - AminAutomationActivity
-    unresolved_gaps:
-      - Control API implementation classes require a dedicated source-file inventory pass.
+    verification_status: confirmed
+    dependencies: [AMIN-3120, AMIN-3130]
+    source_records: [{pr: 26, path: android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java}]
+
+  - node_id: AMIN-3120
+    parent_id: AMIN-3100
+    name: Amin Input Gateway and Action Execution
+    type: capability
+    status: active
+    verification_status: confirmed
+    source_records: [{pr: 26, paths: [android-native/app/src/main/java/com/amin/pocketgba/AminInputGateway.java, android-native/app/src/main/java/com/amin/pocketgba/AminActionDispatcher.java, android-native/app/src/main/java/com/amin/pocketgba/AminActionValidator.java]}]
+
+  - node_id: AMIN-3130
+    parent_id: AMIN-3100
+    name: Control Event and Audit Store
+    type: capability
+    status: active
+    verification_status: confirmed
+    source_records: [{pr: 26, path: android-native/app/src/main/java/com/amin/pocketgba/AminEventStore.java}]
 
   - node_id: AMIN-3200
     parent_id: AMIN-3000
@@ -334,33 +243,9 @@ nodes:
     type: integration
     status: active
     verification_status: confirmed
-    dependencies: [AMIN-3100]
-    source_records:
-      - source_id: SRC-NODE-BRIDGE-PR-001
-        source_type: github_pull_request
-        pr: 67
-        title: Add Node.js Android control bridge
-      - source_id: SRC-NODE-SERVER-001
-        source_type: github_pr_file
-        pr: 67
-        path: amin-server/src/server.js
-      - source_id: SRC-NODE-CLIENT-001
-        source_type: github_pr_file
-        pr: 67
-        path: amin-server/src/android-client.js
-    interface_contract:
-      local_endpoints:
-        - GET /health
-        - GET /android/status
-        - GET /android/actions
-        - POST /android/actions/:action
-      android_upstream:
-        - GET /v1/status
-        - GET /v1/actions
-        - POST /v1/actions/:action
-      authentication: bearer_token_from_local_environment
-    unresolved_gaps:
-      - n8n and PowerShell orchestration are external/local components until repository-backed sources are added.
+    dependencies: [AMIN-3110]
+    source_records: [{pr: 67, path: amin-server/src/server.js}, {pr: 67, path: amin-server/src/android-client.js}]
+    unresolved_gaps: [n8n and PowerShell orchestration remain external/local until repository-backed]
 
   - node_id: AMIN-4000
     parent_id: AMIN-0000
@@ -368,13 +253,17 @@ nodes:
     type: system
     status: active
     verification_status: partial
-    observed_branches:
-      - ai/amin-mcp-v0-1
-      - ai/voice-command-v1
-      - agent/android-phase2-7-capability-platform
-    governance_rule: Agent branches are temporary execution workspaces and are not the authoritative product structure.
-    unresolved_gaps:
-      - Agent runtime/orchestration source contracts require a dedicated inventory pass.
+    children: [AMIN-4100]
+    governance_rule: Agent branches are temporary execution workspaces and are not authoritative product structure.
+
+  - node_id: AMIN-4100
+    parent_id: AMIN-4000
+    name: Amin Read-only MCP v0.1
+    type: integration
+    status: active
+    verification_status: confirmed
+    source_records: [{pr: 10, paths: [amin-mcp/src/index.ts, amin-mcp/src/server.ts, amin-mcp/src/github.ts, amin-mcp/test/server.test.ts]}]
+    interface_contract: {tools: [get_project_status, get_latest_version, get_recent_changes, create_test_plan], github_write: false, apk_publish: false, device_access: false}
 
   - node_id: AMIN-5000
     parent_id: AMIN-0000
@@ -382,12 +271,6 @@ nodes:
     type: system
     status: active
     verification_status: confirmed
-    observed_branches:
-      - ci/android-pr-validation-smoke
-      - ci/android-release-pipeline-v2
-      - ci/register-android-pr-validation
-      - refactor/android-release-v2
-      - release/android
     release_authority:
       development_source: release/android
       production_manifest: main/amin-vault/native-release-manifest.json
@@ -400,12 +283,7 @@ nodes:
     type: governance_system
     status: draft
     verification_status: partial
-    components:
-      - Master BOM
-      - Node Registry
-      - GitHub Project
-      - Issue-to-Agent-to-PR workflow
-      - Integration validation
+    components: [Master BOM, Node Registry, Evidence Inventory, Dependency Impact Rules, GitHub Project, Issue-to-Agent-to-PR workflow, Integration validation]
     project_name: Amin Platform Development
     project_auto_add_filter: is:open
     project_read_access_from_current_connector: unavailable
