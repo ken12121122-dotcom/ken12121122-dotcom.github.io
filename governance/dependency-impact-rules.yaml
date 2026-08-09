@@ -1,0 +1,174 @@
+impact_model:
+  model_id: AMIN-DEPENDENCY-IMPACT-V1
+  version: 0.1.0-draft
+  status: generated
+  review_status: generated
+  purpose: Calculate the validation scope and escalation requirements when a governed node changes.
+  source_of_truth: governance/node-registry.yaml
+  source_mutation: false
+  final_release_decision: human_only
+
+input_schema:
+  required:
+    - change_id
+    - changed_node_ids
+    - change_type
+    - changed_paths
+  optional:
+    - declared_dependencies
+    - interface_changes
+    - data_schema_changes
+    - permission_changes
+    - release_path_changes
+  change_type_enum:
+    - feature
+    - fix
+    - integration
+    - refactor
+    - validation
+    - docs
+    - release
+    - governance
+
+resolution_algorithm:
+  - step: validate_node_ids
+    action: Every changed_node_id must exist in the Node Registry.
+    on_failure: block_and_report_unknown_node
+  - step: collect_direct_dependencies
+    action: Read each changed node's dependencies and parent/child relationships.
+  - step: collect_reverse_dependencies
+    action: Find registry nodes whose dependencies include a changed or already impacted node.
+  - step: expand_interface_impact
+    action: If an interface contract, schema, route, permission, protocol, or release contract changed, include all known consumers and providers.
+  - step: expand_shared_source_impact
+    action: If one changed path is a source_record for multiple nodes, include all nodes that reference the path.
+  - step: classify_impact
+    action: Assign validation_scope and risk_level using the rules below.
+  - step: stop_on_unknowns
+    action: Unknown dependency edges are reported as unresolved_gaps; they are never inferred.
+  - step: require_approval_when_needed
+    action: High-risk changes and release-authority changes require human approval before integration or release.
+
+impact_classes:
+  local:
+    criteria:
+      - no interface contract changed
+      - no reverse dependent node found
+      - no shared source path belongs to another node
+    validation_scope:
+      - changed_nodes
+      - module_tests
+  cross_node:
+    criteria:
+      - one_or_more_reverse_dependents
+      - shared_source_path
+      - parent_child_contract_change
+    validation_scope:
+      - changed_nodes
+      - direct_dependents
+      - integration_tests
+  platform:
+    criteria:
+      - navigation_contract_change
+      - control_api_contract_change
+      - prompt_database_schema_change
+      - graph_relation_schema_change
+      - release_pipeline_change
+      - permission_or_credential_change
+    validation_scope:
+      - changed_nodes
+      - transitive_dependents
+      - platform_integration_tests
+      - release_validation_if_applicable
+
+risk_rules:
+  low:
+    examples:
+      - documentation_only
+      - isolated_visual_text_change
+    human_approval_required: false
+  medium:
+    examples:
+      - capability_behavior_change
+      - dependency_edge_change
+      - local_persistence_behavior_change
+    human_approval_required: false
+    validation_required: true
+  high:
+    examples:
+      - production_release
+      - release_authority_change
+      - credential_or_permission_change
+      - destructive_data_change
+      - database_migration
+      - externally_callable_control_api_change
+      - security_boundary_change
+    human_approval_required: true
+    validation_required: true
+
+known_contract_triggers:
+  - trigger: android_manifest_navigation
+    paths:
+      - android-native/app/src/main/AndroidManifest.xml
+    seed_nodes: [AMIN-1500, AMIN-1320]
+    likely_impacted_nodes: [AMIN-1310, AMIN-1110, AMIN-1120, AMIN-1230, AMIN-3100]
+
+  - trigger: prompt_store_schema
+    paths:
+      - android-native/app/src/main/java/com/amin/pocketgba/PromptStore.java
+    seed_nodes: [AMIN-1210]
+    likely_impacted_nodes: [AMIN-1220, AMIN-1230, AMIN-1240, AMIN-1310]
+
+  - trigger: unified_graph_engine
+    paths:
+      - android-native/app/src/main/assets/amin-wiki-graph/index.html
+      - android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java
+    seed_nodes: [AMIN-1310]
+    likely_impacted_nodes: [AMIN-1240, AMIN-1320, AMIN-1330, AMIN-2100]
+
+  - trigger: android_control_api
+    paths:
+      - android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminInputGateway.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminActionDispatcher.java
+    seed_nodes: [AMIN-3100, AMIN-3110, AMIN-3120]
+    likely_impacted_nodes: [AMIN-1130, AMIN-3200, AMIN-4100]
+
+  - trigger: voice_gateway
+    paths:
+      - android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+      - android-native/app/src/main/java/com/amin/pocketgba/VoiceOrbHomeActivity.java
+    seed_nodes: [AMIN-1130, AMIN-1140]
+    likely_impacted_nodes: [AMIN-1110, AMIN-1120, AMIN-3120]
+
+  - trigger: release_contract
+    paths:
+      - android-native/release-version.json
+      - amin-vault/native-release-manifest.json
+      - .github/workflows/
+    seed_nodes: [AMIN-1400, AMIN-5000]
+    likely_impacted_nodes: [AMIN-1000]
+    human_approval_required: true
+
+output_schema:
+  change_id: string
+  changed_nodes: []
+  impacted_nodes: []
+  impact_paths: []
+  validation_scope: []
+  risk_level: low | medium | high
+  unresolved_gaps: []
+  requires_human_review: boolean
+  block_release: boolean
+  source_records: []
+
+stop_conditions:
+  - changed_node_id_not_registered
+  - required_source_record_missing_for_high_risk_change
+  - unknown_release_authority
+  - destructive_change_without_human_approval
+  - high_risk_dependency_gap_unresolved
+
+rollback:
+  required: true
+  rule: Governance metadata changes remain isolated in a branch/PR and can be rejected without modifying production source or artifacts.

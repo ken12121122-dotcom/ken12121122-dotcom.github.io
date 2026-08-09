@@ -1,0 +1,195 @@
+inventory_pass:
+  id: AMIN-INVENTORY-PASS-2
+  issue: 74
+  status: generated
+  review_status: generated
+  scope:
+    - floating_voice
+    - voice_orb_startup_greeting
+    - architecture_editor_evolution
+    - android_control_api_core
+    - amin_mcp_read_only
+  source_mutation: false
+
+confirmed_evidence:
+  - evidence_id: EV-VOICE-FLOAT-001
+    node_id: AMIN-1130
+    capability: Floating Voice Controller
+    source_type: github_pull_request
+    pr: 21
+    evidence:
+      - voice and keyboard floating controls are separated
+      - voice floating control uses tap start / tap stop interaction
+    verification_status: confirmed
+
+  - evidence_id: EV-VOICE-FLOAT-002
+    node_id: AMIN-1130
+    capability: Floating Voice Controller
+    source_type: github_pull_request
+    pr: 23
+    evidence:
+      - independent voice and keyboard floating switches were included in signed-release validation boundary
+      - voice commands can open or close the voice floating button
+    verification_status: confirmed
+
+  - evidence_id: EV-VOICE-FLOAT-003
+    node_id: AMIN-1130
+    capability: Floating Voice Controller
+    source_type: github_pull_request
+    pr: 25
+    source_path: android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+    evidence:
+      - floating voice controller enters AminInputGateway
+      - VOICE_BUBBLE_CLOSE keeps result visible briefly before closing
+    verification_status: confirmed
+
+  - evidence_id: EV-VOICE-FLOAT-004
+    node_id: AMIN-1130
+    capability: Floating Voice Controller
+    source_type: github_pull_request
+    pr: 40
+    source_path: android-native/app/src/main/java/com/amin/pocketgba/FloatingVoiceController.java
+    evidence:
+      - eight-second no-speech timeout
+      - timeout cancelled by speech start, partial recognition, result, or error
+    verification_status: confirmed
+
+  - evidence_id: EV-VOICE-ORB-001
+    node_id: AMIN-1140
+    capability: Voice Orb Home and Startup Greeting
+    source_type: github_pull_request
+    pr: 69
+    source_path: android-native/app/src/main/java/com/amin/pocketgba/VoiceOrbHomeActivity.java
+    evidence:
+      - Android TextToSpeech startup greeting
+      - time-aware greeting pools
+      - quick reopen greeting becomes short response
+      - automatic speech recognition begins after TTS completion
+      - speech recognition protected from starting while greeting is in progress
+    verification_status: confirmed
+
+  - evidence_id: EV-GRAPH-EVOL-038
+    node_id: AMIN-1330
+    capability: Visual App Architecture Candidate Editor
+    source_type: github_pull_request
+    pr: 59
+    release: 0.10.6-bridge38
+    evidence:
+      - direct branch dragging replaced the multi-button editor workflow
+      - nodes with descendants move as a subtree; leaves move alone
+      - candidate parent change is committed on drop
+      - candidate layout auto-saves locally
+    verification_status: confirmed
+
+  - evidence_id: EV-GRAPH-EVOL-039
+    node_id: AMIN-1330
+    capability: Visual App Architecture Candidate Editor
+    source_type: github_pull_request
+    pr: 60
+    release: 0.10.7-bridge39
+    evidence:
+      - deepest valid node selection for drag start
+      - dragged set contains selected node plus descendants only
+      - new parent is selected by snap target
+      - free-position x/y coordinates are persisted for the moved subtree
+    verification_status: confirmed
+
+  - evidence_id: EV-GRAPH-EVOL-040
+    node_id: AMIN-1330
+    capability: Visual App Architecture Candidate Editor
+    source_type: github_pull_request
+    pr: 61
+    release: 0.10.8-bridge40
+    evidence:
+      - subtree membership follows native Android parent/children structure only
+      - Home Snap restores original Manifest parent/direction/slot spacing
+      - free-position overrides are cleared when restored to native structure
+    verification_status: confirmed
+
+  - evidence_id: EV-GRAPH-EVOL-041
+    node_id: AMIN-1330
+    capability: Visual App Architecture Candidate Editor
+    source_type: github_branch
+    branch: feature/bridge41-exact-branch-drag
+    observed_release_file:
+      path: android-native/release-version.json
+      observed_bridge: 40
+      observed_version_code: 136
+    evidence:
+      - branch exists
+      - branch release metadata still reports Bridge 40
+    verification_status: unverified
+    classification: temporary_or_unreleased_workspace
+    unresolved_gaps:
+      - No release or merged PR evidence was found for a distinct Bridge 41 product capability.
+
+  - evidence_id: EV-CONTROL-CORE-001
+    node_id: AMIN-3110
+    capability: Android Control HTTP and WebSocket Server
+    source_type: github_pull_request
+    pr: 26
+    source_path: android-native/app/src/main/java/com/amin/pocketgba/AminControlHttpServer.java
+    evidence:
+      - GET /v1/status
+      - GET /v1/actions
+      - GET /v1/events
+      - POST /v1/actions and POST /v1/actions/:action
+      - WebSocket /v1/events
+      - LAN token authorization
+      - remote-address allow checks
+      - rate limiting
+    verification_status: confirmed
+
+  - evidence_id: EV-CONTROL-CORE-002
+    node_id: AMIN-3120
+    capability: Amin Input Gateway and Action Execution
+    source_type: github_pull_request
+    pr: 26
+    source_paths:
+      - android-native/app/src/main/java/com/amin/pocketgba/AminInputGateway.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminActionDispatcher.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminActionValidator.java
+      - android-native/app/src/main/java/com/amin/pocketgba/AminAction.java
+      - android-native/app/src/main/java/com/amin/pocketgba/ExecutionResult.java
+    verification_status: confirmed
+
+  - evidence_id: EV-CONTROL-CORE-003
+    node_id: AMIN-3130
+    capability: Control Event and Audit Store
+    source_type: github_pull_request
+    pr: 26
+    source_path: android-native/app/src/main/java/com/amin/pocketgba/AminEventStore.java
+    verification_status: confirmed
+
+  - evidence_id: EV-AI-MCP-001
+    node_id: AMIN-4100
+    capability: Amin Read-only MCP v0.1
+    source_type: github_pull_request
+    pr: 10
+    source_paths:
+      - amin-mcp/src/index.ts
+      - amin-mcp/src/server.ts
+      - amin-mcp/src/github.ts
+      - amin-mcp/test/server.test.ts
+      - .github/workflows/amin-mcp-ci.yml
+    interface_contract:
+      tools:
+        - get_project_status
+        - get_latest_version
+        - get_recent_changes
+        - create_test_plan
+      github_write: false
+      apk_publish: false
+      device_access: false
+    verification_status: confirmed
+
+remaining_gaps:
+  - gap_id: GAP-LOCAL-N8N
+    description: n8n workflows are not repository-backed in the inspected evidence.
+    status: unresolved
+  - gap_id: GAP-LOCAL-POWERSHELL
+    description: local PowerShell orchestration is not repository-backed in the inspected evidence.
+    status: unresolved
+  - gap_id: GAP-BRIDGE41
+    description: feature/bridge41-exact-branch-drag exists, but inspected release metadata still identifies Bridge 40; do not treat Bridge 41 as a released capability.
+    status: unresolved
