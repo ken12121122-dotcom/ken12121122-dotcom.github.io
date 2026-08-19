@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.18-bridge50",
-  "latestVersionCode": 146,
+  "latestVersionName": "0.10.19-bridge51",
+  "latestVersionCode": 147,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.18-bridge50.apk",
-  "apkSha256": "d55023add94b1eedc15279644552e9008a15276625209f71f82bdc0083faba7f",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.19-bridge51.apk",
+  "apkSha256": "061c991906d4287f0d55e67b9b842223c7cf1220429b702ed2d79bfa3819a349",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2720718,
-  "publishedAt": "2026-08-09T01:43:30Z",
+  "sizeBytes": 2721699,
+  "publishedAt": "2026-08-19T11:27:30Z",
   "mandatory": false,
   "releaseNotes": [
-    "語音球首頁新增真正的背景音樂控制：選擇音樂、背景播放、暫停與停止。",
-    "音樂改由 mediaPlayback 前景服務播放，切換到其他 App 或鎖定螢幕後仍可持續播放，並提供通知列控制。",
-    "首次使用需從手機選擇一次音樂檔；App 會保留檔案讀取權限，之後可直接背景播放。",
-    "語音辨識與 TTS 問候期間會暫時降低背景音樂音量，結束後恢復。",
-    "保留既有 packageId、簽章、Control API、Node Registry 與正式更新流程。"
+    "關聯圖改為 Semantic Zoom 知識網路：依縮放倍率在 Detail、Node、Group、Domain 四層自動切換，並加入 hysteresis 避免臨界倍率反覆跳層。",
+    "清除原本 App／Vault／Prompt 混合知識地圖顯示來源，改以 knowledge-architecture.json 作為 canonical graph 資料來源。",
+    "首批知識架構寫入公司營運治理與 Amin Pocket／Knowledge Graph 程式系統，共 2 Domain、18 Group、59 Node、50 Relation。",
+    "程式架構節點已對應 AndroidManifest、WikiGraphActivity、NodeRegistry、Control API、Automation、Voice／Media、Prompt、Runtime Data 與正式 Android 發布治理。",
+    "保留既有 packageId、永久簽章與 release/android → Android PR Validation → Android Production Release → main 的唯一正式發布流程。"
   ]
 }
