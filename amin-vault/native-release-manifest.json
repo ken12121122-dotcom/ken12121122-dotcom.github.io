@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.22-bridge54",
-  "latestVersionCode": 150,
+  "latestVersionName": "0.10.23-bridge55",
+  "latestVersionCode": 151,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.22-bridge54.apk",
-  "apkSha256": "49937058c2f73bd16449bd78eaa5db33584898d53f563e126fc5948b78536d99",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.23-bridge55.apk",
+  "apkSha256": "12f8dfce644472ef8cd3923667ff1a1ffd242a9b7285a8555d56fd8f9a4ddd3c",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2726327,
-  "publishedAt": "2026-08-19T12:09:24Z",
+  "sizeBytes": 2726926,
+  "publishedAt": "2026-08-19T12:25:03Z",
   "mandatory": false,
   "releaseNotes": [
-    "Detail 最底層文字框會依 Detail 文字大小自動調整框體尺寸，文字變小時卡片同步縮小、文字變大時同步放大。",
-    "Detail 層新增直接拖曳文字框位置的互動，不再只能移動整張畫布。",
-    "拖曳後的位置寫入既有 Graph Settings，透過 Android SharedPreferences 持久保存，重開 App 後仍保留。",
-    "Detail 與 Node 層共用拖曳後的節點位置，縮放切換層級時避免節點突然跳回自動排列位置。",
-    "Graph Engine 升至 v44；既有 Semantic Zoom、公司架構與程式架構內容維持不變。"
+    "Detail 文字框新增可調整的軟性排斥力，文字框重疊或距離過近時會自動推開。",
+    "拖曳中的 Detail 文字框會作為固定錨點，其他文字框優先讓開，避免手動定位被排斥力搶走。",
+    "排斥力可在既有圖形設定面板中以 0–100% 調整，0% 可完全關閉。",
+    "排斥後的位置延續既有 Graph Settings 與 Android SharedPreferences 持久保存。",
+    "Graph Engine 升至 v45；Group、Domain、Semantic Zoom、公司架構與程式架構內容維持不變。"
   ]
 }
