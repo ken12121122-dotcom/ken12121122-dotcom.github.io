@@ -1,18 +1,18 @@
 {
-  "versionCode": 148,
-  "versionName": "0.10.20",
+  "versionCode": 149,
+  "versionName": "0.10.21",
   "channel": "bridge",
-  "bridge": 52,
+  "bridge": 53,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "修正 Android 關聯圖未顯示公司與程式知識架構：WebView 不再直接以 file:// fetch 讀取 canonical graph。",
-    "WikiGraphActivity 新增 AminWiki.getKnowledgeArchitectureJson() bridge，由 Android AssetManager 直接讀取 knowledge-architecture.json。",
-    "Graph Engine 升至 v42：Android 優先使用 android-asset-bridge，瀏覽器環境保留 fetch fallback，並在狀態列顯示實際資料來源。",
-    "保留既有 WebView file URL 安全設定，不開啟 setAllowFileAccessFromFileURLs，避免為修正載入而放寬安全權限。",
-    "保留 0.10.19 寫入的 2 Domain、18 Group、59 Node、50 Relation，公司營運治理與 Amin Pocket 程式架構內容不變。"
+    "Semantic Zoom 圖形參數全部收進設定面板，主畫布只保留緊湊的設定入口，不再常駐顯示大量控制項。",
+    "新增放大與縮小單次幅度設定，並保留雙指縮放為連續手勢。",
+    "新增 Detail、Node、Group、Domain 四層獨立文字大小設定。",
+    "新增 0–100% 對數 Zoom 比例軸與 3 個可拖曳切換點，用來調整 Domain↔Group、Group↔Node、Node↔Detail 三個層級門檻。",
+    "圖形設定透過 AminWiki bridge 寫入 Android SharedPreferences，重開 App 後仍保留；公司與程式 canonical graph 內容維持不變。"
   ]
 }
