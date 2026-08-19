@@ -1,18 +1,18 @@
 {
-  "versionCode": 147,
-  "versionName": "0.10.19",
+  "versionCode": 148,
+  "versionName": "0.10.20",
   "channel": "bridge",
-  "bridge": 51,
+  "bridge": 52,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "關聯圖改為 Semantic Zoom 知識網路：依縮放倍率在 Detail、Node、Group、Domain 四層自動切換，並加入 hysteresis 避免臨界倍率反覆跳層。",
-    "清除原本 App／Vault／Prompt 混合知識地圖顯示來源，改以 knowledge-architecture.json 作為 canonical graph 資料來源。",
-    "首批知識架構寫入公司營運治理與 Amin Pocket／Knowledge Graph 程式系統，共 2 Domain、18 Group、59 Node、50 Relation。",
-    "程式架構節點已對應 AndroidManifest、WikiGraphActivity、NodeRegistry、Control API、Automation、Voice／Media、Prompt、Runtime Data 與正式 Android 發布治理。",
-    "保留既有 packageId、永久簽章與 release/android → Android PR Validation → Android Production Release → main 的唯一正式發布流程。"
+    "修正 Android 關聯圖未顯示公司與程式知識架構：WebView 不再直接以 file:// fetch 讀取 canonical graph。",
+    "WikiGraphActivity 新增 AminWiki.getKnowledgeArchitectureJson() bridge，由 Android AssetManager 直接讀取 knowledge-architecture.json。",
+    "Graph Engine 升至 v42：Android 優先使用 android-asset-bridge，瀏覽器環境保留 fetch fallback，並在狀態列顯示實際資料來源。",
+    "保留既有 WebView file URL 安全設定，不開啟 setAllowFileAccessFromFileURLs，避免為修正載入而放寬安全權限。",
+    "保留 0.10.19 寫入的 2 Domain、18 Group、59 Node、50 Relation，公司營運治理與 Amin Pocket 程式架構內容不變。"
   ]
 }
