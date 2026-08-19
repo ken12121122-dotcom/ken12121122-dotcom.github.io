@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "amin-semantic-knowledge-graph/1",
+  "graphVersion": "0.1.0-phase1",
+  "title": "Amin Knowledge Architecture",
+  "state": "cleared-awaiting-architecture",
+  "semanticZoom": {
+    "hysteresis": 1.08,
+    "levels": [
+      {"id": "detail", "label": "Detail", "minScale": 1.25},
+      {"id": "node", "label": "Node", "minScale": 0.68},
+      {"id": "group", "label": "Group", "minScale": 0.36},
+      {"id": "domain", "label": "Domain", "minScale": 0.0}
+    ]
+  },
+  "domains": [],
+  "groups": [],
+  "nodes": [],
+  "relations": [],
+  "provenance": {
+    "phase": 1,
+    "sourceBranch": "release/android",
+    "migrationBranch": "feature/packagecanvas-knowledge-architecture",
+    "note": "Old runtime knowledge-map feeds are intentionally disconnected on this feature branch. Formal release data on main is untouched. Phase 2 will populate company and program architecture."
+  }
+}
