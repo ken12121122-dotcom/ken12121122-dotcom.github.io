@@ -18,6 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public final class WikiGraphActivity extends Activity {
+    private static final String GRAPH_SETTINGS_PREFS="amin_graph_settings";
+    private static final String GRAPH_SETTINGS_KEY="semantic_zoom_ui";
     private WebView webView;
     private PromptStore promptStore;
     private ResourceMappingStore resourceMappingStore;
@@ -56,6 +58,10 @@ public final class WikiGraphActivity extends Activity {
             return scanner.hasNext()?scanner.next():"";
         }catch(Exception ignored){return "";}
     }
+    private String graphSettingsJson(){return getSharedPreferences(GRAPH_SETTINGS_PREFS,MODE_PRIVATE).getString(GRAPH_SETTINGS_KEY,"");}
+    private void saveGraphSettingsJson(String json){
+        try{new JSONObject(json);getSharedPreferences(GRAPH_SETTINGS_PREFS,MODE_PRIVATE).edit().putString(GRAPH_SETTINGS_KEY,json).apply();}catch(Exception ignored){}
+    }
 
     @Override protected void onDestroy(){if(webView!=null){webView.removeJavascriptInterface("AminWiki");webView.stopLoading();webView.loadUrl("about:blank");webView.destroy();webView=null;}if(promptStore!=null)promptStore.close();super.onDestroy();}
 
@@ -63,6 +69,8 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public void close(){runOnUiThread(WikiGraphActivity.this::finish);}
         @JavascriptInterface public String getPromptGraphJson(){return promptGraphJson();}
         @JavascriptInterface public String getKnowledgeArchitectureJson(){return knowledgeArchitectureJson();}
+        @JavascriptInterface public String getGraphSettingsJson(){return graphSettingsJson();}
+        @JavascriptInterface public void saveGraphSettingsJson(String json){WikiGraphActivity.this.saveGraphSettingsJson(json);}
         @JavascriptInterface public String getGraphMode(){return graphMode;}
         @JavascriptInterface public String getFocusNode(){return focusNode;}
         @JavascriptInterface public String getThemeName(){return AminTheme.current(WikiGraphActivity.this);}
