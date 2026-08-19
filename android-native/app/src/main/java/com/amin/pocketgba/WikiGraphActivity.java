@@ -51,12 +51,18 @@ public final class WikiGraphActivity extends Activity {
 
     private String appNavigationJson(){String raw=NodeRegistry.navigationJson(this);try{JSONObject root=new JSONObject(raw);JSONArray pages=root.optJSONArray("pages");if(pages==null)return raw;for(int i=0;i<pages.length();i++){JSONObject page=pages.optJSONObject(i);if(page==null)continue;String rawId=page.optString("id","");if(rawId.isEmpty())continue;JSONObject override=nodeMetadataStore.overrideFor(GraphContract.nodeId(GraphContract.APP_ORIGIN,rawId));String name=override.optString("name","").trim();if(!name.isEmpty())page.put("title",name);String parent=override.optString("parent_id","").trim();if(!parent.isEmpty()){if(parent.startsWith("app:"))parent=parent.substring(4);page.put("parent",parent);}}return root.toString();}catch(Exception ignored){return raw;}}
     private String promptGraphJson(){try{JSONObject root=new JSONObject(promptStore.graphJson());JSONArray links=root.optJSONArray("links");if(links!=null)for(int i=0;i<links.length();i++){JSONObject l=links.optJSONObject(i);if(l==null)continue;String a=l.optString("a","");String b=l.optString("b","");if(a.startsWith("prompt:"))l.put("a",a.substring(7));if(b.startsWith("prompt:"))l.put("b",b.substring(7));}return root.toString();}catch(Exception ignored){return "{\"nodes\":[],\"links\":[]}";}}
+    private String knowledgeArchitectureJson(){
+        try(java.io.InputStream in=getAssets().open("amin-wiki-graph/knowledge-architecture.json");java.util.Scanner scanner=new java.util.Scanner(in,"UTF-8").useDelimiter("\\A")){
+            return scanner.hasNext()?scanner.next():"";
+        }catch(Exception ignored){return "";}
+    }
 
     @Override protected void onDestroy(){if(webView!=null){webView.removeJavascriptInterface("AminWiki");webView.stopLoading();webView.loadUrl("about:blank");webView.destroy();webView=null;}if(promptStore!=null)promptStore.close();super.onDestroy();}
 
     private final class WikiBridge {
         @JavascriptInterface public void close(){runOnUiThread(WikiGraphActivity.this::finish);}
         @JavascriptInterface public String getPromptGraphJson(){return promptGraphJson();}
+        @JavascriptInterface public String getKnowledgeArchitectureJson(){return knowledgeArchitectureJson();}
         @JavascriptInterface public String getGraphMode(){return graphMode;}
         @JavascriptInterface public String getFocusNode(){return focusNode;}
         @JavascriptInterface public String getThemeName(){return AminTheme.current(WikiGraphActivity.this);}
