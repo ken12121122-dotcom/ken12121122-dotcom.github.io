@@ -4,21 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.21-bridge53",
-  "latestVersionCode": 149,
+  "latestVersionName": "0.10.22-bridge54",
+  "latestVersionCode": 150,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.21-bridge53.apk",
-  "apkSha256": "282a7f7ebc5f8d52543de6fe22ce05c2e18930c72491fe3d79359ea6a7b464c9",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.22-bridge54.apk",
+  "apkSha256": "49937058c2f73bd16449bd78eaa5db33584898d53f563e126fc5948b78536d99",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2725420,
-  "publishedAt": "2026-08-19T11:55:26Z",
+  "sizeBytes": 2726327,
+  "publishedAt": "2026-08-19T12:09:24Z",
   "mandatory": false,
   "releaseNotes": [
-    "Semantic Zoom 圖形參數全部收進設定面板，主畫布只保留緊湊的設定入口，不再常駐顯示大量控制項。",
-    "新增放大與縮小單次幅度設定，並保留雙指縮放為連續手勢。",
-    "新增 Detail、Node、Group、Domain 四層獨立文字大小設定。",
-    "新增 0–100% 對數 Zoom 比例軸與 3 個可拖曳切換點，用來調整 Domain↔Group、Group↔Node、Node↔Detail 三個層級門檻。",
-    "圖形設定透過 AminWiki bridge 寫入 Android SharedPreferences，重開 App 後仍保留；公司與程式 canonical graph 內容維持不變。"
+    "Detail 最底層文字框會依 Detail 文字大小自動調整框體尺寸，文字變小時卡片同步縮小、文字變大時同步放大。",
+    "Detail 層新增直接拖曳文字框位置的互動，不再只能移動整張畫布。",
+    "拖曳後的位置寫入既有 Graph Settings，透過 Android SharedPreferences 持久保存，重開 App 後仍保留。",
+    "Detail 與 Node 層共用拖曳後的節點位置，縮放切換層級時避免節點突然跳回自動排列位置。",
+    "Graph Engine 升至 v44；既有 Semantic Zoom、公司架構與程式架構內容維持不變。"
   ]
 }
