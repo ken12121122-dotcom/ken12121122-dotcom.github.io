@@ -30,8 +30,14 @@ public final class VoiceCommandParser {
     }
 
     private final Map<String, VoiceCommandCatalog.Command> aliases = new LinkedHashMap<>();
+    private final boolean legacyRoutingEnabled;
 
     public VoiceCommandParser() {
+        this(false);
+    }
+
+    VoiceCommandParser(boolean legacyRoutingEnabled) {
+        this.legacyRoutingEnabled = legacyRoutingEnabled;
         for (VoiceCommandCatalog.Command command : VoiceCommandCatalog.getCommands()) {
             for (String phrase : command.getPhrases()) {
                 String normalized = normalize(phrase);
@@ -49,6 +55,9 @@ public final class VoiceCommandParser {
         String normalized = normalize(transcript);
         if (normalized.isEmpty()) {
             return new Result(Result.Status.NO_MATCH, null, normalized, "沒有聽到可辨識的指令");
+        }
+        if (!legacyRoutingEnabled) {
+            return new Result(Result.Status.NO_MATCH, null, normalized, "舊語音控制路徑目前停用，交由聊天流程處理");
         }
         if (recognizerConfidence >= 0d && recognizerConfidence < MIN_CONFIDENCE) {
             return new Result(Result.Status.NO_MATCH, null, normalized, "辨識信心不足，請再說一次");
