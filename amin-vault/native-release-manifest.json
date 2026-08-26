@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.25-bridge57.apk",
-  "apkSha256": "008cc36bfa7bb3487cf217bf1d6e3acba43751dc94a144dd94da9469fd544e20",
+  "apkSha256": "4bdf6354afd763d10884263de6f2035651f833af925cffb0de360861f58c1215",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2726850,
-  "publishedAt": "2026-08-26T14:05:26Z",
+  "sizeBytes": 2726869,
+  "publishedAt": "2026-08-26T15:26:30Z",
   "mandatory": false,
   "releaseNotes": [
     "語音浮動球測試期間暫停既有手機控制語音路由，所有一般語音先統一進入聊天 UI 測試流程。",
