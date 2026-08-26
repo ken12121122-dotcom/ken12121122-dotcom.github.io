@@ -3,7 +3,7 @@
   "versionName": "0.10.26",
   "channel": "bridge",
   "bridge": 58,
-  "releaseSequence": 1,
+  "releaseSequence": 2,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -13,6 +13,7 @@
     "舊 VoiceOrbHomeActivity、VoiceCommandActivity、VoiceCommandParser、Node Registry 與 AminInputGateway 全部保留，僅停用自動啟動入口。",
     "保留新的 FloatingVoiceController 聊天 UI 測試路徑：即時 STT、聊天紀錄、10 回合 Active Context、固定『測試』回覆與 TTS。",
     "FloatingVoiceController 的 legacy voice routing 維持停用，避免舊手機控制指令攔截聊天語句。",
-    "本版仍未接真實 LLM API；用途是確認新語音聊天 UI 已正確接上並可獨立測試。"
+    "本版仍未接真實 LLM API；用途是確認新語音聊天 UI 已正確接上並可獨立測試。",
+    "重新觸發 Production Release；功能內容與 versionCode 不變。"
   ]
 }
