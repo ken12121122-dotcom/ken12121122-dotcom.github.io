@@ -1,4 +1,5 @@
 release_retry_for=0.10.26-bridge58
 versionCode=154
 reason=retrigger_queued_production_release
+method=pr_merge
 requested_at=2026-08-26T23:51:00+08:00
