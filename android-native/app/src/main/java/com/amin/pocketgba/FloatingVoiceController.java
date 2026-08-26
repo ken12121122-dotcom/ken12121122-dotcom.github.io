@@ -1,8 +1,6 @@
 package com.amin.pocketgba;
 
 import android.Manifest;
-import android.app.ActivityOptions;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -11,7 +9,6 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,12 +16,14 @@ import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,15 +34,16 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final String PREFS = "amin_floating_voice";
     private static final String KEY_X = "voice_bubble_x";
     private static final String KEY_Y = "voice_bubble_y";
-    private static final long PANEL_HIDE_DELAY_MS = 5000L;
     private static final long BUBBLE_RESET_DELAY_MS = 1400L;
     private static final long LISTENING_IDLE_TIMEOUT_MS = 8000L;
+    private static final long FAKE_REPLY_DELAY_MS = 650L;
+    private static final int MAX_ACTIVE_TURNS = 10;
+    private static final int MAX_ACTIVE_MESSAGES = MAX_ACTIVE_TURNS * 2;
 
     private final UniversalControlAccessibilityService service;
     private final WindowManager windowManager;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final VoiceCommandParser parser = new VoiceCommandParser();
-    private final Runnable hidePanelTask = this::hidePanel;
     private final Runnable resetBubbleTask = () -> setPhase(FloatingVoicePresentation.Phase.IDLE);
     private final Runnable listeningTimeoutTask = this::collapseListeningToIdle;
 
@@ -51,12 +51,17 @@ final class FloatingVoiceController implements RecognitionListener {
     private WindowManager.LayoutParams bubbleParams;
     private LinearLayout panel;
     private WindowManager.LayoutParams panelParams;
+    private TextView modeView;
     private TextView statusView;
     private TextView transcriptView;
     private TextView resultView;
+    private ScrollView chatScroll;
+    private LinearLayout chatContainer;
 
     private SpeechRecognizer speechRecognizer;
     private Intent recognizerIntent;
+    private TextToSpeech textToSpeech;
+    private boolean ttsReady;
     private boolean listening;
     private boolean processing;
     private boolean ignoreNextError;
@@ -77,6 +82,7 @@ final class FloatingVoiceController implements RecognitionListener {
         refreshScreenBounds();
         createStatusPanel();
         createVoiceBubble();
+        ensureTts();
     }
 
     boolean isVisible() {
@@ -89,12 +95,14 @@ final class FloatingVoiceController implements RecognitionListener {
         removeViewSafely(bubble);
         panel = null;
         panelParams = null;
+        modeView = null;
         statusView = null;
         transcriptView = null;
         resultView = null;
+        chatScroll = null;
+        chatContainer = null;
         bubble = null;
         bubbleParams = null;
-        mainHandler.removeCallbacks(hidePanelTask);
         mainHandler.removeCallbacks(resetBubbleTask);
     }
 
@@ -105,6 +113,12 @@ final class FloatingVoiceController implements RecognitionListener {
             speechRecognizer = null;
         }
         recognizerIntent = null;
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+            textToSpeech = null;
+        }
+        ttsReady = false;
     }
 
     void onConfigurationChanged() {
@@ -114,7 +128,8 @@ final class FloatingVoiceController implements RecognitionListener {
             updateViewLayoutSafely(bubble, bubbleParams);
         }
         if (panelParams != null) {
-            panelParams.width = Math.min(Math.max(dp(220), screenWidth - dp(32)), dp(420));
+            panelParams.width = Math.min(Math.max(dp(240), screenWidth - dp(28)), dp(420));
+            panelParams.height = Math.min(dp(390), Math.max(dp(300), screenHeight / 2));
             updateViewLayoutSafely(panel, panelParams);
         }
     }
@@ -193,52 +208,79 @@ final class FloatingVoiceController implements RecognitionListener {
     private void createStatusPanel() {
         panel = new LinearLayout(service);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setGravity(Gravity.CENTER_HORIZONTAL);
-        panel.setPadding(dp(18), dp(14), dp(18), dp(14));
-        panel.setBackground(roundedBackground(0xee17231d, 16f, 0x99ffffff, 1));
-        panel.setVisibility(View.GONE);
+        panel.setPadding(dp(14), dp(12), dp(14), dp(12));
+        panel.setBackground(roundedBackground(0xdd17231d, 18f, 0x55ffffff, 1));
 
-        statusView = textView(18f, Color.WHITE, true);
-        statusView.setText("語音待命");
-        panel.addView(statusView, matchWrap());
+        modeView = textView(13f, 0xffd7e6de, true);
+        modeView.setGravity(Gravity.START);
+        panel.addView(modeView, matchWrap());
 
-        transcriptView = textView(16f, 0xfff5f8f6, false);
-        transcriptView.setText(FloatingVoicePresentation.heardText(""));
+        statusView = textView(17f, Color.WHITE, true);
+        statusView.setGravity(Gravity.START);
+        statusView.setText("UI 測試模式 · 語音待命");
+        LinearLayout.LayoutParams statusParams = matchWrap();
+        statusParams.topMargin = dp(4);
+        panel.addView(statusView, statusParams);
+
+        transcriptView = textView(15f, 0xfff5f8f6, false);
+        transcriptView.setGravity(Gravity.START);
+        transcriptView.setText("點語音球開始說話");
         LinearLayout.LayoutParams transcriptParams = matchWrap();
-        transcriptParams.topMargin = dp(8);
+        transcriptParams.topMargin = dp(6);
         panel.addView(transcriptView, transcriptParams);
 
-        resultView = textView(14f, 0xffc9d5ce, false);
-        resultView.setText(FloatingVoicePresentation.resultText(""));
+        chatScroll = new ScrollView(service);
+        chatScroll.setFillViewport(false);
+        chatScroll.setVerticalScrollBarEnabled(true);
+        chatScroll.setScrollbarFadingEnabled(false);
+
+        chatContainer = new LinearLayout(service);
+        chatContainer.setOrientation(LinearLayout.VERTICAL);
+        chatContainer.setPadding(0, dp(8), 0, dp(8));
+        chatScroll.addView(
+                chatContainer,
+                new ScrollView.LayoutParams(
+                        ScrollView.LayoutParams.MATCH_PARENT,
+                        ScrollView.LayoutParams.WRAP_CONTENT
+                )
+        );
+        LinearLayout.LayoutParams scrollParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+        );
+        scrollParams.topMargin = dp(6);
+        panel.addView(chatScroll, scrollParams);
+
+        resultView = textView(13f, 0xffc9d5ce, false);
+        resultView.setGravity(Gravity.START);
+        resultView.setText("等待語音輸入");
         LinearLayout.LayoutParams resultParams = matchWrap();
         resultParams.topMargin = dp(6);
         panel.addView(resultView, resultParams);
 
+        updateModeLabel();
+
         panelParams = baseOverlayParams(
-                Math.min(Math.max(dp(220), screenWidth - dp(32)), dp(420)),
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                "Amin Floating Voice Status",
-                true
+                Math.min(Math.max(dp(240), screenWidth - dp(28)), dp(420)),
+                Math.min(dp(390), Math.max(dp(300), screenHeight / 2)),
+                "Amin Voice Chat UI Test",
+                false
         );
         panelParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        panelParams.y = dp(54);
+        panelParams.y = dp(46);
         windowManager.addView(panel, panelParams);
     }
 
     private void toggleListening() {
-        mainHandler.removeCallbacks(hidePanelTask);
         mainHandler.removeCallbacks(resetBubbleTask);
         if (listening) {
             finishListening();
             return;
         }
         if (processing) {
-            showPanel(
-                    "正在辨識",
-                    transcriptView == null ? "正在整理語音內容…" : transcriptView.getText().toString(),
-                    "請稍候，完成後可以再點一次",
-                    true
-            );
+            statusView.setText("UI 測試模式 · 等待回覆");
+            resultView.setText("請稍候，測試回覆完成後再說下一句");
             return;
         }
         startListening();
@@ -248,12 +290,9 @@ final class FloatingVoiceController implements RecognitionListener {
         if (service.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             setPhase(FloatingVoicePresentation.Phase.ERROR);
-            showPanel(
-                    "需要麥克風權限",
-                    "尚未開始辨識",
-                    "請到 Amin 的「權限與裝置」開啟麥克風權限",
-                    false
-            );
+            statusView.setText("需要麥克風權限");
+            transcriptView.setText("尚未開始辨識");
+            resultView.setText("請到 Amin 的「權限與裝置」開啟麥克風權限");
             Toast.makeText(service, "請先開啟麥克風權限", Toast.LENGTH_SHORT).show();
             scheduleFinishedState();
             return;
@@ -264,12 +303,9 @@ final class FloatingVoiceController implements RecognitionListener {
         processing = false;
         ignoreNextError = false;
         setPhase(FloatingVoicePresentation.Phase.LISTENING);
-        showPanel(
-                "辨識中",
-                "正在聽你說話…",
-                "再點一次語音按鈕即可停止並辨識",
-                true
-        );
+        statusView.setText("UI 測試模式 · 正在聆聽");
+        transcriptView.setText("正在聽你說話…");
+        resultView.setText("再點一次語音球可停止並送出");
         try {
             mainHandler.removeCallbacks(listeningTimeoutTask);
             mainHandler.postDelayed(listeningTimeoutTask, LISTENING_IDLE_TIMEOUT_MS);
@@ -277,7 +313,8 @@ final class FloatingVoiceController implements RecognitionListener {
         } catch (RuntimeException error) {
             listening = false;
             setPhase(FloatingVoicePresentation.Phase.ERROR);
-            showPanel("語音啟動失敗", "沒有開始錄音", error.getMessage(), false);
+            statusView.setText("語音啟動失敗");
+            resultView.setText(error.getMessage() == null ? "無法啟動語音辨識" : error.getMessage());
             scheduleFinishedState();
         }
     }
@@ -285,12 +322,9 @@ final class FloatingVoiceController implements RecognitionListener {
     private boolean prepareRecognizer() {
         if (!SpeechRecognizer.isRecognitionAvailable(service)) {
             setPhase(FloatingVoicePresentation.Phase.ERROR);
-            showPanel(
-                    "沒有可用的語音服務",
-                    "此裝置無法啟動辨識",
-                    "請確認 Google 語音服務或裝置語音服務已啟用",
-                    false
-            );
+            statusView.setText("沒有可用的語音服務");
+            transcriptView.setText("此裝置無法啟動辨識");
+            resultView.setText("請確認 Google 語音服務或裝置語音服務已啟用");
             scheduleFinishedState();
             return false;
         }
@@ -321,17 +355,12 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false;
         processing = true;
         setPhase(FloatingVoicePresentation.Phase.PROCESSING);
-        showPanel(
-                "正在辨識",
-                transcriptView == null ? "已停止收音" : transcriptView.getText().toString(),
-                "正在整理語音內容…",
-                true
-        );
+        statusView.setText("UI 測試模式 · 正在整理語音");
+        resultView.setText("正在把語音轉成正式訊息…");
         speechRecognizer.stopListening();
     }
 
     private void stopRecognizer(boolean destroy) {
-        mainHandler.removeCallbacks(hidePanelTask);
         mainHandler.removeCallbacks(resetBubbleTask);
         mainHandler.removeCallbacks(listeningTimeoutTask);
         if (speechRecognizer != null) {
@@ -349,13 +378,14 @@ final class FloatingVoiceController implements RecognitionListener {
 
     @Override
     public void onReadyForSpeech(Bundle params) {
-        showPanel("辨識中", "請開始說話", "再點一次即可停止", true);
+        statusView.setText("UI 測試模式 · 正在聆聽");
+        transcriptView.setText("請開始說話");
     }
 
     @Override
     public void onBeginningOfSpeech() {
         mainHandler.removeCallbacks(listeningTimeoutTask);
-        showPanel("辨識中", "已聽到聲音，請繼續說", "正在接收語音…", true);
+        resultView.setText("已聽到聲音，正在即時轉成文字…");
     }
 
     @Override
@@ -370,12 +400,8 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false;
         processing = true;
         setPhase(FloatingVoicePresentation.Phase.PROCESSING);
-        showPanel(
-                "正在辨識",
-                transcriptView == null ? "收音完成" : transcriptView.getText().toString(),
-                "正在整理語音內容…",
-                true
-        );
+        statusView.setText("UI 測試模式 · 等待送出");
+        resultView.setText("語音已結束，正在取得完整文字…");
     }
 
     @Override
@@ -388,12 +414,8 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false;
         processing = false;
         setPhase(FloatingVoicePresentation.Phase.ERROR);
-        showPanel(
-                "辨識失敗",
-                transcriptView == null ? "沒有取得完整文字" : transcriptView.getText().toString(),
-                errorMessage(error),
-                false
-        );
+        statusView.setText("語音辨識失敗");
+        resultView.setText(errorMessage(error));
         scheduleFinishedState();
     }
 
@@ -406,26 +428,70 @@ final class FloatingVoiceController implements RecognitionListener {
         float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
         if (matches == null || matches.isEmpty()) {
             setPhase(FloatingVoicePresentation.Phase.ERROR);
-            showPanel("沒有辨識到指令", "沒有取得文字", "未執行任何動作", false);
+            statusView.setText("沒有辨識到文字");
+            resultView.setText("請再試一次");
             scheduleFinishedState();
             return;
         }
 
-        String transcript = matches.get(0);
+        String transcript = matches.get(0).trim();
+        transcriptView.setText(transcript);
         double confidence = confidences != null && confidences.length > 0 ? confidences[0] : -1d;
         VoiceCommandParser.Result parsed = parser.parse(transcript, confidence);
-        if (parsed.getStatus() != VoiceCommandParser.Result.Status.MATCHED) {
+
+        if (parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED) {
+            executeLegacyVoiceCommand(transcript, parsed);
+            return;
+        }
+
+        runFakeChatReply(transcript);
+    }
+
+    @Override
+    public void onPartialResults(Bundle partialResults) {
+        mainHandler.removeCallbacks(listeningTimeoutTask);
+        ArrayList<String> matches = partialResults.getStringArrayList(
+                SpeechRecognizer.RESULTS_RECOGNITION
+        );
+        if (matches == null || matches.isEmpty()) return;
+        statusView.setText("UI 測試模式 · 即時語音轉文字");
+        transcriptView.setText(matches.get(0));
+        resultView.setText("持續接收中…");
+    }
+
+    @Override
+    public void onEvent(int eventType, Bundle params) { }
+
+    private void runFakeChatReply(String transcript) {
+        if (transcript == null || transcript.trim().isEmpty()) {
             setPhase(FloatingVoicePresentation.Phase.ERROR);
-            showPanel(
-                    "未找到可執行指令",
-                    FloatingVoicePresentation.heardText(transcript),
-                    FloatingVoicePresentation.resultText(parsed.getMessage()),
-                    false
-            );
+            statusView.setText("沒有可送出的文字");
             scheduleFinishedState();
             return;
         }
 
+        addChatMessage("你", transcript, true);
+        processing = true;
+        setPhase(FloatingVoicePresentation.Phase.PROCESSING);
+        statusView.setText("UI 測試模式 · 等待回覆");
+        transcriptView.setText(transcript);
+        resultView.setText("模擬上位 LLM 回覆中…");
+
+        mainHandler.postDelayed(() -> {
+            addChatMessage("AI", "測試", false);
+            processing = false;
+            setPhase(FloatingVoicePresentation.Phase.SUCCESS);
+            statusView.setText("UI 測試模式 · 回覆完成");
+            resultView.setText("固定測試回覆已完成；下一階段才接 LLM API");
+            speak("測試");
+            scheduleFinishedState();
+        }, FAKE_REPLY_DELAY_MS);
+    }
+
+    private void executeLegacyVoiceCommand(
+            String transcript,
+            VoiceCommandParser.Result parsed
+    ) {
         AminAction parsedAction = parsed.getAction();
         AminAction voiceAction = new AminAction(
                 parsedAction.getAction(),
@@ -436,166 +502,94 @@ final class FloatingVoiceController implements RecognitionListener {
                 parsedAction.getCreatedAt()
         );
         AminInputGateway gateway = AminInputGateway.get(service);
+        statusView.setText("既有語音指令模式");
+        transcriptView.setText(transcript);
+        resultView.setText("正在執行既有指令…");
+        setPhase(FloatingVoicePresentation.Phase.PROCESSING);
+        processing = true;
+
         if ("VOICE_BUBBLE_CLOSE".equals(voiceAction.getAction())) {
-            setPhase(FloatingVoicePresentation.Phase.SUCCESS);
-            showPanel(
-                    "辨識完成",
-                    FloatingVoicePresentation.heardText(transcript),
-                    FloatingVoicePresentation.resultText("已關閉語音浮動按鈕"),
-                    true
-            );
+            resultView.setText("已辨識關閉語音球指令");
             mainHandler.postDelayed(
                     () -> gateway.execute(voiceAction, ignored -> { }),
-                    1200L
+                    900L
             );
             return;
         }
+
         gateway.execute(voiceAction, result -> mainHandler.post(() -> {
+            processing = false;
             boolean success = result.isSuccess();
             setPhase(
                     success
                             ? FloatingVoicePresentation.Phase.SUCCESS
                             : FloatingVoicePresentation.Phase.ERROR
             );
-            showPanel(
-                    success ? "辨識完成" : "指令未執行",
-                    FloatingVoicePresentation.heardText(transcript),
-                    FloatingVoicePresentation.resultText(result.getMessage()),
-                    success
-            );
+            statusView.setText(success ? "既有語音指令完成" : "既有語音指令失敗");
+            resultView.setText(result.getMessage());
             scheduleFinishedState();
         }));
     }
 
-    @Override
-    public void onPartialResults(Bundle partialResults) {
-        mainHandler.removeCallbacks(listeningTimeoutTask);
-        ArrayList<String> matches = partialResults.getStringArrayList(
-                SpeechRecognizer.RESULTS_RECOGNITION
+    private void addChatMessage(String role, String text, boolean user) {
+        if (chatContainer == null) return;
+        TextView message = textView(14f, Color.WHITE, false);
+        message.setText(role + "：" + text);
+        message.setGravity(user ? Gravity.END : Gravity.START);
+        message.setPadding(dp(10), dp(7), dp(10), dp(7));
+        message.setBackground(roundedBackground(
+                user ? 0xaa315647 : 0xaa26352f,
+                12f,
+                0x33ffffff,
+                1
+        ));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        if (matches == null || matches.isEmpty()) return;
-        showPanel(
-                "辨識中",
-                FloatingVoicePresentation.heardText(matches.get(0)),
-                "正在接收語音…",
-                true
-        );
-    }
+        params.topMargin = dp(5);
+        chatContainer.addView(message, params);
 
-    @Override
-    public void onEvent(int eventType, Bundle params) { }
-
-    private ExecutionResult execute(AminAction action) {
-        if (action == null) return ExecutionResult.fail("缺少可執行的指令");
-        switch (action.getAction()) {
-            case "OPEN_GBA":
-                return launchActivity(new Intent(service, MainActivity.class))
-                        ? ExecutionResult.ok("已開啟 GBA 遊戲庫")
-                        : ExecutionResult.fail("無法開啟 GBA 遊戲庫");
-            case "OPEN_CONTROLLER_SETTINGS":
-                Intent controller = new Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://ken12121122-dotcom.github.io/amin-vault/gba-controller.html")
-                );
-                return launchActivity(controller)
-                        ? ExecutionResult.ok("已開啟控制器設定")
-                        : ExecutionResult.fail("無法開啟控制器設定");
-            case "OVERLAY_OPEN":
-                return service.showControlsFromVoice()
-                        ? ExecutionResult.ok("已開啟鍵盤浮動按鈕與控制盤")
-                        : ExecutionResult.fail("無法開啟鍵盤控制");
-            case "OVERLAY_CLOSE":
-                return service.hideControlsFromVoice()
-                        ? ExecutionResult.ok("已關閉控制盤與鍵盤浮動按鈕")
-                        : ExecutionResult.fail("無法關閉鍵盤控制");
-            case "VOICE_BUBBLE_OPEN":
-                return service.showVoiceBubbleFromVoice()
-                        ? ExecutionResult.ok("已開啟語音浮動按鈕")
-                        : ExecutionResult.fail("無法開啟語音浮動按鈕");
-            case "VOICE_BUBBLE_CLOSE":
-                return service.hideVoiceBubbleFromVoice()
-                        ? ExecutionResult.ok("已關閉語音浮動按鈕")
-                        : ExecutionResult.fail("無法關閉語音浮動按鈕");
-            case "CONTROL_MODE_SET":
-                String mode = action.getParameters().optString(
-                        "mode",
-                        UniversalControlAccessibilityService.MODE_CURSOR
-                );
-                UniversalControlAccessibilityService.setControlMode(service, mode);
-                return ExecutionResult.ok(
-                        UniversalControlAccessibilityService.MODE_SCROLL.equals(mode)
-                                ? "已切換捲動模式"
-                                : "已切換游標模式"
-                );
-            case "VOICE_STOP":
-                return ExecutionResult.ok("已停止聆聽");
-            default:
-                return UniversalControlAccessibilityService.executeAminAction(action)
-                        ? ExecutionResult.ok(successMessage(action.getAction()))
-                        : ExecutionResult.fail("請先啟用 Amin 全域控制服務");
+        while (chatContainer.getChildCount() > MAX_ACTIVE_MESSAGES) {
+            chatContainer.removeViewAt(0);
+        }
+        updateModeLabel();
+        if (chatScroll != null) {
+            chatScroll.post(() -> chatScroll.fullScroll(View.FOCUS_DOWN));
         }
     }
 
-    private boolean launchActivity(Intent intent) {
-        intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
-        );
-        int flags = PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE;
-        int requestCode = 7200 + Math.abs(intent.filterHashCode() % 500);
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                ActivityOptions creatorOptions = ActivityOptions.makeBasic();
-                creatorOptions.setPendingIntentCreatorBackgroundActivityStartMode(
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                );
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        service,
-                        requestCode,
-                        intent,
-                        flags,
-                        creatorOptions.toBundle()
-                );
-                ActivityOptions senderOptions = ActivityOptions.makeBasic();
-                senderOptions.setPendingIntentBackgroundActivityStartMode(
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                );
-                pendingIntent.send(senderOptions.toBundle());
+    private void updateModeLabel() {
+        if (modeView == null) return;
+        int messages = chatContainer == null ? 0 : chatContainer.getChildCount();
+        int turns = Math.min(MAX_ACTIVE_TURNS, messages / 2);
+        modeView.setText("LLM：UI 測試模式 · Context " + turns + "/" + MAX_ACTIVE_TURNS);
+    }
+
+    private void ensureTts() {
+        if (textToSpeech != null) return;
+        textToSpeech = new TextToSpeech(service, status -> {
+            if (status == TextToSpeech.SUCCESS && textToSpeech != null) {
+                int result = textToSpeech.setLanguage(Locale.TAIWAN);
+                ttsReady = result != TextToSpeech.LANG_MISSING_DATA
+                        && result != TextToSpeech.LANG_NOT_SUPPORTED;
             } else {
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        service,
-                        requestCode,
-                        intent,
-                        flags
-                );
-                pendingIntent.send();
+                ttsReady = false;
             }
-            return true;
-        } catch (PendingIntent.CanceledException | RuntimeException error) {
-            return false;
-        }
+        });
     }
 
-    private String successMessage(String action) {
-        switch (action) {
-            case "SYSTEM_BACK": return "已執行全域返回";
-            case "SYSTEM_HOME": return "已回到首頁";
-            case "CURSOR_TAP": return "已點擊游標位置";
-            case "CURSOR_LONG_PRESS": return "已長按游標位置";
-            case "DIRECTION_UP": return "已向上執行";
-            case "DIRECTION_DOWN": return "已向下執行";
-            case "DIRECTION_LEFT": return "已向左執行";
-            case "DIRECTION_RIGHT": return "已向右執行";
-            default: return "已執行語音指令";
-        }
+    private void speak(String text) {
+        if (!ttsReady || textToSpeech == null || text == null || text.trim().isEmpty()) return;
+        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "amin-ui-test");
     }
 
     private void collapseListeningToIdle() {
         if (!listening || processing) return;
         stopRecognizer(false);
         setPhase(FloatingVoicePresentation.Phase.IDLE);
-        hidePanel();
+        statusView.setText("UI 測試模式 · 語音待命");
+        resultView.setText("沒有持續收到語音，已回到待命");
     }
 
     private String errorMessage(int error) {
@@ -636,30 +630,9 @@ final class FloatingVoiceController implements RecognitionListener {
         }
     }
 
-    private void showPanel(
-            String status,
-            String transcript,
-            String result,
-            boolean success
-    ) {
-        if (panel == null) return;
-        mainHandler.removeCallbacks(hidePanelTask);
-        statusView.setText(status == null ? "語音狀態" : status);
-        statusView.setTextColor(success ? Color.WHITE : 0xffffc2ad);
-        transcriptView.setText(transcript == null ? "" : transcript);
-        resultView.setText(result == null ? "" : result);
-        panel.setVisibility(View.VISIBLE);
-    }
-
-    private void hidePanel() {
-        if (panel != null && !listening && !processing) panel.setVisibility(View.GONE);
-    }
-
     private void scheduleFinishedState() {
         mainHandler.removeCallbacks(resetBubbleTask);
-        mainHandler.removeCallbacks(hidePanelTask);
         mainHandler.postDelayed(resetBubbleTask, BUBBLE_RESET_DELAY_MS);
-        mainHandler.postDelayed(hidePanelTask, PANEL_HIDE_DELAY_MS);
     }
 
     private void snapBubbleToEdge() {
@@ -713,7 +686,6 @@ final class FloatingVoiceController implements RecognitionListener {
         TextView view = new TextView(service);
         view.setTextSize(sizeSp);
         view.setTextColor(color);
-        view.setGravity(Gravity.CENTER);
         if (bold) view.setTypeface(Typeface.DEFAULT_BOLD);
         return view;
     }
@@ -790,23 +762,5 @@ final class FloatingVoiceController implements RecognitionListener {
 
     private int dp(float value) {
         return Math.round(value * service.getResources().getDisplayMetrics().density);
-    }
-
-    private static final class ExecutionResult {
-        private final boolean success;
-        private final String message;
-
-        private ExecutionResult(boolean success, String message) {
-            this.success = success;
-            this.message = message;
-        }
-
-        private static ExecutionResult ok(String message) {
-            return new ExecutionResult(true, message);
-        }
-
-        private static ExecutionResult fail(String message) {
-            return new ExecutionResult(false, message);
-        }
     }
 }
