@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.24-bridge56.apk",
-  "apkSha256": "de50186869c0931b0dbdf56410f445aa50fb10f2fe85b3b8962a10d1ce2eb4bc",
+  "apkSha256": "860bd782e2e8aa3b46fe22883db787e36163650fd4a0026c3c00ffa22016f007",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2727126,
-  "publishedAt": "2026-08-26T13:43:11Z",
+  "sizeBytes": 2726863,
+  "publishedAt": "2026-08-26T14:02:01Z",
   "mandatory": false,
   "releaseNotes": [
     "語音浮動球新增可滑動的聊天紀錄測試介面，保留最近 10 回合 Active Context。",
