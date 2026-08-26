@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.27-bridge59.apk",
-  "apkSha256": "369a0c8b634a72b18c5c478e62e1f144dffba5855a54002d2cfbacf104635def",
+  "apkSha256": "6b8fe5cfeaf4d49937845d774e6630175c9f17be1b41a66f86432dbb3c6b4a49",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2727277,
-  "publishedAt": "2026-08-26T23:05:55Z",
+  "sizeBytes": 2725511,
+  "publishedAt": "2026-08-26T23:24:00Z",
   "mandatory": false,
   "releaseNotes": [
     "控制台新增『語音球聊天』入口，點擊後開啟新的 FloatingVoiceController 聊天語音球。",
