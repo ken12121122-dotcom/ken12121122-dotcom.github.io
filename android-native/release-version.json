@@ -1,18 +1,19 @@
 {
-  "versionCode": 155,
-  "versionName": "0.10.27",
+  "versionCode": 156,
+  "versionName": "0.11.0",
   "channel": "bridge",
-  "bridge": 59,
+  "bridge": 60,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "控制台新增『語音球聊天』入口，點擊後開啟新的 FloatingVoiceController 聊天語音球。",
-    "App 啟動流程維持直接進入控制台，不恢復舊 VoiceOrbHomeActivity 自動啟動。",
-    "舊 Amin 語音指令保留為獨立舊版入口，不與新的聊天語音球混用。",
-    "新聊天語音球維持 UI 測試模式：即時 STT、聊天紀錄、10 回合 Active Context、固定『測試』回覆與 TTS。",
-    "本版仍未接真實 LLM API。"
+    "控制台既有『語音球聊天』入口改為直接進入全螢幕大型綠色 Voice Orb，不再顯示浮動聊天按鈕。",
+    "大型綠色 Voice Orb 背景新增聊天紀錄，保留最近 10 回合 Active Context。",
+    "一般語句會送到目前選定的 LLM；既有 Node Registry 與手機語音指令仍優先處理。",
+    "LLM 回覆會顯示文字並由 Android TTS 念出，TTS 結束後自動重新開啟 SpeechRecognizer，形成連續語音對話循環。",
+    "新增 LLM 設定頁，支援 Gemini、OpenAI、Claude Provider、可自訂 model、API Key 與連線測試。",
+    "API Key 使用 Android Keystore AES/GCM 加密保存在手機本機，不寫入 GitHub 或聊天紀錄。"
   ]
 }
