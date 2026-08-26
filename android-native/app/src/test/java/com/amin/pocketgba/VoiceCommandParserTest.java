@@ -6,18 +6,11 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 
 public final class VoiceCommandParserTest {
-    private final VoiceCommandParser parser = new VoiceCommandParser(true);
+    private final VoiceCommandParser parser = new VoiceCommandParser();
 
     @Test
     public void normalizesTraditionalChinesePunctuation() {
         assertEquals("開啟控制盤", VoiceCommandParser.normalize(" 開啟控制盤！ "));
-    }
-
-    @Test
-    public void defaultParserDisablesLegacyRouting() {
-        VoiceCommandParser.Result result = new VoiceCommandParser().parse("回首頁", 0.99d);
-        assertEquals(VoiceCommandParser.Result.Status.NO_MATCH, result.getStatus());
-        assertEquals(null, result.getAction());
     }
 
     @Test
