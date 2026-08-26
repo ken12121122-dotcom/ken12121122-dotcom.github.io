@@ -4,20 +4,22 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.25-bridge57",
-  "latestVersionCode": 153,
+  "latestVersionName": "0.10.26-bridge58",
+  "latestVersionCode": 154,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.25-bridge57.apk",
-  "apkSha256": "4bdf6354afd763d10884263de6f2035651f833af925cffb0de360861f58c1215",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.26-bridge58.apk",
+  "apkSha256": "fbc0449540ba638b834888e2b4430f1e57b43457dc0d694b9d06b85515aba437",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2726869,
-  "publishedAt": "2026-08-26T15:26:30Z",
+  "sizeBytes": 2726868,
+  "publishedAt": "2026-08-26T16:14:28Z",
   "mandatory": false,
   "releaseNotes": [
-    "語音浮動球測試期間暫停既有手機控制語音路由，所有一般語音先統一進入聊天 UI 測試流程。",
-    "舊的 VoiceCommandParser、VoiceCommandCatalog 與 AminInputGateway 實作完整保留，未刪除；未來可透過入口旗標重新啟用。",
-    "修正既有語音控制指令會優先攔截聊天語句的路由衝突，讓即時 STT → User Message → 固定「測試」回覆 → TTS 流程可以完整驗證。",
-    "本版仍未串接真實 LLM API、記憶壓縮或 GitHub Brain；只驗證新的語音聊天 UI 路徑。"
+    "Bridge 啟動流程恢復由 LaunchGateActivity 進入，不再由舊 VoiceOrbHomeActivity 自動接管 App 啟動。",
+    "舊 VoiceOrbHomeActivity、VoiceCommandActivity、VoiceCommandParser、Node Registry 與 AminInputGateway 全部保留，僅停用自動啟動入口。",
+    "保留新的 FloatingVoiceController 聊天 UI 測試路徑：即時 STT、聊天紀錄、10 回合 Active Context、固定『測試』回覆與 TTS。",
+    "FloatingVoiceController 的 legacy voice routing 維持停用，避免舊手機控制指令攔截聊天語句。",
+    "本版仍未接真實 LLM API；用途是確認新語音聊天 UI 已正確接上並可獨立測試。",
+    "重新觸發 Production Release；功能內容與 versionCode 不變。"
   ]
 }
