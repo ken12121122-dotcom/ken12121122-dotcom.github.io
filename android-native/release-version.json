@@ -1,17 +1,17 @@
 {
-  "versionCode": 152,
-  "versionName": "0.10.24",
+  "versionCode": 153,
+  "versionName": "0.10.25",
   "channel": "bridge",
-  "bridge": 56,
+  "bridge": 57,
   "releaseSequence": 1,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "語音浮動球新增可滑動的聊天紀錄測試介面，保留最近 10 回合 Active Context。",
-    "Android 語音辨識支援即時 partial text 顯示，一般語句會形成 User Message 並進入等待狀態。",
-    "UI 測試模式固定回覆「測試」，並由 Android TTS 自動念出，用於正式串接 LLM Gateway 前驗證完整互動流程。",
-    "既有可辨識語音控制指令仍沿用原本 AminInputGateway 執行，不在本版接入任何 LLM API。"
+    "語音浮動球測試期間暫停既有手機控制語音路由，所有一般語音先統一進入聊天 UI 測試流程。",
+    "舊的 VoiceCommandParser、VoiceCommandCatalog 與 AminInputGateway 實作完整保留，未刪除；未來可透過入口旗標重新啟用。",
+    "修正既有語音控制指令會優先攔截聊天語句的路由衝突，讓即時 STT → User Message → 固定「測試」回覆 → TTS 流程可以完整驗證。",
+    "本版仍未串接真實 LLM API、記憶壓縮或 GitHub Brain；只驗證新的語音聊天 UI 路徑。"
   ]
 }
