@@ -4,22 +4,21 @@
   "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.10.26-bridge58",
-  "latestVersionCode": 154,
+  "latestVersionName": "0.10.27-bridge59",
+  "latestVersionCode": 155,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.26-bridge58.apk",
-  "apkSha256": "9da75e56ba2b0c3c7a51ce6b928840a70f50f8fd7b38b8c0a4ba653c8706897a",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.27-bridge59.apk",
+  "apkSha256": "369a0c8b634a72b18c5c478e62e1f144dffba5855a54002d2cfbacf104635def",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2727269,
-  "publishedAt": "2026-08-26T22:56:45Z",
+  "sizeBytes": 2727277,
+  "publishedAt": "2026-08-26T23:05:55Z",
   "mandatory": false,
   "releaseNotes": [
-    "Bridge 啟動流程恢復由 LaunchGateActivity 進入，不再由舊 VoiceOrbHomeActivity 自動接管 App 啟動。",
-    "舊 VoiceOrbHomeActivity、VoiceCommandActivity、VoiceCommandParser、Node Registry 與 AminInputGateway 全部保留，僅停用自動啟動入口。",
-    "保留新的 FloatingVoiceController 聊天 UI 測試路徑：即時 STT、聊天紀錄、10 回合 Active Context、固定『測試』回覆與 TTS。",
-    "FloatingVoiceController 的 legacy voice routing 維持停用，避免舊手機控制指令攔截聊天語句。",
-    "本版仍未接真實 LLM API；用途是確認新語音聊天 UI 已正確接上並可獨立測試。",
-    "重新觸發 Production Release；功能內容與 versionCode 不變。"
+    "控制台新增『語音球聊天』入口，點擊後開啟新的 FloatingVoiceController 聊天語音球。",
+    "App 啟動流程維持直接進入控制台，不恢復舊 VoiceOrbHomeActivity 自動啟動。",
+    "舊 Amin 語音指令保留為獨立舊版入口，不與新的聊天語音球混用。",
+    "新聊天語音球維持 UI 測試模式：即時 STT、聊天紀錄、10 回合 Active Context、固定『測試』回覆與 TTS。",
+    "本版仍未接真實 LLM API。"
   ]
 }
