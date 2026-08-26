@@ -3,6 +3,7 @@
 
     <application>
         <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait" />
+        <activity android:name=".LlmSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity android:name=".SystemGraphActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".NodeInspectorActivity" android:exported="false" android:screenOrientation="portrait" />
