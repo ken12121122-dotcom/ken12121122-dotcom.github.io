@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.26-bridge58.apk",
-  "apkSha256": "6b38f56cfc29ea95611d4f0fed487015af57d3413f4f5dee13c1ec8827cadcfa",
+  "apkSha256": "42ee88455ed4040c6bf36a7c67e51d1e405a1f0be2a85bb13a0c946aeb95bc0c",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 2726868,
-  "publishedAt": "2026-08-26T16:16:30Z",
+  "publishedAt": "2026-08-26T16:18:42Z",
   "mandatory": false,
   "releaseNotes": [
     "Bridge 啟動流程恢復由 LaunchGateActivity 進入，不再由舊 VoiceOrbHomeActivity 自動接管 App 啟動。",
