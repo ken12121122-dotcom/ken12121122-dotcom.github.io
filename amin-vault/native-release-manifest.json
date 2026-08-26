@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.10.23-bridge55.apk",
-  "apkSha256": "12f8dfce644472ef8cd3923667ff1a1ffd242a9b7285a8555d56fd8f9a4ddd3c",
+  "apkSha256": "b9c95e7de524a017c66de120400294b5c9eeadabe1b3d77deeab8d4e88dd52b3",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2726926,
-  "publishedAt": "2026-08-19T12:25:03Z",
+  "sizeBytes": 2727120,
+  "publishedAt": "2026-08-26T13:39:08Z",
   "mandatory": false,
   "releaseNotes": [
     "Detail 文字框新增可調整的軟性排斥力，文字框重疊或距離過近時會自動推開。",
