@@ -39,6 +39,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final long FAKE_REPLY_DELAY_MS = 650L;
     private static final int MAX_ACTIVE_TURNS = 10;
     private static final int MAX_ACTIVE_MESSAGES = MAX_ACTIVE_TURNS * 2;
+    private static final boolean LEGACY_VOICE_ROUTING_ENABLED = false;
 
     private final UniversalControlAccessibilityService service;
     private final WindowManager windowManager;
@@ -436,12 +437,14 @@ final class FloatingVoiceController implements RecognitionListener {
 
         String transcript = matches.get(0).trim();
         transcriptView.setText(transcript);
-        double confidence = confidences != null && confidences.length > 0 ? confidences[0] : -1d;
-        VoiceCommandParser.Result parsed = parser.parse(transcript, confidence);
 
-        if (parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED) {
-            executeLegacyVoiceCommand(transcript, parsed);
-            return;
+        if (LEGACY_VOICE_ROUTING_ENABLED) {
+            double confidence = confidences != null && confidences.length > 0 ? confidences[0] : -1d;
+            VoiceCommandParser.Result parsed = parser.parse(transcript, confidence);
+            if (parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED) {
+                executeLegacyVoiceCommand(transcript, parsed);
+                return;
+            }
         }
 
         runFakeChatReply(transcript);
