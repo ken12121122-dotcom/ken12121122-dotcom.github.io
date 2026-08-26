@@ -6,6 +6,7 @@ versionCode: 154
 channel: bridge
 bridge: 58
 scope: voice orb launcher fix + floating chat UI test path
+request_sequence: 2
 notes:
   - restore LaunchGateActivity as app startup path
   - keep legacy VoiceOrb/VoiceCommand components but disable automatic takeover
