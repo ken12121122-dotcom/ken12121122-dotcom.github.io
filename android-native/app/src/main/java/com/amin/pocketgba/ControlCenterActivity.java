@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
@@ -127,14 +128,25 @@ public final class ControlCenterActivity extends Activity {
         playParams.topMargin = dp(24);
         content.addView(playCard, playParams);
 
-        LinearLayout voiceCard = actionCard(
-                "🎤",
-                "Amin 語音指令",
-                "按住說話，控制首頁、游標、捲動與全域控制盤",
+        LinearLayout voiceBubbleCard = actionCard(
+                "🎙️",
+                "語音球聊天",
+                "開啟新的語音聊天球；即時語音轉文字、聊天紀錄與測試回覆",
                 "開啟",
                 false
         );
-        voiceCard.setContentDescription("開啟 Amin 語音指令");
+        voiceBubbleCard.setContentDescription("開啟新的 Amin 語音球聊天");
+        voiceBubbleCard.setOnClickListener(view -> openVoiceBubble());
+        content.addView(voiceBubbleCard, cardParams());
+
+        LinearLayout voiceCard = actionCard(
+                "🎤",
+                "Amin 語音指令（舊版）",
+                "保留原有手機控制語音入口，不會自動啟動",
+                "開啟",
+                false
+        );
+        voiceCard.setContentDescription("開啟舊版 Amin 語音指令");
         voiceCard.setOnClickListener(view -> startActivity(new Intent(this, VoiceCommandActivity.class)));
         content.addView(voiceCard, cardParams());
 
@@ -253,6 +265,15 @@ public final class ControlCenterActivity extends Activity {
         content.addView(footer, footerParams);
 
         setContentView(scroll);
+    }
+
+    private void openVoiceBubble() {
+        UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+        Toast.makeText(
+                this,
+                "語音球已開啟；若尚未啟用全域控制權限，請先到『權限與裝置』啟用 Accessibility。",
+                Toast.LENGTH_LONG
+        ).show();
     }
 
     private void toggleTechnicalDetails() {
