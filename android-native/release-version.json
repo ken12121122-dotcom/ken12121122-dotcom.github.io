@@ -1,18 +1,18 @@
 {
-  "versionCode": 157,
-  "versionName": "0.11.1",
+  "versionCode": 158,
+  "versionName": "0.11.2",
   "channel": "bridge",
-  "bridge": 61,
+  "bridge": 62,
   "releaseSequence": 2,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "新增 Neural Flow 獨立入口與手機 workflow canvas POC。",
-    "Neural Flow 可顯示 INPUT、ROUTER、NODE REGISTRY、COMMAND、LLM 等實際分流階段與訊號流動。",
-    "新增 NeuralFlowTrace 事件架構，供後續 Router、LLM、Memory、Skill 與人工核准流程接入。",
-    "新增 Memory Judge、Compress、Approval、Store POC；候選記憶需人工批准，暫不寫入正式長期記憶庫。",
-    "保留 v0.11.0 Voice Orb、Node Registry、手機控制語音指令、LLM 設定與本機加密 API Key 功能。"
+    "重新啟用可拖曳的浮動語音按鈕與懸浮聊天觀察框。",
+    "浮動語音輸入會依序送出 INPUT、ROUTER、NODE REGISTRY、COMMAND、LLM trace，便於在 Neural Flow 畫面同步觀察節點連動。",
+    "NODE 或 COMMAND 命中時僅顯示 POC 路徑，不執行手機控制；一般對話才 fallback 到既有 LLM。",
+    "懸浮聊天框顯示語音辨識內容與實際 LLM 回覆，且採 click-through 避免遮擋 Neural Flow 操作。",
+    "本輪不修改 Neural Flow 動畫判定；Floating live-link 的 Memory 階段暫標示 skip，待連動驗證後再調整。"
   ]
 }
