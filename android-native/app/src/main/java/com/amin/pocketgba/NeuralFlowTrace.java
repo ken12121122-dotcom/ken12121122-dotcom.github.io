@@ -21,8 +21,11 @@ public final class NeuralFlowTrace {
         LLM_REQUEST,
         LLM_RESPONSE,
         LLM_ERROR,
-        MEMORY_CANDIDATE,
-        MEMORY_APPROVAL
+        MEMORY_JUDGE,
+        MEMORY_COMPRESS,
+        MEMORY_APPROVAL,
+        MEMORY_STORE,
+        MEMORY_ERROR
     }
 
     public static final class Event {
@@ -47,7 +50,7 @@ public final class NeuralFlowTrace {
         void onTraceEvent(Event event);
     }
 
-    private static final int MAX_EVENTS = 80;
+    private static final int MAX_EVENTS = 120;
     private static final Object LOCK = new Object();
     private static final ArrayDeque<Event> HISTORY = new ArrayDeque<>();
     private static final CopyOnWriteArrayList<Listener> LISTENERS = new CopyOnWriteArrayList<>();
