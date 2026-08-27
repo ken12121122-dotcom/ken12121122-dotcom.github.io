@@ -1,19 +1,19 @@
 {
-  "versionCode": 164,
-  "versionName": "0.11.8",
+  "versionCode": 165,
+  "versionName": "0.11.9",
   "channel": "bridge",
-  "bridge": 68,
-  "releaseSequence": 2,
+  "bridge": 69,
+  "releaseSequence": 3,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "原固定 knowledge-architecture 資料集已移除；保留並重建知識地圖的縮放、拖曳、Fit 與 Semantic Zoom 操作模型。",
-    "知識地圖改讀 Unified Graph：NODE 直接來自 Node Registry，COMMAND 直接來自 VoiceCommandCatalog，最底層同圖顯示兩種 Entity。",
-    "新增 UnifiedGraphProvider 與 Registry 變更通知；已批准的 NODE 或 COMMAND 註冊後會自動刷新並出現在 Unified Graph，不需另外維護圖形副本。",
-    "新增 Registry 人工批准協議；建立 NODE 先產生候選並跳出批准／拒絕，未批准不得取得正式 node_id 或寫入 Registry。",
-    "新增 Dynamic Command Registry 基礎，未來新增 COMMAND 也可沿相同 Candidate → Approval → Registry → Graph 流程同步。",
-    "新增 Connect Store 與圖上連線建立入口，可保存 NODE↔NODE、NODE↔COMMAND、COMMAND↔COMMAND 關係；並建立 Runtime Edge Trace 顯示通道供後續實際 traversal 亮線。"
+    "新增 Elastic Semantic Force Graph：NODE 依階層與方向形成語意錨點，可拖曳並局部重新平衡。",
+    "主畫布改為 NODE-only 顯示；COMMAND 收進 COMMAND 管理與 Connect Command Chain，不再作為自由漂浮節點。",
+    "新增 NODE、COMMAND、CONNECT 三個管理介面，並改為折疊式浮動控制入口以減少手機畫面占用。",
+    "Connect 支援 Gate 與多個有順序的 Command Chain，並在線上顯示 command 狀態刻度與 runtime progress。",
+    "新增 LIVE Runtime Overlay，將語音建立 NODE 的 Candidate、Approval、Registry、Graph Refresh 流程疊在同一張 Graph 上顯示，且不污染 Registry。",
+    "保留既有語音建立 NODE 的 Candidate → Approval → Registry 流程與 Unified Graph 自動刷新機制。"
   ]
 }
