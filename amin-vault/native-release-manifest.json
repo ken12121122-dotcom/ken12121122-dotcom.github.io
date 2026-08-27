@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.0-bridge60.apk",
-  "apkSha256": "9647f3623d54e12327e70d57c4c14c88e8555d4821aff1bd9f177af0d87598c7",
+  "apkSha256": "66bcbb52bfe9924f75bb1bac718d88e415c893a68e4e21e28db984cf1954de5d",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2725506,
-  "publishedAt": "2026-08-26T23:25:59Z",
+  "sizeBytes": 2736925,
+  "publishedAt": "2026-08-27T02:32:21Z",
   "mandatory": false,
   "releaseNotes": [
     "控制台既有『語音球聊天』入口改為直接進入全螢幕大型綠色 Voice Orb，不再顯示浮動聊天按鈕。",
