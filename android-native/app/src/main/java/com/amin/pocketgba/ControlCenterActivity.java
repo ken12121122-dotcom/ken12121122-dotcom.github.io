@@ -161,6 +161,17 @@ public final class ControlCenterActivity extends Activity {
         financeCard.setOnClickListener(view -> startActivity(new Intent(this, FinanceActivity.class)));
         content.addView(financeCard, cardParams());
 
+        LinearLayout thoughtFlowCard = actionCard(
+                "⌁",
+                "思流",
+                "Graphyn 實驗畫布：觀察 Router、LLM、Memory 與未來 Skill 的訊號流",
+                "進入",
+                false
+        );
+        thoughtFlowCard.setContentDescription("開啟思流 Graphyn 實驗畫布");
+        thoughtFlowCard.setOnClickListener(view -> startActivity(new Intent(this, SystemGraphActivity.class)));
+        content.addView(thoughtFlowCard, cardParams());
+
         LinearLayout statusHeader = new LinearLayout(this);
         statusHeader.setOrientation(LinearLayout.HORIZONTAL);
         statusHeader.setGravity(Gravity.CENTER_VERTICAL);
