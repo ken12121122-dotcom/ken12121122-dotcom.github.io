@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.6-bridge66.apk",
-  "apkSha256": "2708b0b8d81506a7a2fa8b3de1c5bd8941729da1e6dd566bc27b329601641eda",
+  "apkSha256": "da9fecdd64533288bdcdb3a7a676cd76783c4de3ea406af2691f020ad92fe11f",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2753354,
-  "publishedAt": "2026-08-27T10:47:34Z",
+  "sizeBytes": 2753924,
+  "publishedAt": "2026-08-27T11:10:43Z",
   "mandatory": false,
   "releaseNotes": [
     "Neural Flow 每張節點卡片右上角新增單一通行燈，點燈可切換自動／人工通行，不增加文字標籤。",
