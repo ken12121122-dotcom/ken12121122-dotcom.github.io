@@ -53,6 +53,14 @@ final class FloatingVoiceController implements RecognitionListener {
     private TextView statusView;
     private TextView chatView;
     private ScrollView chatScroll;
+    private LinearLayout gatePanel;
+    private TextView gateTitle;
+    private Button gateStop;
+    private Button gatePass;
+    private Runnable pendingGatePass;
+    private Runnable pendingGateBlock;
+    private String pendingGateTurnId = "";
+    private NeuralFlowTrace.Stage pendingGateStage;
     private SpeechRecognizer recognizer;
     private Intent recognizerIntent;
     private boolean listening;
@@ -78,6 +86,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     void hide() {
         stopRecognizer(true);
+        clearPendingGate();
         removeView(panel);
         removeView(bubble);
         panel = null;
@@ -85,6 +94,10 @@ final class FloatingVoiceController implements RecognitionListener {
         statusView = null;
         chatView = null;
         chatScroll = null;
+        gatePanel = null;
+        gateTitle = null;
+        gateStop = null;
+        gatePass = null;
         bubble = null;
         bubbleParams = null;
     }
@@ -110,7 +123,7 @@ final class FloatingVoiceController implements RecognitionListener {
         bubble.setGravity(Gravity.CENTER);
         bubble.setTextColor(Color.WHITE);
         bubble.setTypeface(Typeface.DEFAULT_BOLD);
-        bubble.setContentDescription("Amin Neural Flow 語音按鈕，點一下開始或停止，拖曳可移動");
+        bubble.setContentDescription("Amin Neural Flow 語音按鈕");
         bubble.setBackground(circle(0xe61f7a4d, 0xffffffff));
         bubble.setElevation(dp(8));
         bubble.setOnClickListener(v -> toggleListening());
@@ -174,6 +187,29 @@ final class FloatingVoiceController implements RecognitionListener {
         statusView = text("待命 · 點右側 🎙 開始說話", 12f, true, Color.WHITE);
         panel.addView(statusView, new LinearLayout.LayoutParams(-1, -2));
 
+        gatePanel = new LinearLayout(service);
+        gatePanel.setOrientation(LinearLayout.HORIZONTAL);
+        gatePanel.setGravity(Gravity.CENTER_VERTICAL);
+        gatePanel.setPadding(0, dp(4), 0, dp(4));
+        gatePanel.setVisibility(View.GONE);
+        gateTitle = text("", 12f, true, 0xffffd166);
+        gatePanel.addView(gateTitle, new LinearLayout.LayoutParams(0, dp(40), 1f));
+        gateStop = new Button(service);
+        gateStop.setText("停止");
+        gateStop.setAllCaps(false);
+        gateStop.setTextSize(11f);
+        gateStop.setOnClickListener(v -> resolveGate(false));
+        gatePanel.addView(gateStop, new LinearLayout.LayoutParams(dp(76), dp(40)));
+        gatePass = new Button(service);
+        gatePass.setText("通行");
+        gatePass.setAllCaps(false);
+        gatePass.setTextSize(11f);
+        gatePass.setOnClickListener(v -> resolveGate(true));
+        LinearLayout.LayoutParams passParams = new LinearLayout.LayoutParams(dp(76), dp(40));
+        passParams.leftMargin = dp(4);
+        gatePanel.addView(gatePass, passParams);
+        panel.addView(gatePanel, new LinearLayout.LayoutParams(-1, -2));
+
         chatScroll = new ScrollView(service);
         chatScroll.setVerticalScrollBarEnabled(true);
         chatScroll.setFillViewport(false);
@@ -187,10 +223,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
         panelParams = overlayParams(
                 Math.min(Math.max(dp(240), screenWidth - dp(24)), dp(420)),
-                dp(210),
-                false,
-                "Amin Neural Flow Voice Chat"
-        );
+                dp(250), false, "Amin Neural Flow Voice Chat");
         panelParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         panelParams.y = dp(46);
         windowManager.addView(panel, panelParams);
@@ -203,6 +236,7 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void toggleListening() {
+        if (pendingGatePass != null) { status("先完成目前節點確認"); return; }
         if (processing) { status("上一個訊號仍在處理中"); return; }
         if (listening) stopAndProcess(); else startListening();
     }
@@ -271,29 +305,88 @@ final class FloatingVoiceController implements RecognitionListener {
         status("Router 分流中…");
         final boolean createRequested = isCreateNodeRequest(spoken);
         final String requestedNodeName = createRequested ? extractNodeName(spoken) : "";
+        final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
+        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
 
-        String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "floating voice priority routing");
+        final NodeRegistry.Match nodeMatch = NodeRegistry.matchVoice(service, nodeMetadataStore, spoken);
+        final boolean nodeMatched = nodeMatch != null && !createRequested;
+        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY,
+                nodeMatched ? "matched" : "no_match",
+                nodeMatched ? nodeMatch.alias : (createRequested ? "create intent continues" : "continue"));
 
-        NodeRegistry.Match nodeMatch = NodeRegistry.matchVoice(service, nodeMetadataStore, spoken);
-        if (nodeMatch != null && !createRequested) {
-            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, "matched", nodeMatch.alias);
-            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "node_registry");
-            appendChat("系統：Node Registry 命中「" + nodeMatch.alias + "」。");
-            finishTurn("Node Registry 命中"); return;
+        awaitGate(NodeProtocolGateStore.NODE, turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, () -> {
+            if (nodeMatched) {
+                NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "node_registry");
+                appendChat("系統：Node Registry 命中「" + nodeMatch.alias + "」。");
+                finishTurn("Node Registry 命中");
+                return;
+            }
+            runCommandGate(turnId, spoken, confidence, createRequested, requestedNodeName);
+        });
+    }
+
+    private void runCommandGate(String turnId, String spoken, double confidence,
+                                boolean createRequested, String requestedNodeName) {
+        final VoiceCommandParser.Result parsed = parser.parse(spoken, confidence);
+        final boolean commandMatched = parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED && !createRequested;
+        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND,
+                commandMatched ? "matched" : "no_match",
+                commandMatched ? "legacy command" : "fallback candidate");
+
+        awaitGate(NodeProtocolGateStore.COMMAND, turnId, NeuralFlowTrace.Stage.COMMAND, () -> {
+            if (commandMatched) {
+                NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "command");
+                appendChat("系統：COMMAND 命中；Neural Flow POC 不控制手機。");
+                finishTurn("COMMAND 命中");
+                return;
+            }
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "llm_after_required_gates");
+            sendToLlm(turnId, spoken, createRequested, requestedNodeName);
+        });
+    }
+
+    private void awaitGate(String key, String turnId, NeuralFlowTrace.Stage stage, Runnable onPass) {
+        if (NodeProtocolGateStore.isAuto(service, key)) {
+            NeuralFlowTrace.emit(turnId, stage, "gate_auto_pass", key);
+            onPass.run();
+            return;
         }
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, "no_match", createRequested ? "create intent continues to LLM" : "continue");
-
-        VoiceCommandParser.Result parsed = parser.parse(spoken, confidence);
-        if (parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED && !createRequested) {
-            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND, "matched", "legacy command");
-            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "command");
-            appendChat("系統：COMMAND 命中；Neural Flow POC 不控制手機。");
-            finishTurn("COMMAND 命中"); return;
+        if (pendingGatePass != null) {
+            NeuralFlowTrace.emit(turnId, stage, "gate_blocked", "another gate is pending");
+            finishTurn("Gate 衝突");
+            return;
         }
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND, "no_match", "fallback to LLM");
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "llm");
+        pendingGateTurnId = turnId;
+        pendingGateStage = stage;
+        pendingGatePass = onPass;
+        pendingGateBlock = () -> finishTurn("已停止");
+        NeuralFlowTrace.emit(turnId, stage, "gate_waiting", key);
+        if (gateTitle != null) gateTitle.setText(stage == NeuralFlowTrace.Stage.NODE_REGISTRY ? "NODE" : "COMMAND");
+        if (gatePanel != null) gatePanel.setVisibility(View.VISIBLE);
+        status("等待節點通行");
+    }
 
+    private void resolveGate(boolean pass) {
+        if (pendingGatePass == null) return;
+        Runnable next = pass ? pendingGatePass : pendingGateBlock;
+        String turnId = pendingGateTurnId;
+        NeuralFlowTrace.Stage stage = pendingGateStage;
+        clearPendingGate();
+        if (stage != null && turnId != null && !turnId.isEmpty()) {
+            NeuralFlowTrace.emit(turnId, stage, pass ? "gate_passed" : "gate_blocked", pass ? "manual pass" : "manual stop");
+        }
+        if (next != null) next.run();
+    }
+
+    private void clearPendingGate() {
+        pendingGatePass = null;
+        pendingGateBlock = null;
+        pendingGateTurnId = "";
+        pendingGateStage = null;
+        if (gatePanel != null) gatePanel.setVisibility(View.GONE);
+    }
+
+    private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
         if (!LlmConfigStore.hasApiKey(service)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_ERROR, "blocked", "API Key not configured");
             appendChat("系統：尚未設定 API Key。"); finishTurn("LLM 未設定"); return;
@@ -303,21 +396,20 @@ final class FloatingVoiceController implements RecognitionListener {
         status("LLM 思考中 · " + LlmConfigStore.label(service));
         ArrayList<LlmClient.Message> messages = new ArrayList<>();
         messages.add(new LlmClient.Message("user", spoken));
-        final String callbackTurnId = turnId;
         LlmClient.send(service, messages, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 handler.post(() -> {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();
-                    NeuralFlowTrace.emit(callbackTurnId, NeuralFlowTrace.Stage.LLM_RESPONSE, "received", shorten(reply, 72));
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_RESPONSE, "received", shorten(reply, 72));
                     appendChat("AI：" + reply);
-                    if (createRequested) createNodeAfterReply(callbackTurnId, requestedNodeName, spoken);
-                    NeuralFlowTrace.emit(callbackTurnId, NeuralFlowTrace.Stage.MEMORY_JUDGE, "skip", "floating live-link test: memory write disabled");
+                    if (createRequested) createNodeAfterReply(turnId, requestedNodeName, spoken);
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.MEMORY_JUDGE, "skip", "floating live-link test: memory write disabled");
                     finishTurn(createRequested ? "完成 · 已執行節點建立分支" : "完成 · Memory 測試暫不寫入");
                 });
             }
             @Override public void onError(String message) {
                 handler.post(() -> {
-                    NeuralFlowTrace.emit(callbackTurnId, NeuralFlowTrace.Stage.LLM_ERROR, "error", shorten(message, 72));
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_ERROR, "error", shorten(message, 72));
                     appendChat("系統：LLM 錯誤 · " + message); finishTurn("LLM 錯誤");
                 });
             }
@@ -356,6 +448,7 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void finishTurn(String value) {
+        clearPendingGate();
         processing = false; listening = false;
         if (bubble != null) bubble.setText("🎙");
         status(value + " · 可繼續說下一句");
