@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 
 import org.json.JSONArray;
@@ -8,7 +9,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Candidate/local metadata overrides plus user-created local nodes. */
+/** Local metadata overrides, approved custom nodes, and typed connects. */
 final class NodeMetadataStore {
     private static final String PREFS = "amin_node_metadata";
     private static final String KEY_OVERRIDES = "overrides";
@@ -68,7 +69,30 @@ final class NodeMetadataStore {
         catch (Exception e) { return new JSONArray(); }
     }
 
+    /** Creates only a registration candidate and opens the mandatory approval gate. */
     JSONObject createCustomNode(String requestedName, String sourceText) {
+        RegistryCandidateStore candidates = new RegistryCandidateStore(context);
+        JSONObject candidate = candidates.createNodeCandidate(requestedName, sourceText);
+        if (candidate == null) return null;
+        try {
+            Intent intent = new Intent(context, RegistryApprovalActivity.class);
+            intent.putExtra(RegistryApprovalActivity.EXTRA_CANDIDATE_JSON, candidate.toString());
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            context.startActivity(intent);
+            return new JSONObject()
+                    .put("node_id", candidate.optString("candidate_id", ""))
+                    .put("nodeId", candidate.optString("candidate_id", ""))
+                    .put("name", "待註冊 · " + candidate.optString("title", "新節點"))
+                    .put("title", "待註冊 · " + candidate.optString("title", "新節點"))
+                    .put("registration_pending", true);
+        } catch (Exception error) {
+            candidates.reject(candidate);
+            return null;
+        }
+    }
+
+    /** Writes an already-approved node candidate into the authoritative registry store. */
+    JSONObject registerApprovedNode(String requestedName, String sourceText) {
         String name = clean(requestedName);
         if (name.isEmpty()) name = "新節點";
         String id = "local:" + UUID.randomUUID().toString().substring(0, 8);
@@ -144,10 +168,10 @@ final class NodeMetadataStore {
         for (int i = 0; i < edges.length(); i++) {
             JSONObject edge = edges.optJSONObject(i);
             if (edge == null) continue;
-            String source = value(edge, "source_node_id", "source");
-            if (source.isEmpty()) source = value(edge, "from", "source");
-            String target = value(edge, "target_node_id", "target");
-            if (target.isEmpty()) target = value(edge, "to", "target");
+            String source = value(edge, "from", "source");
+            if (source.isEmpty()) source = value(edge, "source_node_id", "sourceNodeId");
+            String target = value(edge, "to", "target");
+            if (target.isEmpty()) target = value(edge, "target_node_id", "targetNodeId");
             if (!wanted.equals(source) && !wanted.equals(target)) keptEdges.put(edge);
         }
         prefs.edit().putString(KEY_CUSTOM_NODES, keptNodes.toString())
