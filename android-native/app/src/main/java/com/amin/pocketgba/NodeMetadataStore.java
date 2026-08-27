@@ -14,9 +14,11 @@ final class NodeMetadataStore {
     private static final String KEY_OVERRIDES = "overrides";
     private static final String KEY_EDGES = "custom_edges";
     private static final String KEY_CUSTOM_NODES = "custom_nodes";
+    private final Context context;
     private final SharedPreferences prefs;
 
     NodeMetadataStore(Context context) {
+        this.context = context.getApplicationContext();
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
@@ -57,6 +59,7 @@ final class NodeMetadataStore {
             if (storage != null) item.put("storage", storage);
             all.put(nodeId, item);
             prefs.edit().putString(KEY_OVERRIDES, all.toString()).apply();
+            UnifiedGraphProvider.notifyChanged(context);
         } catch (Exception ignored) {}
     }
 
@@ -110,6 +113,7 @@ final class NodeMetadataStore {
         }
         if (!replaced) out.put(node);
         prefs.edit().putString(KEY_CUSTOM_NODES, out.toString()).apply();
+        UnifiedGraphProvider.notifyChanged(context);
     }
 
     JSONObject customNode(String nodeId) {
@@ -141,11 +145,14 @@ final class NodeMetadataStore {
             JSONObject edge = edges.optJSONObject(i);
             if (edge == null) continue;
             String source = value(edge, "source_node_id", "source");
+            if (source.isEmpty()) source = value(edge, "from", "source");
             String target = value(edge, "target_node_id", "target");
+            if (target.isEmpty()) target = value(edge, "to", "target");
             if (!wanted.equals(source) && !wanted.equals(target)) keptEdges.put(edge);
         }
         prefs.edit().putString(KEY_CUSTOM_NODES, keptNodes.toString())
                 .putString(KEY_EDGES, keptEdges.toString()).apply();
+        UnifiedGraphProvider.notifyChanged(context);
     }
 
     JSONArray customEdges() {
@@ -169,6 +176,7 @@ final class NodeMetadataStore {
         }
         if (!replaced) out.put(edge);
         prefs.edit().putString(KEY_EDGES, out.toString()).apply();
+        UnifiedGraphProvider.notifyChanged(context);
     }
 
     void removeEdge(String edgeId) {
@@ -180,6 +188,7 @@ final class NodeMetadataStore {
             if (!edgeId.equals(current.optString("edge_id", current.optString("edgeId", "")))) out.put(current);
         }
         prefs.edit().putString(KEY_EDGES, out.toString()).apply();
+        UnifiedGraphProvider.notifyChanged(context);
     }
 
     String applyToRegistry(String baseRegistryJson) {
