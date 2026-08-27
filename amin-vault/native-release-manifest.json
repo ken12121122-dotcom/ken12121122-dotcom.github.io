@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.5-bridge65.apk",
-  "apkSha256": "15e1545653fe33746aacd2affc6557f5c96fd2cb97f6ef68b9ee66103580fce5",
+  "apkSha256": "2ccea054946a426452a1dd11ef5930790d34a75d0b27b85f2ba967587aab2d55",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2749362,
-  "publishedAt": "2026-08-27T10:43:24Z",
+  "sizeBytes": 2752050,
+  "publishedAt": "2026-08-27T10:45:35Z",
   "mandatory": false,
   "releaseNotes": [
     "Neural Flow 主畫面新增固定功能地圖按鈕，可直接開啟 SystemGraphActivity。",
