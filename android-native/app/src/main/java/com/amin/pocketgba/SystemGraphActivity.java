@@ -58,6 +58,9 @@ public final class SystemGraphActivity extends Activity {
             case "prompt":
                 intent = new Intent(this, PromptKeyboardSetupActivity.class);
                 break;
+            case "memory":
+                intent = new Intent(this, MemoryCenterActivity.class);
+                break;
             case "knowledge":
                 intent = new Intent(this, WikiGraphActivity.class);
                 break;
@@ -105,12 +108,21 @@ public final class SystemGraphActivity extends Activity {
             float rx = Math.min(w * 0.36f, dp(170));
             float ry = Math.min(h * 0.31f, dp(245));
             nodes.add(new Node("core", "AMIN OS", cx, cy, dp(54), true));
-            nodes.add(new Node("original_home", "原始首頁", cx, cy - ry, dp(48), false));
-            nodes.add(new Node("gba", "Pocket GBA", cx + rx, cy - ry * 0.42f, dp(46), false));
-            nodes.add(new Node("prompt", "提示詞鍵盤", cx + rx, cy + ry * 0.42f, dp(46), false));
-            nodes.add(new Node("knowledge", "知識網路", cx, cy + ry, dp(48), false));
-            nodes.add(new Node("control", "全域控制", cx - rx, cy + ry * 0.42f, dp(46), false));
-            nodes.add(new Node("settings", "權限設定", cx - rx, cy - ry * 0.42f, dp(46), false));
+            addOrbitNode("original_home", "原始首頁", cx, cy, rx, ry, -90f, dp(45));
+            addOrbitNode("gba", "Pocket GBA", cx, cy, rx, ry, -39f, dp(44));
+            addOrbitNode("prompt", "提示詞鍵盤", cx, cy, rx, ry, 12f, dp(44));
+            addOrbitNode("memory", "記憶", cx, cy, rx, ry, 63f, dp(46));
+            addOrbitNode("knowledge", "知識網路", cx, cy, rx, ry, 114f, dp(45));
+            addOrbitNode("control", "全域控制", cx, cy, rx, ry, 165f, dp(44));
+            addOrbitNode("settings", "權限設定", cx, cy, rx, ry, 216f, dp(44));
+        }
+
+        private void addOrbitNode(String id, String label, float cx, float cy,
+                                  float rx, float ry, float angleDegrees, float radius) {
+            double radians = Math.toRadians(angleDegrees);
+            float x = cx + (float) Math.cos(radians) * rx;
+            float y = cy + (float) Math.sin(radians) * ry;
+            nodes.add(new Node(id, label, x, y, radius, false));
         }
 
         @Override
