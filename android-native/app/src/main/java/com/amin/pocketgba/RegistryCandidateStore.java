@@ -54,11 +54,14 @@ final class RegistryCandidateStore {
     }
 
     JSONObject approve(JSONObject candidate, NodeMetadataStore nodeStore) {
-        if (candidate == null) return null;
+        if (candidate == null || nodeStore == null) return null;
         String type = candidate.optString("entity_type", "");
         JSONObject registered = null;
         if ("node".equals(type)) {
-            registered = nodeStore.createCustomNode(candidate.optString("title", ""), candidate.optString("source_text", ""));
+            registered = nodeStore.registerApprovedNode(
+                    candidate.optString("title", ""),
+                    candidate.optString("source_text", "")
+            );
         } else if ("command".equals(type)) {
             try {
                 JSONObject command = new JSONObject()
