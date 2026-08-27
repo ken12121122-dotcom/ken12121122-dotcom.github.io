@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -15,6 +14,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
@@ -75,8 +76,12 @@ public final class WikiGraphActivity extends Activity {
         webView.loadUrl("file:///android_asset/amin-wiki-graph/index.html");
 
         IntentFilter filter = new IntentFilter(UnifiedGraphProvider.ACTION_CHANGED);
-        if (Build.VERSION.SDK_INT >= 33) registerReceiver(graphChangedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(graphChangedReceiver, filter);
+        ContextCompat.registerReceiver(
+                this,
+                graphChangedReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
     }
 
     @Override protected void onResume() {
