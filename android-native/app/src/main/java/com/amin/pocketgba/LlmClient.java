@@ -37,6 +37,7 @@ final class LlmClient {
                 if (LlmConfigStore.PROVIDER_OPENAI.equals(provider)) reply = callOpenAi(model, apiKey, history);
                 else if (LlmConfigStore.PROVIDER_CLAUDE.equals(provider)) reply = callClaude(model, apiKey, history);
                 else reply = callGemini(model, apiKey, history);
+                recordConversationNode(context, history, reply);
                 callback.onSuccess(reply);
             } catch (Exception error) {
                 String message = error.getMessage();
@@ -49,6 +50,17 @@ final class LlmClient {
         java.util.ArrayList<Message> messages = new java.util.ArrayList<>();
         messages.add(new Message("user", "請只回答 OK"));
         send(context, messages, callback);
+    }
+
+    private static void recordConversationNode(Context context, List<Message> history, String reply) {
+        if (context == null || history == null || history.isEmpty()) return;
+        for (int i = history.size() - 1; i >= 0; i--) {
+            Message message = history.get(i);
+            if (message != null && "user".equals(message.role)) {
+                new MemoryNodeStore(context).recordConversation(message.text, reply);
+                return;
+            }
+        }
     }
 
     private static String callGemini(String model, String apiKey, List<Message> history) throws Exception {

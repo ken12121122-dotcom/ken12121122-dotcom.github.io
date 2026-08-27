@@ -4,6 +4,20 @@
     <application>
         <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait" />
         <activity android:name=".LlmSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".MemoryCenterActivity" android:exported="false" android:screenOrientation="portrait">
+            <meta-data android:name="amin.graph.visible" android:value="true" />
+            <meta-data android:name="amin.graph.id" android:value="memory" />
+            <meta-data android:name="amin.graph.capability_id" android:value="memory" />
+            <meta-data android:name="amin.graph.title" android:value="記憶" />
+            <meta-data android:name="amin.graph.description" android:value="Pocket 本機長期記憶管理入口。" />
+            <meta-data android:name="amin.graph.parent" android:value="app-core" />
+            <meta-data android:name="amin.graph.route" android:value="amin-memory://open" />
+            <meta-data android:name="amin.graph.direction" android:value="bottom" />
+            <meta-data android:name="amin.graph.slot" android:value="1" />
+            <meta-data android:name="amin.graph.node_type" android:value="capability" />
+            <meta-data android:name="amin.graph.actions" android:value="open" />
+            <meta-data android:name="amin.graph.voice_enabled" android:value="false" />
+        </activity>
 
         <activity android:name=".SystemGraphActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".NodeInspectorActivity" android:exported="false" android:screenOrientation="portrait" />
