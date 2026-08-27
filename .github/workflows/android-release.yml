@@ -53,6 +53,23 @@ jobs:
           print(f"AMIN_RELEASE_NAME=Amin-Pocket-GBA-v{v['versionName']}-bridge{v['bridge']}.apk")
           PY
 
+      - name: Validate graph JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('android-native/app/src/main/assets/amin-wiki-graph/index.html').read_text()
+          if '<script>' not in html or '</script>' not in html:
+              raise SystemExit('Graph HTML script block missing')
+          js = html.split('<script>', 1)[1].split('</script>', 1)[0]
+          Path('/tmp/amin-wiki-graph.js').write_text(js)
+          PY
+          node --check /tmp/amin-wiki-graph.js
+          grep -Fq 'window.AminGraphSmoke' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -Fq 'saveUnifiedEdgeJson' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -Fq 'getRuntimeFlowTraceJson' android-native/app/src/main/assets/amin-wiki-graph/index.html
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
