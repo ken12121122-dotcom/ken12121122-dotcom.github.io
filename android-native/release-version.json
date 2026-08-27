@@ -1,19 +1,19 @@
 {
-  "versionCode": 162,
-  "versionName": "0.11.6",
+  "versionCode": 163,
+  "versionName": "0.11.7",
   "channel": "bridge",
-  "bridge": 66,
+  "bridge": 67,
   "releaseSequence": 2,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "Neural Flow 每張節點卡片右上角新增單一通行燈，點燈可切換自動／人工通行，不增加文字標籤。",
-    "NODE 與 COMMAND 預設為人工通行；其他節點預設自動，設定會持久保存。",
-    "Floating Voice 與 Neural Flow 文字測試都改為強制經過 NODE Gate 與 COMMAND Gate，移除直接送往 LLM 的 bypass 路徑。",
-    "暗燈節點收到訊號後會真正暫停 runtime，逐節點獨立提示通行或停止；未完成必要 Gate 前 LLM 不會被呼叫。",
-    "亮燈仍會經過 Gate 並寫入 gate_auto_pass trace，不代表跳過節點。",
-    "本輪不修改 Memory、新增節點 side-effect 邏輯、功能地圖、MD 結構或既有綠點動畫規則。"
+    "Floating Voice 新增固定單行掃描顯示，NODE 與 COMMAND 會播放 runtime 真正比對過的候選項並停在 MATCH 或 NO MATCH。",
+    "Node Registry 掃描現在保留實際候選清單與命中 node/alias/route，命中內建可執行節點後會嘗試開啟真實 activity 或 route。",
+    "Voice Command 掃描現在保留實際候選清單與命中 command；COMMAND Gate 通行後改由 AminActionDispatcher 執行真實既有功能，不再只顯示 POC 路徑。",
+    "LLM 加入與 NODE、COMMAND 相同的強制 Gate；預設暗燈，未人工通行前不得送出 API request。",
+    "使用者明確要求新增／建立節點時，節點會在進入 LLM 前先寫入 Node Registry，LLM 無權取消建立；LLM 只負責後續回覆。",
+    "NODE、COMMAND、LLM 的 Gate 都不可 bypass；亮燈代表自動批准，暗燈代表逐節點人工批准。"
   ]
 }
