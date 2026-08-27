@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.2-bridge62.apk",
-  "apkSha256": "887eed8787c2ffb2dd454b9d180ad5a2eaa0c28207438fbc6831f2ce6a487d10",
+  "apkSha256": "33ae39922b42ca86ba5cd4dcdedf67d47bf02a2cbaeb1435ec1e4c5ceb2c4f81",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2741242,
-  "publishedAt": "2026-08-27T03:16:00Z",
+  "sizeBytes": 2742367,
+  "publishedAt": "2026-08-27T04:14:30Z",
   "mandatory": false,
   "releaseNotes": [
     "重新啟用可拖曳的浮動語音按鈕與懸浮聊天觀察框。",
