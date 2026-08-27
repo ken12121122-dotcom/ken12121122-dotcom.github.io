@@ -24,14 +24,19 @@ final class RegistryCandidateStore {
         try {
             String title = clean(requestedName);
             if (title.isEmpty()) title = "新節點";
+            String candidateId = "candidate:" + UUID.randomUUID().toString().substring(0, 8);
             JSONObject candidate = new JSONObject()
-                    .put("candidate_id", "candidate:" + UUID.randomUUID().toString().substring(0, 8))
+                    .put("candidate_id", candidateId)
                     .put("entity_type", "node")
                     .put("title", title)
                     .put("source_text", clean(sourceText))
                     .put("review_status", "generated")
                     .put("created_at", System.currentTimeMillis());
             save(candidate);
+            GraphRuntimeFlowTrace.startNodeCreation(candidateId, title);
+            GraphRuntimeFlowTrace.step(candidateId, "candidate", "建立 Candidate", "success");
+            GraphRuntimeFlowTrace.step(candidateId, "approval", "等待人工 Approval", "waiting");
+            UnifiedGraphProvider.notifyChanged(context);
             return candidate;
         } catch (Exception error) { return null; }
     }
@@ -56,8 +61,11 @@ final class RegistryCandidateStore {
     JSONObject approve(JSONObject candidate, NodeMetadataStore nodeStore) {
         if (candidate == null || nodeStore == null) return null;
         String type = candidate.optString("entity_type", "");
+        String candidateId = candidate.optString("candidate_id", "");
         JSONObject registered = null;
         if ("node".equals(type)) {
+            GraphRuntimeFlowTrace.step(candidateId, "approval", "人工 Approval", "success");
+            GraphRuntimeFlowTrace.step(candidateId, "registry", "寫入 Node Registry", "running");
             registered = nodeStore.registerApprovedNode(
                     candidate.optString("title", ""),
                     candidate.optString("source_text", "")
@@ -74,7 +82,17 @@ final class RegistryCandidateStore {
             } catch (Exception ignored) { }
         }
         if (registered != null) {
-            remove(candidate.optString("candidate_id", ""));
+            remove(candidateId);
+            if ("node".equals(type)) {
+                String nodeId = registered.optString("node_id", registered.optString("nodeId", ""));
+                GraphRuntimeFlowTrace.step(candidateId, "registry", "寫入 Node Registry", "success");
+                GraphRuntimeFlowTrace.step(candidateId, "refresh", "Unified Graph Refresh", "success");
+                GraphRuntimeFlowTrace.finish(candidateId, "completed", nodeId);
+            }
+            UnifiedGraphProvider.notifyChanged(context);
+        } else if ("node".equals(type)) {
+            GraphRuntimeFlowTrace.step(candidateId, "registry", "寫入 Node Registry", "failed");
+            GraphRuntimeFlowTrace.finish(candidateId, "failed", "");
             UnifiedGraphProvider.notifyChanged(context);
         }
         return registered;
@@ -82,7 +100,13 @@ final class RegistryCandidateStore {
 
     void reject(JSONObject candidate) {
         if (candidate == null) return;
-        remove(candidate.optString("candidate_id", ""));
+        String candidateId = candidate.optString("candidate_id", "");
+        if ("node".equals(candidate.optString("entity_type", ""))) {
+            GraphRuntimeFlowTrace.step(candidateId, "approval", "人工 Approval", "failed");
+            GraphRuntimeFlowTrace.finish(candidateId, "rejected", "");
+            UnifiedGraphProvider.notifyChanged(context);
+        }
+        remove(candidateId);
     }
 
     JSONArray pending() {

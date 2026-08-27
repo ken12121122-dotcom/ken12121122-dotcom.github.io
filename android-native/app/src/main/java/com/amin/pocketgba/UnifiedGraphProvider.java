@@ -26,7 +26,7 @@ final class UnifiedGraphProvider {
         try {
             JSONObject out = new JSONObject();
             out.put("format", "amin-unified-graph");
-            out.put("version", 1);
+            out.put("version", 2);
             out.put("semanticZoom", new JSONObject().put("hysteresis", 1.08));
 
             JSONArray domains = new JSONArray();
@@ -42,6 +42,7 @@ final class UnifiedGraphProvider {
             out.put("groups", groups);
 
             JSONArray entities = new JSONArray();
+            JSONArray commandCatalog = new JSONArray();
             Set<String> ids = new HashSet<>();
 
             JSONObject nodeRoot = new JSONObject(NodeRegistry.registryJson(context, nodeStore));
@@ -65,7 +66,14 @@ final class UnifiedGraphProvider {
                     entity.put("entityType", "node");
                     entity.put("registryId", id);
                     entity.put("route", source.optString("route", ""));
+                    entity.put("parentId", first(source, "parent_id", "parentNodeId", "parent"));
+                    entity.put("nodeType", first(source, "node_type", "nodeType"));
+                    entity.put("status", source.optString("status", "active"));
+                    entity.put("version", first(source, "version", "nodeVersion"));
+                    entity.put("direction", source.optString("direction", ""));
+                    entity.put("slot", source.optInt("slot", 0));
                     entity.put("voice", source.optJSONObject("voice") == null ? new JSONObject() : source.optJSONObject("voice"));
+                    entity.put("storage", source.optJSONObject("storage") == null ? new JSONObject() : source.optJSONObject("storage"));
                     entities.put(entity);
                 }
             }
@@ -84,8 +92,12 @@ final class UnifiedGraphProvider {
                 entity.put("entityType", "command");
                 entity.put("registryId", id);
                 entity.put("action", command.getAction());
+                entity.put("category", command.getCategory());
+                entity.put("mode", command.getMode() == null ? "" : command.getMode());
+                entity.put("requiresAccessibility", command.requiresAccessibility());
                 entity.put("phrases", new JSONArray(command.getPhrases()));
                 entities.put(entity);
+                commandCatalog.put(new JSONObject(entity.toString()));
             }
 
             DynamicCommandStore dynamicStore = new DynamicCommandStore(context);
@@ -108,13 +120,20 @@ final class UnifiedGraphProvider {
                 entity.put("entityType", "command");
                 entity.put("registryId", id);
                 entity.put("action", source.optString("action", ""));
+                entity.put("category", source.optString("category", "dynamic"));
+                entity.put("mode", source.optString("mode", ""));
+                entity.put("requiresAccessibility", source.optBoolean("requires_accessibility", false));
                 entity.put("phrases", source.optJSONArray("phrases") == null ? new JSONArray() : source.optJSONArray("phrases"));
                 entities.put(entity);
+                commandCatalog.put(new JSONObject(entity.toString()));
             }
             out.put("nodes", entities);
+            out.put("commands", commandCatalog);
 
             JSONArray relations = new JSONArray();
-            JSONArray edges = nodeStore == null ? new JSONArray() : nodeStore.customEdges();
+            JSONObject edgeRoot = new JSONObject(NodeRegistry.typedEdgesJson(context, nodeStore));
+            JSONArray edges = edgeRoot.optJSONArray("edges");
+            if (edges == null) edges = new JSONArray();
             for (int i = 0; i < edges.length(); i++) {
                 JSONObject edge = edges.optJSONObject(i);
                 if (edge == null) continue;
@@ -125,17 +144,26 @@ final class UnifiedGraphProvider {
                 if (relation.isEmpty()) relation = "related_to";
                 String edgeId = first(edge, "edge_id", "edgeId");
                 if (edgeId.isEmpty()) edgeId = "edge:" + i;
-                relations.put(new JSONObject()
+                JSONObject relationOut = new JSONObject()
                         .put("id", edgeId)
                         .put("from", from)
                         .put("to", to)
-                        .put("type", relation));
+                        .put("type", relation)
+                        .put("status", edge.optString("status", "active"));
+                if (edge.has("command_chain")) relationOut.put("commandChain", edge.optJSONArray("command_chain"));
+                else if (edge.has("commands")) relationOut.put("commandChain", edge.optJSONArray("commands"));
+                else relationOut.put("commandChain", new JSONArray());
+                if (edge.has("gate")) relationOut.put("gate", edge.optJSONObject("gate"));
+                else relationOut.put("gate", new JSONObject().put("enabled", true));
+                relationOut.put("authority", edge.optString("authority", ""));
+                relations.put(relationOut);
             }
             out.put("relations", relations);
             out.put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson());
+            out.put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
             return out.toString();
         } catch (Exception error) {
-            return "{\"format\":\"amin-unified-graph\",\"version\":1,\"domains\":[],\"groups\":[],\"nodes\":[],\"relations\":[],\"runtimeEdges\":[]}";
+            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
         }
     }
 
