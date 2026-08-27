@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.3-bridge63.apk",
-  "apkSha256": "5f70daa03c5aa16f7ad16a0a5155db70e285e8ee18a2d5693e9a396ac244ee14",
+  "apkSha256": "d01a177b14fd8ddb26e14b9524161b26c004d8124eee0554216dc1d5848cc16b",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2744622,
-  "publishedAt": "2026-08-27T04:16:30Z",
+  "sizeBytes": 2748128,
+  "publishedAt": "2026-08-27T04:34:01Z",
   "mandatory": false,
   "releaseNotes": [
     "懸浮聊天框改為可手指上下滾動，並保留自動捲到最新訊息。",
