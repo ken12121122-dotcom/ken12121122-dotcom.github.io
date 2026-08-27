@@ -160,9 +160,10 @@ final class UnifiedGraphProvider {
             }
             out.put("relations", relations);
             out.put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson());
+            out.put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
             return out.toString();
         } catch (Exception error) {
-            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[]}";
+            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
         }
     }
 
