@@ -154,6 +154,9 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
             return GraphRuntimeEdgeTrace.snapshotJson().toString();
         }
+        @JavascriptInterface public String getRuntimeFlowTraceJson() {
+            return GraphRuntimeFlowTrace.snapshotJson().toString();
+        }
         @JavascriptInterface public boolean addUnifiedEdge(String from, String to, String relation) {
             String source = from == null ? "" : from.trim();
             String target = to == null ? "" : to.trim();
