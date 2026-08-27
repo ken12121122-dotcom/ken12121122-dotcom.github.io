@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.9-bridge69.apk",
-  "apkSha256": "340a9c38dffcc019c684ed109874105f4e6c843097dba8f28de374b49ce457d1",
+  "apkSha256": "18b977014a731df0c6dee9ec8c32361fcd2743e0d56be4f3332db47ed51ecf46",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2758343,
-  "publishedAt": "2026-08-27T16:18:37Z",
+  "sizeBytes": 2759397,
+  "publishedAt": "2026-08-27T16:37:18Z",
   "mandatory": false,
   "releaseNotes": [
     "新增 Elastic Semantic Force Graph：NODE 依階層與方向形成語意錨點，可拖曳並局部重新平衡。",
