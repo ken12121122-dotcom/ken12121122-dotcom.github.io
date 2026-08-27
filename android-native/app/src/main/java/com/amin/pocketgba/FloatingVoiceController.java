@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,6 +30,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /** Floating voice + scrollable chat overlay for live Neural Flow observation. */
@@ -37,6 +39,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final String KEY_X = "voice_bubble_x";
     private static final String KEY_Y = "voice_bubble_y";
     private static final long LISTENING_TIMEOUT_MS = 8000L;
+    private static final long SCAN_STEP_MS = 45L;
 
     private final UniversalControlAccessibilityService service;
     private final WindowManager windowManager;
@@ -51,6 +54,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private LinearLayout panel;
     private WindowManager.LayoutParams panelParams;
     private TextView statusView;
+    private TextView scanView;
     private TextView chatView;
     private ScrollView chatScroll;
     private LinearLayout gatePanel;
@@ -92,6 +96,7 @@ final class FloatingVoiceController implements RecognitionListener {
         panel = null;
         panelParams = null;
         statusView = null;
+        scanView = null;
         chatView = null;
         chatScroll = null;
         gatePanel = null;
@@ -186,6 +191,10 @@ final class FloatingVoiceController implements RecognitionListener {
 
         statusView = text("待命 · 點右側 🎙 開始說話", 12f, true, Color.WHITE);
         panel.addView(statusView, new LinearLayout.LayoutParams(-1, -2));
+        scanView = text("—", 11f, false, 0xffa9bbb1);
+        scanView.setSingleLine(true);
+        scanView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        panel.addView(scanView, new LinearLayout.LayoutParams(-1, dp(24)));
 
         gatePanel = new LinearLayout(service);
         gatePanel.setOrientation(LinearLayout.HORIZONTAL);
@@ -223,7 +232,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
         panelParams = overlayParams(
                 Math.min(Math.max(dp(240), screenWidth - dp(24)), dp(420)),
-                dp(250), false, "Amin Neural Flow Voice Chat");
+                dp(274), false, "Amin Neural Flow Voice Chat");
         panelParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         panelParams.y = dp(46);
         windowManager.addView(panel, panelParams);
@@ -308,41 +317,63 @@ final class FloatingVoiceController implements RecognitionListener {
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
 
-        final NodeRegistry.Match nodeMatch = NodeRegistry.matchVoice(service, nodeMetadataStore, spoken);
+        final NodeRegistry.ScanResult scan = NodeRegistry.scanVoice(service, nodeMetadataStore, spoken);
+        final NodeRegistry.Match nodeMatch = scan.match;
         final boolean nodeMatched = nodeMatch != null && !createRequested;
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY,
-                nodeMatched ? "matched" : "no_match",
-                nodeMatched ? nodeMatch.alias : (createRequested ? "create intent continues" : "continue"));
-
-        awaitGate(NodeProtocolGateStore.NODE, turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, () -> {
-            if (nodeMatched) {
-                NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "node_registry");
-                appendChat("系統：Node Registry 命中「" + nodeMatch.alias + "」。");
-                finishTurn("Node Registry 命中");
-                return;
-            }
-            runCommandGate(turnId, spoken, confidence, createRequested, requestedNodeName);
+        playScan(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, "NODE", scan.candidates,
+                nodeMatched ? nodeMatch.alias : "NO MATCH", () -> {
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.NODE_REGISTRY,
+                    nodeMatched ? "matched" : "no_match",
+                    nodeMatched ? nodeDetail(nodeMatch) : (createRequested ? "create intent continues" : "continue"));
+            awaitGate(NodeProtocolGateStore.NODE, turnId, NeuralFlowTrace.Stage.NODE_REGISTRY, () -> {
+                if (nodeMatched) {
+                    boolean launched = executeNodeMatch(nodeMatch);
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, launched ? "complete" : "node_no_executor", nodeDetail(nodeMatch));
+                    appendChat(launched
+                            ? "系統：已開啟節點「" + nodeMatch.alias + "」。"
+                            : "系統：Node 命中「" + nodeMatch.alias + "」，但目前沒有可執行 route。");
+                    finishTurn(launched ? "NODE 已執行" : "NODE 命中但無 executor");
+                    return;
+                }
+                runCommandGate(turnId, spoken, confidence, createRequested, requestedNodeName);
+            });
         });
     }
 
     private void runCommandGate(String turnId, String spoken, double confidence,
                                 boolean createRequested, String requestedNodeName) {
-        final VoiceCommandParser.Result parsed = parser.parse(spoken, confidence);
+        final VoiceCommandParser.ScanResult commandScan = parser.scan(spoken, confidence);
+        final VoiceCommandParser.Result parsed = commandScan.getResult();
         final boolean commandMatched = parsed.getStatus() == VoiceCommandParser.Result.Status.MATCHED && !createRequested;
-        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND,
-                commandMatched ? "matched" : "no_match",
-                commandMatched ? "legacy command" : "fallback candidate");
+        String finalName = commandMatched && parsed.getCommand() != null ? parsed.getCommand().getTitle() : "NO MATCH";
+        playScan(turnId, NeuralFlowTrace.Stage.COMMAND, "COMMAND", commandScan.getCandidates(), finalName, () -> {
+            String detail = commandMatched && parsed.getCommand() != null
+                    ? parsed.getCommand().getId() + " · " + parsed.getAction().getAction()
+                    : "fallback candidate";
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND,
+                    commandMatched ? "matched" : "no_match", detail);
 
-        awaitGate(NodeProtocolGateStore.COMMAND, turnId, NeuralFlowTrace.Stage.COMMAND, () -> {
-            if (commandMatched) {
-                NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "command");
-                appendChat("系統：COMMAND 命中；Neural Flow POC 不控制手機。");
-                finishTurn("COMMAND 命中");
-                return;
-            }
-            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "llm_after_required_gates");
-            sendToLlm(turnId, spoken, createRequested, requestedNodeName);
+            awaitGate(NodeProtocolGateStore.COMMAND, turnId, NeuralFlowTrace.Stage.COMMAND, () -> {
+                if (commandMatched) {
+                    AminActionDispatcher.DispatchResult dispatch = AminActionDispatcher.dispatch(service, parsed.getAction());
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.COMMAND,
+                            dispatch.isSuccess() ? "executed" : "execute_failed", dispatch.getMessage());
+                    NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER,
+                            dispatch.isSuccess() ? "complete" : "command_failed", detail);
+                    appendChat("系統：" + dispatch.getMessage());
+                    finishTurn(dispatch.isSuccess() ? "COMMAND 已執行" : "COMMAND 執行失敗");
+                    return;
+                }
+                if (createRequested) createNodeAfterReply(turnId, requestedNodeName, spoken);
+                NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "complete", "llm_after_required_gates");
+                runLlmGate(turnId, spoken, createRequested, requestedNodeName);
+            });
         });
+    }
+
+    private void runLlmGate(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
+        awaitGate(NodeProtocolGateStore.LLM, turnId, NeuralFlowTrace.Stage.LLM_REQUEST,
+                () -> sendToLlm(turnId, spoken, createRequested, requestedNodeName));
     }
 
     private void awaitGate(String key, String turnId, NeuralFlowTrace.Stage stage, Runnable onPass) {
@@ -361,9 +392,16 @@ final class FloatingVoiceController implements RecognitionListener {
         pendingGatePass = onPass;
         pendingGateBlock = () -> finishTurn("已停止");
         NeuralFlowTrace.emit(turnId, stage, "gate_waiting", key);
-        if (gateTitle != null) gateTitle.setText(stage == NeuralFlowTrace.Stage.NODE_REGISTRY ? "NODE" : "COMMAND");
+        if (gateTitle != null) gateTitle.setText(gateLabel(stage));
         if (gatePanel != null) gatePanel.setVisibility(View.VISIBLE);
         status("等待節點通行");
+    }
+
+    private String gateLabel(NeuralFlowTrace.Stage stage) {
+        if (stage == NeuralFlowTrace.Stage.NODE_REGISTRY) return "NODE";
+        if (stage == NeuralFlowTrace.Stage.COMMAND) return "COMMAND";
+        if (stage == NeuralFlowTrace.Stage.LLM_REQUEST) return "LLM";
+        return stage == null ? "" : stage.name();
     }
 
     private void resolveGate(boolean pass) {
@@ -386,6 +424,61 @@ final class FloatingVoiceController implements RecognitionListener {
         if (gatePanel != null) gatePanel.setVisibility(View.GONE);
     }
 
+    private void playScan(String turnId, NeuralFlowTrace.Stage stage, String prefix,
+                          List<String> candidates, String finalValue, Runnable done) {
+        ArrayList<String> actual = new ArrayList<>();
+        if (candidates != null) actual.addAll(candidates);
+        playScanStep(turnId, stage, prefix, actual, 0, finalValue, done);
+    }
+
+    private void playScanStep(String turnId, NeuralFlowTrace.Stage stage, String prefix,
+                              ArrayList<String> candidates, int index, String finalValue, Runnable done) {
+        if (index >= candidates.size()) {
+            String end = prefix + " ▸ " + finalValue;
+            if (scanView != null) scanView.setText(end);
+            NeuralFlowTrace.emit(turnId, stage, "scan_complete", end);
+            handler.postDelayed(done, SCAN_STEP_MS);
+            return;
+        }
+        String line = prefix + " ▸ " + shorten(candidates.get(index), 46);
+        if (scanView != null) scanView.setText(line);
+        NeuralFlowTrace.emit(turnId, stage, "scan", line);
+        handler.postDelayed(() -> playScanStep(turnId, stage, prefix, candidates, index + 1, finalValue, done), SCAN_STEP_MS);
+    }
+
+    private boolean executeNodeMatch(NodeRegistry.Match match) {
+        if (match == null || match.node == null) return false;
+        JSONObject node = match.node;
+        String activity = node.optString("activity", "").trim();
+        if (!activity.isEmpty()) {
+            try {
+                Intent intent = new Intent();
+                intent.setClassName(service, activity);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                service.startActivity(intent);
+                return true;
+            } catch (RuntimeException ignored) { }
+        }
+        String route = node.optString("route", "").trim();
+        if (!route.isEmpty()) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(route));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                service.startActivity(intent);
+                return true;
+            } catch (RuntimeException ignored) { }
+        }
+        return false;
+    }
+
+    private String nodeDetail(NodeRegistry.Match match) {
+        if (match == null || match.node == null) return "";
+        JSONObject node = match.node;
+        String id = node.optString("node_id", node.optString("nodeId", node.optString("id", "")));
+        String route = node.optString("route", "");
+        return id + " · alias=" + match.alias + (route.isEmpty() ? "" : " · route=" + route);
+    }
+
     private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
         if (!LlmConfigStore.hasApiKey(service)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_ERROR, "blocked", "API Key not configured");
@@ -402,9 +495,8 @@ final class FloatingVoiceController implements RecognitionListener {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();
                     NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_RESPONSE, "received", shorten(reply, 72));
                     appendChat("AI：" + reply);
-                    if (createRequested) createNodeAfterReply(turnId, requestedNodeName, spoken);
                     NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.MEMORY_JUDGE, "skip", "floating live-link test: memory write disabled");
-                    finishTurn(createRequested ? "完成 · 已執行節點建立分支" : "完成 · Memory 測試暫不寫入");
+                    finishTurn(createRequested ? "完成 · 節點已先建立，LLM 回覆完成" : "完成 · Memory 測試暫不寫入");
                 });
             }
             @Override public void onError(String message) {
