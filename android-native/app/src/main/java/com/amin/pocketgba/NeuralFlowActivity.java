@@ -3,6 +3,7 @@ package com.amin.pocketgba;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -42,6 +43,7 @@ import java.util.Map;
 public final class NeuralFlowActivity extends Activity implements NeuralFlowTrace.Listener {
     private FlowCanvas flowCanvas;
     private TextView statusView;
+    private TextView turnView;
     private EditText inputView;
     private LinearLayout candidatePanel;
     private EditText candidateSummaryView;
@@ -84,11 +86,46 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
-        header.setPadding(dp(18), dp(12), dp(18), dp(8));
+        header.setPadding(dp(14), dp(10), dp(14), dp(8));
         header.setBackgroundColor(0xf7f7f8f7);
-        header.addView(text("Neural Flow", 20f, true, 0xff17211b), new LinearLayout.LayoutParams(-1, -2));
+
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.addView(text("Neural Flow", 20f, true, 0xff17211b), new LinearLayout.LayoutParams(0, -2, 1f));
+        Button featureMap = smallButton("功能地圖");
+        featureMap.setOnClickListener(v -> openFeatureMap());
+        titleRow.addView(featureMap, new LinearLayout.LayoutParams(dp(96), dp(42)));
+        header.addView(titleRow, new LinearLayout.LayoutParams(-1, -2));
+
         header.addView(text("Live router → LLM → memory trace · 拖動畫布 · 點節點看 MD", 12f, false, 0xff6b746e),
                 new LinearLayout.LayoutParams(-1, -2));
+
+        turnView = text("TURN —", 11f, true, 0xff19794b);
+        LinearLayout.LayoutParams turnParams = new LinearLayout.LayoutParams(-1, -2);
+        turnParams.topMargin = dp(3);
+        header.addView(turnView, turnParams);
+
+        LinearLayout toolsRow = new LinearLayout(this);
+        toolsRow.setOrientation(LinearLayout.HORIZONTAL);
+        toolsRow.setGravity(Gravity.CENTER_VERTICAL);
+        Button center = smallButton("回到中心");
+        center.setOnClickListener(v -> flowCanvas.resetViewport());
+        toolsRow.addView(center, new LinearLayout.LayoutParams(0, dp(40), 1f));
+        Button recentMd = smallButton("最近節點 MD");
+        recentMd.setOnClickListener(v -> showLatestNodeMarkdown());
+        LinearLayout.LayoutParams recentParams = new LinearLayout.LayoutParams(0, dp(40), 1f);
+        recentParams.leftMargin = dp(4);
+        toolsRow.addView(recentMd, recentParams);
+        Button clear = smallButton("清除 Trace");
+        clear.setOnClickListener(v -> clearVisualTrace());
+        LinearLayout.LayoutParams clearParams = new LinearLayout.LayoutParams(0, dp(40), 1f);
+        clearParams.leftMargin = dp(4);
+        toolsRow.addView(clear, clearParams);
+        LinearLayout.LayoutParams toolsParams = new LinearLayout.LayoutParams(-1, -2);
+        toolsParams.topMargin = dp(4);
+        header.addView(toolsRow, toolsParams);
+
         FrameLayout.LayoutParams headerParams = new FrameLayout.LayoutParams(-1, -2);
         headerParams.gravity = Gravity.TOP;
         root.addView(header, headerParams);
@@ -166,8 +203,27 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         Button button = new Button(this);
         button.setText(label);
         button.setAllCaps(false);
-        button.setTextSize(12f);
+        button.setTextSize(11f);
         return button;
+    }
+
+    private void openFeatureMap() {
+        startActivity(new Intent(this, SystemGraphActivity.class));
+    }
+
+    private void showLatestNodeMarkdown() {
+        String key = flowCanvas.latestKey();
+        if (key == null || key.isEmpty()) {
+            statusView.setText("目前沒有最近節點可開啟");
+            return;
+        }
+        showNodeMarkdown(key, flowCanvas.latestEvent(key));
+    }
+
+    private void clearVisualTrace() {
+        flowCanvas.clearVisualTrace();
+        if (turnView != null) turnView.setText("TURN — · 畫面 Trace 已清除");
+        if (statusView != null) statusView.setText("已清除畫面 Trace；Runtime 歷史未刪除");
     }
 
     private void runTrace(String raw) {
@@ -181,6 +237,7 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         activeSourceText = spoken;
         activeAssistantReply = "";
         activeTurnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
+        if (turnView != null) turnView.setText(activeTurnId);
         NeuralFlowTrace.emit(activeTurnId, NeuralFlowTrace.Stage.ROUTER, "enter", "priority routing");
         statusView.setText("正在分流…");
 
@@ -330,6 +387,7 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         runOnUiThread(() -> {
             if (activeTurnId.isEmpty() || event.turnId.equals(activeTurnId)) {
                 activeTurnId = event.turnId;
+                if (turnView != null) turnView.setText(event.turnId + " · " + event.stage.name());
                 flowCanvas.accept(event);
             }
         });
@@ -340,6 +398,8 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         if (events.isEmpty()) return;
         activeTurnId = events.get(events.size() - 1).turnId;
         for (NeuralFlowTrace.Event event : events) flowCanvas.accept(event);
+        NeuralFlowTrace.Event latest = events.get(events.size() - 1);
+        if (turnView != null) turnView.setText(latest.turnId + " · " + latest.stage.name());
     }
 
     private void showNodeMarkdown(String key, NeuralFlowTrace.Event lastEvent) {
@@ -508,6 +568,7 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         private NeuralFlowTrace.Stage previousStage;
         private String currentStatus = "idle";
         private String currentDetail = "";
+        private String latestKey = "";
         private float signalProgress = 1f;
         private ValueAnimator animator;
         private float offsetX;
@@ -551,8 +612,33 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             currentStage = event.stage;
             currentStatus = event.status;
             currentDetail = event.detail;
-            latestRuntime.put(keyFor(event.stage), event);
+            latestKey = keyFor(event.stage);
+            latestRuntime.put(latestKey, event);
             animateSignal();
+        }
+
+        String latestKey() { return latestKey; }
+
+        NeuralFlowTrace.Event latestEvent(String key) { return latestRuntime.get(key); }
+
+        void clearVisualTrace() {
+            if (animator != null) animator.cancel();
+            latestRuntime.clear();
+            latestKey = "";
+            previousStage = null;
+            currentStage = null;
+            currentStatus = "idle";
+            currentDetail = "";
+            signalProgress = 1f;
+            invalidate();
+        }
+
+        void resetViewport() {
+            if (getWidth() <= 0 || getHeight() <= 0) return;
+            offsetX = (getWidth() - contentWidth) / 2f;
+            offsetY = -dp(36);
+            clampOffset();
+            invalidate();
         }
 
         private void animateSignal() {
