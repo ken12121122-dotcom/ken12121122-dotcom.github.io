@@ -2,6 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
+        <provider
+            android:name=".NeuralFlowEntryProvider"
+            android:authorities="${applicationId}.neuralflow.entry"
+            android:exported="false" />
+        <activity
+            android:name=".NeuralFlowActivity"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait" />
+
         <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait" />
         <activity android:name=".LlmSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
 
