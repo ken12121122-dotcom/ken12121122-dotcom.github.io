@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -60,7 +61,6 @@ final class FloatingVoiceController implements RecognitionListener {
     private boolean processing;
     private int screenWidth;
     private int screenHeight;
-    private String activeTurnId = "";
 
     FloatingVoiceController(UniversalControlAccessibilityService service, WindowManager windowManager) {
         this.service = service;
@@ -297,7 +297,6 @@ final class FloatingVoiceController implements RecognitionListener {
         } else {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.INPUT, "received", shorten(spoken, 56));
         }
-        activeTurnId = turnId;
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "floating voice priority routing");
 
         NodeRegistry.Match nodeMatch = NodeRegistry.matchVoice(service, nodeMetadataStore, spoken);
