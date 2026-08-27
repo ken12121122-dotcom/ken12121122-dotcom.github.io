@@ -2,6 +2,7 @@ package com.amin.pocketgba;
 
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -9,18 +10,25 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Neural Flow POC: a live, observable routing + memory sandbox.
@@ -79,7 +87,7 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         header.setPadding(dp(18), dp(12), dp(18), dp(8));
         header.setBackgroundColor(0xf7f7f8f7);
         header.addView(text("Neural Flow", 20f, true, 0xff17211b), new LinearLayout.LayoutParams(-1, -2));
-        header.addView(text("Live router → LLM → memory trace · POC sandbox", 12f, false, 0xff6b746e),
+        header.addView(text("Live router → LLM → memory trace · 拖動畫布 · 點節點看 MD", 12f, false, 0xff6b746e),
                 new LinearLayout.LayoutParams(-1, -2));
         FrameLayout.LayoutParams headerParams = new FrameLayout.LayoutParams(-1, -2);
         headerParams.gravity = Gravity.TOP;
@@ -334,6 +342,149 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         for (NeuralFlowTrace.Event event : events) flowCanvas.accept(event);
     }
 
+    private void showNodeMarkdown(String key, NeuralFlowTrace.Event lastEvent) {
+        String markdown = markdownFor(key, lastEvent);
+        TextView body = text(markdown, 13f, false, 0xff17211b);
+        body.setTextIsSelectable(true);
+        body.setPadding(dp(16), dp(12), dp(16), dp(24));
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setVerticalScrollBarEnabled(true);
+        scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(nodeTitle(key) + " · MD")
+                .setView(scroll)
+                .setPositiveButton("關閉", null)
+                .create();
+        dialog.setOnShowListener(d -> {
+            int maxHeight = Math.round(getResources().getDisplayMetrics().heightPixels * 0.72f);
+            scroll.getLayoutParams().height = maxHeight;
+            scroll.requestLayout();
+        });
+        dialog.show();
+    }
+
+    private String markdownFor(String key, NeuralFlowTrace.Event event) {
+        StringBuilder md = new StringBuilder();
+        md.append("# ").append(nodeTitle(key)).append("\n\n");
+        md.append("## Node ID\n").append(nodeId(key)).append("\n\n");
+        md.append("## 作用\n").append(nodePurpose(key)).append("\n\n");
+        md.append("## Input\n").append(nodeInput(key)).append("\n\n");
+        md.append("## Output\n").append(nodeOutput(key)).append("\n\n");
+        md.append("## 前後流程\n").append(nodeFlow(key)).append("\n\n");
+        md.append("## 狀態定義\n").append(nodeStatuses(key)).append("\n\n");
+        md.append("## 執行屬性\n").append(nodeExecutionMode(key)).append("\n\n");
+        md.append("---\n\n## 最近一次執行暫存\n");
+        if (event == null) {
+            md.append("尚無執行紀錄。\n");
+            return md.toString();
+        }
+        md.append("- turn_id: ").append(event.turnId).append("\n");
+        md.append("- timestamp: ").append(formatTime(event.timestampMs)).append("\n");
+        md.append("- stage: ").append(event.stage.name()).append("\n");
+        md.append("- status: ").append(event.status).append("\n\n");
+        md.append("### Input Snapshot\n");
+        md.append("source_text: ").append(activeSourceText == null || activeSourceText.isEmpty() ? "—" : activeSourceText).append("\n\n");
+        md.append("### Output Snapshot\n");
+        md.append("status: ").append(event.status).append("\n");
+        md.append("detail: ").append(event.detail == null || event.detail.isEmpty() ? "—" : event.detail).append("\n");
+        if ("llm".equals(key)) {
+            md.append("reply: ").append(activeAssistantReply == null || activeAssistantReply.isEmpty() ? "—" : activeAssistantReply).append("\n");
+        }
+        if ("router".equals(key)) {
+            md.append("route_result: ").append(event.detail == null || event.detail.isEmpty() ? "尚未形成結構化 routes[]" : event.detail).append("\n");
+            md.append("route_count: 目前 runtime 尚未提供結構化多路分流計數\n");
+        }
+        md.append("\n> 此區只保留此節點最近一次經過的 runtime snapshot；下一次經過會直接覆蓋。\n");
+        return md.toString();
+    }
+
+    private String nodeTitle(String key) {
+        if ("input".equals(key)) return "INPUT";
+        if ("router".equals(key)) return "ROUTER";
+        if ("node".equals(key)) return "NODE REGISTRY";
+        if ("command".equals(key)) return "COMMAND";
+        if ("llm".equals(key)) return "LLM";
+        if ("judge".equals(key)) return "MEMORY JUDGE";
+        if ("compress".equals(key)) return "MEMORY COMPRESS";
+        if ("approval".equals(key)) return "MEMORY APPROVAL";
+        if ("store".equals(key)) return "MEMORY STORE";
+        return key.toUpperCase(Locale.ROOT);
+    }
+
+    private String nodeId(String key) { return "neural:" + key; }
+
+    private String nodePurpose(String key) {
+        if ("input".equals(key)) return "接收本輪文字／語音訊號並建立 turn。";
+        if ("router".equals(key)) return "依固定優先順序控制目前可用的路由；本輪不修改 Router 判斷規則。";
+        if ("node".equals(key)) return "比對 Node Registry 的語音 alias，判斷是否命中既有功能節點。";
+        if ("command".equals(key)) return "比對既有 Legacy Voice Command。";
+        if ("llm".equals(key)) return "一般對話 fallback，送往目前設定的 LLM 並接收回答。";
+        if ("judge".equals(key)) return "判斷 LLM 回合是否形成可保存的候選記憶。";
+        if ("compress".equals(key)) return "把候選記憶壓縮成短而可獨立理解的摘要。";
+        if ("approval".equals(key)) return "等待使用者批准或拒絕候選記憶。";
+        if ("store".equals(key)) return "只把已批准候選寫入 Neural Flow POC store。";
+        return "Neural Flow 節點。";
+    }
+
+    private String nodeInput(String key) {
+        if ("input".equals(key)) return "- voice/text payload";
+        if ("router".equals(key)) return "- current turn\n- user input";
+        if ("node".equals(key)) return "- normalized user input\n- Node Registry\n- voice aliases";
+        if ("command".equals(key)) return "- normalized user input\n- legacy command parser";
+        if ("llm".equals(key)) return "- user message\n- configured provider/model";
+        if ("judge".equals(key)) return "- user text\n- assistant reply";
+        if ("compress".equals(key)) return "- memory candidate";
+        if ("approval".equals(key)) return "- compressed candidate";
+        if ("store".equals(key)) return "- approved candidate";
+        return "- runtime payload";
+    }
+
+    private String nodeOutput(String key) {
+        if ("input".equals(key)) return "- turn_id\n- INPUT trace";
+        if ("router".equals(key)) return "- selected route detail\n- ROUTER trace";
+        if ("node".equals(key)) return "- matched / no_match";
+        if ("command".equals(key)) return "- matched / no_match";
+        if ("llm".equals(key)) return "- reply / error";
+        if ("judge".equals(key)) return "- skip / candidate / error";
+        if ("compress".equals(key)) return "- compressed summary";
+        if ("approval".equals(key)) return "- approved / rejected / waiting_user";
+        if ("store".equals(key)) return "- saved / error";
+        return "- trace event";
+    }
+
+    private String nodeFlow(String key) {
+        if ("input".equals(key)) return "INPUT → ROUTER";
+        if ("router".equals(key)) return "INPUT → ROUTER → NODE / COMMAND / LLM";
+        if ("node".equals(key)) return "ROUTER → NODE REGISTRY → COMMAND 或結束";
+        if ("command".equals(key)) return "NODE REGISTRY → COMMAND → LLM 或結束";
+        if ("llm".equals(key)) return "COMMAND → LLM → MEMORY JUDGE";
+        if ("judge".equals(key)) return "LLM → MEMORY JUDGE → MEMORY COMPRESS 或結束";
+        if ("compress".equals(key)) return "MEMORY JUDGE → COMPRESS → APPROVAL";
+        if ("approval".equals(key)) return "COMPRESS → APPROVAL → STORE 或結束";
+        if ("store".equals(key)) return "APPROVAL → STORE";
+        return "依 Neural Flow trace。";
+    }
+
+    private String nodeStatuses(String key) {
+        if ("node".equals(key) || "command".equals(key)) return "- matched\n- no_match";
+        if ("llm".equals(key)) return "- sending\n- received\n- blocked\n- error";
+        if ("judge".equals(key)) return "- analyzing\n- skip\n- candidate\n- error\n- invalid_json";
+        if ("approval".equals(key)) return "- waiting_user\n- approved\n- rejected";
+        if ("store".equals(key)) return "- saved";
+        return "- received / enter / complete（依 stage）";
+    }
+
+    private String nodeExecutionMode(String key) {
+        if ("node".equals(key) || "command".equals(key)) return "POC 目前只觀察命中，不執行手機控制。";
+        if ("store".equals(key)) return "實際寫入，但僅限隔離的 Neural Flow POC store。";
+        return "此節點依目前 runtime 實際 trace 顯示；MD 不改變路由決策。";
+    }
+
+    private String formatTime(long timeMs) {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.TAIWAN).format(new Date(timeMs));
+    }
+
     private final class FlowCanvas extends View {
         private final Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -352,16 +503,28 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
         private final RectF compressRect = new RectF();
         private final RectF approvalRect = new RectF();
         private final RectF storeRect = new RectF();
+        private final Map<String, NeuralFlowTrace.Event> latestRuntime = new HashMap<>();
         private NeuralFlowTrace.Stage currentStage;
         private NeuralFlowTrace.Stage previousStage;
         private String currentStatus = "idle";
         private String currentDetail = "";
         private float signalProgress = 1f;
         private ValueAnimator animator;
+        private float offsetX;
+        private float offsetY;
+        private float contentWidth;
+        private float contentHeight;
+        private float downX;
+        private float downY;
+        private float startOffsetX;
+        private float startOffsetY;
+        private boolean dragging;
+        private boolean initialPositioned;
 
         FlowCanvas() {
             super(NeuralFlowActivity.this);
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            setClickable(true);
             grid.setColor(0xffe7ebe8);
             grid.setStrokeWidth(dp(1));
             edge.setColor(0xffb5c0b9);
@@ -388,6 +551,7 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             currentStage = event.stage;
             currentStatus = event.status;
             currentDetail = event.detail;
+            latestRuntime.put(keyFor(event.stage), event);
             animateSignal();
         }
 
@@ -409,8 +573,22 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             super.onDetachedFromWindow();
         }
 
+        @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+            super.onSizeChanged(w, h, oldw, oldh);
+            contentWidth = Math.max(dp(620), w + dp(260));
+            contentHeight = Math.max(dp(920), h + dp(260));
+            if (!initialPositioned) {
+                offsetX = (w - contentWidth) / 2f;
+                offsetY = -dp(36);
+                clampOffset();
+                initialPositioned = true;
+            } else clampOffset();
+        }
+
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
+            canvas.save();
+            canvas.translate(offsetX, offsetY);
             drawGrid(canvas);
             layoutNodes();
             drawEdges(canvas);
@@ -435,29 +613,30 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             drawMovingSignal(canvas);
             if (currentStage != null) {
                 canvas.drawText(currentStage.name() + " · " + currentStatus,
-                        dp(14), getHeight() - dp(152), title);
-                canvas.drawText(shorten(currentDetail, 48),
-                        dp(14), getHeight() - dp(134), meta);
+                        dp(18), contentHeight - dp(82), title);
+                canvas.drawText(shorten(currentDetail, 60),
+                        dp(18), contentHeight - dp(62), meta);
             }
+            canvas.restore();
         }
 
         private void layoutNodes() {
-            float w = getWidth();
+            float w = contentWidth;
             float centerX = w * 0.5f;
-            float mainW = Math.min(dp(190), w - dp(48));
-            float branchW = Math.min(dp(132), (w - dp(44)) / 2f);
-            float h = dp(50);
+            float mainW = dp(210);
+            float branchW = dp(154);
+            float h = dp(54);
             float left = centerX - mainW / 2f;
-            float top = dp(70);
+            float top = dp(118);
             inputRect.set(left, top, left + mainW, top + h);
-            routerRect.set(left, top + dp(76), left + mainW, top + dp(76) + h);
-            nodeRect.set(dp(14), top + dp(152), dp(14) + branchW, top + dp(152) + h);
-            commandRect.set(w - dp(14) - branchW, top + dp(152), w - dp(14), top + dp(152) + h);
-            llmRect.set(left, top + dp(228), left + mainW, top + dp(228) + h);
-            judgeRect.set(dp(14), top + dp(304), dp(14) + branchW, top + dp(304) + h);
-            compressRect.set(w - dp(14) - branchW, top + dp(304), w - dp(14), top + dp(304) + h);
-            approvalRect.set(dp(14), top + dp(380), dp(14) + branchW, top + dp(380) + h);
-            storeRect.set(w - dp(14) - branchW, top + dp(380), w - dp(14), top + dp(380) + h);
+            routerRect.set(left, top + dp(88), left + mainW, top + dp(88) + h);
+            nodeRect.set(centerX - dp(186), top + dp(176), centerX - dp(186) + branchW, top + dp(176) + h);
+            commandRect.set(centerX + dp(32), top + dp(176), centerX + dp(32) + branchW, top + dp(176) + h);
+            llmRect.set(left, top + dp(264), left + mainW, top + dp(264) + h);
+            judgeRect.set(centerX - dp(186), top + dp(352), centerX - dp(186) + branchW, top + dp(352) + h);
+            compressRect.set(centerX + dp(32), top + dp(352), centerX + dp(32) + branchW, top + dp(352) + h);
+            approvalRect.set(centerX - dp(186), top + dp(440), centerX - dp(186) + branchW, top + dp(440) + h);
+            storeRect.set(centerX + dp(32), top + dp(440), centerX + dp(32) + branchW, top + dp(440) + h);
         }
 
         private void drawEdges(Canvas canvas) {
@@ -506,14 +685,12 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             return llmRect;
         }
 
-        private boolean isActive(NeuralFlowTrace.Stage stage) {
-            return currentStage == stage;
-        }
+        private boolean isActive(NeuralFlowTrace.Stage stage) { return currentStage == stage; }
 
         private void drawGrid(Canvas canvas) {
             int step = dp(24);
-            for (int x = 0; x < getWidth(); x += step) {
-                for (int y = 0; y < getHeight(); y += step) canvas.drawCircle(x, y, dp(1), grid);
+            for (int x = 0; x < contentWidth; x += step) {
+                for (int y = 0; y < contentHeight; y += step) canvas.drawCircle(x, y, dp(1), grid);
             }
         }
 
@@ -525,7 +702,80 @@ public final class NeuralFlowActivity extends Activity implements NeuralFlowTrac
             RectF badge = new RectF(rect.left + dp(9), rect.top + dp(8), rect.left + dp(42), rect.top + dp(24));
             canvas.drawRoundRect(badge, dp(8), dp(8), tintPaint);
             canvas.drawText(name, rect.left + dp(47), rect.top + dp(21), title);
-            canvas.drawText(description, rect.left + dp(10), rect.top + dp(39), meta);
+            canvas.drawText(description, rect.left + dp(10), rect.top + dp(41), meta);
+        }
+
+        @Override public boolean onTouchEvent(MotionEvent event) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downX = event.getX();
+                    downY = event.getY();
+                    startOffsetX = offsetX;
+                    startOffsetY = offsetY;
+                    dragging = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getX() - downX;
+                    float dy = event.getY() - downY;
+                    if (Math.abs(dx) > dp(7) || Math.abs(dy) > dp(7)) dragging = true;
+                    if (dragging) {
+                        offsetX = startOffsetX + dx;
+                        offsetY = startOffsetY + dy;
+                        clampOffset();
+                        invalidate();
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (!dragging) {
+                        performClick();
+                        handleNodeTap(event.getX() - offsetX, event.getY() - offsetY);
+                    }
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        @Override public boolean performClick() {
+            super.performClick();
+            return true;
+        }
+
+        private void clampOffset() {
+            float minX = Math.min(0f, getWidth() - contentWidth);
+            float minY = Math.min(0f, getHeight() - contentHeight);
+            offsetX = Math.max(minX, Math.min(0f, offsetX));
+            offsetY = Math.max(minY, Math.min(0f, offsetY));
+        }
+
+        private void handleNodeTap(float x, float y) {
+            layoutNodes();
+            String key = null;
+            if (inputRect.contains(x, y)) key = "input";
+            else if (routerRect.contains(x, y)) key = "router";
+            else if (nodeRect.contains(x, y)) key = "node";
+            else if (commandRect.contains(x, y)) key = "command";
+            else if (llmRect.contains(x, y)) key = "llm";
+            else if (judgeRect.contains(x, y)) key = "judge";
+            else if (compressRect.contains(x, y)) key = "compress";
+            else if (approvalRect.contains(x, y)) key = "approval";
+            else if (storeRect.contains(x, y)) key = "store";
+            if (key != null) showNodeMarkdown(key, latestRuntime.get(key));
+        }
+
+        private String keyFor(NeuralFlowTrace.Stage stage) {
+            if (stage == NeuralFlowTrace.Stage.INPUT) return "input";
+            if (stage == NeuralFlowTrace.Stage.ROUTER) return "router";
+            if (stage == NeuralFlowTrace.Stage.NODE_REGISTRY) return "node";
+            if (stage == NeuralFlowTrace.Stage.COMMAND) return "command";
+            if (stage == NeuralFlowTrace.Stage.LLM_REQUEST || stage == NeuralFlowTrace.Stage.LLM_RESPONSE || stage == NeuralFlowTrace.Stage.LLM_ERROR) return "llm";
+            if (stage == NeuralFlowTrace.Stage.MEMORY_JUDGE || stage == NeuralFlowTrace.Stage.MEMORY_ERROR) return "judge";
+            if (stage == NeuralFlowTrace.Stage.MEMORY_COMPRESS) return "compress";
+            if (stage == NeuralFlowTrace.Stage.MEMORY_APPROVAL) return "approval";
+            if (stage == NeuralFlowTrace.Stage.MEMORY_STORE) return "store";
+            return "llm";
         }
     }
 
