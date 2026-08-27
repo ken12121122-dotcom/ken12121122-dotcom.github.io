@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.1-bridge61.apk",
-  "apkSha256": "2df2dc016aed3e378e2d3c41906798a510f6b96b4553ae79d15f1ea13094321c",
+  "apkSha256": "23bdf6bb6db5faa3f0ad5e4d5b502eeca323f04d7033afea31a316df75acc805",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2736925,
-  "publishedAt": "2026-08-27T02:50:43Z",
+  "sizeBytes": 2741245,
+  "publishedAt": "2026-08-27T03:14:12Z",
   "mandatory": false,
   "releaseNotes": [
     "新增 Neural Flow 獨立入口與手機 workflow canvas POC。",
