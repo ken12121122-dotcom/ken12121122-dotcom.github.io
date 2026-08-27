@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.UUID;
@@ -165,7 +166,30 @@ public final class WikiGraphActivity extends Activity {
                         .put("from", source)
                         .put("to", target)
                         .put("relation", type)
-                        .put("status", "active");
+                        .put("status", "active")
+                        .put("gate", new JSONObject().put("enabled", true))
+                        .put("command_chain", new JSONArray());
+                nodeMetadataStore.addOrReplaceEdge(edge);
+                return true;
+            } catch (Exception error) { return false; }
+        }
+        @JavascriptInterface public boolean saveUnifiedEdgeJson(String edgeJson) {
+            try {
+                JSONObject edge = new JSONObject(edgeJson == null ? "{}" : edgeJson);
+                String source = edge.optString("from", "").trim();
+                String target = edge.optString("to", "").trim();
+                if (source.isEmpty() || target.isEmpty() || source.equals(target)) return false;
+                String edgeId = edge.optString("edge_id", edge.optString("edgeId", "")).trim();
+                if (edgeId.isEmpty()) edgeId = "edge:" + UUID.randomUUID().toString().substring(0, 8);
+                String relation = edge.optString("relation", edge.optString("type", "related_to")).trim();
+                if (relation.isEmpty()) relation = "related_to";
+                edge.put("edge_id", edgeId);
+                edge.put("from", source);
+                edge.put("to", target);
+                edge.put("relation", relation);
+                edge.put("status", edge.optString("status", "active"));
+                if (edge.optJSONObject("gate") == null) edge.put("gate", new JSONObject().put("enabled", true));
+                if (edge.optJSONArray("command_chain") == null) edge.put("command_chain", new JSONArray());
                 nodeMetadataStore.addOrReplaceEdge(edge);
                 return true;
             } catch (Exception error) { return false; }
