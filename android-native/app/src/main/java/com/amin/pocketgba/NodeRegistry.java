@@ -16,6 +16,11 @@ final class NodeRegistry {
     static final String META_VISIBLE="amin.graph.visible", META_ID="amin.graph.id", META_CAPABILITY="amin.graph.capability_id", META_TITLE="amin.graph.title", META_DESCRIPTION="amin.graph.description", META_PARENT="amin.graph.parent", META_ROUTE="amin.graph.route", META_TYPE="amin.graph.node_type", META_ACTIONS="amin.graph.actions", META_INPUT="amin.graph.input_contract", META_OUTPUT="amin.graph.output_contract", META_VOICE_ENABLED="amin.graph.voice_enabled", META_VOICE_ALIASES="amin.graph.voice_aliases", META_STATUS="amin.graph.status", META_VERSION="amin.graph.version", META_STORAGE_ADAPTER="amin.graph.storage_adapter", META_STORAGE_SOURCE="amin.graph.storage_source_id", META_STORAGE_TABLE="amin.graph.storage_table", META_FILTER_JSON="amin.graph.filter_json", META_INPUT_CONTEXT_JSON="amin.graph.input_context_json";
 
     static final class Match { final JSONObject node; final String alias; Match(JSONObject node,String alias){this.node=node;this.alias=alias;} }
+    static final class ScanResult {
+        final Match match;
+        final List<String> candidates;
+        ScanResult(Match match,List<String> candidates){this.match=match;this.candidates=candidates;}
+    }
     private NodeRegistry(){}
 
     static String navigationJson(Context context){
@@ -50,7 +55,30 @@ final class NodeRegistry {
     static JSONObject findNode(Context c,NodeMetadataStore o,String id){String n=clean(id);if(n.isEmpty())return null;try{JSONArray a=new JSONObject(registryJson(c,o)).optJSONArray("nodes");if(a==null)return null;for(int i=0;i<a.length();i++){JSONObject x=a.optJSONObject(i);if(x!=null&&(n.equals(x.optString("node_id"))||n.equals(x.optString("nodeId"))||n.equals(x.optString("capability_id"))||n.equals(x.optString("capabilityId"))))return x;}}catch(Exception ignored){}return null;}
     static JSONObject findByRoute(Context c,NodeMetadataStore o,String route){String n=clean(route);if(n.isEmpty())return null;try{JSONArray a=new JSONObject(registryJson(c,o)).optJSONArray("nodes");if(a==null)return null;for(int i=0;i<a.length();i++){JSONObject x=a.optJSONObject(i);if(x!=null&&n.equals(x.optString("route")))return x;}}catch(Exception ignored){}return null;}
 
-    static Match matchVoice(Context c,NodeMetadataStore o,String transcript){String normalized=VoiceCommandParser.normalize(transcript);if(normalized.isEmpty())return null;Match candidate=null;int best=-1;try{JSONArray nodes=new JSONObject(registryJson(c,o)).optJSONArray("nodes");if(nodes==null)return null;for(int i=0;i<nodes.length();i++){JSONObject n=nodes.optJSONObject(i);if(n==null)continue;JSONObject voice=n.optJSONObject("voice");if(voice==null||!voice.optBoolean("enabled",false))continue;JSONArray aliases=voice.optJSONArray("aliases");if(aliases==null)continue;for(int j=0;j<aliases.length();j++){String alias=aliases.optString(j,"");String a=VoiceCommandParser.normalize(alias);if(a.isEmpty())continue;boolean exact=normalized.equals(a),contains=normalized.contains(a)||a.contains(normalized);if(!exact&&!contains)continue;int score=exact?10000+a.length():a.length();if(score>best){best=score;candidate=new Match(n,alias);}}}}catch(Exception ignored){}return candidate;}
+    static Match matchVoice(Context c,NodeMetadataStore o,String transcript){return scanVoice(c,o,transcript).match;}
+
+    static ScanResult scanVoice(Context c,NodeMetadataStore o,String transcript){
+        String normalized=VoiceCommandParser.normalize(transcript);
+        List<String> scanned=new ArrayList<>();
+        if(normalized.isEmpty())return new ScanResult(null,scanned);
+        Match candidate=null;int best=-1;
+        try{
+            JSONArray nodes=new JSONObject(registryJson(c,o)).optJSONArray("nodes");if(nodes==null)return new ScanResult(null,scanned);
+            for(int i=0;i<nodes.length();i++){
+                JSONObject n=nodes.optJSONObject(i);if(n==null)continue;
+                JSONObject voice=n.optJSONObject("voice");if(voice==null||!voice.optBoolean("enabled",false))continue;
+                JSONArray aliases=voice.optJSONArray("aliases");if(aliases==null)continue;
+                String title=n.optString("name",n.optString("title",n.optString("node_id",n.optString("nodeId","NODE"))));
+                for(int j=0;j<aliases.length();j++){
+                    String alias=aliases.optString(j,"");String a=VoiceCommandParser.normalize(alias);if(a.isEmpty())continue;
+                    scanned.add(title+" · "+alias);
+                    boolean exact=normalized.equals(a),contains=normalized.contains(a)||a.contains(normalized);if(!exact&&!contains)continue;
+                    int score=exact?10000+a.length():a.length();if(score>best){best=score;candidate=new Match(n,alias);}
+                }
+            }
+        }catch(Exception ignored){}
+        return new ScanResult(candidate,scanned);
+    }
 
     private static void appendFinanceVirtualPages(JSONArray pages)throws Exception{
         pages.put(virtualPage("finance-transactions","finance.transactions.view","收支明細","查看 Google Sheets / Transactions","finance","amin-data://transactions","data_view","open,refresh","transaction_v1","transaction_v1",true,"收支明細,交易紀錄,全部收支",storage("google_sheets",FinanceStorageConfig.SOURCE_ID,FinanceStorageConfig.TRANSACTIONS),"right",2));
