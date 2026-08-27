@@ -21,7 +21,7 @@ final class NodeProtocolGateStore {
 
     static boolean isAuto(Context context, String key) {
         if (context == null || key == null) return true;
-        boolean defaultValue = !(NODE.equals(key) || COMMAND.equals(key));
+        boolean defaultValue = !(NODE.equals(key) || COMMAND.equals(key) || LLM.equals(key));
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(PREFIX + key, defaultValue);
     }
