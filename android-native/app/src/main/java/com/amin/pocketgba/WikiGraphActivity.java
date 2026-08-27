@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Unified graph viewer. The old fixed knowledge dataset is no longer a runtime source. */
+/** Unified graph viewer. Registry data and runtime overlays stay independently writable. */
 public final class WikiGraphActivity extends Activity {
     private static final String GRAPH_SETTINGS_PREFS = "amin_graph_settings";
     private static final String GRAPH_SETTINGS_KEY = "semantic_zoom_ui";
@@ -69,6 +69,7 @@ public final class WikiGraphActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 applyWebTheme();
+                injectRuntimeOverlay();
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
@@ -126,6 +127,31 @@ public final class WikiGraphActivity extends Activity {
                 + "r.setProperty('--text','" + hex(palette.text) + "');"
                 + "r.setProperty('--muted','" + hex(palette.muted) + "');"
                 + "r.setProperty('--border','" + hex(palette.border) + "');})();";
+        webView.evaluateJavascript(js, null);
+    }
+
+    /**
+     * Runtime flow is intentionally injected as a separate display layer.
+     * If this layer fails, the registry graph renderer remains fully usable.
+     */
+    private void injectRuntimeOverlay() {
+        if (webView == null) return;
+        String js = "(()=>{"
+                + "if(window.__aminRuntimeOverlayInstalled)return;window.__aminRuntimeOverlayInstalled=true;"
+                + "let enabled=true;"
+                + "const tools=document.querySelector('.tools');"
+                + "const toggle=document.createElement('button');toggle.id='runtimeToggle';toggle.textContent='LIVE ON';"
+                + "if(tools)tools.appendChild(toggle);"
+                + "const panel=document.createElement('div');panel.id='runtimeOverlay';"
+                + "Object.assign(panel.style,{position:'fixed',left:'9px',right:'9px',bottom:'42px',zIndex:'11',pointerEvents:'none',display:'none',gap:'6px',alignItems:'stretch',overflowX:'auto',padding:'8px',border:'1px solid varCss('--border'),borderRadius:'14px',background:'color-mix(in srgb, '+varCss('--panel')+' 92%, transparent)',boxShadow:'0 10px 30px rgba(0,0,0,.12)'});"
+                + "document.body.appendChild(panel);"
+                + "toggle.onclick=()=>{enabled=!enabled;toggle.textContent=enabled?'LIVE ON':'LIVE OFF';if(!enabled)panel.style.display='none';else refresh();};"
+                + "function varCss(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#fff'}"
+                + "function color(s){s=String(s||'');if(s==='failed'||s==='rejected'||s==='blocked')return varCss('--blocked');if(s==='waiting'||s==='approval_waiting')return varCss('--waiting');if(s==='pending'||s==='generated')return varCss('--pending');return varCss('--active')}"
+                + "function escapeText(v){return String(v==null?'':v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]))}"
+                + "function refresh(){if(!enabled)return;try{const raw=window.AminWiki?.getRuntimeFlowTraceJson?.();const flows=raw?JSON.parse(raw):[];panel.innerHTML='';if(!Array.isArray(flows)||!flows.length){panel.style.display='none';return;}panel.style.display='flex';const flow=flows[flows.length-1]||{};const head=document.createElement('div');Object.assign(head.style,{minWidth:'110px',padding:'7px 9px',borderRadius:'10px',background:varCss('--panel'),border:'1px solid '+varCss('--border'),fontSize:'11px',fontWeight:'800'});head.innerHTML='<div>LIVE FLOW</div><div style=\"font-weight:600;color:'+varCss('--muted')+'\">'+escapeText(flow.title||flow.type||'Runtime')+'</div>';panel.appendChild(head);const steps=Array.isArray(flow.steps)?flow.steps:[];steps.forEach((s,i)=>{const wrap=document.createElement('div');Object.assign(wrap.style,{display:'flex',alignItems:'center',gap:'6px',minWidth:'fit-content'});const arrow=document.createElement('span');arrow.textContent='→';arrow.style.color=varCss('--muted');wrap.appendChild(arrow);const card=document.createElement('div');Object.assign(card.style,{minWidth:'96px',padding:'7px 8px',borderRadius:'10px',background:varCss('--panel'),border:'1px solid '+varCss('--border'),fontSize:'10px'});card.innerHTML='<div style=\"display:flex;gap:6px;align-items:center\"><span style=\"width:9px;height:9px;border-radius:50%;display:inline-block;background:'+color(s.status)+'\"></span><strong>'+escapeText(s.title||s.step_id||('Step '+(i+1)))+'</strong></div><div style=\"margin-top:3px;color:'+varCss('--muted')+'\">'+escapeText(s.status||'pending')+'</div>';wrap.appendChild(card);panel.appendChild(wrap);});if(flow.final_node_id){const wrap=document.createElement('div');Object.assign(wrap.style,{display:'flex',alignItems:'center',gap:'6px',minWidth:'fit-content'});wrap.innerHTML='<span style=\"color:'+varCss('--muted')+'\">→</span><div style=\"padding:7px 8px;border-radius:10px;background:'+varCss('--panel')+';border:1px solid '+varCss('--active')+';font-size:10px\"><strong>NODE</strong><div style=\"color:'+varCss('--muted')+'\">'+escapeText(flow.final_node_id)+'</div></div>';panel.appendChild(wrap)}}catch(e){panel.style.display='none'}}"
+                + "window.__aminRuntimeOverlayRefresh=refresh;refresh();setInterval(refresh,700);"
+                + "})();";
         webView.evaluateJavascript(js, null);
     }
 
