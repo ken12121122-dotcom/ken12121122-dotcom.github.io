@@ -1,18 +1,19 @@
 {
-  "versionCode": 158,
-  "versionName": "0.11.2",
+  "versionCode": 159,
+  "versionName": "0.11.3",
   "channel": "bridge",
-  "bridge": 62,
+  "bridge": 63,
   "releaseSequence": 2,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "重新啟用可拖曳的浮動語音按鈕與懸浮聊天觀察框。",
-    "浮動語音輸入會依序送出 INPUT、ROUTER、NODE REGISTRY、COMMAND、LLM trace，便於在 Neural Flow 畫面同步觀察節點連動。",
-    "NODE 或 COMMAND 命中時僅顯示 POC 路徑，不執行手機控制；一般對話才 fallback 到既有 LLM。",
-    "懸浮聊天框顯示語音辨識內容與實際 LLM 回覆，且採 click-through 避免遮擋 Neural Flow 操作。",
-    "本輪不修改 Neural Flow 動畫判定；Floating live-link 的 Memory 階段暫標示 skip，待連動驗證後再調整。"
+    "懸浮聊天框改為可手指上下滾動，並保留自動捲到最新訊息。",
+    "懸浮聊天框新增功能地圖按鈕，可直接開啟功能節點地圖。",
+    "語音聊天可用『新增節點／建立節點』觸發節點建立測試；LLM 回覆後會執行第二段 Node Registry 建立流程。",
+    "聊天建立的自訂節點會寫入本機 Node Registry 投影並出現在功能地圖。",
+    "功能地圖新增編輯節點模式；自訂節點可修改名稱與說明，也可刪除自訂節點及其本機 Edge。",
+    "內建核心節點維持不可刪除，避免破壞系統骨架。"
   ]
 }
