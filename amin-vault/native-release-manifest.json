@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.7-bridge67.apk",
-  "apkSha256": "c16c4764ad9313acf427e349156011bd3cde04520f642fd509ac0e5052fb5590",
+  "apkSha256": "96f0d5df7b6fa082aa8cb6be32f78f8ef01183740125f724e39fa36c93b5cf23",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2755939,
-  "publishedAt": "2026-08-27T11:15:11Z",
+  "sizeBytes": 2760819,
+  "publishedAt": "2026-08-27T12:08:34Z",
   "mandatory": false,
   "releaseNotes": [
     "Floating Voice 新增固定單行掃描顯示，NODE 與 COMMAND 會播放 runtime 真正比對過的候選項並停在 MATCH 或 NO MATCH。",
