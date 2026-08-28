@@ -44,13 +44,16 @@ final class GitHubSourceGraphScanner {
         String revision = treeRoot.optString("sha", "").trim();
         if (revision.isEmpty()) throw new IllegalStateException("GITHUB_TREE_REVISION_MISSING");
 
-        JSONObject graph = buildGraph(treeRoot.optJSONArray("tree"), revision);
+        JSONArray tree = treeRoot.optJSONArray("tree");
+        JSONObject graph = buildGraph(tree, revision);
+        JSONObject reverseDiscovery = ScannerReverseDiscovery.discover(tree, revision);
         JSONObject normalized = SourceGraphContract.normalize(graph);
         if (!normalized.optBoolean("valid", false)) throw new IllegalStateException("SOURCE_GRAPH_INVALID");
         normalized.put("revision", revision);
         normalized.put("generatedFrom", "github-cloud-tree");
-        normalized.put("scanMode", "evidence-only-v1");
+        normalized.put("scanMode", "evidence-only-reverse-v1");
         normalized.put("anchorId", classIdFor(SCANNER_ANCHOR_PATH));
+        normalized.put("reverseDiscovery", reverseDiscovery);
         return normalized;
     }
 
@@ -162,13 +165,14 @@ final class GitHubSourceGraphScanner {
                 .put("path", path == null ? "" : path)
                 .put("scannerRule", rule == null ? "" : rule);
         if (blobSha != null && !blobSha.trim().isEmpty()) evidence.put("blobSha", blobSha.trim());
+        String verification = "java-file-class-candidate".equals(rule) ? "discovered" : "static_verified";
         out.put(new JSONObject()
                 .put("id", id)
                 .put("entityType", type)
                 .put("title", title)
                 .put("path", path)
                 .put("reviewStatus", "candidate")
-                .put("verification", "static_verified")
+                .put("verification", verification)
                 .put("evidence", evidence));
     }
 
@@ -176,13 +180,14 @@ final class GitHubSourceGraphScanner {
                                     String revision, String rule) throws Exception {
         String id = "source:" + type + ":" + from + ">" + to;
         if (!relationIds.add(id)) return;
+        String verification = "java-file-class-candidate".equals(rule) ? "discovered" : "static_verified";
         out.put(new JSONObject()
                 .put("id", id)
                 .put("type", type)
                 .put("from", from)
                 .put("to", to)
                 .put("reviewStatus", "candidate")
-                .put("verification", "static_verified")
+                .put("verification", verification)
                 .put("evidence", new JSONObject()
                         .put("provider", "github")
                         .put("repository", REPOSITORY)
