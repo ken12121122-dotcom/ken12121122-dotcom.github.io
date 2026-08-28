@@ -40,12 +40,33 @@ public class CapabilityCandidateValidatorTest {
         assertEquals("RELATIONSHIP_INVALID", result.code);
     }
 
+    @Test public void relatedToCannotBecomeRegisteredRelationship() throws Exception {
+        JSONObject candidate = CapabilityCandidateProtocol.createCandidate(new JSONObject()
+                .put("entity_type", "connect")
+                .put("from", "app:a")
+                .put("to", "app:b")
+                .put("relation", "related_to"), "test");
+        CapabilityCandidateValidator.Result result = validator.validate(null, null, candidate);
+        assertFalse(result.valid);
+        assertEquals("RELATIONSHIP_REQUIRES_CLASSIFICATION", result.code);
+    }
+
     @Test public void acceptsKnownRelationshipConnect() throws Exception {
         JSONObject candidate = CapabilityCandidateProtocol.createCandidate(new JSONObject()
                 .put("entity_type", "connect")
                 .put("source_node_id", "app:a")
                 .put("target_node_id", "app:b")
                 .put("relationship_type", "uses"), "test");
+        CapabilityCandidateValidator.Result result = validator.validate(null, null, candidate);
+        assertTrue(result.valid);
+    }
+
+    @Test public void acceptsCanvasRelationAliasWhenCanonical() throws Exception {
+        JSONObject candidate = CapabilityCandidateProtocol.createCandidate(new JSONObject()
+                .put("entity_type", "connect")
+                .put("from", "app:a")
+                .put("to", "app:b")
+                .put("relation", "executes"), "test");
         CapabilityCandidateValidator.Result result = validator.validate(null, null, candidate);
         assertTrue(result.valid);
     }
