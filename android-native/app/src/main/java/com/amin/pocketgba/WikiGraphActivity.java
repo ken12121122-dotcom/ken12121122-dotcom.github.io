@@ -71,6 +71,7 @@ public final class WikiGraphActivity extends Activity {
                 applyWebTheme();
                 GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
+                requestCloudSourceSync();
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
@@ -90,6 +91,7 @@ public final class WikiGraphActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         reloadUnifiedGraph();
+        requestCloudSourceSync();
     }
 
     @Override protected void onDestroy() {
@@ -117,6 +119,12 @@ public final class WikiGraphActivity extends Activity {
     private void reloadUnifiedGraph() {
         if (webView == null) return;
         webView.post(() -> webView.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null));
+    }
+
+    private void requestCloudSourceSync() {
+        GitHubSourceGraphScanner.syncAsync(this, () -> runOnUiThread(() -> {
+            if (webView != null) webView.evaluateJavascript("window.AminSourceReviewRefresh?AminSourceReviewRefresh():false", null);
+        }));
     }
 
     private void applyWebTheme() {
@@ -163,6 +171,15 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getUnifiedGraphJson() {
             return UnifiedGraphProvider.graphJson(WikiGraphActivity.this, nodeMetadataStore);
         }
+        @JavascriptInterface public String getSourceReviewJson() {
+            return SourceGraphProvider.reviewState(WikiGraphActivity.this).toString();
+        }
+        @JavascriptInterface public boolean acceptPendingSourceChange() {
+            boolean accepted = new CloudSourceGraphStore(WikiGraphActivity.this).acceptPending();
+            if (accepted) runOnUiThread(WikiGraphActivity.this::reloadUnifiedGraph);
+            return accepted;
+        }
+        @JavascriptInterface public void syncSourceNow() { requestCloudSourceSync(); }
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
             return GraphRuntimeEdgeTrace.snapshotJson().toString();
         }
