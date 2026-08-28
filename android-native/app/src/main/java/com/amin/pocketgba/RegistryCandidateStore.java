@@ -8,7 +8,10 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Pending registration candidates. Nothing becomes registered until approve(...) is called. */
+/**
+ * Pending registration candidates. Nothing becomes registered until approve(...) is called.
+ * Action and Connect approval re-run deterministic validation immediately before persistence.
+ */
 final class RegistryCandidateStore {
     private static final String PREFS = "amin_registry_candidates";
     private static final String KEY_PENDING = "pending";
