@@ -37,6 +37,14 @@ jobs:
           print(f"AMIN_BRIDGE_SUFFIX=-bridge{data['bridge']}")
           PY
 
+      - name: Validate Graph architecture JavaScript
+        shell: bash
+        run: |
+          set -euxo pipefail
+          node --check android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          grep -q "AminGraphArchitectureVisibility" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          grep -q "UNREGISTERED_LINK" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
