@@ -43,7 +43,8 @@ jobs:
           set -euxo pipefail
           node --check android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
           grep -q "AminGraphArchitectureVisibility" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "UNREGISTERED_LINK" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          grep -q "architectureFindings" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          grep -q "capabilitySource" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
