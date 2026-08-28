@@ -53,10 +53,13 @@ jobs:
           grep -q "遠景｜只顯示大節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
           grep -q "中景｜大＋中節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
           grep -q "近景｜大＋中＋小節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "待確認 Evidence 掃描結果" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "確認變更" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q "Scanner Reverse Discovery" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q "確認這個 revision" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           grep -q "AminSourceReviewRefresh" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           grep -q "acceptPendingSourceRevision" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q "GAP ·" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q "SCANNER_COMMAND_EVIDENCE_NOT_FOUND" android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
+          grep -q "GitHubSourceGraphScanner.syncAsync(" android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
           grep -q "AminGitHubNativeCapabilityMap" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
           grep -q "readOnly:true" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
           grep -q "AminGitHubBootstrapGate" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
