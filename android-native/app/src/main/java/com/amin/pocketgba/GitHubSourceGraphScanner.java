@@ -47,18 +47,22 @@ final class GitHubSourceGraphScanner {
         return normalized;
     }
 
-    static void syncAsync(Context context, Runnable onChanged) {
+    static void syncAsync(Context context, Runnable onFinished) {
         if (context == null) return;
         Context app = context.getApplicationContext();
+        GitHubSourceSyncState.syncing();
         new Thread(() -> {
             try {
                 JSONObject graph = scan();
                 String revision = graph.optString("revision", "").trim();
                 CloudSourceGraphStore store = new CloudSourceGraphStore(app);
-                String before = store.pendingRevision();
                 store.stage(revision, graph);
-                if (!store.pendingRevision().equals(before) && onChanged != null) onChanged.run();
-            } catch (Exception ignored) { }
+                GitHubSourceSyncState.ready(revision);
+            } catch (Exception error) {
+                GitHubSourceSyncState.failed(error);
+            } finally {
+                if (onFinished != null) onFinished.run();
+            }
         }, "amin-source-sync").start();
     }
 
