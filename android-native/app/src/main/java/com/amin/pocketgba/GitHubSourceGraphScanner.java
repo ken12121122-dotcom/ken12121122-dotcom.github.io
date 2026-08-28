@@ -14,11 +14,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Public GitHub tree scanner that rebuilds a review-only, evidence-backed Source Graph snapshot. */
+/** Public GitHub tree scanner for a review-only, evidence-backed Scanner reverse-discovery snapshot. */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
     static final String BRANCH = "release/android";
     static final String SCANNER_ANCHOR_PATH = "android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java";
+    static final String SCANNER_CALLER_PATH = "android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java";
     private static final String JAVA_ROOT = "android-native/app/src/main/java/";
     private static final AtomicBoolean SYNC_IN_FLIGHT = new AtomicBoolean(false);
 
@@ -69,8 +70,7 @@ final class GitHubSourceGraphScanner {
             try {
                 JSONObject graph = scan();
                 String revision = graph.optString("revision", "").trim();
-                CloudSourceGraphStore store = new CloudSourceGraphStore(app);
-                store.stage(revision, graph);
+                new CloudSourceGraphStore(app).stage(revision, graph);
                 GitHubSourceSyncState.ready(revision);
             } catch (Exception error) {
                 GitHubSourceSyncState.failed(error);
@@ -93,37 +93,8 @@ final class GitHubSourceGraphScanner {
         addEntity(entities, ids, branchId, "branch", BRANCH, "", revision, "branch-ref", "");
         addRelation(relations, relationIds, "contains", repoId, branchId, revision, "git-ref-membership");
 
-        if (tree != null) {
-            for (int i = 0; i < tree.length(); i++) {
-                JSONObject item = tree.optJSONObject(i);
-                if (item == null) continue;
-                String filePath = item.optString("path", "").trim();
-                if (!"blob".equals(item.optString("type", "")) || !filePath.startsWith(JAVA_ROOT) || !filePath.endsWith(".java")) continue;
-
-                String blobSha = item.optString("sha", "").trim();
-                String parentId = branchId;
-                String[] parts = filePath.split("/");
-                StringBuilder dirPath = new StringBuilder();
-                for (int p = 0; p < parts.length - 1; p++) {
-                    if (dirPath.length() > 0) dirPath.append('/');
-                    dirPath.append(parts[p]);
-                    String dirId = "dir:" + dirPath;
-                    addEntity(entities, ids, dirId, "directory", parts[p], dirPath.toString(), revision, "tree-path", "");
-                    addRelation(relations, relationIds, "contains", parentId, dirId, revision, "tree-parent-child");
-                    parentId = dirId;
-                }
-
-                String relative = filePath.substring(JAVA_ROOT.length());
-                String fileName = parts[parts.length - 1];
-                String fileId = fileIdFor(relative);
-                String classId = classIdFor(filePath);
-                String base = fileName.substring(0, fileName.length() - 5);
-                addEntity(entities, ids, fileId, "file", fileName, filePath, revision, "git-blob", blobSha);
-                addEntity(entities, ids, classId, "class", base, filePath, revision, "java-file-class-candidate", blobSha);
-                addRelation(relations, relationIds, "contains", parentId, fileId, revision, "tree-parent-child");
-                addRelation(relations, relationIds, "declares", fileId, classId, revision, "java-file-class-candidate");
-            }
-        }
+        addEvidenceFile(tree, revision, SCANNER_ANCHOR_PATH, branchId, entities, relations, ids, relationIds);
+        addEvidenceFile(tree, revision, SCANNER_CALLER_PATH, branchId, entities, relations, ids, relationIds);
 
         if (!ids.contains(classIdFor(SCANNER_ANCHOR_PATH))) {
             throw new IllegalStateException("SCANNER_ANCHOR_NOT_FOUND");
@@ -134,15 +105,53 @@ final class GitHubSourceGraphScanner {
                 .put("version", SourceGraphContract.VERSION)
                 .put("authority", "github-cloud-review")
                 .put("revision", revision)
+                .put("reviewScope", "scanner-reverse-discovery-v1")
                 .put("entities", entities)
                 .put("relations", relations);
     }
 
+    private static void addEvidenceFile(JSONArray tree, String revision, String filePath, String branchId,
+                                        JSONArray entities, JSONArray relations, Set<String> ids,
+                                        Set<String> relationIds) throws Exception {
+        JSONObject item = findBlob(tree, filePath);
+        if (item == null) throw new IllegalStateException("EVIDENCE_FILE_NOT_FOUND:" + filePath);
+        String blobSha = item.optString("sha", "").trim();
+        String parentId = branchId;
+        String[] parts = filePath.split("/");
+        StringBuilder dirPath = new StringBuilder();
+        for (int p = 0; p < parts.length - 1; p++) {
+            if (dirPath.length() > 0) dirPath.append('/');
+            dirPath.append(parts[p]);
+            String dirId = "dir:" + dirPath;
+            addEntity(entities, ids, dirId, "directory", parts[p], dirPath.toString(), revision, "tree-path", "");
+            addRelation(relations, relationIds, "contains", parentId, dirId, revision, "tree-parent-child");
+            parentId = dirId;
+        }
+
+        String relative = filePath.substring(JAVA_ROOT.length());
+        String fileName = parts[parts.length - 1];
+        String fileId = fileIdFor(relative);
+        String classId = classIdFor(filePath);
+        String base = fileName.substring(0, fileName.length() - 5);
+        addEntity(entities, ids, fileId, "file", fileName, filePath, revision, "git-blob", blobSha);
+        addEntity(entities, ids, classId, "class", base, filePath, revision, "java-file-class-candidate", blobSha);
+        addRelation(relations, relationIds, "contains", parentId, fileId, revision, "tree-parent-child");
+        addRelation(relations, relationIds, "declares", fileId, classId, revision, "java-file-class-candidate");
+    }
+
+    private static JSONObject findBlob(JSONArray tree, String path) {
+        if (tree == null) return null;
+        for (int i = 0; i < tree.length(); i++) {
+            JSONObject item = tree.optJSONObject(i);
+            if (item == null) continue;
+            if ("blob".equals(item.optString("type", "")) && path.equals(item.optString("path", ""))) return item;
+        }
+        return null;
+    }
+
     private static String fileIdFor(String relative) {
         if (relative == null) return "";
-        String clean = relative.trim();
-        if (!clean.contains("/")) return "file:" + clean;
-        return "file:" + clean;
+        return "file:" + relative.trim();
     }
 
     private static String classIdFor(String filePath) {
