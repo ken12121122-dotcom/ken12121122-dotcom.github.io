@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Unified graph viewer. Registry and runtime remain authoritative; the HTML asset owns graph presentation. */
+/** Unified graph viewer. Registry and runtime remain authoritative; new Actions/Connects enter Registry only through approval. */
 public final class WikiGraphActivity extends Activity {
     private static final String GRAPH_SETTINGS_PREFS = "amin_graph_settings";
     private static final String GRAPH_SETTINGS_KEY = "semantic_zoom_ui";
