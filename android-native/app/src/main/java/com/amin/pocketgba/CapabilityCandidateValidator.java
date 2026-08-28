@@ -5,8 +5,6 @@ import android.content.Context;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 /** Deterministic validation layer before semantic review and human approval. */
@@ -108,10 +106,13 @@ final class CapabilityCandidateValidator {
     private Result validateConnect(Context context, NodeMetadataStore nodeStore, JSONObject candidate) {
         String source = first(candidate, "source_node_id", "source", "from");
         String target = first(candidate, "target_node_id", "target", "to");
-        String relationship = first(candidate, "relationship_type", "relationshipType");
+        String relationship = CapabilityCandidateProtocol.relationshipName(candidate);
         if (source.isEmpty()) return Result.fail("SOURCE_REQUIRED", "Connect source node is required");
         if (target.isEmpty()) return Result.fail("TARGET_REQUIRED", "Connect target node is required");
         if (source.equals(target)) return Result.fail("SELF_CONNECT_NOT_ALLOWED", "Connect source and target must differ");
+        if ("related_to".equals(relationship) || relationship.isEmpty()) {
+            return Result.fail("RELATIONSHIP_REQUIRES_CLASSIFICATION", "Draft connect must be classified before registration");
+        }
         if (!GraphContract.isRelationshipTypeAllowed(relationship)) {
             return Result.fail("RELATIONSHIP_INVALID", "Unsupported relationship type: " + relationship);
         }
