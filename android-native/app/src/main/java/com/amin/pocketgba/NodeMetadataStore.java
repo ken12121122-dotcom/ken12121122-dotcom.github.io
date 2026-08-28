@@ -9,7 +9,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Local metadata overrides, approved custom nodes, and typed connects. */
+/** Local metadata overrides, approved custom nodes/actions, and typed connects. */
 final class NodeMetadataStore {
     private static final String PREFS = "amin_node_metadata";
     private static final String KEY_OVERRIDES = "overrides";
@@ -69,7 +69,6 @@ final class NodeMetadataStore {
         catch (Exception e) { return new JSONArray(); }
     }
 
-    /** Creates only a registration candidate and opens the mandatory approval gate. */
     JSONObject createCustomNode(String requestedName, String sourceText) {
         RegistryCandidateStore candidates = new RegistryCandidateStore(context);
         JSONObject candidate = candidates.createNodeCandidate(requestedName, sourceText);
@@ -91,7 +90,6 @@ final class NodeMetadataStore {
         }
     }
 
-    /** Writes an already-approved node candidate into the authoritative registry store. */
     JSONObject registerApprovedNode(String requestedName, String sourceText) {
         String name = clean(requestedName);
         if (name.isEmpty()) name = "新節點";
@@ -118,6 +116,58 @@ final class NodeMetadataStore {
             saveCustomNode(node);
             return new JSONObject(node.toString());
         } catch (Exception e) { return null; }
+    }
+
+    JSONObject registerApprovedAction(String ownerNodeId, String actionId) {
+        String owner = clean(ownerNodeId);
+        String action = clean(actionId);
+        if (owner.isEmpty() || action.isEmpty()) return null;
+        try {
+            JSONObject custom = customNode(owner);
+            if (custom != null) {
+                JSONArray actions = copyArray(custom.optJSONArray("actions"));
+                appendUnique(actions, action);
+                custom.put("actions", actions);
+                saveCustomNode(custom);
+                return new JSONObject().put("entity_type", "action").put("owner_node_id", owner).put("action", action);
+            }
+            JSONObject registered = NodeRegistry.findNode(context, this, owner);
+            if (registered == null) return null;
+            JSONArray actions = copyArray(registered.optJSONArray("actions"));
+            appendUnique(actions, action);
+            JSONObject all = new JSONObject(prefs.getString(KEY_OVERRIDES, "{}"));
+            JSONObject item = all.optJSONObject(owner);
+            if (item == null) item = new JSONObject();
+            item.put("actions", actions);
+            all.put(owner, item);
+            prefs.edit().putString(KEY_OVERRIDES, all.toString()).apply();
+            UnifiedGraphProvider.notifyChanged(context);
+            return new JSONObject().put("entity_type", "action").put("owner_node_id", owner).put("action", action);
+        } catch (Exception error) { return null; }
+    }
+
+    JSONObject registerApprovedConnect(JSONObject edge) {
+        if (edge == null) return null;
+        try {
+            String edgeId = value(edge, "edge_id", "edgeId");
+            String source = value(edge, "source_node_id", "source");
+            if (source.isEmpty()) source = value(edge, "from", "source");
+            String target = value(edge, "target_node_id", "target");
+            if (target.isEmpty()) target = value(edge, "to", "target");
+            String relationship = CapabilityCandidateProtocol.relationshipName(edge);
+            if (edgeId.isEmpty() || source.isEmpty() || target.isEmpty() || !GraphContract.isRelationshipTypeAllowed(relationship)) return null;
+            JSONObject canonical = new JSONObject(edge.toString())
+                    .put("edge_id", edgeId).put("edgeId", edgeId)
+                    .put("source_node_id", source).put("source", source).put("from", source)
+                    .put("target_node_id", target).put("target", target).put("to", target)
+                    .put("relationship_type", relationship).put("relationshipType", relationship).put("relation", relationship)
+                    .put("status", edge.optString("status", "active"))
+                    .put("version", edge.optString("version", "1"));
+            if (canonical.optJSONObject("gate") == null) canonical.put("gate", new JSONObject().put("enabled", true));
+            if (canonical.optJSONArray("command_chain") == null) canonical.put("command_chain", new JSONArray());
+            addOrReplaceEdge(canonical);
+            return new JSONObject(canonical.toString());
+        } catch (Exception error) { return null; }
     }
 
     void saveCustomNode(JSONObject node) {
@@ -184,6 +234,19 @@ final class NodeMetadataStore {
         catch (Exception e) { return new JSONArray(); }
     }
 
+    JSONObject customEdge(String edgeId) {
+        String wanted = clean(edgeId);
+        if (wanted.isEmpty()) return null;
+        JSONArray edges = customEdges();
+        for (int i = 0; i < edges.length(); i++) {
+            JSONObject edge = edges.optJSONObject(i);
+            if (edge != null && wanted.equals(value(edge, "edge_id", "edgeId"))) {
+                try { return new JSONObject(edge.toString()); } catch (Exception ignored) { return edge; }
+            }
+        }
+        return null;
+    }
+
     void addOrReplaceEdge(JSONObject edge) {
         if (edge == null) return;
         String edgeId = edge.optString("edge_id", edge.optString("edgeId", "")).trim();
@@ -232,6 +295,7 @@ final class NodeMetadataStore {
                 if (o.has("parent_id")) { node.put("parent_id", o.optString("parent_id")); node.put("parentNodeId", o.optString("parent_id")); }
                 if (o.has("voice")) node.put("voice", o.optJSONObject("voice"));
                 if (o.has("storage")) node.put("storage", o.optJSONObject("storage"));
+                if (o.has("actions")) node.put("actions", copyArray(o.optJSONArray("actions")));
             }
             JSONArray custom = customNodes();
             for (int i = 0; i < custom.length(); i++) {
@@ -254,6 +318,20 @@ final class NodeMetadataStore {
             }
             return root.toString();
         } catch (Exception e) { return baseEdgesJson; }
+    }
+
+    private static JSONArray copyArray(JSONArray source) {
+        try { return source == null ? new JSONArray() : new JSONArray(source.toString()); }
+        catch (Exception error) { return new JSONArray(); }
+    }
+
+    private static void appendUnique(JSONArray values, String value) {
+        String wanted = clean(value);
+        if (wanted.isEmpty()) return;
+        for (int i = 0; i < values.length(); i++) {
+            if (wanted.equalsIgnoreCase(clean(values.optString(i, "")))) return;
+        }
+        values.put(wanted);
     }
 
     private static String clean(String value) { return value == null ? "" : value.trim(); }

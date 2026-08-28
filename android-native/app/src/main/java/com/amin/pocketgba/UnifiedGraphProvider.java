@@ -140,7 +140,7 @@ final class UnifiedGraphProvider {
                 String from = first(edge, "from", "source", "source_node_id", "sourceNodeId");
                 String to = first(edge, "to", "target", "target_node_id", "targetNodeId");
                 if (from.isEmpty() || to.isEmpty()) continue;
-                String relation = first(edge, "relation", "type", "edge_type");
+                String relation = first(edge, "relationship_type", "relationshipType", "relation", "type", "edge_type");
                 if (relation.isEmpty()) relation = "related_to";
                 String edgeId = first(edge, "edge_id", "edgeId");
                 if (edgeId.isEmpty()) edgeId = "edge:" + i;

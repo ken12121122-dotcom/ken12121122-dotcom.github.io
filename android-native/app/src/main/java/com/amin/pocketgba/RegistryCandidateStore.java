@@ -8,7 +8,10 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Pending registration candidates. Nothing becomes registered until approve(...) is called. */
+/**
+ * Pending registration candidates. Nothing becomes registered until approve(...) is called.
+ * Action and Connect approval re-run deterministic validation immediately before persistence.
+ */
 final class RegistryCandidateStore {
     private static final String PREFS = "amin_registry_candidates";
     private static final String KEY_PENDING = "pending";
@@ -58,6 +61,49 @@ final class RegistryCandidateStore {
         } catch (Exception error) { return null; }
     }
 
+    JSONObject createActionCandidate(String ownerNodeId, String action, String sourceText) {
+        try {
+            JSONObject proposal = new JSONObject()
+                    .put("entity_type", CapabilityCandidateProtocol.TYPE_ACTION)
+                    .put("owner_node_id", clean(ownerNodeId))
+                    .put("action", clean(action))
+                    .put("source_text", clean(sourceText));
+            JSONObject candidate = CapabilityCandidateProtocol.createCandidate(proposal, "registry-action");
+            if (candidate == null) return null;
+            save(candidate);
+            UnifiedGraphProvider.notifyChanged(context);
+            return candidate;
+        } catch (Exception error) { return null; }
+    }
+
+    JSONObject createConnectCandidate(JSONObject proposedEdge, String sourceText) {
+        try {
+            JSONObject edge = proposedEdge == null ? new JSONObject() : new JSONObject(proposedEdge.toString());
+            String source = first(edge, "source_node_id", "source", "from");
+            String target = first(edge, "target_node_id", "target", "to");
+            String relationship = CapabilityCandidateProtocol.relationshipName(edge);
+            if (relationship.isEmpty()) relationship = "related_to";
+            String edgeId = first(edge, "edge_id", "edgeId");
+            if (edgeId.isEmpty()) edgeId = "edge:" + UUID.randomUUID().toString().substring(0, 8);
+
+            edge.put("entity_type", CapabilityCandidateProtocol.TYPE_CONNECT)
+                    .put("edge_id", edgeId)
+                    .put("edgeId", edgeId)
+                    .put("source_node_id", source).put("source", source).put("from", source)
+                    .put("target_node_id", target).put("target", target).put("to", target)
+                    .put("relationship_type", relationship).put("relationshipType", relationship).put("relation", relationship)
+                    .put("source_text", clean(sourceText));
+            if (edge.optJSONObject("gate") == null) edge.put("gate", new JSONObject().put("enabled", true));
+            if (edge.optJSONArray("command_chain") == null) edge.put("command_chain", new JSONArray());
+
+            JSONObject candidate = CapabilityCandidateProtocol.createCandidate(edge, "registry-connect");
+            if (candidate == null) return null;
+            save(candidate);
+            UnifiedGraphProvider.notifyChanged(context);
+            return candidate;
+        } catch (Exception error) { return null; }
+    }
+
     JSONObject approve(JSONObject candidate, NodeMetadataStore nodeStore) {
         if (candidate == null || nodeStore == null) return null;
         String type = candidate.optString("entity_type", "");
@@ -80,6 +126,17 @@ final class RegistryCandidateStore {
                         .put("phrases", candidate.optJSONArray("phrases") == null ? new JSONArray() : candidate.optJSONArray("phrases"));
                 registered = new DynamicCommandStore(context).register(command);
             } catch (Exception ignored) { }
+        } else if (CapabilityCandidateProtocol.TYPE_ACTION.equals(type)) {
+            CapabilityCandidateValidator.Result validation = new CapabilityCandidateValidator().validate(context, nodeStore, candidate);
+            if (!validation.valid) return null;
+            registered = nodeStore.registerApprovedAction(
+                    first(candidate, "owner_node_id", "ownerNodeId", "capability_id", "capabilityId"),
+                    CapabilityCandidateProtocol.actionName(candidate)
+            );
+        } else if (CapabilityCandidateProtocol.TYPE_CONNECT.equals(type)) {
+            CapabilityCandidateValidator.Result validation = new CapabilityCandidateValidator().validate(context, nodeStore, candidate);
+            if (!validation.valid) return null;
+            registered = nodeStore.registerApprovedConnect(candidate);
         }
         if (registered != null) {
             remove(candidateId);
@@ -107,6 +164,7 @@ final class RegistryCandidateStore {
             UnifiedGraphProvider.notifyChanged(context);
         }
         remove(candidateId);
+        UnifiedGraphProvider.notifyChanged(context);
     }
 
     JSONArray pending() {
@@ -130,6 +188,15 @@ final class RegistryCandidateStore {
             if (current != null && !wanted.equals(current.optString("candidate_id", ""))) out.put(current);
         }
         prefs.edit().putString(KEY_PENDING, out.toString()).apply();
+    }
+
+    private static String first(JSONObject object, String... keys) {
+        if (object == null) return "";
+        for (String key : keys) {
+            String value = clean(object.optString(key, ""));
+            if (!value.isEmpty()) return value;
+        }
+        return "";
     }
 
     private static String clean(String value) { return value == null ? "" : value.trim(); }
