@@ -59,8 +59,8 @@ final class CapabilityCandidateProtocol {
         String explicit = normalizeType(proposal.optString("entity_type", proposal.optString("candidate_type", "")));
         if (!TYPE_UNKNOWN.equals(explicit)) return explicit;
 
-        if (hasAny(proposal, "relationship_type", "relationshipType")
-                || (hasAny(proposal, "source_node_id", "source") && hasAny(proposal, "target_node_id", "target"))) {
+        if (hasAny(proposal, "relationship_type", "relationshipType", "relation", "type")
+                || (hasAny(proposal, "source_node_id", "source", "from") && hasAny(proposal, "target_node_id", "target", "to"))) {
             return TYPE_CONNECT;
         }
         if (hasAny(proposal, "command_id") || proposal.optJSONArray("phrases") != null) return TYPE_COMMAND;
@@ -79,18 +79,15 @@ final class CapabilityCandidateProtocol {
         String type = normalizeType(candidate.optString("entity_type", ""));
         if (TYPE_UNKNOWN.equals(type)) return true;
 
-        // New UI action names are structurally valid but may duplicate an existing command/action.
         if (TYPE_ACTION.equals(type)) {
             String action = actionName(candidate);
             return action.isEmpty() || !AminActionValidator.getSupportedActions().contains(action.toUpperCase(Locale.ROOT));
         }
 
-        // New commands should be semantically checked for duplicate meaning before registration.
         if (TYPE_COMMAND.equals(type)) return true;
 
-        // A connect can be validated structurally; semantic review is only required when no known relationship type is supplied.
         if (TYPE_CONNECT.equals(type)) {
-            String relationship = candidate.optString("relationship_type", candidate.optString("relationshipType", ""));
+            String relationship = relationshipName(candidate);
             return !GraphContract.isRelationshipTypeAllowed(relationship);
         }
         return false;
@@ -107,6 +104,16 @@ final class CapabilityCandidateProtocol {
         if (object == null) return "";
         String value = object.optString("action_id", object.optString("action", ""));
         return clean(value);
+    }
+
+    static String relationshipName(JSONObject object) {
+        if (object == null) return "";
+        String[] keys = {"relationship_type", "relationshipType", "relation", "type"};
+        for (String key : keys) {
+            String value = clean(object.optString(key, ""));
+            if (!value.isEmpty()) return value;
+        }
+        return "";
     }
 
     private static boolean hasAny(JSONObject object, String... keys) {
