@@ -1,5 +1,7 @@
 package com.amin.pocketgba;
 
+import android.util.Base64;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -7,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Anchor-driven reverse discovery for the Scanner bootstrap capability.
@@ -26,7 +29,7 @@ final class ScannerReverseDiscovery {
         String scannerBlob = blobSha(tree, SCANNER_PATH);
         if (scannerBlob.isEmpty()) throw new IllegalStateException("SCANNER_SOURCE_BLOB_NOT_FOUND");
 
-        String scannerSource = fetchRaw(revision, SCANNER_PATH);
+        String scannerSource = fetchBlob(scannerBlob);
         boolean scannerClassVerified = scannerSource.contains("class GitHubSourceGraphScanner");
         boolean scannerEntryVerified = scannerSource.contains("static void syncAsync(");
         if (!scannerClassVerified || !scannerEntryVerified) {
@@ -48,7 +51,7 @@ final class ScannerReverseDiscovery {
         String callerBlob = blobSha(tree, CALLER_PATH);
         boolean callerVerified = false;
         if (!callerBlob.isEmpty()) {
-            String callerSource = fetchRaw(revision, CALLER_PATH);
+            String callerSource = fetchBlob(callerBlob);
             boolean methodExists = callerSource.contains("void requestCloudSourceSync()");
             boolean callExists = callerSource.contains("GitHubSourceGraphScanner.syncAsync(");
             callerVerified = methodExists && callExists;
@@ -136,24 +139,31 @@ final class ScannerReverseDiscovery {
         return "";
     }
 
-    private static String fetchRaw(String revision, String path) throws Exception {
-        String rawUrl = "https://raw.githubusercontent.com/" + REPOSITORY + "/" + revision + "/" + path;
-        HttpURLConnection connection = (HttpURLConnection) new URL(rawUrl).openConnection();
+    private static String fetchBlob(String blobSha) throws Exception {
+        String blobUrl = "https://api.github.com/repos/" + REPOSITORY + "/git/blobs/" + blobSha;
+        HttpURLConnection connection = (HttpURLConnection) new URL(blobUrl).openConnection();
         connection.setConnectTimeout(7000);
         connection.setReadTimeout(10000);
+        connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("User-Agent", "AMIN-Android-ReverseDiscovery");
         int code = connection.getResponseCode();
         if (code < 200 || code >= 300) {
             connection.disconnect();
-            throw new IllegalStateException("GITHUB_RAW_HTTP_" + code + ":" + path);
+            throw new IllegalStateException("GITHUB_BLOB_HTTP_" + code + ":" + blobSha);
         }
         StringBuilder raw = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;
-            while ((line = reader.readLine()) != null) raw.append(line).append('\n');
+            while ((line = reader.readLine()) != null) raw.append(line);
         } finally {
             connection.disconnect();
         }
-        return raw.toString();
+        JSONObject payload = new JSONObject(raw.toString());
+        if (!"base64".equals(payload.optString("encoding", ""))) {
+            throw new IllegalStateException("GITHUB_BLOB_ENCODING_INVALID:" + blobSha);
+        }
+        String encoded = payload.optString("content", "");
+        byte[] decoded = Base64.decode(encoded, Base64.DEFAULT);
+        return new String(decoded, StandardCharsets.UTF_8);
     }
 }
