@@ -1,16 +1,16 @@
 {
-  "versionCode": 170,
-  "versionName": "0.11.14",
+  "versionCode": 171,
+  "versionName": "0.11.15",
   "channel": "bridge",
-  "bridge": 74,
-  "releaseSequence": 8,
+  "bridge": 75,
+  "releaseSequence": 9,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "新增 GitHub 架構同步入口與同步狀態畫面。",
-    "新增 GitHub 原生能力唯讀目錄與手機功能架構脈絡。",
-    "保留既有 Registry、Connect、Gate、Command 權限邊界。"
+    "Evidence-Only Scanner v1：沒有 GitHub Evidence 不建立 Candidate Node/Relation。",
+    "移除固定 GitHub→Repository→Android→現有功能假主幹，恢復 Pending Review Gate。",
+    "修正 release/android ref、nested package 掃描、重複同步與 revision 競態，並保留 Accepted rollback snapshot。"
   ]
 }
