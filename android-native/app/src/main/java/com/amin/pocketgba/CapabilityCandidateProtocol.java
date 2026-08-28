@@ -14,6 +14,7 @@ import java.util.UUID;
  *
  * Rule: classification is deterministic first. Semantic/LLM review may propose a better classification,
  * but it must never bypass validation or human Registry approval.
+ * `related_to` is a draft relationship only; it must be classified into GraphContract vocabulary before registration.
  */
 final class CapabilityCandidateProtocol {
     static final int VERSION = 1;
