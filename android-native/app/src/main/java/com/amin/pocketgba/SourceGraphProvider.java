@@ -42,7 +42,14 @@ final class SourceGraphProvider {
 
     static JSONObject reviewState(Context context) {
         if (context == null) return new JSONObject();
-        return new CloudSourceGraphStore(context).reviewState();
+        try {
+            JSONObject state = new CloudSourceGraphStore(context).reviewState();
+            state.put("sync", GitHubSourceSyncState.snapshot());
+            return state;
+        } catch (Exception ignored) {
+            try { return new JSONObject().put("sync", GitHubSourceSyncState.snapshot()); }
+            catch (Exception impossible) { return new JSONObject(); }
+        }
     }
 
     private static JSONObject bundled(Context context) {
