@@ -11,6 +11,7 @@ import java.util.Set;
 final class GraphContract {
     static final int CONTRACT_VERSION=2;
     static final String REGISTRY_FORMAT="amin-node-registry",EDGE_FORMAT="amin-typed-edges",APP_ORIGIN="app",HIERARCHY_RELATIONSHIP="contains",HIERARCHY_CLASS="hierarchy",MANIFEST_AUTHORITY="android_manifest";
+    /** Ordered canonical vocabulary. related_to is intentionally excluded because it is draft-only. */
     static final Set<String> RELATIONSHIP_TYPES=new LinkedHashSet<>(Arrays.asList("contains","opens","uses","reads_from","writes_to","executes","depends_on"));
     private GraphContract(){}
 
