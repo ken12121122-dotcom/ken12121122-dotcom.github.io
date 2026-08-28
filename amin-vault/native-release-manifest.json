@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.12-bridge72.apk",
-  "apkSha256": "cedb84581a98262696aa70cb615ab79b7ab0e4f9f8455ac9ccf300dda0296bb3",
+  "apkSha256": "cb3a776fc727d38201a6620c02fab5aa32c73e96e692d390818cb677e5ea4e65",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2771942,
-  "publishedAt": "2026-08-28T12:00:03Z",
+  "sizeBytes": 2774918,
+  "publishedAt": "2026-08-28T13:08:45Z",
   "mandatory": false,
   "releaseNotes": [
     "新增 AMIN Source Graph Foundation，將 Repository、Branch、Directory、File、Class、Function 與 Capability/Runtime 分層管理。",
