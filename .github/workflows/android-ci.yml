@@ -44,6 +44,8 @@ jobs:
           node --check android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
           node --check android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
           node --check android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          node --check android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
+          node --check android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
           grep -q "AminGraphArchitectureVisibility" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
           grep -q "architectureFindings" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
           grep -q "capabilitySource" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
@@ -54,6 +56,11 @@ jobs:
           grep -q "待確認 Source 更新" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           grep -q "確認變更" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           grep -q "AminSourceReviewRefresh" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q "AminGitHubNativeCapabilityMap" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
+          grep -q "readOnly:true" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
+          grep -q "AminGitHubBootstrapGate" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+          grep -q "正在建立 GitHub 架構" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+          grep -q "手機現有功能" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
