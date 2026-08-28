@@ -70,4 +70,12 @@ public class CapabilityCandidateValidatorTest {
         CapabilityCandidateValidator.Result result = validator.validate(null, null, candidate);
         assertTrue(result.valid);
     }
+
+    @Test public void exposesStableRelationshipChoicesForHumanApproval() {
+        assertEquals("contains", GraphContract.relationshipTypes()[0]);
+        assertEquals("opens", GraphContract.relationshipTypes()[1]);
+        assertEquals("uses", GraphContract.relationshipTypes()[2]);
+        assertEquals("depends_on", GraphContract.relationshipTypes()[6]);
+        assertFalse(GraphContract.isRelationshipTypeAllowed("related_to"));
+    }
 }
