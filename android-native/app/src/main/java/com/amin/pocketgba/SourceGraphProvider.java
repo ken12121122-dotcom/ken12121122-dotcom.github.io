@@ -7,9 +7,10 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-/** Source Graph ingestion boundary. Accepted cloud graph wins; bundled asset remains rollback/fallback. */
+/** Source Graph ingestion boundary. Evidence-only reverse snapshots are review records, not active graph replacements. */
 final class SourceGraphProvider {
     private static final String ASSET = "amin-source-graph.json";
+    private static final String REVIEW_ONLY_SCAN_MODE = "evidence-only-reverse-v1";
 
     private SourceGraphProvider() { }
 
@@ -19,7 +20,7 @@ final class SourceGraphProvider {
         if (context == null) return SourceGraphContract.empty("CONTEXT_REQUIRED");
         try {
             JSONObject accepted = new CloudSourceGraphStore(context).accepted();
-            if (accepted != null) {
+            if (accepted != null && !REVIEW_ONLY_SCAN_MODE.equals(accepted.optString("scanMode", ""))) {
                 JSONObject normalized = SourceGraphContract.normalize(accepted);
                 if (normalized.optBoolean("valid", false)) {
                     normalized.put("authority", "github-cloud-accepted");
