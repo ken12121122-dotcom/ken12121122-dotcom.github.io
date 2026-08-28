@@ -39,6 +39,25 @@ public class CapabilityCandidateProtocolTest {
         assertEquals(CapabilityCandidateProtocol.TYPE_CONNECT, CapabilityCandidateProtocol.classify(proposal));
     }
 
+    @Test public void classifiesCanvasConnectAliases() throws Exception {
+        JSONObject proposal = new JSONObject()
+                .put("from", "app:a")
+                .put("to", "app:b")
+                .put("relation", "uses");
+        assertEquals(CapabilityCandidateProtocol.TYPE_CONNECT, CapabilityCandidateProtocol.classify(proposal));
+        assertEquals("uses", CapabilityCandidateProtocol.relationshipName(proposal));
+        assertFalse(CapabilityCandidateProtocol.requiresSemanticReview(new JSONObject(proposal.toString()).put("entity_type", "connect")));
+    }
+
+    @Test public void relatedToRemainsDraftAndRequiresClassification() throws Exception {
+        JSONObject proposal = new JSONObject()
+                .put("entity_type", "connect")
+                .put("from", "app:a")
+                .put("to", "app:b")
+                .put("relation", "related_to");
+        assertTrue(CapabilityCandidateProtocol.requiresSemanticReview(proposal));
+    }
+
     @Test public void newActionRequiresSemanticReviewButKnownActionDoesNot() throws Exception {
         JSONObject known = CapabilityCandidateProtocol.createCandidate(new JSONObject()
                 .put("entity_type", "action")
