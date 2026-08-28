@@ -26,8 +26,12 @@ final class UnifiedGraphProvider {
         try {
             JSONObject out = new JSONObject();
             out.put("format", "amin-unified-graph");
-            out.put("version", 2);
+            out.put("version", 3);
             out.put("semanticZoom", new JSONObject().put("hysteresis", 1.08));
+            out.put("layers", new JSONObject()
+                    .put("capability", new JSONObject().put("available", true).put("authoritative", true))
+                    .put("source", new JSONObject().put("available", true).put("authoritative", false))
+                    .put("runtime", new JSONObject().put("available", true).put("authoritative", false)));
 
             JSONArray domains = new JSONArray();
             domains.put(new JSONObject()
@@ -159,11 +163,12 @@ final class UnifiedGraphProvider {
                 relations.put(relationOut);
             }
             out.put("relations", relations);
+            out.put("sourceGraph", SourceGraphProvider.graph(context));
             out.put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson());
             out.put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
             return out.toString();
         } catch (Exception error) {
-            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
+            return "{\"format\":\"amin-unified-graph\",\"version\":3,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"sourceGraph\":{\"format\":\"amin-source-graph\",\"version\":1,\"entities\":[],\"relations\":[]},\"runtimeEdges\":[],\"runtimeFlows\":[]}";
         }
     }
 
