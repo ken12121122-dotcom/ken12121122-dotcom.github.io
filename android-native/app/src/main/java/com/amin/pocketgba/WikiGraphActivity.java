@@ -143,6 +143,16 @@ public final class WikiGraphActivity extends Activity {
         } catch (Exception ignored) { }
     }
 
+    private boolean openApproval(JSONObject candidate) {
+        if (candidate == null) return false;
+        try {
+            Intent intent = new Intent(this, RegistryApprovalActivity.class);
+            intent.putExtra(RegistryApprovalActivity.EXTRA_CANDIDATE_JSON, candidate.toString());
+            startActivity(intent);
+            return true;
+        } catch (Exception error) { return false; }
+    }
+
     private final class WikiBridge {
         @JavascriptInterface public void close() { runOnUiThread(WikiGraphActivity.this::finish); }
         @JavascriptInterface public String getThemeName() { return AminTheme.current(WikiGraphActivity.this); }
@@ -157,6 +167,13 @@ public final class WikiGraphActivity extends Activity {
         }
         @JavascriptInterface public String getRuntimeFlowTraceJson() {
             return GraphRuntimeFlowTrace.snapshotJson().toString();
+        }
+        @JavascriptInterface public boolean requestActionRegistration(String ownerNodeId, String action) {
+            RegistryCandidateStore store = new RegistryCandidateStore(WikiGraphActivity.this);
+            JSONObject candidate = store.createActionCandidate(ownerNodeId, action, "wiki-graph");
+            if (candidate == null) return false;
+            runOnUiThread(() -> openApproval(candidate));
+            return true;
         }
         @JavascriptInterface public boolean addUnifiedEdge(String from, String to, String relation) {
             String source = from == null ? "" : from.trim();
@@ -173,19 +190,22 @@ public final class WikiGraphActivity extends Activity {
                         .put("status", "active")
                         .put("gate", new JSONObject().put("enabled", true))
                         .put("command_chain", new JSONArray());
-                nodeMetadataStore.addOrReplaceEdge(edge);
+                RegistryCandidateStore store = new RegistryCandidateStore(WikiGraphActivity.this);
+                JSONObject candidate = store.createConnectCandidate(edge, "wiki-graph:add");
+                if (candidate == null) return false;
+                runOnUiThread(() -> openApproval(candidate));
                 return true;
             } catch (Exception error) { return false; }
         }
         @JavascriptInterface public boolean saveUnifiedEdgeJson(String edgeJson) {
             try {
                 JSONObject edge = new JSONObject(edgeJson == null ? "{}" : edgeJson);
-                String source = edge.optString("from", "").trim();
-                String target = edge.optString("to", "").trim();
+                String source = edge.optString("from", edge.optString("source", "")).trim();
+                String target = edge.optString("to", edge.optString("target", "")).trim();
                 if (source.isEmpty() || target.isEmpty() || source.equals(target)) return false;
                 String edgeId = edge.optString("edge_id", edge.optString("edgeId", "")).trim();
                 if (edgeId.isEmpty()) edgeId = "edge:" + UUID.randomUUID().toString().substring(0, 8);
-                String relation = edge.optString("relation", edge.optString("type", "related_to")).trim();
+                String relation = CapabilityCandidateProtocol.relationshipName(edge);
                 if (relation.isEmpty()) relation = "related_to";
                 edge.put("edge_id", edgeId);
                 edge.put("from", source);
@@ -194,7 +214,21 @@ public final class WikiGraphActivity extends Activity {
                 edge.put("status", edge.optString("status", "active"));
                 if (edge.optJSONObject("gate") == null) edge.put("gate", new JSONObject().put("enabled", true));
                 if (edge.optJSONArray("command_chain") == null) edge.put("command_chain", new JSONArray());
-                nodeMetadataStore.addOrReplaceEdge(edge);
+
+                JSONObject existing = nodeMetadataStore.customEdge(edgeId);
+                if (existing != null) {
+                    String currentRelation = CapabilityCandidateProtocol.relationshipName(existing);
+                    if (GraphContract.isRelationshipTypeAllowed(currentRelation) && currentRelation.equals(relation)) {
+                        edge.put("relationship_type", relation).put("relationshipType", relation);
+                        nodeMetadataStore.addOrReplaceEdge(edge);
+                        return true;
+                    }
+                }
+
+                RegistryCandidateStore store = new RegistryCandidateStore(WikiGraphActivity.this);
+                JSONObject candidate = store.createConnectCandidate(edge, "wiki-graph:save");
+                if (candidate == null) return false;
+                runOnUiThread(() -> openApproval(candidate));
                 return true;
             } catch (Exception error) { return false; }
         }
