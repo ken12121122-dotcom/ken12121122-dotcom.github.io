@@ -56,6 +56,7 @@ public class CapabilityCandidateProtocolTest {
                 .put("to", "app:b")
                 .put("relation", "related_to");
         assertTrue(CapabilityCandidateProtocol.requiresSemanticReview(proposal));
+        assertFalse(GraphContract.isRelationshipTypeAllowed("related_to"));
     }
 
     @Test public void newActionRequiresSemanticReviewButKnownActionDoesNot() throws Exception {
