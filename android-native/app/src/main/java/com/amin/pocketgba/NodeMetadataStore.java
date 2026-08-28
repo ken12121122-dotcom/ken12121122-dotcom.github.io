@@ -9,7 +9,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-/** Local metadata overrides, approved custom nodes, and typed connects. */
+/** Local metadata overrides, approved custom nodes/actions, and typed connects. */
 final class NodeMetadataStore {
     private static final String PREFS = "amin_node_metadata";
     private static final String KEY_OVERRIDES = "overrides";
@@ -69,7 +69,6 @@ final class NodeMetadataStore {
         catch (Exception e) { return new JSONArray(); }
     }
 
-    /** Creates only a registration candidate and opens the mandatory approval gate. */
     JSONObject createCustomNode(String requestedName, String sourceText) {
         RegistryCandidateStore candidates = new RegistryCandidateStore(context);
         JSONObject candidate = candidates.createNodeCandidate(requestedName, sourceText);
@@ -91,7 +90,6 @@ final class NodeMetadataStore {
         }
     }
 
-    /** Writes an already-approved node candidate into the authoritative registry store. */
     JSONObject registerApprovedNode(String requestedName, String sourceText) {
         String name = clean(requestedName);
         if (name.isEmpty()) name = "新節點";
@@ -120,7 +118,6 @@ final class NodeMetadataStore {
         } catch (Exception e) { return null; }
     }
 
-    /** Adds an approved Action to a registered node without creating a second node registry. */
     JSONObject registerApprovedAction(String ownerNodeId, String actionId) {
         String owner = clean(ownerNodeId);
         String action = clean(actionId);
@@ -134,12 +131,10 @@ final class NodeMetadataStore {
                 saveCustomNode(custom);
                 return new JSONObject().put("entity_type", "action").put("owner_node_id", owner).put("action", action);
             }
-
             JSONObject registered = NodeRegistry.findNode(context, this, owner);
             if (registered == null) return null;
             JSONArray actions = copyArray(registered.optJSONArray("actions"));
             appendUnique(actions, action);
-
             JSONObject all = new JSONObject(prefs.getString(KEY_OVERRIDES, "{}"));
             JSONObject item = all.optJSONObject(owner);
             if (item == null) item = new JSONObject();
@@ -161,7 +156,6 @@ final class NodeMetadataStore {
             if (target.isEmpty()) target = value(edge, "to", "target");
             String relationship = CapabilityCandidateProtocol.relationshipName(edge);
             if (edgeId.isEmpty() || source.isEmpty() || target.isEmpty() || !GraphContract.isRelationshipTypeAllowed(relationship)) return null;
-
             JSONObject canonical = new JSONObject(edge.toString())
                     .put("edge_id", edgeId).put("edgeId", edgeId)
                     .put("source_node_id", source).put("source", source).put("from", source)
