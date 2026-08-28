@@ -1,17 +1,16 @@
 {
-  "versionCode": 169,
-  "versionName": "0.11.13",
+  "versionCode": 170,
+  "versionName": "0.11.14",
   "channel": "bridge",
-  "bridge": 73,
-  "releaseSequence": 7,
+  "bridge": 74,
+  "releaseSequence": 8,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "修正 Capability Semantic Zoom：縮小時只強調大節點，中景顯示大＋中節點，放大時恢復大＋中＋小節點。",
-    "新增中文縮放層級提示，直接顯示遠景／中景／近景目前會看到哪些節點。",
-    "大中小節點優先依 visualSize / level / canonical type 判定，舊資料則沿用現有 parent hierarchy 相容規則。",
-    "保留 Capability / Source / Runtime / All / Unregistered 圖層、Registry、Connect、Gate、Command 與 Runtime 行為。"
+    "新增 GitHub 架構同步入口與同步狀態畫面。",
+    "新增 GitHub 原生能力唯讀目錄與手機功能架構脈絡。",
+    "保留既有 Registry、Connect、Gate、Command 權限邊界。"
   ]
 }
