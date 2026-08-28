@@ -175,9 +175,18 @@ public final class WikiGraphActivity extends Activity {
             return SourceGraphProvider.reviewState(WikiGraphActivity.this).toString();
         }
         @JavascriptInterface public boolean acceptPendingSourceChange() {
-            boolean accepted = new CloudSourceGraphStore(WikiGraphActivity.this).acceptPending();
+            String revision = new CloudSourceGraphStore(WikiGraphActivity.this).pendingRevision();
+            return acceptPendingSourceRevision(revision);
+        }
+        @JavascriptInterface public boolean acceptPendingSourceRevision(String expectedRevision) {
+            boolean accepted = new CloudSourceGraphStore(WikiGraphActivity.this).acceptPending(expectedRevision);
             if (accepted) runOnUiThread(WikiGraphActivity.this::reloadUnifiedGraph);
             return accepted;
+        }
+        @JavascriptInterface public boolean rollbackAcceptedSourceChange() {
+            boolean rolledBack = new CloudSourceGraphStore(WikiGraphActivity.this).rollbackAccepted();
+            if (rolledBack) runOnUiThread(WikiGraphActivity.this::reloadUnifiedGraph);
+            return rolledBack;
         }
         @JavascriptInterface public void syncSourceNow() { requestCloudSourceSync(); }
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
