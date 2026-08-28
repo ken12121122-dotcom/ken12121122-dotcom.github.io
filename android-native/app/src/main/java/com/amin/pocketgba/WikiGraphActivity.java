@@ -69,6 +69,7 @@ public final class WikiGraphActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 applyWebTheme();
+                GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
             }
         });
