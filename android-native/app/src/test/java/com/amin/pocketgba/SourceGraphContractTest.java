@@ -9,17 +9,23 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 public final class SourceGraphContractTest {
-    @Test public void acceptsRepositoryHierarchyAndDeclarations() throws Exception {
+    @Test public void acceptsRepositoryHierarchyDeclarationsFunctionsAndCalls() throws Exception {
         JSONObject graph = new JSONObject();
         JSONArray entities = new JSONArray()
                 .put(entity("repo:amin", "repository"))
                 .put(entity("branch:release/android", "branch"))
+                .put(entity("dir:java", "directory"))
                 .put(entity("file:WikiGraphActivity.java", "file"))
-                .put(entity("class:WikiGraphActivity", "class"));
+                .put(entity("class:WikiGraphActivity", "class"))
+                .put(entity("function:reload", "function"))
+                .put(entity("class:UnifiedGraphProvider", "class"));
         JSONArray relations = new JSONArray()
                 .put(relation("repo:amin", "branch:release/android", "contains"))
-                .put(relation("branch:release/android", "file:WikiGraphActivity.java", "contains"))
-                .put(relation("file:WikiGraphActivity.java", "class:WikiGraphActivity", "declares"));
+                .put(relation("branch:release/android", "dir:java", "contains"))
+                .put(relation("dir:java", "file:WikiGraphActivity.java", "contains"))
+                .put(relation("file:WikiGraphActivity.java", "class:WikiGraphActivity", "declares"))
+                .put(relation("class:WikiGraphActivity", "function:reload", "declares"))
+                .put(relation("class:WikiGraphActivity", "class:UnifiedGraphProvider", "calls"));
         graph.put("entities", entities).put("relations", relations);
 
         JSONObject normalized = SourceGraphContract.normalize(graph);
