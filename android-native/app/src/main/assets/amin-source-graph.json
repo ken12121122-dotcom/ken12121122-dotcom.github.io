@@ -1,0 +1,74 @@
+{
+  "format": "amin-source-graph",
+  "version": 1,
+  "authority": "repository-baseline",
+  "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+  "branch": "release/android",
+  "entities": [
+    {"id":"repo:amin","entityType":"repository","title":"AMIN Repository","path":""},
+    {"id":"branch:release/android","entityType":"branch","title":"release/android","path":""},
+    {"id":"dir:android-native","entityType":"directory","title":"android-native","path":"android-native"},
+    {"id":"dir:java-core","entityType":"directory","title":"com.amin.pocketgba","path":"android-native/app/src/main/java/com/amin/pocketgba"},
+
+    {"id":"file:UnifiedGraphProvider.java","entityType":"file","title":"UnifiedGraphProvider.java","path":"android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java"},
+    {"id":"class:UnifiedGraphProvider","entityType":"class","title":"UnifiedGraphProvider","path":"android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java"},
+    {"id":"function:UnifiedGraphProvider.graphJson","entityType":"function","title":"graphJson","path":"android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java"},
+
+    {"id":"file:WikiGraphActivity.java","entityType":"file","title":"WikiGraphActivity.java","path":"android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java"},
+    {"id":"class:WikiGraphActivity","entityType":"class","title":"WikiGraphActivity","path":"android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java"},
+    {"id":"function:WikiGraphActivity.reloadUnifiedGraph","entityType":"function","title":"reloadUnifiedGraph","path":"android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java"},
+
+    {"id":"file:NodeRegistry.java","entityType":"file","title":"NodeRegistry.java","path":"android-native/app/src/main/java/com/amin/pocketgba/NodeRegistry.java"},
+    {"id":"class:NodeRegistry","entityType":"class","title":"NodeRegistry","path":"android-native/app/src/main/java/com/amin/pocketgba/NodeRegistry.java"},
+    {"id":"file:GraphContract.java","entityType":"file","title":"GraphContract.java","path":"android-native/app/src/main/java/com/amin/pocketgba/GraphContract.java"},
+    {"id":"class:GraphContract","entityType":"class","title":"GraphContract","path":"android-native/app/src/main/java/com/amin/pocketgba/GraphContract.java"},
+    {"id":"file:RegistryCandidateStore.java","entityType":"file","title":"RegistryCandidateStore.java","path":"android-native/app/src/main/java/com/amin/pocketgba/RegistryCandidateStore.java"},
+    {"id":"class:RegistryCandidateStore","entityType":"class","title":"RegistryCandidateStore","path":"android-native/app/src/main/java/com/amin/pocketgba/RegistryCandidateStore.java"},
+    {"id":"file:RegistryApprovalActivity.java","entityType":"file","title":"RegistryApprovalActivity.java","path":"android-native/app/src/main/java/com/amin/pocketgba/RegistryApprovalActivity.java"},
+    {"id":"class:RegistryApprovalActivity","entityType":"class","title":"RegistryApprovalActivity","path":"android-native/app/src/main/java/com/amin/pocketgba/RegistryApprovalActivity.java"},
+    {"id":"file:SourceGraphProvider.java","entityType":"file","title":"SourceGraphProvider.java","path":"android-native/app/src/main/java/com/amin/pocketgba/SourceGraphProvider.java"},
+    {"id":"class:SourceGraphProvider","entityType":"class","title":"SourceGraphProvider","path":"android-native/app/src/main/java/com/amin/pocketgba/SourceGraphProvider.java"},
+
+    {"id":"file:ControlCenterActivity.java","entityType":"file","title":"ControlCenterActivity.java","path":"android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java"},
+    {"id":"class:ControlCenterActivity","entityType":"class","title":"ControlCenterActivity","path":"android-native/app/src/main/java/com/amin/pocketgba/ControlCenterActivity.java"},
+    {"id":"file:VoiceCommandActivity.java","entityType":"file","title":"VoiceCommandActivity.java","path":"android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandActivity.java"},
+    {"id":"class:VoiceCommandActivity","entityType":"class","title":"VoiceCommandActivity","path":"android-native/app/src/main/java/com/amin/pocketgba/VoiceCommandActivity.java"},
+    {"id":"file:UpdateHubActivity.java","entityType":"file","title":"UpdateHubActivity.java","path":"android-native/app/src/main/java/com/amin/pocketgba/UpdateHubActivity.java"},
+    {"id":"class:UpdateHubActivity","entityType":"class","title":"UpdateHubActivity","path":"android-native/app/src/main/java/com/amin/pocketgba/UpdateHubActivity.java"}
+  ],
+  "relations": [
+    {"id":"src:1","from":"repo:amin","to":"branch:release/android","type":"contains"},
+    {"id":"src:2","from":"branch:release/android","to":"dir:android-native","type":"contains"},
+    {"id":"src:3","from":"dir:android-native","to":"dir:java-core","type":"contains"},
+
+    {"id":"src:4","from":"dir:java-core","to":"file:UnifiedGraphProvider.java","type":"contains"},
+    {"id":"src:5","from":"file:UnifiedGraphProvider.java","to":"class:UnifiedGraphProvider","type":"declares"},
+    {"id":"src:6","from":"class:UnifiedGraphProvider","to":"function:UnifiedGraphProvider.graphJson","type":"declares"},
+    {"id":"src:7","from":"dir:java-core","to":"file:WikiGraphActivity.java","type":"contains"},
+    {"id":"src:8","from":"file:WikiGraphActivity.java","to":"class:WikiGraphActivity","type":"declares"},
+    {"id":"src:9","from":"class:WikiGraphActivity","to":"function:WikiGraphActivity.reloadUnifiedGraph","type":"declares"},
+    {"id":"src:10","from":"dir:java-core","to":"file:NodeRegistry.java","type":"contains"},
+    {"id":"src:11","from":"file:NodeRegistry.java","to":"class:NodeRegistry","type":"declares"},
+    {"id":"src:12","from":"dir:java-core","to":"file:GraphContract.java","type":"contains"},
+    {"id":"src:13","from":"file:GraphContract.java","to":"class:GraphContract","type":"declares"},
+    {"id":"src:14","from":"dir:java-core","to":"file:RegistryCandidateStore.java","type":"contains"},
+    {"id":"src:15","from":"file:RegistryCandidateStore.java","to":"class:RegistryCandidateStore","type":"declares"},
+    {"id":"src:16","from":"dir:java-core","to":"file:RegistryApprovalActivity.java","type":"contains"},
+    {"id":"src:17","from":"file:RegistryApprovalActivity.java","to":"class:RegistryApprovalActivity","type":"declares"},
+    {"id":"src:18","from":"dir:java-core","to":"file:SourceGraphProvider.java","type":"contains"},
+    {"id":"src:19","from":"file:SourceGraphProvider.java","to":"class:SourceGraphProvider","type":"declares"},
+
+    {"id":"src:20","from":"dir:java-core","to":"file:ControlCenterActivity.java","type":"contains"},
+    {"id":"src:21","from":"file:ControlCenterActivity.java","to":"class:ControlCenterActivity","type":"declares"},
+    {"id":"src:22","from":"dir:java-core","to":"file:VoiceCommandActivity.java","type":"contains"},
+    {"id":"src:23","from":"file:VoiceCommandActivity.java","to":"class:VoiceCommandActivity","type":"declares"},
+    {"id":"src:24","from":"dir:java-core","to":"file:UpdateHubActivity.java","type":"contains"},
+    {"id":"src:25","from":"file:UpdateHubActivity.java","to":"class:UpdateHubActivity","type":"declares"},
+
+    {"id":"src:26","from":"class:WikiGraphActivity","to":"class:UnifiedGraphProvider","type":"calls"},
+    {"id":"src:27","from":"class:WikiGraphActivity","to":"class:RegistryCandidateStore","type":"calls"},
+    {"id":"src:28","from":"class:WikiGraphActivity","to":"class:RegistryApprovalActivity","type":"calls"},
+    {"id":"src:29","from":"class:ControlCenterActivity","to":"class:VoiceCommandActivity","type":"calls"},
+    {"id":"src:30","from":"class:ControlCenterActivity","to":"class:UpdateHubActivity","type":"calls"}
+  ]
+}

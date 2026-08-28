@@ -26,8 +26,15 @@ final class UnifiedGraphProvider {
         try {
             JSONObject out = new JSONObject();
             out.put("format", "amin-unified-graph");
-            out.put("version", 2);
-            out.put("semanticZoom", new JSONObject().put("hysteresis", 1.08));
+            out.put("version", 4);
+            out.put("semanticZoom", new JSONObject()
+                    .put("hysteresis", 1.08)
+                    .put("sourceDepths", new JSONArray().put("repository").put("branch").put("directory").put("file").put("class").put("function")));
+            out.put("layers", new JSONObject()
+                    .put("capability", new JSONObject().put("available", true).put("authoritative", true))
+                    .put("source", new JSONObject().put("available", true).put("authoritative", false))
+                    .put("runtime", new JSONObject().put("available", true).put("authoritative", false))
+                    .put("unregistered", new JSONObject().put("available", true).put("authoritative", false)));
 
             JSONArray domains = new JSONArray();
             domains.put(new JSONObject()
@@ -159,11 +166,18 @@ final class UnifiedGraphProvider {
                 relations.put(relationOut);
             }
             out.put("relations", relations);
+
+            JSONObject sourceGraph = SourceGraphProvider.graph(context);
+            out.put("sourceGraph", sourceGraph);
+            JSONObject capabilitySource = CapabilitySourceProvider.evaluate(context, entities, sourceGraph, relations);
+            out.put("capabilitySource", capabilitySource);
+            out.put("architectureFindings", capabilitySource.optJSONArray("findings") == null ? new JSONArray() : capabilitySource.optJSONArray("findings"));
+
             out.put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson());
             out.put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
             return out.toString();
         } catch (Exception error) {
-            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
+            return "{\"format\":\"amin-unified-graph\",\"version\":4,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"sourceGraph\":{\"format\":\"amin-source-graph\",\"version\":1,\"entities\":[],\"relations\":[]},\"capabilitySource\":{\"format\":\"amin-capability-source-map\",\"version\":1,\"mappings\":[],\"findings\":[]},\"architectureFindings\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
         }
     }
 

@@ -1,0 +1,12 @@
+{
+  "format": "amin-capability-source-map",
+  "version": 1,
+  "authority": "repository-baseline",
+  "mappings": [
+    {"id":"map:graph:activity","capabilityId":"app:graph","sourceId":"class:WikiGraphActivity","relation":"implemented_by","provenance":"android_manifest+source"},
+    {"id":"map:graph:provider","capabilityId":"app:graph","sourceId":"class:UnifiedGraphProvider","relation":"implemented_by","provenance":"source"},
+    {"id":"map:control-center:activity","capabilityId":"app:control-center","sourceId":"class:ControlCenterActivity","relation":"implemented_by","provenance":"android_manifest+source"},
+    {"id":"map:voice:activity","capabilityId":"app:voice","sourceId":"class:VoiceCommandActivity","relation":"implemented_by","provenance":"android_manifest+source"},
+    {"id":"map:update:activity","capabilityId":"app:update","sourceId":"class:UpdateHubActivity","relation":"implemented_by","provenance":"android_manifest+source"}
+  ]
+}
