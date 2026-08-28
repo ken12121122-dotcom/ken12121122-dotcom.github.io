@@ -11,7 +11,9 @@ final class GraphArchitectureVisibilityInjector {
     private static final String[] ASSETS = new String[] {
             "amin-wiki-graph/architecture-visibility.js",
             "amin-wiki-graph/capability-semantic-zoom.js",
-            "amin-wiki-graph/source-review.js"
+            "amin-wiki-graph/github-native-capabilities.js",
+            "amin-wiki-graph/source-review.js",
+            "amin-wiki-graph/github-bootstrap-gate.js"
     };
 
     private GraphArchitectureVisibilityInjector() { }
