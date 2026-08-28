@@ -10,7 +10,8 @@ import java.io.InputStream;
 final class GraphArchitectureVisibilityInjector {
     private static final String[] ASSETS = new String[] {
             "amin-wiki-graph/architecture-visibility.js",
-            "amin-wiki-graph/capability-semantic-zoom.js"
+            "amin-wiki-graph/capability-semantic-zoom.js",
+            "amin-wiki-graph/source-review.js"
     };
 
     private GraphArchitectureVisibilityInjector() { }
