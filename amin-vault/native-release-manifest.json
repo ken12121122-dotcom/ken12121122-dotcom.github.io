@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.13-bridge73.apk",
-  "apkSha256": "bb41b91ab99f24f6852ba15d1918cac2dde267ee2c68f18d11c0c2cba9bc5d6b",
+  "apkSha256": "9b422576b2e1e1330180e4d6409d1aa247a585dd9133a951d537fdcf1726a315",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 2774908,
-  "publishedAt": "2026-08-28T13:12:23Z",
+  "publishedAt": "2026-08-28T13:48:54Z",
   "mandatory": false,
   "releaseNotes": [
     "修正 Capability Semantic Zoom：縮小時只強調大節點，中景顯示大＋中節點，放大時恢復大＋中＋小節點。",
