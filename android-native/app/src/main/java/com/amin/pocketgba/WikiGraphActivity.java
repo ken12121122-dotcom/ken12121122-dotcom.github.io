@@ -158,6 +158,12 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getRuntimeFlowTraceJson() {
             return GraphRuntimeFlowTrace.snapshotJson().toString();
         }
+        @JavascriptInterface public String traverseUnifiedEdge(String edgeId) {
+            String turnId = "graph-" + UUID.randomUUID().toString().substring(0, 8);
+            String result = GraphRuntimeTraversal.traverse(WikiGraphActivity.this, nodeMetadataStore, edgeId, turnId);
+            UnifiedGraphProvider.notifyChanged(WikiGraphActivity.this);
+            return result;
+        }
         @JavascriptInterface public boolean addUnifiedEdge(String from, String to, String relation) {
             String source = from == null ? "" : from.trim();
             String target = to == null ? "" : to.trim();

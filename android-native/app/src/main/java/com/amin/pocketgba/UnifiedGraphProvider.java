@@ -26,14 +26,23 @@ final class UnifiedGraphProvider {
         try {
             JSONObject out = new JSONObject();
             out.put("format", "amin-unified-graph");
-            out.put("version", 2);
+            out.put("version", 3);
             out.put("semanticZoom", new JSONObject().put("hysteresis", 1.08));
+            out.put("entitySemantics", new JSONObject()
+                    .put("sourceOfTruth", "registry")
+                    .put("sizeRule", "type->level->visualSize")
+                    .put("large", new JSONArray().put("SYSTEM").put("AGENT"))
+                    .put("medium", new JSONArray().put("STREAM").put("SKILL").put("GROUP"))
+                    .put("small", new JSONArray().put("NODE").put("COMMAND").put("TOOL")));
 
             JSONArray domains = new JSONArray();
             domains.put(new JSONObject()
                     .put("id", "system:amin")
                     .put("title", "AMIN")
-                    .put("summary", "Unified registry graph"));
+                    .put("summary", "Unified registry graph")
+                    .put("canonicalType", "SYSTEM")
+                    .put("level", "large")
+                    .put("visualSize", "large"));
             out.put("domains", domains);
 
             JSONArray groups = new JSONArray();
@@ -56,6 +65,11 @@ final class UnifiedGraphProvider {
                     ids.add(id);
                     String title = first(source, "name", "title");
                     if (title.isEmpty()) title = id;
+                    String canonicalType = GraphEntitySemantics.canonicalType(source, "NODE");
+                    String level = GraphEntitySemantics.levelForType(canonicalType);
+                    String parentId = first(source, "parent_id", "parentNodeId", "parent");
+                    parentId = GraphEntitySemantics.legacyParentForLevel(parentId, level);
+
                     JSONObject entity = new JSONObject();
                     entity.put("id", id);
                     entity.put("title", title);
@@ -66,7 +80,7 @@ final class UnifiedGraphProvider {
                     entity.put("entityType", "node");
                     entity.put("registryId", id);
                     entity.put("route", source.optString("route", ""));
-                    entity.put("parentId", first(source, "parent_id", "parentNodeId", "parent"));
+                    entity.put("parentId", parentId);
                     entity.put("nodeType", first(source, "node_type", "nodeType"));
                     entity.put("status", source.optString("status", "active"));
                     entity.put("version", first(source, "version", "nodeVersion"));
@@ -74,6 +88,7 @@ final class UnifiedGraphProvider {
                     entity.put("slot", source.optInt("slot", 0));
                     entity.put("voice", source.optJSONObject("voice") == null ? new JSONObject() : source.optJSONObject("voice"));
                     entity.put("storage", source.optJSONObject("storage") == null ? new JSONObject() : source.optJSONObject("storage"));
+                    GraphEntitySemantics.apply(entity, source, "NODE");
                     entities.put(entity);
                 }
             }
@@ -96,6 +111,7 @@ final class UnifiedGraphProvider {
                 entity.put("mode", command.getMode() == null ? "" : command.getMode());
                 entity.put("requiresAccessibility", command.requiresAccessibility());
                 entity.put("phrases", new JSONArray(command.getPhrases()));
+                GraphEntitySemantics.apply(entity, null, "COMMAND");
                 entities.put(entity);
                 commandCatalog.put(new JSONObject(entity.toString()));
             }
@@ -124,6 +140,7 @@ final class UnifiedGraphProvider {
                 entity.put("mode", source.optString("mode", ""));
                 entity.put("requiresAccessibility", source.optBoolean("requires_accessibility", false));
                 entity.put("phrases", source.optJSONArray("phrases") == null ? new JSONArray() : source.optJSONArray("phrases"));
+                GraphEntitySemantics.apply(entity, source, "COMMAND");
                 entities.put(entity);
                 commandCatalog.put(new JSONObject(entity.toString()));
             }
@@ -144,17 +161,19 @@ final class UnifiedGraphProvider {
                 if (relation.isEmpty()) relation = "related_to";
                 String edgeId = first(edge, "edge_id", "edgeId");
                 if (edgeId.isEmpty()) edgeId = "edge:" + i;
+                JSONObject gate = edge.optJSONObject("gate");
+                if (gate == null) gate = new JSONObject().put("enabled", true);
                 JSONObject relationOut = new JSONObject()
                         .put("id", edgeId)
                         .put("from", from)
                         .put("to", to)
                         .put("type", relation)
-                        .put("status", edge.optString("status", "active"));
+                        .put("status", edge.optString("status", "active"))
+                        .put("gate", new JSONObject(gate.toString()))
+                        .put("gateState", gate.optBoolean("enabled", true) ? "pass" : "blocked");
                 if (edge.has("command_chain")) relationOut.put("commandChain", edge.optJSONArray("command_chain"));
                 else if (edge.has("commands")) relationOut.put("commandChain", edge.optJSONArray("commands"));
                 else relationOut.put("commandChain", new JSONArray());
-                if (edge.has("gate")) relationOut.put("gate", edge.optJSONObject("gate"));
-                else relationOut.put("gate", new JSONObject().put("enabled", true));
                 relationOut.put("authority", edge.optString("authority", ""));
                 relations.put(relationOut);
             }
@@ -163,12 +182,19 @@ final class UnifiedGraphProvider {
             out.put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
             return out.toString();
         } catch (Exception error) {
-            return "{\"format\":\"amin-unified-graph\",\"version\":2,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
+            return "{\"format\":\"amin-unified-graph\",\"version\":3,\"domains\":[],\"groups\":[],\"nodes\":[],\"commands\":[],\"relations\":[],\"runtimeEdges\":[],\"runtimeFlows\":[]}";
         }
     }
 
     private static JSONObject group(String id, String title, String domainId, String summary) throws Exception {
-        return new JSONObject().put("id", id).put("title", title).put("domainId", domainId).put("summary", summary);
+        return new JSONObject()
+                .put("id", id)
+                .put("title", title)
+                .put("domainId", domainId)
+                .put("summary", summary)
+                .put("canonicalType", "GROUP")
+                .put("level", "medium")
+                .put("visualSize", "medium");
     }
 
     private static String nodeDetail(JSONObject node) {
