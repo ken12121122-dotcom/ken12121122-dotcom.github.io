@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.10-bridge70.apk",
-  "apkSha256": "cfd95589616830a039a50be7b0bcbaa6950b033e7bc3c22d846222af70002c76",
+  "apkSha256": "f7439ef9bc2193d0fb91b72daffcb774b3f4cce8b17a705e20454f7aa05abb17",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2757375,
-  "publishedAt": "2026-08-27T16:39:39Z",
+  "sizeBytes": 2763423,
+  "publishedAt": "2026-08-28T09:27:25Z",
   "mandatory": false,
   "releaseNotes": [
     "修正 Amin Graph 前端 JavaScript 語法錯誤，避免更新後畫布空白。",
