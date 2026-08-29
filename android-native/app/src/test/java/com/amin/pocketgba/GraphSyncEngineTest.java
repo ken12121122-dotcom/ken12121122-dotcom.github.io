@@ -97,6 +97,16 @@ public final class GraphSyncEngineTest {
         assertEquals("r1", synced.getJSONArray("relations").getJSONObject(0).getString("evidenceRevision"));
     }
 
+    @Test public void legacyRecordWithoutSeenMetadataUsesCurrentObservationTime() throws Exception {
+        JSONObject previous = GraphSyncEngine.empty();
+        previous.getJSONArray("entities").put(entity("scanner", "r0"));
+
+        JSONObject synced = GraphSyncEngine.sync(previous, canonical("r1", true), 2000L);
+
+        assertEquals(2000L, find(synced.getJSONArray("entities"), "scanner").getLong("firstSeen"));
+        assertEquals(2000L, find(synced.getJSONArray("entities"), "scanner").getLong("lastSeen"));
+    }
+
     private static JSONObject canonical(String revision, boolean includeCaller) throws Exception {
         JSONArray entities = new JSONArray().put(entity("scanner", revision));
         JSONArray relations = new JSONArray();

@@ -153,6 +153,30 @@ public final class SharedGraphSyncKernelTest {
         assertEquals(state.toString(), result.getJSONObject("state").toString());
     }
 
+    @Test public void failedAndCancelledBatchesCannotMutateOrStaleState() throws Exception {
+        JSONObject state = successState(SharedGraphSyncKernel.apply(null,
+                batch("work", owner("brain", "amin-agent-control"), "manual_tasks", true,
+                        new JSONArray().put(entity("task:42", "TASK", "suggested", "task-v1")), new JSONArray()),
+                1000L));
+
+        JSONObject failed = batch(
+                "work", owner("brain", "amin-agent-control"), "manual_tasks", true,
+                new JSONArray(), new JSONArray()).put("batch_status", "failed");
+        JSONObject cancelled = batch(
+                "work", owner("brain", "amin-agent-control"), "manual_tasks", true,
+                new JSONArray(), new JSONArray()).put("batch_status", "cancelled");
+
+        JSONObject failedResult = SharedGraphSyncKernel.apply(state, failed, 2000L);
+        JSONObject cancelledResult = SharedGraphSyncKernel.apply(state, cancelled, 3000L);
+
+        assertFalse(failedResult.getBoolean("success"));
+        assertEquals("BATCH_NOT_APPLICABLE", failedResult.getString("errorCode"));
+        assertEquals(state.toString(), failedResult.getJSONObject("state").toString());
+        assertFalse(cancelledResult.getBoolean("success"));
+        assertEquals("BATCH_NOT_APPLICABLE", cancelledResult.getString("errorCode"));
+        assertEquals(state.toString(), cancelledResult.getJSONObject("state").toString());
+    }
+
     @Test public void syncOwnerKeyIsCanonicalAcrossJsonPropertyOrder() throws Exception {
         JSONObject first = new JSONObject().put("provider", "github").put("repository", "repo");
         JSONObject second = new JSONObject().put("repository", "repo").put("provider", "github");

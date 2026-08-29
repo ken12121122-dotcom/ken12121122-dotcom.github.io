@@ -26,7 +26,7 @@ final class GraphSyncEngine {
             if (!validCanonicalEvidence(incoming)) return preserved;
 
             JSONObject result = SharedGraphSyncKernel.apply(
-                    toGenericState(preserved), toBatch(incoming), observedAt);
+                    toGenericState(preserved, observedAt), toBatch(incoming), observedAt);
             if (!result.optBoolean("success", false)) return preserved;
             return fromGenericState(result.getJSONObject("state"), incoming,
                     result.getJSONObject("syncStats"), observedAt);
@@ -91,22 +91,28 @@ final class GraphSyncEngine {
         return out;
     }
 
-    private static JSONObject toGenericState(JSONObject evidenceState) throws Exception {
+    private static JSONObject toGenericState(JSONObject evidenceState, long observedAt) throws Exception {
         JSONObject out = SharedGraphSyncKernel.emptyState();
         JSONArray entities = evidenceState.getJSONArray("entities");
         for (int i = 0; i < entities.length(); i++) {
             JSONObject item = entities.optJSONObject(i);
-            if (item != null) out.getJSONArray("entities").put(toGenericPreviousRecord(item, "entityId"));
+            if (item != null) {
+                out.getJSONArray("entities").put(toGenericPreviousRecord(item, "entityId", observedAt));
+            }
         }
         JSONArray relations = evidenceState.getJSONArray("relations");
         for (int i = 0; i < relations.length(); i++) {
             JSONObject item = relations.optJSONObject(i);
-            if (item != null) out.getJSONArray("relations").put(toGenericPreviousRecord(item, "relationId"));
+            if (item != null) {
+                out.getJSONArray("relations").put(toGenericPreviousRecord(item, "relationId", observedAt));
+            }
         }
         return out;
     }
 
-    private static JSONObject toGenericPreviousRecord(JSONObject item, String identityField) throws Exception {
+    private static JSONObject toGenericPreviousRecord(JSONObject item,
+                                                      String identityField,
+                                                      long observedAt) throws Exception {
         JSONObject owner = evidenceOwner();
         String fingerprint = clean(item.optString("sourceHash", ""));
         if (fingerprint.isEmpty()) fingerprint = CanonicalEvidenceAdapter.contentFingerprint(item);
@@ -122,8 +128,8 @@ final class GraphSyncEngine {
                 .put("provenance", new JSONObject().put("adapter", "CanonicalEvidenceAdapter"))
                 .put("content_fingerprint", fingerprint)
                 .put("payload", evidencePayload(item))
-                .put("firstSeen", item.optLong("firstSeen", 0L))
-                .put("lastSeen", item.optLong("lastSeen", 0L))
+                .put("firstSeen", item.optLong("firstSeen", observedAt))
+                .put("lastSeen", item.optLong("lastSeen", observedAt))
                 .put("sync_status", "stale".equals(item.optString("status", "")) ? "stale" : "active")
                 .put("change", item.optString("change", "unchanged"));
         if (item.has("missingSince")) out.put("missingSince", item.optLong("missingSince", 0L));
