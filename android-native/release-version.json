@@ -1,16 +1,17 @@
 {
-  "versionCode": 171,
-  "versionName": "0.11.15-rc1",
+  "versionCode": 172,
+  "versionName": "0.11.15-rc2",
   "channel": "candidate",
-  "bridge": 75,
-  "releaseSequence": 9,
+  "bridge": 76,
+  "releaseSequence": 10,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "候選測試版：Scanner Reverse Discovery v1。",
-    "從 Scanner Skill Anchor 依真實 Evidence 反向追蹤來源。",
-    "找不到正式 Command Evidence 時必須停止於 COMMAND GAP，不建立虛構上游節點。"
+    "候選測試版：Evidence-only Scanner / Dynamic Graph 整合。",
+    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。",
+    "Scanner 只建立有 Evidence 的 NODE / CONNECT；COMMAND Evidence 不足時維持 COMMAND GAP，不補造權限或治理關係。",
+    "Graph 使用唯一原始動態 force layout，重複掃描不建立重複 identity，Evidence 消失時標記 stale。"
   ]
 }
