@@ -155,6 +155,9 @@ final class GraphSyncEngine {
             item.put("status", record.optString("sync_status", "active"));
             item.put("sourceHash", record.optString("content_fingerprint", ""));
             item.put("change", record.optString("change", "unchanged"));
+            if (clean(item.optString("evidenceRevision", "")).isEmpty()) {
+                item.put("evidenceRevision", clean(record.optString("revision", "")));
+            }
             if (record.has("missingSince")) item.put("missingSince", record.optLong("missingSince", 0L));
             evidence.put(item);
         }

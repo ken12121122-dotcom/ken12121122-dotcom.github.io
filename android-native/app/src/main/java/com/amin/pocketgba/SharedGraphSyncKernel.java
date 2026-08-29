@@ -45,6 +45,10 @@ final class SharedGraphSyncKernel {
             Indexed priorRelations = indexPrevious(preserved.getJSONArray("relations"));
             Indexed incomingEntities = indexIncoming(batch.getJSONArray("entities"));
             Indexed incomingRelations = indexIncoming(batch.getJSONArray("relations"));
+            if (hasOwnershipCollision(priorEntities.records, incomingEntities.records, ownershipKey)
+                    || hasOwnershipCollision(priorRelations.records, incomingRelations.records, ownershipKey)) {
+                return failure(preserved, "OWNERSHIP_COLLISION");
+            }
 
             JSONObject out = emptyState();
             JSONArray entities = out.getJSONArray("entities");
@@ -240,6 +244,19 @@ final class SharedGraphSyncKernel {
             if (!id.isEmpty() && !out.records.containsKey(id)) out.records.put(id, item);
         }
         return out;
+    }
+
+    private static boolean hasOwnershipCollision(Map<String, JSONObject> prior,
+                                                 Map<String, JSONObject> incoming,
+                                                 String incomingOwnershipKey) {
+        for (String id : incoming.keySet()) {
+            JSONObject existing = prior.get(id);
+            if (existing != null
+                    && !incomingOwnershipKey.equals(clean(existing.optString("ownership_key", "")))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static JSONObject stats(Map<String, JSONObject> priorEntities,

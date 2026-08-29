@@ -181,6 +181,37 @@ public final class SharedGraphSyncKernelTest {
                 .getString("sync_status"));
     }
 
+    @Test public void stableIdentityCannotBeTakenOverByAnotherOwnershipKey() throws Exception {
+        JSONObject ownerA = owner("brain", "amin-agent-control");
+        JSONObject ownerB = owner("github", "ken12121122-dotcom/ken12121122-dotcom.github.io");
+        JSONObject state = successState(SharedGraphSyncKernel.apply(null,
+                batch("knowledge", ownerA, "knowledge_records", true,
+                        new JSONArray().put(entity("knowledge:1", "KNOWLEDGE", "active", "brain-v1")),
+                        new JSONArray()),
+                1000L));
+
+        JSONObject collision = SharedGraphSyncKernel.apply(state,
+                batch("knowledge", ownerB, "repository_knowledge", true,
+                        new JSONArray().put(entity("knowledge:1", "KNOWLEDGE", "active", "github-v1")),
+                        new JSONArray()),
+                2000L);
+
+        assertFalse(collision.getBoolean("success"));
+        assertEquals("OWNERSHIP_COLLISION", collision.getString("errorCode"));
+        JSONObject preserved = find(collision.getJSONObject("state").getJSONArray("entities"), "knowledge:1");
+        assertEquals(SharedGraphSyncKernel.ownershipKey("knowledge", ownerA, "knowledge_records"),
+                preserved.getString("ownership_key"));
+        assertEquals("brain-v1", preserved.getString("content_fingerprint"));
+
+        JSONObject missingFromOwnerA = successState(SharedGraphSyncKernel.apply(
+                collision.getJSONObject("state"),
+                batch("knowledge", ownerA, "knowledge_records", true,
+                        new JSONArray(), new JSONArray()),
+                3000L));
+        assertEquals("stale", find(missingFromOwnerA.getJSONArray("entities"), "knowledge:1")
+                .getString("sync_status"));
+    }
+
     private static JSONObject batch(String scope, JSONObject syncOwner, String partition,
                                     boolean complete, JSONArray entities, JSONArray relations) throws Exception {
         JSONObject out = new JSONObject()

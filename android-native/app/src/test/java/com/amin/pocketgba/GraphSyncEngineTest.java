@@ -86,6 +86,17 @@ public final class GraphSyncEngineTest {
         assertEquals(first.toString(), second.toString());
     }
 
+    @Test public void missingRecordRevisionFallsBackToSnapshotRevision() throws Exception {
+        JSONObject input = canonical("r1", true);
+        input.getJSONArray("entities").getJSONObject(0).remove("evidenceRevision");
+        input.getJSONArray("relations").getJSONObject(0).remove("evidenceRevision");
+
+        JSONObject synced = GraphSyncEngine.sync(null, input, 1000L);
+
+        assertEquals("r1", synced.getJSONArray("entities").getJSONObject(0).getString("evidenceRevision"));
+        assertEquals("r1", synced.getJSONArray("relations").getJSONObject(0).getString("evidenceRevision"));
+    }
+
     private static JSONObject canonical(String revision, boolean includeCaller) throws Exception {
         JSONArray entities = new JSONArray().put(entity("scanner", revision));
         JSONArray relations = new JSONArray();

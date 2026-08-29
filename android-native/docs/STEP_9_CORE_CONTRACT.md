@@ -293,7 +293,9 @@ relations: []
 Each record supplies `stable_id`, `content_fingerprint`, and a contract-valid
 `payload`. The kernel writes `sync_status` separately and never rewrites a
 domain `lifecycle_status` inside the payload. A rejected batch returns an error
-code plus the prior state unchanged. A Bridge Adapter must call the central
+code plus the prior state unchanged. An existing `stable_id` cannot be silently
+re-owned by another ownership key; that collision is rejected and requires an
+explicit contract-level migration. A Bridge Adapter must call the central
 `Step9BridgeGraphContract` registry before passing relations to the kernel.
 
 `failed`, `cancelled`, uncommitted, malformed, and complete snapshots without
