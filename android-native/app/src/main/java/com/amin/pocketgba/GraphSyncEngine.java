@@ -3,61 +3,35 @@ package com.amin.pocketgba;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 /**
- * Incrementally resolves canonical evidence snapshots into a stable graph state.
+ * Evidence adapter facade for the single SharedGraphSyncKernel.
  *
- * Identity is authoritative: entityId and relationId are the merge keys. Missing evidence becomes
- * stale instead of being deleted. Rendering and coordinates are intentionally outside this class.
+ * The Evidence state format remains compatible with the existing store and UnifiedGraphProvider.
+ * Stable merge, de-duplication and stale semantics live only in the shared kernel; Evidence field
+ * selection and hashing stay in CanonicalEvidenceAdapter.
  */
 final class GraphSyncEngine {
     static final String FORMAT = "amin-synced-graph-evidence";
     static final int VERSION = 1;
 
+    private static final String GRAPH_SCOPE = "knowledge";
+    private static final String SYNC_PARTITION = "scanner_evidence";
+    private static final String CONTRACT_SCHEMA_VERSION = "canonical-evidence-v1";
+
     private GraphSyncEngine() { }
 
     static JSONObject sync(JSONObject previous, JSONObject incoming, long observedAt) {
+        JSONObject preserved = validEvidenceState(previous) ? copy(previous) : empty();
         try {
-            JSONObject out = empty();
-            JSONObject prior = previous == null ? empty() : previous;
-            JSONObject next = incoming == null ? CanonicalEvidenceAdapter.empty() : incoming;
-            String revision = clean(next.optString("revision", ""));
+            if (!validCanonicalEvidence(incoming)) return preserved;
 
-            Map<String, JSONObject> priorEntities = index(prior.optJSONArray("entities"), "entityId", "id");
-            Map<String, JSONObject> incomingEntities = index(next.optJSONArray("entities"), "entityId", "id");
-            Map<String, JSONObject> priorRelations = index(prior.optJSONArray("relations"), "relationId", "id");
-            Map<String, JSONObject> incomingRelations = index(next.optJSONArray("relations"), "relationId", "id");
-
-            JSONArray entities = out.getJSONArray("entities");
-            for (Map.Entry<String, JSONObject> entry : incomingEntities.entrySet()) {
-                JSONObject old = priorEntities.get(entry.getKey());
-                entities.put(active(entry.getValue(), old, revision, observedAt));
-            }
-            for (Map.Entry<String, JSONObject> entry : priorEntities.entrySet()) {
-                if (!incomingEntities.containsKey(entry.getKey())) entities.put(stale(entry.getValue(), observedAt));
-            }
-
-            JSONArray relations = out.getJSONArray("relations");
-            for (Map.Entry<String, JSONObject> entry : incomingRelations.entrySet()) {
-                JSONObject old = priorRelations.get(entry.getKey());
-                relations.put(active(entry.getValue(), old, revision, observedAt));
-            }
-            for (Map.Entry<String, JSONObject> entry : priorRelations.entrySet()) {
-                if (!incomingRelations.containsKey(entry.getKey())) relations.put(stale(entry.getValue(), observedAt));
-            }
-
-            out.put("revision", revision);
-            out.put("anchorId", next.optString("anchorId", ""));
-            out.put("sourceStatus", next.optString("status", ""));
-            out.put("observedAt", observedAt);
-            out.put("syncStats", stats(priorEntities, incomingEntities, priorRelations, incomingRelations));
-            return out;
+            JSONObject result = SharedGraphSyncKernel.apply(
+                    toGenericState(preserved, observedAt), toBatch(incoming), observedAt);
+            if (!result.optBoolean("success", false)) return preserved;
+            return fromGenericState(result.getJSONObject("state"), incoming,
+                    result.getJSONObject("syncStats"), observedAt);
         } catch (Exception ignored) {
-            return empty();
+            return preserved;
         }
     }
 
@@ -78,84 +52,163 @@ final class GraphSyncEngine {
         }
     }
 
-    private static JSONObject active(JSONObject incoming, JSONObject old, String revision, long observedAt) throws Exception {
-        JSONObject out = new JSONObject(incoming.toString());
-        long firstSeen = old == null ? observedAt : old.optLong("firstSeen", observedAt);
-        out.put("firstSeen", firstSeen);
-        out.put("lastSeen", observedAt);
-        out.put("status", "active");
-        out.put("evidenceRevision", clean(incoming.optString("evidenceRevision", revision)));
-        out.put("sourceHash", hashEvidence(incoming));
-        if (old != null) {
-            String oldHash = clean(old.optString("sourceHash", ""));
-            out.put("change", oldHash.equals(out.optString("sourceHash", "")) ? "unchanged" : "updated");
-        } else {
-            out.put("change", "added");
-        }
-        return out;
-    }
-
-    private static JSONObject stale(JSONObject old, long observedAt) throws Exception {
-        JSONObject out = new JSONObject(old.toString());
-        out.put("status", "stale");
-        out.put("change", "missing");
-        out.put("missingSince", old.optLong("missingSince", observedAt));
-        return out;
-    }
-
-    private static JSONObject stats(Map<String, JSONObject> priorEntities,
-                                    Map<String, JSONObject> incomingEntities,
-                                    Map<String, JSONObject> priorRelations,
-                                    Map<String, JSONObject> incomingRelations) throws Exception {
-        int entityAdded = 0, entityKept = 0, entityMissing = 0;
-        for (String id : incomingEntities.keySet()) {
-            if (priorEntities.containsKey(id)) entityKept++; else entityAdded++;
-        }
-        for (String id : priorEntities.keySet()) if (!incomingEntities.containsKey(id)) entityMissing++;
-
-        int relationAdded = 0, relationKept = 0, relationMissing = 0;
-        for (String id : incomingRelations.keySet()) {
-            if (priorRelations.containsKey(id)) relationKept++; else relationAdded++;
-        }
-        for (String id : priorRelations.keySet()) if (!incomingRelations.containsKey(id)) relationMissing++;
-
+    private static JSONObject toBatch(JSONObject incoming) throws Exception {
         return new JSONObject()
-                .put("entityAdded", entityAdded)
-                .put("entityKept", entityKept)
-                .put("entityMissing", entityMissing)
-                .put("relationAdded", relationAdded)
-                .put("relationKept", relationKept)
-                .put("relationMissing", relationMissing);
+                .put("format", SharedGraphSyncKernel.BATCH_FORMAT)
+                .put("version", SharedGraphSyncKernel.VERSION)
+                .put("contract_schema_version", CONTRACT_SCHEMA_VERSION)
+                .put("graph_scope", GRAPH_SCOPE)
+                .put("sync_owner", evidenceOwner())
+                .put("sync_partition", SYNC_PARTITION)
+                .put("revision", clean(incoming.getString("revision")))
+                .put("provenance", new JSONObject()
+                        .put("adapter", "CanonicalEvidenceAdapter")
+                        .put("source_format", CanonicalEvidenceAdapter.FORMAT))
+                .put("committed", true)
+                .put("batch_status", "complete")
+                .put("complete_snapshot", true)
+                .put("completeness_proof", new JSONObject()
+                        .put("kind", "canonical_evidence_snapshot")
+                        .put("entity_count", incoming.getJSONArray("entities").length())
+                        .put("relation_count", incoming.getJSONArray("relations").length()))
+                .put("entities", toGenericRecords(incoming.getJSONArray("entities"), "entityId"))
+                .put("relations", toGenericRecords(incoming.getJSONArray("relations"), "relationId"));
     }
 
-    private static Map<String, JSONObject> index(JSONArray array, String primary, String fallback) {
-        Map<String, JSONObject> out = new LinkedHashMap<>();
-        if (array == null) return out;
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject item = array.optJSONObject(i);
-            if (item == null) continue;
-            String id = clean(item.optString(primary, item.optString(fallback, "")));
-            if (!id.isEmpty() && !out.containsKey(id)) out.put(id, item);
+    private static JSONArray toGenericRecords(JSONArray evidence, String identityField) throws Exception {
+        JSONArray out = new JSONArray();
+        for (int i = 0; i < evidence.length(); i++) {
+            JSONObject item = evidence.optJSONObject(i);
+            if (item == null) {
+                out.put(JSONObject.NULL);
+                continue;
+            }
+            out.put(new JSONObject()
+                    .put("stable_id", clean(item.optString(identityField, item.optString("id", ""))))
+                    .put("content_fingerprint", CanonicalEvidenceAdapter.contentFingerprint(item))
+                    .put("payload", copy(item)));
         }
         return out;
     }
 
-    private static String hashEvidence(JSONObject object) {
+    private static JSONObject toGenericState(JSONObject evidenceState, long observedAt) throws Exception {
+        JSONObject out = SharedGraphSyncKernel.emptyState();
+        JSONArray entities = evidenceState.getJSONArray("entities");
+        for (int i = 0; i < entities.length(); i++) {
+            JSONObject item = entities.optJSONObject(i);
+            if (item != null) {
+                out.getJSONArray("entities").put(toGenericPreviousRecord(item, "entityId", observedAt));
+            }
+        }
+        JSONArray relations = evidenceState.getJSONArray("relations");
+        for (int i = 0; i < relations.length(); i++) {
+            JSONObject item = relations.optJSONObject(i);
+            if (item != null) {
+                out.getJSONArray("relations").put(toGenericPreviousRecord(item, "relationId", observedAt));
+            }
+        }
+        return out;
+    }
+
+    private static JSONObject toGenericPreviousRecord(JSONObject item,
+                                                      String identityField,
+                                                      long observedAt) throws Exception {
+        JSONObject owner = evidenceOwner();
+        String fingerprint = clean(item.optString("sourceHash", ""));
+        if (fingerprint.isEmpty()) fingerprint = CanonicalEvidenceAdapter.contentFingerprint(item);
+        JSONObject out = new JSONObject()
+                .put("stable_id", clean(item.optString(identityField, item.optString("id", ""))))
+                .put("graph_scope", GRAPH_SCOPE)
+                .put("sync_owner", owner)
+                .put("sync_owner_key", SharedGraphSyncKernel.canonicalOwnerKey(owner))
+                .put("sync_partition", SYNC_PARTITION)
+                .put("ownership_key", SharedGraphSyncKernel.ownershipKey(GRAPH_SCOPE, owner, SYNC_PARTITION))
+                .put("contract_schema_version", CONTRACT_SCHEMA_VERSION)
+                .put("revision", clean(item.optString("evidenceRevision", "legacy")))
+                .put("provenance", new JSONObject().put("adapter", "CanonicalEvidenceAdapter"))
+                .put("content_fingerprint", fingerprint)
+                .put("payload", evidencePayload(item))
+                .put("firstSeen", item.optLong("firstSeen", observedAt))
+                .put("lastSeen", item.optLong("lastSeen", observedAt))
+                .put("sync_status", "stale".equals(item.optString("status", "")) ? "stale" : "active")
+                .put("change", item.optString("change", "unchanged"));
+        if (item.has("missingSince")) out.put("missingSince", item.optLong("missingSince", 0L));
+        return out;
+    }
+
+    private static JSONObject fromGenericState(JSONObject generic,
+                                               JSONObject incoming,
+                                               JSONObject stats,
+                                               long observedAt) throws Exception {
+        JSONObject out = empty();
+        copyEvidenceRecords(generic.getJSONArray("entities"), out.getJSONArray("entities"));
+        copyEvidenceRecords(generic.getJSONArray("relations"), out.getJSONArray("relations"));
+        out.put("revision", clean(incoming.getString("revision")));
+        out.put("anchorId", incoming.optString("anchorId", ""));
+        out.put("sourceStatus", incoming.optString("status", ""));
+        out.put("observedAt", observedAt);
+        out.put("syncStats", copy(stats));
+        return out;
+    }
+
+    private static void copyEvidenceRecords(JSONArray generic, JSONArray evidence) throws Exception {
+        for (int i = 0; i < generic.length(); i++) {
+            JSONObject record = generic.optJSONObject(i);
+            if (record == null) continue;
+            JSONObject item = copy(record.getJSONObject("payload"));
+            item.put("firstSeen", record.optLong("firstSeen", 0L));
+            item.put("lastSeen", record.optLong("lastSeen", 0L));
+            item.put("status", record.optString("sync_status", "active"));
+            item.put("sourceHash", record.optString("content_fingerprint", ""));
+            item.put("change", record.optString("change", "unchanged"));
+            if (clean(item.optString("evidenceRevision", "")).isEmpty()) {
+                item.put("evidenceRevision", clean(record.optString("revision", "")));
+            }
+            if (record.has("missingSince")) item.put("missingSince", record.optLong("missingSince", 0L));
+            evidence.put(item);
+        }
+    }
+
+    private static JSONObject evidencePayload(JSONObject item) {
+        JSONObject out = copy(item);
+        out.remove("firstSeen");
+        out.remove("lastSeen");
+        out.remove("status");
+        out.remove("sourceHash");
+        out.remove("change");
+        out.remove("missingSince");
+        return out;
+    }
+
+    private static JSONObject evidenceOwner() throws Exception {
+        return new JSONObject()
+                .put("provider", "amin_scanner")
+                .put("adapter", "canonical_evidence_v1");
+    }
+
+    private static boolean validCanonicalEvidence(JSONObject incoming) {
+        return incoming != null
+                && CanonicalEvidenceAdapter.FORMAT.equals(incoming.optString("format", ""))
+                && incoming.optInt("version", -1) == CanonicalEvidenceAdapter.VERSION
+                && !clean(incoming.optString("revision", "")).isEmpty()
+                && incoming.optJSONArray("entities") != null
+                && incoming.optJSONArray("relations") != null;
+    }
+
+    private static boolean validEvidenceState(JSONObject state) {
+        return state != null
+                && FORMAT.equals(state.optString("format", ""))
+                && state.optInt("version", -1) == VERSION
+                && state.optJSONArray("entities") != null
+                && state.optJSONArray("relations") != null;
+    }
+
+    private static JSONObject copy(JSONObject object) {
+        if (object == null) return new JSONObject();
         try {
-            JSONObject payload = new JSONObject();
-            payload.put("sourceKey", object.optString("sourceKey", ""));
-            payload.put("from", object.optString("from", ""));
-            payload.put("to", object.optString("to", ""));
-            payload.put("type", object.optString("type", ""));
-            payload.put("verification", object.optString("verification", ""));
-            payload.put("evidence", object.optJSONObject("evidence") == null ? new JSONObject() : object.optJSONObject("evidence"));
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(payload.toString().getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : digest) hex.append(String.format("%02x", b & 0xff));
-            return hex.toString();
+            return new JSONObject(object.toString());
         } catch (Exception ignored) {
-            return "";
+            return new JSONObject();
         }
     }
 

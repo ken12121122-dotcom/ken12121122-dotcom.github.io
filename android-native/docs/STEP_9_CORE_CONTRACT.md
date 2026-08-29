@@ -268,7 +268,41 @@ The Evidence Adapter continues to own Evidence-specific fields and validation.
    are accepted.
 8. Begin the GitHub Work Observer only after 9A, 9B, and 9C pass contract review.
 
-## 12. Hard acceptance gates
+## 12. Kernel batch envelope v1
+
+`SharedGraphSyncKernel` accepts one already-validated owner/partition batch. The
+required envelope is:
+
+```yaml
+format: amin-graph-sync-batch
+version: 1
+contract_schema_version: step9-core-v1
+graph_scope: knowledge|work|bridge
+sync_owner: {}
+sync_partition: pull_requests
+revision: provider-revision
+provenance: {}
+committed: true
+batch_status: complete|partial
+complete_snapshot: true|false
+completeness_proof: {} # required when complete_snapshot is true
+entities: []
+relations: []
+```
+
+Each record supplies `stable_id`, `content_fingerprint`, and a contract-valid
+`payload`. The kernel writes `sync_status` separately and never rewrites a
+domain `lifecycle_status` inside the payload. A rejected batch returns an error
+code plus the prior state unchanged. An existing `stable_id` cannot be silently
+re-owned by another ownership key; that collision is rejected and requires an
+explicit contract-level migration. A Bridge Adapter must call the central
+`Step9BridgeGraphContract` registry before passing relations to the kernel.
+
+`failed`, `cancelled`, uncommitted, malformed, and complete snapshots without
+inspectable completeness proof are rejected. A valid `partial` batch may
+upsert observations but cannot stale missing records.
+
+## 13. Hard acceptance gates
 
 Step 9 Core cannot be considered accepted unless automated contract checks can
 prove all of the following:
@@ -290,7 +324,7 @@ prove all of the following:
 Until these gates are implemented and pass, status must remain specification or
 implementation-in-progress. No completion or release claim is permitted.
 
-## 13. Downstream boundary
+## 14. Downstream boundary
 
 After Step 9 contracts and the GitHub Work Observer are complete:
 

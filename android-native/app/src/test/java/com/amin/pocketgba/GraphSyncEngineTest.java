@@ -78,6 +78,35 @@ public final class GraphSyncEngineTest {
         assertEquals("updated", after.getString("change"));
     }
 
+    @Test public void malformedIncomingEvidencePreservesLastCommittedState() throws Exception {
+        JSONObject first = GraphSyncEngine.sync(null, canonical("r1", true), 1000L);
+        JSONObject malformed = new JSONObject().put("format", "wrong-format");
+        JSONObject second = GraphSyncEngine.sync(first, malformed, 2000L);
+
+        assertEquals(first.toString(), second.toString());
+    }
+
+    @Test public void missingRecordRevisionFallsBackToSnapshotRevision() throws Exception {
+        JSONObject input = canonical("r1", true);
+        input.getJSONArray("entities").getJSONObject(0).remove("evidenceRevision");
+        input.getJSONArray("relations").getJSONObject(0).remove("evidenceRevision");
+
+        JSONObject synced = GraphSyncEngine.sync(null, input, 1000L);
+
+        assertEquals("r1", synced.getJSONArray("entities").getJSONObject(0).getString("evidenceRevision"));
+        assertEquals("r1", synced.getJSONArray("relations").getJSONObject(0).getString("evidenceRevision"));
+    }
+
+    @Test public void legacyRecordWithoutSeenMetadataUsesCurrentObservationTime() throws Exception {
+        JSONObject previous = GraphSyncEngine.empty();
+        previous.getJSONArray("entities").put(entity("scanner", "r0"));
+
+        JSONObject synced = GraphSyncEngine.sync(previous, canonical("r1", true), 2000L);
+
+        assertEquals(2000L, find(synced.getJSONArray("entities"), "scanner").getLong("firstSeen"));
+        assertEquals(2000L, find(synced.getJSONArray("entities"), "scanner").getLong("lastSeen"));
+    }
+
     private static JSONObject canonical(String revision, boolean includeCaller) throws Exception {
         JSONArray entities = new JSONArray().put(entity("scanner", revision));
         JSONArray relations = new JSONArray();
