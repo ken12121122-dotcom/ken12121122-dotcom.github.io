@@ -28,6 +28,18 @@ public class BrainAuthSecurityTest {
         assertFalse(read("src/main/res/xml/data_extraction_rules.xml").contains("amin_brain_auth"));
     }
 
+    @Test
+    public void ciAndReleaseInjectPublicClientIdAndReleaseRejectsEmptyConfiguration() throws Exception {
+        String ci = read("../../.github/workflows/android-ci.yml");
+        String release = read("../../.github/workflows/android-release.yml");
+        assertTrue(ci.contains("vars.AMIN_GITHUB_APP_CLIENT_ID"));
+        assertTrue(ci.contains("-PAMIN_GITHUB_APP_CLIENT_ID=\"$AMIN_GITHUB_APP_CLIENT_ID\""));
+        assertTrue(release.contains("vars.AMIN_GITHUB_APP_CLIENT_ID"));
+        assertTrue(release.contains("test -n \"$AMIN_GITHUB_APP_CLIENT_ID\""));
+        assertFalse(ci.contains("GITHUB_APP_CLIENT_SECRET"));
+        assertFalse(release.contains("GITHUB_APP_PRIVATE_KEY"));
+    }
+
     private static String read(String relative) throws Exception {
         Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
         while (current != null) {
