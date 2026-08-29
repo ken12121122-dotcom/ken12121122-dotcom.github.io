@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,9 +29,9 @@ public class BrainAuthSecurityTest {
     }
 
     private static String read(String relative) throws Exception {
-        Path working = Path.of(System.getProperty("user.dir"));
+        Path working = Paths.get(System.getProperty("user.dir"));
         Path app = Files.isRegularFile(working.resolve("app/build.gradle"))
                 ? working.resolve("app") : working.resolve("android-native/app");
-        return Files.readString(app.resolve(relative), StandardCharsets.UTF_8);
+        return new String(Files.readAllBytes(app.resolve(relative)), StandardCharsets.UTF_8);
     }
 }

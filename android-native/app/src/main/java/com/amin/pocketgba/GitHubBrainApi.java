@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.Map;
 
 final class GitHubBrainApi {
@@ -41,7 +42,7 @@ final class GitHubBrainApi {
                 "application/vnd.github+json"), 201, "私人任務發布失敗"));
         int number = response.optInt("number", 0);
         String url = response.optString("html_url", "");
-        if (number <= 0 || url.isBlank()) throw new IllegalStateException("GitHub 未回傳有效 Issue。 ");
+        if (number <= 0 || url.trim().isEmpty()) throw new IllegalStateException("GitHub 未回傳有效 Issue。 ");
         return new Issue(number, url);
     }
 
@@ -70,17 +71,17 @@ final class GitHubBrainApi {
                 + URLEncoder.encode("work-graph/v1/mobile-feed.json", "UTF-8").replace("%2F", "/")
                 + "?ref=main";
         Map<String, String> additional = new LinkedHashMap<>();
-        if (etag != null && !etag.isBlank()) additional.put("If-None-Match", etag);
+        if (etag != null && !etag.trim().isEmpty()) additional.put("If-None-Match", etag);
         GitHubHttpResponse response = request("GET", path, "", "application/vnd.github.raw+json", additional);
         if (response.statusCode() == 304) return new FeedResponse(false, etag == null ? "" : etag, null);
         success(response, 200, "無法讀取 Brain 狀態");
         JSONObject feed = object(response);
-        BrainFeedState.diff(feed, java.util.Set.of());
+        BrainFeedState.diff(feed, java.util.Collections.emptySet());
         return new FeedResponse(true, response.header("ETag"), feed);
     }
 
     private GitHubHttpResponse request(String method, String path, String body, String accept) throws Exception {
-        return request(method, path, body, accept, Map.of());
+        return request(method, path, body, accept, Collections.emptyMap());
     }
 
     private GitHubHttpResponse request(String method, String path, String body, String accept,

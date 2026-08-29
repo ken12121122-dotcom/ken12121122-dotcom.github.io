@@ -29,7 +29,7 @@ final class BrainTokenVault {
     }
 
     synchronized void save(GitHubDeviceFlowProtocol.Token token) throws Exception {
-        if (token == null || token.accessToken().isBlank()) throw new IllegalArgumentException("Token 不可為空。 ");
+        if (token == null || token.accessToken().trim().isEmpty()) throw new IllegalArgumentException("Token 不可為空。 ");
         JSONObject clear = new JSONObject()
                 .put("access_token", token.accessToken())
                 .put("refresh_token", token.refreshToken())
@@ -49,7 +49,7 @@ final class BrainTokenVault {
 
     synchronized GitHubDeviceFlowProtocol.Token load() {
         String stored = preferences.getString(RECORD, "");
-        if (stored == null || stored.isBlank()) return null;
+        if (stored == null || stored.trim().isEmpty()) return null;
         try {
             JSONObject record = new JSONObject(stored);
             if (record.optInt("version", -1) != 1) throw new IllegalStateException();

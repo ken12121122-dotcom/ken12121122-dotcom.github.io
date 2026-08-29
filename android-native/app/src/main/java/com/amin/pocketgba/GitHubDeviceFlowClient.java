@@ -46,7 +46,7 @@ final class GitHubDeviceFlowClient {
     }
 
     GitHubDeviceFlowProtocol.Token refresh(String refreshToken) throws Exception {
-        if (refreshToken == null || refreshToken.isBlank()) throw new IllegalArgumentException("Refresh token 不可為空。 ");
+        if (refreshToken == null || refreshToken.trim().isEmpty()) throw new IllegalArgumentException("Refresh token 不可為空。 ");
         String body = "client_id=" + form(clientId)
                 + "&grant_type=" + form("refresh_token")
                 + "&refresh_token=" + form(refreshToken);

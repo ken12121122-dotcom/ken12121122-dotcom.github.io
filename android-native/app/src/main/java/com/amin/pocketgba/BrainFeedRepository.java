@@ -49,7 +49,7 @@ final class BrainFeedRepository {
 
     synchronized JSONObject cachedFeed() {
         String raw = preferences.getString(FEED, "");
-        if (raw == null || raw.isBlank()) return null;
+        if (raw == null || raw.trim().isEmpty()) return null;
         try { return new JSONObject(raw); }
         catch (Exception error) { return null; }
     }
@@ -63,7 +63,7 @@ final class BrainFeedRepository {
             JSONArray array = new JSONArray(raw);
             for (int index = 0; index < array.length(); index++) {
                 String value = array.optString(index, "");
-                if (!value.isBlank()) values.add(value);
+                if (!value.trim().isEmpty()) values.add(value);
             }
         } catch (Exception ignored) { }
         return values;

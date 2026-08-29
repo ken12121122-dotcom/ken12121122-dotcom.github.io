@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 
 public class GitHubDeviceFlowProtocolTest {
     @Test
-    public void parsesDeviceCodeAndNeverRequiresClientSecret() {
+    public void parsesDeviceCodeAndNeverRequiresClientSecret() throws Exception {
         GitHubDeviceFlowProtocol.DeviceCode code = GitHubDeviceFlowProtocol.parseDeviceCode(
                 new JSONObject().put("device_code", "device-token").put("user_code", "ABCD-EFGH")
                         .put("verification_uri", "https://github.com/login/device")
@@ -21,7 +21,7 @@ public class GitHubDeviceFlowProtocolTest {
     }
 
     @Test
-    public void handlesPendingSlowDownDeniedExpiredAndSuccess() {
+    public void handlesPendingSlowDownDeniedExpiredAndSuccess() throws Exception {
         assertEquals(GitHubDeviceFlowProtocol.PollStatus.PENDING,
                 GitHubDeviceFlowProtocol.parsePoll(new JSONObject().put("error", "authorization_pending"), 5)
                         .status());

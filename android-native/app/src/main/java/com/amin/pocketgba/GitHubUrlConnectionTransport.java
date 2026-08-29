@@ -8,13 +8,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 final class GitHubUrlConnectionTransport implements GitHubHttpTransport {
-    private static final Set<String> HOSTS = Set.of("github.com", "api.github.com");
+    private static final Set<String> HOSTS = new HashSet<>(Arrays.asList("github.com", "api.github.com"));
 
     @Override
     public GitHubHttpResponse execute(GitHubHttpRequest request) throws Exception {

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,7 +36,8 @@ public class GitHubBrainApiTest {
                 .reply(200, "[{\"name\":\"agent-approved\"}]");
         GitHubBrainApi api = new GitHubBrainApi(transport, "owner-token");
         BrainTaskEnvelope envelope = BrainTaskEnvelope.create(UUID.randomUUID(), UUID.randomUUID(),
-                UUID.randomUUID(), "任務", "建立任務畫面。", "auto", List.of("android:ui"), 1, Instant.now());
+                UUID.randomUUID(), "任務", "建立任務畫面。", "auto",
+                Collections.singletonList("android:ui"), 1, Instant.now());
         GitHubBrainApi.Issue created = api.createIssue(envelope);
         api.approveIssue(created.number());
 
@@ -59,7 +61,7 @@ public class GitHubBrainApiTest {
 
     @Test
     public void conditionalFeedReadTreats304AsUnchanged() throws Exception {
-        FakeTransport transport = new FakeTransport().reply(304, "", Map.of("ETag", "etag-1"));
+        FakeTransport transport = new FakeTransport().reply(304, "", Collections.singletonMap("ETag", "etag-1"));
         GitHubBrainApi.FeedResponse response = new GitHubBrainApi(transport, "owner-token")
                 .fetchMobileFeed("etag-1");
         assertFalse(response.changed());
@@ -70,7 +72,7 @@ public class GitHubBrainApiTest {
     private static final class FakeTransport implements GitHubHttpTransport {
         final ArrayDeque<GitHubHttpResponse> responses = new ArrayDeque<>();
         final List<GitHubHttpRequest> requests = new ArrayList<>();
-        FakeTransport reply(int status, String body) { return reply(status, body, Map.of()); }
+        FakeTransport reply(int status, String body) { return reply(status, body, Collections.emptyMap()); }
         FakeTransport reply(int status, String body, Map<String, String> headers) {
             responses.add(new GitHubHttpResponse(status, body, headers));
             return this;

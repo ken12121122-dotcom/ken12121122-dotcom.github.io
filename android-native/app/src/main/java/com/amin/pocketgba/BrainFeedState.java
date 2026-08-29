@@ -4,13 +4,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 final class BrainFeedState {
-    private static final Set<String> NOTIFIABLE = Set.of("waiting_owner", "completed", "failed");
+    private static final Set<String> NOTIFIABLE = new LinkedHashSet<>(
+            Arrays.asList("waiting_owner", "completed", "failed"));
     private static final int MAX_SEEN = 256;
 
     private BrainFeedState() { }
@@ -74,7 +76,7 @@ final class BrainFeedState {
 
     private static void validate(JSONObject feed) {
         if (feed == null || !"amin-brain-mobile-feed".equals(feed.optString("format", ""))
-                || feed.optInt("version", -1) != 1 || feed.optString("revision", "").isBlank()
+                || feed.optInt("version", -1) != 1 || feed.optString("revision", "").trim().isEmpty()
                 || feed.optJSONArray("goals") == null || feed.optJSONArray("tasks") == null
                 || feed.optJSONArray("runs") == null || feed.optJSONArray("notifications") == null) {
             throw new IllegalArgumentException("Brain feed 格式不正確。 ");

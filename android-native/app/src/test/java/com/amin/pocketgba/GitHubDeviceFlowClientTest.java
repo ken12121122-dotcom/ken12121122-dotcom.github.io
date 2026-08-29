@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,9 +19,9 @@ public class GitHubDeviceFlowClientTest {
         transport.responses.add(new GitHubHttpResponse(200, new JSONObject()
                 .put("device_code", "device").put("user_code", "ABCD-EFGH")
                 .put("verification_uri", "https://github.com/login/device")
-                .put("expires_in", 900).put("interval", 5).toString(), Map.of()));
+                .put("expires_in", 900).put("interval", 5).toString(), Collections.emptyMap()));
         transport.responses.add(new GitHubHttpResponse(200,
-                new JSONObject().put("error", "authorization_pending").toString(), Map.of()));
+                new JSONObject().put("error", "authorization_pending").toString(), Collections.emptyMap()));
         GitHubDeviceFlowClient client = new GitHubDeviceFlowClient(transport, "Iv1.public-client-id");
 
         GitHubDeviceFlowProtocol.DeviceCode code = client.requestCode();

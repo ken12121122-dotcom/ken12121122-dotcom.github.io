@@ -5,6 +5,8 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -14,13 +16,13 @@ import static org.junit.Assert.assertTrue;
 
 public class BrainTaskEnvelopeTest {
     @Test
-    public void producesExactPrivateIssueEnvelopeWithClientStableIdentity() {
+    public void producesExactPrivateIssueEnvelopeWithClientStableIdentity() throws Exception {
         BrainTaskEnvelope envelope = BrainTaskEnvelope.create(
                 UUID.fromString("11111111-1111-4111-8111-111111111111"),
                 UUID.fromString("22222222-2222-4222-8222-222222222222"),
                 UUID.fromString("33333333-3333-4333-8333-333333333333"),
                 "新增任務中心", "顯示任務與執行狀態。", "auto",
-                List.of("android:ui", "github:issues"), 2,
+                Arrays.asList("android:ui", "github:issues"), 2,
                 Instant.parse("2026-08-29T12:00:00Z"));
 
         String body = envelope.issueBody();
@@ -37,15 +39,15 @@ public class BrainTaskEnvelopeTest {
     }
 
     @Test
-    public void rejectsSecretsUnsupportedAgentAndMalformedCapability() {
+    public void rejectsSecretsUnsupportedAgentAndMalformedCapability() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> create("OPENAI_API_KEY=sk-secret", "auto",
-                List.of("android:ui"), 1));
+                Collections.singletonList("android:ui"), 1));
         assertThrows(IllegalArgumentException.class, () -> create("正常需求", "other",
-                List.of("android:ui"), 1));
+                Collections.singletonList("android:ui"), 1));
         assertThrows(IllegalArgumentException.class, () -> create("正常需求", "auto",
-                List.of("bad capability"), 1));
+                Collections.singletonList("bad capability"), 1));
         assertThrows(IllegalArgumentException.class, () -> create("正常需求", "auto",
-                List.of("android:ui"), 3));
+                Collections.singletonList("android:ui"), 3));
     }
 
     private static BrainTaskEnvelope create(String specification, String agent,
