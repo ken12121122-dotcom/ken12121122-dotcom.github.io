@@ -30,6 +30,7 @@ final class UnifiedGraphProvider {
             if (context == null) return out.toString();
 
             JSONObject persisted = new GraphEvidenceSyncStore(context).current();
+            boolean growthPlayback = GraphGrowthPlaybackStore.isActive();
             JSONObject synced = GraphGrowthPlaybackStore.currentOr(persisted);
             if (!GraphSyncEngine.FORMAT.equals(synced.optString("format", ""))) return out.toString();
             JSONArray syncedEntities = synced.optJSONArray("entities");
@@ -98,7 +99,7 @@ final class UnifiedGraphProvider {
             out.put("scannerRevision", synced.optString("revision", ""));
             out.put("scannerStatus", synced.optString("sourceStatus", ""));
             out.put("syncedEvidence", new JSONObject(synced.toString()));
-            out.put("growthPlayback", synced != persisted);
+            out.put("growthPlayback", growthPlayback);
             return out.toString();
         } catch (Exception error) {
             return emptyGraph().toString();
