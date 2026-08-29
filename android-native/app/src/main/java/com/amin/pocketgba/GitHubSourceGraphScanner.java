@@ -93,10 +93,15 @@ final class GitHubSourceGraphScanner {
                 new CloudSourceGraphStore(app).stage(revision, snapshot);
                 JSONObject canonical = snapshot.optJSONObject("canonicalEvidence");
                 if (canonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
-                new GraphEvidenceSyncStore(app).sync(canonical, System.currentTimeMillis());
+
+                GraphEvidenceSyncStore syncStore = new GraphEvidenceSyncStore(app);
+                JSONObject previous = syncStore.current();
+                JSONObject next = syncStore.sync(canonical, System.currentTimeMillis());
                 GitHubSourceSyncState.ready(revision);
-                UnifiedGraphProvider.notifyChanged(app);
+
+                GraphGrowthPlaybackController.play(app, previous, next);
             } catch (Exception error) {
+                GraphGrowthPlaybackStore.clear();
                 GitHubSourceSyncState.failed(error);
             } finally {
                 SYNC_IN_FLIGHT.set(false);
