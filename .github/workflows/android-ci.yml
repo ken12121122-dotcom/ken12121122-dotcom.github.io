@@ -60,6 +60,8 @@ jobs:
           grep -q 'GraphEvidenceSyncStore' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'amin-canonical-evidence' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
           grep -q 'CanonicalEvidenceBatchMerger' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'BundledIndexerEvidenceProvider' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'scanner-evidence/tree-sitter-scanner.json' android-native/app/src/main/java/com/amin/pocketgba/BundledIndexerEvidenceProvider.java
           grep -q 'Stable entityId/relationId identity' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceBatchMerger.java
           grep -q 'amin-indexer-evidence' android-native/app/src/main/java/com/amin/pocketgba/IndexerEvidenceAdapter.java
           grep -q 'sourceKey' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
@@ -141,6 +143,11 @@ jobs:
           assert not any(r.get('authorityVerified') for r in structural)
           print(json.dumps(data, ensure_ascii=False, indent=2))
           PY
+
+          mkdir -p android-native/app/src/main/assets/scanner-evidence
+          cp build/scanner-evidence/tree-sitter-scanner.json \
+            android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
+          test -s android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
