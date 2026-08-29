@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
  */
 final class ScannerReverseDiscovery {
     private static final String REPOSITORY = GitHubSourceGraphScanner.REPOSITORY;
-    private static final String BRANCH = GitHubSourceGraphScanner.BRANCH;
+    private static final String BRANCH = BuildConfig.SOURCE_REF;
     private static final String SCANNER_PATH = GitHubSourceGraphScanner.SCANNER_ANCHOR_PATH;
     private static final String CALLER_PATH = "android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java";
 
