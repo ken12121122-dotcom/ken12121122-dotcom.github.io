@@ -15,9 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * GitHub evidence collector for Scanner reverse discovery.
  *
- * Scanner providers are merged into one canonical evidence batch before sync. This allows future
- * authority-layer scanners/indexers to run in one scan cycle without adding another graph or
- * fabricating layers that are not evidenced.
+ * Scanner providers are merged into one canonical evidence batch before sync. This allows
+ * authority-layer probes to run in one scan cycle without adding another graph or fabricating
+ * semantic links that are not evidenced.
  */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
@@ -56,9 +56,17 @@ final class GitHubSourceGraphScanner {
         JSONObject reverseCanonical = CanonicalEvidenceAdapter.fromReverseDiscovery(reverseDiscovery)
                 .put("provider", "github-source-reverse");
 
-        // All current/future evidence providers for this scan cycle must enter through this merge.
-        // No provider may write directly to the visual graph.
-        JSONObject canonicalEvidence = CanonicalEvidenceBatchMerger.merge(revision, reverseCanonical);
+        // Probe all known architecture layers from this exact tree snapshot. These are source
+        // artifacts only; they intentionally contain no authority CONNECTs.
+        JSONObject architectureArtifacts = ArchitectureArtifactEvidenceScanner.scan(tree, revision);
+
+        // All evidence providers for this scan cycle enter through one merge. No provider may
+        // write directly to the visual graph.
+        JSONObject canonicalEvidence = CanonicalEvidenceBatchMerger.merge(
+                revision,
+                reverseCanonical,
+                architectureArtifacts
+        );
         JSONArray canonicalEntities = canonicalEvidence.optJSONArray("entities");
         if (canonicalEntities == null || canonicalEntities.length() == 0) {
             throw new IllegalStateException("CANONICAL_EVIDENCE_EMPTY");
@@ -69,13 +77,14 @@ final class GitHubSourceGraphScanner {
                 .put("version", SourceGraphContract.VERSION)
                 .put("authority", "github-cloud-review")
                 .put("revision", revision)
-                .put("reviewScope", "scanner-evidence-batch-v1")
+                .put("reviewScope", "scanner-evidence-batch-v2")
                 .put("generatedFrom", "github-cloud-evidence")
                 .put("scanMode", "evidence-only-reverse-v2")
                 .put("anchorId", reverseDiscovery.optString("anchorId", ""))
                 .put("entities", new JSONArray())
                 .put("relations", new JSONArray())
                 .put("reverseDiscovery", reverseDiscovery)
+                .put("architectureArtifacts", architectureArtifacts)
                 .put("canonicalEvidence", canonicalEvidence);
 
         JSONObject normalized = SourceGraphContract.normalize(snapshot);
