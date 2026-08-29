@@ -1,22 +1,22 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "bridge",
+  "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.14-bridge74",
-  "latestVersionCode": 170,
+  "latestVersionName": "0.11.15-rc1-bridge75",
+  "latestVersionCode": 171,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.14-bridge74.apk",
-  "apkSha256": "144d7a1230b34acdd00163ff4ba9ce3e15d0dd3aafad29013c9b6747117cc203",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.15-rc1-bridge75.apk",
+  "apkSha256": "ed7e270cb7e0256d2226486afae40058722c7775299b4a80e469e61ac95f7d61",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2787454,
-  "publishedAt": "2026-08-28T23:34:55Z",
+  "sizeBytes": 2790825,
+  "publishedAt": "2026-08-29T00:24:14Z",
   "mandatory": false,
   "releaseNotes": [
-    "新增 GitHub 架構同步入口與同步狀態畫面。",
-    "新增 GitHub 原生能力唯讀目錄與手機功能架構脈絡。",
-    "保留既有 Registry、Connect、Gate、Command 權限邊界。"
+    "候選測試版：Scanner Reverse Discovery v1。",
+    "從 Scanner Skill Anchor 依真實 Evidence 反向追蹤來源。",
+    "找不到正式 Command Evidence 時必須停止於 COMMAND GAP，不建立虛構上游節點。"
   ]
 }
