@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Parser = require('tree-sitter');
 const Java = require('tree-sitter-java');
+const toolPackage = require('./package.json');
 
 const repoRoot = path.resolve(process.argv[2] || '.');
 const scannerPath = 'android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java';
@@ -78,8 +79,8 @@ const output = {
   format: 'amin-indexer-evidence',
   version: 1,
   provider: 'tree-sitter-java',
-  providerVersion: require('tree-sitter-java/package.json').version,
-  parserVersion: require('tree-sitter/package.json').version,
+  providerVersion: toolPackage.dependencies['tree-sitter-java'],
+  parserVersion: toolPackage.dependencies['tree-sitter'],
   revision,
   anchor: {
     entityId: 'function:GitHubSourceGraphScanner.syncAsync',
