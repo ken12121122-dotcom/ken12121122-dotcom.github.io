@@ -98,17 +98,20 @@ function javaFiles(dir) {
 const allJavaFiles = javaFiles(javaRoot);
 const referenceScanErrors = [];
 
+function sourceClassFor(relative) {
+  return path.basename(relative, '.java');
+}
+
 function identifierReferences(className) {
   const refs = [];
   for (const relative of allJavaFiles) {
     const source = read(relative);
-    // Cheap lexical prefilter keeps Tree-sitter focused on files that can actually contain the symbol.
     if (!source.includes(className)) continue;
     let tree;
     try {
       tree = parseJava(source);
     } catch (error) {
-      referenceScanErrors.push({ path: relative, symbol: className, error: String(error && error.message || error) });
+      referenceScanErrors.push({ path: relative, className, error: error.message || error.name || 'parse_error' });
       continue;
     }
     walk(tree.rootNode, (node) => {
@@ -116,6 +119,7 @@ function identifierReferences(className) {
       if (text(node, source) !== className) return;
       refs.push({
         path: relative,
+        sourceClass: sourceClassFor(relative),
         nodeType: node.type,
         startIndex: node.startIndex,
         endIndex: node.endIndex,
@@ -163,6 +167,38 @@ const artifacts = architectureLayers.map((candidate) => {
   };
 });
 
+const byClass = new Map(artifacts.map((artifact) => [artifact.className, artifact]));
+const structuralRelationKeys = new Set();
+const structuralRelations = [];
+for (const target of artifacts) {
+  for (const ref of target.references) {
+    const source = byClass.get(ref.sourceClass);
+    if (!source || source.className === target.className) continue;
+    const key = `${source.entityId}>${target.entityId}`;
+    if (structuralRelationKeys.has(key)) continue;
+    structuralRelationKeys.add(key);
+    structuralRelations.push({
+      relationId: `relation:references:${source.entityId}>${target.entityId}`,
+      from: source.entityId,
+      to: target.entityId,
+      type: 'references',
+      verification: 'ast_verified',
+      authorityVerified: false,
+      evidence: {
+        provider: 'tree-sitter-java',
+        path: ref.path,
+        sourceClass: ref.sourceClass,
+        targetClass: target.className,
+        nodeType: ref.nodeType,
+        startIndex: ref.startIndex,
+        endIndex: ref.endIndex,
+        startPosition: ref.startPosition,
+        endPosition: ref.endPosition
+      }
+    });
+  }
+}
+
 const revision = process.env.GITHUB_SHA || '';
 const output = {
   format: 'amin-indexer-evidence',
@@ -209,13 +245,14 @@ const output = {
     }
   ],
   artifacts,
+  structuralRelations,
   referenceScanErrors,
   gaps: [
     {
       after: `function:WikiGraphActivity.${callerMethodName}`,
       expectedLayer: 'command',
       code: 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND',
-      reason: 'Tree-sitter proves the Java caller relation and architecture declarations/references only; it does not prove formal COMMAND ownership.'
+      reason: 'Tree-sitter proves Java caller and structural references only; structural references are not formal COMMAND or authority ownership.'
     }
   ]
 };
