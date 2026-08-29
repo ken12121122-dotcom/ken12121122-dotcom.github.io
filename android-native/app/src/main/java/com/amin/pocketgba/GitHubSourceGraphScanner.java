@@ -107,7 +107,7 @@ final class GitHubSourceGraphScanner {
                 JSONObject liveCanonical = snapshot.optJSONObject("canonicalEvidence");
                 if (liveCanonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
 
-                JSONObject bundledCanonical = BundledIndexerEvidenceProvider.canonical(app);
+                JSONObject bundledCanonical = BundledIndexerEvidenceProvider.loadForRevision(app, revision);
                 JSONObject canonical = CanonicalEvidenceBatchMerger.merge(
                         revision,
                         liveCanonical,
