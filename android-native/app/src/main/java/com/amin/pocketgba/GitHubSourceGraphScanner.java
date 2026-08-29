@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
-    static final String BRANCH = "release/android";
+    static final String DEFAULT_SOURCE_REF = "release/android";
     static final String SCANNER_ANCHOR_PATH = "android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java";
     static final String SCANNER_CALLER_PATH = "android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java";
     private static final AtomicBoolean SYNC_IN_FLIGHT = new AtomicBoolean(false);
@@ -29,35 +29,38 @@ final class GitHubSourceGraphScanner {
     private GitHubSourceGraphScanner() { }
 
     static JSONObject scan() throws Exception {
-        String encodedRef = URLEncoder.encode(BRANCH, "UTF-8").replace("+", "%20");
-        String treeUrl = "https://api.github.com/repos/" + REPOSITORY + "/git/trees/" + encodedRef + "?recursive=1";
-        HttpURLConnection connection = (HttpURLConnection) new URL(treeUrl).openConnection();
-        connection.setConnectTimeout(7000);
-        connection.setReadTimeout(10000);
-        connection.setRequestProperty("Accept", "application/vnd.github+json");
-        connection.setRequestProperty("User-Agent", "AMIN-Android-EvidenceCollector");
-        int code = connection.getResponseCode();
-        if (code < 200 || code >= 300) throw new IllegalStateException("GITHUB_TREE_HTTP_" + code);
+        String sourceRef = BuildConfig.SOURCE_REF == null ? "" : BuildConfig.SOURCE_REF.trim();
+        if (sourceRef.isEmpty()) sourceRef = DEFAULT_SOURCE_REF;
 
-        StringBuilder raw = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) raw.append(line);
-        } finally {
-            connection.disconnect();
+        // Revision identity is always an immutable commit SHA. Tree SHA is recorded separately
+        // and must never be compared to CI/indexer commit revisions.
+        String encodedRef = URLEncoder.encode(sourceRef, "UTF-8").replace("+", "%20");
+        JSONObject commitRoot = getJson("https://api.github.com/repos/" + REPOSITORY + "/commits/" + encodedRef,
+                "GITHUB_COMMIT_HTTP_");
+        String revision = commitRoot.optString("sha", "").trim();
+        JSONObject commit = commitRoot.optJSONObject("commit");
+        JSONObject commitTree = commit == null ? null : commit.optJSONObject("tree");
+        String treeRevision = commitTree == null ? "" : commitTree.optString("sha", "").trim();
+        if (revision.isEmpty()) throw new IllegalStateException("GITHUB_COMMIT_REVISION_MISSING");
+        if (treeRevision.isEmpty()) throw new IllegalStateException("GITHUB_TREE_REVISION_MISSING");
+
+        JSONObject treeRoot = getJson(
+                "https://api.github.com/repos/" + REPOSITORY + "/git/trees/" + treeRevision + "?recursive=1",
+                "GITHUB_TREE_HTTP_"
+        );
+        String returnedTreeRevision = treeRoot.optString("sha", "").trim();
+        if (!treeRevision.equals(returnedTreeRevision)) {
+            throw new IllegalStateException("GITHUB_TREE_REVISION_MISMATCH");
         }
-
-        JSONObject treeRoot = new JSONObject(raw.toString());
-        String revision = treeRoot.optString("sha", "").trim();
-        if (revision.isEmpty()) throw new IllegalStateException("GITHUB_TREE_REVISION_MISSING");
         JSONArray tree = treeRoot.optJSONArray("tree");
+        if (tree == null) throw new IllegalStateException("GITHUB_TREE_MISSING");
 
         JSONObject reverseDiscovery = ScannerReverseDiscovery.discover(tree, revision);
         JSONObject reverseCanonical = CanonicalEvidenceAdapter.fromReverseDiscovery(reverseDiscovery)
                 .put("provider", "github-source-reverse");
 
-        // Probe all known architecture layers from this exact tree snapshot. These are source
-        // artifacts only; they intentionally contain no authority CONNECTs.
+        // Probe all known architecture layers from this exact commit/tree snapshot. These are
+        // source artifacts only; they intentionally contain no authority CONNECTs.
         JSONObject architectureArtifacts = ArchitectureArtifactEvidenceScanner.scan(tree, revision);
 
         // Live providers available without APK assets. Bundled mature-indexer evidence is merged
@@ -76,7 +79,9 @@ final class GitHubSourceGraphScanner {
                 .put("format", SourceGraphContract.FORMAT)
                 .put("version", SourceGraphContract.VERSION)
                 .put("authority", "github-cloud-review")
+                .put("sourceRef", sourceRef)
                 .put("revision", revision)
+                .put("treeRevision", treeRevision)
                 .put("reviewScope", "scanner-evidence-batch-v3")
                 .put("generatedFrom", "github-cloud-evidence")
                 .put("scanMode", "evidence-only-reverse-v2")
@@ -89,7 +94,30 @@ final class GitHubSourceGraphScanner {
 
         JSONObject normalized = SourceGraphContract.normalize(snapshot);
         if (!normalized.optBoolean("valid", false)) throw new IllegalStateException("SOURCE_SNAPSHOT_INVALID");
+        normalized.put("sourceRef", sourceRef);
+        normalized.put("treeRevision", treeRevision);
         return normalized;
+    }
+
+    private static JSONObject getJson(String url, String errorPrefix) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(7000);
+        connection.setReadTimeout(10000);
+        connection.setRequestProperty("Accept", "application/vnd.github+json");
+        connection.setRequestProperty("User-Agent", "AMIN-Android-EvidenceCollector");
+        int code = connection.getResponseCode();
+        if (code < 200 || code >= 300) {
+            connection.disconnect();
+            throw new IllegalStateException(errorPrefix + code);
+        }
+        StringBuilder raw = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) raw.append(line);
+        } finally {
+            connection.disconnect();
+        }
+        return new JSONObject(raw.toString());
     }
 
     static void syncAsync(Context context, Runnable onFinished) {
