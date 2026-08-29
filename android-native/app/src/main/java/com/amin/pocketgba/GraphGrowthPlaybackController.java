@@ -139,8 +139,8 @@ final class GraphGrowthPlaybackController {
     }
 
     private static Set<String> changedIds(JSONObject previous, JSONObject next, String arrayKey, String idKey) {
-        Map<String, String> before = hashes(previous == null ? null : previous.optJSONArray(arrayKey), idKey);
-        Map<String, String> after = hashes(next == null ? null : next.optJSONArray(arrayKey), idKey);
+        Map<String, String> before = signatures(previous == null ? null : previous.optJSONArray(arrayKey), idKey);
+        Map<String, String> after = signatures(next == null ? null : next.optJSONArray(arrayKey), idKey);
         Set<String> changed = new HashSet<>();
         for (Map.Entry<String, String> entry : after.entrySet()) {
             String old = before.get(entry.getKey());
@@ -149,14 +149,18 @@ final class GraphGrowthPlaybackController {
         return changed;
     }
 
-    private static Map<String, String> hashes(JSONArray values, String idKey) {
+    private static Map<String, String> signatures(JSONArray values, String idKey) {
         Map<String, String> out = new HashMap<>();
         if (values == null) return out;
         for (int i = 0; i < values.length(); i++) {
             JSONObject item = values.optJSONObject(i);
             if (item == null) continue;
             String id = idOf(item, idKey);
-            if (!id.isEmpty()) out.put(id, clean(item.optString("sourceHash", item.toString())));
+            if (id.isEmpty()) continue;
+            String hash = clean(item.optString("sourceHash", item.toString()));
+            String status = clean(item.optString("status", "active"));
+            String change = clean(item.optString("change", ""));
+            out.put(id, hash + "\n" + status + "\n" + change);
         }
         return out;
     }
@@ -186,14 +190,18 @@ final class GraphGrowthPlaybackController {
 
     private static void playTone(JSONObject entity) {
         String verification = clean(entity == null ? "" : entity.optString("verification", ""));
-        int tone = "gap".equals(verification) ? ToneGenerator.TONE_PROP_NACK : ToneGenerator.TONE_PROP_ACK;
-        tone(tone, "gap".equals(verification) ? 90 : 55);
+        String status = clean(entity == null ? "" : entity.optString("status", "active"));
+        boolean warning = "gap".equals(verification) || "stale".equals(status);
+        int tone = warning ? ToneGenerator.TONE_PROP_NACK : ToneGenerator.TONE_PROP_ACK;
+        tone(tone, warning ? 90 : 55);
     }
 
     private static void playRelationTone(JSONObject relation) {
         String verification = clean(relation == null ? "" : relation.optString("verification", ""));
-        tone("gap".equals(verification) ? ToneGenerator.TONE_PROP_NACK : ToneGenerator.TONE_PROP_BEEP2,
-                "gap".equals(verification) ? 90 : 45);
+        String status = clean(relation == null ? "" : relation.optString("status", "active"));
+        boolean warning = "gap".equals(verification) || "stale".equals(status);
+        tone(warning ? ToneGenerator.TONE_PROP_NACK : ToneGenerator.TONE_PROP_BEEP2,
+                warning ? 90 : 45);
     }
 
     private static void tone(int tone, int durationMs) {
