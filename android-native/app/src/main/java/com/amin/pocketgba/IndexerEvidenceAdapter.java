@@ -43,8 +43,39 @@ final class IndexerEvidenceAdapter {
                         anchor.optString("verification", "indexed"),
                         anchor.optJSONObject("evidence"),
                         revision,
-                        provider
+                        provider,
+                        anchor.optBoolean("authorityVerified", false)
                 );
+            }
+
+            JSONArray artifacts = input.optJSONArray("artifacts");
+            if (artifacts != null) {
+                for (int i = 0; i < artifacts.length(); i++) {
+                    JSONObject artifact = artifacts.optJSONObject(i);
+                    if (artifact == null) continue;
+                    String id = clean(artifact.optString("entityId", artifact.optString("id", "")));
+                    if (id.isEmpty()) continue;
+                    JSONObject evidence = new JSONObject()
+                            .put("provider", provider)
+                            .put("path", artifact.optString("path", ""))
+                            .put("className", artifact.optString("className", ""))
+                            .put("layer", artifact.optString("layer", ""));
+                    JSONObject declaration = artifact.optJSONObject("declaration");
+                    if (declaration != null) evidence.put("declaration", new JSONObject(declaration.toString()));
+                    addEntity(
+                            entities,
+                            entityIds,
+                            id,
+                            artifact.optString("className", id),
+                            "source_artifact",
+                            "",
+                            artifact.optString("verification", "indexed"),
+                            evidence,
+                            revision,
+                            provider,
+                            artifact.optBoolean("authorityVerified", false)
+                    );
+                }
             }
 
             JSONArray indexedRelations = input.optJSONArray("relations");
@@ -62,11 +93,42 @@ final class IndexerEvidenceAdapter {
                         String callerSymbol = clean(evidence.optString("callerSymbol", ""));
                         if (!callerSymbol.isEmpty()) title = callerSymbol.replace(".", " · ");
                     }
-                    addEntity(entities, entityIds, to, title, "source", from, verification, evidence, revision, provider);
+                    addEntity(entities, entityIds, to, title, "source", from, verification, evidence,
+                            revision, provider, source.optBoolean("authorityVerified", false));
                     String relationId = clean(source.optString("relationId", source.optString("id", "")));
                     String type = clean(source.optString("type", "related_to"));
                     if (relationId.isEmpty()) relationId = "relation:" + type + ":" + from + ">" + to;
-                    addRelation(relations, relationIds, relationId, from, to, type, verification, evidence, revision, provider);
+                    addRelation(relations, relationIds, relationId, from, to, type, verification, evidence,
+                            revision, provider, source.optBoolean("authorityVerified", false),
+                            source.optString("relationClass", ""));
+                }
+            }
+
+            JSONArray structuralRelations = input.optJSONArray("structuralRelations");
+            if (structuralRelations != null) {
+                for (int i = 0; i < structuralRelations.length(); i++) {
+                    JSONObject source = structuralRelations.optJSONObject(i);
+                    if (source == null) continue;
+                    String from = clean(source.optString("from", ""));
+                    String to = clean(source.optString("to", ""));
+                    if (from.isEmpty() || to.isEmpty()) continue;
+                    String type = clean(source.optString("type", "references"));
+                    String relationId = clean(source.optString("relationId", source.optString("id", "")));
+                    if (relationId.isEmpty()) relationId = "relation:" + type + ":" + from + ">" + to;
+                    addRelation(
+                            relations,
+                            relationIds,
+                            relationId,
+                            from,
+                            to,
+                            type,
+                            source.optString("verification", "indexed"),
+                            source.optJSONObject("evidence"),
+                            revision,
+                            provider,
+                            false,
+                            source.optString("relationClass", "DEPENDENCY")
+                    );
                 }
             }
 
@@ -87,7 +149,8 @@ final class IndexerEvidenceAdapter {
                             "gap",
                             null,
                             revision,
-                            provider
+                            provider,
+                            false
                     );
                     if (!after.isEmpty()) {
                         addRelation(
@@ -100,7 +163,9 @@ final class IndexerEvidenceAdapter {
                                 "gap",
                                 null,
                                 revision,
-                                provider
+                                provider,
+                                false,
+                                "CONTROL"
                         );
                     }
                     out.put("gap", new JSONObject(gap.toString()));
@@ -121,7 +186,7 @@ final class IndexerEvidenceAdapter {
 
     private static void addEntity(JSONArray out, Set<String> ids, String id, String title, String kind,
                                   String parentId, String verification, JSONObject evidence,
-                                  String revision, String provider) throws Exception {
+                                  String revision, String provider, boolean authorityVerified) throws Exception {
         id = clean(id);
         if (id.isEmpty() || !ids.add(id)) return;
         JSONObject entity = new JSONObject()
@@ -131,6 +196,7 @@ final class IndexerEvidenceAdapter {
                 .put("kind", clean(kind))
                 .put("parentId", clean(parentId))
                 .put("verification", clean(verification))
+                .put("authorityVerified", authorityVerified)
                 .put("evidenceRevision", revision)
                 .put("sourceKey", sourceKey(id, evidence, provider));
         if (evidence != null) entity.put("evidence", new JSONObject(evidence.toString()));
@@ -139,7 +205,8 @@ final class IndexerEvidenceAdapter {
 
     private static void addRelation(JSONArray out, Set<String> ids, String id, String from, String to,
                                     String type, String verification, JSONObject evidence,
-                                    String revision, String provider) throws Exception {
+                                    String revision, String provider, boolean authorityVerified,
+                                    String relationClass) throws Exception {
         id = clean(id);
         if (id.isEmpty() || !ids.add(id)) return;
         JSONObject relation = new JSONObject()
@@ -149,8 +216,11 @@ final class IndexerEvidenceAdapter {
                 .put("to", clean(to))
                 .put("type", clean(type).isEmpty() ? "related_to" : type)
                 .put("verification", clean(verification))
+                .put("authorityVerified", authorityVerified)
                 .put("evidenceRevision", revision)
                 .put("provider", provider);
+        String normalizedClass = clean(relationClass);
+        if (!normalizedClass.isEmpty()) relation.put("relationClass", normalizedClass);
         if (evidence != null) relation.put("evidence", new JSONObject(evidence.toString()));
         out.put(relation);
     }
@@ -158,7 +228,7 @@ final class IndexerEvidenceAdapter {
     private static String sourceKey(String id, JSONObject evidence, String provider) {
         if (evidence == null) return clean(provider) + "|" + id;
         String path = clean(evidence.optString("path", ""));
-        String symbol = clean(evidence.optString("symbol", evidence.optString("callerSymbol", evidence.optString("calleeSymbol", ""))));
+        String symbol = clean(evidence.optString("symbol", evidence.optString("callerSymbol", evidence.optString("calleeSymbol", evidence.optString("className", "")))));
         StringBuilder out = new StringBuilder(clean(provider));
         if (!path.isEmpty()) out.append('|').append(path);
         if (!symbol.isEmpty()) out.append('|').append(symbol);
