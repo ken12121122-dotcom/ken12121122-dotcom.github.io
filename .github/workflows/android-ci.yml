@@ -20,10 +20,14 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      AMIN_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
 
     steps:
-      - name: Checkout pull request
+      - name: Checkout pull request head
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Read release metadata
         shell: bash
@@ -77,6 +81,8 @@ jobs:
           grep -q 'ToneGenerator' android-native/app/src/main/java/com/amin/pocketgba/GraphGrowthPlaybackController.java
           grep -q 'evidence-only-reverse-v2' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
           grep -q 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND' android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
+          grep -q 'BuildConfig.SOURCE_REF' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'treeRevision' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
           grep -q 'Scanner Reverse Discovery' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           grep -q 'acceptPendingSourceRevision' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
 
@@ -94,13 +100,15 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "$AMIN_SOURCE_REVISION"
           mkdir -p build/scanner-evidence
-          node tools/tree-sitter-scanner/scan-java.cjs "$GITHUB_WORKSPACE" > build/scanner-evidence/tree-sitter-scanner.json
+          GITHUB_SHA="$AMIN_SOURCE_REVISION" node tools/tree-sitter-scanner/scan-java.cjs "$GITHUB_WORKSPACE" > build/scanner-evidence/tree-sitter-scanner.json
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           p = Path('build/scanner-evidence/tree-sitter-scanner.json')
           data = json.loads(p.read_text())
+          assert data['revision'] == os.environ['AMIN_SOURCE_REVISION']
           assert data['provider'] == 'tree-sitter-java'
           assert data['anchor']['verification'] == 'ast_verified'
           assert data['anchor']['evidence']['nodeType'] == 'method_declaration'
@@ -171,6 +179,7 @@ jobs:
             -PAMIN_VERSION_CODE="$AMIN_VERSION_CODE" \
             -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
             -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
+            -PAMIN_SOURCE_REF="$AMIN_SOURCE_REVISION" \
             :app:testDebugUnitTest \
             :app:testBridgeUnitTest \
             :app:lintBridge \
