@@ -6,6 +6,7 @@ on:
       - release/android
     paths:
       - 'android-native/**'
+      - 'tools/tree-sitter-scanner/**'
       - '.github/workflows/android-ci.yml'
 
 permissions:
@@ -68,6 +69,36 @@ jobs:
           ! grep -q 'semanticAnchor' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           ! grep -q 'createElement.(.canvas' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
 
+      - name: Install mature Java AST scanner
+        shell: bash
+        run: |
+          set -euxo pipefail
+          npm install --prefix tools/tree-sitter-scanner --ignore-scripts=false --no-audit --no-fund
+
+      - name: Prove Scanner caller with Tree-sitter
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build/scanner-evidence
+          node tools/tree-sitter-scanner/scan-java.cjs "$GITHUB_WORKSPACE" > build/scanner-evidence/tree-sitter-scanner.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('build/scanner-evidence/tree-sitter-scanner.json')
+          data = json.loads(p.read_text())
+          assert data['provider'] == 'tree-sitter-java'
+          assert data['anchor']['verification'] == 'ast_verified'
+          assert data['anchor']['evidence']['nodeType'] == 'method_declaration'
+          assert len(data['relations']) == 1
+          rel = data['relations'][0]
+          assert rel['type'] == 'invoked_by'
+          assert rel['verification'] == 'ast_verified'
+          assert rel['evidence']['nodeType'] == 'method_invocation'
+          assert rel['to'] == 'function:WikiGraphActivity.requestCloudSourceSync'
+          assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
+          print(json.dumps(data, ensure_ascii=False, indent=2))
+          PY
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -94,6 +125,14 @@ jobs:
             :app:testBridgeUnitTest \
             :app:lintBridge \
             :app:assembleDebug
+
+      - name: Publish scanner evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: amin-pr-${{ github.event.pull_request.number }}-scanner-evidence
+          path: build/scanner-evidence/tree-sitter-scanner.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish PR test APK
         uses: actions/upload-artifact@v4
