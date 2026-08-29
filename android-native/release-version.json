@@ -1,19 +1,16 @@
 {
-  "versionCode": 177,
-  "versionName": "0.11.15",
-  "channel": "bridge",
-  "bridge": 81,
-  "releaseSequence": 15,
+  "versionCode": 178,
+  "versionName": "0.11.16-rc1",
+  "channel": "candidate",
+  "bridge": 82,
+  "releaseSequence": 16,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "整合 Evidence-only Scanner 與單一 Dynamic Graph，並完成原地更新與資料保留驗收。",
-    "修正 Evidence-only review：即使 canonical NODE / CONNECT 為 0，只要 reverse-discovery anchor Evidence 已驗證且 revision 一致，確認 revision 仍可執行。",
-    "Graph 保持單一 force renderer，但加入弱中心重力、較低排斥力、速度上限與較強阻尼，避免未連接節點持續向外漂移。",
-    "semantic anchor 僅用於初始位置，不再有個別節點固定回拉；拖放後 NODE 重新自由參與 force layout。",
-    "Source Review 不建立第二張 canvas、不畫固定 CONNECT；COMMAND Evidence 不足時維持 COMMAND GAP。",
-    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。"
+    "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
+    "以 graph_scope、sync_owner 與 sync_partition 隔離 Knowledge、Work、Bridge、Pull Request、Branch、CI 與人工 Task 的同步生命週期。",
+    "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；本候選版不新增手機畫面或操作按鈕。"
   ]
 }
