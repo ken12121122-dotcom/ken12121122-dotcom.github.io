@@ -60,8 +60,8 @@ final class GitHubSourceGraphScanner {
         // artifacts only; they intentionally contain no authority CONNECTs.
         JSONObject architectureArtifacts = ArchitectureArtifactEvidenceScanner.scan(tree, revision);
 
-        // All evidence providers for this scan cycle enter through one merge. No provider may
-        // write directly to the visual graph.
+        // Live providers available without APK assets. Bundled mature-indexer evidence is merged
+        // later in syncAsync because reading APK assets requires Context.
         JSONObject canonicalEvidence = CanonicalEvidenceBatchMerger.merge(
                 revision,
                 reverseCanonical,
@@ -77,7 +77,7 @@ final class GitHubSourceGraphScanner {
                 .put("version", SourceGraphContract.VERSION)
                 .put("authority", "github-cloud-review")
                 .put("revision", revision)
-                .put("reviewScope", "scanner-evidence-batch-v2")
+                .put("reviewScope", "scanner-evidence-batch-v3")
                 .put("generatedFrom", "github-cloud-evidence")
                 .put("scanMode", "evidence-only-reverse-v2")
                 .put("anchorId", reverseDiscovery.optString("anchorId", ""))
@@ -104,9 +104,18 @@ final class GitHubSourceGraphScanner {
             try {
                 JSONObject snapshot = scan();
                 String revision = snapshot.optString("revision", "").trim();
+                JSONObject liveCanonical = snapshot.optJSONObject("canonicalEvidence");
+                if (liveCanonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
+
+                JSONObject bundledCanonical = BundledIndexerEvidenceProvider.canonical(app);
+                JSONObject canonical = CanonicalEvidenceBatchMerger.merge(
+                        revision,
+                        liveCanonical,
+                        bundledCanonical
+                );
+                snapshot.put("bundledIndexerEvidence", bundledCanonical);
+                snapshot.put("canonicalEvidence", canonical);
                 new CloudSourceGraphStore(app).stage(revision, snapshot);
-                JSONObject canonical = snapshot.optJSONObject("canonicalEvidence");
-                if (canonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
 
                 GraphEvidenceSyncStore syncStore = new GraphEvidenceSyncStore(app);
                 JSONObject previous = syncStore.current();
