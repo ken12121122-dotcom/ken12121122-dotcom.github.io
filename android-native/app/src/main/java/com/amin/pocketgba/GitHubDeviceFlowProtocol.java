@@ -86,8 +86,12 @@ final class GitHubDeviceFlowProtocol {
         int intervalSeconds() { return intervalSeconds; }
         long expiresAtMillis() { return expiresAtMillis; }
         JSONObject json() {
-            return new JSONObject().put("user_code", userCode).put("verification_uri", verificationUri)
-                    .put("interval", intervalSeconds).put("expires_at", expiresAtMillis);
+            try {
+                return new JSONObject().put("user_code", userCode).put("verification_uri", verificationUri)
+                        .put("interval", intervalSeconds).put("expires_at", expiresAtMillis);
+            } catch (Exception error) {
+                throw new IllegalStateException("Unable to create Device Flow status JSON", error);
+            }
         }
     }
 
