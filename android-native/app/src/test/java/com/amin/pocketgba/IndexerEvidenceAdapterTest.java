@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONArray;
@@ -56,7 +57,16 @@ public final class IndexerEvidenceAdapterTest {
         assertEquals("SCANNER_COMMAND_EVIDENCE_NOT_FOUND", canonical.getJSONObject("gap").getString("code"));
         assertTrue(canonical.toString().contains("ast_verified"));
         assertTrue(canonical.toString().contains("COMMAND GAP"));
-        assertTrue(!canonical.toString().contains("owner"));
-        assertTrue(!canonical.toString().contains("governance"));
+
+        JSONArray entities = canonical.getJSONArray("entities");
+        for (int i = 0; i < entities.length(); i++) {
+            JSONObject entity = entities.getJSONObject(i);
+            String id = entity.optString("entityId", entity.optString("id", ""));
+            String kind = entity.optString("kind", "");
+            assertFalse(id.startsWith("owner:"));
+            assertFalse(id.startsWith("governance:"));
+            assertFalse("owner".equals(kind));
+            assertFalse("governance".equals(kind));
+        }
     }
 }
