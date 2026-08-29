@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * GitHub evidence collector for Scanner reverse discovery.
  *
  * This class no longer builds a second repository/file graph. It only collects source evidence,
- * converts it to CanonicalEvidence, and lets the single Amin Graph renderer decide layout.
+ * converts it to CanonicalEvidence, synchronizes stable identity, and lets the single Amin Graph
+ * renderer decide layout.
  */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
@@ -90,6 +91,9 @@ final class GitHubSourceGraphScanner {
                 JSONObject snapshot = scan();
                 String revision = snapshot.optString("revision", "").trim();
                 new CloudSourceGraphStore(app).stage(revision, snapshot);
+                JSONObject canonical = snapshot.optJSONObject("canonicalEvidence");
+                if (canonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
+                new GraphEvidenceSyncStore(app).sync(canonical, System.currentTimeMillis());
                 GitHubSourceSyncState.ready(revision);
                 UnifiedGraphProvider.notifyChanged(app);
             } catch (Exception error) {
