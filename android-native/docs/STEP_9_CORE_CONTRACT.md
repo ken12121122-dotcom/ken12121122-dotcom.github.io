@@ -195,6 +195,8 @@ KNOWLEDGE --learned_from--> RUN
 
 ### 9A Knowledge Graph Contract
 
+Normative draft: [`STEP_9A_KNOWLEDGE_GRAPH_CONTRACT.md`](./STEP_9A_KNOWLEDGE_GRAPH_CONTRACT.md)
+
 Defines Knowledge and Memory semantics, including:
 
 - `KNOWLEDGE` and `MEMORY_CANDIDATE` identity;
@@ -205,6 +207,8 @@ Defines Knowledge and Memory semantics, including:
 - allowed Knowledge-internal relations.
 
 ### 9B Work Graph Contract
+
+Normative draft: [`STEP_9B_WORK_GRAPH_CONTRACT.md`](./STEP_9B_WORK_GRAPH_CONTRACT.md)
 
 Defines stable identities and lifecycle for:
 
@@ -219,6 +223,8 @@ approval actions, selection, retry, reassignment, dispatch, callback, and
 notification.
 
 ### 9C Bridge Graph Contract
+
+Normative draft: [`STEP_9C_BRIDGE_GRAPH_CONTRACT.md`](./STEP_9C_BRIDGE_GRAPH_CONTRACT.md)
 
 Defines cross-scope relation semantics, direction, identity, provenance,
 ownership, and independent lifecycle. Bridge relations must remain queryable
