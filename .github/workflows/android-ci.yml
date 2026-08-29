@@ -126,8 +126,19 @@ jobs:
             assert item['declaration']['nodeType'] in ('class_declaration', 'interface_declaration', 'enum_declaration')
             assert isinstance(item['references'], list)
 
+          structural = data['structuralRelations']
+          assert isinstance(structural, list)
+          for relation in structural:
+            assert relation['type'] == 'references'
+            assert relation['verification'] == 'ast_verified'
+            assert relation['authorityVerified'] is False
+            assert relation['from'].startswith('source-artifact:')
+            assert relation['to'].startswith('source-artifact:')
+            assert relation['evidence']['nodeType'] in ('identifier', 'type_identifier')
+
           assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
           assert not any(a.get('authorityVerified') for a in data['artifacts'])
+          assert not any(r.get('authorityVerified') for r in structural)
           print(json.dumps(data, ensure_ascii=False, indent=2))
           PY
 
