@@ -19,8 +19,11 @@ const architectureLayers = [
   { layer: 'permission', className: 'PermissionCenterActivity', path: `${javaRoot}/PermissionCenterActivity.java` }
 ];
 
-const parser = new Parser();
-parser.setLanguage(Java);
+function parseJava(source) {
+  const parser = new Parser();
+  parser.setLanguage(Java);
+  return parser.parse(source);
+}
 
 function read(relative) {
   return fs.readFileSync(path.join(repoRoot, relative), 'utf8');
@@ -42,7 +45,7 @@ function fieldText(node, field, source) {
 }
 
 function findMethod(source, methodName) {
-  const tree = parser.parse(source);
+  const tree = parseJava(source);
   let found = null;
   walk(tree.rootNode, (node) => {
     if (found || node.type !== 'method_declaration') return;
@@ -52,7 +55,7 @@ function findMethod(source, methodName) {
 }
 
 function findClass(source, className) {
-  const tree = parser.parse(source);
+  const tree = parseJava(source);
   let found = null;
   walk(tree.rootNode, (node) => {
     if (found || (node.type !== 'class_declaration' && node.type !== 'interface_declaration' && node.type !== 'enum_declaration')) return;
@@ -62,7 +65,7 @@ function findClass(source, className) {
 }
 
 function findInvocation(source, ownerName, methodName) {
-  const tree = parser.parse(source);
+  const tree = parseJava(source);
   let found = null;
   let enclosingMethod = null;
   walk(tree.rootNode, (node, ancestors) => {
@@ -92,11 +95,13 @@ function javaFiles(dir) {
   return out;
 }
 
+const allJavaFiles = javaFiles(javaRoot);
+
 function identifierReferences(className) {
   const refs = [];
-  for (const relative of javaFiles(javaRoot)) {
+  for (const relative of allJavaFiles) {
     const source = read(relative);
-    const tree = parser.parse(source);
+    const tree = parseJava(source);
     walk(tree.rootNode, (node) => {
       if (node.type !== 'identifier' && node.type !== 'type_identifier') return;
       if (text(node, source) !== className) return;
