@@ -1,17 +1,18 @@
 {
-  "versionCode": 172,
-  "versionName": "0.11.15-rc2",
+  "versionCode": 173,
+  "versionName": "0.11.15-rc3",
   "channel": "candidate",
-  "bridge": 76,
-  "releaseSequence": 10,
+  "bridge": 77,
+  "releaseSequence": 11,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
     "候選測試版：Evidence-only Scanner / Dynamic Graph 整合。",
-    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。",
-    "Scanner 只建立有 Evidence 的 NODE / CONNECT；COMMAND Evidence 不足時維持 COMMAND GAP，不補造權限或治理關係。",
-    "Graph 使用唯一原始動態 force layout，重複掃描不建立重複 identity，Evidence 消失時標記 stale。"
+    "移除 Source Review 的第二張固定 overlay renderer；Review 面板只顯示 Evidence，不建立節點、不畫固定連線。",
+    "確認 revision 後立即關閉 Review 面板，並防止同一已接受 revision 因週期 refresh 再次彈出。",
+    "所有 Evidence NODE / CONNECT 只交給唯一原始 Dynamic Graph Engine；COMMAND Evidence 不足時維持 COMMAND GAP。",
+    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。"
   ]
 }
