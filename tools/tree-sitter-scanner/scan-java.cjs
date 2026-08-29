@@ -96,12 +96,21 @@ function javaFiles(dir) {
 }
 
 const allJavaFiles = javaFiles(javaRoot);
+const referenceScanErrors = [];
 
 function identifierReferences(className) {
   const refs = [];
   for (const relative of allJavaFiles) {
     const source = read(relative);
-    const tree = parseJava(source);
+    // Cheap lexical prefilter keeps Tree-sitter focused on files that can actually contain the symbol.
+    if (!source.includes(className)) continue;
+    let tree;
+    try {
+      tree = parseJava(source);
+    } catch (error) {
+      referenceScanErrors.push({ path: relative, symbol: className, error: String(error && error.message || error) });
+      continue;
+    }
     walk(tree.rootNode, (node) => {
       if (node.type !== 'identifier' && node.type !== 'type_identifier') return;
       if (text(node, source) !== className) return;
@@ -200,6 +209,7 @@ const output = {
     }
   ],
   artifacts,
+  referenceScanErrors,
   gaps: [
     {
       after: `function:WikiGraphActivity.${callerMethodName}`,
