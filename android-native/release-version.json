@@ -1,9 +1,9 @@
 {
-  "versionCode": 179,
-  "versionName": "0.11.16-rc2",
-  "channel": "candidate",
-  "bridge": 83,
-  "releaseSequence": 17,
+  "versionCode": 180,
+  "versionName": "0.11.16",
+  "channel": "bridge",
+  "bridge": 84,
+  "releaseSequence": 18,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -12,6 +12,6 @@
     "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
     "以 graph_scope、sync_owner 與 sync_partition 隔離 Knowledge、Work、Bridge、Pull Request、Branch、CI 與人工 Task 的同步生命週期。",
     "拒絕不同 ownership key 靜默接管既有 stable identity，並保留 Evidence snapshot revision fallback。",
-    "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；本候選版不新增手機畫面或操作按鈕。"
+    "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；已完成原地更新、資料保留與既有 Graph 無退化驗收。"
   ]
 }
