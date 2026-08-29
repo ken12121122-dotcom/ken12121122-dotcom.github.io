@@ -4,19 +4,20 @@
   "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.16-rc1-bridge82",
-  "latestVersionCode": 178,
+  "latestVersionName": "0.11.16-rc2-bridge83",
+  "latestVersionCode": 179,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.16-rc1-bridge82.apk",
-  "apkSha256": "ffb41ffb30f964a0a9d8f96aaf28fa0bacc919d0d10a17a3acc8ae2b4703a4b5",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.16-rc2-bridge83.apk",
+  "apkSha256": "c449d517e498043831c03a1310468b545f912054a03f31557acaa3b4f91afb4e",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2794943,
-  "publishedAt": "2026-08-29T11:58:38Z",
+  "sizeBytes": 2795232,
+  "publishedAt": "2026-08-29T12:16:41Z",
   "mandatory": false,
   "releaseNotes": [
     "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
     "以 graph_scope、sync_owner 與 sync_partition 隔離 Knowledge、Work、Bridge、Pull Request、Branch、CI 與人工 Task 的同步生命週期。",
+    "拒絕不同 ownership key 靜默接管既有 stable identity，並保留 Evidence snapshot revision fallback。",
     "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；本候選版不新增手機畫面或操作按鈕。"
   ]
 }
