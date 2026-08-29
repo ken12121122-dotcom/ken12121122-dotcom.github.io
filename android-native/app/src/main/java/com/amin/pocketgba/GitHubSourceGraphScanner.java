@@ -72,6 +72,7 @@ final class GitHubSourceGraphScanner {
                 String revision = graph.optString("revision", "").trim();
                 new CloudSourceGraphStore(app).stage(revision, graph);
                 GitHubSourceSyncState.ready(revision);
+                UnifiedGraphProvider.notifyChanged(app);
             } catch (Exception error) {
                 GitHubSourceSyncState.failed(error);
             } finally {
