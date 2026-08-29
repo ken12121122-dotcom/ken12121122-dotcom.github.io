@@ -15,9 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * GitHub evidence collector for Scanner reverse discovery.
  *
- * This class no longer builds a second repository/file graph. It only collects source evidence,
- * converts it to CanonicalEvidence, synchronizes stable identity, and lets the single Amin Graph
- * renderer decide layout.
+ * Scanner providers are merged into one canonical evidence batch before sync. This allows future
+ * authority-layer scanners/indexers to run in one scan cycle without adding another graph or
+ * fabricating layers that are not evidenced.
  */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
@@ -53,7 +53,12 @@ final class GitHubSourceGraphScanner {
         JSONArray tree = treeRoot.optJSONArray("tree");
 
         JSONObject reverseDiscovery = ScannerReverseDiscovery.discover(tree, revision);
-        JSONObject canonicalEvidence = CanonicalEvidenceAdapter.fromReverseDiscovery(reverseDiscovery);
+        JSONObject reverseCanonical = CanonicalEvidenceAdapter.fromReverseDiscovery(reverseDiscovery)
+                .put("provider", "github-source-reverse");
+
+        // All current/future evidence providers for this scan cycle must enter through this merge.
+        // No provider may write directly to the visual graph.
+        JSONObject canonicalEvidence = CanonicalEvidenceBatchMerger.merge(revision, reverseCanonical);
         JSONArray canonicalEntities = canonicalEvidence.optJSONArray("entities");
         if (canonicalEntities == null || canonicalEntities.length() == 0) {
             throw new IllegalStateException("CANONICAL_EVIDENCE_EMPTY");
@@ -64,7 +69,7 @@ final class GitHubSourceGraphScanner {
                 .put("version", SourceGraphContract.VERSION)
                 .put("authority", "github-cloud-review")
                 .put("revision", revision)
-                .put("reviewScope", "scanner-reverse-discovery-v1")
+                .put("reviewScope", "scanner-evidence-batch-v1")
                 .put("generatedFrom", "github-cloud-evidence")
                 .put("scanMode", "evidence-only-reverse-v2")
                 .put("anchorId", reverseDiscovery.optString("anchorId", ""))
