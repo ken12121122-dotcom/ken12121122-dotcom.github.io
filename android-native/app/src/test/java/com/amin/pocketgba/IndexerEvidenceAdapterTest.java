@@ -22,7 +22,39 @@ public final class IndexerEvidenceAdapterTest {
                 .put("callerSymbol", "WikiGraphActivity.requestCloudSourceSync")
                 .put("calleeSymbol", "GitHubSourceGraphScanner.syncAsync");
 
-        JSONObject input = new JSONObject()
+        JSONObject input = validInput(anchorEvidence, relationEvidence);
+        JSONObject canonical = IndexerEvidenceAdapter.toCanonical(input);
+        assertEquals(CanonicalEvidenceAdapter.FORMAT, canonical.getString("format"));
+        assertEquals("tree-sitter-java", canonical.getString("provider"));
+        assertEquals("abc123", canonical.getString("revision"));
+        assertEquals(3, canonical.getJSONArray("entities").length());
+        assertEquals(2, canonical.getJSONArray("relations").length());
+        assertEquals("SCANNER_COMMAND_EVIDENCE_NOT_FOUND", canonical.getJSONObject("gap").getString("code"));
+        assertTrue(canonical.toString().contains("ast_verified"));
+        assertTrue(canonical.toString().contains("COMMAND GAP"));
+
+        JSONArray entities = canonical.getJSONArray("entities");
+        for (int i = 0; i < entities.length(); i++) {
+            JSONObject entity = entities.getJSONObject(i);
+            String id = entity.optString("entityId", entity.optString("id", ""));
+            String kind = entity.optString("kind", "");
+            assertFalse(id.startsWith("owner:"));
+            assertFalse(id.startsWith("governance:"));
+            assertFalse("owner".equals(kind));
+            assertFalse("governance".equals(kind));
+        }
+    }
+
+    @Test public void unsupportedIndexerVersionProducesEmptyCanonicalEvidence() throws Exception {
+        JSONObject input = validInput(new JSONObject(), new JSONObject());
+        input.put("version", IndexerEvidenceAdapter.VERSION + 1);
+        JSONObject canonical = IndexerEvidenceAdapter.toCanonical(input);
+        assertEquals(0, canonical.getJSONArray("entities").length());
+        assertEquals(0, canonical.getJSONArray("relations").length());
+    }
+
+    private static JSONObject validInput(JSONObject anchorEvidence, JSONObject relationEvidence) throws Exception {
+        return new JSONObject()
                 .put("format", IndexerEvidenceAdapter.FORMAT)
                 .put("version", IndexerEvidenceAdapter.VERSION)
                 .put("provider", "tree-sitter-java")
@@ -47,26 +79,5 @@ public final class IndexerEvidenceAdapterTest {
                         .put("expectedLayer", "command")
                         .put("code", "SCANNER_COMMAND_EVIDENCE_NOT_FOUND")
                         .put("reason", "No formal command ownership evidence")));
-
-        JSONObject canonical = IndexerEvidenceAdapter.toCanonical(input);
-        assertEquals(CanonicalEvidenceAdapter.FORMAT, canonical.getString("format"));
-        assertEquals("tree-sitter-java", canonical.getString("provider"));
-        assertEquals("abc123", canonical.getString("revision"));
-        assertEquals(3, canonical.getJSONArray("entities").length());
-        assertEquals(2, canonical.getJSONArray("relations").length());
-        assertEquals("SCANNER_COMMAND_EVIDENCE_NOT_FOUND", canonical.getJSONObject("gap").getString("code"));
-        assertTrue(canonical.toString().contains("ast_verified"));
-        assertTrue(canonical.toString().contains("COMMAND GAP"));
-
-        JSONArray entities = canonical.getJSONArray("entities");
-        for (int i = 0; i < entities.length(); i++) {
-            JSONObject entity = entities.getJSONObject(i);
-            String id = entity.optString("entityId", entity.optString("id", ""));
-            String kind = entity.optString("kind", "");
-            assertFalse(id.startsWith("owner:"));
-            assertFalse(id.startsWith("governance:"));
-            assertFalse("owner".equals(kind));
-            assertFalse("governance".equals(kind));
-        }
     }
 }
