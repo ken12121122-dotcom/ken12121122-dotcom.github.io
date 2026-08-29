@@ -56,10 +56,18 @@ jobs:
           grep -q 'physicsStep' android-native/app/src/main/assets/amin-wiki-graph/index.html
           grep -q 'layoutAuthority' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'amin-dynamic-canvas-only' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
-          grep -q 'canonicalEvidence' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'syncedEvidence' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'GraphEvidenceSyncStore' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'amin-canonical-evidence' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'amin-indexer-evidence' android-native/app/src/main/java/com/amin/pocketgba/IndexerEvidenceAdapter.java
           grep -q 'sourceKey' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
           grep -q 'evidenceRevision' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'amin-synced-graph-evidence' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'firstSeen' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'lastSeen' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'sourceHash' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q '"stale"' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'GraphEvidenceSyncStore' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
           grep -q 'evidence-only-reverse-v2' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
           grep -q 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND' android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
           grep -q 'Scanner Reverse Discovery' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
