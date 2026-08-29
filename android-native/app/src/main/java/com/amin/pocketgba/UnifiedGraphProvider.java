@@ -29,7 +29,8 @@ final class UnifiedGraphProvider {
             JSONObject out = emptyGraph();
             if (context == null) return out.toString();
 
-            JSONObject synced = new GraphEvidenceSyncStore(context).current();
+            JSONObject persisted = new GraphEvidenceSyncStore(context).current();
+            JSONObject synced = GraphGrowthPlaybackStore.currentOr(persisted);
             if (!GraphSyncEngine.FORMAT.equals(synced.optString("format", ""))) return out.toString();
             JSONArray syncedEntities = synced.optJSONArray("entities");
             if (syncedEntities == null || syncedEntities.length() == 0) return out.toString();
@@ -97,6 +98,7 @@ final class UnifiedGraphProvider {
             out.put("scannerRevision", synced.optString("revision", ""));
             out.put("scannerStatus", synced.optString("sourceStatus", ""));
             out.put("syncedEvidence", new JSONObject(synced.toString()));
+            out.put("growthPlayback", synced != persisted);
             return out.toString();
         } catch (Exception error) {
             return emptyGraph().toString();
@@ -107,7 +109,7 @@ final class UnifiedGraphProvider {
         try {
             return new JSONObject()
                     .put("format", "amin-unified-graph")
-                    .put("version", 7)
+                    .put("version", 8)
                     .put("layoutAuthority", "amin-dynamic-canvas-only")
                     .put("domains", new JSONArray())
                     .put("groups", new JSONArray())
@@ -115,6 +117,7 @@ final class UnifiedGraphProvider {
                     .put("commands", new JSONArray())
                     .put("relations", new JSONArray())
                     .put("syncedEvidence", GraphSyncEngine.empty())
+                    .put("growthPlayback", false)
                     .put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson())
                     .put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
         } catch (Exception impossible) {
