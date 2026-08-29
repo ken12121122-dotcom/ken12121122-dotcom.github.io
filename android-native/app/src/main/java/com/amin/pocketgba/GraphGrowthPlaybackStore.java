@@ -21,6 +21,12 @@ final class GraphGrowthPlaybackStore {
         }
     }
 
+    static boolean isActive() {
+        synchronized (LOCK) {
+            return playback != null;
+        }
+    }
+
     static JSONObject currentOr(JSONObject fallback) {
         synchronized (LOCK) {
             return playback == null ? cloneJson(fallback) : cloneJson(playback);
