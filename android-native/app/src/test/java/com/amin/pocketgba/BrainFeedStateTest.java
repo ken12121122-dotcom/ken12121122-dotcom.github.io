@@ -33,6 +33,19 @@ public class BrainFeedStateTest {
         assertTrue(delta.newNotifications().isEmpty());
     }
 
+    @Test
+    public void capabilityRuntimeSummaryIsVisibleWithoutChangingFeedV1() {
+        JSONObject feed = feed("rev-capability").put("capability_runtime", BrainJson.object(
+                "capabilities", new JSONArray().put(BrainJson.object("capability_id", "android:ui")),
+                "certifications", new JSONArray().put(BrainJson.object("status", "active")),
+                "autonomy_policies", new JSONArray(),
+                "passed_training_records", 2));
+        String summary = BrainFeedState.summary(feed);
+        assertTrue(summary.contains("能力：1"));
+        assertTrue(summary.contains("有效認證：1"));
+        assertTrue(summary.contains("訓練通過：2"));
+    }
+
     private static JSONObject feed(String revision, JSONObject... notifications) {
         JSONArray values = new JSONArray();
         for (JSONObject notification : notifications) values.put(notification);

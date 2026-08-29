@@ -20,7 +20,7 @@ final class BrainFeedState {
         LinkedHashSet<String> seen = new LinkedHashSet<>();
         if (previouslySeen != null) seen.addAll(previouslySeen);
         List<Notification> fresh = new ArrayList<>();
-        JSONArray notifications = feed.getJSONArray("notifications");
+        JSONArray notifications = feed.optJSONArray("notifications");
         for (int index = 0; index < notifications.length(); index++) {
             JSONObject value = notifications.optJSONObject(index);
             if (value == null) continue;
@@ -35,13 +35,13 @@ final class BrainFeedState {
             String oldest = seen.iterator().next();
             seen.remove(oldest);
         }
-        return new Delta(feed.getString("revision"), fresh, seen);
+        return new Delta(feed.optString("revision", ""), fresh, seen);
     }
 
     static String summary(JSONObject feed) {
         validate(feed);
-        JSONArray tasks = feed.getJSONArray("tasks");
-        JSONArray runs = feed.getJSONArray("runs");
+        JSONArray tasks = feed.optJSONArray("tasks");
+        JSONArray runs = feed.optJSONArray("runs");
         StringBuilder output = new StringBuilder();
         if (tasks.length() == 0) output.append("尚無手機任務。 ");
         for (int index = tasks.length() - 1; index >= 0 && index >= tasks.length() - 20; index--) {
@@ -51,8 +51,24 @@ final class BrainFeedState {
             output.append("• ").append(task.optString("title", task.optString("stable_id", "TASK")))
                     .append(" · ").append(task.optString("lifecycle_status", "unknown"));
         }
+        JSONObject capabilityRuntime = feed.optJSONObject("capability_runtime");
+        if (capabilityRuntime != null) {
+            JSONArray capabilities = capabilityRuntime.optJSONArray("capabilities");
+            JSONArray certifications = capabilityRuntime.optJSONArray("certifications");
+            int active = 0;
+            if (certifications != null) {
+                for (int index = 0; index < certifications.length(); index++) {
+                    JSONObject certification = certifications.optJSONObject(index);
+                    if (certification != null && "active".equals(certification.optString("status", ""))) active++;
+                }
+            }
+            output.append("\n\n能力：").append(capabilities == null ? 0 : capabilities.length())
+                    .append(" · 有效認證：").append(active)
+                    .append(" · 訓練通過：").append(capabilityRuntime.optInt("passed_training_records", 0));
+        }
+        String revision = feed.optString("revision", "");
         output.append("\n\nRUN：").append(runs.length()).append(" · Feed：")
-                .append(feed.getString("revision"), 0, Math.min(10, feed.getString("revision").length()));
+                .append(revision, 0, Math.min(10, revision.length()));
         return output.toString();
     }
 
