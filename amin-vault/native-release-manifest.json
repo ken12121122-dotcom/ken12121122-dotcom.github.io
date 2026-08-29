@@ -1,25 +1,22 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "candidate",
+  "channel": "bridge",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.15-rc5-bridge79",
-  "latestVersionCode": 175,
+  "latestVersionName": "0.11.14-bridge74",
+  "latestVersionCode": 170,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.15-rc5-bridge79.apk",
-  "apkSha256": "f9a259d7456c8397b4f0776973eaf0af9464468c783a58860d4d0223f1aecb48",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.14-bridge74.apk",
+  "apkSha256": "05fa5bbb1790f9b2fdd493199d46a91fcd8de10ad543a60751cd60b048dfd1fb",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2790910,
-  "publishedAt": "2026-08-29T09:27:29Z",
+  "sizeBytes": 2787454,
+  "publishedAt": "2026-08-29T10:34:30Z",
   "mandatory": false,
   "releaseNotes": [
-    "候選測試版：Evidence-only Scanner / Dynamic Graph 整合。",
-    "修正 Evidence-only review：即使 canonical NODE / CONNECT 為 0，只要 reverse-discovery anchor Evidence 已驗證且 revision 一致，確認 revision 仍可執行。",
-    "Graph 保持單一 force renderer，但加入弱中心重力、較低排斥力、速度上限與較強阻尼，避免未連接節點持續向外漂移。",
-    "semantic anchor 僅用於初始位置，不再有個別節點固定回拉；拖放後 NODE 重新自由參與 force layout。",
-    "Source Review 不建立第二張 canvas、不畫固定 CONNECT；COMMAND Evidence 不足時維持 COMMAND GAP。",
-    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。"
+    "新增 GitHub 架構同步入口與同步狀態畫面。",
+    "新增 GitHub 原生能力唯讀目錄與手機功能架構脈絡。",
+    "保留既有 Registry、Connect、Gate、Command 權限邊界。"
   ]
 }
