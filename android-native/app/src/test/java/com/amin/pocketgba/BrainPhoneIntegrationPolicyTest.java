@@ -50,9 +50,18 @@ public class BrainPhoneIntegrationPolicyTest {
     }
 
     private static String read(String relative) throws Exception {
-        Path working = Paths.get(System.getProperty("user.dir"));
-        Path app = Files.isRegularFile(working.resolve("app/build.gradle"))
-                ? working.resolve("app") : working.resolve("android-native/app");
-        return new String(Files.readAllBytes(app.resolve(relative)), StandardCharsets.UTF_8);
+        Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        while (current != null) {
+            Path directApp = current.resolve("app");
+            Path repositoryApp = current.resolve("android-native/app");
+            if (Files.isRegularFile(directApp.resolve("build.gradle"))) {
+                return new String(Files.readAllBytes(directApp.resolve(relative)), StandardCharsets.UTF_8);
+            }
+            if (Files.isRegularFile(repositoryApp.resolve("build.gradle"))) {
+                return new String(Files.readAllBytes(repositoryApp.resolve(relative)), StandardCharsets.UTF_8);
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("Cannot locate android-native/app from user.dir");
     }
 }
