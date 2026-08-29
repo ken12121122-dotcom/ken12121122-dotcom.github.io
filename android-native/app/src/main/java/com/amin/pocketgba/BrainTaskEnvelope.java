@@ -26,7 +26,7 @@ final class BrainTaskEnvelope {
     private final JSONObject json;
 
     private BrainTaskEnvelope(JSONObject json) {
-        this.json = new JSONObject(json.toString());
+        this.json = BrainJson.copy(json);
     }
 
     static BrainTaskEnvelope create(UUID goalId, UUID taskId, UUID clientNonce,
@@ -80,7 +80,7 @@ final class BrainTaskEnvelope {
         return new BrainTaskEnvelope(value);
     }
 
-    JSONObject json() { return new JSONObject(json.toString()); }
+    JSONObject json() { return BrainJson.copy(json); }
     String title() { return json.getString("title"); }
     String taskUuid() { return json.getString("task_id"); }
     String goalUuid() { return json.getString("goal_id"); }

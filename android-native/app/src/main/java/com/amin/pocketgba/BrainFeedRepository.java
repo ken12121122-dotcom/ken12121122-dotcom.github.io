@@ -75,11 +75,11 @@ final class BrainFeedRepository {
         private final String summary;
         Refresh(boolean changed, JSONObject feed, String summary) {
             this.changed = changed;
-            this.feed = feed == null ? null : new JSONObject(feed.toString());
+            this.feed = BrainJson.copy(feed);
             this.summary = summary;
         }
         boolean changed() { return changed; }
-        JSONObject feed() { return feed == null ? null : new JSONObject(feed.toString()); }
+        JSONObject feed() { return BrainJson.copy(feed); }
         String summary() { return summary; }
     }
 }

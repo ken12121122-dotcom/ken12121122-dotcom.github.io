@@ -112,10 +112,10 @@ final class GitHubBrainApi {
         private final JSONObject feed;
         FeedResponse(boolean changed, String etag, JSONObject feed) {
             this.changed = changed; this.etag = etag == null ? "" : etag;
-            this.feed = feed == null ? null : new JSONObject(feed.toString());
+            this.feed = BrainJson.copy(feed);
         }
         boolean changed() { return changed; }
         String etag() { return etag; }
-        JSONObject feed() { return feed == null ? null : new JSONObject(feed.toString()); }
+        JSONObject feed() { return BrainJson.copy(feed); }
     }
 }
