@@ -15,7 +15,9 @@ final class IndexerEvidenceAdapter {
 
     static JSONObject toCanonical(JSONObject input) {
         try {
-            if (input == null || !FORMAT.equals(input.optString("format", ""))) {
+            if (input == null
+                    || !FORMAT.equals(input.optString("format", ""))
+                    || input.optInt("version", -1) != VERSION) {
                 return CanonicalEvidenceAdapter.empty();
             }
 
