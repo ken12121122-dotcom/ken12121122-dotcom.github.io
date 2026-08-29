@@ -56,6 +56,8 @@ Android WebView 的 `navigator.getGamepads()` 可能是空的。不要因此判�
 
 APK 權威檔案：`amin-vault/native-release-manifest.json`
 
+所有 Agent 在建立候選 APK、透過手機更新通道驗收或發布正式版本前，必須完整閱讀 `docs/ANDROID_UPDATE_CHANNEL_PLAYBOOK.md`；不得以 Debug artifact 取代永久簽章更新流程。
+
 - package：`com.amin.pocketgba`
 - verified latest：`0.9.2-bridge16`
 - verified code：`112`
