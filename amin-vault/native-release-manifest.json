@@ -4,19 +4,20 @@
   "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.15-rc1-bridge75",
-  "latestVersionCode": 171,
+  "latestVersionName": "0.11.15-rc2-bridge76",
+  "latestVersionCode": 172,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.15-rc1-bridge75.apk",
-  "apkSha256": "ed7e270cb7e0256d2226486afae40058722c7775299b4a80e469e61ac95f7d61",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.15-rc2-bridge76.apk",
+  "apkSha256": "9c9359e1cbb21b36ff4442c9b47cf44826722a7cf014418e65dc3316b6237869",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2790825,
-  "publishedAt": "2026-08-29T00:24:14Z",
+  "sizeBytes": 2792822,
+  "publishedAt": "2026-08-29T07:50:31Z",
   "mandatory": false,
   "releaseNotes": [
-    "候選測試版：Scanner Reverse Discovery v1。",
-    "從 Scanner Skill Anchor 依真實 Evidence 反向追蹤來源。",
-    "找不到正式 Command Evidence 時必須停止於 COMMAND GAP，不建立虛構上游節點。"
+    "候選測試版：Evidence-only Scanner / Dynamic Graph 整合。",
+    "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。",
+    "Scanner 只建立有 Evidence 的 NODE / CONNECT；COMMAND Evidence 不足時維持 COMMAND GAP，不補造權限或治理關係。",
+    "Graph 使用唯一原始動態 force layout，重複掃描不建立重複 identity，Evidence 消失時標記 stale。"
   ]
 }
