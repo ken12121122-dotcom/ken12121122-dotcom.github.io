@@ -88,7 +88,7 @@ jobs:
           set -euxo pipefail
           npm install --prefix tools/tree-sitter-scanner --ignore-scripts=false --no-audit --no-fund
 
-      - name: Prove Scanner caller with Tree-sitter
+      - name: Prove Scanner caller and architecture layers with Tree-sitter
         shell: bash
         run: |
           set -euxo pipefail
@@ -108,7 +108,26 @@ jobs:
           assert rel['verification'] == 'ast_verified'
           assert rel['evidence']['nodeType'] == 'method_invocation'
           assert rel['to'] == 'function:WikiGraphActivity.requestCloudSourceSync'
+
+          expected = {
+            'command': 'VoiceCommandCatalog',
+            'capability': 'CapabilitySourceMap',
+            'registry': 'NodeRegistry',
+            'governance': 'RegistryApprovalActivity',
+            'permission': 'PermissionCenterActivity',
+          }
+          artifacts = {a['layer']: a for a in data['artifacts']}
+          assert set(artifacts) == set(expected)
+          for layer, class_name in expected.items():
+            item = artifacts[layer]
+            assert item['className'] == class_name
+            assert item['verification'] == 'ast_verified'
+            assert item['authorityVerified'] is False
+            assert item['declaration']['nodeType'] in ('class_declaration', 'interface_declaration', 'enum_declaration')
+            assert isinstance(item['references'], list)
+
           assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
+          assert not any(a.get('authorityVerified') for a in data['artifacts'])
           print(json.dumps(data, ensure_ascii=False, indent=2))
           PY
 
