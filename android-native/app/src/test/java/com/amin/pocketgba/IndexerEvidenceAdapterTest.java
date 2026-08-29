@@ -45,12 +45,74 @@ public final class IndexerEvidenceAdapterTest {
         }
     }
 
+    @Test public void preservesStructuralReferencesAsDependencyEvidenceOnly() throws Exception {
+        JSONObject input = validInput(new JSONObject(), new JSONObject())
+                .put("artifacts", new JSONArray()
+                        .put(new JSONObject()
+                                .put("layer", "command")
+                                .put("entityId", "source-artifact:VoiceCommandCatalog")
+                                .put("className", "VoiceCommandCatalog")
+                                .put("path", "VoiceCommandCatalog.java")
+                                .put("verification", "ast_verified")
+                                .put("authorityVerified", false)
+                                .put("declaration", new JSONObject().put("nodeType", "class_declaration")))
+                        .put(new JSONObject()
+                                .put("layer", "registry")
+                                .put("entityId", "source-artifact:NodeRegistry")
+                                .put("className", "NodeRegistry")
+                                .put("path", "NodeRegistry.java")
+                                .put("verification", "ast_verified")
+                                .put("authorityVerified", false)
+                                .put("declaration", new JSONObject().put("nodeType", "class_declaration"))))
+                .put("structuralRelations", new JSONArray().put(new JSONObject()
+                        .put("relationId", "relation:references:source-artifact:VoiceCommandCatalog>source-artifact:NodeRegistry")
+                        .put("from", "source-artifact:VoiceCommandCatalog")
+                        .put("to", "source-artifact:NodeRegistry")
+                        .put("type", "references")
+                        .put("relationClass", "DEPENDENCY")
+                        .put("verification", "ast_verified")
+                        .put("authorityVerified", false)
+                        .put("evidence", new JSONObject()
+                                .put("provider", "tree-sitter-java")
+                                .put("path", "SomeMediator.java")
+                                .put("nodeType", "type_identifier"))));
+
+        JSONObject canonical = IndexerEvidenceAdapter.toCanonical(input);
+        JSONArray entities = canonical.getJSONArray("entities");
+        JSONArray relations = canonical.getJSONArray("relations");
+        assertTrue(containsEntity(entities, "source-artifact:VoiceCommandCatalog"));
+        assertTrue(containsEntity(entities, "source-artifact:NodeRegistry"));
+
+        JSONObject structural = findRelation(relations,
+                "relation:references:source-artifact:VoiceCommandCatalog>source-artifact:NodeRegistry");
+        assertEquals("references", structural.getString("type"));
+        assertEquals("DEPENDENCY", structural.getString("relationClass"));
+        assertEquals("ast_verified", structural.getString("verification"));
+        assertFalse(structural.getBoolean("authorityVerified"));
+    }
+
     @Test public void unsupportedIndexerVersionProducesEmptyCanonicalEvidence() throws Exception {
         JSONObject input = validInput(new JSONObject(), new JSONObject());
         input.put("version", IndexerEvidenceAdapter.VERSION + 1);
         JSONObject canonical = IndexerEvidenceAdapter.toCanonical(input);
         assertEquals(0, canonical.getJSONArray("entities").length());
         assertEquals(0, canonical.getJSONArray("relations").length());
+    }
+
+    private static boolean containsEntity(JSONArray entities, String id) {
+        for (int i = 0; i < entities.length(); i++) {
+            JSONObject entity = entities.optJSONObject(i);
+            if (entity != null && id.equals(entity.optString("entityId", ""))) return true;
+        }
+        return false;
+    }
+
+    private static JSONObject findRelation(JSONArray relations, String id) {
+        for (int i = 0; i < relations.length(); i++) {
+            JSONObject relation = relations.optJSONObject(i);
+            if (relation != null && id.equals(relation.optString("relationId", ""))) return relation;
+        }
+        return new JSONObject();
     }
 
     private static JSONObject validInput(JSONObject anchorEvidence, JSONObject relationEvidence) throws Exception {
