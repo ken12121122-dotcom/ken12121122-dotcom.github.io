@@ -26,6 +26,14 @@ public final class GraphSyncEngineTest {
         assertEquals("unchanged", find(second.getJSONArray("entities"), "scanner").getString("change"));
     }
 
+    @Test public void duplicateIncomingIdsCollapseToOneStableEntity() throws Exception {
+        JSONObject input = canonical("r1", true);
+        input.getJSONArray("entities").put(entity("caller", "r1"));
+        JSONObject synced = GraphSyncEngine.sync(null, input, 1000L);
+        assertEquals(2, synced.getJSONArray("entities").length());
+        assertEquals(1, synced.getJSONArray("relations").length());
+    }
+
     @Test public void missingEvidenceBecomesStaleInsteadOfDeletion() throws Exception {
         JSONObject first = GraphSyncEngine.sync(null, canonical("r1", true), 1000L);
         JSONObject second = GraphSyncEngine.sync(first, canonical("r2", false), 2000L);
@@ -38,6 +46,22 @@ public final class GraphSyncEngineTest {
         assertEquals("stale", second.getJSONArray("relations").getJSONObject(0).getString("status"));
         assertEquals(1, second.getJSONObject("syncStats").getInt("entityMissing"));
         assertEquals(1, second.getJSONObject("syncStats").getInt("relationMissing"));
+    }
+
+    @Test public void recoveredEvidenceReturnsSameIdentityToActive() throws Exception {
+        JSONObject first = GraphSyncEngine.sync(null, canonical("r1", true), 1000L);
+        JSONObject missing = GraphSyncEngine.sync(first, canonical("r2", false), 2000L);
+        JSONObject recovered = GraphSyncEngine.sync(missing, canonical("r3", true), 3000L);
+
+        JSONObject caller = find(recovered.getJSONArray("entities"), "caller");
+        assertEquals("caller", caller.getString("entityId"));
+        assertEquals("active", caller.getString("status"));
+        assertEquals(1000L, caller.getLong("firstSeen"));
+        assertEquals(3000L, caller.getLong("lastSeen"));
+        assertEquals("unchanged", caller.getString("change"));
+        assertEquals("active", recovered.getJSONArray("relations").getJSONObject(0).getString("status"));
+        assertEquals(0, recovered.getJSONObject("syncStats").getInt("entityAdded"));
+        assertEquals(2, recovered.getJSONObject("syncStats").getInt("entityKept"));
     }
 
     @Test public void changedEvidenceUpdatesHashWithoutChangingEntityIdentity() throws Exception {
