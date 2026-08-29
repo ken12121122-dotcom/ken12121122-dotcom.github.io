@@ -6,14 +6,15 @@ import android.webkit.WebView;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-/** Loads optional graph visualization overlays without changing Registry/runtime authority. */
+/**
+ * Injects non-rendering graph support only.
+ *
+ * There is exactly one visual layout authority: amin-wiki-graph/index.html.
+ * Scanner/source tooling may review evidence but must not create another canvas or layout engine.
+ */
 final class GraphArchitectureVisibilityInjector {
     private static final String[] ASSETS = new String[] {
-            "amin-wiki-graph/architecture-visibility.js",
-            "amin-wiki-graph/capability-semantic-zoom.js",
-            "amin-wiki-graph/github-native-capabilities.js",
-            "amin-wiki-graph/source-review.js",
-            "amin-wiki-graph/github-bootstrap-gate.js"
+            "amin-wiki-graph/source-review.js"
     };
 
     private GraphArchitectureVisibilityInjector() { }
