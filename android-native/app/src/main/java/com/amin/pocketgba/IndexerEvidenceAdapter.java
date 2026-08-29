@@ -58,7 +58,7 @@ final class IndexerEvidenceAdapter {
                     String title = to;
                     if (evidence != null) {
                         String callerSymbol = clean(evidence.optString("callerSymbol", ""));
-                        if (!callerSymbol.isEmpty()) title = callerSymbol.replace('.', ' · ');
+                        if (!callerSymbol.isEmpty()) title = callerSymbol.replace(".", " · ");
                     }
                     addEntity(entities, entityIds, to, title, "source", from, verification, evidence, revision, provider);
                     String relationId = clean(source.optString("relationId", source.optString("id", "")));
