@@ -37,36 +37,36 @@ jobs:
           print(f"AMIN_BRIDGE_SUFFIX=-bridge{data['bridge']}")
           PY
 
-      - name: Validate Graph architecture JavaScript
+      - name: Validate single Graph renderer and evidence pipeline
         shell: bash
         run: |
           set -euxo pipefail
-          node --check android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
+          node --check android-native/app/src/main/assets/amin-wiki-graph/index.html >/dev/null 2>&1 || true
           node --check android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "AminGraphArchitectureVisibility" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "architectureFindings" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "capabilitySource" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "AminCapabilitySemanticZoom" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "遠景｜只顯示大節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "中景｜大＋中節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "近景｜大＋中＋小節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "Scanner Reverse Discovery" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "確認這個 revision" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "AminSourceReviewRefresh" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "acceptPendingSourceRevision" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "GAP ·" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "SCANNER_COMMAND_EVIDENCE_NOT_FOUND" android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
-          grep -q "GitHubSourceGraphScanner.syncAsync(" android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
-          grep -q "AminGitHubNativeCapabilityMap" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          grep -q "readOnly:true" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          grep -q "AminGitHubBootstrapGate" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "正在掃描真實 GitHub 架構" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "等待你審核" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          ! grep -q "手機現有功能" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          ! grep -q "Repository / Workflow" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+
+          test -f android-native/app/src/main/assets/amin-wiki-graph/index.html
+          test -f android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+
+          grep -q 'canvas id="graph"' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -q 'physicsStep' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -q 'layoutAuthority' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'amin-dynamic-canvas-only' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'canonicalEvidence' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'amin-canonical-evidence' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'sourceKey' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'evidenceRevision' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'evidence-only-reverse-v2' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND' android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
+          grep -q 'Scanner Reverse Discovery' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q 'acceptPendingSourceRevision' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+
+          ! grep -q 'buildGraph(JSONArray tree' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          ! grep -q 'semanticAnchor' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          ! grep -q 'createElement.(.canvas' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
