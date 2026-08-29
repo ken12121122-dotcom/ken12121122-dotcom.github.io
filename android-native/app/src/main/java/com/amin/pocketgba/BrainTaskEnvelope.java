@@ -60,33 +60,33 @@ final class BrainTaskEnvelope {
             }
             capabilities.put(capability);
         }
-        JSONObject target = new JSONObject()
-                .put("repository", TARGET_REPOSITORY)
-                .put("base_branch", TARGET_BASE_BRANCH)
-                .put("allowed_path_prefixes", new JSONArray().put(ALLOWED_PATH_PREFIX));
-        JSONObject value = new JSONObject()
-                .put("format", "amin-brain-task-request")
-                .put("version", 1)
-                .put("goal_id", goalId.toString())
-                .put("task_id", taskId.toString())
-                .put("title", safeTitle)
-                .put("specification", safeSpecification)
-                .put("target", target)
-                .put("requested_agent", agent)
-                .put("required_capabilities", capabilities)
-                .put("max_attempts", maximumAttempts)
-                .put("created_at", createdAt.toString())
-                .put("client_nonce", clientNonce.toString());
+        JSONObject target = BrainJson.object(
+                "repository", TARGET_REPOSITORY,
+                "base_branch", TARGET_BASE_BRANCH,
+                "allowed_path_prefixes", new JSONArray().put(ALLOWED_PATH_PREFIX));
+        JSONObject value = BrainJson.object(
+                "format", "amin-brain-task-request",
+                "version", 1,
+                "goal_id", goalId.toString(),
+                "task_id", taskId.toString(),
+                "title", safeTitle,
+                "specification", safeSpecification,
+                "target", target,
+                "requested_agent", agent,
+                "required_capabilities", capabilities,
+                "max_attempts", maximumAttempts,
+                "created_at", createdAt.toString(),
+                "client_nonce", clientNonce.toString());
         return new BrainTaskEnvelope(value);
     }
 
     JSONObject json() { return BrainJson.copy(json); }
-    String title() { return json.getString("title"); }
-    String taskUuid() { return json.getString("task_id"); }
-    String goalUuid() { return json.getString("goal_id"); }
+    String title() { return BrainJson.requiredString(json, "title"); }
+    String taskUuid() { return BrainJson.requiredString(json, "task_id"); }
+    String goalUuid() { return BrainJson.requiredString(json, "goal_id"); }
 
     String issueBody() {
-        return "<!-- amin-brain-task:v1 -->\n```json\n" + json.toString(2) + "\n```";
+        return "<!-- amin-brain-task:v1 -->\n```json\n" + BrainJson.pretty(json) + "\n```";
     }
 
     private static String required(String value, String label, int maximum) {
