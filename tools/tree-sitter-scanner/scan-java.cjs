@@ -7,8 +7,17 @@ const Java = require('tree-sitter-java');
 const toolPackage = require('./package.json');
 
 const repoRoot = path.resolve(process.argv[2] || '.');
-const scannerPath = 'android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java';
-const callerPath = 'android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java';
+const javaRoot = 'android-native/app/src/main/java/com/amin/pocketgba';
+const scannerPath = `${javaRoot}/GitHubSourceGraphScanner.java`;
+const callerPath = `${javaRoot}/WikiGraphActivity.java`;
+
+const architectureLayers = [
+  { layer: 'command', className: 'VoiceCommandCatalog', path: `${javaRoot}/VoiceCommandCatalog.java` },
+  { layer: 'capability', className: 'CapabilitySourceMap', path: `${javaRoot}/CapabilitySourceMap.java` },
+  { layer: 'registry', className: 'NodeRegistry', path: `${javaRoot}/NodeRegistry.java` },
+  { layer: 'governance', className: 'RegistryApprovalActivity', path: `${javaRoot}/RegistryApprovalActivity.java` },
+  { layer: 'permission', className: 'PermissionCenterActivity', path: `${javaRoot}/PermissionCenterActivity.java` }
+];
 
 const parser = new Parser();
 parser.setLanguage(Java);
@@ -42,6 +51,16 @@ function findMethod(source, methodName) {
   return { tree, node: found };
 }
 
+function findClass(source, className) {
+  const tree = parser.parse(source);
+  let found = null;
+  walk(tree.rootNode, (node) => {
+    if (found || (node.type !== 'class_declaration' && node.type !== 'interface_declaration' && node.type !== 'enum_declaration')) return;
+    if (fieldText(node, 'name', source) === className) found = node;
+  });
+  return { tree, node: found };
+}
+
 function findInvocation(source, ownerName, methodName) {
   const tree = parser.parse(source);
   let found = null;
@@ -62,6 +81,38 @@ function findInvocation(source, ownerName, methodName) {
   return { tree, node: found, enclosingMethod };
 }
 
+function javaFiles(dir) {
+  const absolute = path.join(repoRoot, dir);
+  const out = [];
+  for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
+    const relative = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...javaFiles(relative));
+    else if (entry.isFile() && entry.name.endsWith('.java')) out.push(relative);
+  }
+  return out;
+}
+
+function identifierReferences(className) {
+  const refs = [];
+  for (const relative of javaFiles(javaRoot)) {
+    const source = read(relative);
+    const tree = parser.parse(source);
+    walk(tree.rootNode, (node) => {
+      if (node.type !== 'identifier' && node.type !== 'type_identifier') return;
+      if (text(node, source) !== className) return;
+      refs.push({
+        path: relative,
+        nodeType: node.type,
+        startIndex: node.startIndex,
+        endIndex: node.endIndex,
+        startPosition: node.startPosition,
+        endPosition: node.endPosition
+      });
+    });
+  }
+  return refs;
+}
+
 const scannerSource = read(scannerPath);
 const callerSource = read(callerPath);
 const scannerMethod = findMethod(scannerSource, 'syncAsync');
@@ -73,6 +124,30 @@ if (!invocation.enclosingMethod) throw new Error('TREE_SITTER_CALLER_METHOD_NOT_
 
 const callerMethodName = fieldText(invocation.enclosingMethod, 'name', callerSource);
 if (!callerMethodName) throw new Error('TREE_SITTER_CALLER_METHOD_NAME_MISSING');
+
+const artifacts = architectureLayers.map((candidate) => {
+  const source = read(candidate.path);
+  const declaration = findClass(source, candidate.className);
+  if (!declaration.node) throw new Error(`TREE_SITTER_LAYER_DECLARATION_NOT_FOUND:${candidate.layer}`);
+  const references = identifierReferences(candidate.className)
+    .filter((ref) => !(ref.path === candidate.path && ref.startIndex >= declaration.node.startIndex && ref.endIndex <= declaration.node.endIndex));
+  return {
+    layer: candidate.layer,
+    entityId: `source-artifact:${candidate.className}`,
+    className: candidate.className,
+    path: candidate.path,
+    verification: 'ast_verified',
+    authorityVerified: false,
+    declaration: {
+      nodeType: declaration.node.type,
+      startIndex: declaration.node.startIndex,
+      endIndex: declaration.node.endIndex,
+      startPosition: declaration.node.startPosition,
+      endPosition: declaration.node.endPosition
+    },
+    references
+  };
+});
 
 const revision = process.env.GITHUB_SHA || '';
 const output = {
@@ -119,12 +194,13 @@ const output = {
       }
     }
   ],
+  artifacts,
   gaps: [
     {
       after: `function:WikiGraphActivity.${callerMethodName}`,
       expectedLayer: 'command',
       code: 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND',
-      reason: 'Tree-sitter proves the Java caller relation only; it does not prove formal COMMAND ownership.'
+      reason: 'Tree-sitter proves the Java caller relation and architecture declarations/references only; it does not prove formal COMMAND ownership.'
     }
   ]
 };
