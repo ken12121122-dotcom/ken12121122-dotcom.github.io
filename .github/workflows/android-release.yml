@@ -188,6 +188,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin main
+          git reset --hard HEAD
+          git clean -fd
           git checkout -B main origin/main
           mkdir -p amin-vault/releases
           cp "$STAGE/$AMIN_RELEASE_NAME" "amin-vault/releases/$AMIN_RELEASE_NAME"
