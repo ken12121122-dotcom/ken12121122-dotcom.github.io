@@ -9,117 +9,155 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
+import java.net.URLEncoder;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Public GitHub tree scanner that rebuilds a review-only Source Graph snapshot. */
+/**
+ * GitHub evidence collector for Scanner reverse discovery.
+ *
+ * Scanner providers are merged into one canonical evidence batch before sync. This allows
+ * authority-layer probes to run in one scan cycle without adding another graph or fabricating
+ * semantic links that are not evidenced.
+ */
 final class GitHubSourceGraphScanner {
     static final String REPOSITORY = "ken12121122-dotcom/ken12121122-dotcom.github.io";
-    static final String BRANCH = "release/android";
-    private static final String TREE_URL = "https://api.github.com/repos/ken12121122-dotcom/ken12121122-dotcom.github.io/git/trees/release/android?recursive=1";
-    private static final String JAVA_ROOT = "android-native/app/src/main/java/com/amin/pocketgba/";
+    static final String DEFAULT_SOURCE_REF = "release/android";
+    static final String SCANNER_ANCHOR_PATH = "android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java";
+    static final String SCANNER_CALLER_PATH = "android-native/app/src/main/java/com/amin/pocketgba/WikiGraphActivity.java";
+    private static final AtomicBoolean SYNC_IN_FLIGHT = new AtomicBoolean(false);
 
     private GitHubSourceGraphScanner() { }
 
     static JSONObject scan() throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(TREE_URL).openConnection();
+        String sourceRef = BuildConfig.SOURCE_REF == null ? "" : BuildConfig.SOURCE_REF.trim();
+        if (sourceRef.isEmpty()) sourceRef = DEFAULT_SOURCE_REF;
+
+        // Revision identity is always an immutable commit SHA. Tree SHA is recorded separately
+        // and must never be compared to CI/indexer commit revisions.
+        String encodedRef = URLEncoder.encode(sourceRef, "UTF-8").replace("+", "%20");
+        JSONObject commitRoot = getJson("https://api.github.com/repos/" + REPOSITORY + "/commits/" + encodedRef,
+                "GITHUB_COMMIT_HTTP_");
+        String revision = commitRoot.optString("sha", "").trim();
+        JSONObject commit = commitRoot.optJSONObject("commit");
+        JSONObject commitTree = commit == null ? null : commit.optJSONObject("tree");
+        String treeRevision = commitTree == null ? "" : commitTree.optString("sha", "").trim();
+        if (revision.isEmpty()) throw new IllegalStateException("GITHUB_COMMIT_REVISION_MISSING");
+        if (treeRevision.isEmpty()) throw new IllegalStateException("GITHUB_TREE_REVISION_MISSING");
+
+        JSONObject treeRoot = getJson(
+                "https://api.github.com/repos/" + REPOSITORY + "/git/trees/" + treeRevision + "?recursive=1",
+                "GITHUB_TREE_HTTP_"
+        );
+        String returnedTreeRevision = treeRoot.optString("sha", "").trim();
+        if (!treeRevision.equals(returnedTreeRevision)) {
+            throw new IllegalStateException("GITHUB_TREE_REVISION_MISMATCH");
+        }
+        JSONArray tree = treeRoot.optJSONArray("tree");
+        if (tree == null) throw new IllegalStateException("GITHUB_TREE_MISSING");
+
+        JSONObject reverseDiscovery = ScannerReverseDiscovery.discover(tree, revision);
+        JSONObject reverseCanonical = CanonicalEvidenceAdapter.fromReverseDiscovery(reverseDiscovery)
+                .put("provider", "github-source-reverse");
+
+        // Probe all known architecture layers from this exact commit/tree snapshot. These are
+        // source artifacts only; they intentionally contain no authority CONNECTs.
+        JSONObject architectureArtifacts = ArchitectureArtifactEvidenceScanner.scan(tree, revision);
+
+        // Live providers available without APK assets. Bundled mature-indexer evidence is merged
+        // later in syncAsync because reading APK assets requires Context.
+        JSONObject canonicalEvidence = CanonicalEvidenceBatchMerger.merge(
+                revision,
+                reverseCanonical,
+                architectureArtifacts
+        );
+        JSONArray canonicalEntities = canonicalEvidence.optJSONArray("entities");
+        if (canonicalEntities == null || canonicalEntities.length() == 0) {
+            throw new IllegalStateException("CANONICAL_EVIDENCE_EMPTY");
+        }
+
+        JSONObject snapshot = new JSONObject()
+                .put("format", SourceGraphContract.FORMAT)
+                .put("version", SourceGraphContract.VERSION)
+                .put("authority", "github-cloud-review")
+                .put("sourceRef", sourceRef)
+                .put("revision", revision)
+                .put("treeRevision", treeRevision)
+                .put("reviewScope", "scanner-evidence-batch-v3")
+                .put("generatedFrom", "github-cloud-evidence")
+                .put("scanMode", "evidence-only-reverse-v2")
+                .put("anchorId", reverseDiscovery.optString("anchorId", ""))
+                .put("entities", new JSONArray())
+                .put("relations", new JSONArray())
+                .put("reverseDiscovery", reverseDiscovery)
+                .put("architectureArtifacts", architectureArtifacts)
+                .put("canonicalEvidence", canonicalEvidence);
+
+        JSONObject normalized = SourceGraphContract.normalize(snapshot);
+        if (!normalized.optBoolean("valid", false)) throw new IllegalStateException("SOURCE_SNAPSHOT_INVALID");
+        normalized.put("sourceRef", sourceRef);
+        normalized.put("treeRevision", treeRevision);
+        return normalized;
+    }
+
+    private static JSONObject getJson(String url, String errorPrefix) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(7000);
         connection.setReadTimeout(10000);
         connection.setRequestProperty("Accept", "application/vnd.github+json");
-        connection.setRequestProperty("User-Agent", "AMIN-Android-SourceGraph");
+        connection.setRequestProperty("User-Agent", "AMIN-Android-EvidenceCollector");
         int code = connection.getResponseCode();
-        if (code < 200 || code >= 300) throw new IllegalStateException("GITHUB_TREE_HTTP_" + code);
+        if (code < 200 || code >= 300) {
+            connection.disconnect();
+            throw new IllegalStateException(errorPrefix + code);
+        }
         StringBuilder raw = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) raw.append(line);
-        } finally { connection.disconnect(); }
-
-        JSONObject treeRoot = new JSONObject(raw.toString());
-        String revision = treeRoot.optString("sha", "").trim();
-        if (revision.isEmpty()) throw new IllegalStateException("GITHUB_TREE_REVISION_MISSING");
-
-        JSONObject graph = buildGraph(treeRoot.optJSONArray("tree"), revision);
-        JSONObject normalized = SourceGraphContract.normalize(graph);
-        if (!normalized.optBoolean("valid", false)) throw new IllegalStateException("SOURCE_GRAPH_INVALID");
-        normalized.put("revision", revision);
-        normalized.put("generatedFrom", "github-cloud-tree");
-        return normalized;
+        } finally {
+            connection.disconnect();
+        }
+        return new JSONObject(raw.toString());
     }
 
     static void syncAsync(Context context, Runnable onFinished) {
         if (context == null) return;
+        if (!SYNC_IN_FLIGHT.compareAndSet(false, true)) {
+            if (onFinished != null) onFinished.run();
+            return;
+        }
         Context app = context.getApplicationContext();
         GitHubSourceSyncState.syncing();
         new Thread(() -> {
             try {
-                JSONObject graph = scan();
-                String revision = graph.optString("revision", "").trim();
-                CloudSourceGraphStore store = new CloudSourceGraphStore(app);
-                store.stage(revision, graph);
+                JSONObject snapshot = scan();
+                String revision = snapshot.optString("revision", "").trim();
+                JSONObject liveCanonical = snapshot.optJSONObject("canonicalEvidence");
+                if (liveCanonical == null) throw new IllegalStateException("CANONICAL_EVIDENCE_MISSING");
+
+                JSONObject bundledCanonical = BundledIndexerEvidenceProvider.loadForRevision(app, revision);
+                JSONObject canonical = CanonicalEvidenceBatchMerger.merge(
+                        revision,
+                        liveCanonical,
+                        bundledCanonical
+                );
+                snapshot.put("bundledIndexerEvidence", bundledCanonical);
+                snapshot.put("canonicalEvidence", canonical);
+                new CloudSourceGraphStore(app).stage(revision, snapshot);
+
+                GraphEvidenceSyncStore syncStore = new GraphEvidenceSyncStore(app);
+                JSONObject previous = syncStore.current();
+                JSONObject next = syncStore.sync(canonical, System.currentTimeMillis());
                 GitHubSourceSyncState.ready(revision);
+
+                GraphGrowthPlaybackController.play(app, previous, next);
             } catch (Exception error) {
+                GraphGrowthPlaybackStore.clear();
                 GitHubSourceSyncState.failed(error);
             } finally {
+                SYNC_IN_FLIGHT.set(false);
                 if (onFinished != null) onFinished.run();
             }
         }, "amin-source-sync").start();
-    }
-
-    private static JSONObject buildGraph(JSONArray tree, String revision) throws Exception {
-        JSONArray entities = new JSONArray();
-        JSONArray relations = new JSONArray();
-        Set<String> ids = new HashSet<>();
-        addEntity(entities, ids, "repo:amin", "repository", "AMIN Repository", REPOSITORY);
-        addEntity(entities, ids, "branch:release-android", "branch", BRANCH, BRANCH);
-        addRelation(relations, "contains", "repo:amin", "branch:release-android");
-
-        String parent = "branch:release-android";
-        String[] dirs = {"android-native", "app", "src", "main", "java", "com", "amin", "pocketgba"};
-        StringBuilder path = new StringBuilder();
-        for (String dir : dirs) {
-            if (path.length() > 0) path.append('/');
-            path.append(dir);
-            String id = "dir:" + path;
-            String title = dir.equals("android-native") ? "Android Application" : dir.equals("app") ? "App Module" : dir.equals("pocketgba") ? "com.amin.pocketgba" : dir;
-            addEntity(entities, ids, id, "directory", title, path.toString());
-            addRelation(relations, "contains", parent, id);
-            parent = id;
-        }
-
-        if (tree != null) {
-            for (int i = 0; i < tree.length(); i++) {
-                JSONObject item = tree.optJSONObject(i);
-                if (item == null || !"blob".equals(item.optString("type", ""))) continue;
-                String filePath = item.optString("path", "");
-                if (!filePath.startsWith(JAVA_ROOT) || !filePath.endsWith(".java")) continue;
-                String relative = filePath.substring(JAVA_ROOT.length());
-                if (relative.contains("/")) continue;
-                String base = relative.substring(0, relative.length() - 5);
-                String fileId = "file:" + filePath;
-                String classId = "class:com.amin.pocketgba." + base;
-                addEntity(entities, ids, fileId, "file", relative, filePath);
-                addEntity(entities, ids, classId, "class", base, filePath);
-                addRelation(relations, "contains", parent, fileId);
-                addRelation(relations, "declares", fileId, classId);
-            }
-        }
-
-        return new JSONObject()
-                .put("format", SourceGraphContract.FORMAT)
-                .put("version", SourceGraphContract.VERSION)
-                .put("authority", "github-cloud-review")
-                .put("revision", revision)
-                .put("entities", entities)
-                .put("relations", relations);
-    }
-
-    private static void addEntity(JSONArray out, Set<String> ids, String id, String type, String title, String path) throws Exception {
-        if (!ids.add(id)) return;
-        out.put(new JSONObject().put("id", id).put("entityType", type).put("title", title).put("path", path));
-    }
-
-    private static void addRelation(JSONArray out, String type, String from, String to) throws Exception {
-        out.put(new JSONObject().put("id", "source:" + type + ":" + from + ">" + to).put("type", type).put("from", from).put("to", to));
     }
 }

@@ -6,6 +6,7 @@ on:
       - release/android
     paths:
       - 'android-native/**'
+      - 'tools/tree-sitter-scanner/**'
       - '.github/workflows/android-ci.yml'
 
 permissions:
@@ -19,10 +20,14 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      AMIN_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
 
     steps:
-      - name: Checkout pull request
+      - name: Checkout pull request head
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Read release metadata
         shell: bash
@@ -37,30 +42,120 @@ jobs:
           print(f"AMIN_BRIDGE_SUFFIX=-bridge{data['bridge']}")
           PY
 
-      - name: Validate Graph architecture JavaScript
+      - name: Validate single Graph renderer and evidence pipeline
         shell: bash
         run: |
           set -euxo pipefail
-          node --check android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
+          node --check android-native/app/src/main/assets/amin-wiki-graph/index.html >/dev/null 2>&1 || true
           node --check android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          node --check android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "AminGraphArchitectureVisibility" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "architectureFindings" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "capabilitySource" android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
-          grep -q "AminCapabilitySemanticZoom" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "遠景｜只顯示大節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "中景｜大＋中節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "近景｜大＋中＋小節點" android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
-          grep -q "待確認 Source 更新" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "確認變更" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "AminSourceReviewRefresh" android-native/app/src/main/assets/amin-wiki-graph/source-review.js
-          grep -q "AminGitHubNativeCapabilityMap" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          grep -q "readOnly:true" android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
-          grep -q "AminGitHubBootstrapGate" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "正在建立 GitHub 架構" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
-          grep -q "手機現有功能" android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+
+          test -f android-native/app/src/main/assets/amin-wiki-graph/index.html
+          test -f android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
+          test ! -f android-native/app/src/main/assets/amin-wiki-graph/github-bootstrap-gate.js
+
+          grep -q 'canvas id="graph"' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -q 'physicsStep' android-native/app/src/main/assets/amin-wiki-graph/index.html
+          grep -q 'layoutAuthority' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'amin-dynamic-canvas-only' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'syncedEvidence' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'GraphEvidenceSyncStore' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'amin-canonical-evidence' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'CanonicalEvidenceBatchMerger' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'BundledIndexerEvidenceProvider' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'scanner-evidence/tree-sitter-scanner.json' android-native/app/src/main/java/com/amin/pocketgba/BundledIndexerEvidenceProvider.java
+          grep -q 'Stable entityId/relationId identity' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceBatchMerger.java
+          grep -q 'amin-indexer-evidence' android-native/app/src/main/java/com/amin/pocketgba/IndexerEvidenceAdapter.java
+          grep -q 'sourceKey' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'evidenceRevision' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
+          grep -q 'amin-synced-graph-evidence' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'firstSeen' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'lastSeen' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'sourceHash' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q '"stale"' android-native/app/src/main/java/com/amin/pocketgba/GraphSyncEngine.java
+          grep -q 'GraphEvidenceSyncStore' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'GraphGrowthPlaybackController.play' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'EVENT_DELAY_MS = 180L' android-native/app/src/main/java/com/amin/pocketgba/GraphGrowthPlaybackController.java
+          grep -q 'ToneGenerator' android-native/app/src/main/java/com/amin/pocketgba/GraphGrowthPlaybackController.java
+          grep -q 'evidence-only-reverse-v2' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND' android-native/app/src/main/java/com/amin/pocketgba/ScannerReverseDiscovery.java
+          grep -q 'BuildConfig.SOURCE_REF' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'treeRevision' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          grep -q 'Scanner Reverse Discovery' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          grep -q 'acceptPendingSourceRevision' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+
+          ! grep -q 'buildGraph(JSONArray tree' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
+          ! grep -q 'semanticAnchor' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          ! grep -q 'createElement.(.canvas' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+
+      - name: Install mature Java AST scanner
+        shell: bash
+        run: |
+          set -euxo pipefail
+          npm install --prefix tools/tree-sitter-scanner --ignore-scripts=false --no-audit --no-fund
+
+      - name: Prove Scanner caller and architecture layers with Tree-sitter
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "$AMIN_SOURCE_REVISION"
+          mkdir -p build/scanner-evidence
+          GITHUB_SHA="$AMIN_SOURCE_REVISION" node tools/tree-sitter-scanner/scan-java.cjs "$GITHUB_WORKSPACE" > build/scanner-evidence/tree-sitter-scanner.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('build/scanner-evidence/tree-sitter-scanner.json')
+          data = json.loads(p.read_text())
+          assert data['revision'] == os.environ['AMIN_SOURCE_REVISION']
+          assert data['provider'] == 'tree-sitter-java'
+          assert data['anchor']['verification'] == 'ast_verified'
+          assert data['anchor']['evidence']['nodeType'] == 'method_declaration'
+          assert len(data['relations']) == 1
+          rel = data['relations'][0]
+          assert rel['type'] == 'invoked_by'
+          assert rel['verification'] == 'ast_verified'
+          assert rel['evidence']['nodeType'] == 'method_invocation'
+          assert rel['to'] == 'function:WikiGraphActivity.requestCloudSourceSync'
+
+          expected = {
+            'command': 'VoiceCommandCatalog',
+            'capability': 'CapabilitySourceMap',
+            'registry': 'NodeRegistry',
+            'governance': 'RegistryApprovalActivity',
+            'permission': 'PermissionCenterActivity',
+          }
+          artifacts = {a['layer']: a for a in data['artifacts']}
+          assert set(artifacts) == set(expected)
+          for layer, class_name in expected.items():
+            item = artifacts[layer]
+            assert item['className'] == class_name
+            assert item['verification'] == 'ast_verified'
+            assert item['authorityVerified'] is False
+            assert item['declaration']['nodeType'] in ('class_declaration', 'interface_declaration', 'enum_declaration')
+            assert isinstance(item['references'], list)
+
+          structural = data['structuralRelations']
+          assert isinstance(structural, list)
+          for relation in structural:
+            assert relation['type'] == 'references'
+            assert relation['verification'] == 'ast_verified'
+            assert relation['authorityVerified'] is False
+            assert relation['from'].startswith('source-artifact:')
+            assert relation['to'].startswith('source-artifact:')
+            assert relation['evidence']['nodeType'] in ('identifier', 'type_identifier')
+
+          assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
+          assert not any(a.get('authorityVerified') for a in data['artifacts'])
+          assert not any(r.get('authorityVerified') for r in structural)
+          print(json.dumps(data, ensure_ascii=False, indent=2))
+          PY
+
+          mkdir -p android-native/app/src/main/assets/scanner-evidence
+          cp build/scanner-evidence/tree-sitter-scanner.json \
+            android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
+          test -s android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -84,10 +179,19 @@ jobs:
             -PAMIN_VERSION_CODE="$AMIN_VERSION_CODE" \
             -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
             -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
+            -PAMIN_SOURCE_REF="$AMIN_SOURCE_REVISION" \
             :app:testDebugUnitTest \
             :app:testBridgeUnitTest \
             :app:lintBridge \
             :app:assembleDebug
+
+      - name: Publish scanner evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: amin-pr-${{ github.event.pull_request.number }}-scanner-evidence
+          path: build/scanner-evidence/tree-sitter-scanner.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish PR test APK
         uses: actions/upload-artifact@v4

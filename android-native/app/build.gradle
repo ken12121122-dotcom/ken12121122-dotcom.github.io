@@ -11,6 +11,7 @@ def aminSigningReady = [aminKeystorePath, aminKeystorePassword, aminKeyAlias, am
 def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '123').toInteger()
 def aminVersionName = providers.gradleProperty('AMIN_VERSION_NAME').orNull ?: '0.9.5'
 def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge27'
+def aminSourceRef = providers.gradleProperty('AMIN_SOURCE_REF').orNull ?: System.getenv('AMIN_SOURCE_REF') ?: 'release/android'
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
@@ -26,6 +27,7 @@ android {
         manifestPlaceholders = [appLabel: '我是最棒的']
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
         buildConfigField 'String', 'APP_WEB_URL', '"https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1"'
+        buildConfigField 'String', 'SOURCE_REF', '"' + aminSourceRef.replace('\\', '\\\\').replace('"', '\\"') + '"'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
