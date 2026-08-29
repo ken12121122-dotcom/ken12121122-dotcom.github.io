@@ -1,9 +1,9 @@
 {
-  "versionCode": 173,
-  "versionName": "0.11.15-rc3",
+  "versionCode": 174,
+  "versionName": "0.11.15-rc4",
   "channel": "candidate",
-  "bridge": 77,
-  "releaseSequence": 11,
+  "bridge": 78,
+  "releaseSequence": 12,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -12,6 +12,7 @@
     "候選測試版：Evidence-only Scanner / Dynamic Graph 整合。",
     "移除 Source Review 的第二張固定 overlay renderer；Review 面板只顯示 Evidence，不建立節點、不畫固定連線。",
     "確認 revision 後立即關閉 Review 面板，並防止同一已接受 revision 因週期 refresh 再次彈出。",
+    "移除主 Graph 的持續 semantic anchor 回拉力；semantic anchor 僅用於初始位置，拖放後 NODE 重新自由參與 force layout，CONNECT 隨端點移動。",
     "所有 Evidence NODE / CONNECT 只交給唯一原始 Dynamic Graph Engine；COMMAND Evidence 不足時維持 COMMAND GAP。",
     "Tree-sitter Evidence 與 Runtime Scanner 綁定同一 immutable commit revision，revision 不一致時拒絕合併。"
   ]
