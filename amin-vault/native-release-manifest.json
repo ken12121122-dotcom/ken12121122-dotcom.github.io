@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.14-bridge74.apk",
-  "apkSha256": "597912f575253c7c2dae578c6fd728890c152146d436446601b96e2db6c03afd",
+  "apkSha256": "fa264c96785c3d776c53803e42b9f7bf957b2b543a3fe355bc48d4c2f19f7454",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 2787454,
-  "publishedAt": "2026-08-29T10:44:52Z",
+  "publishedAt": "2026-08-29T10:49:03Z",
   "mandatory": false,
   "releaseNotes": [
     "新增 GitHub 架構同步入口與同步狀態畫面。",
