@@ -31,6 +31,7 @@ public class GitHubBrainApiTest {
     public void publishesIssueThenApprovesWithSeparateLabelRequest() throws Exception {
         FakeTransport transport = new FakeTransport()
                 .reply(201, "{\"number\":17,\"html_url\":\"https://github.com/private/issues/17\"}")
+                .reply(404, "{}")
                 .reply(200, "[{\"name\":\"agent-approved\"}]");
         GitHubBrainApi api = new GitHubBrainApi(transport, "owner-token");
         BrainTaskEnvelope envelope = BrainTaskEnvelope.create(UUID.randomUUID(), UUID.randomUUID(),
@@ -41,8 +42,19 @@ public class GitHubBrainApiTest {
         assertEquals("POST", transport.requests.get(0).method());
         assertTrue(transport.requests.get(0).url().endsWith("/issues"));
         assertTrue(transport.requests.get(0).body().contains("amin-brain-task:v1"));
-        assertTrue(transport.requests.get(1).url().endsWith("/issues/17/labels"));
-        assertTrue(transport.requests.get(1).body().contains("agent-approved"));
+        assertEquals("DELETE", transport.requests.get(1).method());
+        assertTrue(transport.requests.get(1).url().endsWith("/issues/17/labels/agent-approved"));
+        assertTrue(transport.requests.get(2).url().endsWith("/issues/17/labels"));
+        assertTrue(transport.requests.get(2).body().contains("agent-approved"));
+    }
+
+    @Test
+    public void ownerCanSendSeparateAuditableCancellationLabel() throws Exception {
+        FakeTransport transport = new FakeTransport().reply(404, "{}")
+                .reply(200, "[{\"name\":\"agent-cancel\"}]");
+        new GitHubBrainApi(transport, "owner-token").cancelIssue(17);
+        assertEquals("DELETE", transport.requests.get(0).method());
+        assertTrue(transport.requests.get(1).body().contains("agent-cancel"));
     }
 
     @Test

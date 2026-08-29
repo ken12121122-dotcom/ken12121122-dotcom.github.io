@@ -33,6 +33,9 @@ public class BrainPhoneIntegrationPolicyTest {
         assertFalse(api.contains("/pulls"));
         assertFalse(api.contains("/secrets"));
         assertTrue(api.contains("amin-agent-control"));
+        assertTrue(api.contains("cancelIssue"));
+        assertTrue(activity.contains("取消上次任務"));
+        assertTrue(activity.contains("capabilitiesInput.setText(\"android:ui\")"));
     }
 
     @Test

@@ -46,11 +46,23 @@ final class GitHubBrainApi {
     }
 
     void approveIssue(int issueNumber) throws Exception {
+        replaceActionLabel(issueNumber, "agent-approved", "私人任務批准失敗");
+    }
+
+    void cancelIssue(int issueNumber) throws Exception {
+        replaceActionLabel(issueNumber, "agent-cancel", "私人任務取消失敗");
+    }
+
+    private void replaceActionLabel(int issueNumber, String label, String message) throws Exception {
         if (issueNumber <= 0) throw new IllegalArgumentException("Issue 編號無效。 ");
-        JSONObject body = new JSONObject().put("labels", new JSONArray().put("agent-approved"));
-        GitHubHttpResponse response = request("POST", REPOSITORY_PATH + "/issues/" + issueNumber + "/labels",
-                body.toString(), "application/vnd.github+json");
-        success(response, 200, "私人任務批准失敗");
+        GitHubHttpResponse removed = request("DELETE", REPOSITORY_PATH + "/issues/" + issueNumber
+                + "/labels/" + URLEncoder.encode(label, "UTF-8"), "", "application/vnd.github+json");
+        if (!(removed.statusCode() == 200 || removed.statusCode() == 204 || removed.statusCode() == 404)) {
+            throw new IllegalStateException(message + "（HTTP " + removed.statusCode() + "）");
+        }
+        JSONObject body = new JSONObject().put("labels", new JSONArray().put(label));
+        success(request("POST", REPOSITORY_PATH + "/issues/" + issueNumber + "/labels",
+                body.toString(), "application/vnd.github+json"), 200, message);
     }
 
     FeedResponse fetchMobileFeed(String etag) throws Exception {

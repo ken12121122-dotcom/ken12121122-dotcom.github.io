@@ -70,6 +70,7 @@ public final class BrainControlActivity extends Activity {
     private Button connectButton;
     private Button openGitHubButton;
     private Button approveLastButton;
+    private Button cancelLastButton;
     private Button publishButton;
     private Button publishApproveButton;
     private Button refreshButton;
@@ -158,8 +159,9 @@ public final class BrainControlActivity extends Activity {
         specificationInput = input("清楚描述要新增或修改的 App 功能。不要貼 API key、token 或私密金鑰。", true);
         specificationInput.setMinLines(5);
         taskCard.addView(specificationInput, top(4));
-        taskCard.addView(label("需要的能力（逗號分隔，可留空）"), top(12));
+        taskCard.addView(label("需要的能力（逗號分隔，至少一項）"), top(12));
         capabilitiesInput = input("android:ui, github:issues", false);
+        capabilitiesInput.setText("android:ui");
         taskCard.addView(capabilitiesInput, top(4));
         taskCard.addView(label("主要 Agent"), top(12));
         agentSpinner = new Spinner(this);
@@ -182,6 +184,9 @@ public final class BrainControlActivity extends Activity {
         approveLastButton = secondaryButton("批准上次只發布的任務");
         approveLastButton.setOnClickListener(view -> approveLast());
         taskCard.addView(approveLastButton, top(8));
+        cancelLastButton = secondaryButton("取消上次任務");
+        cancelLastButton.setOnClickListener(view -> cancelLast());
+        taskCard.addView(cancelLastButton, top(8));
         content.addView(taskCard, top(8));
 
         operationStatus = text("建立 Issue 與加入批准標籤是兩個獨立、可稽核動作。", 13f, false, COLOR_MUTED);
@@ -323,6 +328,24 @@ public final class BrainControlActivity extends Activity {
         });
     }
 
+    private void cancelLast() {
+        int issue = uiPreferences.getInt(LAST_ISSUE, 0);
+        if (issue <= 0) {
+            operationStatus.setText("沒有可取消的上次任務。 ");
+            return;
+        }
+        setBusy(true, "正在送出擁有者取消動作…");
+        executor.execute(() -> {
+            try {
+                session.requireVerifiedApi().cancelIssue(issue);
+                runOnUiThread(() -> setBusy(false,
+                        "私人任務 #" + issue + " 已送出取消；TASK identity 不會改變。 "));
+            } catch (Exception error) {
+                runOnUiThread(() -> setBusy(false, safeMessage(error)));
+            }
+        });
+    }
+
     private void refreshFeed(boolean emitNotification) {
         runOnUiThread(() -> {
             refreshButton.setEnabled(false);
@@ -374,6 +397,7 @@ public final class BrainControlActivity extends Activity {
         publishApproveButton.setEnabled(loggedIn);
         refreshButton.setEnabled(loggedIn);
         approveLastButton.setEnabled(loggedIn && uiPreferences.getInt(LAST_ISSUE, 0) > 0);
+        cancelLastButton.setEnabled(loggedIn && uiPreferences.getInt(LAST_ISSUE, 0) > 0);
     }
 
     private List<String> capabilities() {
