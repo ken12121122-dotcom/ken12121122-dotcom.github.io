@@ -165,4 +165,3 @@ next_human_gate：<none or exact phone action>
 - `#111` 驗收與合併完成前，不得在 `release/android` 另寫 Shared Graph Sync Kernel。
 - Shared Kernel 只能抽取已驗證的 stable identity、dedupe、incremental merge、firstSeen、lastSeen 與 stale-on-missing 語義。
 - GitHub Work Observer 必須等 Step 9 Core、9A、9B、9C 與 stale ownership contract 完成後才可開始。
-
