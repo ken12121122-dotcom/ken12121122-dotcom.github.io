@@ -1,0 +1,36 @@
+package com.amin.pocketgba;
+
+import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class BrainAuthSecurityTest {
+    @Test
+    public void apkConfigurationContainsOnlyPublicClientIdAndNoSecretField() throws Exception {
+        String gradle = read("build.gradle");
+        String vault = read("src/main/java/com/amin/pocketgba/BrainTokenVault.java");
+        assertTrue(gradle.contains("AMIN_GITHUB_APP_CLIENT_ID"));
+        assertFalse(gradle.contains("GITHUB_APP_CLIENT_SECRET"));
+        assertFalse(gradle.contains("GITHUB_APP_PRIVATE_KEY"));
+        assertTrue(vault.contains("AndroidKeyStore"));
+        assertTrue(vault.contains("AES/GCM/NoPadding"));
+    }
+
+    @Test
+    public void backupRulesDoNotIncludeBrainAuthenticationPreferences() throws Exception {
+        assertFalse(read("src/main/res/xml/backup_rules.xml").contains("amin_brain_auth"));
+        assertFalse(read("src/main/res/xml/data_extraction_rules.xml").contains("amin_brain_auth"));
+    }
+
+    private static String read(String relative) throws Exception {
+        Path working = Path.of(System.getProperty("user.dir"));
+        Path app = Files.isRegularFile(working.resolve("app/build.gradle"))
+                ? working.resolve("app") : working.resolve("android-native/app");
+        return Files.readString(app.resolve(relative), StandardCharsets.UTF_8);
+    }
+}

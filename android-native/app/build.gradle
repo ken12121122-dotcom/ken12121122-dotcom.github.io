@@ -12,6 +12,7 @@ def aminVersionCode = (providers.gradleProperty('AMIN_VERSION_CODE').orNull ?: '
 def aminVersionName = providers.gradleProperty('AMIN_VERSION_NAME').orNull ?: '0.9.5'
 def aminBridgeSuffix = providers.gradleProperty('AMIN_BRIDGE_SUFFIX').orNull ?: '-bridge27'
 def aminSourceRef = providers.gradleProperty('AMIN_SOURCE_REF').orNull ?: System.getenv('AMIN_SOURCE_REF') ?: 'release/android'
+def aminGitHubAppClientId = providers.gradleProperty('AMIN_GITHUB_APP_CLIENT_ID').orNull ?: System.getenv('AMIN_GITHUB_APP_CLIENT_ID') ?: ''
 def aminBridgeUrl = 'https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1&channel=bridge'
 
 android {
@@ -28,6 +29,8 @@ android {
         buildConfigField 'String', 'NATIVE_UPDATE_MANIFEST_URL', '"https://ken12121122-dotcom.github.io/amin-vault/native-release-manifest.json"'
         buildConfigField 'String', 'APP_WEB_URL', '"https://ken12121122-dotcom.github.io/amin-vault/gba.html?native=1"'
         buildConfigField 'String', 'SOURCE_REF', '"' + aminSourceRef.replace('\\', '\\\\').replace('"', '\\"') + '"'
+        // GitHub App client IDs are public identifiers. Never add a client secret or private key to the APK.
+        buildConfigField 'String', 'AMIN_GITHUB_APP_CLIENT_ID', '"' + aminGitHubAppClientId.replace('\\', '\\\\').replace('"', '\\"') + '"'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
