@@ -3,6 +3,8 @@ package com.amin.pocketgba;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -133,6 +135,27 @@ final class CanonicalEvidenceAdapter {
                     .put("relations", new JSONArray());
         } catch (Exception impossible) {
             return new JSONObject();
+        }
+    }
+
+    /** Evidence-only content fingerprint used by the shared graph kernel adapter. */
+    static String contentFingerprint(JSONObject object) {
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("sourceKey", object.optString("sourceKey", ""));
+            payload.put("from", object.optString("from", ""));
+            payload.put("to", object.optString("to", ""));
+            payload.put("type", object.optString("type", ""));
+            payload.put("verification", object.optString("verification", ""));
+            payload.put("evidence", object.optJSONObject("evidence") == null
+                    ? new JSONObject() : object.optJSONObject("evidence"));
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(payload.toString().getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : digest) hex.append(String.format("%02x", b & 0xff));
+            return hex.toString();
+        } catch (Exception ignored) {
+            return "";
         }
     }
 

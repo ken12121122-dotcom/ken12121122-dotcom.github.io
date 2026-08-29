@@ -78,6 +78,14 @@ public final class GraphSyncEngineTest {
         assertEquals("updated", after.getString("change"));
     }
 
+    @Test public void malformedIncomingEvidencePreservesLastCommittedState() throws Exception {
+        JSONObject first = GraphSyncEngine.sync(null, canonical("r1", true), 1000L);
+        JSONObject malformed = new JSONObject().put("format", "wrong-format");
+        JSONObject second = GraphSyncEngine.sync(first, malformed, 2000L);
+
+        assertEquals(first.toString(), second.toString());
+    }
+
     private static JSONObject canonical(String revision, boolean includeCaller) throws Exception {
         JSONArray entities = new JSONArray().put(entity("scanner", revision));
         JSONArray relations = new JSONArray();
