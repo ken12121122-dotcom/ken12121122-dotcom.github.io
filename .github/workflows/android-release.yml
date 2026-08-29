@@ -1,4 +1,4 @@
-name: Android Candidate / Production Release
+name: Android Production Release
 
 on:
   workflow_dispatch:
@@ -44,6 +44,15 @@ jobs:
           ref: ${{ steps.source.outputs.ref }}
           fetch-depth: 0
 
+      - name: Resolve immutable scanner source revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          REVISION="$(git rev-parse HEAD)"
+          test -n "$REVISION"
+          echo "AMIN_SOURCE_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "Scanner source revision=$REVISION"
+
       - name: Read and validate release metadata
         shell: bash
         run: |
@@ -78,6 +87,36 @@ jobs:
             test "$AMIN_CHANNEL" = 'candidate'
           fi
           echo "Distribution source=$SOURCE_REF channel=$AMIN_CHANNEL versionCode=$AMIN_VERSION_CODE"
+
+      - name: Install mature Java AST scanner
+        shell: bash
+        run: |
+          set -euxo pipefail
+          npm install --prefix tools/tree-sitter-scanner --ignore-scripts=false --no-audit --no-fund
+
+      - name: Package revision-matched Tree-sitter evidence
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "$AMIN_SOURCE_REVISION"
+          mkdir -p build/scanner-evidence
+          GITHUB_SHA="$AMIN_SOURCE_REVISION" node tools/tree-sitter-scanner/scan-java.cjs "$GITHUB_WORKSPACE" \
+            > build/scanner-evidence/tree-sitter-scanner.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('build/scanner-evidence/tree-sitter-scanner.json')
+          data = json.loads(p.read_text())
+          assert data['revision'] == os.environ['AMIN_SOURCE_REVISION']
+          assert data['provider'] == 'tree-sitter-java'
+          assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
+          assert not any(a.get('authorityVerified') for a in data['artifacts'])
+          assert not any(r.get('authorityVerified') for r in data['structuralRelations'])
+          PY
+          mkdir -p android-native/app/src/main/assets/scanner-evidence
+          cp build/scanner-evidence/tree-sitter-scanner.json \
+            android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
+          test -s android-native/app/src/main/assets/scanner-evidence/tree-sitter-scanner.json
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -121,12 +160,13 @@ jobs:
             -PAMIN_VERSION_CODE="$AMIN_VERSION_CODE" \
             -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
             -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
+            -PAMIN_SOURCE_REF="$AMIN_SOURCE_REVISION" \
             :app:testDebugUnitTest \
             :app:testBridgeUnitTest \
             :app:lintBridge \
             :app:assembleBridge
 
-      - name: Verify APK identity and permanent signer
+      - name: Verify APK identity permanent signer and scanner evidence
         shell: bash
         run: |
           set -euxo pipefail
@@ -139,6 +179,15 @@ jobs:
           grep -Fq "$EXPECTED" "$RUNNER_TEMP/android-release-badging.txt"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/android-release-signing.txt"
           grep -Fqi "$AMIN_SIGNER_SHA256" "$RUNNER_TEMP/android-release-signing.txt"
+          unzip -p "$APK" assets/scanner-evidence/tree-sitter-scanner.json > "$RUNNER_TEMP/tree-sitter-scanner.json"
+          test -s "$RUNNER_TEMP/tree-sitter-scanner.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads(Path(os.environ['RUNNER_TEMP'], 'tree-sitter-scanner.json').read_text())
+          assert data['revision'] == os.environ['AMIN_SOURCE_REVISION']
+          assert data['gaps'][0]['code'] == 'SCANNER_COMMAND_EVIDENCE_NOT_FOUND'
+          PY
 
       - name: Create distribution artifact and manifest
         shell: bash
@@ -208,4 +257,5 @@ jobs:
             amin-vault/native-release-manifest.json
             ${{ runner.temp }}/android-release-badging.txt
             ${{ runner.temp }}/android-release-signing.txt
+            ${{ runner.temp }}/tree-sitter-scanner.json
           if-no-files-found: error
