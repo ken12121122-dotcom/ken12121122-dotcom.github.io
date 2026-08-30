@@ -72,6 +72,7 @@ public final class WikiGraphActivity extends Activity {
                 GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
                 requestCloudSourceSync();
+                requestGitHubWorkSync();
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
@@ -92,6 +93,7 @@ public final class WikiGraphActivity extends Activity {
         super.onResume();
         reloadUnifiedGraph();
         requestCloudSourceSync();
+        requestGitHubWorkSync();
     }
 
     @Override protected void onDestroy() {
@@ -125,6 +127,10 @@ public final class WikiGraphActivity extends Activity {
         GitHubSourceGraphScanner.syncAsync(this, () -> runOnUiThread(() -> {
             if (webView != null) webView.evaluateJavascript("window.AminSourceReviewRefresh?AminSourceReviewRefresh():false", null);
         }));
+    }
+
+    private void requestGitHubWorkSync() {
+        GitHubWorkObserver.syncAsync(this, () -> runOnUiThread(this::reloadUnifiedGraph));
     }
 
     private void applyWebTheme() {
@@ -189,6 +195,10 @@ public final class WikiGraphActivity extends Activity {
             return rolledBack;
         }
         @JavascriptInterface public void syncSourceNow() { requestCloudSourceSync(); }
+        @JavascriptInterface public void syncGitHubWorkNow() { requestGitHubWorkSync(); }
+        @JavascriptInterface public String getGitHubWorkSyncJson() {
+            return GitHubWorkSyncState.snapshot().toString();
+        }
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
             return GraphRuntimeEdgeTrace.snapshotJson().toString();
         }
