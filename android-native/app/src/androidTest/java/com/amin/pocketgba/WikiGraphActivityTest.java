@@ -28,11 +28,18 @@ public final class WikiGraphActivityTest {
             assertNotNull(webView.get());
 
             String result = evaluateWhenReady(scenario, webView.get(),
-                    "(()=>{document.getElementById('workBtn').click();return JSON.stringify({"
+                    "(()=>{document.getElementById('workBtn').click();"
+                            + "const manager=document.getElementById('workManager');"
+                            + "const rect=manager.getBoundingClientRect();"
+                            + "return JSON.stringify({"
                             + "canvas:document.querySelectorAll('canvas#graph').length,"
                             + "workButton:!!document.getElementById('workBtn'),"
-                            + "workPanel:document.getElementById('workManager').classList.contains('open'),"
+                            + "workPanel:manager.classList.contains('open'),"
                             + "refresh:!!document.getElementById('workRefresh'),"
+                            + "topClose:!!document.getElementById('workCloseTop'),"
+                            + "safeBottom:rect.bottom<=innerHeight-48,"
+                            + "scrollContain:getComputedStyle(manager).overscrollBehaviorY==='contain',"
+                            + "graphControlsHidden:getComputedStyle(document.querySelector('.nav')).visibility==='hidden',"
                             + "rawLogs:window.AminGraphSmoke.state().rawLogsEnabled,"
                             + "layout:window.AminGraphSmoke.state().layout});})()");
 
@@ -40,6 +47,10 @@ public final class WikiGraphActivityTest {
             assertTrue(result, result.contains("\\\"workButton\\\":true"));
             assertTrue(result, result.contains("\\\"workPanel\\\":true"));
             assertTrue(result, result.contains("\\\"refresh\\\":true"));
+            assertTrue(result, result.contains("\\\"topClose\\\":true"));
+            assertTrue(result, result.contains("\\\"safeBottom\\\":true"));
+            assertTrue(result, result.contains("\\\"scrollContain\\\":true"));
+            assertTrue(result, result.contains("\\\"graphControlsHidden\\\":true"));
             assertTrue(result, result.contains("\\\"rawLogs\\\":false"));
             assertTrue(result, result.contains("single-force-canvas"));
         }

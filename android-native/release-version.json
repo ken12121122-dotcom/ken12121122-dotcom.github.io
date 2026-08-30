@@ -1,17 +1,17 @@
 {
-  "versionCode": 182,
-  "versionName": "0.11.18-rc1",
+  "versionCode": 183,
+  "versionName": "0.11.18-rc2",
   "channel": "candidate",
-  "bridge": 86,
-  "releaseSequence": 20,
+  "bridge": 87,
+  "releaseSequence": 21,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
     "在既有單一 Dynamic Canvas 加入唯讀 GitHub Work 面板，可查看 Repository、Branch、Commit、Issue、Pull Request、Review、CI、Release 與 Artifact。",
-    "支援手動刷新、30 分鐘 stale refresh、partial partition 與 GitHub API rate-limit 狀態，刷新失敗時保留前一份可用 Work Graph。",
-    "CI 失敗只顯示 GitHub Jobs API 提供的 failed job 與 failed step；不下載或摘要 raw logs。",
-    "GitHub 存取固定為公開 repository 的 unauthenticated GET-only，不新增 token、write、merge 或 release 控制能力。"
+    "GitHub Work 面板改用獨立安全捲動區、避開 Android 系統導覽列，並在頂端保留固定關閉按鈕。",
+    "開啟 Work 面板時隱藏背景 Graph 控制鍵，避免滑動時誤觸 Fit、Reset 或底層控制。",
+    "GitHub 存取維持公開 repository 的 unauthenticated GET-only；只顯示 structured failed job／step，不讀 raw logs。"
   ]
 }

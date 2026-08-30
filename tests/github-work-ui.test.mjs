@@ -24,3 +24,13 @@ test('mobile acceptance controls remain read-only and expose required status', (
   assert.match(source, /AminWiki\.syncGitHubWorkNow\(\)/);
   assert.doesNotMatch(source, /workflow_dispatch|mergePullRequest|createRelease|\/logs/);
 });
+
+test('mobile Work manager owns scrolling and avoids Android navigation controls', () => {
+  assert.match(source, /overscroll-behavior-y:contain/);
+  assert.match(source, /bottom:max\(64px,calc\(env\(safe-area-inset-bottom\) \+ 16px\)\)/);
+  assert.match(source, /id="workCloseTop"/);
+  assert.match(source, /id="closePanelTop"/);
+  assert.match(source, /\.manager-open \.nav/);
+  assert.match(source, /\.panel-open \.nav/);
+  assert.match(source, /function openManager\(m\)/);
+});
