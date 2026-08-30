@@ -9,10 +9,10 @@
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.16-bridge84.apk",
-  "apkSha256": "eea8931670731ea77cc041f15c3964986060a72ac847c1946f4bec1b879b8ad6",
+  "apkSha256": "70b448965dd3cfc69492cda327a304ee83b15203cb135bd6885fdef76522dc62",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "sizeBytes": 2795209,
-  "publishedAt": "2026-08-29T12:35:55Z",
+  "publishedAt": "2026-08-30T00:01:38Z",
   "mandatory": false,
   "releaseNotes": [
     "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
