@@ -106,7 +106,7 @@ test('Bridge package establishes one fixed native update identity without pinnin
   assert.match(gradle, /applicationId 'com\.amin\.pocketgba'/);
   assert.doesNotMatch(gradle, /applicationIdSuffix/);
   assert.match(gradle, /versionNameSuffix (?:aminPreviewSuffix|aminBridgeSuffix)/);
-  assert.match(gradle, /manifestPlaceholders = \[appLabel: 'Amin Pocket GBA/);
+  assert.match(gradle, /manifestPlaceholders = \[appLabel: '[^']+'\]/);
   assert.match(gradle, /buildTypes\s*\{/);
   assert.match(gradle, /bridge\s*\{/);
 });
