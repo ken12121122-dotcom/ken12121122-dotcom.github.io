@@ -1,17 +1,17 @@
 {
-  "versionCode": 181,
-  "versionName": "0.11.17",
-  "channel": "bridge",
-  "bridge": 85,
-  "releaseSequence": 19,
+  "versionCode": 183,
+  "versionName": "0.11.19-rc1",
+  "channel": "candidate",
+  "bridge": 87,
+  "releaseSequence": 21,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
-    "以 graph_scope、sync_owner 與 sync_partition 隔離 Knowledge、Work、Bridge、Pull Request、Branch、CI 與人工 Task 的同步生命週期。",
-    "拒絕不同 ownership key 靜默接管既有 stable identity，並保留 Evidence snapshot revision fallback。",
-    "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；已完成原地更新、資料保留與既有 Graph 無退化驗收。"
+    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work，並將 Step 11 Capability Graph v1 inventory 投影到既有 Unified Graph 與單一 Dynamic Canvas。",
+    "Capability、Skill、Workflow、Tool、Connector、Command 與 Certification 共用 capability_id、SharedGraphSyncKernel、既有 identity 與 dedupe，不建立第二套 Graph。",
+    "第一版所有 capability 固定 execution disabled、autonomy none；Certification 必須同時具備 evidence 與 OWNER approval。",
+    "GitHub Work 維持 public GET-only、Raw logs OFF；不新增 token、write、merge、正式發布或 Phase 2 能力。"
   ]
 }

@@ -13,7 +13,7 @@ Last status update: 2026-08-30
 - `main` is primarily the published APK / updater manifest endpoint; it is not the Android development baseline.
 - Current production version: `0.11.17-bridge85`
 - `versionCode`: `181`
-- Last known `release/android` baseline SHA before Phase 1 work: `15296c67f93abf1fa574196385647c7cea7b1051`
+- Latest synchronized `release/android` baseline SHA: `6a2404b06101ada270f126befb74db4fc83761ac`
 - Production workflow: `Android Production Release`
 - Release metadata source: `android-native/release-version.json`
 
@@ -36,10 +36,11 @@ Last status update: 2026-08-30
 
 - Issue #120: Android GitHub Control Layer for mobile Agent operations.
 - Phase 1: read-only GitHub Work Graph observability.
-- Codex completed the first architecture / gap analysis and received approval to begin the minimal Phase 1 implementation.
+- Draft PR #121: `feat/github-control-layer-phase1-readonly`; OWNER phone acceptance completed for the Phase 1 read-only GitHub Work candidate.
 - Issue #123: Step 11 Capability Runtime.
-- Step 11 first slice is limited to executable Capability Graph v1 contract and read-only inventory.
-- Step 11 branch: `feat/step11-capability-runtime-contract`, based on `release/android` SHA `6a2404b06101ada270f126befb74db4fc83761ac`.
+- Draft PR #124: `feat/step11-capability-runtime-contract`, stacked on the accepted PR #121 head.
+- Step 11 first delivery remains limited to the executable Capability Graph v1 contract, governed read-only inventory, and projection into the existing Unified Graph / Dynamic Canvas.
+- Step 11 execution, autonomy, write controls, merge, production release, and Phase 2 remain out of scope.
 
 ### Not complete yet
 
@@ -263,7 +264,8 @@ Codex should:
 - use `feat/github-control-layer-phase1-readonly`
 - implement the OWNER-approved Phase 1 boundary
 - preserve existing Graph / identity / dedupe / Canvas architecture
-- stop and report after a meaningful reviewable implementation slice rather than entering Phase 2 automatically
+- follow the top-level `AGENTS.md` continuous-execution rule and continue through tests / CI fixes
+- stop at the complete OWNER mobile acceptance gate; do not enter Phase 2 automatically
 
 OWNER prefers testing after a complete meaningful function exists, not merely to inspect an intermediate UI.
 

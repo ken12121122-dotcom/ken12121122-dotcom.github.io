@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -72,6 +73,7 @@ public final class WikiGraphActivity extends Activity {
                 GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
                 requestCloudSourceSync();
+                requestGitHubWorkSync(false);
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
@@ -117,14 +119,30 @@ public final class WikiGraphActivity extends Activity {
     }
 
     private void reloadUnifiedGraph() {
-        if (webView == null) return;
-        webView.post(() -> webView.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null));
+        WebView current = webView;
+        if (current == null) return;
+        current.post(() -> {
+            if (webView == current && !isFinishing() && !isDestroyed()) {
+                current.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null);
+            }
+        });
     }
 
     private void requestCloudSourceSync() {
         GitHubSourceGraphScanner.syncAsync(this, () -> runOnUiThread(() -> {
             if (webView != null) webView.evaluateJavascript("window.AminSourceReviewRefresh?AminSourceReviewRefresh():false", null);
         }));
+    }
+
+    private void requestGitHubWorkSync(boolean forced) {
+        Runnable finished = () -> runOnUiThread(() -> {
+            reloadUnifiedGraph();
+            if (webView != null) {
+                webView.evaluateJavascript("window.AminGitHubWorkRefresh?AminGitHubWorkRefresh():false", null);
+            }
+        });
+        if (forced) GitHubWorkObserver.syncAsync(this, finished);
+        else GitHubWorkObserver.syncIfStaleAsync(this, finished);
     }
 
     private void applyWebTheme() {
@@ -189,6 +207,21 @@ public final class WikiGraphActivity extends Activity {
             return rolledBack;
         }
         @JavascriptInterface public void syncSourceNow() { requestCloudSourceSync(); }
+        @JavascriptInterface public void syncGitHubWorkNow() { requestGitHubWorkSync(true); }
+        @JavascriptInterface public String getGitHubWorkSyncJson() {
+            return GitHubWorkSyncState.snapshot(WikiGraphActivity.this).toString();
+        }
+        @JavascriptInterface public boolean openGitHubUrl(String rawUrl) {
+            try {
+                Uri uri = Uri.parse(rawUrl == null ? "" : rawUrl.trim());
+                if (!"https".equalsIgnoreCase(uri.getScheme())
+                        || !"github.com".equalsIgnoreCase(uri.getHost())) return false;
+                runOnUiThread(() -> startActivity(new Intent(Intent.ACTION_VIEW, uri)));
+                return true;
+            } catch (Exception error) {
+                return false;
+            }
+        }
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
             return GraphRuntimeEdgeTrace.snapshotJson().toString();
         }

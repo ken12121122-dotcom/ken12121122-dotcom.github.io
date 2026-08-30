@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - release/android
+      - feat/github-control-layer-phase1-readonly
     paths:
       - 'android-native/**'
       - 'tools/tree-sitter-scanner/**'
@@ -67,6 +68,11 @@ jobs:
           grep -q 'CapabilityInventoryProjector.append' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'SharedGraphSyncKernel.apply' android-native/app/src/main/java/com/amin/pocketgba/CapabilityInventoryStore.java
           grep -q 'put("execution_enabled", false)' android-native/app/src/main/java/com/amin/pocketgba/CapabilityGraphContract.java
+          grep -q 'NodeRegistry.registryJson' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'VoiceCommandCatalog.getCommands' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'NodeRegistry.typedEdgesJson' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'GitHubWorkSyncStore' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
+          grep -q 'SharedGraphSyncKernel.apply' android-native/app/src/main/java/com/amin/pocketgba/GitHubWorkSyncStore.java
           grep -q 'amin-canonical-evidence' android-native/app/src/main/java/com/amin/pocketgba/CanonicalEvidenceAdapter.java
           grep -q 'CanonicalEvidenceBatchMerger' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
           grep -q 'BundledIndexerEvidenceProvider' android-native/app/src/main/java/com/amin/pocketgba/GitHubSourceGraphScanner.java
@@ -96,6 +102,10 @@ jobs:
           ! grep -q 'createElement.(.canvas' android-native/app/src/main/assets/amin-wiki-graph/source-review.js
           ! grep -Eq 'Runtime.getRuntime|ProcessBuilder|workflow_dispatch|mergePullRequest|createRelease' \
             android-native/app/src/main/java/com/amin/pocketgba/Capability*.java
+          ! grep -Eq '/logs|Authorization|workflow_dispatch|/dispatches|/merges' \
+            android-native/app/src/main/java/com/amin/pocketgba/GitHubWork*.java
+          ! grep -Eq 'createElement.*canvas|new Canvas|<canvas' \
+            android-native/app/src/main/java/com/amin/pocketgba/GitHub*.java
 
       - name: Install mature Java AST scanner
         shell: bash
@@ -281,18 +291,18 @@ jobs:
           set -euxo pipefail
           export ANDROID_AVD_HOME="$RUNNER_TEMP/avd"
           mkdir -p "$ANDROID_AVD_HOME"
-          echo no | avdmanager create avd --force --name amin_step11_api35 \
+          echo no | avdmanager create avd --force --name amin_phase1_step11_api35 \
             --package 'system-images;android-35;google_apis;x86_64' --device 'pixel_7'
           nohup env -u RUNNER_TRACKING_ID ANDROID_AVD_HOME="$ANDROID_AVD_HOME" \
-            "$ANDROID_HOME/emulator/emulator" -avd amin_step11_api35 -no-window \
+            "$ANDROID_HOME/emulator/emulator" -avd amin_phase1_step11_api35 -no-window \
             -gpu swiftshader_indirect -accel on -cores 2 -memory 3072 -noaudio \
             -no-boot-anim -no-snapshot -wipe-data -camera-back none \
-            > "$RUNNER_TEMP/step11-emulator.log" 2>&1 &
+            > "$RUNNER_TEMP/phase1-step11-emulator.log" 2>&1 &
           EMULATOR_PID=$!
           adb start-server
           for attempt in $(seq 1 120); do
             if ! kill -0 "$EMULATOR_PID" 2>/dev/null; then
-              cat "$RUNNER_TEMP/step11-emulator.log"
+              cat "$RUNNER_TEMP/phase1-step11-emulator.log"
               exit 1
             fi
             if [ "$(adb get-state 2>/dev/null || true)" = device ] && \
@@ -314,32 +324,38 @@ jobs:
           APP_APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
           TEST_APK='android-native/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
-          "$AAPT" dump badging "$APP_APK" | tee "$RUNNER_TEMP/step11-badging.txt"
-          grep -Fq "package: name='com.amin.pocketgba'" "$RUNNER_TEMP/step11-badging.txt"
-          grep -Fq "launchable-activity:" "$RUNNER_TEMP/step11-badging.txt"
+          "$AAPT" dump badging "$APP_APK" | tee "$RUNNER_TEMP/phase1-step11-badging.txt"
+          grep -Fq "package: name='com.amin.pocketgba'" "$RUNNER_TEMP/phase1-step11-badging.txt"
+          grep -Fq "launchable-activity:" "$RUNNER_TEMP/phase1-step11-badging.txt"
           adb install -r "$APP_APK"
           adb install -r "$TEST_APK"
           adb shell monkey -p com.amin.pocketgba -c android.intent.category.LAUNCHER 1
           adb shell am start -W -a android.intent.action.VIEW -d 'amin-graph://open' \
             -p com.amin.pocketgba | grep -F 'Status: ok'
 
-      - name: Run Step 11 Capability inventory acceptance
+      - name: Run GitHub Work and Step 11 mobile acceptance tests
         shell: bash
         run: |
           set -euxo pipefail
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.WikiGraphActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/phase1-instrumentation.txt"
+          grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/phase1-instrumentation.txt"
           adb shell am instrument -w -r \
             -e class com.amin.pocketgba.CapabilityInventoryActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/step11-instrumentation.txt"
           grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/step11-instrumentation.txt"
 
-      - name: Publish Step 11 emulator acceptance evidence
+      - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
         with:
-          name: amin-pr-${{ github.event.pull_request.number }}-step11-emulator-acceptance
+          name: amin-pr-${{ github.event.pull_request.number }}-phase1-step11-emulator-acceptance
           path: |
-            ${{ runner.temp }}/step11-badging.txt
+            ${{ runner.temp }}/phase1-step11-badging.txt
+            ${{ runner.temp }}/phase1-instrumentation.txt
             ${{ runner.temp }}/step11-instrumentation.txt
-            ${{ runner.temp }}/step11-emulator.log
+            ${{ runner.temp }}/phase1-step11-emulator.log
           if-no-files-found: error
           retention-days: 7
