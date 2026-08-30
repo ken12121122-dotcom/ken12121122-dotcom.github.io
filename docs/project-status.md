@@ -352,3 +352,126 @@ The same evidence model should later support ChatGPT / Engineering Orchestrator 
 - eventually surface those reports directly inside the Android app
 
 Scheduled reporting is a later capability; it is not part of Issue #120 Phase 1.
+
+## 16. Planned roadmap material — Skill Platform / Agent Governance / Memory Intelligence
+
+> Source: recurring GitHub trend intelligence. These items are **roadmap material / backlog inputs**, not active implementation instructions and must not expand Issue #120 Phase 1.
+>
+> Implementation rule: when one of these packages becomes active, first apply the repository's Reference-First process: inspect existing AMIN capability, search mature external references / official SDKs / reusable patterns, verify license and architecture fit, then choose `REUSE -> ADAPT -> EXTEND -> BUILD`. Record material reference evidence in the Issue / PR. Do not create a parallel Graph, identity, dedupe, merge, Canvas, Memory, Agent-status, or permission architecture.
+
+### Package A — Skill Platform
+
+Purpose: establish a stable platform contract so Android, future game-world clients, Personal Skills, Canonical Skills and third-party Creator tooling can refer to the same capability identity rather than inventing client-specific feature models.
+
+Roadmap material:
+
+1. **Skill Manifest / Skill Contract v0.1**
+   - define stable `skill_id`, name, version and developer / owner identity
+   - define profession / category and prerequisites
+   - define capabilities / actions and tool dependencies
+   - define input / output contract
+   - define permission requirements
+   - define Memory read / write scope
+   - allow optional world representation metadata without coupling the core contract to one renderer
+2. **Skill Registry**
+   - one canonical registry for installed / available / enabled skills
+   - preserve stable identity and version provenance
+   - do not use UI navigation state as the source of truth
+3. **Skill Tree projection**
+   - treat the Skill Tree as a product / learning / game-world projection over Skill Registry + prerequisites
+   - do not hard-bind Skill Tree structure one-to-one to Git branches or directory layout
+4. **Canonical Skill vs Personal Skill**
+   - Canonical Skill: reviewed, versioned, supported platform capability
+   - Personal Skill: user-specific composition / workflow built from approved capabilities
+   - a Personal Skill must not silently gain permissions beyond its component capabilities
+
+Guidance before implementation:
+
+- Search existing Agent Skill / plugin manifest specifications before defining a new schema.
+- Prefer an executable / validated contract over documentation-only fields.
+- Keep renderer metadata optional so Android Native UI, a future 3D world, Web or other clients can share the same Skill core.
+- OWNER Gate is required for material security / permission / platform-contract decisions, not for ordinary implementation inside an approved contract.
+
+### Package B — Agent Workforce Contract / Fleet State
+
+Purpose: make Agent execution state a shared platform concept rather than a dashboard-specific UI model.
+
+Roadmap material:
+
+1. Formalize one **Agent Execution Status Contract** shared by Claude Code, Codex, ChatGPT and future Agents.
+2. Reuse / extend the planned status fields in Section 15 rather than introducing a second status schema.
+3. Separate evidence-backed facts from inferred / presentation-only status.
+4. Define a platform-level Fleet State that can later be rendered by Android, Web or a game-world client.
+5. Keep GitHub Evidence traceability for engineering Agents; do not fabricate work state from UI activity alone.
+
+Guidance before implementation:
+
+- Study mature Agent harness / fleet-control patterns for work isolation, status, task ownership, waiting / blocked semantics and evidence provenance.
+- The Android Workforce Dashboard is one projection of Fleet State, not the owner of Fleet State.
+- Do not enter assignment / execution / write control until the corresponding OWNER security gate is approved.
+
+### Package C — Trust & Governance
+
+Purpose: establish a reusable permission and certification model before Agents / Skills can execute increasingly powerful actions.
+
+Roadmap material:
+
+1. Explore a shared permission-level vocabulary equivalent to:
+
+```text
+L0 OBSERVE
+L1 ANALYZE
+L2 PROPOSE
+L3 EXECUTE
+L4 MODIFY
+L5 DESTRUCTIVE / RELEASE
+```
+
+2. Map actual capabilities to explicit permissions rather than trusting a display-level label alone.
+3. Add Skill security / certification gates before third-party or generated Skills can enter the canonical environment.
+4. Future Creator / Developer certification should be evidence-based: training / Quest evidence, Sandbox work, automated tests, security checks, architecture checks and review.
+5. Preserve explicit OWNER gates for destructive, release, credential, security-boundary and high-risk permission changes.
+
+Guidance before implementation:
+
+- Do not interpret the L0-L5 vocabulary as an already-approved authorization implementation; it is a roadmap model to research and validate.
+- Prefer least privilege and capability-specific grants.
+- Generated / Personal Skills remain sandboxed until their permissions and dependencies are known.
+- Third-party Skills must have provenance, version and review evidence before canonical publication.
+
+### Package D — Memory Intelligence / Provenance
+
+Purpose: make future Brain / Memory results explainable and traceable instead of storing decontextualized facts.
+
+Roadmap material:
+
+1. Define Memory provenance fields / relations for source, creation time, producing Agent / conversation, supporting evidence, confidence, relationships and verification state.
+2. Preserve the distinction between user-provided memory, Agent-derived inference and externally retrieved knowledge.
+3. Allow UI / future game-world clients to answer: "Where did this memory come from?" without duplicating the underlying Memory model.
+4. Use provenance to support later consolidation, conflict detection, confidence updates and evidence inspection.
+
+Guidance before implementation:
+
+- First inspect the existing Brain / Neural Memory foundations and current Graph / Evidence models.
+- Extend the canonical Memory architecture when appropriate; do not create a second Memory Graph merely for provenance visualization.
+- External knowledge must retain source / retrieval provenance where technically available.
+
+### Lower-priority research material
+
+- **Architecture / Diagram Skill** — investigate reusable diagram-generation / architecture-documentation Skills; likely `REUSE / ADAPT`, but not a core runtime priority.
+- **Local / device-side Agent runtime** — monitor and research when Android hardware / model constraints justify it; do not force it into the current architecture.
+- **Physical-device Agent control** — retain as future / currently unrelated research unless a concrete product requirement appears.
+
+### Suggested activation order after the current Phase 1 gate
+
+When OWNER chooses to activate these roadmap packages, prefer:
+
+```text
+1. Skill Contract / Registry research
+2. Agent Execution Status Contract / Fleet State
+3. Permission / Governance contract
+4. Memory Provenance
+5. Creator / Certification expansion
+```
+
+This ordering is guidance, not automatic authorization to start a new phase. Each activated package must have an Issue / acceptance boundary and must follow the top-level Agent preflight / continuous-execution rules once its direction is approved.
