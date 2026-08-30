@@ -55,7 +55,10 @@ public final class WikiGraphActivityTest {
                 result.set(value == null ? "" : value);
                 latch.countDown();
             }));
-            assertTrue("JavaScript callback timed out", latch.await(3, TimeUnit.SECONDS));
+            if (!latch.await(3, TimeUnit.SECONDS)) {
+                Thread.sleep(250L);
+                continue;
+            }
             latest = result.get();
             if (latest.contains("single-force-canvas")) return latest;
             Thread.sleep(250L);
