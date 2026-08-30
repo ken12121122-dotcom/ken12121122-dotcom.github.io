@@ -28,6 +28,9 @@ public final class CapabilityInventoryProjectorTest {
         assertFalse(new JSONObject(node.getString("detail")).getBoolean("execution_enabled"));
         assertEquals("not_evaluated", node.getString("trustStatus"));
         assertEquals(0L, node.getLong("trustExpiresAt"));
+        assertEquals(1, node.getJSONArray("sourceRecords").length());
+        assertEquals("voice_command_catalog", node.getJSONArray("sourceRecords")
+                .getJSONObject(0).getString("authority"));
         assertEquals("amin-shared-graph-sync-state",
                 unified.getJSONObject("capabilityInventory").getString("format"));
     }

@@ -48,7 +48,7 @@ public final class CapabilityGraphContractTest {
         JSONObject certified = CapabilityGraphContract.entity("skill:safe", CapabilityGraphContract.SKILL,
                 attributes("skill").put("lifecycle_status", "certified")
                         .put("certification_status", "certified")
-                        .put("certification_evidence", new JSONArray().put("test:42"))
+                        .put("certification_evidence", evidence("test:42"))
                         .put("certification_scope", certificationScope())
                         .put("human_approval", new JSONObject().put("review_status", "approved")));
         assertEquals("certified", certified.getJSONObject("payload").getString("certification_status"));
@@ -61,7 +61,7 @@ public final class CapabilityGraphContractTest {
             CapabilityGraphContract.entity("skill:no-scope", CapabilityGraphContract.SKILL,
                     attributes("skill").put("lifecycle_status", "certified")
                             .put("certification_status", "certified")
-                            .put("certification_evidence", new JSONArray().put("test:42"))
+                            .put("certification_evidence", evidence("test:42"))
                             .put("human_approval", new JSONObject().put("review_status", "approved")));
             fail("Expected certification scope gate");
         } catch (IllegalArgumentException expected) {
@@ -74,6 +74,28 @@ public final class CapabilityGraphContractTest {
                 CapabilityGraphContract.CAPABILITY, "certified_by", "cert:42",
                 CapabilityGraphContract.CERTIFICATION, new JSONObject());
         assertFalse(relation.getJSONObject("payload").getBoolean("execution_enabled"));
+    }
+
+    @Test public void rejectsUninspectableSourceAndCertificationEvidence() throws Exception {
+        try {
+            CapabilityGraphContract.entity("tool:no-source", CapabilityGraphContract.TOOL,
+                    attributes("tool").put("source_records", new JSONArray().put("unstructured")));
+            fail("Expected source evidence gate");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("CAPABILITY_SOURCE_REQUIRED", expected.getMessage());
+        }
+
+        try {
+            CapabilityGraphContract.entity("skill:no-evidence-source", CapabilityGraphContract.SKILL,
+                    attributes("skill").put("lifecycle_status", "certified")
+                            .put("certification_status", "certified")
+                            .put("certification_evidence", new JSONArray().put("unstructured"))
+                            .put("certification_scope", certificationScope())
+                            .put("human_approval", new JSONObject().put("review_status", "approved")));
+            fail("Expected structured certification evidence gate");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("CERTIFICATION_REQUIRES_APPROVAL_AND_EVIDENCE", expected.getMessage());
+        }
     }
 
     @Test public void unregisteredRelationIsRejected() throws Exception {
@@ -123,5 +145,10 @@ public final class CapabilityGraphContractTest {
     private static JSONObject certificationScope() throws Exception {
         return new JSONObject().put("scope_id", "scope:safe").put("version", "1")
                 .put("issued_at", 1000L).put("expires_at", 2000L);
+    }
+
+    private static JSONArray evidence(String sourceId) throws Exception {
+        return new JSONArray().put(new JSONObject()
+                .put("source_id", sourceId).put("authority", "test"));
     }
 }

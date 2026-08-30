@@ -85,8 +85,10 @@ with execution disabled.
 
 ## Source records
 
-Every entity requires at least one source record containing an inspectable
-source ID and authority. The first inventory authorities are the Android
+Every entity requires at least one structured source record containing a
+non-empty `source_id` and `authority`. Certification evidence uses the same
+inspectable structure; unstructured strings or missing authorities reject the
+batch. The first inventory authorities are the Android
 manifest / Node Registry, built-in Voice Command Catalog, and approved Dynamic
 Command Registry.
 
@@ -100,7 +102,12 @@ commands to the existing Unified Graph JSON. It does not choose coordinates,
 create a Canvas, or enable relation execution. Capability relations project
 with their Gate disabled. The existing Canvas may expose a read-only Capability
 manager for filtering and inspection; it is not a second graph or execution
-surface.
+surface. The manager filters type (including Command), lifecycle, and
+certification state. Its detail view renders source records, certification
+evidence, approval state, scope, and expiry as readable fields rather than a
+raw object. An elapsed certification expiry is highlighted as a read-only
+effective status; the stored record is not silently renewed, downgraded, or
+revoked.
 
 ## OWNER gates beyond this slice
 

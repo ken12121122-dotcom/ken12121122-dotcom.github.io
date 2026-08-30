@@ -41,6 +41,10 @@ test('Capability governance stays a read-only manager inside the single Canvas',
   assert.match(canvas, /不可執行、不可自動認證、不可提升 autonomy/);
   assert.match(canvas, /capabilityTypeFilter/);
   assert.match(canvas, /capabilityLifecycleFilter/);
+  assert.match(canvas, /capabilityCertificationFilter/);
+  assert.match(canvas, /<option>COMMAND<\/option>/);
+  assert.match(canvas, /來源紀錄：/);
+  assert.match(canvas, /effectiveCertification/);
   assert.match(canvas, /unsafeCapabilityCount/);
   assert.doesNotMatch(canvas, /id="executeCapability"|id="approveCapability"|id="certifyCapability"/);
 });

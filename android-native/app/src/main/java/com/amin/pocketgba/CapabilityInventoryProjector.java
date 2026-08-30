@@ -32,6 +32,12 @@ final class CapabilityInventoryProjector {
                 String certification = payload.optString("certification_status", "not_certified");
                 JSONObject certificationScope = payload.optJSONObject("certification_scope");
                 if (certificationScope == null) certificationScope = new JSONObject();
+                JSONArray sourceRecords = payload.optJSONArray("source_records");
+                if (sourceRecords == null) sourceRecords = new JSONArray();
+                JSONArray certificationEvidence = payload.optJSONArray("certification_evidence");
+                if (certificationEvidence == null) certificationEvidence = new JSONArray();
+                JSONObject humanApproval = payload.optJSONObject("human_approval");
+                if (humanApproval == null) humanApproval = new JSONObject();
                 nodes.put(new JSONObject()
                         .put("id", id)
                         .put("title", payload.optString("title", id))
@@ -45,8 +51,9 @@ final class CapabilityInventoryProjector {
                                 .put("trust_expires_at", payload.optLong("trust_expires_at", 0L))
                                 .put("autonomy", payload.optString("autonomy_level", "none"))
                                 .put("execution_enabled", payload.optBoolean("execution_enabled", false))
-                                .put("source_records", payload.optJSONArray("source_records") == null
-                                        ? new JSONArray() : payload.optJSONArray("source_records")).toString())
+                                .put("source_records", sourceRecords)
+                                .put("certification_evidence", certificationEvidence)
+                                .put("human_approval", humanApproval).toString())
                         .put("entityType", "capability")
                         .put("nodeType", type.toLowerCase())
                         .put("parentId", "")
@@ -55,6 +62,9 @@ final class CapabilityInventoryProjector {
                         .put("lifecycleStatus", lifecycle)
                         .put("certificationStatus", certification)
                         .put("certificationScope", new JSONObject(certificationScope.toString()))
+                        .put("sourceRecords", new JSONArray(sourceRecords.toString()))
+                        .put("certificationEvidence", new JSONArray(certificationEvidence.toString()))
+                        .put("humanApproval", new JSONObject(humanApproval.toString()))
                         .put("trustStatus", payload.optString("trust_status", "not_evaluated"))
                         .put("trustExpiresAt", payload.optLong("trust_expires_at", 0L))
                         .put("reviewStatus", payload.optString("review_status", ""))

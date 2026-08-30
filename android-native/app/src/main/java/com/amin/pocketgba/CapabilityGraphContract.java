@@ -62,7 +62,7 @@ final class CapabilityGraphContract {
             JSONObject approval = source.optJSONObject("human_approval");
             JSONArray evidence = source.optJSONArray("certification_evidence");
             if (approval == null || !"approved".equals(approval.optString("review_status", ""))
-                    || evidence == null || evidence.length() == 0) {
+                    || !validSourceRecords(evidence)) {
                 throw new IllegalArgumentException("CERTIFICATION_REQUIRES_APPROVAL_AND_EVIDENCE");
             }
             if (!validCertificationScope(certificationScope)) {
@@ -71,7 +71,7 @@ final class CapabilityGraphContract {
         }
 
         JSONArray records = source.optJSONArray("source_records");
-        if (records == null || records.length() == 0) {
+        if (!validSourceRecords(records)) {
             throw new IllegalArgumentException("CAPABILITY_SOURCE_REQUIRED");
         }
         source.put("entity_type", normalizedType)
@@ -163,12 +163,12 @@ final class CapabilityGraphContract {
                 if (!REVIEW_STATUSES.contains(review)) return "INVALID_REVIEW_STATUS";
                 if (!CERTIFICATION_STATUSES.contains(certification)) return "INVALID_CERTIFICATION_STATUS";
                 JSONArray sources = payload.optJSONArray("source_records");
-                if (sources == null || sources.length() == 0) return "CAPABILITY_SOURCE_REQUIRED";
+                if (!validSourceRecords(sources)) return "CAPABILITY_SOURCE_REQUIRED";
                 if ("certified".equals(lifecycle) || "certified".equals(certification)) {
                     JSONObject approval = payload.optJSONObject("human_approval");
                     JSONArray evidence = payload.optJSONArray("certification_evidence");
                     if (approval == null || !"approved".equals(approval.optString("review_status", ""))
-                            || evidence == null || evidence.length() == 0) {
+                            || !validSourceRecords(evidence)) {
                         return "CERTIFICATION_REQUIRES_APPROVAL_AND_EVIDENCE";
                     }
                     if (!validCertificationScope(payload.optJSONObject("certification_scope"))) {
@@ -247,6 +247,16 @@ final class CapabilityGraphContract {
         long issuedAt = scope.optLong("issued_at", 0L);
         long expiresAt = scope.optLong("expires_at", 0L);
         return issuedAt > 0L && expiresAt > issuedAt;
+    }
+
+    private static boolean validSourceRecords(JSONArray records) {
+        if (records == null || records.length() == 0) return false;
+        for (int i = 0; i < records.length(); i++) {
+            JSONObject record = records.optJSONObject(i);
+            if (record == null || clean(record.optString("source_id", "")).isEmpty()
+                    || clean(record.optString("authority", "")).isEmpty()) return false;
+        }
+        return true;
     }
 
     private static String canonicalJson(Object value) throws Exception {
