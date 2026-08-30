@@ -9,9 +9,9 @@
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work，並將 Step 11 Capability Graph v1 inventory 投影到既有 Unified Graph 與單一 Dynamic Canvas。",
+    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work，並在既有單一 Dynamic Canvas 加入可依類型與生命週期篩選的唯讀 Capability 治理面板。",
     "Capability、Skill、Workflow、Tool、Connector、Command 與 Certification 共用 capability_id、SharedGraphSyncKernel、既有 identity 與 dedupe，不建立第二套 Graph。",
-    "第一版所有 capability 固定 execution disabled、autonomy none；Certification 必須同時具備 evidence 與 OWNER approval。",
+    "所有 capability 固定 execution disabled、autonomy none；Certification 必須同時具備 evidence、OWNER approval 與版本化、具到期日的認證範圍。",
     "GitHub Work 維持 public GET-only、Raw logs OFF；不新增 token、write、merge、正式發布或 Phase 2 能力。"
   ]
 }

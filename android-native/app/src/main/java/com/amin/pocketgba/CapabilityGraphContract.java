@@ -35,6 +35,8 @@ final class CapabilityGraphContract {
             "not_certified", "training", "certified", "expired", "suspended", "revoked"));
     private static final Set<String> CAPABILITY_RELATIONS = new HashSet<>(Arrays.asList(
             "contains", "opens", "uses", "reads_from", "writes_to", "executes", "depends_on"));
+    private static final Set<String> CERTIFICATION_RELATIONS = new HashSet<>(Arrays.asList(
+            "certified_by", "certifies"));
 
     private CapabilityGraphContract() { }
 
@@ -53,12 +55,18 @@ final class CapabilityGraphContract {
         if (!CERTIFICATION_STATUSES.contains(certification)) {
             throw new IllegalArgumentException("INVALID_CERTIFICATION_STATUS");
         }
-        if ("certified".equals(lifecycle) || "certified".equals(certification)) {
+        JSONObject certificationScope = source.optJSONObject("certification_scope");
+        if (certificationScope == null) certificationScope = emptyCertificationScope();
+        boolean certified = "certified".equals(lifecycle) || "certified".equals(certification);
+        if (certified) {
             JSONObject approval = source.optJSONObject("human_approval");
             JSONArray evidence = source.optJSONArray("certification_evidence");
             if (approval == null || !"approved".equals(approval.optString("review_status", ""))
                     || evidence == null || evidence.length() == 0) {
                 throw new IllegalArgumentException("CERTIFICATION_REQUIRES_APPROVAL_AND_EVIDENCE");
+            }
+            if (!validCertificationScope(certificationScope)) {
+                throw new IllegalArgumentException("CERTIFICATION_SCOPE_REQUIRED");
             }
         }
 
@@ -71,6 +79,9 @@ final class CapabilityGraphContract {
                 .put("lifecycle_status", lifecycle)
                 .put("review_status", review)
                 .put("certification_status", certification)
+                .put("certification_scope", certificationScope)
+                .put("trust_status", certified ? "time_bounded" : "not_evaluated")
+                .put("trust_expires_at", certified ? certificationScope.optLong("expires_at", 0L) : 0L)
                 .put("autonomy_level", "none")
                 .put("execution_enabled", false);
         return record(id, source);
@@ -92,8 +103,7 @@ final class CapabilityGraphContract {
         if (!TYPES.contains(fromType) || !TYPES.contains(toType)) {
             throw new IllegalArgumentException("UNREGISTERED_CAPABILITY_TYPE");
         }
-        if (!(CAPABILITY.equals(fromType) && CAPABILITY.equals(toType)
-                && CAPABILITY_RELATIONS.contains(relation))) {
+        if (!allowedRelation(fromType, relation, toType)) {
             throw new IllegalArgumentException("UNREGISTERED_CAPABILITY_RELATION");
         }
         JSONObject payload = attributes == null ? new JSONObject() : new JSONObject(attributes.toString());
@@ -161,6 +171,17 @@ final class CapabilityGraphContract {
                             || evidence == null || evidence.length() == 0) {
                         return "CERTIFICATION_REQUIRES_APPROVAL_AND_EVIDENCE";
                     }
+                    if (!validCertificationScope(payload.optJSONObject("certification_scope"))) {
+                        return "CERTIFICATION_SCOPE_REQUIRED";
+                    }
+                    if (!"time_bounded".equals(payload.optString("trust_status", ""))
+                            || payload.optLong("trust_expires_at", 0L) != payload
+                            .getJSONObject("certification_scope").optLong("expires_at", 0L)) {
+                        return "INVALID_TRUST_VALIDITY_WINDOW";
+                    }
+                } else if (!"not_evaluated".equals(payload.optString("trust_status", ""))
+                        || payload.optLong("trust_expires_at", -1L) != 0L) {
+                    return "INVALID_TRUST_VALIDITY_WINDOW";
                 }
                 if (!"none".equals(payload.optString("autonomy_level", ""))
                         || payload.optBoolean("execution_enabled", true)) {
@@ -171,9 +192,9 @@ final class CapabilityGraphContract {
                 JSONObject record = relations.optJSONObject(i);
                 JSONObject payload = record == null ? null : record.optJSONObject("payload");
                 if (payload == null) return "INVALID_CAPABILITY_RELATION";
-                if (!(CAPABILITY.equals(normalizeType(payload.optString("source_type", "")))
-                        && CAPABILITY.equals(normalizeType(payload.optString("target_type", "")))
-                        && CAPABILITY_RELATIONS.contains(payload.optString("relation_semantic", "")))) {
+                if (!allowedRelation(normalizeType(payload.optString("source_type", "")),
+                        payload.optString("relation_semantic", ""),
+                        normalizeType(payload.optString("target_type", "")))) {
                     return "UNREGISTERED_CAPABILITY_RELATION";
                 }
                 if (payload.optBoolean("execution_enabled", true)) return "CAPABILITY_EXECUTION_NOT_ALLOWED";
@@ -201,6 +222,31 @@ final class CapabilityGraphContract {
                 .put("stable_id", stableId)
                 .put("content_fingerprint", contentFingerprint(payload))
                 .put("payload", payload);
+    }
+
+    private static boolean allowedRelation(String sourceType, String semantic, String targetType) {
+        if (CAPABILITY.equals(sourceType) && CAPABILITY.equals(targetType)) {
+            return CAPABILITY_RELATIONS.contains(semantic);
+        }
+        if (!CERTIFICATION_RELATIONS.contains(semantic)) return false;
+        if (CAPABILITY.equals(sourceType) && CERTIFICATION.equals(targetType)) {
+            return "certified_by".equals(semantic);
+        }
+        return CERTIFICATION.equals(sourceType) && CAPABILITY.equals(targetType)
+                && "certifies".equals(semantic);
+    }
+
+    private static JSONObject emptyCertificationScope() throws Exception {
+        return new JSONObject().put("scope_id", "").put("version", "")
+                .put("issued_at", 0L).put("expires_at", 0L);
+    }
+
+    private static boolean validCertificationScope(JSONObject scope) {
+        if (scope == null || clean(scope.optString("scope_id", "")).isEmpty()
+                || clean(scope.optString("version", "")).isEmpty()) return false;
+        long issuedAt = scope.optLong("issued_at", 0L);
+        long expiresAt = scope.optLong("expires_at", 0L);
+        return issuedAt > 0L && expiresAt > issuedAt;
     }
 
     private static String canonicalJson(Object value) throws Exception {

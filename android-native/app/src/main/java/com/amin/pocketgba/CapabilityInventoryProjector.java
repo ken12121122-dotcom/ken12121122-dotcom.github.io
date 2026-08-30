@@ -30,6 +30,8 @@ final class CapabilityInventoryProjector {
                 String type = payload.optString("entity_type", CapabilityGraphContract.CAPABILITY);
                 String lifecycle = payload.optString("lifecycle_status", "approved");
                 String certification = payload.optString("certification_status", "not_certified");
+                JSONObject certificationScope = payload.optJSONObject("certification_scope");
+                if (certificationScope == null) certificationScope = new JSONObject();
                 nodes.put(new JSONObject()
                         .put("id", id)
                         .put("title", payload.optString("title", id))
@@ -38,6 +40,9 @@ final class CapabilityInventoryProjector {
                                 .put("lifecycle", lifecycle)
                                 .put("review_status", payload.optString("review_status", ""))
                                 .put("certification", certification)
+                                .put("certification_scope", certificationScope)
+                                .put("trust_status", payload.optString("trust_status", "not_evaluated"))
+                                .put("trust_expires_at", payload.optLong("trust_expires_at", 0L))
                                 .put("autonomy", payload.optString("autonomy_level", "none"))
                                 .put("execution_enabled", payload.optBoolean("execution_enabled", false))
                                 .put("source_records", payload.optJSONArray("source_records") == null
@@ -49,6 +54,9 @@ final class CapabilityInventoryProjector {
                         .put("capabilityType", type)
                         .put("lifecycleStatus", lifecycle)
                         .put("certificationStatus", certification)
+                        .put("certificationScope", new JSONObject(certificationScope.toString()))
+                        .put("trustStatus", payload.optString("trust_status", "not_evaluated"))
+                        .put("trustExpiresAt", payload.optLong("trust_expires_at", 0L))
                         .put("reviewStatus", payload.optString("review_status", ""))
                         .put("autonomyLevel", payload.optString("autonomy_level", "none"))
                         .put("executionEnabled", payload.optBoolean("execution_enabled", false))

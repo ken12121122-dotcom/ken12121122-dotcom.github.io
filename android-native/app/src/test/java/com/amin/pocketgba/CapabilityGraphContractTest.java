@@ -49,8 +49,31 @@ public final class CapabilityGraphContractTest {
                 attributes("skill").put("lifecycle_status", "certified")
                         .put("certification_status", "certified")
                         .put("certification_evidence", new JSONArray().put("test:42"))
+                        .put("certification_scope", certificationScope())
                         .put("human_approval", new JSONObject().put("review_status", "approved")));
         assertEquals("certified", certified.getJSONObject("payload").getString("certification_status"));
+        assertEquals("time_bounded", certified.getJSONObject("payload").getString("trust_status"));
+        assertEquals(2000L, certified.getJSONObject("payload").getLong("trust_expires_at"));
+    }
+
+    @Test public void certificationRequiresVersionedTimeBoundedScope() throws Exception {
+        try {
+            CapabilityGraphContract.entity("skill:no-scope", CapabilityGraphContract.SKILL,
+                    attributes("skill").put("lifecycle_status", "certified")
+                            .put("certification_status", "certified")
+                            .put("certification_evidence", new JSONArray().put("test:42"))
+                            .put("human_approval", new JSONObject().put("review_status", "approved")));
+            fail("Expected certification scope gate");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("CERTIFICATION_SCOPE_REQUIRED", expected.getMessage());
+        }
+    }
+
+    @Test public void certificationRelationsAreReadOnlyAndExplicitlyRegistered() throws Exception {
+        JSONObject relation = CapabilityGraphContract.relation("rel:cert", "skill:safe",
+                CapabilityGraphContract.CAPABILITY, "certified_by", "cert:42",
+                CapabilityGraphContract.CERTIFICATION, new JSONObject());
+        assertFalse(relation.getJSONObject("payload").getBoolean("execution_enabled"));
     }
 
     @Test public void unregisteredRelationIsRejected() throws Exception {
@@ -95,5 +118,10 @@ public final class CapabilityGraphContractTest {
                 .put("certification_status", "not_certified")
                 .put("source_records", new JSONArray().put(new JSONObject()
                         .put("source_id", source).put("authority", "test")));
+    }
+
+    private static JSONObject certificationScope() throws Exception {
+        return new JSONObject().put("scope_id", "scope:safe").put("version", "1")
+                .put("issued_at", 1000L).put("expires_at", 2000L);
     }
 }

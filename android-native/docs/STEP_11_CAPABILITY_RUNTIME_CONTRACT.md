@@ -72,7 +72,16 @@ not_certified | training | certified | expired | suspended | revoked
 
 Every projected record includes `autonomy_level=none` and
 `execution_enabled=false`. A certified record requires both inspectable
-certification evidence and `human_approval.review_status=approved`.
+certification evidence and `human_approval.review_status=approved`. It also
+requires a versioned, time-bounded `certification_scope` containing `scope_id`,
+`version`, `issued_at`, and `expires_at`. The contract exposes this boundary as
+`trust_status=time_bounded` and `trust_expires_at`; it does not calculate a
+trust score or renew, downgrade, or revoke certification automatically.
+
+Certification relations are explicitly limited to
+`CAPABILITY --certified_by--> CERTIFICATION` and
+`CERTIFICATION --certifies--> CAPABILITY`. They remain read-only and project
+with execution disabled.
 
 ## Source records
 
@@ -89,7 +98,9 @@ committed Capability state.
 `CapabilityInventoryProjector` only adds read-only nodes, relations, and
 commands to the existing Unified Graph JSON. It does not choose coordinates,
 create a Canvas, or enable relation execution. Capability relations project
-with their Gate disabled.
+with their Gate disabled. The existing Canvas may expose a read-only Capability
+manager for filtering and inspection; it is not a second graph or execution
+surface.
 
 ## OWNER gates beyond this slice
 

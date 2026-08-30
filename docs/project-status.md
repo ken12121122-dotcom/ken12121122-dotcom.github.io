@@ -39,7 +39,7 @@ Last status update: 2026-08-30
 - Draft PR #121: `feat/github-control-layer-phase1-readonly`; OWNER phone acceptance completed for the Phase 1 read-only GitHub Work candidate.
 - Issue #123: Step 11 Capability Runtime.
 - Draft PR #124: `feat/step11-capability-runtime-contract`, stacked on the accepted PR #121 head.
-- Step 11 first delivery remains limited to the executable Capability Graph v1 contract, governed read-only inventory, and projection into the existing Unified Graph / Dynamic Canvas.
+- Step 11 first delivery remains limited to the executable Capability Graph v1 contract, governed read-only inventory, versioned time-bounded certification scope, and a filterable read-only manager inside the existing Unified Graph / Dynamic Canvas.
 - Step 11 execution, autonomy, write controls, merge, production release, and Phase 2 remain out of scope.
 
 ### Not complete yet

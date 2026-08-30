@@ -26,6 +26,8 @@ public final class CapabilityInventoryProjectorTest {
         assertEquals("command:open_graph", node.getString("id"));
         assertEquals("none", new JSONObject(node.getString("detail")).getString("autonomy"));
         assertFalse(new JSONObject(node.getString("detail")).getBoolean("execution_enabled"));
+        assertEquals("not_evaluated", node.getString("trustStatus"));
+        assertEquals(0L, node.getLong("trustExpiresAt"));
         assertEquals("amin-shared-graph-sync-state",
                 unified.getJSONObject("capabilityInventory").getString("format"));
     }

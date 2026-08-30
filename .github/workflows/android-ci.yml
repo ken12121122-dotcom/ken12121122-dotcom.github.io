@@ -68,6 +68,8 @@ jobs:
           grep -q 'CapabilityInventoryProjector.append' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'SharedGraphSyncKernel.apply' android-native/app/src/main/java/com/amin/pocketgba/CapabilityInventoryStore.java
           grep -q 'put("execution_enabled", false)' android-native/app/src/main/java/com/amin/pocketgba/CapabilityGraphContract.java
+          grep -q 'CERTIFICATION_SCOPE_REQUIRED' android-native/app/src/main/java/com/amin/pocketgba/CapabilityGraphContract.java
+          grep -q 'CAPABILITY 治理 · 唯讀' android-native/app/src/main/assets/amin-wiki-graph/index.html
           grep -q 'NodeRegistry.registryJson' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'VoiceCommandCatalog.getCommands' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java
           grep -q 'NodeRegistry.typedEdgesJson' android-native/app/src/main/java/com/amin/pocketgba/UnifiedGraphProvider.java

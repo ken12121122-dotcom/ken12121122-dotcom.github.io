@@ -29,11 +29,18 @@ public final class CapabilityInventoryActivityTest {
             assertNotNull(webView.get());
 
             String result = evaluateWhenReady(scenario, webView.get(),
-                    "(()=>JSON.stringify(window.AminGraphSmoke?AminGraphSmoke.state():{}))()");
+                    "(()=>{document.getElementById('capabilityBtn')?.click();"
+                            + "const s=window.AminGraphSmoke?AminGraphSmoke.state():{};"
+                            + "s.capabilityManagerOpen=document.getElementById('capabilityManager')?.classList.contains('open');"
+                            + "s.readOnlyBoundary=document.getElementById('capabilityManager')?.textContent.includes('不可執行');"
+                            + "return JSON.stringify(s)})()");
 
             assertTrue(result, result.contains("\\\"layout\\\":\\\"single-force-canvas\\\""));
             assertTrue(result, result.matches(".*\\\\\"capabilityNodeCount\\\\\":[1-9][0-9]*.*"));
+            assertTrue(result, result.matches(".*\\\\\"capabilityPanelCount\\\\\":[1-9][0-9]*.*"));
             assertTrue(result, result.contains("\\\"unsafeCapabilityCount\\\":0"));
+            assertTrue(result, result.contains("\\\"capabilityManagerOpen\\\":true"));
+            assertTrue(result, result.contains("\\\"readOnlyBoundary\\\":true"));
         }
     }
 

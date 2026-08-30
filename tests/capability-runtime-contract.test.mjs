@@ -6,6 +6,7 @@ const root = new URL('../android-native/app/src/main/java/com/amin/pocketgba/', 
 const contract = readFileSync(new URL('CapabilityGraphContract.java', root), 'utf8');
 const projector = readFileSync(new URL('CapabilityInventoryProjector.java', root), 'utf8');
 const provider = readFileSync(new URL('UnifiedGraphProvider.java', root), 'utf8');
+const canvas = readFileSync(new URL('../android-native/app/src/main/assets/amin-wiki-graph/index.html', import.meta.url), 'utf8');
 
 test('Step 11 reuses the shared kernel and existing Unified Graph projection', () => {
   assert.match(contract, /SharedGraphSyncKernel\.BATCH_FORMAT/);
@@ -28,4 +29,18 @@ test('Capability certification requires evidence and OWNER approval', () => {
   assert.match(contract, /certification_evidence/);
   assert.match(contract, /human_approval/);
   assert.match(contract, /review_status/);
+  assert.match(contract, /certification_scope/);
+  assert.match(contract, /trust_expires_at/);
+  assert.match(contract, /CERTIFICATION_SCOPE_REQUIRED/);
+  assert.match(contract, /certified_by/);
+});
+
+test('Capability governance stays a read-only manager inside the single Canvas', () => {
+  assert.match(canvas, /id="capabilityManager"/);
+  assert.match(canvas, /CAPABILITY 治理 · 唯讀/);
+  assert.match(canvas, /不可執行、不可自動認證、不可提升 autonomy/);
+  assert.match(canvas, /capabilityTypeFilter/);
+  assert.match(canvas, /capabilityLifecycleFilter/);
+  assert.match(canvas, /unsafeCapabilityCount/);
+  assert.doesNotMatch(canvas, /id="executeCapability"|id="approveCapability"|id="certifyCapability"/);
 });
