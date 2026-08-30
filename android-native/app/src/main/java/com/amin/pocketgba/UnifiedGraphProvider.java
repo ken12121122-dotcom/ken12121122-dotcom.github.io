@@ -316,7 +316,7 @@ final class UnifiedGraphProvider {
             projectedRelations++;
         }
 
-        JSONObject sync = GitHubWorkSyncState.snapshot();
+        JSONObject sync = GitHubWorkSyncState.snapshot(context);
         out.put("githubWork", new JSONObject()
                 .put("format", GitHubWorkContract.SCHEMA_VERSION)
                 .put("readOnly", true)
@@ -378,11 +378,13 @@ final class UnifiedGraphProvider {
     }
 
     private static String workStatus(String lifecycle, String syncStatus) {
-        if ("stale".equals(syncStatus) || "queued".equals(lifecycle) || "in_progress".equals(lifecycle)) {
+        if ("stale".equals(syncStatus) || "queued".equals(lifecycle) || "in_progress".equals(lifecycle)
+                || "draft".equals(lifecycle)) {
             return "pending";
         }
         if ("failure".equals(lifecycle) || "failed".equals(lifecycle)
-                || "cancelled".equals(lifecycle) || "timed_out".equals(lifecycle)) return "blocked";
+                || "cancelled".equals(lifecycle) || "timed_out".equals(lifecycle)
+                || "changes_requested".equals(lifecycle) || "expired".equals(lifecycle)) return "blocked";
         return "active";
     }
 

@@ -39,6 +39,26 @@ public final class GitHubWorkContractTest {
         assertEquals("github", batch.getJSONObject("sync_owner").getString("provider"));
     }
 
+    @Test public void workGraphV1AcceptsEveryApprovedPhaseOneNodeType() throws Exception {
+        String[] types = {GitHubWorkContract.REPOSITORY, GitHubWorkContract.BRANCH,
+                GitHubWorkContract.COMMIT, GitHubWorkContract.ISSUE, GitHubWorkContract.PULL_REQUEST,
+                GitHubWorkContract.REVIEW, GitHubWorkContract.WORKFLOW_RUN, GitHubWorkContract.JOB,
+                GitHubWorkContract.RELEASE, GitHubWorkContract.ARTIFACT};
+        for (int i = 0; i < types.length; i++) {
+            JSONObject record = GitHubWorkContract.entity("github:test:" + i, types[i],
+                    String.valueOf(i), types[i], "observed", "", "", new JSONObject());
+            assertEquals(types[i], record.getJSONObject("payload").getString("work_type"));
+        }
+        assertEquals("github:issue:" + REPOSITORY_ID + ":120",
+                GitHubWorkContract.issueId(REPOSITORY_ID, 120));
+        assertEquals("github:review:" + REPOSITORY_ID + ":9",
+                GitHubWorkContract.reviewId(REPOSITORY_ID, 9L));
+        assertEquals("github:release:" + REPOSITORY_ID + ":8",
+                GitHubWorkContract.releaseId(REPOSITORY_ID, 8L));
+        assertEquals("github:artifact:" + REPOSITORY_ID + ":7",
+                GitHubWorkContract.artifactId(REPOSITORY_ID, 7L));
+    }
+
     @Test public void partialPageCannotMarkMissingRecordStale() throws Exception {
         JSONArray initial = new JSONArray()
                 .put(commit("a", "first"))

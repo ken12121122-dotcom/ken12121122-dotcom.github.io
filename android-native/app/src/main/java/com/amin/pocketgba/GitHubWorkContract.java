@@ -21,22 +21,31 @@ final class GitHubWorkContract {
     static final String REPOSITORY = "REPOSITORY";
     static final String BRANCH = "BRANCH";
     static final String COMMIT = "COMMIT";
+    static final String ISSUE = "ISSUE";
     static final String PULL_REQUEST = "PULL_REQUEST";
+    static final String REVIEW = "REVIEW";
     static final String WORKFLOW_RUN = "WORKFLOW_RUN";
     static final String JOB = "JOB";
+    static final String RELEASE = "RELEASE";
+    static final String ARTIFACT = "ARTIFACT";
 
     private static final Set<String> NODE_TYPES = new HashSet<>();
     private static final Set<String> RELATIONS = new HashSet<>();
 
     static {
-        Collections.addAll(NODE_TYPES, REPOSITORY, BRANCH, COMMIT, PULL_REQUEST, WORKFLOW_RUN, JOB);
+        Collections.addAll(NODE_TYPES, REPOSITORY, BRANCH, COMMIT, ISSUE, PULL_REQUEST,
+                REVIEW, WORKFLOW_RUN, JOB, RELEASE, ARTIFACT);
         register(REPOSITORY, "contains", BRANCH);
+        register(REPOSITORY, "contains", ISSUE);
         register(REPOSITORY, "contains", PULL_REQUEST);
+        register(REPOSITORY, "contains", RELEASE);
         register(BRANCH, "points_to", COMMIT);
         register(PULL_REQUEST, "head_commit", COMMIT);
+        register(PULL_REQUEST, "has_review", REVIEW);
         register(PULL_REQUEST, "has_run", WORKFLOW_RUN);
         register(COMMIT, "has_run", WORKFLOW_RUN);
         register(WORKFLOW_RUN, "has_job", JOB);
+        register(WORKFLOW_RUN, "has_artifact", ARTIFACT);
     }
 
     private GitHubWorkContract() { }
@@ -126,11 +135,23 @@ final class GitHubWorkContract {
     static String pullRequestId(long repositoryId, int number) {
         return "github:pr:" + repositoryId + ":" + number;
     }
+    static String issueId(long repositoryId, int number) {
+        return "github:issue:" + repositoryId + ":" + number;
+    }
+    static String reviewId(long repositoryId, long reviewId) {
+        return "github:review:" + repositoryId + ":" + reviewId;
+    }
     static String runId(long repositoryId, long runId) {
         return "github:run:" + repositoryId + ":" + runId;
     }
     static String jobId(long repositoryId, long jobId) {
         return "github:job:" + repositoryId + ":" + jobId;
+    }
+    static String releaseId(long repositoryId, long releaseId) {
+        return "github:release:" + repositoryId + ":" + releaseId;
+    }
+    static String artifactId(long repositoryId, long artifactId) {
+        return "github:artifact:" + repositoryId + ":" + artifactId;
     }
 
     private static JSONObject record(String stableId, JSONObject payload) throws Exception {

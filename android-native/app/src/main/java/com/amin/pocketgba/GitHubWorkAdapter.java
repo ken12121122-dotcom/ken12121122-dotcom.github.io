@@ -33,15 +33,27 @@ final class GitHubWorkAdapter {
         batches.put(commitBatch(repositoryId, repositoryName, repository,
                 observation.optJSONArray("commits"), revision,
                 completeness.optBoolean("commits", false), observedAt));
+        batches.put(issueBatch(repositoryId, repositoryName,
+                observation.optJSONArray("issues"), revision,
+                completeness.optBoolean("issues", false), observedAt));
         batches.put(pullBatch(repositoryId, repositoryName,
                 observation.optJSONArray("pull_requests"), revision,
                 completeness.optBoolean("pull_requests", false), observedAt));
+        batches.put(reviewBatch(repositoryId, repositoryName,
+                observation.optJSONArray("pull_requests"), revision,
+                completeness.optBoolean("reviews", false), observedAt));
         batches.put(runBatch(repositoryId, repositoryName,
                 observation.optJSONArray("workflow_runs"), revision,
                 completeness.optBoolean("workflow_runs", false), observedAt));
         batches.put(jobBatch(repositoryId, repositoryName,
                 observation.optJSONArray("jobs"), revision,
                 completeness.optBoolean("jobs", false), observedAt));
+        batches.put(releaseBatch(repositoryId, repositoryName,
+                observation.optJSONArray("releases"), revision,
+                completeness.optBoolean("releases", false), observedAt));
+        batches.put(artifactBatch(repositoryId, repositoryName,
+                observation.optJSONArray("artifacts"), revision,
+                completeness.optBoolean("artifacts", false), observedAt));
         return batches;
     }
 
@@ -136,9 +148,14 @@ final class GitHubWorkAdapter {
             int number = pull.optInt("number", 0);
             if (number <= 0) continue;
             String prId = GitHubWorkContract.pullRequestId(repositoryId, number);
-            String lifecycle = pull.optBoolean("merged", false) ? "merged" : pull.optString("state", "unknown");
+            String lifecycle = !pull.isNull("merged_at") && !pull.optString("merged_at", "").isEmpty()
+                    ? "merged" : pull.optString("state", "unknown");
             JSONObject head = pull.optJSONObject("head");
             JSONObject base = pull.optJSONObject("base");
+            JSONArray files = pull.optJSONArray("_files");
+            JSONArray reviews = pull.optJSONArray("_reviews");
+            JSONObject fileSummary = fileSummary(files);
+            JSONObject reviewSummary = reviewSummary(reviews);
             entities.put(GitHubWorkContract.entity(prId, GitHubWorkContract.PULL_REQUEST,
                     String.valueOf(number), "PR #" + number + " · " + pull.optString("title", ""),
                     lifecycle, pull.optString("html_url", ""), repoId,
@@ -148,7 +165,14 @@ final class GitHubWorkAdapter {
                             .put("head_ref", head == null ? "" : head.optString("ref", ""))
                             .put("head_sha", head == null ? "" : head.optString("sha", ""))
                             .put("base_ref", base == null ? "" : base.optString("ref", ""))
-                            .put("updated_at", pull.optString("updated_at", ""))));
+                            .put("updated_at", pull.optString("updated_at", ""))
+                            .put("changed_files", fileSummary.optInt("changed_files", 0))
+                            .put("additions", fileSummary.optInt("additions", 0))
+                            .put("deletions", fileSummary.optInt("deletions", 0))
+                            .put("changed_file_names", fileSummary.optJSONArray("file_names"))
+                            .put("review_count", reviewSummary.optInt("review_count", 0))
+                            .put("approval_count", reviewSummary.optInt("approval_count", 0))
+                            .put("changes_requested_count", reviewSummary.optInt("changes_requested_count", 0))));
             relations.put(GitHubWorkContract.relation(
                     "github:relation:repo-pr:" + repositoryId + ":" + number,
                     repoId, GitHubWorkContract.REPOSITORY, "contains",
@@ -163,6 +187,76 @@ final class GitHubWorkAdapter {
             }
         }
         return GitHubWorkContract.batch(repositoryId, name, "pull_requests", revision,
+                complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject issueBatch(long repositoryId, String name, JSONArray input,
+                                         String revision, boolean complete, long observedAt) throws Exception {
+        JSONArray entities = new JSONArray();
+        JSONArray relations = new JSONArray();
+        JSONArray issues = input == null ? new JSONArray() : input;
+        String repoId = GitHubWorkContract.repoId(repositoryId);
+        for (int i = 0; i < issues.length(); i++) {
+            JSONObject issue = issues.optJSONObject(i);
+            if (issue == null || issue.optJSONObject("pull_request") != null) continue;
+            int number = issue.optInt("number", 0);
+            if (number <= 0) continue;
+            String issueId = GitHubWorkContract.issueId(repositoryId, number);
+            entities.put(GitHubWorkContract.entity(issueId, GitHubWorkContract.ISSUE,
+                    String.valueOf(number), "Issue #" + number + " · " + issue.optString("title", ""),
+                    issue.optString("state", "unknown"), issue.optString("html_url", ""), repoId,
+                    new JSONObject()
+                            .put("number", number)
+                            .put("locked", issue.optBoolean("locked", false))
+                            .put("comments", issue.optInt("comments", 0))
+                            .put("created_at", issue.optString("created_at", ""))
+                            .put("updated_at", issue.optString("updated_at", ""))
+                            .put("closed_at", issue.optString("closed_at", ""))));
+            relations.put(GitHubWorkContract.relation(
+                    "github:relation:repo-issue:" + repositoryId + ":" + number,
+                    repoId, GitHubWorkContract.REPOSITORY, "contains",
+                    issueId, GitHubWorkContract.ISSUE, new JSONObject()));
+        }
+        return GitHubWorkContract.batch(repositoryId, name, "issues", revision,
+                complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject reviewBatch(long repositoryId, String name, JSONArray input,
+                                          String revision, boolean complete, long observedAt) throws Exception {
+        JSONArray entities = new JSONArray();
+        JSONArray relations = new JSONArray();
+        JSONArray pulls = input == null ? new JSONArray() : input;
+        for (int i = 0; i < pulls.length(); i++) {
+            JSONObject pull = pulls.optJSONObject(i);
+            int pullNumber = pull == null ? 0 : pull.optInt("number", 0);
+            JSONArray reviews = pull == null ? null : pull.optJSONArray("_reviews");
+            if (pullNumber <= 0 || reviews == null) continue;
+            String prId = GitHubWorkContract.pullRequestId(repositoryId, pullNumber);
+            for (int j = 0; j < reviews.length(); j++) {
+                JSONObject review = reviews.optJSONObject(j);
+                long reviewNumber = review == null ? 0L : review.optLong("id", 0L);
+                if (reviewNumber <= 0L) continue;
+                JSONObject user = review.optJSONObject("user");
+                String state = review.optString("state", "observed").toLowerCase();
+                String reviewId = GitHubWorkContract.reviewId(repositoryId, reviewNumber);
+                entities.put(GitHubWorkContract.entity(reviewId, GitHubWorkContract.REVIEW,
+                        String.valueOf(reviewNumber), "Review · "
+                                + (user == null ? "unknown" : user.optString("login", "unknown"))
+                                + " · " + state, state, review.optString("html_url", ""), prId,
+                        new JSONObject()
+                                .put("review_id", reviewNumber)
+                                .put("pull_number", pullNumber)
+                                .put("reviewer", user == null ? "" : user.optString("login", ""))
+                                .put("state", state)
+                                .put("submitted_at", review.optString("submitted_at", ""))
+                                .put("commit_id", review.optString("commit_id", ""))));
+                relations.put(GitHubWorkContract.relation(
+                        "github:relation:pr-review:" + repositoryId + ":" + pullNumber + ":" + reviewNumber,
+                        prId, GitHubWorkContract.PULL_REQUEST, "has_review",
+                        reviewId, GitHubWorkContract.REVIEW, new JSONObject()));
+            }
+        }
+        return GitHubWorkContract.batch(repositoryId, name, "reviews", revision,
                 complete, entities, relations, observedAt);
     }
 
@@ -252,6 +346,114 @@ final class GitHubWorkAdapter {
         }
         return GitHubWorkContract.batch(repositoryId, name, "jobs", revision,
                 complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject releaseBatch(long repositoryId, String name, JSONArray input,
+                                           String revision, boolean complete, long observedAt) throws Exception {
+        JSONArray entities = new JSONArray();
+        JSONArray relations = new JSONArray();
+        JSONArray releases = input == null ? new JSONArray() : input;
+        String repoId = GitHubWorkContract.repoId(repositoryId);
+        for (int i = 0; i < releases.length(); i++) {
+            JSONObject release = releases.optJSONObject(i);
+            long releaseNumber = release == null ? 0L : release.optLong("id", 0L);
+            if (releaseNumber <= 0L) continue;
+            String releaseId = GitHubWorkContract.releaseId(repositoryId, releaseNumber);
+            String lifecycle = release.optBoolean("draft", false) ? "draft"
+                    : release.optBoolean("prerelease", false) ? "prerelease" : "published";
+            String tag = release.optString("tag_name", "");
+            entities.put(GitHubWorkContract.entity(releaseId, GitHubWorkContract.RELEASE,
+                    String.valueOf(releaseNumber), release.optString("name", tag), lifecycle,
+                    release.optString("html_url", ""), repoId,
+                    new JSONObject()
+                            .put("release_id", releaseNumber)
+                            .put("tag_name", tag)
+                            .put("target_commitish", release.optString("target_commitish", ""))
+                            .put("draft", release.optBoolean("draft", false))
+                            .put("prerelease", release.optBoolean("prerelease", false))
+                            .put("created_at", release.optString("created_at", ""))
+                            .put("published_at", release.optString("published_at", ""))));
+            relations.put(GitHubWorkContract.relation(
+                    "github:relation:repo-release:" + repositoryId + ":" + releaseNumber,
+                    repoId, GitHubWorkContract.REPOSITORY, "contains",
+                    releaseId, GitHubWorkContract.RELEASE, new JSONObject()));
+        }
+        return GitHubWorkContract.batch(repositoryId, name, "releases", revision,
+                complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject artifactBatch(long repositoryId, String name, JSONArray input,
+                                            String revision, boolean complete, long observedAt) throws Exception {
+        JSONArray entities = new JSONArray();
+        JSONArray relations = new JSONArray();
+        JSONArray artifacts = input == null ? new JSONArray() : input;
+        for (int i = 0; i < artifacts.length(); i++) {
+            JSONObject artifact = artifacts.optJSONObject(i);
+            long artifactNumber = artifact == null ? 0L : artifact.optLong("id", 0L);
+            JSONObject workflowRun = artifact == null ? null : artifact.optJSONObject("workflow_run");
+            long runNumber = workflowRun == null ? 0L : workflowRun.optLong("id", 0L);
+            if (artifactNumber <= 0L) continue;
+            String artifactId = GitHubWorkContract.artifactId(repositoryId, artifactNumber);
+            String runId = runNumber <= 0L ? "" : GitHubWorkContract.runId(repositoryId, runNumber);
+            String lifecycle = artifact.optBoolean("expired", false) ? "expired" : "available";
+            entities.put(GitHubWorkContract.entity(artifactId, GitHubWorkContract.ARTIFACT,
+                    String.valueOf(artifactNumber), artifact.optString("name", "Artifact"), lifecycle,
+                    runNumber <= 0L ? "https://github.com/" + name + "/actions"
+                            : "https://github.com/" + name + "/actions/runs/" + runNumber,
+                    runId,
+                    new JSONObject()
+                            .put("artifact_id", artifactNumber)
+                            .put("workflow_run_id", runNumber)
+                            .put("size_in_bytes", artifact.optLong("size_in_bytes", 0L))
+                            .put("expired", artifact.optBoolean("expired", false))
+                            .put("created_at", artifact.optString("created_at", ""))
+                            .put("expires_at", artifact.optString("expires_at", ""))));
+            if (!runId.isEmpty()) {
+                relations.put(GitHubWorkContract.relation(
+                        "github:relation:run-artifact:" + repositoryId + ":" + runNumber + ":" + artifactNumber,
+                        runId, GitHubWorkContract.WORKFLOW_RUN, "has_artifact",
+                        artifactId, GitHubWorkContract.ARTIFACT, new JSONObject()));
+            }
+        }
+        return GitHubWorkContract.batch(repositoryId, name, "artifacts", revision,
+                complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject fileSummary(JSONArray files) throws Exception {
+        JSONArray names = new JSONArray();
+        int additions = 0;
+        int deletions = 0;
+        if (files != null) {
+            for (int i = 0; i < files.length(); i++) {
+                JSONObject file = files.optJSONObject(i);
+                if (file == null) continue;
+                additions += file.optInt("additions", 0);
+                deletions += file.optInt("deletions", 0);
+                if (names.length() < 8) names.put(file.optString("filename", ""));
+            }
+        }
+        return new JSONObject()
+                .put("changed_files", files == null ? 0 : files.length())
+                .put("additions", additions)
+                .put("deletions", deletions)
+                .put("file_names", names);
+    }
+
+    private static JSONObject reviewSummary(JSONArray reviews) throws Exception {
+        int approvals = 0;
+        int changesRequested = 0;
+        if (reviews != null) {
+            for (int i = 0; i < reviews.length(); i++) {
+                JSONObject review = reviews.optJSONObject(i);
+                String state = review == null ? "" : review.optString("state", "");
+                if ("APPROVED".equals(state)) approvals++;
+                if ("CHANGES_REQUESTED".equals(state)) changesRequested++;
+            }
+        }
+        return new JSONObject()
+                .put("review_count", reviews == null ? 0 : reviews.length())
+                .put("approval_count", approvals)
+                .put("changes_requested_count", changesRequested);
     }
 
     private static JSONObject failedStep(JSONArray steps) {

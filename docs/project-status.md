@@ -36,7 +36,8 @@ Last status update: 2026-08-30
 
 - Issue #120: Android GitHub Control Layer for mobile Agent operations.
 - Phase 1: read-only GitHub Work Graph observability.
-- Codex completed the first architecture / gap analysis and received approval to begin the minimal Phase 1 implementation.
+- Draft PR #121: `feat/github-control-layer-phase1-readonly`.
+- Codex completed the architecture / gap analysis and received approval to continue Phase 1 through a complete OWNER mobile acceptance candidate.
 
 ### Not complete yet
 
@@ -260,7 +261,8 @@ Codex should:
 - use `feat/github-control-layer-phase1-readonly`
 - implement the OWNER-approved Phase 1 boundary
 - preserve existing Graph / identity / dedupe / Canvas architecture
-- stop and report after a meaningful reviewable implementation slice rather than entering Phase 2 automatically
+- follow the top-level `AGENTS.md` continuous-execution rule and continue through tests / CI fixes
+- stop at the complete OWNER mobile acceptance gate; do not enter Phase 2 automatically
 
 OWNER prefers testing after a complete meaningful function exists, not merely to inspect an intermediate UI.
 
