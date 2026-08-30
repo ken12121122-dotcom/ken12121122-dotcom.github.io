@@ -2,6 +2,48 @@
 
 新 AI、Codex、ChatGPT 或 GitHub Actions 在修改程式前，必須先完整閱讀本檔。
 
+## Agent 頂層開工契約（最高優先級）
+
+所有 Codex、Claude Code、ChatGPT / Work 或其他工程 Agent 在開始任何 Android 工程任務前，必須完成以下 Preflight。此規則是工程執行入口，不得因單一 Issue、PR、聊天上下文或舊 handoff 而跳過。
+
+1. 完整閱讀 `AGENTS.md`。
+2. 完整閱讀 `docs/project-status.md`，確認目前 production baseline、active phase、OWNER-approved boundary 與 handoff。
+3. 讀取目前 active Issue / requirement。
+4. 若已有 active feature branch / PR，必須讀取其最新 head、diff、comments、CI / checks，不能只依 project-status 推測實作狀態。
+5. 開工前確認正式 `release/android` baseline，並確認自己的工作 branch / PR base 正確。
+6. 若上述文件與實際 code / tests / PR / CI / release manifest 不一致，以可驗證的 GitHub 工程證據為 implementation truth，並先更新或標示 handoff stale。
+
+Agent 在開始實作時必須能確認以下狀態；若任一項不成立，不得宣稱已完成 preflight：
+
+```text
+AGENTS_READ=yes
+PROJECT_STATUS_READ=yes
+ACTIVE_ISSUE_READ=yes
+ACTIVE_PR_READ=yes|not_applicable
+BASELINE_VERIFIED=yes
+```
+
+### OWNER 已核准範圍內的持續執行規則
+
+當 OWNER 已明確核准 scope、architecture boundary 與 security boundary 後，Agent **不得因完成單一 implementation slice、單一 commit、單一測試或單一 UI 畫面就停止並等待 OWNER**。
+
+在已核准範圍內，Agent應持續自行執行：實作 → 測試 → Code Review / static review → 修正一般 implementation gap / bug → 重跑失敗測試或 CI → 繼續實作，直到形成一個完整、可實際操作、值得 OWNER 驗收的 meaningful functional slice。
+
+一般 bug、測試失敗、CI failure、lint/build failure、可在既定架構與權限內修正的 implementation gap，不構成 OWNER 停止點；Agent 應先自行分析與修復。
+
+只有以下 OWNER Gate 可以中止持續執行並要求 OWNER 決策：
+
+- 需要超出已核准 Phase / Issue scope；
+- 需要新增 GitHub write、merge、release、destructive 或 production 權限；
+- 需要改變既定 Graph Engine / stable identity / dedupe / merge / Canvas 等核心 architecture contract；
+- 需要新的 credential、secret、security boundary 或高風險權限決策；
+- 需求之間存在重大且無法安全自行判斷的衝突；
+- 已到達需要 OWNER 真機操作、主觀 UX 判斷或 production approval 才能繼續的驗收閘門。
+
+Agent 的正常停止點不是「完成一個 slice」，而是：已核准範圍內的完整 meaningful function 已實作，必要 automated tests / CI 已通過或已明確證明哪些只能由 OWNER 驗收，且已準備好清楚的 OWNER 測試入口、操作步驟、預期結果與版本/commit 證據。
+
+若 active Issue 或舊 handoff 寫著「完成第一個 reviewable slice 後停下」，而 OWNER 後續已核准本持續執行規則，應以此最新頂層契約為準；仍不得跨越上述 OWNER Gate。
+
 最後人工驗證：2026-07-19，Asia/Taipei  
 Repository：`ken12121122-dotcom/ken12121122-dotcom.github.io`  
 Default branch：`main`
