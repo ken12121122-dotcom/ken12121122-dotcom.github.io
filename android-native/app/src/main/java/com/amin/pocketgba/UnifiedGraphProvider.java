@@ -24,7 +24,7 @@ final class UnifiedGraphProvider {
         context.sendBroadcast(intent);
     }
 
-    static String graphJson(Context context, NodeMetadataStore ignoredNodeStore) {
+    static String graphJson(Context context, NodeMetadataStore nodeStore) {
         try {
             JSONObject out = emptyGraph();
             if (context == null) return out.toString();
@@ -32,14 +32,15 @@ final class UnifiedGraphProvider {
             JSONObject persisted = new GraphEvidenceSyncStore(context).current();
             boolean growthPlayback = GraphGrowthPlaybackStore.isActive();
             JSONObject synced = GraphGrowthPlaybackStore.currentOr(persisted);
-            if (!GraphSyncEngine.FORMAT.equals(synced.optString("format", ""))) return out.toString();
+            if (!GraphSyncEngine.FORMAT.equals(synced.optString("format", ""))) synced = GraphSyncEngine.empty();
             JSONArray syncedEntities = synced.optJSONArray("entities");
-            if (syncedEntities == null || syncedEntities.length() == 0) return out.toString();
 
             JSONArray nodes = out.getJSONArray("nodes");
             JSONArray relations = out.getJSONArray("relations");
+            JSONObject capabilityState = new CapabilityInventoryStore(context).refresh(nodeStore);
+            CapabilityInventoryProjector.append(out, capabilityState);
 
-            for (int i = 0; i < syncedEntities.length(); i++) {
+            for (int i = 0; syncedEntities != null && i < syncedEntities.length(); i++) {
                 JSONObject entity = syncedEntities.optJSONObject(i);
                 if (entity == null) continue;
                 String id = clean(entity.optString("entityId", entity.optString("id", "")));

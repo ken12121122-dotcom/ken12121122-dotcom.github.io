@@ -37,6 +37,9 @@ Last status update: 2026-08-30
 - Issue #120: Android GitHub Control Layer for mobile Agent operations.
 - Phase 1: read-only GitHub Work Graph observability.
 - Codex completed the first architecture / gap analysis and received approval to begin the minimal Phase 1 implementation.
+- Issue #123: Step 11 Capability Runtime.
+- Step 11 first slice is limited to executable Capability Graph v1 contract and read-only inventory.
+- Step 11 branch: `feat/step11-capability-runtime-contract`, based on `release/android` SHA `6a2404b06101ada270f126befb74db4fc83761ac`.
 
 ### Not complete yet
 
