@@ -275,3 +275,80 @@ For ChatGPT / Codex / Claude Code:
 5. Treat code, tests, PR status, workflow runs, and release manifest as authoritative evidence for implementation state.
 6. Update this status document when an architecture decision, production baseline, active phase, or handoff state materially changes.
 7. Do not copy secrets, tokens, private keys, PATs, or credentials into this document.
+
+## 15. Planned roadmap — Agent Workforce / Engineering Dashboard
+
+This is a planned post-Phase-1 capability, not an instruction to interrupt or expand Issue #120. Begin only after the GitHub read-only Control Layer reaches the appropriate OWNER acceptance gate.
+
+Purpose: evolve the Android app from GitHub engineering observability into an OWNER-facing Agent workforce control surface. GitHub remains the engineering source of truth; the app presents traceable Agent status rather than inventing a parallel task system.
+
+### Role ownership
+
+- **ChatGPT — Product Architect / Engineering Orchestrator / Progress Reporter**
+  - discuss product direction with OWNER
+  - translate requirements into scope / contracts / acceptance criteria
+  - route work between Claude Code and Codex
+  - architecture / integration review
+  - summarize GitHub Evidence into OWNER progress reports
+  - define OWNER acceptance flow
+- **Claude Code — UI / Product Engineer**
+  - Android UI / UX
+  - Agent cards, screens, interactions, visual states
+  - presentation and UI-state binding
+  - OWNER Attention presentation
+- **Codex — Backend / Platform Engineer**
+  - GitHub Control Layer and engineering data path
+  - Issue / branch / PR / workflow / checks state
+  - domain / repository / service / parser / cache logic
+  - automated tests / CI / integration validation
+- **OWNER** retains final authority for product direction, subjective UX acceptance, architecture/security boundary changes, destructive/write permissions, merge, and production release.
+
+Agents may make minimal cross-domain changes required to complete an approved task, but must not create competing implementations, duplicate ownership, or parallel Graph / identity / dedupe / merge / Canvas architecture.
+
+### Planned Android capabilities
+
+1. Agent workforce dashboard showing Claude Code, Codex, ChatGPT and future Agents.
+2. Status vocabulary: `working`, `waiting`, `blocked`, `idle`, `review`.
+3. Show current task, Issue, branch, PR, CI/check status and blocker where GitHub Evidence supports them.
+4. OWNER Attention surface showing only decisions or gates that actually require OWNER action.
+5. Tap an Agent to inspect its traceable GitHub evidence chain.
+6. Reuse the existing Work Graph / Unified Graph / Dynamic Canvas and stable identity architecture.
+7. Later phase: mobile assignment / approve / reject / review controls, subject to explicit write/security gates.
+
+### Shared Agent status contract direction
+
+Do not allow Claude Code and Codex to invent separate status schemas. Reuse existing models where possible; otherwise establish one shared executable contract with fields equivalent to:
+
+```text
+agent_id
+agent_type
+role
+issue_number
+branch
+pr_number
+current_task
+status
+ci_status
+blocking_reason
+owner_attention_required
+owner_attention_reason
+started_at
+last_activity_at
+evidence[]
+```
+
+All derived status must remain traceable to GitHub Evidence. UI presentation must not guess engineering state.
+
+### Progress reporting layer
+
+The same evidence model should later support ChatGPT / Engineering Orchestrator progress reporting:
+
+- summarize what Claude Code is working on
+- summarize what Codex is working on
+- show integration / CI health
+- identify blockers
+- identify OWNER Attention
+- support scheduled OWNER engineering reports
+- eventually surface those reports directly inside the Android app
+
+Scheduled reporting is a later capability; it is not part of Issue #120 Phase 1.
