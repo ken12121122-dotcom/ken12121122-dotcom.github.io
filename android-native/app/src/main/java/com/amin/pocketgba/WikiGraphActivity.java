@@ -119,8 +119,13 @@ public final class WikiGraphActivity extends Activity {
     }
 
     private void reloadUnifiedGraph() {
-        if (webView == null) return;
-        webView.post(() -> webView.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null));
+        WebView current = webView;
+        if (current == null) return;
+        current.post(() -> {
+            if (webView == current && !isFinishing() && !isDestroyed()) {
+                current.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null);
+            }
+        });
     }
 
     private void requestCloudSourceSync() {
