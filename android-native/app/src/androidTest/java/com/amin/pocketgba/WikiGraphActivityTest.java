@@ -40,6 +40,7 @@ public final class WikiGraphActivityTest {
                             + "safeBottom:rect.bottom<=innerHeight-48,"
                             + "scrollContain:getComputedStyle(manager).overscrollBehaviorY==='contain',"
                             + "graphControlsHidden:getComputedStyle(document.querySelector('.nav')).visibility==='hidden',"
+                            + "graphControlsRelocated:getComputedStyle(document.querySelector('.nav')).bottom==='auto'&&parseFloat(getComputedStyle(document.querySelector('.nav')).top)>0,"
                             + "rawLogs:window.AminGraphSmoke.state().rawLogsEnabled,"
                             + "layout:window.AminGraphSmoke.state().layout});})()");
 
@@ -51,6 +52,7 @@ public final class WikiGraphActivityTest {
             assertTrue(result, result.contains("\\\"safeBottom\\\":true"));
             assertTrue(result, result.contains("\\\"scrollContain\\\":true"));
             assertTrue(result, result.contains("\\\"graphControlsHidden\\\":true"));
+            assertTrue(result, result.contains("\\\"graphControlsRelocated\\\":true"));
             assertTrue(result, result.contains("\\\"rawLogs\\\":false"));
             assertTrue(result, result.contains("single-force-canvas"));
         }

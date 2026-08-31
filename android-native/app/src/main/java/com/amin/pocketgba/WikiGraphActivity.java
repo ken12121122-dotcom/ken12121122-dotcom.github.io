@@ -14,9 +14,14 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import androidx.core.graphics.Insets;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +53,7 @@ public final class WikiGraphActivity extends Activity {
         AminTheme.Palette palette = AminTheme.palette(this);
         getWindow().setStatusBarColor(palette.background);
         getWindow().setNavigationBarColor(palette.background);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         webView = new WebView(this);
         webView.setBackgroundColor(palette.background);
@@ -78,7 +83,22 @@ public final class WikiGraphActivity extends Activity {
         });
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new WikiBridge(), "AminWiki");
-        setContentView(webView);
+        FrameLayout graphViewport = new FrameLayout(this);
+        graphViewport.setClipToPadding(true);
+        graphViewport.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        ViewCompat.setOnApplyWindowInsetsListener(graphViewport, (view, windowInsets) -> {
+            Insets safe = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout()
+            );
+            view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            return windowInsets;
+        });
+        setContentView(graphViewport);
+        ViewCompat.requestApplyInsets(graphViewport);
         webView.loadUrl("file:///android_asset/amin-wiki-graph/index.html");
 
         IntentFilter filter = new IntentFilter(UnifiedGraphProvider.ACTION_CHANGED);
