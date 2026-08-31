@@ -65,9 +65,13 @@ public final class WikiGraphActivityTest {
             scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
             assertNotNull(webView.get());
 
-            String proposed = evaluateWhenReady(scenario, webView.get(),
-                    "(()=>{localStorage.removeItem('amin-focus-chain-pins-v1');"
-                            + "window.AminReloadUnifiedGraph();"
+            String ready = evaluateWhenReady(scenario, webView.get(),
+                    "JSON.stringify({layout:window.AminGraphSmoke?.state().layout})");
+            assertTrue(ready, ready.contains("single-force-canvas"));
+
+            String proposed = evaluateOnce(scenario, webView.get(),
+                    "(()=>{window.AminGraphSmoke.pausePhysics();"
+                            + "localStorage.removeItem('amin-focus-chain-pins-v1');"
                             + "const prepared=window.AminGraphSmoke.prepareFirstFocusRoute();"
                             + "const state=window.AminGraphSmoke.state();"
                             + "return JSON.stringify({prepared,"
@@ -84,7 +88,7 @@ public final class WikiGraphActivityTest {
             assertTrue(proposed, proposed.contains("\\\"activeBeforeApproval\\\":false"));
             assertTrue(proposed, proposed.contains("\\\"canvas\\\":1"));
 
-            String approved = evaluateWhenReady(scenario, webView.get(),
+            String approved = evaluateOnce(scenario, webView.get(),
                     "(()=>{const approved=window.AminGraphSmoke.approveFirstFocusRoute();"
                             + "document.getElementById('focusBtn').click();"
                             + "document.querySelector('[data-focus-action=pin-current]')?.click();"
@@ -108,6 +112,18 @@ public final class WikiGraphActivityTest {
             assertTrue(approved, approved.contains("\\\"pinStored\\\":true"));
             assertTrue(approved, approved.contains("\\\"canvas\\\":1"));
         }
+    }
+
+    private static String evaluateOnce(ActivityScenario<WikiGraphActivity> scenario,
+                                       WebView webView, String script) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> result = new AtomicReference<>("");
+        scenario.onActivity(activity -> webView.evaluateJavascript(script, value -> {
+            result.set(value == null ? "" : value);
+            latch.countDown();
+        }));
+        assertTrue("WebView focus action timed out", latch.await(30, TimeUnit.SECONDS));
+        return result.get();
     }
 
     private static String evaluateWhenReady(ActivityScenario<WikiGraphActivity> scenario,
