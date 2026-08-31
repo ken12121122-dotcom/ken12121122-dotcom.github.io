@@ -40,7 +40,7 @@ public final class WikiGraphActivityTest {
                             + "safeBottom:rect.bottom<=innerHeight-48,"
                             + "scrollContain:getComputedStyle(manager).overscrollBehaviorY==='contain',"
                             + "graphControlsHidden:getComputedStyle(document.querySelector('.nav')).visibility==='hidden',"
-                            + "graphControlsRelocated:getComputedStyle(document.querySelector('.nav')).bottom==='auto'&&parseFloat(getComputedStyle(document.querySelector('.nav')).top)>0,"
+                            + "graphControlsRelocated:document.querySelector('.nav').getBoundingClientRect().bottom<innerHeight/2&&getComputedStyle(document.querySelector('.nav')).flexDirection==='row',"
                             + "rawLogs:window.AminGraphSmoke.state().rawLogsEnabled,"
                             + "layout:window.AminGraphSmoke.state().layout});})()");
 
