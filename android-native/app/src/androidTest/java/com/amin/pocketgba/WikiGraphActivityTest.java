@@ -64,6 +64,8 @@ public final class WikiGraphActivityTest {
             AtomicReference<WebView> webView = new AtomicReference<>();
             scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
             assertNotNull(webView.get());
+            assertTrue("Focus Path persistence requires WebView DOM storage",
+                    webView.get().getSettings().getDomStorageEnabled());
 
             String ready = evaluateWhenReady(scenario, webView.get(),
                     "JSON.stringify({layout:window.AminGraphSmoke?.state().layout})");

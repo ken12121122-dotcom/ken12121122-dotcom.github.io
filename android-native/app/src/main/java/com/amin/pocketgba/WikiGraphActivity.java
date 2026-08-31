@@ -59,7 +59,9 @@ public final class WikiGraphActivity extends Activity {
         webView.setBackgroundColor(palette.background);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(false);
+        // Pin Path state stays inside this local graph origin. Keep network and
+        // cross-origin file access disabled below while allowing Web Storage.
+        settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(false);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(false);
