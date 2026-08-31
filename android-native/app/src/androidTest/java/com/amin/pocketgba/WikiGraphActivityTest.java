@@ -27,6 +27,7 @@ public final class WikiGraphActivityTest {
             scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
             assertNotNull(webView.get());
 
+            // Fixed-position "bottom:auto" resolves to pixels in WebView; verify actual bounds instead.
             String result = evaluateWhenReady(scenario, webView.get(),
                     "(()=>{document.getElementById('workBtn').click();"
                             + "const manager=document.getElementById('workManager');"
