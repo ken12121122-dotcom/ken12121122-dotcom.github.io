@@ -59,6 +59,57 @@ public final class WikiGraphActivityTest {
         }
     }
 
+    @Test public void confirmsAndProjectsFocusRouteInsideExistingCanvas() throws Exception {
+        try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
+            AtomicReference<WebView> webView = new AtomicReference<>();
+            scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
+            assertNotNull(webView.get());
+
+            String proposed = evaluateWhenReady(scenario, webView.get(),
+                    "(()=>{localStorage.removeItem('amin-focus-chain-pins-v1');"
+                            + "window.AminReloadUnifiedGraph();"
+                            + "const prepared=window.AminGraphSmoke.prepareFirstFocusRoute();"
+                            + "const state=window.AminGraphSmoke.state();"
+                            + "return JSON.stringify({prepared,"
+                            + "review:document.getElementById('routeReview').classList.contains('open'),"
+                            + "choiceCount:document.querySelectorAll('[data-approve-route]').length,"
+                            + "confirmation:document.getElementById('routeReviewSummary').textContent.includes('確認前 Canvas 不會改變'),"
+                            + "activeBeforeApproval:state.focus.active,"
+                            + "canvas:document.querySelectorAll('canvas#graph').length,layout:state.layout});})()");
+            assertTrue(proposed, proposed.contains("\\\"prepared\\\":true"));
+            assertTrue(proposed, proposed.contains("\\\"review\\\":true"));
+            assertTrue(proposed, proposed.contains("\\\"choiceCount\\\":"));
+            assertTrue(proposed, !proposed.contains("\\\"choiceCount\\\":0"));
+            assertTrue(proposed, proposed.contains("\\\"confirmation\\\":true"));
+            assertTrue(proposed, proposed.contains("\\\"activeBeforeApproval\\\":false"));
+            assertTrue(proposed, proposed.contains("\\\"canvas\\\":1"));
+
+            String approved = evaluateWhenReady(scenario, webView.get(),
+                    "(()=>{const approved=window.AminGraphSmoke.approveFirstFocusRoute();"
+                            + "document.getElementById('focusBtn').click();"
+                            + "document.querySelector('[data-focus-action=pin-current]')?.click();"
+                            + "const manager=document.getElementById('focusManager'),rect=manager.getBoundingClientRect(),state=window.AminGraphSmoke.state();"
+                            + "return JSON.stringify({approved,active:state.focus.active,routeCount:state.focus.routeCount,"
+                            + "maxOpen:state.focus.maxOpenChains,maxDepth:state.focus.maxDepthPerChain,"
+                            + "visibleBounded:state.focus.visibleNodeCount<=state.fullNodeCount,"
+                            + "managerOpen:manager.classList.contains('open'),safeBottom:rect.bottom<=innerHeight-48,"
+                            + "hudTop:document.getElementById('focusHud').getBoundingClientRect().bottom<innerHeight/2,"
+                            + "pinStored:localStorage.getItem('amin-focus-chain-pins-v1').includes('route_id'),"
+                            + "canvas:document.querySelectorAll('canvas#graph').length,layout:state.layout});})()");
+            assertTrue(approved, approved.contains("\\\"approved\\\":true"));
+            assertTrue(approved, approved.contains("\\\"active\\\":true"));
+            assertTrue(approved, approved.contains("\\\"routeCount\\\":1"));
+            assertTrue(approved, approved.contains("\\\"maxOpen\\\":3"));
+            assertTrue(approved, approved.contains("\\\"maxDepth\\\":6"));
+            assertTrue(approved, approved.contains("\\\"visibleBounded\\\":true"));
+            assertTrue(approved, approved.contains("\\\"managerOpen\\\":true"));
+            assertTrue(approved, approved.contains("\\\"safeBottom\\\":true"));
+            assertTrue(approved, approved.contains("\\\"hudTop\\\":true"));
+            assertTrue(approved, approved.contains("\\\"pinStored\\\":true"));
+            assertTrue(approved, approved.contains("\\\"canvas\\\":1"));
+        }
+    }
+
     private static String evaluateWhenReady(ActivityScenario<WikiGraphActivity> scenario,
                                             WebView webView, String script) throws Exception {
         String latest = "";
