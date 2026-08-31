@@ -62,10 +62,15 @@ public final class WikiGraphActivityTest {
     @Test public void confirmsAndProjectsFocusRouteInsideExistingCanvas() throws Exception {
         try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
             AtomicReference<WebView> webView = new AtomicReference<>();
-            scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
+            AtomicReference<Boolean> domStorageEnabled = new AtomicReference<>(false);
+            scenario.onActivity(activity -> {
+                WebView found = findWebView(activity.findViewById(android.R.id.content));
+                webView.set(found);
+                domStorageEnabled.set(found != null && found.getSettings().getDomStorageEnabled());
+            });
             assertNotNull(webView.get());
             assertTrue("Focus Path persistence requires WebView DOM storage",
-                    webView.get().getSettings().getDomStorageEnabled());
+                    domStorageEnabled.get());
 
             String ready = evaluateWhenReady(scenario, webView.get(),
                     "JSON.stringify({layout:window.AminGraphSmoke?.state().layout})");
