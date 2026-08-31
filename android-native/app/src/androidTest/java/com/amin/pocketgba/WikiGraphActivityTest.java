@@ -70,7 +70,7 @@ public final class WikiGraphActivityTest {
             assertTrue(ready, ready.contains("single-force-canvas"));
 
             String proposed = evaluateOnce(scenario, webView.get(),
-                    "(()=>{window.AminGraphSmoke.pausePhysics();"
+                    "(()=>{try{window.AminGraphSmoke.pausePhysics();"
                             + "localStorage.removeItem('amin-focus-chain-pins-v1');"
                             + "const prepared=window.AminGraphSmoke.prepareFirstFocusRoute();"
                             + "const state=window.AminGraphSmoke.state();"
@@ -79,7 +79,8 @@ public final class WikiGraphActivityTest {
                             + "choiceCount:document.querySelectorAll('[data-approve-route]').length,"
                             + "confirmation:document.getElementById('routeReviewSummary').textContent.includes('確認前 Canvas 不會改變'),"
                             + "activeBeforeApproval:state.focus.active,"
-                            + "canvas:document.querySelectorAll('canvas#graph').length,layout:state.layout});})()");
+                            + "canvas:document.querySelectorAll('canvas#graph').length,layout:state.layout});"
+                            + "}catch(error){return JSON.stringify({prepared:false,error:String(error),stack:String(error?.stack||'')});}})()");
             assertTrue(proposed, proposed.contains("\\\"prepared\\\":true"));
             assertTrue(proposed, proposed.contains("\\\"review\\\":true"));
             assertTrue(proposed, proposed.contains("\\\"choiceCount\\\":"));
