@@ -369,3 +369,42 @@ The same evidence model should later support ChatGPT / Engineering Orchestrator 
 - eventually surface those reports directly inside the Android app
 
 Scheduled reporting is a later capability; it is not part of Issue #120 Phase 1.
+
+## 17. Step 12 active implementation — Agent Control Dashboard
+
+OWNER authorized the proposed post-Step-11 roadmap on 2026-09-01. Step 12 begins with the
+read-only Agent Control Dashboard boundary from Issue #122 and the Step 12–18 reconciliation
+comment on Issue #123.
+
+- Branch: `feat/step12-agent-control-dashboard-readonly`
+- Stack base: PR #128 immutable candidate head
+  `9b604f70caa84b97d6e9f91c8a2a71c5a253c594`
+- Production baseline remains `release/android`
+  `6a2404b06101ada270f126befb74db4fc83761ac`
+- Contract: `android-native/docs/STEP_12_AGENT_CONTROL_DASHBOARD_CONTRACT.md`
+
+Approved Step 12 boundary:
+
+- GitHub-evidence-backed Agent roster and status;
+- statuses `working`, `waiting`, `blocked`, `idle`, `review`;
+- current task, Issue, branch, PR, CI, blocker, and explicit OWNER Attention;
+- evidence navigation through the existing Unified Graph, Dynamic Canvas, and Focus Chain;
+- fail closed when Agent ownership or state is not explicitly evidenced;
+- read-only only.
+
+Agent provenance handoff extension:
+
+- every trusted Agent assignment derives a deterministic `agent-execution-receipt-v1`;
+- the receipt binds the durable Agent ID to existing Issue / PR / Workflow Run Work Graph IDs;
+- those IDs form a machine-readable minimal Context handoff without copying conversation history;
+- marker authors cannot inject arbitrary Context node IDs;
+- this is trusted-PR declaration evidence, not cryptographic provider/model/session proof;
+- no new Graph, identity, dedupe, Connect, Canvas, write permission, or execution authority is added.
+
+Validation routing note: the existing Android PR Validation stacked-base allowlist now includes
+`feat/focus-chain-navigation-phase1`, so Step 12 can use the same unit, lint, APK, and emulator
+acceptance workflow. No release workflow or production path is changed.
+
+Not authorized in Step 12: GitHub write, Agent dispatch/assignment mutation, raw logs, Tool
+execution, credentials, paid models, autonomy, merge, release, production, or Steps 13–18
+implementation.

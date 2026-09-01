@@ -27,7 +27,7 @@
     evidence: new Set(['provides_evidence_for', 'evidence_for', 'verified_by', 'verifies', 'learned_from']),
     workflow: new Set(['contains', 'opens', 'executes', 'has_run', 'has_job', 'has_artifact']),
     version: new Set(['points_to', 'head_commit', 'version_of', 'supersedes', 'derived_from', 'promoted_to']),
-    responsibility: new Set(['owns', 'owned_by', 'assigned_to', 'reviewed_by', 'has_review', 'certified_by', 'certifies']),
+    responsibility: new Set(['owns', 'owned_by', 'assigned_to', 'reviewed_by', 'has_review', 'certified_by', 'certifies', 'works_on']),
     impact: new Set(['impacts', 'affects', 'writes_to', 'produces', 'generated', 'deploys'])
   });
 

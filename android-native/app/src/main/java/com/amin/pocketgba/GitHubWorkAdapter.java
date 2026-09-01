@@ -156,23 +156,26 @@ final class GitHubWorkAdapter {
             JSONArray reviews = pull.optJSONArray("_reviews");
             JSONObject fileSummary = fileSummary(files);
             JSONObject reviewSummary = reviewSummary(reviews);
+            JSONObject agentExecution = trustedAgentExecution(name, pull);
+            JSONObject attributes = new JSONObject()
+                    .put("number", number)
+                    .put("draft", pull.optBoolean("draft", false))
+                    .put("head_ref", head == null ? "" : head.optString("ref", ""))
+                    .put("head_sha", head == null ? "" : head.optString("sha", ""))
+                    .put("base_ref", base == null ? "" : base.optString("ref", ""))
+                    .put("updated_at", pull.optString("updated_at", ""))
+                    .put("changed_files", fileSummary.optInt("changed_files", 0))
+                    .put("additions", fileSummary.optInt("additions", 0))
+                    .put("deletions", fileSummary.optInt("deletions", 0))
+                    .put("changed_file_names", fileSummary.optJSONArray("file_names"))
+                    .put("review_count", reviewSummary.optInt("review_count", 0))
+                    .put("approval_count", reviewSummary.optInt("approval_count", 0))
+                    .put("changes_requested_count", reviewSummary.optInt("changes_requested_count", 0));
+            if (agentExecution.length() > 0) attributes.put("agent_execution", agentExecution);
             entities.put(GitHubWorkContract.entity(prId, GitHubWorkContract.PULL_REQUEST,
                     String.valueOf(number), "PR #" + number + " · " + pull.optString("title", ""),
                     lifecycle, pull.optString("html_url", ""), repoId,
-                    new JSONObject()
-                            .put("number", number)
-                            .put("draft", pull.optBoolean("draft", false))
-                            .put("head_ref", head == null ? "" : head.optString("ref", ""))
-                            .put("head_sha", head == null ? "" : head.optString("sha", ""))
-                            .put("base_ref", base == null ? "" : base.optString("ref", ""))
-                            .put("updated_at", pull.optString("updated_at", ""))
-                            .put("changed_files", fileSummary.optInt("changed_files", 0))
-                            .put("additions", fileSummary.optInt("additions", 0))
-                            .put("deletions", fileSummary.optInt("deletions", 0))
-                            .put("changed_file_names", fileSummary.optJSONArray("file_names"))
-                            .put("review_count", reviewSummary.optInt("review_count", 0))
-                            .put("approval_count", reviewSummary.optInt("approval_count", 0))
-                            .put("changes_requested_count", reviewSummary.optInt("changes_requested_count", 0))));
+                    attributes));
             relations.put(GitHubWorkContract.relation(
                     "github:relation:repo-pr:" + repositoryId + ":" + number,
                     repoId, GitHubWorkContract.REPOSITORY, "contains",
@@ -188,6 +191,28 @@ final class GitHubWorkAdapter {
         }
         return GitHubWorkContract.batch(repositoryId, name, "pull_requests", revision,
                 complete, entities, relations, observedAt);
+    }
+
+    private static JSONObject trustedAgentExecution(String repository, JSONObject pull) {
+        JSONObject marker = AgentExecutionStatusContract.parsePullRequestBody(
+                pull == null ? "" : pull.optString("body", ""));
+        if (marker.length() == 0 || !marker.optBoolean("valid", false)) return marker;
+        JSONObject head = pull.optJSONObject("head");
+        JSONObject headRepository = head == null ? null : head.optJSONObject("repo");
+        String headFullName = headRepository == null ? "" : headRepository.optString("full_name", "");
+        String association = pull.optString("author_association", "").trim().toUpperCase();
+        boolean authorizedAssociation = "OWNER".equals(association) || "MEMBER".equals(association)
+                || "COLLABORATOR".equals(association);
+        if (!repository.equals(headFullName) || !authorizedAssociation) {
+            try {
+                return new JSONObject().put("schema_version", AgentExecutionStatusContract.SCHEMA_VERSION)
+                        .put("valid", false).put("error", "UNTRUSTED_AGENT_ASSIGNMENT_SOURCE")
+                        .put("read_only", true);
+            } catch (Exception impossible) {
+                return new JSONObject();
+            }
+        }
+        return marker;
     }
 
     private static JSONObject issueBatch(long repositoryId, String name, JSONArray input,

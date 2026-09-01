@@ -1,17 +1,17 @@
 {
-  "versionCode": 184,
-  "versionName": "0.11.20-rc1",
+  "versionCode": 185,
+  "versionName": "0.11.21-rc1",
   "channel": "candidate",
-  "bridge": 88,
-  "releaseSequence": 22,
+  "bridge": 89,
+  "releaseSequence": 23,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work 與 Capability 治理面板，並在既有單一 Dynamic Canvas 加入 Focus Chain Navigation。",
-    "可自行選擇節點 A 與節點 B，先檢視正向、反向與替代路徑，再經確認將選定流程投影到原有 Canvas；確認前不改變畫面。",
-    "Focus Chain 最多同時保留三條路徑、每段最多六個 hops；支援收合關聯數量、長路徑分段、Accordion chain 與可跨開啟保存的 Pin Path。",
-    "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
+    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work、Capability 治理與 Focus Chain Navigation，並在既有單一 Dynamic Canvas 加入 Step 12 唯讀 Agent Control Dashboard。",
+    "顯示 Claude Code、Codex、ChatGPT 的固定 Agent roster，以及 GitHub Evidence 支持的任務、Issue、branch、PR、CI、blocker 與 OWNER Attention。",
+    "Agent 歸屬只接受同 repository 且具 OWNER、MEMBER 或 COLLABORATOR 關係的單一 PR marker；缺少、重複或不可信證據時 fail closed 為 idle 或 unknown。",
+    "沿用 GitHub Work、SharedGraphSyncKernel、既有 stable identity、dedupe、Unified Graph、Focus Chain 與單一 Canvas；不新增 raw logs、GitHub write、Agent dispatch、Tool execution、憑證、自治、merge、正式發布或 Step 13。"
   ]
 }
