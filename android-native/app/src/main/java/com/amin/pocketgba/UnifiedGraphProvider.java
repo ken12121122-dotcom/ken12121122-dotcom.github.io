@@ -46,6 +46,7 @@ final class UnifiedGraphProvider {
             CapabilityInventoryProjector.append(out, capabilityState);
             addEvidence(context, out, nodes, relations, nodeIds, relationIds);
             addGitHubWork(context, out, nodes, relations, nodeIds, relationIds);
+            AgentStatusProjector.append(out, nodes, relations, nodeIds, relationIds);
 
             JSONObject sourceGraph = SourceGraphProvider.graph(context);
             out.put("sourceGraph", sourceGraph);
@@ -362,6 +363,11 @@ final class UnifiedGraphProvider {
                     .put("syncedEvidence", GraphSyncEngine.empty())
                     .put("githubWork", new JSONObject().put("readOnly", true).put("rawLogsEnabled", false)
                             .put("entityCount", 0).put("relationCount", 0))
+                    .put("agentControl", new JSONObject()
+                            .put("format", AgentExecutionStatusContract.SCHEMA_VERSION)
+                            .put("readOnly", true).put("source", "github-work-evidence")
+                            .put("rosterCount", 0).put("activeCount", 0)
+                            .put("ownerAttentionCount", 0).put("statuses", new JSONArray()))
                     .put("growthPlayback", false)
                     .put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson())
                     .put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
