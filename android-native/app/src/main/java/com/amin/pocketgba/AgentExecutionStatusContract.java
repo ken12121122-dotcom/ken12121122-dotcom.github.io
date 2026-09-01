@@ -22,7 +22,7 @@ final class AgentExecutionStatusContract {
 
     private static final int MAX_MARKER_BYTES = 4096;
     private static final Pattern MARKER = Pattern.compile(
-            "<!--\\s*amin-agent-execution\\s*(\\{.*?})\\s*-->", Pattern.DOTALL);
+            "<!--\\s*amin-agent-execution\\s*(\\{.*?\\})\\s*-->", Pattern.DOTALL);
     private static final Pattern AGENT_ID = Pattern.compile("agent:[a-z0-9][a-z0-9._-]{1,48}");
     private static final Set<String> TYPES = new HashSet<>(Arrays.asList(
             "claude_code", "codex", "chatgpt", "other"));
