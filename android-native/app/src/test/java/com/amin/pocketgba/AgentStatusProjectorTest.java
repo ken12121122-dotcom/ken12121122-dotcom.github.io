@@ -52,6 +52,15 @@ public final class AgentStatusProjectorTest {
         assertEquals("review", codex.getString("status"));
         assertEquals("passing", codex.getString("ci_status"));
         assertEquals(3, codex.getJSONArray("evidence").length());
+        JSONObject receipt = codex.getJSONObject("execution_receipt");
+        assertEquals("agent-execution-receipt-v1", receipt.getString("schema_version"));
+        assertEquals(AgentExecutionStatusContract.CODEX, receipt.getString("agent_id"));
+        assertEquals(issueId, receipt.getString("task_node_id"));
+        assertEquals(prId, receipt.getString("output_node_id"));
+        assertEquals(prId, receipt.getString("source_node_id"));
+        assertEquals("trusted-github-pr-marker", receipt.getString("verification_level"));
+        assertEquals(3, receipt.getJSONArray("context_node_ids").length());
+        assertEquals(1, control.getJSONArray("receipts").length());
         assertEquals(3, countAgents(nodes));
         assertTrue(hasRelation(relations, AgentExecutionStatusContract.CODEX, prId));
         assertTrue(hasRelation(relations, AgentExecutionStatusContract.CODEX, issueId));
@@ -72,7 +81,9 @@ public final class AgentStatusProjectorTest {
             JSONObject status = statuses.getJSONObject(i);
             assertEquals("idle", status.getString("status"));
             assertEquals(0, status.getJSONArray("evidence").length());
+            assertTrue(status.isNull("execution_receipt"));
         }
+        assertEquals(0, graph.getJSONObject("agentControl").getJSONArray("receipts").length());
         assertEquals(0, graph.getJSONObject("agentControl").getInt("activeCount"));
     }
 

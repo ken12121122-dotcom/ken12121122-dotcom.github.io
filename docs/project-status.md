@@ -392,6 +392,15 @@ Approved Step 12 boundary:
 - fail closed when Agent ownership or state is not explicitly evidenced;
 - read-only only.
 
+Agent provenance handoff extension:
+
+- every trusted Agent assignment derives a deterministic `agent-execution-receipt-v1`;
+- the receipt binds the durable Agent ID to existing Issue / PR / Workflow Run Work Graph IDs;
+- those IDs form a machine-readable minimal Context handoff without copying conversation history;
+- marker authors cannot inject arbitrary Context node IDs;
+- this is trusted-PR declaration evidence, not cryptographic provider/model/session proof;
+- no new Graph, identity, dedupe, Connect, Canvas, write permission, or execution authority is added.
+
 Validation routing note: the existing Android PR Validation stacked-base allowlist now includes
 `feat/focus-chain-navigation-phase1`, so Step 12 can use the same unit, lint, APK, and emulator
 acceptance workflow. No release workflow or production path is changed.

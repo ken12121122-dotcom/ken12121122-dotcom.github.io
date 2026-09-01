@@ -60,6 +60,39 @@ Agent nodes are a derived Unified Graph projection. Their evidence relations tar
 provider-backed GitHub Work node IDs. The projection does not claim ownership of or stale
 provider records.
 
+## Execution receipt and Context handoff
+
+For every trusted active Agent assignment, the projector derives one
+`agent-execution-receipt-v1` from existing GitHub Work evidence. The receipt is the Agent's
+visible engineering imprint and the machine-readable entry point for a later Context router.
+It contains the existing Issue, PR, and latest Workflow Run node references available for that
+assignment. It does not copy conversation history or create knowledge nodes.
+
+The PR marker cannot declare `context_node_ids`. The projector accepts only provider-backed
+node IDs already present in the normalized Work Graph, so a self-declared marker cannot inject
+an arbitrary Context edge. Missing or untrusted assignments receive no receipt. The existing
+Agent-to-evidence relations remain the only Canvas relations; no second Connect system is
+introduced.
+
+```yaml
+AgentExecutionReceipt:
+  schema_version: agent-execution-receipt-v1
+  receipt_id: deterministic string
+  agent_id: durable Agent ID
+  task_node_id: existing Issue node ID | ""
+  output_node_id: existing PR node ID
+  context_node_ids: [existing Work Graph node IDs]
+  workflow_status: working | waiting | blocked | idle | review
+  verification_level: trusted-github-pr-marker
+  source_node_id: existing PR node ID
+  last_activity_at: timestamp | ""
+  read_only: true
+```
+
+This first receipt proves only that a trusted same-repository PR declares the Agent identity and
+that the referenced Work nodes were observed. It is not a cryptographic model/provider/session
+attestation. Provider run IDs and signed receipts remain a future governed extension.
+
 ## Output
 
 ```yaml
@@ -83,6 +116,7 @@ AgentExecutionStatus:
     - source_type: issue | pr | workflow_run
       source_ref: stable GitHub Work node ID
       url: string
+  execution_receipt: AgentExecutionReceipt | null
   read_only: true
 ```
 

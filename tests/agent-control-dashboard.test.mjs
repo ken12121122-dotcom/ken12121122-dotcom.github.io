@@ -37,3 +37,12 @@ test('Dashboard exposes evidence navigation without write or autonomy actions', 
   assert.doesNotMatch(html, /assignAgent|dispatchAgent|approveAgent|cancelAgent|mergePullRequest/);
   assert.match(html, /agentUnsafeCount/);
 });
+
+test('Verified Agent work exposes a deterministic read-only context receipt', () => {
+  for (const marker of [
+    'agent-execution-receipt-v1', 'execution_receipt', 'context_node_ids',
+    'trusted-github-pr-marker', '印記：', 'Context：'
+  ]) assert.ok(projector.includes(marker) || html.includes(marker), `missing ${marker}`);
+  assert.match(projector, /The PR marker cannot inject arbitrary context node IDs/);
+  assert.doesNotMatch(contract, /context_node_ids/);
+});

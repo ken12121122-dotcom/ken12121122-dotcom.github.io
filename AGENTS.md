@@ -240,3 +240,18 @@ CI 不得寫死 Bridge 版本。應從實際 APK 讀取 package、versionName、
 - 安全回退點
 
 每次完成實機驗證或正式發布後，才同步更新本檔、兩份 manifest 與架構文件。
+
+## Agent 工程印記
+
+本 repository 後續由工程 Agent 執行並形成 PR 的工作，PR body 應依
+`android-native/docs/STEP_12_AGENT_CONTROL_DASHBOARD_CONTRACT.md` 保留且僅保留一個
+`amin-agent-execution` machine-readable marker。系統不得依文字風格、GitHub 登入帳號或
+commit message 猜測 ChatGPT、Codex、Claude Code 或其他 Agent 身分。
+
+Android Agent Control Layer 只可從可信的同 repository PR marker 與既有 GitHub Work
+Node 推導唯讀 Execution Receipt；marker 不得自行指定 Context Node 或建立新 Graph
+關聯。缺少、重複、不可信或無效 marker 時必須 fail closed，顯示來源未驗證或 idle。
+
+目前 v1 每個 PR 只支援一個明確 Agent 歸屬。若同一 PR 混合多個 Agent 且無法由可驗證
+執行紀錄分離，不得把整體成果推定歸屬其中一個 Agent；應保留為 provenance gap，等待
+未來具 provider/session/run 證據或簽章的 receipt contract。

@@ -13,6 +13,7 @@ import java.util.Set;
 /** Projects strict GitHub evidence into the existing Unified Graph and single Canvas. */
 final class AgentStatusProjector {
     private static final String GROUP_ID = "group:agents";
+    private static final String RECEIPT_SCHEMA_VERSION = "agent-execution-receipt-v1";
 
     private AgentStatusProjector() { }
 
@@ -22,6 +23,7 @@ final class AgentStatusProjector {
         Map<String, JSONObject> byId = indexNodes(nodes);
         Map<String, JSONObject> latestByAgent = latestAssignments(nodes);
         JSONArray statuses = new JSONArray();
+        JSONArray receipts = new JSONArray();
         int activeCount = 0;
         int attentionCount = 0;
 
@@ -30,6 +32,8 @@ final class AgentStatusProjector {
             JSONObject assignment = latestByAgent.get(agentId);
             JSONObject status = buildStatus(roster, assignment, byId, relations);
             statuses.put(status);
+            JSONObject receipt = status.optJSONObject("execution_receipt");
+            if (receipt != null) receipts.put(receipt);
             if (!"idle".equals(status.getString("status"))) activeCount++;
             if (status.optBoolean("owner_attention_required", false)) attentionCount++;
 
@@ -66,6 +70,7 @@ final class AgentStatusProjector {
                 .put("rosterCount", statuses.length())
                 .put("activeCount", activeCount)
                 .put("ownerAttentionCount", attentionCount)
+                .put("receipts", receipts)
                 .put("statuses", statuses));
     }
 
@@ -92,6 +97,7 @@ final class AgentStatusProjector {
                 .put("started_at", "")
                 .put("last_activity_at", "")
                 .put("evidence", new JSONArray())
+                .put("execution_receipt", JSONObject.NULL)
                 .put("read_only", true);
         if (assignment == null || marker == null || !marker.optBoolean("valid", false)) return status;
 
@@ -139,7 +145,41 @@ final class AgentStatusProjector {
         if (!agentId.equals(marker.optString("agent_id", ""))) {
             throw new IllegalStateException("AGENT_ID_PROJECTION_MISMATCH");
         }
+        status.put("execution_receipt", executionReceipt(status));
         return status;
+    }
+
+    /**
+     * Builds a deterministic, read-only handoff receipt only from normalized GitHub Work
+     * evidence. The PR marker cannot inject arbitrary context node IDs.
+     */
+    private static JSONObject executionReceipt(JSONObject status) throws Exception {
+        String agentId = status.getString("agent_id");
+        String prId = status.optString("pr_node_id", "");
+        JSONArray evidence = status.optJSONArray("evidence");
+        JSONArray contextNodeIds = new JSONArray();
+        String taskNodeId = "";
+        if (evidence != null) {
+            for (int i = 0; i < evidence.length(); i++) {
+                JSONObject item = evidence.optJSONObject(i);
+                String sourceRef = item == null ? "" : item.optString("source_ref", "");
+                if (sourceRef.isEmpty()) continue;
+                contextNodeIds.put(sourceRef);
+                if ("issue".equals(item.optString("source_type", ""))) taskNodeId = sourceRef;
+            }
+        }
+        return new JSONObject()
+                .put("schema_version", RECEIPT_SCHEMA_VERSION)
+                .put("receipt_id", "agent:receipt:" + slug(agentId) + ":" + slug(prId))
+                .put("agent_id", agentId)
+                .put("task_node_id", taskNodeId)
+                .put("output_node_id", prId)
+                .put("context_node_ids", contextNodeIds)
+                .put("workflow_status", status.optString("status", "idle"))
+                .put("verification_level", "trusted-github-pr-marker")
+                .put("source_node_id", prId)
+                .put("last_activity_at", status.optString("last_activity_at", ""))
+                .put("read_only", true);
     }
 
     private static JSONObject latestRelatedRun(String prId, Map<String, JSONObject> byId,
