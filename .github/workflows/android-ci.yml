@@ -6,6 +6,7 @@ on:
       - release/android
       - feat/github-control-layer-phase1-readonly
       - feat/step11-capability-runtime-contract
+      - feat/focus-chain-navigation-phase1
     paths:
       - 'android-native/**'
       - 'tools/tree-sitter-scanner/**'
