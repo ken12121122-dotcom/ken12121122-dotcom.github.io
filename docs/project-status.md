@@ -392,6 +392,10 @@ Approved Step 12 boundary:
 - fail closed when Agent ownership or state is not explicitly evidenced;
 - read-only only.
 
+Validation routing note: the existing Android PR Validation stacked-base allowlist now includes
+`feat/focus-chain-navigation-phase1`, so Step 12 can use the same unit, lint, APK, and emulator
+acceptance workflow. No release workflow or production path is changed.
+
 Not authorized in Step 12: GitHub write, Agent dispatch/assignment mutation, raw logs, Tool
 execution, credentials, paid models, autonomy, merge, release, production, or Steps 13–18
 implementation.
