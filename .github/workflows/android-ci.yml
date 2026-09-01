@@ -339,7 +339,7 @@ jobs:
           adb shell am start -W -a android.intent.action.VIEW -d 'amin-graph://open' \
             -p com.amin.pocketgba | grep -F 'Status: ok'
 
-      - name: Run GitHub Work, Step 11, and Focus Chain mobile acceptance tests
+      - name: Run GitHub Work, Step 11, Focus Chain, and Step 12 mobile acceptance tests
         shell: bash
         run: |
           set -euxo pipefail
@@ -353,6 +353,11 @@ jobs:
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/step11-instrumentation.txt"
           grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/step11-instrumentation.txt"
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.AgentControlDashboardActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/step12-instrumentation.txt"
+          grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/step12-instrumentation.txt"
 
       - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
@@ -362,6 +367,7 @@ jobs:
             ${{ runner.temp }}/phase1-step11-badging.txt
             ${{ runner.temp }}/phase1-instrumentation.txt
             ${{ runner.temp }}/step11-instrumentation.txt
+            ${{ runner.temp }}/step12-instrumentation.txt
             ${{ runner.temp }}/phase1-step11-emulator.log
           if-no-files-found: error
           retention-days: 7
