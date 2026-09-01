@@ -40,16 +40,16 @@ public final class AgentControlDashboardActivityTest {
                             + "controlsHidden:getComputedStyle(document.querySelector('.nav')).visibility==='hidden',"
                             + "layout:state.layout});})()");
 
-            assertTrue(result, result.contains("\"canvas\":1"));
-            assertTrue(result, result.contains("\"open\":true"));
-            assertTrue(result, result.contains("\"safeBottom\":true"));
-            assertTrue(result, result.contains("\"topClose\":true"));
-            assertTrue(result, result.contains("\"roster\":3"));
-            assertTrue(result, result.contains("\"panel\":3"));
-            assertTrue(result, result.contains("\"attentionSurface\":true"));
-            assertTrue(result, result.contains("\"readOnly\":true"));
-            assertTrue(result, result.contains("\"unsafe\":0"));
-            assertTrue(result, result.contains("\"controlsHidden\":true"));
+            assertTrue(result, result.contains("\\\"canvas\\\":1"));
+            assertTrue(result, result.contains("\\\"open\\\":true"));
+            assertTrue(result, result.contains("\\\"safeBottom\\\":true"));
+            assertTrue(result, result.contains("\\\"topClose\\\":true"));
+            assertTrue(result, result.contains("\\\"roster\\\":3"));
+            assertTrue(result, result.contains("\\\"panel\\\":3"));
+            assertTrue(result, result.contains("\\\"attentionSurface\\\":true"));
+            assertTrue(result, result.contains("\\\"readOnly\\\":true"));
+            assertTrue(result, result.contains("\\\"unsafe\\\":0"));
+            assertTrue(result, result.contains("\\\"controlsHidden\\\":true"));
             assertTrue(result, result.contains("single-force-canvas"));
         }
     }
@@ -69,7 +69,7 @@ public final class AgentControlDashboardActivityTest {
                 continue;
             }
             latest = result.get();
-            if (latest.contains("single-force-canvas") && latest.contains("\"panel\":3")) return latest;
+            if (latest.contains("single-force-canvas") && latest.contains("\\\"panel\\\":3")) return latest;
             Thread.sleep(250L);
         }
         return latest;
