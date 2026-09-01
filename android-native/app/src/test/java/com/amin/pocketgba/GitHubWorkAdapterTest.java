@@ -38,6 +38,10 @@ public final class GitHubWorkAdapterTest {
                 .getJSONObject("payload");
         assertEquals(1, pullPayload.getJSONObject("attributes").getInt("changed_files"));
         assertEquals(1, pullPayload.getJSONObject("attributes").getInt("approval_count"));
+        JSONObject agent = pullPayload.getJSONObject("attributes").getJSONObject("agent_execution");
+        assertTrue(agent.getBoolean("valid"));
+        assertEquals(AgentExecutionStatusContract.CODEX, agent.getString("agent_id"));
+        assertFalse(pullPayload.getJSONObject("attributes").has("body"));
 
         JSONObject runBatch = batches.getJSONObject(6);
         assertEquals(2, runBatch.getJSONArray("relations").length());
@@ -54,6 +58,21 @@ public final class GitHubWorkAdapterTest {
         assertEquals(11, state.getJSONArray("relations").length());
     }
 
+    @Test public void forkPullRequestCannotClaimPermanentAgentIdentity() throws Exception {
+        JSONObject input = observation();
+        JSONObject pull = input.getJSONArray("pull_requests").getJSONObject(0);
+        pull.put("author_association", "CONTRIBUTOR");
+        pull.getJSONObject("head").getJSONObject("repo")
+                .put("full_name", "external/fork");
+
+        JSONObject attributes = GitHubWorkAdapter.toBatches(input).getJSONObject(4)
+                .getJSONArray("entities").getJSONObject(0).getJSONObject("payload")
+                .getJSONObject("attributes");
+        JSONObject marker = attributes.getJSONObject("agent_execution");
+        assertFalse(marker.optBoolean("valid", true));
+        assertEquals("UNTRUSTED_AGENT_ASSIGNMENT_SOURCE", marker.optString("error", ""));
+    }
+
     private static JSONObject observation() throws Exception {
         JSONObject repository = new JSONObject()
                 .put("id", REPOSITORY_ID)
@@ -68,7 +87,13 @@ public final class GitHubWorkAdapterTest {
                         .put("author", new JSONObject().put("name", "Amin").put("date", "now")));
         JSONObject pull = new JSONObject().put("number", 120).put("title", "Control layer")
                 .put("state", "open").put("html_url", "https://example/pr")
-                .put("head", new JSONObject().put("ref", "feat").put("sha", SHA))
+                .put("body", "<!-- amin-agent-execution {\"agent_id\":\"agent:codex\","
+                        + "\"agent_type\":\"codex\",\"role\":\"Backend / Platform Engineer\","
+                        + "\"issue_number\":122,\"current_task\":\"Step 12 dashboard\","
+                        + "\"status\":\"working\",\"owner_attention_required\":false} -->")
+                .put("author_association", "OWNER")
+                .put("head", new JSONObject().put("ref", "feat").put("sha", SHA)
+                        .put("repo", new JSONObject().put("full_name", GitHubWorkApi.REPOSITORY)))
                 .put("base", new JSONObject().put("ref", "release/android"))
                 .put("_reviews", new JSONArray().put(new JSONObject().put("id", 7001L)
                         .put("state", "APPROVED").put("user", new JSONObject().put("login", "owner"))))
