@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -25,16 +27,34 @@ public final class FoxPetControlActivity extends Activity {
     private static final int COLOR_MUTED = 0xff68766e;
     private static final int COLOR_ACCENT = 0xff19794b;
 
-    private TextView speechRateValue;
-    private TextView pitchValue;
-    private TextView volumeValue;
+    private TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setStatusBarColor(COLOR_BG);
         getWindow().setNavigationBarColor(COLOR_BG);
+        initTts();
         buildUi();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts = null;
+        }
+        super.onDestroy();
+    }
+
+    private void initTts() {
+        tts = new TextToSpeech(this, status -> {
+            if (status == TextToSpeech.SUCCESS && tts != null) {
+                tts.setLanguage(Locale.TAIWAN);
+                applyTtsSettings();
+            }
+        });
     }
 
     private void buildUi() {
@@ -47,9 +67,13 @@ public final class FoxPetControlActivity extends Activity {
         root.setPadding(dp(20), dp(22), dp(20), dp(36));
         scroll.addView(root);
 
-        TextView title = text("🦊 狐狸控制面板", 28f, true, COLOR_TEXT);
-        root.addView(title, fullWidth());
-        TextView intro = text("控制狐狸如何取代語音球、顯示聊天與朗讀回覆。所有設定沿用同一套 Voice / Chat Runtime。", 14f, false, COLOR_MUTED);
+        root.addView(text("🦊 狐狸控制面板", 28f, true, COLOR_TEXT), fullWidth());
+        TextView intro = text(
+                "控制狐狸如何取代語音球、顯示聊天與朗讀回覆。設定沿用同一套 Voice / Chat Runtime。",
+                14f,
+                false,
+                COLOR_MUTED
+        );
         LinearLayout.LayoutParams introParams = fullWidth();
         introParams.topMargin = dp(8);
         root.addView(intro, introParams);
@@ -72,70 +96,74 @@ public final class FoxPetControlActivity extends Activity {
                     : checkedId == hidden.getId() ? FoxPetPreferences.MODE_HIDDEN
                     : FoxPetPreferences.MODE_VOICE_BALL;
             FoxPetPreferences.setDisplayMode(this, mode);
-            applyPresentation(mode);
+            boolean visible = !FoxPetPreferences.MODE_HIDDEN.equals(mode);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, visible);
+            String message = FoxPetPreferences.MODE_FOX.equals(mode)
+                    ? "狐狸模式已儲存；角色 Overlay 會沿用同一個 Voice Runtime。"
+                    : FoxPetPreferences.MODE_HIDDEN.equals(mode)
+                    ? "語音入口已隱藏。"
+                    : "已切換語音球模式。";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         });
         root.addView(modes, fullWidth());
 
         section(root, "狐狸互動");
         Switch draggable = toggle("允許拖曳狐狸", FoxPetPreferences.isDraggable(this));
-        draggable.setOnCheckedChangeListener((button, checked) -> {
-            FoxPetPreferences.setDraggable(this, checked);
-            UniversalControlAccessibilityService.refreshVoicePresentation(this);
-        });
+        draggable.setOnCheckedChangeListener((button, checked) -> FoxPetPreferences.setDraggable(this, checked));
         root.addView(draggable, fullWidth());
 
         Switch chat = toggle("顯示聊天對話框", FoxPetPreferences.isChatBubbleEnabled(this));
-        chat.setOnCheckedChangeListener((button, checked) -> {
-            FoxPetPreferences.setChatBubbleEnabled(this, checked);
-            UniversalControlAccessibilityService.refreshVoicePresentation(this);
-        });
+        chat.setOnCheckedChangeListener((button, checked) -> FoxPetPreferences.setChatBubbleEnabled(this, checked));
         root.addView(chat, fullWidth());
 
         section(root, "狐狸聲音");
         Switch autoSpeak = toggle("AI 回覆自動朗讀", FoxPetPreferences.isAutoSpeakEnabled(this));
-        autoSpeak.setOnCheckedChangeListener((button, checked) -> {
-            FoxPetPreferences.setAutoSpeakEnabled(this, checked);
-            UniversalControlAccessibilityService.refreshVoicePresentation(this);
-        });
+        autoSpeak.setOnCheckedChangeListener((button, checked) -> FoxPetPreferences.setAutoSpeakEnabled(this, checked));
         root.addView(autoSpeak, fullWidth());
 
-        speechRateValue = sliderRow(root, "語速", FoxPetPreferences.getSpeechRate(this), 0.6f, 1.6f,
-                value -> {
-                    FoxPetPreferences.setSpeechRate(this, value);
-                    UniversalControlAccessibilityService.refreshVoicePresentation(this);
-                });
-        pitchValue = sliderRow(root, "音高", FoxPetPreferences.getPitch(this), 0.6f, 1.6f,
-                value -> {
-                    FoxPetPreferences.setPitch(this, value);
-                    UniversalControlAccessibilityService.refreshVoicePresentation(this);
-                });
-        volumeValue = sliderRow(root, "音量", FoxPetPreferences.getVolume(this), 0f, 1f,
-                value -> {
-                    FoxPetPreferences.setVolume(this, value);
-                    UniversalControlAccessibilityService.refreshVoicePresentation(this);
-                });
+        sliderRow(root, "語速", FoxPetPreferences.getSpeechRate(this), 0.6f, 1.6f, value -> {
+            FoxPetPreferences.setSpeechRate(this, value);
+            applyTtsSettings();
+        });
+        sliderRow(root, "音高", FoxPetPreferences.getPitch(this), 0.6f, 1.6f, value -> {
+            FoxPetPreferences.setPitch(this, value);
+            applyTtsSettings();
+        });
+        sliderRow(root, "音量", FoxPetPreferences.getVolume(this), 0f, 1f, FoxPetPreferences::setVolume);
 
         Button preview = button("試聽狐狸聲音");
-        preview.setOnClickListener(v -> UniversalControlAccessibilityService.previewFoxVoice(this));
+        preview.setOnClickListener(v -> previewVoice());
         root.addView(preview, cardParams());
 
         section(root, "快速控制");
-        Button showFox = button("立即顯示狐狸");
+        Button showFox = button("切換成狐狸模式");
         showFox.setOnClickListener(v -> {
             FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_FOX);
-            applyPresentation(FoxPetPreferences.MODE_FOX);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+            Toast.makeText(this, "狐狸模式已儲存。", Toast.LENGTH_SHORT).show();
+            recreate();
         });
         root.addView(showFox, cardParams());
 
         Button sleep = button("讓狐狸退下");
-        sleep.setOnClickListener(v -> UniversalControlAccessibilityService.requestFoxDormant(this));
+        sleep.setOnClickListener(v -> {
+            FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_HIDDEN);
+            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, false);
+            Toast.makeText(this, "狐狸已退下；Accessibility Service 保持啟用。", Toast.LENGTH_SHORT).show();
+            recreate();
+        });
         root.addView(sleep, cardParams());
 
         Button accessibility = button("開啟 Accessibility 設定");
         accessibility.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         root.addView(accessibility, cardParams());
 
-        TextView note = text("第一版使用 Android 原生 TTS。真正固定角色聲線可在後續接 Neural TTS，但不需要改 Chat Runtime。", 12f, false, COLOR_MUTED);
+        TextView note = text(
+                "第一版聲音使用 Android 原生 TTS；語速、音高、音量會保存。真正固定角色聲線可後續接 Neural TTS。",
+                12f,
+                false,
+                COLOR_MUTED
+        );
         LinearLayout.LayoutParams noteParams = fullWidth();
         noteParams.topMargin = dp(18);
         root.addView(note, noteParams);
@@ -143,15 +171,26 @@ public final class FoxPetControlActivity extends Activity {
         setContentView(scroll);
     }
 
-    private void applyPresentation(String mode) {
-        UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, !FoxPetPreferences.MODE_HIDDEN.equals(mode));
-        UniversalControlAccessibilityService.refreshVoicePresentation(this);
-        Toast.makeText(this, FoxPetPreferences.MODE_FOX.equals(mode) ? "已切換狐狸模式" : FoxPetPreferences.MODE_HIDDEN.equals(mode) ? "已隱藏語音入口" : "已切換語音球模式", Toast.LENGTH_SHORT).show();
+    private void previewVoice() {
+        if (tts == null) {
+            Toast.makeText(this, "TTS 尚未準備好。", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        applyTtsSettings();
+        Bundle params = new Bundle();
+        params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, FoxPetPreferences.getVolume(this));
+        tts.speak("我是狐狸，我在。", TextToSpeech.QUEUE_FLUSH, params, "fox-preview");
+    }
+
+    private void applyTtsSettings() {
+        if (tts == null) return;
+        tts.setSpeechRate(FoxPetPreferences.getSpeechRate(this));
+        tts.setPitch(FoxPetPreferences.getPitch(this));
     }
 
     private interface FloatConsumer { void accept(float value); }
 
-    private TextView sliderRow(LinearLayout root, String label, float current, float min, float max, FloatConsumer consumer) {
+    private void sliderRow(LinearLayout root, String label, float current, float min, float max, FloatConsumer consumer) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         LinearLayout header = new LinearLayout(this);
@@ -176,7 +215,6 @@ public final class FoxPetControlActivity extends Activity {
         });
         row.addView(bar, fullWidth());
         root.addView(row, cardParams());
-        return valueText;
     }
 
     private void section(LinearLayout root, String value) {
