@@ -213,9 +213,15 @@ public final class NativeUpdateActivity extends Activity {
     }
 
     private JSONObject fetchJson(String urlText) throws Exception {
-        HttpURLConnection connection = openTrustedConnection(urlText);
+        String separator = urlText.contains("?") ? "&" : "?";
+        HttpURLConnection connection = openTrustedConnection(
+                urlText + separator + "update=" + System.currentTimeMillis()
+        );
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(20000);
+        connection.setUseCaches(false);
+        connection.setRequestProperty("Cache-Control", "no-cache, no-store");
+        connection.setRequestProperty("Pragma", "no-cache");
         connection.setRequestProperty("Accept", "application/json");
         connection.connect();
         verifyTrustedUrl(connection.getURL());
