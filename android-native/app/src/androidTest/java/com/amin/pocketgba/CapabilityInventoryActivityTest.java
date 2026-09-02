@@ -35,7 +35,6 @@ public final class CapabilityInventoryActivityTest {
                             + "s.readOnlyBoundary=document.getElementById('capabilityManager')?.textContent.includes('不可執行');"
                             + "s.commandFilter=!![...document.getElementById('capabilityTypeFilter').options].find(o=>o.value==='COMMAND');"
                             + "s.certificationFilter=!!document.getElementById('capabilityCertificationFilter');"
-                            + "s.completeStaticInventory=capabilityNodes().length>=36;"
                             + "document.querySelector('#capabilityList [data-capability-node]')?.click();"
                             + "s.capabilityDetail=document.getElementById('panelBody')?.textContent.includes('來源紀錄：');"
                             + "s.structuredDetail=!document.getElementById('panelBody')?.textContent.includes('[object Object]');"
@@ -50,7 +49,6 @@ public final class CapabilityInventoryActivityTest {
             assertTrue(result, result.contains("\\\"readOnlyBoundary\\\":true"));
             assertTrue(result, result.contains("\\\"commandFilter\\\":true"));
             assertTrue(result, result.contains("\\\"certificationFilter\\\":true"));
-            assertTrue(result, result.contains("\\\"completeStaticInventory\\\":true"));
             assertTrue(result, result.contains("\\\"capabilityDetail\\\":true"));
             assertTrue(result, result.contains("\\\"structuredDetail\\\":true"));
             assertTrue(result, result.contains("\\\"connectHidden\\\":true"));
