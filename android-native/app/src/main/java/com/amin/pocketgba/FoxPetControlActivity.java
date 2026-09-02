@@ -3,6 +3,8 @@ package com.amin.pocketgba;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
@@ -26,6 +28,7 @@ public final class FoxPetControlActivity extends Activity {
     private static final int COLOR_MUTED = 0xff68766e;
 
     private TextToSpeech tts;
+    private boolean overlayPermissionPending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +47,14 @@ public final class FoxPetControlActivity extends Activity {
             tts = null;
         }
         super.onDestroy();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (overlayPermissionPending && canDrawOverlays()) {
+            overlayPermissionPending = false;
+            activateMode(FoxPetPreferences.MODE_FOX);
+        }
     }
 
     private void initTts() {
@@ -93,9 +104,7 @@ public final class FoxPetControlActivity extends Activity {
             String mode = checkedId == fox.getId() ? FoxPetPreferences.MODE_FOX
                     : checkedId == hidden.getId() ? FoxPetPreferences.MODE_HIDDEN
                     : FoxPetPreferences.MODE_VOICE_BALL;
-            FoxPetPreferences.setDisplayMode(this, mode);
-            boolean visible = !FoxPetPreferences.MODE_HIDDEN.equals(mode);
-            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, visible);
+            activateMode(mode);
             String message = FoxPetPreferences.MODE_FOX.equals(mode)
                     ? "狐狸模式已儲存；角色 Overlay 會沿用同一個 Voice Runtime。"
                     : FoxPetPreferences.MODE_HIDDEN.equals(mode)
@@ -137,8 +146,7 @@ public final class FoxPetControlActivity extends Activity {
         section(root, "快速控制");
         Button showFox = button("切換成狐狸模式");
         showFox.setOnClickListener(v -> {
-            FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_FOX);
-            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+            activateMode(FoxPetPreferences.MODE_FOX);
             Toast.makeText(this, "狐狸模式已儲存。", Toast.LENGTH_SHORT).show();
             recreate();
         });
@@ -146,8 +154,7 @@ public final class FoxPetControlActivity extends Activity {
 
         Button sleep = button("讓狐狸退下");
         sleep.setOnClickListener(v -> {
-            FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_HIDDEN);
-            UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, false);
+            activateMode(FoxPetPreferences.MODE_HIDDEN);
             Toast.makeText(this, "狐狸已退下；Accessibility Service 保持啟用。", Toast.LENGTH_SHORT).show();
             recreate();
         });
@@ -179,6 +186,26 @@ public final class FoxPetControlActivity extends Activity {
         Bundle params = new Bundle();
         params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, FoxPetPreferences.getVolume(this));
         tts.speak("我是狐狸，我在。", TextToSpeech.QUEUE_FLUSH, params, "fox-preview");
+    }
+
+    private void activateMode(String mode) {
+        FoxPetPreferences.setDisplayMode(this, mode);
+        // Keep the existing runtime alive; presentation visibility is handled inside it.
+        UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+        UniversalControlAccessibilityService.refreshVoicePresentation(this);
+        if (FoxPetPreferences.MODE_FOX.equals(mode) && !canDrawOverlays()) {
+            overlayPermissionPending = true;
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())));
+            Toast.makeText(this, "請允許顯示在其他應用程式上層，返回後狐狸會自動出現。",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        FoxPresentationBridge.applyDisplayMode(this);
+    }
+
+    private boolean canDrawOverlays() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this);
     }
 
     private void applyTtsSettings() {

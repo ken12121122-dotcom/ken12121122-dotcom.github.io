@@ -10,6 +10,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.InputStream;
 
 /** Central runtime registry for graph capabilities. Activity metadata is authoritative; virtual nodes cover shared-route/data pages. */
 final class NodeRegistry {
@@ -30,6 +31,8 @@ final class NodeRegistry {
             ActivityInfo[] infos=pm.getPackageInfo(context.getPackageName(),PackageManager.GET_ACTIVITIES|PackageManager.GET_META_DATA).activities;
             if(infos!=null)for(ActivityInfo info:infos){Bundle m=info.metaData;if(m==null||!m.getBoolean(META_VISIBLE,false))continue;pages.put(pageFromMetadata(info,m));}
             appendFinanceVirtualPages(pages);
+            appendFoxPetVirtualPage(pages);
+            appendNodeContextVirtualPages(context,pages);
         }catch(Exception ignored){}
         try{return new JSONObject().put("format","amin-app-navigation").put("version",5).put("rootId","app-core").put("rootCapabilityId","app:app-core").put("rootTitle","Amin Pocket").put("rootDescription","Amin Pocket capability root").put("rootRoute","amin-home://open").put("pages",pages).toString();}
         catch(Exception e){return"{\"pages\":[]}";}
@@ -38,7 +41,8 @@ final class NodeRegistry {
     static String registryJson(Context c,NodeMetadataStore o){String b=GraphContract.nodeRegistryJson(navigationJson(c));return o==null?b:o.applyToRegistry(b);}
 
     static String typedEdgesJson(Context c,NodeMetadataStore o){
-        String base=GraphContract.typedEdgesJson(navigationJson(c));
+        String navigation=navigationJson(c);
+        String base=GraphContract.typedEdgesJson(navigation);
         try{
             JSONObject root=new JSONObject(base);JSONArray edges=root.optJSONArray("edges");if(edges==null){edges=new JSONArray();root.put("edges",edges);}
             edges.put(GraphContract.edge("edge:finance:create:writes-transactions","app:finance-transaction-create","app:finance-transactions-store","writes_to","active","1").put("authority","capability_projection"));
@@ -47,6 +51,17 @@ final class NodeRegistry {
             edges.put(GraphContract.edge("edge:finance:categories:reads-sheet","app:finance-categories","app:finance-categories-store","reads_from","active","1").put("authority","capability_projection"));
             edges.put(GraphContract.edge("edge:finance:accounts:reads-sheet","app:finance-accounts","app:finance-accounts-store","reads_from","active","1").put("authority","capability_projection"));
             edges.put(GraphContract.edge("edge:finance:assets:reads-sheet","app:finance-assets","app:finance-assets-store","reads_from","active","1").put("authority","capability_projection"));
+            JSONArray pages=new JSONObject(navigation).optJSONArray("pages");
+            if(pages!=null)for(int i=0;i<pages.length();i++){
+                JSONObject page=pages.optJSONObject(i);
+                if(page==null||"reference".equals(page.optString("nodeType","")))continue;
+                String rawId=clean(page.optString("id",""));
+                JSONObject input=page.optJSONObject("inputContext");
+                String contextNodeId=input==null?"":clean(input.optString("context_node_id",""));
+                if(rawId.isEmpty()||contextNodeId.isEmpty())continue;
+                edges.put(GraphContract.edge("edge:"+rawId+":reads-context",nodeId(rawId),contextNodeId,"reads_from","active","1")
+                        .put("authority","node_context_catalog").put("read_only",true));
+            }
             base=root.toString();
         }catch(Exception ignored){}
         return o==null?base:o.mergeEdges(base);
@@ -90,6 +105,43 @@ final class NodeRegistry {
         pages.put(virtualPage("finance-accounts-store","finance.storage.accounts","Accounts Sheet","Google Sheets 實體分頁 Accounts","finance","","storage","read,write","","",false,"",storage("google_sheets",FinanceStorageConfig.SOURCE_ID,FinanceStorageConfig.ACCOUNTS),"bottom",3));
         pages.put(virtualPage("finance-assets-store","finance.storage.assets","Assets Sheet","Google Sheets 實體分頁 Assets","finance","","storage","read,write","","",false,"",storage("google_sheets",FinanceStorageConfig.SOURCE_ID,FinanceStorageConfig.ASSETS),"bottom",4));
     }
+
+    private static void appendFoxPetVirtualPage(JSONArray pages)throws Exception{
+        pages.put(virtualPage("fox-desktop-pet","app:fox-desktop-pet","桌面狐狸",
+                "既有 Voice / Chat Runtime 的桌面 Overlay Presentation。","fox-pet-control","",
+                "presentation","start,stop,show,hide","","",false,"",
+                new JSONObject().put("adapter","fox_pet_overlay").put("source_id","FoxPetOverlayService")
+                        .put("table",""),"bottom",1));
+    }
+
+    private static void appendNodeContextVirtualPages(Context context,JSONArray pages)throws Exception{
+        int sourceCount=pages.length();
+        for(int i=0;i<sourceCount;i++){
+            JSONObject page=pages.optJSONObject(i);
+            if(page==null||"reference".equals(page.optString("nodeType","")))continue;
+            String rawId=clean(page.optString("id",""));
+            if(rawId.isEmpty())continue;
+            String assetPath="node-context/"+rawId+".md";
+            if(!assetExists(context,assetPath))continue;
+            String contextRawId=rawId+"-md";
+            page.put("inputContext",new JSONObject().put("mode","managed_md")
+                    .put("context_node_id",nodeId(contextRawId)).put("chat_access","read_only"));
+            pages.put(virtualPage(contextRawId,"context."+rawId+".md",
+                    page.optString("title",rawId)+" MD",
+                    page.optString("title",rawId)+"節點的唯讀 Markdown context。",
+                    rawId,"","reference","read","","",false,"",
+                    new JSONObject().put("adapter","asset_md")
+                            .put("source_id","asset:"+assetPath).put("table",""),"bottom",1));
+        }
+    }
+
+    private static boolean assetExists(Context context,String path){
+        if(context==null)return false;
+        try(InputStream ignored=context.getAssets().open(path)){return true;}
+        catch(Exception ignored){return false;}
+    }
+
+    private static String nodeId(String rawId){return GraphContract.nodeId(GraphContract.APP_ORIGIN,rawId);}
 
     private static JSONObject virtualPage(String id,String capabilityId,String title,String description,String parent,String route,String type,String actions,String input,String output,boolean voiceEnabled,String aliases,JSONObject storage,String direction,int slot)throws Exception{return new JSONObject().put("id",id).put("capabilityId",capabilityId).put("title",title).put("description",description).put("parent",parent).put("route",route).put("direction",direction).put("slot",slot).put("activity","").put("origin","app").put("locked",true).put("nodeType",type).put("status","active").put("nodeVersion","1").put("actions",csv(actions)).put("inputContract",input).put("outputContract",output).put("voice",new JSONObject().put("enabled",voiceEnabled).put("aliases",csv(aliases))).put("storage",storage).put("filter",new JSONObject()).put("inputContext",new JSONObject());}
     private static JSONObject storage(String adapter,String source,String table)throws Exception{return new JSONObject().put("adapter",adapter).put("source_id",source).put("table",table).put("spreadsheet_id",FinanceStorageConfig.SPREADSHEET_ID);}

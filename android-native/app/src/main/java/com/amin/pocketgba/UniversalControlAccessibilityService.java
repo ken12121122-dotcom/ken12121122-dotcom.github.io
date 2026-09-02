@@ -130,6 +130,15 @@ public final class UniversalControlAccessibilityService extends AccessibilitySer
         }
     }
 
+    public static void refreshVoicePresentation(Context context) {
+        UniversalControlAccessibilityService instance = activeInstance;
+        if (instance != null && instance.floatingVoiceController != null) {
+            instance.mainHandler.post(instance.floatingVoiceController::refreshPresentationMode);
+        } else {
+            FoxPresentationBridge.applyDisplayMode(context);
+        }
+    }
+
     @Deprecated
     public static boolean isOverlayEnabled(Context context) {
         return isKeyboardBubbleEnabled(context);

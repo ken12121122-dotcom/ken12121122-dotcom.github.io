@@ -51,6 +51,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final VoiceCommandParser parser = new VoiceCommandParser();
     private final NodeMetadataStore nodeMetadataStore;
+    private final FoxPresentationBridge.RuntimeListener foxTapListener = this::toggleListening;
     private final ArrayList<String> chatHistory = new ArrayList<>();
     private final Runnable listeningTimeout = this::stopListeningToIdle;
     private final Runnable idleCheckIn = this::showIdleCheckIn;
@@ -90,6 +91,7 @@ final class FloatingVoiceController implements RecognitionListener {
 
     void show() {
         if (windowManager == null || bubble != null) return;
+        FoxPresentationBridge.attach(foxTapListener);
         refreshScreenBounds();
         createPanel();
         createBubble();
@@ -120,7 +122,24 @@ final class FloatingVoiceController implements RecognitionListener {
         presenceState = PresenceState.DORMANT;
     }
 
-    void destroy() { hide(); }
+    void destroy() { FoxPresentationBridge.detach(foxTapListener); hide(); }
+
+    void refreshPresentationMode() {
+        boolean voiceBall = FoxPetPreferences.MODE_VOICE_BALL.equals(
+                FoxPetPreferences.getDisplayMode(service));
+        if (bubble != null) bubble.setVisibility(voiceBall ? View.VISIBLE : View.GONE);
+        if (panel != null) panel.setVisibility(voiceBall && presenceState != PresenceState.DORMANT
+                ? View.VISIBLE : View.GONE);
+        FoxPresentationBridge.applyDisplayMode(service);
+        if (FoxPetPreferences.MODE_FOX.equals(FoxPetPreferences.getDisplayMode(service))) {
+            FoxPresentationBridge.VisualState state = presenceState == PresenceState.DORMANT
+                    ? FoxPresentationBridge.VisualState.SLEEPING
+                    : presenceState == PresenceState.IDLE_WAIT
+                    ? FoxPresentationBridge.VisualState.SITTING
+                    : FoxPresentationBridge.VisualState.ACTIVE;
+            FoxPresentationBridge.present(service, state, "", false);
+        }
+    }
 
     void onConfigurationChanged() {
         refreshScreenBounds();
@@ -274,6 +293,7 @@ final class FloatingVoiceController implements RecognitionListener {
         wakeWordExpected = true;
         if (panel != null) panel.setVisibility(View.VISIBLE);
         if (bubble != null) bubble.setText("🦊");
+        refreshPresentationMode();
         status("請說「狐狸」喚醒");
         startListening();
     }
@@ -288,7 +308,9 @@ final class FloatingVoiceController implements RecognitionListener {
         cancelPresenceTimers();
         listening = true;
         processing = false;
-        bubble.setText("■");
+        if (bubble != null) bubble.setText("■");
+        FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.LISTENING,
+                wakeWordExpected ? "請說「狐狸」喚醒" : "我在聽。", false);
         status(wakeWordExpected ? "正在等你說「狐狸」…" : "正在聆聽… 再點一次可送出");
         handler.removeCallbacks(listeningTimeout);
         handler.postDelayed(listeningTimeout, LISTENING_TIMEOUT_MS);
@@ -320,7 +342,9 @@ final class FloatingVoiceController implements RecognitionListener {
     private void stopAndProcess() {
         if (!listening || recognizer == null) return;
         handler.removeCallbacks(listeningTimeout);
-        listening = false; processing = true; bubble.setText("…"); status("正在取得完整語音…");
+        listening = false; processing = true; if (bubble != null) bubble.setText("…");
+        status("正在取得完整語音…");
+        FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.THINKING, "", false);
         recognizer.stopListening();
     }
 
@@ -348,11 +372,27 @@ final class FloatingVoiceController implements RecognitionListener {
 
     private void routeTranscript(String spoken, double confidence) {
         appendChat("你：" + spoken);
+        ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
+                service, nodeMetadataStore, spoken);
+        if (capability.isHandled()) {
+            appendChat("AI：" + capability.getAnswer());
+            finishTurn("Capability 唯讀回覆完成");
+            FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.TALKING,
+                    capability.getAnswer(), true);
+            return;
+        }
         status("Router 分流中…");
         final boolean createRequested = isCreateNodeRequest(spoken);
         final String requestedNodeName = createRequested ? extractNodeName(spoken) : "";
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
+
+        if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken)) {
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "fox_context",
+                    "read-only Node Markdown question");
+            runLlmGate(turnId, spoken, false, "");
+            return;
+        }
 
         final NodeRegistry.ScanResult scan = NodeRegistry.scanVoice(service, nodeMetadataStore, spoken);
         final NodeRegistry.Match nodeMatch = scan.match;
@@ -524,9 +564,11 @@ final class FloatingVoiceController implements RecognitionListener {
 
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_REQUEST, "sending", LlmConfigStore.label(service));
         status("LLM 思考中 · " + LlmConfigStore.label(service));
+        FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.THINKING, "", false);
         ArrayList<LlmClient.Message> messages = new ArrayList<>();
         messages.add(new LlmClient.Message("user", spoken));
-        LlmClient.send(service, messages, new LlmClient.Callback() {
+        JSONObject context = FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken);
+        LlmClient.send(service, FoxConversationContextBuilder.systemContext(context), messages, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 handler.post(() -> {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();
@@ -534,6 +576,8 @@ final class FloatingVoiceController implements RecognitionListener {
                     appendChat("AI：" + reply);
                     NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.MEMORY_JUDGE, "skip", "floating live-link test: memory write disabled");
                     finishTurn(createRequested ? "完成 · 節點已先建立，LLM 回覆完成" : "完成 · Memory 測試暫不寫入");
+                    FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.TALKING,
+                            reply, true);
                 });
             }
             @Override public void onError(String message) {
@@ -593,7 +637,10 @@ final class FloatingVoiceController implements RecognitionListener {
         }
         presenceState = PresenceState.IDLE_WAIT;
         if (panel != null) panel.setVisibility(View.VISIBLE);
+        refreshPresentationMode();
         appendChat("狐狸：還有事情要處理嗎？沒有的話我先退下。");
+        FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.SITTING,
+                "還有事情要處理嗎？沒有的話我先退下。", false);
         status("等待 60 秒 · 無回應就退下");
         Toast.makeText(service, "狐狸：還有事情要處理嗎？", Toast.LENGTH_LONG).show();
         handler.removeCallbacks(dormantTimeout);
@@ -614,6 +661,7 @@ final class FloatingVoiceController implements RecognitionListener {
             bubble.setText("🦊");
             bubble.setContentDescription("狐狸休眠中 · 點一下後說狐狸喚醒");
         }
+        refreshPresentationMode();
     }
 
     private void markActive() {
@@ -624,6 +672,7 @@ final class FloatingVoiceController implements RecognitionListener {
             bubble.setText("🎙");
             bubble.setContentDescription("Amin Neural Flow 語音按鈕");
         }
+        refreshPresentationMode();
         scheduleIdleCheckIn();
     }
 
@@ -671,7 +720,7 @@ final class FloatingVoiceController implements RecognitionListener {
     @Override public void onBeginningOfSpeech() { handler.removeCallbacks(listeningTimeout); status("已聽到聲音…"); }
     @Override public void onRmsChanged(float rmsdB) { }
     @Override public void onBufferReceived(byte[] buffer) { }
-    @Override public void onEndOfSpeech() { handler.removeCallbacks(listeningTimeout); listening = false; processing = true; if (bubble != null) bubble.setText("…"); status("正在理解…"); }
+    @Override public void onEndOfSpeech() { handler.removeCallbacks(listeningTimeout); listening = false; processing = true; if (bubble != null) bubble.setText("…"); status("正在理解…"); FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.THINKING, "", false); }
     @Override public void onError(int error) {
         handler.removeCallbacks(listeningTimeout);
         processing = false; listening = false;

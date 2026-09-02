@@ -281,7 +281,9 @@ public final class ControlCenterActivity extends Activity {
     }
 
     private void openVoiceBubble() {
+        FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_VOICE_BALL);
         UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+        UniversalControlAccessibilityService.refreshVoicePresentation(this);
         if (!isUniversalControlEnabled()) {
             Toast.makeText(
                     this,
