@@ -5,6 +5,7 @@ on:
     branches:
       - release/android
       - feat/github-control-layer-phase1-readonly
+      - feat/step11-capability-runtime-contract
     paths:
       - 'android-native/**'
       - 'tools/tree-sitter-scanner/**'
@@ -49,10 +50,12 @@ jobs:
           set -euxo pipefail
           node --check android-native/app/src/main/assets/amin-wiki-graph/index.html >/dev/null 2>&1 || true
           node --check android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          node --check android-native/app/src/main/assets/amin-wiki-graph/focus-chain-projection.js
           node --test tests/*.test.mjs
 
           test -f android-native/app/src/main/assets/amin-wiki-graph/index.html
           test -f android-native/app/src/main/assets/amin-wiki-graph/source-review.js
+          test -f android-native/app/src/main/assets/amin-wiki-graph/focus-chain-projection.js
           test ! -f android-native/app/src/main/assets/amin-wiki-graph/architecture-visibility.js
           test ! -f android-native/app/src/main/assets/amin-wiki-graph/capability-semantic-zoom.js
           test ! -f android-native/app/src/main/assets/amin-wiki-graph/github-native-capabilities.js
@@ -335,7 +338,7 @@ jobs:
           adb shell am start -W -a android.intent.action.VIEW -d 'amin-graph://open' \
             -p com.amin.pocketgba | grep -F 'Status: ok'
 
-      - name: Run GitHub Work and Step 11 mobile acceptance tests
+      - name: Run GitHub Work, Step 11, and Focus Chain mobile acceptance tests
         shell: bash
         run: |
           set -euxo pipefail
@@ -343,7 +346,7 @@ jobs:
             -e class com.amin.pocketgba.WikiGraphActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/phase1-instrumentation.txt"
-          grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/phase1-instrumentation.txt"
+          grep -Eq 'OK \(2 tests\)' "$RUNNER_TEMP/phase1-instrumentation.txt"
           adb shell am instrument -w -r \
             -e class com.amin.pocketgba.CapabilityInventoryActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \

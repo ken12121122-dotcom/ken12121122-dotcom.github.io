@@ -4,7 +4,7 @@
 >
 > Before starting Android engineering work, read this document together with the active Issue / PR and verify current GitHub state. Do not treat this file as a substitute for code or CI evidence.
 
-Last status update: 2026-08-30
+Last status update: 2026-08-31
 
 ## 1. Production baseline
 
@@ -41,6 +41,7 @@ Last status update: 2026-08-30
 - Draft PR #124: `feat/step11-capability-runtime-contract`, stacked on the accepted PR #121 head.
 - Step 11 first delivery remains limited to the executable Capability Graph v1 contract, governed read-only inventory, versioned time-bounded certification scope, and a read-only manager inside the existing Unified Graph / Dynamic Canvas. The manager filters type (including Command), lifecycle, and certification state and renders structured source/evidence details without exposing Connect or execution actions.
 - Step 11 execution, autonomy, write controls, merge, production release, and Phase 2 remain out of scope.
+- Issue #127: OWNER-approved Focus Chain Navigation Phase 1, implemented as a view projection on the existing Unified Graph and single Dynamic Canvas.
 
 ### Not complete yet
 
@@ -260,12 +261,12 @@ Current owner of implementation: Codex.
 
 Codex should:
 
-- work from latest `release/android`
-- use `feat/github-control-layer-phase1-readonly`
-- implement the OWNER-approved Phase 1 boundary
+- continue Issue #127 from the verified PR #124 head while keeping `release/android` unchanged
+- use `feat/focus-chain-navigation-phase1` with PR base `feat/step11-capability-runtime-contract`
+- implement the OWNER-approved Focus Chain Phase 1 interaction and security boundary
 - preserve existing Graph / identity / dedupe / Canvas architecture
 - follow the top-level `AGENTS.md` continuous-execution rule and continue through tests / CI fixes
-- stop at the complete OWNER mobile acceptance gate; do not enter Phase 2 automatically
+- stop at the complete OWNER mobile acceptance / candidate-publication gate; do not enter Phase 2 automatically
 
 OWNER prefers testing after a complete meaningful function exists, not merely to inspect an intermediate UI.
 
@@ -281,7 +282,18 @@ For ChatGPT / Codex / Claude Code:
 6. Update this status document when an architecture decision, production baseline, active phase, or handoff state materially changes.
 7. Do not copy secrets, tokens, private keys, PATs, or credentials into this document.
 
-## 15. Planned roadmap — Agent Workforce / Engineering Dashboard
+## 15. Active stacked work — Focus Chain Navigation
+
+- Issue: `#127`
+- Branch: `feat/focus-chain-navigation-phase1`
+- Stack base: PR #124 head (`feat/step11-capability-runtime-contract`), so the new pull request diff remains isolated from PR #121 / #124.
+- Interaction: choose node A and node B, inspect deterministic authored forward/reverse route choices, then explicitly approve the Canvas projection.
+- View limits: at most three open/pinned paths and six hops per visible segment; longer paths use overlapping segments.
+- Persisted state: Pin Path stores only rebuildable existing node/edge ID references. Missing references are ignored on restore.
+- Security: read-only view state only. No Graph mutation, second renderer, identity/dedupe layer, GitHub write, execution, credential, autonomy, merge, or release authority.
+- Archify is an interaction reference only; its renderer and IR are not embedded and no Archify source code is copied.
+
+## 16. Planned roadmap — Agent Workforce / Engineering Dashboard
 
 This is a planned post-Phase-1 capability, not an instruction to interrupt or expand Issue #120. Begin only after the GitHub read-only Control Layer reaches the appropriate OWNER acceptance gate.
 
