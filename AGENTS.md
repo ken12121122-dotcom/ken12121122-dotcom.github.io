@@ -240,3 +240,9 @@ CI 不得寫死 Bridge 版本。應從實際 APK 讀取 package、versionName、
 - 安全回退點
 
 每次完成實機驗證或正式發布後，才同步更新本檔、兩份 manifest 與架構文件。
+
+## 跨 Repo 多 Agent 協作（AMIN Brain）
+
+私人 orchestration、Work Graph、手機任務 transport、Codex／Claude Code 分工與 Handoff Evidence 的權威文件位於 `ken12121122-dotcom/amin-agent-control`：先讀該 Repo 根目錄 `AGENTS.md` 與 `docs/AMIN_BRAIN_AGENT_WORKFLOW.md`。
+
+本 Repo 仍是公開 App 與發布閘門的權威來源。AMIN Brain 自動派工只能由 `release/android` 建立 Draft PR 並修改 `android-native/**`；不得將私人 Work Graph、GitHub token、Agent transcript 或 `.agent-handoff/` 放進本 Repo。若私人 Control Repo 規則與本檔的發布、簽章、版本或實機驗收規則衝突，以本檔為準。

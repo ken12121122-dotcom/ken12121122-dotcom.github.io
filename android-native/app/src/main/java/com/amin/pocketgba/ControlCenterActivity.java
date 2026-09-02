@@ -163,6 +163,17 @@ public final class ControlCenterActivity extends Activity {
         financeCard.setOnClickListener(view -> startActivity(new Intent(this, FinanceActivity.class)));
         content.addView(financeCard, cardParams());
 
+        LinearLayout brainCard = actionCard(
+                "🧠",
+                "AMIN Brain 任務中心",
+                "從手機發布與批准私人任務，查看 Codex／Claude 執行狀態",
+                "開啟",
+                false
+        );
+        brainCard.setContentDescription("開啟 AMIN Brain 手機任務中心");
+        brainCard.setOnClickListener(view -> startActivity(new Intent(this, BrainControlActivity.class)));
+        content.addView(brainCard, cardParams());
+
         LinearLayout statusHeader = new LinearLayout(this);
         statusHeader.setOrientation(LinearLayout.HORIZONTAL);
         statusHeader.setGravity(Gravity.CENTER_VERTICAL);

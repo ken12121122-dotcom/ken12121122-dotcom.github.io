@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 35
     env:
       AMIN_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+      AMIN_GITHUB_APP_CLIENT_ID: ${{ vars.AMIN_GITHUB_APP_CLIENT_ID }}
 
     steps:
       - name: Checkout pull request head
@@ -202,6 +203,7 @@ jobs:
             -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
             -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
             -PAMIN_SOURCE_REF="$AMIN_SOURCE_REVISION" \
+            -PAMIN_GITHUB_APP_CLIENT_ID="$AMIN_GITHUB_APP_CLIENT_ID" \
             :app:testDebugUnitTest \
             :app:testBridgeUnitTest \
             :app:lintBridge \
