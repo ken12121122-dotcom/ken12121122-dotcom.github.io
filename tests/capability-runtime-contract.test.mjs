@@ -48,6 +48,7 @@ test('Capability governance stays a read-only manager inside the single Canvas',
   assert.match(canvas, /unsafeCapabilityCount/);
   assert.match(canvas, /graph\?\.capabilityInventory\?\.entities/);
   assert.match(canvas, /focusCapabilityNode\(capability\.dataset\.capabilityNode\)/);
+  assert.match(canvas, /prepareFirstFocusRoute:\(\)=>\{const edge=focusGraph\(\)\.relations\[0\]/);
   assert.doesNotMatch(canvas, /id="executeCapability"|id="approveCapability"|id="certifyCapability"/);
 });
 
