@@ -38,8 +38,13 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final String PREFS = "amin_floating_voice";
     private static final String KEY_X = "voice_bubble_x";
     private static final String KEY_Y = "voice_bubble_y";
+    private static final String WAKE_WORD = "狐狸";
     private static final long LISTENING_TIMEOUT_MS = 8000L;
     private static final long SCAN_STEP_MS = 45L;
+    private static final long IDLE_CHECKIN_MS = 15L * 60L * 1000L;
+    private static final long IDLE_DISMISS_MS = 60L * 1000L;
+
+    private enum PresenceState { ACTIVE, IDLE_WAIT, DORMANT }
 
     private final UniversalControlAccessibilityService service;
     private final WindowManager windowManager;
@@ -48,6 +53,8 @@ final class FloatingVoiceController implements RecognitionListener {
     private final NodeMetadataStore nodeMetadataStore;
     private final ArrayList<String> chatHistory = new ArrayList<>();
     private final Runnable listeningTimeout = this::stopListeningToIdle;
+    private final Runnable idleCheckIn = this::showIdleCheckIn;
+    private final Runnable dormantTimeout = this::enterDormant;
 
     private TextView bubble;
     private WindowManager.LayoutParams bubbleParams;
@@ -69,6 +76,8 @@ final class FloatingVoiceController implements RecognitionListener {
     private Intent recognizerIntent;
     private boolean listening;
     private boolean processing;
+    private boolean wakeWordExpected;
+    private PresenceState presenceState = PresenceState.ACTIVE;
     private int screenWidth;
     private int screenHeight;
 
@@ -84,11 +93,13 @@ final class FloatingVoiceController implements RecognitionListener {
         refreshScreenBounds();
         createPanel();
         createBubble();
+        markActive();
     }
 
     boolean isVisible() { return bubble != null; }
 
     void hide() {
+        cancelPresenceTimers();
         stopRecognizer(true);
         clearPendingGate();
         removeView(panel);
@@ -105,6 +116,8 @@ final class FloatingVoiceController implements RecognitionListener {
         gatePass = null;
         bubble = null;
         bubbleParams = null;
+        wakeWordExpected = false;
+        presenceState = PresenceState.DORMANT;
     }
 
     void destroy() { hide(); }
@@ -245,9 +258,24 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void toggleListening() {
+        if (presenceState == PresenceState.DORMANT) {
+            beginWakeWordListening();
+            return;
+        }
         if (pendingGatePass != null) { status("先完成目前節點確認"); return; }
         if (processing) { status("上一個訊號仍在處理中"); return; }
+        if (presenceState == PresenceState.IDLE_WAIT) markActive();
         if (listening) stopAndProcess(); else startListening();
+    }
+
+    private void beginWakeWordListening() {
+        if (pendingGatePass != null || processing) return;
+        cancelPresenceTimers();
+        wakeWordExpected = true;
+        if (panel != null) panel.setVisibility(View.VISIBLE);
+        if (bubble != null) bubble.setText("🦊");
+        status("請說「狐狸」喚醒");
+        startListening();
     }
 
     private void startListening() {
@@ -257,15 +285,18 @@ final class FloatingVoiceController implements RecognitionListener {
             return;
         }
         if (!prepareRecognizer()) return;
+        cancelPresenceTimers();
         listening = true;
         processing = false;
         bubble.setText("■");
-        status("正在聆聽… 再點一次可送出");
+        status(wakeWordExpected ? "正在等你說「狐狸」…" : "正在聆聽… 再點一次可送出");
         handler.removeCallbacks(listeningTimeout);
         handler.postDelayed(listeningTimeout, LISTENING_TIMEOUT_MS);
         try { recognizer.startListening(recognizerIntent); }
         catch (RuntimeException error) {
-            listening = false; bubble.setText("🎙"); status("語音辨識啟動失敗");
+            listening = false;
+            if (bubble != null) bubble.setText(wakeWordExpected ? "🦊" : "🎙");
+            status("語音辨識啟動失敗");
         }
     }
 
@@ -296,8 +327,14 @@ final class FloatingVoiceController implements RecognitionListener {
     private void stopListeningToIdle() {
         if (recognizer != null && listening) recognizer.cancel();
         listening = false; processing = false;
+        if (wakeWordExpected) {
+            wakeWordExpected = false;
+            enterDormant();
+            return;
+        }
         if (bubble != null) bubble.setText("🎙");
         status("待命 · 點 🎙 開始說話");
+        scheduleIdleCheckIn();
     }
 
     private void stopRecognizer(boolean destroy) {
@@ -542,8 +579,78 @@ final class FloatingVoiceController implements RecognitionListener {
     private void finishTurn(String value) {
         clearPendingGate();
         processing = false; listening = false;
+        wakeWordExpected = false;
+        markActive();
         if (bubble != null) bubble.setText("🎙");
         status(value + " · 可繼續說下一句");
+    }
+
+    private void showIdleCheckIn() {
+        if (bubble == null || presenceState == PresenceState.DORMANT) return;
+        if (listening || processing || pendingGatePass != null) {
+            scheduleIdleCheckIn();
+            return;
+        }
+        presenceState = PresenceState.IDLE_WAIT;
+        if (panel != null) panel.setVisibility(View.VISIBLE);
+        appendChat("狐狸：還有事情要處理嗎？沒有的話我先退下。");
+        status("等待 60 秒 · 無回應就退下");
+        Toast.makeText(service, "狐狸：還有事情要處理嗎？", Toast.LENGTH_LONG).show();
+        handler.removeCallbacks(dormantTimeout);
+        handler.postDelayed(dormantTimeout, IDLE_DISMISS_MS);
+    }
+
+    private void enterDormant() {
+        cancelPresenceTimers();
+        if (listening || processing || pendingGatePass != null) {
+            scheduleIdleCheckIn();
+            return;
+        }
+        stopRecognizer(false);
+        wakeWordExpected = false;
+        presenceState = PresenceState.DORMANT;
+        if (panel != null) panel.setVisibility(View.GONE);
+        if (bubble != null) {
+            bubble.setText("🦊");
+            bubble.setContentDescription("狐狸休眠中 · 點一下後說狐狸喚醒");
+        }
+    }
+
+    private void markActive() {
+        cancelPresenceTimers();
+        presenceState = PresenceState.ACTIVE;
+        if (panel != null) panel.setVisibility(View.VISIBLE);
+        if (bubble != null) {
+            bubble.setText("🎙");
+            bubble.setContentDescription("Amin Neural Flow 語音按鈕");
+        }
+        scheduleIdleCheckIn();
+    }
+
+    private void scheduleIdleCheckIn() {
+        if (bubble == null || presenceState == PresenceState.DORMANT || listening || processing || pendingGatePass != null) return;
+        handler.removeCallbacks(idleCheckIn);
+        handler.removeCallbacks(dormantTimeout);
+        handler.postDelayed(idleCheckIn, IDLE_CHECKIN_MS);
+    }
+
+    private void cancelPresenceTimers() {
+        handler.removeCallbacks(idleCheckIn);
+        handler.removeCallbacks(dormantTimeout);
+    }
+
+    private boolean containsWakeWord(String text) {
+        return text != null && text.replace(" ", "").contains(WAKE_WORD);
+    }
+
+    private String stripWakeWord(String text) {
+        if (text == null) return "";
+        String value = text.trim();
+        int index = value.indexOf(WAKE_WORD);
+        if (index < 0) return value;
+        String before = value.substring(0, index).trim();
+        String after = value.substring(index + WAKE_WORD.length()).trim();
+        return (before + " " + after).trim();
     }
 
     private void appendChat(String line) {
@@ -560,12 +667,23 @@ final class FloatingVoiceController implements RecognitionListener {
 
     private void status(String value) { if (statusView != null) statusView.setText(value); }
 
-    @Override public void onReadyForSpeech(Bundle params) { status("請開始說話"); }
+    @Override public void onReadyForSpeech(Bundle params) { status(wakeWordExpected ? "請說「狐狸」" : "請開始說話"); }
     @Override public void onBeginningOfSpeech() { handler.removeCallbacks(listeningTimeout); status("已聽到聲音…"); }
     @Override public void onRmsChanged(float rmsdB) { }
     @Override public void onBufferReceived(byte[] buffer) { }
     @Override public void onEndOfSpeech() { handler.removeCallbacks(listeningTimeout); listening = false; processing = true; if (bubble != null) bubble.setText("…"); status("正在理解…"); }
-    @Override public void onError(int error) { handler.removeCallbacks(listeningTimeout); processing = false; listening = false; if (bubble != null) bubble.setText("🎙"); status("語音辨識失敗 · 再試一次"); }
+    @Override public void onError(int error) {
+        handler.removeCallbacks(listeningTimeout);
+        processing = false; listening = false;
+        if (wakeWordExpected) {
+            wakeWordExpected = false;
+            enterDormant();
+            return;
+        }
+        if (bubble != null) bubble.setText("🎙");
+        status("語音辨識失敗 · 再試一次");
+        scheduleIdleCheckIn();
+    }
     @Override public void onPartialResults(Bundle partialResults) {
         ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         if (matches != null && !matches.isEmpty()) status("聽到：" + shorten(matches.get(0), 28));
@@ -577,10 +695,37 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false; processing = true;
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-        if (matches == null || matches.isEmpty()) { finishTurn("沒有辨識到文字"); return; }
+        if (matches == null || matches.isEmpty()) {
+            if (wakeWordExpected) { processing = false; wakeWordExpected = false; enterDormant(); }
+            else finishTurn("沒有辨識到文字");
+            return;
+        }
         String spoken = matches.get(0) == null ? "" : matches.get(0).trim();
         double confidence = confidences != null && confidences.length > 0 ? confidences[0] : 1.0d;
-        if (spoken.isEmpty()) { finishTurn("沒有辨識到文字"); return; }
+        if (spoken.isEmpty()) {
+            if (wakeWordExpected) { processing = false; wakeWordExpected = false; enterDormant(); }
+            else finishTurn("沒有辨識到文字");
+            return;
+        }
+        if (wakeWordExpected) {
+            wakeWordExpected = false;
+            processing = false;
+            if (!containsWakeWord(spoken)) {
+                appendChat("系統：未聽到喚醒詞「狐狸」，繼續休眠。");
+                enterDormant();
+                return;
+            }
+            String remainder = stripWakeWord(spoken);
+            markActive();
+            appendChat("狐狸：我在。");
+            if (remainder.isEmpty()) {
+                finishTurn("已喚醒");
+                return;
+            }
+            routeTranscript(remainder, confidence);
+            return;
+        }
+        markActive();
         routeTranscript(spoken, confidence);
     }
 

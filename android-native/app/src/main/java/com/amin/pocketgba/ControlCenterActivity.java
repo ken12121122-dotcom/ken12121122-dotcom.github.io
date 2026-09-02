@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
@@ -11,6 +12,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -269,11 +271,37 @@ public final class ControlCenterActivity extends Activity {
 
     private void openVoiceBubble() {
         UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
-        Toast.makeText(
+        if (!isUniversalControlEnabled()) {
+            Toast.makeText(
+                    this,
+                    "語音球已準備好，但全域控制權限目前未啟用。請先啟用 Amin Accessibility，啟用後語音球會自動顯示。",
+                    Toast.LENGTH_LONG
+            ).show();
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            return;
+        }
+        Toast.makeText(this, "語音球已開啟。", Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isUniversalControlEnabled() {
+        String enabledServices = Settings.Secure.getString(
+                getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        );
+        if (enabledServices == null || enabledServices.isBlank()) {
+            return false;
+        }
+        ComponentName expected = new ComponentName(
                 this,
-                "語音球已開啟；若尚未啟用全域控制權限，請先到『權限與裝置』啟用 Accessibility。",
-                Toast.LENGTH_LONG
-        ).show();
+                UniversalControlAccessibilityService.class
+        );
+        for (String entry : enabledServices.split(":")) {
+            ComponentName component = ComponentName.unflattenFromString(entry);
+            if (expected.equals(component)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void toggleTechnicalDetails() {
