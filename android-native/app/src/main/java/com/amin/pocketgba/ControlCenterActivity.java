@@ -11,6 +11,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -57,6 +59,8 @@ public final class ControlCenterActivity extends Activity {
     private Button detectButton;
     private Button detailsButton;
     private LinearLayout technicalDetails;
+    private LinearLayout foxPetCard;
+    private boolean foxPetPermissionPending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +75,13 @@ public final class ControlCenterActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (networkValue != null) refreshNetwork();
+        if (foxPetPermissionPending && canDrawOverlays()) {
+            foxPetPermissionPending = false;
+            startFoxPet();
+        } else if (FoxPetState.isEnabled(this) && canDrawOverlays()) {
+            ensureFoxPetRunning();
+        }
+        refreshFoxPetCard();
     }
 
     private void configureWindow() {
@@ -162,6 +173,17 @@ public final class ControlCenterActivity extends Activity {
         financeCard.setContentDescription("開啟財務首頁");
         financeCard.setOnClickListener(view -> startActivity(new Intent(this, FinanceActivity.class)));
         content.addView(financeCard, cardParams());
+
+        foxPetCard = actionCard(
+                "🦊",
+                "桌面狐狸",
+                "可拖曳、閒置淡化，並會自己在桌面散步",
+                FoxPetState.isEnabled(this) ? "關閉" : "開啟",
+                false
+        );
+        foxPetCard.setContentDescription("開啟或關閉桌面狐狸");
+        foxPetCard.setOnClickListener(view -> toggleFoxPet());
+        content.addView(foxPetCard, cardParams());
 
         LinearLayout statusHeader = new LinearLayout(this);
         statusHeader.setOrientation(LinearLayout.HORIZONTAL);
@@ -267,6 +289,65 @@ public final class ControlCenterActivity extends Activity {
         content.addView(footer, footerParams);
 
         setContentView(scroll);
+    }
+
+    private void toggleFoxPet() {
+        if (FoxPetState.isEnabled(this)) {
+            Intent stop = new Intent(this, FoxPetOverlayService.class)
+                    .setAction(FoxPetOverlayService.ACTION_STOP);
+            stopService(stop);
+            FoxPetState.setEnabled(this, false);
+            foxPetPermissionPending = false;
+            refreshFoxPetCard();
+            Toast.makeText(this, "桌面狐狸已關閉。", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!canDrawOverlays()) {
+            foxPetPermissionPending = true;
+            Intent permissionIntent = new Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())
+            );
+            startActivity(permissionIntent);
+            Toast.makeText(
+                    this,
+                    "請允許 Amin 顯示在其他應用程式上層，返回後狐狸會自動開啟。",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        startFoxPet();
+    }
+
+    private boolean canDrawOverlays() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this);
+    }
+
+    private void startFoxPet() {
+        FoxPetState.setEnabled(this, true);
+        ensureFoxPetRunning();
+        refreshFoxPetCard();
+        Toast.makeText(this, "桌面狐狸已開啟。", Toast.LENGTH_SHORT).show();
+    }
+
+    private void ensureFoxPetRunning() {
+        Intent start = new Intent(this, FoxPetOverlayService.class)
+                .setAction(FoxPetOverlayService.ACTION_START);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(start);
+        } else {
+            startService(start);
+        }
+    }
+
+    private void refreshFoxPetCard() {
+        if (foxPetCard == null || foxPetCard.getChildCount() < 3) return;
+        View action = foxPetCard.getChildAt(2);
+        if (action instanceof TextView) {
+            ((TextView) action).setText((FoxPetState.isEnabled(this) ? "關閉" : "開啟") + "  ›");
+        }
     }
 
     private void openVoiceBubble() {
