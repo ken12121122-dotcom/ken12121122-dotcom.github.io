@@ -1,9 +1,9 @@
 {
-  "versionCode": 184,
-  "versionName": "0.11.20-rc1",
+  "versionCode": 185,
+  "versionName": "0.11.21-rc1",
   "channel": "candidate",
-  "bridge": 88,
-  "releaseSequence": 22,
+  "bridge": 89,
+  "releaseSequence": 23,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
