@@ -408,3 +408,31 @@ acceptance workflow. No release workflow or production path is changed.
 Not authorized in Step 12: GitHub write, Agent dispatch/assignment mutation, raw logs, Tool
 execution, credentials, paid models, autonomy, merge, release, production, or Steps 13–18
 implementation.
+
+## 18. Step 12.1 active implementation — Agent / Skill Governance Gate
+
+OWNER authorized continued Step 12 implementation on 2026-09-02. Step 12.1 adds a repository
+pull-request gate on top of the existing Agent marker / Execution Receipt and Capability Skill
+review contracts; it does not add another identity, Registry, Graph, dedupe layer, Connect, or
+Canvas.
+
+- Branch: `feat/step12-1-agent-skill-governance-gate`
+- Stack base: PR #130 head `7038004cc564dbaf78f5c49c14e7087e071e5d00`
+- Production baseline remains `release/android`
+  `6a2404b06101ada270f126befb74db4fc83761ac`
+- Contract: `docs/STEP_12_1_AGENT_SKILL_GOVERNANCE_GATE.md`
+
+Repository CI check portion:
+
+- every PR supplies exactly one trusted, valid `amin-agent-execution` marker;
+- every changed `SKILL.md` has exact path coverage, stable ID/version, structured sources,
+  matching Agent provenance, and explicit gaps;
+- Agent submissions remain non-canonical and execution-disabled;
+- read-only CI tests fail closed for missing, duplicate, forked, untrusted, incomplete, or
+  self-promoted declarations;
+- governance-critical files are assigned to the OWNER in `CODEOWNERS`.
+
+Remaining OWNER Gate: GitHub currently has no verified branch protection / ruleset enforcing the
+check. Requiring `Agent and Skill Governance Gate / validate-governance` and CODEOWNER approval
+is a server-side repository administration action. No Agent should enable it, merge, release, or
+claim it is active without explicit OWNER authorization and verification.

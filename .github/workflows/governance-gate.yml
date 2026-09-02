@@ -1,0 +1,40 @@
+name: Agent and Skill Governance Gate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: governance-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-governance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted merge candidate
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only -z \
+            "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+            > "$RUNNER_TEMP/amin-changed-files"
+
+      - name: Test executable governance contract
+        run: node --test tests/governance-gate.test.mjs
+
+      - name: Enforce Agent and Skill evidence
+        run: |
+          node tools/governance-gate/validate-governance.mjs \
+            --event "$GITHUB_EVENT_PATH" \
+            --changed-files "$RUNNER_TEMP/amin-changed-files" \
+            --policy .github/governance/policy-v1.json
