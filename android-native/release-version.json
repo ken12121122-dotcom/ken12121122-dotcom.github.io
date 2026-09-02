@@ -1,9 +1,9 @@
 {
-  "versionCode": 185,
-  "versionName": "0.11.21-rc1",
+  "versionCode": 186,
+  "versionName": "0.11.22-rc1",
   "channel": "candidate",
-  "bridge": 89,
-  "releaseSequence": 23,
+  "bridge": 90,
+  "releaseSequence": 24,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -15,6 +15,7 @@
     "將既有聊天入口命名為狐狸，為 24 個內建功能 Node 建立簡要唯讀 Markdown context，並以既有 reads_from 關聯接回 Node Registry。",
     "狐狸依問題最多選取三個相關 Node MD 回報；新增且通過 RegistryApprovalActivity 的自訂 Node 會自動建立 app-private MD 與關聯。",
     "整合既有 FoxPetOverlayService 與狐狸控制面板；語音球、桌面狐狸、隱藏模式互斥，桌面狐狸沿用同一個 FloatingVoiceController，支援拖曳、狀態、完整回覆泡泡與 Android TTS。",
+    "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }
