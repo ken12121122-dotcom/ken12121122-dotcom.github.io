@@ -1,0 +1,16 @@
+{
+  "schema_version": "amin-governance-policy-v1",
+  "agent_marker": "amin-agent-execution",
+  "skill_marker": "amin-skill-submission",
+  "trusted_author_associations": ["OWNER", "MEMBER", "COLLABORATOR"],
+  "skill_file_patterns": ["(^|/)SKILL\\.md$"],
+  "candidate_skill_statuses": ["generated", "reviewed", "rejected", "deprecated"],
+  "forbidden_agent_skill_statuses": ["approved", "certified", "canonical"],
+  "owner_required_paths": [
+    "AGENTS.md",
+    ".github/CODEOWNERS",
+    ".github/governance/",
+    ".github/workflows/governance-gate.yml",
+    ".github/PULL_REQUEST_TEMPLATE.md"
+  ]
+}

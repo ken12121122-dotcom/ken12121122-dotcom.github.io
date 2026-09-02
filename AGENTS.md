@@ -255,3 +255,21 @@ Node 推導唯讀 Execution Receipt；marker 不得自行指定 Context Node 或
 目前 v1 每個 PR 只支援一個明確 Agent 歸屬。若同一 PR 混合多個 Agent 且無法由可驗證
 執行紀錄分離，不得把整體成果推定歸屬其中一個 Agent；應保留為 provenance gap，等待
 未來具 provider/session/run 證據或簽章的 receipt contract。
+
+### Agent / Skill PR governance preflight
+
+Every engineering PR must pass `.github/workflows/governance-gate.yml`. Keep exactly one valid
+`amin-agent-execution` marker in the PR body; a missing, duplicate, fork-supplied, untrusted, or
+identity-mismatched marker fails closed.
+
+When a PR changes any `SKILL.md`, it must also declare exactly one `amin-skill-submission` marker
+covering every changed Skill path. An Agent may submit only a source-backed, versioned candidate
+with explicit provenance and unresolved gaps. An Agent must not mark its own Skill `approved`,
+`certified`, or canonical, and must not enable Skill execution. Promotion remains an explicit
+OWNER/human review action. The marker is submission evidence only; do not create a second Skill
+Registry, Agent identity, Graph, dedupe system, Connect system, or Canvas.
+
+The executable contract is documented in
+`docs/STEP_12_1_AGENT_SKILL_GOVERNANCE_GATE.md`. `CODEOWNERS` and the check become a hard merge
+boundary only after the OWNER enables the corresponding GitHub ruleset / branch-protection
+requirements; Agents must not claim that server-side enforcement is active before verification.

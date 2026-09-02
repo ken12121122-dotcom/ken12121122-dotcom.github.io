@@ -1,0 +1,8 @@
+# Governance contracts require explicit OWNER review when branch rules enable CODEOWNERS.
+/AGENTS.md @ken12121122-dotcom
+/.github/CODEOWNERS @ken12121122-dotcom
+/.github/PULL_REQUEST_TEMPLATE.md @ken12121122-dotcom
+/.github/governance/ @ken12121122-dotcom
+/.github/workflows/governance-gate.yml @ken12121122-dotcom
+/tools/governance-gate/ @ken12121122-dotcom
+/tests/governance-gate.test.mjs @ken12121122-dotcom
