@@ -348,11 +348,25 @@ final class FloatingVoiceController implements RecognitionListener {
 
     private void routeTranscript(String spoken, double confidence) {
         appendChat("你：" + spoken);
+        ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
+                service, nodeMetadataStore, spoken);
+        if (capability.isHandled()) {
+            appendChat("AI：" + capability.getAnswer());
+            finishTurn("Capability 唯讀回覆完成");
+            return;
+        }
         status("Router 分流中…");
         final boolean createRequested = isCreateNodeRequest(spoken);
         final String requestedNodeName = createRequested ? extractNodeName(spoken) : "";
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
+
+        if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken)) {
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "fox_context",
+                    "read-only Node Markdown question");
+            runLlmGate(turnId, spoken, false, "");
+            return;
+        }
 
         final NodeRegistry.ScanResult scan = NodeRegistry.scanVoice(service, nodeMetadataStore, spoken);
         final NodeRegistry.Match nodeMatch = scan.match;
@@ -526,7 +540,8 @@ final class FloatingVoiceController implements RecognitionListener {
         status("LLM 思考中 · " + LlmConfigStore.label(service));
         ArrayList<LlmClient.Message> messages = new ArrayList<>();
         messages.add(new LlmClient.Message("user", spoken));
-        LlmClient.send(service, messages, new LlmClient.Callback() {
+        JSONObject context = FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken);
+        LlmClient.send(service, FoxConversationContextBuilder.systemContext(context), messages, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 handler.post(() -> {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();

@@ -95,6 +95,10 @@ final class NodeMetadataStore {
         if (name.isEmpty()) name = "新節點";
         String id = "local:" + UUID.randomUUID().toString().substring(0, 8);
         try {
+            String description = sourceText == null ? "由聊天建立" : "由聊天建立：" + sourceText.trim();
+            String mdSource = ManagedNodeMdStore.createDraft(context, id, name, description);
+            if (mdSource.isEmpty()) return null;
+            String contextNodeId = id + ":md";
             JSONObject voice = new JSONObject().put("enabled", true)
                     .put("aliases", new JSONArray().put(name));
             JSONObject storage = new JSONObject().put("adapter", "").put("source_id", "").put("table", "");
@@ -103,7 +107,7 @@ final class NodeMetadataStore {
                     .put("rawId", id.substring("local:".length()))
                     .put("capability_id", id).put("capabilityId", id)
                     .put("name", name).put("title", name)
-                    .put("description", sourceText == null ? "由聊天建立" : "由聊天建立：" + sourceText.trim())
+                    .put("description", description)
                     .put("node_type", "custom")
                     .put("parent_id", "app:app-core").put("parentNodeId", "app:app-core")
                     .put("status", "active").put("version", "1")
@@ -112,8 +116,32 @@ final class NodeMetadataStore {
                     .put("route", "").put("activity", "")
                     .put("origin", "local").put("locked", false)
                     .put("voice", voice).put("storage", storage)
-                    .put("filter", new JSONObject()).put("input_context", new JSONObject());
+                    .put("filter", new JSONObject()).put("input_context", new JSONObject()
+                            .put("mode", "managed_md").put("context_node_id", contextNodeId)
+                            .put("chat_access", "read_only"));
             saveCustomNode(node);
+            JSONObject reference = new JSONObject()
+                    .put("node_id", contextNodeId).put("nodeId", contextNodeId)
+                    .put("rawId", id.substring("local:".length()) + "-md")
+                    .put("capability_id", "context." + id.substring("local:".length()) + ".md")
+                    .put("capabilityId", "context." + id.substring("local:".length()) + ".md")
+                    .put("name", name + " MD").put("title", name + " MD")
+                    .put("description", name + "節點的唯讀 Markdown context。")
+                    .put("node_type", "reference")
+                    .put("parent_id", id).put("parentNodeId", id)
+                    .put("status", "active").put("version", "1")
+                    .put("actions", new JSONArray().put("read"))
+                    .put("input_contract", "").put("output_contract", "")
+                    .put("route", "").put("activity", "")
+                    .put("origin", "local").put("locked", true)
+                    .put("voice", new JSONObject().put("enabled", false).put("aliases", new JSONArray()))
+                    .put("storage", new JSONObject().put("adapter", "internal_md")
+                            .put("source_id", mdSource).put("table", ""))
+                    .put("filter", new JSONObject()).put("input_context", new JSONObject());
+            saveCustomNode(reference);
+            addOrReplaceEdge(GraphContract.edge("edge:" + id + ":reads-context", id,
+                    contextNodeId, "reads_from", "active", "1")
+                    .put("authority", "managed_node_md").put("read_only", true));
             return new JSONObject(node.toString());
         } catch (Exception e) { return null; }
     }
@@ -208,10 +236,19 @@ final class NodeMetadataStore {
         String wanted = clean(nodeId);
         if (wanted.isEmpty()) return;
         JSONArray nodes = customNodes();
+        String contextNodeId = "";
+        for (int i = 0; i < nodes.length(); i++) {
+            JSONObject candidate = nodes.optJSONObject(i);
+            if (candidate == null || !wanted.equals(value(candidate, "node_id", "nodeId"))) continue;
+            JSONObject input = candidate.optJSONObject("input_context");
+            if (input != null) contextNodeId = clean(input.optString("context_node_id", ""));
+            break;
+        }
         JSONArray keptNodes = new JSONArray();
         for (int i = 0; i < nodes.length(); i++) {
             JSONObject node = nodes.optJSONObject(i);
-            if (node != null && !wanted.equals(value(node, "node_id", "nodeId"))) keptNodes.put(node);
+            String currentId = value(node, "node_id", "nodeId");
+            if (node != null && !wanted.equals(currentId) && !contextNodeId.equals(currentId)) keptNodes.put(node);
         }
         JSONArray edges = customEdges();
         JSONArray keptEdges = new JSONArray();
@@ -222,7 +259,8 @@ final class NodeMetadataStore {
             if (source.isEmpty()) source = value(edge, "source_node_id", "sourceNodeId");
             String target = value(edge, "to", "target");
             if (target.isEmpty()) target = value(edge, "target_node_id", "targetNodeId");
-            if (!wanted.equals(source) && !wanted.equals(target)) keptEdges.put(edge);
+            if (!wanted.equals(source) && !wanted.equals(target)
+                    && !contextNodeId.equals(source) && !contextNodeId.equals(target)) keptEdges.put(edge);
         }
         prefs.edit().putString(KEY_CUSTOM_NODES, keptNodes.toString())
                 .putString(KEY_EDGES, keptEdges.toString()).apply();
