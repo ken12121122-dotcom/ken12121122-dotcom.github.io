@@ -12,7 +12,28 @@
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait" />
 
-        <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait" />
+        <activity android:name=".VoiceOrbHomeActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait">
+            <meta-data android:name="amin.graph.visible" android:value="true" />
+            <meta-data android:name="amin.graph.id" android:value="fox-chat" />
+            <meta-data android:name="amin.graph.capability_id" android:value="app:fox-chat" />
+            <meta-data android:name="amin.graph.title" android:value="狐狸" />
+            <meta-data android:name="amin.graph.description" android:value="共用 LLM 聊天入口；依 Node 關聯的 Markdown context 回報。" />
+            <meta-data android:name="amin.graph.parent" android:value="voice" />
+            <meta-data android:name="amin.graph.route" android:value="amin-fox://chat" />
+            <meta-data android:name="amin.graph.direction" android:value="top" />
+            <meta-data android:name="amin.graph.slot" android:value="2" />
+            <meta-data android:name="amin.graph.node_type" android:value="capability" />
+            <meta-data android:name="amin.graph.actions" android:value="open,chat" />
+            <meta-data android:name="amin.graph.voice_enabled" android:value="true" />
+            <meta-data android:name="amin.graph.voice_aliases" android:value="狐狸,聊天狐狸,跟狐狸聊天" />
+            <meta-data android:name="amin.graph.input_context_json" android:value="{&quot;mode&quot;:&quot;managed_md&quot;,&quot;context_node_id&quot;:&quot;app:fox-chat-md&quot;,&quot;chat_access&quot;:&quot;read_only&quot;}" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="amin-fox" android:host="chat" />
+            </intent-filter>
+        </activity>
         <activity android:name=".LlmSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
 
         <activity android:name=".SystemGraphActivity" android:exported="false" android:screenOrientation="portrait" />

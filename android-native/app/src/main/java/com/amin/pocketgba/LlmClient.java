@@ -27,6 +27,10 @@ final class LlmClient {
     private LlmClient() {}
 
     static void send(Context context, List<Message> history, Callback callback) {
+        send(context, "", history, callback);
+    }
+
+    static void send(Context context, String systemContext, List<Message> history, Callback callback) {
         final String provider = LlmConfigStore.provider(context);
         final String model = LlmConfigStore.model(context);
         final String apiKey = LlmConfigStore.apiKey(context);
@@ -34,9 +38,9 @@ final class LlmClient {
         EXECUTOR.execute(() -> {
             try {
                 String reply;
-                if (LlmConfigStore.PROVIDER_OPENAI.equals(provider)) reply = callOpenAi(model, apiKey, history);
-                else if (LlmConfigStore.PROVIDER_CLAUDE.equals(provider)) reply = callClaude(model, apiKey, history);
-                else reply = callGemini(model, apiKey, history);
+                if (LlmConfigStore.PROVIDER_OPENAI.equals(provider)) reply = callOpenAi(model, apiKey, systemContext, history);
+                else if (LlmConfigStore.PROVIDER_CLAUDE.equals(provider)) reply = callClaude(model, apiKey, systemContext, history);
+                else reply = callGemini(model, apiKey, systemContext, history);
                 callback.onSuccess(reply);
             } catch (Exception error) {
                 String message = error.getMessage();
@@ -51,7 +55,7 @@ final class LlmClient {
         send(context, messages, callback);
     }
 
-    private static String callGemini(String model, String apiKey, List<Message> history) throws Exception {
+    private static String callGemini(String model, String apiKey, String systemContext, List<Message> history) throws Exception {
         String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
         JSONArray contents = new JSONArray();
         for (Message message : history) {
@@ -60,7 +64,12 @@ final class LlmClient {
             item.put("parts", new JSONArray().put(new JSONObject().put("text", message.text)));
             contents.put(item);
         }
-        JSONObject response = postJson(endpoint, null, new JSONObject().put("contents", contents));
+        JSONObject body = new JSONObject().put("contents", contents);
+        if (!clean(systemContext).isEmpty()) {
+            body.put("systemInstruction", new JSONObject().put("parts",
+                    new JSONArray().put(new JSONObject().put("text", systemContext))));
+        }
+        JSONObject response = postJson(endpoint, null, body);
         JSONArray candidates = response.optJSONArray("candidates");
         if (candidates == null || candidates.length() == 0) throw new IllegalStateException("Gemini 沒有回傳內容");
         JSONArray parts = candidates.getJSONObject(0).getJSONObject("content").optJSONArray("parts");
@@ -68,8 +77,9 @@ final class LlmClient {
         return parts.getJSONObject(0).optString("text", "").trim();
     }
 
-    private static String callOpenAi(String model, String apiKey, List<Message> history) throws Exception {
+    private static String callOpenAi(String model, String apiKey, String systemContext, List<Message> history) throws Exception {
         JSONArray messages = new JSONArray();
+        if (!clean(systemContext).isEmpty()) messages.put(new JSONObject().put("role", "system").put("content", systemContext));
         for (Message message : history) messages.put(new JSONObject().put("role", message.role).put("content", message.text));
         JSONObject body = new JSONObject().put("model", model).put("messages", messages);
         JSONObject response = postJson("https://api.openai.com/v1/chat/completions", "Bearer " + apiKey, body);
@@ -78,10 +88,11 @@ final class LlmClient {
         return choices.getJSONObject(0).getJSONObject("message").optString("content", "").trim();
     }
 
-    private static String callClaude(String model, String apiKey, List<Message> history) throws Exception {
+    private static String callClaude(String model, String apiKey, String systemContext, List<Message> history) throws Exception {
         JSONArray messages = new JSONArray();
         for (Message message : history) messages.put(new JSONObject().put("role", message.role).put("content", message.text));
         JSONObject body = new JSONObject().put("model", model).put("max_tokens", 1024).put("messages", messages);
+        if (!clean(systemContext).isEmpty()) body.put("system", systemContext);
         HttpURLConnection connection = open("https://api.anthropic.com/v1/messages");
         connection.setRequestProperty("x-api-key", apiKey);
         connection.setRequestProperty("anthropic-version", "2023-06-01");
@@ -138,4 +149,6 @@ final class LlmClient {
         String compact = text.replace('\n', ' ').trim();
         return compact.length() > 220 ? compact.substring(0, 220) : compact;
     }
+
+    private static String clean(String value) { return value == null ? "" : value.trim(); }
 }

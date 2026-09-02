@@ -23,6 +23,8 @@ public final class CapabilityInventoryAdapterTest {
                 .getString("stable_id"));
         assertFalse(commandBatch.getJSONArray("entities").getJSONObject(0)
                 .getJSONObject("payload").getBoolean("execution_enabled"));
+        assertTrue(registryBatch.getJSONArray("entities").getJSONObject(1)
+                .getJSONObject("payload").getJSONObject("voice").getBoolean("enabled"));
     }
 
     @Test public void sharedKernelPreservesIdentityAndIsolatesCommandStaleState() throws Exception {
@@ -51,6 +53,14 @@ public final class CapabilityInventoryAdapterTest {
         assertFalse(before.getString("content_fingerprint").equals(after.getString("content_fingerprint")));
     }
 
+    @Test public void markdownReferenceRemainsOutsideCapabilityInventory() throws Exception {
+        JSONObject source = registry("Graph");
+        source.getJSONArray("nodes").put(node("app:fox-chat-md", "context.fox-chat.md", "狐狸聊天 MD")
+                .put("node_type", "reference"));
+        JSONObject batch = CapabilityInventoryAdapter.registryBatch(source, edges(), 1000L);
+        assertEquals(2, batch.getJSONArray("entities").length());
+    }
+
     private static JSONObject registry(String title) throws Exception {
         return new JSONObject().put("format", "amin-node-registry").put("version", 1)
                 .put("valid", true).put("sourceAuthority", "android_manifest")
@@ -62,7 +72,9 @@ public final class CapabilityInventoryAdapterTest {
     private static JSONObject node(String nodeId, String capabilityId, String title) throws Exception {
         return new JSONObject().put("node_id", nodeId).put("capability_id", capabilityId)
                 .put("name", title).put("node_type", "capability").put("status", "active")
-                .put("version", "1").put("actions", new JSONArray().put("open"));
+                .put("version", "1").put("actions", new JSONArray().put("open"))
+                .put("voice", new JSONObject().put("enabled", !"app:app-core".equals(nodeId))
+                        .put("aliases", new JSONArray().put(title)));
     }
 
     private static JSONObject edges() throws Exception {
