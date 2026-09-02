@@ -1,0 +1,71 @@
+name: Governance Work Package Validation
+
+on:
+  pull_request:
+    paths:
+      - 'governance/**'
+      - '.github/workflows/governance-work-package-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  work-package-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Known request produces Voice Orb work package
+        run: |
+          python governance/tools/work_package_generator.py governance/examples/work-request-voice-orb.json --output /tmp/voice.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/voice.json', encoding='utf-8'))
+          assert p['valid'] is True
+          assert p['node_resolution']['selected_node_ids'] == ['AMIN-1140']
+          assert 'AMIN-1140' in p['impact']['impacted_nodes']
+          assert p['review_status'] == 'generated'
+          assert p['can_modify_source'] is False
+          PY
+
+      - name: Ambiguous request must require selection
+        run: |
+          set +e
+          python governance/tools/work_package_generator.py governance/examples/work-request-ambiguous.json --output /tmp/ambiguous.json
+          code=$?
+          set -e
+          test "$code" -eq 2
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/ambiguous.json', encoding='utf-8'))
+          assert p['valid'] is False
+          assert p['status'] == 'selection_required'
+          assert p['requires_human_review'] is True
+          assert len(p['candidates']) > 1
+          PY
+
+      - name: Unknown request must fail closed
+        run: |
+          set +e
+          python governance/tools/work_package_generator.py governance/examples/work-request-unknown.json --output /tmp/unknown.json
+          code=$?
+          set -e
+          test "$code" -eq 2
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/unknown.json', encoding='utf-8'))
+          assert p['valid'] is False
+          assert p['status'] == 'no_candidate'
+          assert p['block_release'] is True
+          assert 'no_registered_node_matches_request' in p['unresolved_gaps']
+          PY
+
+      - name: Generator must remain source read-only
+        run: |
+          git diff --exit-code -- governance/node-registry.yaml governance/dependency-impact-rules.yaml
