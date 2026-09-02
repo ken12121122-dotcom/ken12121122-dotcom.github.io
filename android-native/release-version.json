@@ -1,17 +1,17 @@
 {
-  "versionCode": 181,
-  "versionName": "0.11.17",
-  "channel": "bridge",
-  "bridge": 85,
-  "releaseSequence": 19,
+  "versionCode": 182,
+  "versionName": "0.11.18-rc1",
+  "channel": "candidate",
+  "bridge": 86,
+  "releaseSequence": 20,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "建立 Step 9 Shared Graph Sync Kernel，以 stable identity、dedupe、incremental merge、firstSeen／lastSeen 與 ownership-safe stale-on-missing 支援後續 Brain Memory。",
-    "以 graph_scope、sync_owner 與 sync_partition 隔離 Knowledge、Work、Bridge、Pull Request、Branch、CI 與人工 Task 的同步生命週期。",
-    "拒絕不同 ownership key 靜默接管既有 stable identity，並保留 Evidence snapshot revision fallback。",
-    "保留既有 Evidence Graph 與單一 Dynamic Canvas 行為；已完成原地更新、資料保留與既有 Graph 無退化驗收。"
+    "在既有單一 Dynamic Canvas 加入唯讀 GitHub Work 面板，可查看 Repository、Branch、Commit、Issue、Pull Request、Review、CI、Release 與 Artifact。",
+    "支援手動刷新、30 分鐘 stale refresh、partial partition 與 GitHub API rate-limit 狀態，刷新失敗時保留前一份可用 Work Graph。",
+    "CI 失敗只顯示 GitHub Jobs API 提供的 failed job 與 failed step；不下載或摘要 raw logs。",
+    "GitHub 存取固定為公開 repository 的 unauthenticated GET-only，不新增 token、write、merge 或 release 控制能力。"
   ]
 }
