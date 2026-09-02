@@ -42,6 +42,8 @@ final class UnifiedGraphProvider {
             JSONArray registryRelations = new JSONArray();
             addRegistry(context, nodeStore, nodes, commands, relations, registryNodes,
                     registryRelations, nodeIds, relationIds);
+            JSONObject capabilityState = new CapabilityInventoryStore(context).refresh(nodeStore);
+            CapabilityInventoryProjector.append(out, capabilityState);
             addEvidence(context, out, nodes, relations, nodeIds, relationIds);
             addGitHubWork(context, out, nodes, relations, nodeIds, relationIds);
 

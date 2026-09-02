@@ -27,6 +27,7 @@ public final class WikiGraphActivityTest {
             scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
             assertNotNull(webView.get());
 
+            // Fixed-position "bottom:auto" resolves to pixels in WebView; verify actual bounds instead.
             String result = evaluateWhenReady(scenario, webView.get(),
                     "(()=>{document.getElementById('workBtn').click();"
                             + "const manager=document.getElementById('workManager');"
@@ -40,6 +41,7 @@ public final class WikiGraphActivityTest {
                             + "safeBottom:rect.bottom<=innerHeight-48,"
                             + "scrollContain:getComputedStyle(manager).overscrollBehaviorY==='contain',"
                             + "graphControlsHidden:getComputedStyle(document.querySelector('.nav')).visibility==='hidden',"
+                            + "graphControlsRelocated:document.querySelector('.nav').getBoundingClientRect().bottom<innerHeight/2&&getComputedStyle(document.querySelector('.nav')).flexDirection==='row',"
                             + "rawLogs:window.AminGraphSmoke.state().rawLogsEnabled,"
                             + "layout:window.AminGraphSmoke.state().layout});})()");
 
@@ -51,6 +53,7 @@ public final class WikiGraphActivityTest {
             assertTrue(result, result.contains("\\\"safeBottom\\\":true"));
             assertTrue(result, result.contains("\\\"scrollContain\\\":true"));
             assertTrue(result, result.contains("\\\"graphControlsHidden\\\":true"));
+            assertTrue(result, result.contains("\\\"graphControlsRelocated\\\":true"));
             assertTrue(result, result.contains("\\\"rawLogs\\\":false"));
             assertTrue(result, result.contains("single-force-canvas"));
         }
