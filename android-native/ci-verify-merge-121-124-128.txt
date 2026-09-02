@@ -1,0 +1,6 @@
+purpose=ci_validation_only
+verifies_merge_of=PR #121 (a0bf80d), PR #124 (637f7cf), PR #128 (1e1e665)
+into=release/android
+reason=android-ci.yml only triggers on pull_request; merging via API does not run CI against the resulting release/android HEAD
+requested_at=2026-09-02
+owner_approved=true
