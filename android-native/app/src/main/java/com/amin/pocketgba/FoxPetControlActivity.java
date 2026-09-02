@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
@@ -25,7 +24,6 @@ public final class FoxPetControlActivity extends Activity {
     private static final int COLOR_BG = 0xfff4f7f5;
     private static final int COLOR_TEXT = 0xff16231b;
     private static final int COLOR_MUTED = 0xff68766e;
-    private static final int COLOR_ACCENT = 0xff19794b;
 
     private TextToSpeech tts;
 
@@ -129,7 +127,8 @@ public final class FoxPetControlActivity extends Activity {
             FoxPetPreferences.setPitch(this, value);
             applyTtsSettings();
         });
-        sliderRow(root, "音量", FoxPetPreferences.getVolume(this), 0f, 1f, FoxPetPreferences::setVolume);
+        sliderRow(root, "音量", FoxPetPreferences.getVolume(this), 0f, 1f,
+                value -> FoxPetPreferences.setVolume(this, value));
 
         Button preview = button("試聽狐狸聲音");
         preview.setOnClickListener(v -> previewVoice());
