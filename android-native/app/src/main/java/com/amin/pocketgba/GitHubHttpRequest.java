@@ -19,6 +19,7 @@ final class GitHubHttpRequest {
         this.body = body == null ? "" : body;
         this.maximumResponseBytes = maximumResponseBytes;
     }
+
     String method() { return method; }
     String url() { return url; }
     Map<String, String> headers() { return headers; }

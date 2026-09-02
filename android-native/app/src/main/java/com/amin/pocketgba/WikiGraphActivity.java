@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -13,9 +14,14 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import androidx.core.graphics.Insets;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,13 +53,15 @@ public final class WikiGraphActivity extends Activity {
         AminTheme.Palette palette = AminTheme.palette(this);
         getWindow().setStatusBarColor(palette.background);
         getWindow().setNavigationBarColor(palette.background);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         webView = new WebView(this);
         webView.setBackgroundColor(palette.background);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(false);
+        // Pin Path state stays inside this local graph origin. Keep network and
+        // cross-origin file access disabled below while allowing Web Storage.
+        settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(false);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(false);
@@ -72,11 +80,27 @@ public final class WikiGraphActivity extends Activity {
                 GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
                 requestCloudSourceSync();
+                requestGitHubWorkSync(false);
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new WikiBridge(), "AminWiki");
-        setContentView(webView);
+        FrameLayout graphViewport = new FrameLayout(this);
+        graphViewport.setClipToPadding(true);
+        graphViewport.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        ViewCompat.setOnApplyWindowInsetsListener(graphViewport, (view, windowInsets) -> {
+            Insets safe = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout()
+            );
+            view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            return windowInsets;
+        });
+        setContentView(graphViewport);
+        ViewCompat.requestApplyInsets(graphViewport);
         webView.loadUrl("file:///android_asset/amin-wiki-graph/index.html");
 
         IntentFilter filter = new IntentFilter(UnifiedGraphProvider.ACTION_CHANGED);
@@ -117,14 +141,30 @@ public final class WikiGraphActivity extends Activity {
     }
 
     private void reloadUnifiedGraph() {
-        if (webView == null) return;
-        webView.post(() -> webView.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null));
+        WebView current = webView;
+        if (current == null) return;
+        current.post(() -> {
+            if (webView == current && !isFinishing() && !isDestroyed()) {
+                current.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null);
+            }
+        });
     }
 
     private void requestCloudSourceSync() {
         GitHubSourceGraphScanner.syncAsync(this, () -> runOnUiThread(() -> {
             if (webView != null) webView.evaluateJavascript("window.AminSourceReviewRefresh?AminSourceReviewRefresh():false", null);
         }));
+    }
+
+    private void requestGitHubWorkSync(boolean forced) {
+        Runnable finished = () -> runOnUiThread(() -> {
+            reloadUnifiedGraph();
+            if (webView != null) {
+                webView.evaluateJavascript("window.AminGitHubWorkRefresh?AminGitHubWorkRefresh():false", null);
+            }
+        });
+        if (forced) GitHubWorkObserver.syncAsync(this, finished);
+        else GitHubWorkObserver.syncIfStaleAsync(this, finished);
     }
 
     private void applyWebTheme() {
@@ -189,6 +229,21 @@ public final class WikiGraphActivity extends Activity {
             return rolledBack;
         }
         @JavascriptInterface public void syncSourceNow() { requestCloudSourceSync(); }
+        @JavascriptInterface public void syncGitHubWorkNow() { requestGitHubWorkSync(true); }
+        @JavascriptInterface public String getGitHubWorkSyncJson() {
+            return GitHubWorkSyncState.snapshot(WikiGraphActivity.this).toString();
+        }
+        @JavascriptInterface public boolean openGitHubUrl(String rawUrl) {
+            try {
+                Uri uri = Uri.parse(rawUrl == null ? "" : rawUrl.trim());
+                if (!"https".equalsIgnoreCase(uri.getScheme())
+                        || !"github.com".equalsIgnoreCase(uri.getHost())) return false;
+                runOnUiThread(() -> startActivity(new Intent(Intent.ACTION_VIEW, uri)));
+                return true;
+            } catch (Exception error) {
+                return false;
+            }
+        }
         @JavascriptInterface public String getRuntimeEdgeTraceJson() {
             return GraphRuntimeEdgeTrace.snapshotJson().toString();
         }

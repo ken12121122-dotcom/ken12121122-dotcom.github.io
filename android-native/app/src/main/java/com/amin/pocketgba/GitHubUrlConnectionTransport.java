@@ -7,28 +7,28 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/** HTTPS-only GitHub transport shared with the future authenticated control layer. */
 final class GitHubUrlConnectionTransport implements GitHubHttpTransport {
     private static final Set<String> HOSTS = new HashSet<>(Arrays.asList("github.com", "api.github.com"));
 
-    @Override
-    public GitHubHttpResponse execute(GitHubHttpRequest request) throws Exception {
+    @Override public GitHubHttpResponse execute(GitHubHttpRequest request) throws Exception {
         URL url = new URL(request.url());
         String host = url.getHost().toLowerCase(Locale.ROOT);
         if (!"https".equalsIgnoreCase(url.getProtocol()) || !HOSTS.contains(host)) {
-            throw new SecurityException("GitHub 連線來源不受信任。 ");
+            throw new SecurityException("GITHUB_HOST_NOT_ALLOWED");
         }
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setInstanceFollowRedirects(false);
-        connection.setConnectTimeout(15_000);
-        connection.setReadTimeout(25_000);
+        connection.setConnectTimeout(12_000);
+        connection.setReadTimeout(20_000);
         connection.setUseCaches(false);
         connection.setRequestMethod(request.method());
         for (Map.Entry<String, String> header : request.headers().entrySet()) {
@@ -43,7 +43,7 @@ final class GitHubUrlConnectionTransport implements GitHubHttpTransport {
         int status = connection.getResponseCode();
         if (status >= 300 && status < 400) {
             connection.disconnect();
-            throw new SecurityException("GitHub 連線拒絕重新導向。 ");
+            throw new SecurityException("GITHUB_REDIRECT_NOT_ALLOWED");
         }
         InputStream raw = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
         String responseBody = raw == null ? "" : read(raw, request.maximumResponseBytes());
@@ -65,7 +65,7 @@ final class GitHubUrlConnectionTransport implements GitHubHttpTransport {
             int count;
             while ((count = input.read(buffer)) != -1) {
                 total += count;
-                if (total > maximumBytes) throw new SecurityException("GitHub 回應超過安全大小。 ");
+                if (total > maximumBytes) throw new SecurityException("GITHUB_RESPONSE_TOO_LARGE");
                 output.write(buffer, 0, count);
             }
             return new String(output.toByteArray(), StandardCharsets.UTF_8);

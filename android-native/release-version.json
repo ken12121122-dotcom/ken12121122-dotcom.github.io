@@ -1,17 +1,17 @@
 {
-  "versionCode": 181,
-  "versionName": "0.11.17-rc1",
+  "versionCode": 184,
+  "versionName": "0.11.20-rc1",
   "channel": "candidate",
-  "bridge": 85,
-  "releaseSequence": 19,
+  "bridge": 88,
+  "releaseSequence": 22,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "新增 AMIN Brain 手機控制中心，可從手機建立私人 Goal／Task、批准或取消任務，並保留同一個 stable Task identity。",
-    "以私人 GitHub App Device Flow 登入，只授予 amin-agent-control 的 Issue 讀寫與內容唯讀權限；APK 不包含 Client Secret、Private Key 或 Agent API Key。",
-    "手機可透過私人任務 Issue 觸發電腦上的 Codex CLI 與 Claude Code 訂閱 Agent 分工，執行範圍限制為 android-native 並只建立 Draft PR。",
-    "新增 Work Graph 拉取同步、WAITING_OWNER／完成／失敗狀態、能力與認證摘要，以及需要處理時的手機通知。"
+    "保留已通過 OWNER 手機驗收的唯讀 GitHub Work 與 Capability 治理面板，並在既有單一 Dynamic Canvas 加入 Focus Chain Navigation。",
+    "可自行選擇節點 A 與節點 B，先檢視正向、反向與替代路徑，再經確認將選定流程投影到原有 Canvas；確認前不改變畫面。",
+    "Focus Chain 最多同時保留三條路徑、每段最多六個 hops；支援收合關聯數量、長路徑分段、Accordion chain 與可跨開啟保存的 Pin Path。",
+    "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }

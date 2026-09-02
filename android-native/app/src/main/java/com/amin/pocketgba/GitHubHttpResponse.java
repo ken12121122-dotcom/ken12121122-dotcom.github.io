@@ -14,6 +14,7 @@ final class GitHubHttpResponse {
         this.body = body == null ? "" : body;
         this.headers = Collections.unmodifiableMap(new LinkedHashMap<>(headers));
     }
+
     int statusCode() { return statusCode; }
     String body() { return body; }
     String header(String name) {
