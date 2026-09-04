@@ -32,6 +32,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Floating voice + scrollable chat overlay for live Neural Flow observation. */
 final class FloatingVoiceController implements RecognitionListener {
@@ -39,6 +41,7 @@ final class FloatingVoiceController implements RecognitionListener {
     private static final String KEY_X = "voice_bubble_x";
     private static final String KEY_Y = "voice_bubble_y";
     private static final String WAKE_WORD = "狐狸";
+    private static final Pattern WAKE_WORD_PATTERN = Pattern.compile("狐\\s*狸");
     private static final long LISTENING_TIMEOUT_MS = 8000L;
     private static final long SCAN_STEP_MS = 45L;
     private static final long IDLE_CHECKIN_MS = 15L * 60L * 1000L;
@@ -639,17 +642,17 @@ final class FloatingVoiceController implements RecognitionListener {
         handler.removeCallbacks(dormantTimeout);
     }
 
-    private boolean containsWakeWord(String text) {
-        return text != null && text.replace(" ", "").contains(WAKE_WORD);
+    static boolean containsWakeWord(String text) {
+        return text != null && WAKE_WORD_PATTERN.matcher(text).find();
     }
 
-    private String stripWakeWord(String text) {
+    static String stripWakeWord(String text) {
         if (text == null) return "";
         String value = text.trim();
-        int index = value.indexOf(WAKE_WORD);
-        if (index < 0) return value;
-        String before = value.substring(0, index).trim();
-        String after = value.substring(index + WAKE_WORD.length()).trim();
+        Matcher matcher = WAKE_WORD_PATTERN.matcher(value);
+        if (!matcher.find()) return value;
+        String before = value.substring(0, matcher.start()).trim();
+        String after = value.substring(matcher.end()).trim();
         return (before + " " + after).trim();
     }
 
