@@ -25,6 +25,7 @@ jobs:
       AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
       AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
       AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+      AMIN_GITHUB_APP_CLIENT_ID: ${{ vars.AMIN_GITHUB_APP_CLIENT_ID }}
 
     steps:
       - name: Resolve distribution source
@@ -86,6 +87,7 @@ jobs:
             test '${{ github.event_name }}' = 'workflow_dispatch'
             test "$AMIN_CHANNEL" = 'candidate'
           fi
+          test -n "$AMIN_GITHUB_APP_CLIENT_ID"
           echo "Distribution source=$SOURCE_REF channel=$AMIN_CHANNEL versionCode=$AMIN_VERSION_CODE"
 
       - name: Install mature Java AST scanner
@@ -161,6 +163,7 @@ jobs:
             -PAMIN_VERSION_NAME="$AMIN_VERSION_NAME" \
             -PAMIN_BRIDGE_SUFFIX="$AMIN_BRIDGE_SUFFIX" \
             -PAMIN_SOURCE_REF="$AMIN_SOURCE_REVISION" \
+            -PAMIN_GITHUB_APP_CLIENT_ID="$AMIN_GITHUB_APP_CLIENT_ID" \
             :app:testDebugUnitTest \
             :app:testBridgeUnitTest \
             :app:lintBridge \
