@@ -68,7 +68,7 @@ test('P0 conversational capability entry remains read-only', () => {
     /AminActionDispatcher|createCustomNode|workflow_dispatch|mergePullRequest|createRelease|ProcessBuilder|Runtime\.getRuntime/);
 });
 
-test('bridge inventory contains 42 capabilities and every built-in Node has Markdown', () => {
+test('bridge inventory contains 43 capabilities and every built-in Node has Markdown', () => {
   const mainManifest = readFileSync(new URL('../android-native/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
   const bridgeManifest = readFileSync(new URL('../android-native/app/src/bridge/AndroidManifest.xml', import.meta.url), 'utf8');
   const registry = readFileSync(new URL('NodeRegistry.java', root), 'utf8');
@@ -77,7 +77,7 @@ test('bridge inventory contains 42 capabilities and every built-in Node has Mark
     + (bridgeManifest.match(/amin\.graph\.visible" android:value="true"/g) || []).length;
   const virtualPageTemplates = (registry.match(/pages\.put\(virtualPage\(/g) || []).length;
   const commandCount = (commands.match(/commands\.add\(command\(/g) || []).length;
-  assert.equal(1 + visible + (virtualPageTemplates - 1) + commandCount, 42);
+  assert.equal(1 + visible + (virtualPageTemplates - 1) + commandCount, 43);
   const manifestIds = [...mainManifest.matchAll(/amin\.graph\.id" android:value="([^"]+)"/g),
     ...bridgeManifest.matchAll(/amin\.graph\.id" android:value="([^"]+)"/g)].map(match => match[1]);
   const virtualIds = [...registry.matchAll(/pages\.put\(virtualPage\("([^"]+)"/g)]
@@ -86,10 +86,10 @@ test('bridge inventory contains 42 capabilities and every built-in Node has Mark
   const actualMd = readdirSync(new URL('../android-native/app/src/main/assets/node-context/', import.meta.url))
     .filter(name => name.endsWith('.md')).map(name => name.slice(0, -3)).sort();
   assert.deepEqual(actualMd, expectedMd);
-  assert.equal(actualMd.length, 24);
+  assert.equal(actualMd.length, 25);
   const bom = readFileSync(new URL('../android-native/docs/CAPABILITY_BOM.md', import.meta.url), 'utf8');
-  assert.match(bom, /Existing Capability total \| 42/);
-  assert.match(bom, /Chat-addressable \| 41/);
+  assert.match(bom, /Existing Capability total \| 43/);
+  assert.match(bom, /Chat-addressable \| 42/);
   assert.match(bom, /Bridge required \| 1/);
   assert.match(bom, /Roadmap-only \/ not implemented \| 0/);
   assert.match(bom, /`app:app-core`.*Bridge required/);

@@ -6,11 +6,11 @@ Baseline: `release/android` plus the P0 conversational capability entry.
 
 | Measure | Count | Meaning |
 | --- | ---: | --- |
-| Existing Capability total | 42 | 25 Registry capabilities plus 17 existing commands |
-| Chat-addressable | 41 | Fox can identify/read the Node context or the existing catalog can resolve the command |
+| Existing Capability total | 43 | 26 Registry capabilities plus 17 existing commands |
+| Chat-addressable | 42 | Fox can identify/read the Node context or the existing catalog can resolve the command |
 | Bridge required | 1 | The system root has no managed MD context and is not a user function |
 | Roadmap-only / not implemented | 0 | Roadmap ideas are not inserted into the runtime inventory |
-| Managed Node MD assets | 24 | Every built-in functional Node; reference Nodes are excluded from the BOM |
+| Managed Node MD assets | 25 | Every built-in functional Node; reference Nodes are excluded from the BOM |
 
 `Chat-addressable` is read/report/resolve only. It does not authorize the LLM to
 execute a command, mutate the Graph or MD, write GitHub, merge, release, extend
@@ -27,6 +27,7 @@ itself, or act autonomously.
 | `app:control-center` — 控制中心 | `ControlCenterActivity`; `amin-home://open` | Implemented | Direct, read-only MD + existing route | None |
 | `app:graph` — 關聯圖 | `WikiGraphActivity`; `amin-graph://open` | Implemented | Direct, read-only MD + existing route | None |
 | `app:control-api` — Control API | `AminControlApiActivity`; `amin-api://settings` | Implemented | Direct, read-only MD + existing route | None |
+| `app:brain-control` — AMIN Brain | `BrainControlActivity`; `amin-brain://open` | Implemented, private-repo backed | Direct, read-only MD + existing route | Requires OWNER GitHub App account setup before it connects |
 | `app:voice` — 語音入口 | `VoiceCommandActivity`; `amin-voice://open` | Implemented | Direct, read-only MD + existing route | None |
 | `app:voice-catalog` — 語音指令 | `VoiceCommandCatalogActivity`; `amin-voice://commands` | Implemented | Direct, read-only MD + existing route | None |
 | `app:permissions` — 權限中心 | `PermissionCenterActivity`; `amin-permissions://open` | Implemented | Direct, read-only MD + existing route | None |
