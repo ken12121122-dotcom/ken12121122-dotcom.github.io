@@ -68,7 +68,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         refreshModelLabel();
         if (firstResume) {
             firstResume = false;
-            handler.postDelayed(() -> speakThenListen("我在。", false), 180L);
+            handler.postDelayed(() -> speakThenListen("狐狸在。", false), 180L);
         } else if (launchedFeature) {
             launchedFeature = false;
             handler.postDelayed(this::startListeningWithPermission, 300L);
@@ -104,7 +104,7 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         top.setGravity(Gravity.CENTER_VERTICAL);
         content.addView(top, wrap());
 
-        TextView brand = text("AMIN AI VOICE", 13, true, 0xff59e39b);
+        TextView brand = text("狐狸 · AMIN AI", 13, true, 0xff59e39b);
         top.addView(brand, new LinearLayout.LayoutParams(0, -2, 1f));
         Button settings = button("LLM 設定");
         settings.setOnClickListener(v -> { launchedFeature = true; startActivity(new Intent(this, LlmSettingsActivity.class)); });
@@ -248,6 +248,19 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         if (spoken.contains("功能地圖") || spoken.contains("節點地圖")) { openSystemFeatureMap(); return; }
         if (spoken.equals("關閉") || spoken.equals("回控制台") || spoken.contains("關閉語音球")) { finish(); return; }
 
+        ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
+                this, nodeMetadataStore, spoken);
+        if (capability.isHandled()) {
+            appendMessage("assistant", capability.getAnswer());
+            speakThenListen(capability.getSpokenAnswer(), false);
+            return;
+        }
+
+        if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(this, nodeMetadataStore, spoken)) {
+            sendToLlm(spoken);
+            return;
+        }
+
         NodeRegistry.Match nodeMatch = NodeRegistry.matchVoice(this, nodeMetadataStore, spoken);
         if (nodeMatch != null) {
             JSONObject node = nodeMatch.node;
@@ -267,10 +280,10 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
             }
         }
 
-        sendToLlm();
+        sendToLlm(spoken);
     }
 
-    private void sendToLlm() {
+    private void sendToLlm(String query) {
         if (!LlmConfigStore.hasApiKey(this)) {
             status("尚未設定 API Key", VoiceOrbView.Phase.ERROR);
             appendSystemLine("請先按右上角「LLM 設定」貼上 API Key。", 0xfff0c36a);
@@ -279,7 +292,8 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         }
         status("LLM 思考中 · " + LlmConfigStore.label(this), VoiceOrbView.Phase.PROCESSING);
         final ArrayList<LlmClient.Message> snapshot = new ArrayList<>(chatHistory);
-        LlmClient.send(this, snapshot, new LlmClient.Callback() {
+        JSONObject context = FoxConversationContextBuilder.build(this, nodeMetadataStore, query);
+        LlmClient.send(this, FoxConversationContextBuilder.systemContext(context), snapshot, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 runOnUiThread(() -> {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();

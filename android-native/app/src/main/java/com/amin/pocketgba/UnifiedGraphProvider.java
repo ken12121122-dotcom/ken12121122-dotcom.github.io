@@ -70,6 +70,7 @@ final class UnifiedGraphProvider {
             for (int i = 0; i < sourceNodes.length(); i++) {
                 JSONObject source = sourceNodes.optJSONObject(i);
                 if (source == null) continue;
+                if ("reference".equalsIgnoreCase(first(source, "node_type", "nodeType"))) continue;
                 String id = first(source, "node_id", "nodeId", "capability_id", "capabilityId", "id");
                 if (!nodeIds.add(id)) continue;
                 String title = first(source, "name", "title");
@@ -158,6 +159,7 @@ final class UnifiedGraphProvider {
             String from = first(edge, "from", "source", "source_node_id", "sourceNodeId");
             String to = first(edge, "to", "target", "target_node_id", "targetNodeId");
             if (from.isEmpty() || to.isEmpty()) continue;
+            if (!nodeIds.contains(from) || !nodeIds.contains(to)) continue;
             String type = first(edge, "relationship_type", "relationshipType", "relation", "type", "edge_type");
             if (type.isEmpty()) type = "related_to";
             String id = first(edge, "edge_id", "edgeId");
@@ -433,6 +435,11 @@ final class UnifiedGraphProvider {
         if (aliases != null && aliases.length() > 0) {
             if (out.length() > 0) out.append('\n');
             out.append("aliases: ").append(jsonList(aliases));
+        }
+        JSONObject context = node.optJSONObject("input_context");
+        if (context != null && context.length() > 0) {
+            if (out.length() > 0) out.append('\n');
+            out.append("md context: ").append(context.optString("context_node_id", "declared"));
         }
         if (out.length() == 0) out.append(node.optString("description", ""));
         return out.toString();

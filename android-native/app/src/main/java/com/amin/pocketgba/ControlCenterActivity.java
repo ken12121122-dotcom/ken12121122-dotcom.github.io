@@ -141,6 +141,17 @@ public final class ControlCenterActivity extends Activity {
         voiceBubbleCard.setOnClickListener(view -> openVoiceBubble());
         content.addView(voiceBubbleCard, cardParams());
 
+        LinearLayout foxPetCard = actionCard(
+                "🦊",
+                "狐狸控制面板",
+                "切換語音球／狐狸、聊天泡泡與狐狸聲音",
+                "設定",
+                false
+        );
+        foxPetCard.setContentDescription("開啟狐狸控制面板");
+        foxPetCard.setOnClickListener(view -> startActivity(new Intent(this, FoxPetControlActivity.class)));
+        content.addView(foxPetCard, cardParams());
+
         LinearLayout voiceCard = actionCard(
                 "🎤",
                 "Amin 語音指令（舊版）",
@@ -281,7 +292,9 @@ public final class ControlCenterActivity extends Activity {
     }
 
     private void openVoiceBubble() {
+        FoxPetPreferences.setDisplayMode(this, FoxPetPreferences.MODE_VOICE_BALL);
         UniversalControlAccessibilityService.setVoiceBubbleEnabled(this, true);
+        UniversalControlAccessibilityService.refreshVoicePresentation(this);
         if (!isUniversalControlEnabled()) {
             Toast.makeText(
                     this,

@@ -4,7 +4,7 @@
 >
 > Before starting Android engineering work, read this document together with the active Issue / PR and verify current GitHub state. Do not treat this file as a substitute for code or CI evidence.
 
-Last status update: 2026-08-31
+Last status update: 2026-09-02
 
 ## 1. Production baseline
 
@@ -13,7 +13,7 @@ Last status update: 2026-08-31
 - `main` is primarily the published APK / updater manifest endpoint; it is not the Android development baseline.
 - Current production version: `0.11.17-bridge85`
 - `versionCode`: `181`
-- Latest synchronized `release/android` baseline SHA: `6a2404b06101ada270f126befb74db4fc83761ac`
+- Latest synchronized `release/android` baseline SHA: `1e1e66596300df58cdb66b8990db65046f292180`
 - Production workflow: `Android Production Release`
 - Release metadata source: `android-native/release-version.json`
 
@@ -34,14 +34,22 @@ Last status update: 2026-08-31
 
 ### In progress
 
-- Issue #120: Android GitHub Control Layer for mobile Agent operations.
-- Phase 1: read-only GitHub Work Graph observability.
-- Draft PR #121: `feat/github-control-layer-phase1-readonly`; OWNER phone acceptance completed for the Phase 1 read-only GitHub Work candidate.
-- Issue #123: Step 11 Capability Runtime.
-- Draft PR #124: `feat/step11-capability-runtime-contract`, stacked on the accepted PR #121 head.
+- Issue #123 P0 Conversational Capability Entry is being implemented on
+  `feat/p0-conversational-capability-entry` from the latest synchronized
+  `release/android` baseline. The first slice reuses the existing voice/chat
+  surfaces and Capability inventory to answer read-only capability inventory
+  and lookup questions. The shared LLM chat Node is now registered as `狐狸`
+  (`app:fox-chat`). Every bundled functional Node now has a simple managed MD
+  and an existing typed `reads_from` relation. Both chat surfaces select up to
+  three matching Nodes and pass only their bounded, read-only MD context to the
+  shared LLM; MD references stay outside the Capability BOM and default Canvas.
+  It does not execute a Tool, mutate the Graph, create a
+  capability, write GitHub, raise autonomy, merge, or release.
+- Issue #120 Phase 1 read-only GitHub Work Graph was merged through PR #121.
+- Issue #123 Step 11 Capability Runtime first delivery was merged through PR #124.
 - Step 11 first delivery remains limited to the executable Capability Graph v1 contract, governed read-only inventory, versioned time-bounded certification scope, and a read-only manager inside the existing Unified Graph / Dynamic Canvas. The manager filters type (including Command), lifecycle, and certification state and renders structured source/evidence details without exposing Connect or execution actions.
 - Step 11 execution, autonomy, write controls, merge, production release, and Phase 2 remain out of scope.
-- Issue #127: OWNER-approved Focus Chain Navigation Phase 1, implemented as a view projection on the existing Unified Graph and single Dynamic Canvas.
+- Issue #127 Focus Chain Navigation Phase 1 was merged through PR #128 as a view projection on the existing Unified Graph and single Dynamic Canvas.
 
 ### Not complete yet
 
@@ -261,12 +269,16 @@ Current owner of implementation: Codex.
 
 Codex should:
 
-- continue Issue #127 from the verified PR #124 head while keeping `release/android` unchanged
-- use `feat/focus-chain-navigation-phase1` with PR base `feat/step11-capability-runtime-contract`
-- implement the OWNER-approved Focus Chain Phase 1 interaction and security boundary
-- preserve existing Graph / identity / dedupe / Canvas architecture
-- follow the top-level `AGENTS.md` continuous-execution rule and continue through tests / CI fixes
-- stop at the complete OWNER mobile acceptance / candidate-publication gate; do not enter Phase 2 automatically
+- continue Issue #123 P0 Conversational Capability Entry on
+  `feat/p0-conversational-capability-entry` while keeping `release/android`
+  unchanged
+- reuse the existing Chat Runtime, Capability inventory, Graph identity/dedupe,
+  Unified Graph, Dynamic Canvas, approval, and permission foundations
+- implement only read-only Context Builder / Capability Resolver behavior
+- follow the top-level `AGENTS.md` continuous-execution rule and continue through
+  tests / CI fixes
+- stop before GitHub write, Tool execution, self-extension, autonomy, merge,
+  candidate publication, or release unless OWNER separately approves those gates
 
 OWNER prefers testing after a complete meaningful function exists, not merely to inspect an intermediate UI.
 

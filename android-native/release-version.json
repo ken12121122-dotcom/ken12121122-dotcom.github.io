@@ -1,9 +1,9 @@
 {
-  "versionCode": 184,
-  "versionName": "0.11.20-rc1",
+  "versionCode": 187,
+  "versionName": "0.11.22-rc2",
   "channel": "candidate",
-  "bridge": 88,
-  "releaseSequence": 22,
+  "bridge": 91,
+  "releaseSequence": 25,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -12,6 +12,12 @@
     "保留已通過 OWNER 手機驗收的唯讀 GitHub Work 與 Capability 治理面板，並在既有單一 Dynamic Canvas 加入 Focus Chain Navigation。",
     "可自行選擇節點 A 與節點 B，先檢視正向、反向與替代路徑，再經確認將選定流程投影到原有 Canvas；確認前不改變畫面。",
     "Focus Chain 最多同時保留三條路徑、每段最多六個 hops；支援收合關聯數量、長路徑分段、Accordion chain 與可跨開啟保存的 Pin Path。",
+    "將既有聊天入口命名為狐狸，為 24 個內建功能 Node 建立簡要唯讀 Markdown context，並以既有 reads_from 關聯接回 Node Registry。",
+    "狐狸依問題最多選取三個相關 Node MD 回報；新增且通過 RegistryApprovalActivity 的自訂 Node 會自動建立 app-private MD 與關聯。",
+    "整合既有 FoxPetOverlayService 與狐狸控制面板；語音球、桌面狐狸、隱藏模式互斥，桌面狐狸沿用同一個 FloatingVoiceController，支援拖曳、狀態、完整回覆泡泡與 Android TTS。",
+    "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
+    "新增 AMIN Brain 私人任務中心（app:brain-control）到 Capability BOM，補上遺漏的唯讀 Node Markdown。",
+    "在狐狸控制面板加入可實際到達的 LLM 設定入口；先前 LLM 設定畫面只能從另一個替代首頁開啟，一般操作路徑走不到。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }

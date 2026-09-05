@@ -21,6 +21,7 @@ final class CapabilityInventoryAdapter {
         for (int i = 0; i < nodes.length(); i++) {
             JSONObject node = nodes.optJSONObject(i);
             if (node == null) continue;
+            if ("reference".equalsIgnoreCase(node.optString("node_type", ""))) continue;
             String nodeId = first(node, "node_id", "nodeId");
             String capabilityId = first(node, "capability_id", "capabilityId");
             if (capabilityId.isEmpty()) throw new IllegalArgumentException("CAPABILITY_ID_REQUIRED");
@@ -32,7 +33,11 @@ final class CapabilityInventoryAdapter {
                     .put("node_id", nodeId)
                     .put("node_type", node.optString("node_type", "capability"))
                     .put("route", node.optString("route", ""))
+                    .put("activity", node.optString("activity", ""))
                     .put("actions", copy(node.optJSONArray("actions")))
+                    .put("voice", copy(node.optJSONObject("voice")))
+                    .put("storage", copy(node.optJSONObject("storage")))
+                    .put("input_context", copy(node.optJSONObject("input_context")))
                     .put("lifecycle_status", lifecycle(node.optString("status", "active")))
                     .put("review_status", "approved")
                     .put("certification_status", "not_certified")
@@ -125,6 +130,11 @@ final class CapabilityInventoryAdapter {
     private static JSONArray copy(JSONArray value) {
         try { return value == null ? new JSONArray() : new JSONArray(value.toString()); }
         catch (Exception ignored) { return new JSONArray(); }
+    }
+
+    private static JSONObject copy(JSONObject value) {
+        try { return value == null ? new JSONObject() : new JSONObject(value.toString()); }
+        catch (Exception ignored) { return new JSONObject(); }
     }
 
     private static String first(JSONObject object, String... keys) {
