@@ -164,6 +164,10 @@ public final class FoxPetControlActivity extends Activity {
         accessibility.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         root.addView(accessibility, cardParams());
 
+        Button llmSettings = button("LLM 設定（連接大腦）");
+        llmSettings.setOnClickListener(v -> startActivity(new Intent(this, LlmSettingsActivity.class)));
+        root.addView(llmSettings, cardParams());
+
         TextView note = text(
                 "第一版聲音使用 Android 原生 TTS；語速、音高、音量會保存。真正固定角色聲線可後續接 Neural TTS。",
                 12f,
