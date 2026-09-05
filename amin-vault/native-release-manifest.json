@@ -4,15 +4,15 @@
   "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.22-rc1-bridge90",
-  "latestVersionCode": 186,
+  "latestVersionName": "0.11.22-rc2-bridge91",
+  "latestVersionCode": 187,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc1-bridge90.apk",
-  "apkSha256": "85828b84f7681b5394a216665bbba603b32acb054e8da49efea526de3a06d7ae",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc2-bridge91.apk",
+  "apkSha256": "bba4fd5c50914ca4fa35405729385771066d27254f426d78cda7ad4b3ad5f0ae",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2890940,
-  "publishedAt": "2026-09-04T09:37:25Z",
+  "sizeBytes": 2890650,
+  "publishedAt": "2026-09-05T12:22:21Z",
   "mandatory": false,
   "releaseNotes": [
     "保留已通過 OWNER 手機驗收的唯讀 GitHub Work 與 Capability 治理面板，並在既有單一 Dynamic Canvas 加入 Focus Chain Navigation。",
@@ -22,6 +22,8 @@
     "狐狸依問題最多選取三個相關 Node MD 回報；新增且通過 RegistryApprovalActivity 的自訂 Node 會自動建立 app-private MD 與關聯。",
     "整合既有 FoxPetOverlayService 與狐狸控制面板；語音球、桌面狐狸、隱藏模式互斥，桌面狐狸沿用同一個 FloatingVoiceController，支援拖曳、狀態、完整回覆泡泡與 Android TTS。",
     "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
+    "新增 AMIN Brain 私人任務中心（app:brain-control）到 Capability BOM，補上遺漏的唯讀 Node Markdown。",
+    "在狐狸控制面板加入可實際到達的 LLM 設定入口；先前 LLM 設定畫面只能從另一個替代首頁開啟，一般操作路徑走不到。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }
