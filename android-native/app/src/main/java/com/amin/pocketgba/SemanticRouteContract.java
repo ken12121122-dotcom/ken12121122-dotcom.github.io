@@ -95,7 +95,16 @@ final class SemanticRouteContract {
 
     /** System prompt enforcing the contract's output shape and its read-only, no-execution boundary. */
     static String systemPrompt() {
-        return "你是語意路由器（Semantic Router）。只輸出一個 JSON 物件，不要有任何其他文字、"
+        return systemPrompt(null);
+    }
+
+    /**
+     * Phase 12 Step 4: {@code nodeCatalog} (from {@link FoxConversationContextBuilder#nodeCatalog})
+     * grounds selected_nodes in real, already-registered Node IDs and their existing title/
+     * description/alias data, instead of the model guessing IDs it has never seen.
+     */
+    static String systemPrompt(String nodeCatalog) {
+        String base = "你是語意路由器（Semantic Router）。只輸出一個 JSON 物件，不要有任何其他文字、"
                 + "不要解釋、不要使用 markdown code fence。"
                 + "JSON 格式：{\"intent\":\"" + INTENT_CAPABILITY_QUERY + " 或 " + INTENT_NODE_CONTEXT
                 + " 或 " + INTENT_OTHER + "\",\"selected_nodes\":[],\"selected_capabilities\":[],"
@@ -104,5 +113,10 @@ final class SemanticRouteContract {
                 + "requires_execution 永遠回傳 false——你只負責分類與選擇，不能執行、寫入、批准或發布任何東西，"
                 + "那些邊界仍由既有程式碼把關。"
                 + "如果不確定，confidence 給低分，並在 unresolved_gaps 說明原因，讓呼叫端改用既有的規則式判斷。";
+        if (nodeCatalog == null || nodeCatalog.trim().isEmpty()) return base;
+        return base + "\n\n以下是目前已註冊、你唯一可以填入 selected_nodes 的 Node 清單"
+                + "（格式：node_id | title | description | aliases）：\n" + nodeCatalog.trim()
+                + "\nselected_nodes 只能填這份清單裡出現過的 node_id，不能自己發明或猜測不存在的 ID；"
+                + "找不到相符的 Node 就留空陣列，並在 unresolved_gaps 說明。";
     }
 }

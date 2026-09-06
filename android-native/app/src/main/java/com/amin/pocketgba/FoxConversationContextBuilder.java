@@ -12,6 +12,8 @@ import java.util.List;
 /** Selects relevant registered Nodes and composes only their managed Markdown for Fox chat. */
 final class FoxConversationContextBuilder {
     private static final int MAX_SELECTED_NODES = 3;
+    private static final int MAX_CATALOG_NODES = 40;
+    private static final int MAX_CATALOG_DESCRIPTION_LENGTH = 60;
 
     private static final class Match {
         final JSONObject node;
@@ -40,6 +42,54 @@ final class FoxConversationContextBuilder {
     static boolean isNodeContextSelection(SemanticRouteContract semantic) {
         return semantic != null && SemanticRouteContract.INTENT_NODE_CONTEXT.equals(semantic.intent)
                 && !semantic.selectedNodes.isEmpty();
+    }
+
+    /**
+     * Phase 12 Step 4: a compact catalog of already-registered Nodes' existing title/description/
+     * alias data (the same fields keyword matching already reads in {@link #score}), so the
+     * Semantic Router can ground {@code selected_nodes} in real IDs instead of guessing. Applies
+     * the same eligibility filter as keyword matching (registered, non-reference, has input_context).
+     */
+    static String nodeCatalog(Context context, NodeMetadataStore store) {
+        StringBuilder out = new StringBuilder();
+        try {
+            JSONArray nodes = new JSONObject(NodeRegistry.registryJson(context, store)).optJSONArray("nodes");
+            if (nodes == null) return "";
+            int count = 0;
+            for (int i = 0; i < nodes.length() && count < MAX_CATALOG_NODES; i++) {
+                JSONObject node = nodes.optJSONObject(i);
+                if (node == null || "reference".equalsIgnoreCase(node.optString("node_type", ""))
+                        || node.optJSONObject("input_context") == null) continue;
+                String id = node.optString("node_id", node.optString("nodeId", ""));
+                if (id.isEmpty()) continue;
+                String title = node.optString("title", node.optString("name", id));
+                String description = shorten(node.optString("description", ""), MAX_CATALOG_DESCRIPTION_LENGTH);
+                out.append(id).append(" | ").append(title).append(" | ").append(description)
+                        .append(" | ").append(aliasesOf(node)).append('\n');
+                count++;
+            }
+        } catch (Exception ignored) { }
+        return out.toString().trim();
+    }
+
+    private static String aliasesOf(JSONObject node) {
+        JSONObject voice = node.optJSONObject("voice");
+        JSONArray aliases = voice == null ? null : voice.optJSONArray("aliases");
+        if (aliases == null || aliases.length() == 0) return "";
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < aliases.length(); i++) {
+            String alias = aliases.optString(i, "");
+            if (alias.trim().isEmpty()) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(alias.trim());
+        }
+        return out.toString();
+    }
+
+    private static String shorten(String value, int maxLength) {
+        if (value == null) return "";
+        String trimmed = value.trim();
+        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength) + "…";
     }
 
     static JSONObject build(Context context, NodeMetadataStore store, String query) {

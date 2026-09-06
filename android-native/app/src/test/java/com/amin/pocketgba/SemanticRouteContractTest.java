@@ -59,4 +59,21 @@ public final class SemanticRouteContractTest {
         assertTrue(prompt.contains("false"));
         assertTrue(prompt.contains("capability_query"));
     }
+
+    @Test public void systemPromptWithoutCatalogOmitsNodeListInstruction() {
+        String prompt = SemanticRouteContract.systemPrompt((String) null);
+        assertFalse(prompt.contains("selected_nodes 只能填"));
+    }
+
+    @Test public void systemPromptWithCatalogGroundsSelectedNodesInRealIds() {
+        String catalog = "app:finance | 財務 | 記帳與收支 | 財務,記帳";
+        String prompt = SemanticRouteContract.systemPrompt(catalog);
+        assertTrue(prompt.contains(catalog));
+        assertTrue(prompt.contains("selected_nodes 只能填"));
+    }
+
+    @Test public void systemPromptWithBlankCatalogOmitsNodeListInstruction() {
+        String prompt = SemanticRouteContract.systemPrompt("   ");
+        assertFalse(prompt.contains("selected_nodes 只能填"));
+    }
 }

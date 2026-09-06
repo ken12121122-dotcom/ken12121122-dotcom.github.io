@@ -386,7 +386,8 @@ final class FloatingVoiceController implements RecognitionListener {
         if (LlmConfigStore.hasApiKey(service)) {
             ArrayList<LlmClient.Message> messages = new ArrayList<>();
             messages.add(new LlmClient.Message("user", spoken));
-            LlmClient.send(service, SemanticRouteContract.systemPrompt(), messages, new LlmClient.Callback() {
+            String nodeCatalog = FoxConversationContextBuilder.nodeCatalog(service, nodeMetadataStore);
+            LlmClient.send(service, SemanticRouteContract.systemPrompt(nodeCatalog), messages, new LlmClient.Callback() {
                 @Override public void onSuccess(String text) {
                     handler.post(() -> continueRouteTranscript(spoken, confidence, parseSemanticResult(text)));
                 }
