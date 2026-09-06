@@ -25,16 +25,46 @@ final class FoxConversationContextBuilder {
         return looksLikeQuestion(query) && !matches(context, store, query).isEmpty();
     }
 
+    /**
+     * Phase 12 Step 3: when the Semantic Router already decided this is a node-context question
+     * with specific nodes selected, trust that instead of re-deriving intent/selection by keyword.
+     * Pass {@code semantic == null} to keep today's unchanged keyword-only behavior.
+     */
+    static boolean shouldAnswerWithNodeContext(Context context, NodeMetadataStore store, String query,
+            SemanticRouteContract semantic) {
+        if (semantic != null) return isNodeContextSelection(semantic);
+        return shouldAnswerWithNodeContext(context, store, query);
+    }
+
+    /** Pure decision, no Context needed — kept separate so it is unit-testable without a device. */
+    static boolean isNodeContextSelection(SemanticRouteContract semantic) {
+        return semantic != null && SemanticRouteContract.INTENT_NODE_CONTEXT.equals(semantic.intent)
+                && !semantic.selectedNodes.isEmpty();
+    }
+
     static JSONObject build(Context context, NodeMetadataStore store, String query) {
+        return build(context, store, query, null);
+    }
+
+    /**
+     * @param semanticSelectedNodeIds when non-null and non-empty, these Node IDs (from the Semantic
+     *        Router) replace keyword scoring for which Nodes get included — still subject to the
+     *        same eligibility filter as keyword matching (registered, non-reference, has
+     *        input_context). Pass null to keep today's unchanged keyword-scoring behavior.
+     */
+    static JSONObject build(Context context, NodeMetadataStore store, String query,
+            List<String> semanticSelectedNodeIds) {
         JSONArray selected = new JSONArray();
         JSONArray sources = new JSONArray();
         JSONArray gaps = new JSONArray();
         StringBuilder content = new StringBuilder();
         appendContext(context, store, NodeMdContextBuilder.FOX_NODE_ID,
                 "狐狸", selected, sources, gaps, content);
-        List<Match> matches = matches(context, store, query);
-        for (int i = 0; i < matches.size() && i < MAX_SELECTED_NODES; i++) {
-            JSONObject node = matches.get(i).node;
+        List<JSONObject> chosen = semanticSelectedNodeIds != null && !semanticSelectedNodeIds.isEmpty()
+                ? nodesById(context, store, semanticSelectedNodeIds)
+                : nodesFromMatches(matches(context, store, query));
+        for (int i = 0; i < chosen.size() && i < MAX_SELECTED_NODES; i++) {
+            JSONObject node = chosen.get(i);
             String id = node.optString("node_id", node.optString("nodeId", ""));
             if (NodeMdContextBuilder.FOX_NODE_ID.equals(id)) continue;
             appendContext(context, store, id,
@@ -47,6 +77,31 @@ final class FoxConversationContextBuilder {
                     .put("source_records", sources).put("unresolved_gaps", gaps)
                     .put("read_only", true);
         } catch (Exception ignored) { return new JSONObject(); }
+    }
+
+    private static List<JSONObject> nodesFromMatches(List<Match> matches) {
+        List<JSONObject> out = new ArrayList<>();
+        for (Match match : matches) out.add(match.node);
+        return out;
+    }
+
+    /** Looks up Semantic-Router-selected Node IDs, applying the same eligibility filter as keyword matching. */
+    private static List<JSONObject> nodesById(Context context, NodeMetadataStore store, List<String> ids) {
+        List<JSONObject> out = new ArrayList<>();
+        try {
+            JSONArray nodes = new JSONObject(NodeRegistry.registryJson(context, store)).optJSONArray("nodes");
+            if (nodes == null) return out;
+            for (String id : ids) {
+                for (int i = 0; i < nodes.length(); i++) {
+                    JSONObject node = nodes.optJSONObject(i);
+                    if (node == null || "reference".equalsIgnoreCase(node.optString("node_type", ""))
+                            || node.optJSONObject("input_context") == null) continue;
+                    String nodeId = node.optString("node_id", node.optString("nodeId", ""));
+                    if (nodeId.equals(id)) { out.add(node); break; }
+                }
+            }
+        } catch (Exception ignored) { }
+        return out;
     }
 
     static String systemContext(JSONObject context) {
