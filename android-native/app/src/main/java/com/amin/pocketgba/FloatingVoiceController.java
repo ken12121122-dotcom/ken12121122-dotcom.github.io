@@ -373,10 +373,46 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false; processing = false;
     }
 
+    /**
+     * Phase 12 Semantic Router v0.1 — Step 2 (capability gate only). When an LLM is configured,
+     * one classification call decides whether this is a capability question; a low-confidence,
+     * unparseable, or execution-requesting result — or no API key at all — falls back to the
+     * unchanged deterministic {@link CapabilityResolver#isCapabilityQuestion(String)} keyword gate.
+     * Everything past the capability gate (node context, Node Registry, command parser, LLM gate)
+     * is untouched in this step; see {@link SemanticRouteContract} for why it was scoped this way.
+     */
     private void routeTranscript(String spoken, double confidence) {
         appendChat("你：" + spoken);
-        ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
-                service, nodeMetadataStore, spoken);
+        if (LlmConfigStore.hasApiKey(service)) {
+            ArrayList<LlmClient.Message> messages = new ArrayList<>();
+            messages.add(new LlmClient.Message("user", spoken));
+            LlmClient.send(service, SemanticRouteContract.systemPrompt(), messages, new LlmClient.Callback() {
+                @Override public void onSuccess(String text) {
+                    handler.post(() -> continueRouteTranscript(spoken, confidence, parseSemanticResult(text)));
+                }
+                @Override public void onError(String message) {
+                    handler.post(() -> continueRouteTranscript(spoken, confidence, null));
+                }
+            });
+            return;
+        }
+        continueRouteTranscript(spoken, confidence, null);
+    }
+
+    /** @return a usable route, or null when the caller must fall back to the deterministic gate unchanged. */
+    static SemanticRouteContract parseSemanticResult(String rawModelOutput) {
+        try {
+            SemanticRouteContract contract = SemanticRouteContract.parse(rawModelOutput);
+            return contract.isUsable() ? contract : null;
+        } catch (RuntimeException malformed) {
+            return null;
+        }
+    }
+
+    private void continueRouteTranscript(String spoken, double confidence, SemanticRouteContract semantic) {
+        ConversationalCapabilityRuntime.Result capability = semantic != null
+                ? ConversationalCapabilityRuntime.resolve(service, nodeMetadataStore, spoken, semantic.isCapabilityQuery())
+                : ConversationalCapabilityRuntime.resolve(service, nodeMetadataStore, spoken);
         if (capability.isHandled()) {
             appendChat("AI：" + capability.getAnswer());
             finishTurn("Capability 唯讀回覆完成");
@@ -389,6 +425,8 @@ final class FloatingVoiceController implements RecognitionListener {
         final String requestedNodeName = createRequested ? extractNodeName(spoken) : "";
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
+        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "capability_gate",
+                semantic != null ? "semantic:" + semantic.confidence : "deterministic");
 
         if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "fox_context",
