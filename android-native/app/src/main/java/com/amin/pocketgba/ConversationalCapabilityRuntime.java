@@ -28,7 +28,19 @@ final class ConversationalCapabilityRuntime {
     private ConversationalCapabilityRuntime() { }
 
     static Result resolve(Context context, NodeMetadataStore nodeStore, String query) {
-        if (!CapabilityResolver.isCapabilityQuestion(query)) {
+        return resolve(context, nodeStore, query, null);
+    }
+
+    /**
+     * @param capabilityQuestionOverride when non-null, replaces the deterministic
+     *        {@link CapabilityResolver#isCapabilityQuestion(String)} keyword gate with this decision
+     *        (Phase 12 Semantic Router). Pass null to keep today's unchanged keyword-only behavior.
+     */
+    static Result resolve(Context context, NodeMetadataStore nodeStore, String query, Boolean capabilityQuestionOverride) {
+        boolean isCapabilityQuestion = capabilityQuestionOverride != null
+                ? capabilityQuestionOverride
+                : CapabilityResolver.isCapabilityQuestion(query);
+        if (!isCapabilityQuestion) {
             return new Result(false, "", "", new JSONObject());
         }
         JSONObject resolution = CapabilityResolver.resolve(query,

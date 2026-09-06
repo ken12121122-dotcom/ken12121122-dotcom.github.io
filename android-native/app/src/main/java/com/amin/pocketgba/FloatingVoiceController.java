@@ -373,10 +373,47 @@ final class FloatingVoiceController implements RecognitionListener {
         listening = false; processing = false;
     }
 
+    /**
+     * Phase 12 Semantic Router v0.1 — Step 2 (capability gate only). When an LLM is configured,
+     * one classification call decides whether this is a capability question; a low-confidence,
+     * unparseable, or execution-requesting result — or no API key at all — falls back to the
+     * unchanged deterministic {@link CapabilityResolver#isCapabilityQuestion(String)} keyword gate.
+     * Everything past the capability gate (node context, Node Registry, command parser, LLM gate)
+     * is untouched in this step; see {@link SemanticRouteContract} for why it was scoped this way.
+     */
     private void routeTranscript(String spoken, double confidence) {
         appendChat("你：" + spoken);
-        ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
-                service, nodeMetadataStore, spoken);
+        if (LlmConfigStore.hasApiKey(service)) {
+            ArrayList<LlmClient.Message> messages = new ArrayList<>();
+            messages.add(new LlmClient.Message("user", spoken));
+            String nodeCatalog = FoxConversationContextBuilder.nodeCatalog(service, nodeMetadataStore);
+            LlmClient.send(service, SemanticRouteContract.systemPrompt(nodeCatalog), messages, new LlmClient.Callback() {
+                @Override public void onSuccess(String text) {
+                    handler.post(() -> continueRouteTranscript(spoken, confidence, parseSemanticResult(text)));
+                }
+                @Override public void onError(String message) {
+                    handler.post(() -> continueRouteTranscript(spoken, confidence, null));
+                }
+            });
+            return;
+        }
+        continueRouteTranscript(spoken, confidence, null);
+    }
+
+    /** @return a usable route, or null when the caller must fall back to the deterministic gate unchanged. */
+    static SemanticRouteContract parseSemanticResult(String rawModelOutput) {
+        try {
+            SemanticRouteContract contract = SemanticRouteContract.parse(rawModelOutput);
+            return contract.isUsable() ? contract : null;
+        } catch (RuntimeException malformed) {
+            return null;
+        }
+    }
+
+    private void continueRouteTranscript(String spoken, double confidence, SemanticRouteContract semantic) {
+        ConversationalCapabilityRuntime.Result capability = semantic != null
+                ? ConversationalCapabilityRuntime.resolve(service, nodeMetadataStore, spoken, semantic.isCapabilityQuery())
+                : ConversationalCapabilityRuntime.resolve(service, nodeMetadataStore, spoken);
         if (capability.isHandled()) {
             appendChat("AI：" + capability.getAnswer());
             finishTurn("Capability 唯讀回覆完成");
@@ -389,11 +426,15 @@ final class FloatingVoiceController implements RecognitionListener {
         final String requestedNodeName = createRequested ? extractNodeName(spoken) : "";
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
+        NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "capability_gate",
+                semantic != null ? "semantic:" + semantic.confidence : "deterministic");
 
-        if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken)) {
+        if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken, semantic)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "fox_context",
-                    "read-only Node Markdown question");
-            runLlmGate(turnId, spoken, false, "");
+                    FoxConversationContextBuilder.isNodeContextSelection(semantic)
+                            ? "semantic node selection: " + semantic.selectedNodes
+                            : "read-only Node Markdown question");
+            runLlmGate(turnId, spoken, false, "", semantic);
             return;
         }
 
@@ -452,8 +493,13 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void runLlmGate(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
+        runLlmGate(turnId, spoken, createRequested, requestedNodeName, null);
+    }
+
+    private void runLlmGate(String turnId, String spoken, boolean createRequested, String requestedNodeName,
+            SemanticRouteContract semantic) {
         awaitGate(NodeProtocolGateStore.LLM, turnId, NeuralFlowTrace.Stage.LLM_REQUEST,
-                () -> sendToLlm(turnId, spoken, createRequested, requestedNodeName));
+                () -> sendToLlm(turnId, spoken, createRequested, requestedNodeName, semantic));
     }
 
     private void awaitGate(String key, String turnId, NeuralFlowTrace.Stage stage, Runnable onPass) {
@@ -560,6 +606,11 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
+        sendToLlm(turnId, spoken, createRequested, requestedNodeName, null);
+    }
+
+    private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName,
+            SemanticRouteContract semantic) {
         if (!LlmConfigStore.hasApiKey(service)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_ERROR, "blocked", "API Key not configured");
             appendChat("系統：尚未設定 API Key。"); finishTurn("LLM 未設定"); return;
@@ -570,7 +621,9 @@ final class FloatingVoiceController implements RecognitionListener {
         FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.THINKING, "", false);
         ArrayList<LlmClient.Message> messages = new ArrayList<>();
         messages.add(new LlmClient.Message("user", spoken));
-        JSONObject context = FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken);
+        JSONObject context = FoxConversationContextBuilder.isNodeContextSelection(semantic)
+                ? FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken, semantic.selectedNodes)
+                : FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken);
         LlmClient.send(service, FoxConversationContextBuilder.systemContext(context), messages, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 handler.post(() -> {

@@ -12,6 +12,8 @@ import java.util.List;
 /** Selects relevant registered Nodes and composes only their managed Markdown for Fox chat. */
 final class FoxConversationContextBuilder {
     private static final int MAX_SELECTED_NODES = 3;
+    private static final int MAX_CATALOG_NODES = 40;
+    private static final int MAX_CATALOG_DESCRIPTION_LENGTH = 60;
 
     private static final class Match {
         final JSONObject node;
@@ -25,16 +27,94 @@ final class FoxConversationContextBuilder {
         return looksLikeQuestion(query) && !matches(context, store, query).isEmpty();
     }
 
+    /**
+     * Phase 12 Step 3: when the Semantic Router already decided this is a node-context question
+     * with specific nodes selected, trust that instead of re-deriving intent/selection by keyword.
+     * Pass {@code semantic == null} to keep today's unchanged keyword-only behavior.
+     */
+    static boolean shouldAnswerWithNodeContext(Context context, NodeMetadataStore store, String query,
+            SemanticRouteContract semantic) {
+        if (semantic != null) return isNodeContextSelection(semantic);
+        return shouldAnswerWithNodeContext(context, store, query);
+    }
+
+    /** Pure decision, no Context needed — kept separate so it is unit-testable without a device. */
+    static boolean isNodeContextSelection(SemanticRouteContract semantic) {
+        return semantic != null && SemanticRouteContract.INTENT_NODE_CONTEXT.equals(semantic.intent)
+                && !semantic.selectedNodes.isEmpty();
+    }
+
+    /**
+     * Phase 12 Step 4: a compact catalog of already-registered Nodes' existing title/description/
+     * alias data (the same fields keyword matching already reads in {@link #score}), so the
+     * Semantic Router can ground {@code selected_nodes} in real IDs instead of guessing. Applies
+     * the same eligibility filter as keyword matching (registered, non-reference, has input_context).
+     */
+    static String nodeCatalog(Context context, NodeMetadataStore store) {
+        StringBuilder out = new StringBuilder();
+        try {
+            JSONArray nodes = new JSONObject(NodeRegistry.registryJson(context, store)).optJSONArray("nodes");
+            if (nodes == null) return "";
+            int count = 0;
+            for (int i = 0; i < nodes.length() && count < MAX_CATALOG_NODES; i++) {
+                JSONObject node = nodes.optJSONObject(i);
+                if (node == null || "reference".equalsIgnoreCase(node.optString("node_type", ""))
+                        || node.optJSONObject("input_context") == null) continue;
+                String id = node.optString("node_id", node.optString("nodeId", ""));
+                if (id.isEmpty()) continue;
+                String title = node.optString("title", node.optString("name", id));
+                String description = shorten(node.optString("description", ""), MAX_CATALOG_DESCRIPTION_LENGTH);
+                out.append(id).append(" | ").append(title).append(" | ").append(description)
+                        .append(" | ").append(aliasesOf(node)).append('\n');
+                count++;
+            }
+        } catch (Exception ignored) { }
+        return out.toString().trim();
+    }
+
+    private static String aliasesOf(JSONObject node) {
+        JSONObject voice = node.optJSONObject("voice");
+        JSONArray aliases = voice == null ? null : voice.optJSONArray("aliases");
+        if (aliases == null || aliases.length() == 0) return "";
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < aliases.length(); i++) {
+            String alias = aliases.optString(i, "");
+            if (alias.trim().isEmpty()) continue;
+            if (out.length() > 0) out.append(',');
+            out.append(alias.trim());
+        }
+        return out.toString();
+    }
+
+    private static String shorten(String value, int maxLength) {
+        if (value == null) return "";
+        String trimmed = value.trim();
+        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength) + "…";
+    }
+
     static JSONObject build(Context context, NodeMetadataStore store, String query) {
+        return build(context, store, query, null);
+    }
+
+    /**
+     * @param semanticSelectedNodeIds when non-null and non-empty, these Node IDs (from the Semantic
+     *        Router) replace keyword scoring for which Nodes get included — still subject to the
+     *        same eligibility filter as keyword matching (registered, non-reference, has
+     *        input_context). Pass null to keep today's unchanged keyword-scoring behavior.
+     */
+    static JSONObject build(Context context, NodeMetadataStore store, String query,
+            List<String> semanticSelectedNodeIds) {
         JSONArray selected = new JSONArray();
         JSONArray sources = new JSONArray();
         JSONArray gaps = new JSONArray();
         StringBuilder content = new StringBuilder();
         appendContext(context, store, NodeMdContextBuilder.FOX_NODE_ID,
                 "狐狸", selected, sources, gaps, content);
-        List<Match> matches = matches(context, store, query);
-        for (int i = 0; i < matches.size() && i < MAX_SELECTED_NODES; i++) {
-            JSONObject node = matches.get(i).node;
+        List<JSONObject> chosen = semanticSelectedNodeIds != null && !semanticSelectedNodeIds.isEmpty()
+                ? nodesById(context, store, semanticSelectedNodeIds)
+                : nodesFromMatches(matches(context, store, query));
+        for (int i = 0; i < chosen.size() && i < MAX_SELECTED_NODES; i++) {
+            JSONObject node = chosen.get(i);
             String id = node.optString("node_id", node.optString("nodeId", ""));
             if (NodeMdContextBuilder.FOX_NODE_ID.equals(id)) continue;
             appendContext(context, store, id,
@@ -47,6 +127,37 @@ final class FoxConversationContextBuilder {
                     .put("source_records", sources).put("unresolved_gaps", gaps)
                     .put("read_only", true);
         } catch (Exception ignored) { return new JSONObject(); }
+    }
+
+    private static List<JSONObject> nodesFromMatches(List<Match> matches) {
+        List<JSONObject> out = new ArrayList<>();
+        for (Match match : matches) out.add(match.node);
+        return out;
+    }
+
+    /** Looks up Semantic-Router-selected Node IDs, applying the same eligibility filter as keyword matching. */
+    private static List<JSONObject> nodesById(Context context, NodeMetadataStore store, List<String> ids) {
+        List<JSONObject> out = new ArrayList<>();
+        java.util.Set<String> requested = new java.util.HashSet<>();
+        try {
+            JSONArray nodes = new JSONObject(NodeRegistry.registryJson(context, store)).optJSONArray("nodes");
+            if (nodes == null) return out;
+            for (String id : ids) {
+                // A model can repeat an ID (sometimes in different casing) across selected_nodes;
+                // without this, the same Node's Markdown would be appended into content twice.
+                if (!requested.add(id.toLowerCase(java.util.Locale.ROOT))) continue;
+                for (int i = 0; i < nodes.length(); i++) {
+                    JSONObject node = nodes.optJSONObject(i);
+                    if (node == null || "reference".equalsIgnoreCase(node.optString("node_type", ""))
+                            || node.optJSONObject("input_context") == null) continue;
+                    String nodeId = node.optString("node_id", node.optString("nodeId", ""));
+                    // Case-insensitive: the catalog tells the model the exact ID, but a model can
+                    // still alter casing when copying it back.
+                    if (nodeId.equalsIgnoreCase(id)) { out.add(node); break; }
+                }
+            }
+        } catch (Exception ignored) { }
+        return out;
     }
 
     static String systemContext(JSONObject context) {

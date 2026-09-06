@@ -1,9 +1,9 @@
 {
-  "versionCode": 187,
-  "versionName": "0.11.22-rc2",
+  "versionCode": 188,
+  "versionName": "0.11.22-rc3",
   "channel": "candidate",
-  "bridge": 91,
-  "releaseSequence": 25,
+  "bridge": 92,
+  "releaseSequence": 26,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -18,6 +18,8 @@
     "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
     "新增 AMIN Brain 私人任務中心（app:brain-control）到 Capability BOM，補上遺漏的唯讀 Node Markdown。",
     "在狐狸控制面板加入可實際到達的 LLM 設定入口；先前 LLM 設定畫面只能從另一個替代首頁開啟，一般操作路徑走不到。",
+    "新增語意路由器（Semantic Router）v0.1 雛形：已設定 LLM API Key 時，先用一次語意分類判斷是否為能力問題、是否為特定 Node 的唯讀資料問題，取代原本部分關鍵字判斷；沒設定 Key、信心不足或模型要求執行時，一律退回原本關鍵字判斷，行為不變。",
+    "語意路由器只負責分類與 Node 選擇，不能執行、寫入、批准或發布任何東西，這些邊界仍由既有 RegistryApprovalActivity 與其他既有程式碼把關；Node 選擇只能從既有已註冊 Node 目錄挑選，不能自行發明 ID。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }
