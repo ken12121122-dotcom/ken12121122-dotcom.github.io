@@ -56,7 +56,12 @@ final class SemanticRouteContract {
      *         Callers must treat this the same as a low-confidence result: fall back.
      */
     static SemanticRouteContract parse(String rawModelOutput) {
-        JSONObject json = new JSONObject(extractJsonObject(rawModelOutput));
+        JSONObject json;
+        try {
+            json = new JSONObject(extractJsonObject(rawModelOutput));
+        } catch (org.json.JSONException error) {
+            throw new IllegalArgumentException("malformed semantic router response", error);
+        }
         boolean requiresExecution = json.optBoolean("requires_execution", true);
         double confidence = json.optDouble("confidence", 0.0);
         return new SemanticRouteContract(
