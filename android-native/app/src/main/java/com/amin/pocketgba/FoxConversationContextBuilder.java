@@ -138,16 +138,22 @@ final class FoxConversationContextBuilder {
     /** Looks up Semantic-Router-selected Node IDs, applying the same eligibility filter as keyword matching. */
     private static List<JSONObject> nodesById(Context context, NodeMetadataStore store, List<String> ids) {
         List<JSONObject> out = new ArrayList<>();
+        java.util.Set<String> requested = new java.util.HashSet<>();
         try {
             JSONArray nodes = new JSONObject(NodeRegistry.registryJson(context, store)).optJSONArray("nodes");
             if (nodes == null) return out;
             for (String id : ids) {
+                // A model can repeat an ID (sometimes in different casing) across selected_nodes;
+                // without this, the same Node's Markdown would be appended into content twice.
+                if (!requested.add(id.toLowerCase(java.util.Locale.ROOT))) continue;
                 for (int i = 0; i < nodes.length(); i++) {
                     JSONObject node = nodes.optJSONObject(i);
                     if (node == null || "reference".equalsIgnoreCase(node.optString("node_type", ""))
                             || node.optJSONObject("input_context") == null) continue;
                     String nodeId = node.optString("node_id", node.optString("nodeId", ""));
-                    if (nodeId.equals(id)) { out.add(node); break; }
+                    // Case-insensitive: the catalog tells the model the exact ID, but a model can
+                    // still alter casing when copying it back.
+                    if (nodeId.equalsIgnoreCase(id)) { out.add(node); break; }
                 }
             }
         } catch (Exception ignored) { }
