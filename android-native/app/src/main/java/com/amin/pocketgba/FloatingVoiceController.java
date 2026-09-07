@@ -390,6 +390,14 @@ final class FloatingVoiceController implements RecognitionListener {
         final String turnId = NeuralFlowTrace.beginTurn(shorten(spoken, 56));
         NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "enter", "forced gate routing");
 
+        if (LegalCorpusResolver.isLegalQuestion(spoken)) {
+            JSONObject legalContext = LegalCorpusResolver.buildContext(service, spoken);
+            NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "legal_context",
+                    "startup/equity law question, has_evidence=" + legalContext.optBoolean("has_evidence", false));
+            runLlmGate(turnId, spoken, false, "", legalContext);
+            return;
+        }
+
         if (FoxConversationContextBuilder.shouldAnswerWithNodeContext(service, nodeMetadataStore, spoken)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.ROUTER, "fox_context",
                     "read-only Node Markdown question");
@@ -452,8 +460,13 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void runLlmGate(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
+        runLlmGate(turnId, spoken, createRequested, requestedNodeName, null);
+    }
+
+    private void runLlmGate(String turnId, String spoken, boolean createRequested, String requestedNodeName,
+            JSONObject legalContext) {
         awaitGate(NodeProtocolGateStore.LLM, turnId, NeuralFlowTrace.Stage.LLM_REQUEST,
-                () -> sendToLlm(turnId, spoken, createRequested, requestedNodeName));
+                () -> sendToLlm(turnId, spoken, createRequested, requestedNodeName, legalContext));
     }
 
     private void awaitGate(String key, String turnId, NeuralFlowTrace.Stage stage, Runnable onPass) {
@@ -560,6 +573,11 @@ final class FloatingVoiceController implements RecognitionListener {
     }
 
     private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName) {
+        sendToLlm(turnId, spoken, createRequested, requestedNodeName, null);
+    }
+
+    private void sendToLlm(String turnId, String spoken, boolean createRequested, String requestedNodeName,
+            JSONObject legalContext) {
         if (!LlmConfigStore.hasApiKey(service)) {
             NeuralFlowTrace.emit(turnId, NeuralFlowTrace.Stage.LLM_ERROR, "blocked", "API Key not configured");
             appendChat("系統：尚未設定 API Key。"); finishTurn("LLM 未設定"); return;
@@ -570,8 +588,11 @@ final class FloatingVoiceController implements RecognitionListener {
         FoxPresentationBridge.present(service, FoxPresentationBridge.VisualState.THINKING, "", false);
         ArrayList<LlmClient.Message> messages = new ArrayList<>();
         messages.add(new LlmClient.Message("user", spoken));
-        JSONObject context = FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken);
-        LlmClient.send(service, FoxConversationContextBuilder.systemContext(context), messages, new LlmClient.Callback() {
+        String systemContext = legalContext != null
+                ? LegalCorpusResolver.systemPrompt(legalContext)
+                : FoxConversationContextBuilder.systemContext(
+                        FoxConversationContextBuilder.build(service, nodeMetadataStore, spoken));
+        LlmClient.send(service, systemContext, messages, new LlmClient.Callback() {
             @Override public void onSuccess(String text) {
                 handler.post(() -> {
                     String reply = text == null || text.trim().isEmpty() ? "我沒有取得有效回覆。" : text.trim();
