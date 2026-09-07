@@ -1,9 +1,9 @@
 {
-  "versionCode": 187,
-  "versionName": "0.11.22-rc2",
+  "versionCode": 189,
+  "versionName": "0.11.22-rc4",
   "channel": "candidate",
-  "bridge": 91,
-  "releaseSequence": 25,
+  "bridge": 93,
+  "releaseSequence": 27,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
@@ -18,6 +18,8 @@
     "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
     "新增 AMIN Brain 私人任務中心（app:brain-control）到 Capability BOM，補上遺漏的唯讀 Node Markdown。",
     "在狐狸控制面板加入可實際到達的 LLM 設定入口；先前 LLM 設定畫面只能從另一個替代首頁開啟，一般操作路徑走不到。",
+    "新增狐狸法規顧問：公司法／商業登記法／證券交易法／中小企業發展條例共 847 條全文內建於 App，回答創業與股權架構問題時只依條文回答並附法規名稱與條號，查無證據時明確拒答，不使用模型記憶硬答。",
+    "此候選版基於 release/android 目前主線（不含尚待驗收的 Semantic Router v0.1 語意路由分支）；語意路由與這次的法規顧問是兩條平行、各自獨立驗證中的候選線，尚未合併。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }
