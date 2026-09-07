@@ -4,15 +4,15 @@
   "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.22-rc3-bridge92",
-  "latestVersionCode": 188,
+  "latestVersionName": "0.11.22-rc4-bridge93",
+  "latestVersionCode": 189,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc3-bridge92.apk",
-  "apkSha256": "b2c5d1a3932b953c3a52196ff82381813748f87fbb3d56025760148c00f96084",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc4-bridge93.apk",
+  "apkSha256": "6b8bc350b51a70b89bdea672b519b429342429bb92c4629e0aa44d3be5d31f09",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 2894790,
-  "publishedAt": "2026-09-06T12:45:08Z",
+  "sizeBytes": 2978906,
+  "publishedAt": "2026-09-07T13:18:31Z",
   "mandatory": false,
   "releaseNotes": [
     "保留已通過 OWNER 手機驗收的唯讀 GitHub Work 與 Capability 治理面板，並在既有單一 Dynamic Canvas 加入 Focus Chain Navigation。",
@@ -24,8 +24,8 @@
     "更新中心每次檢查都繞過 CDN 與 HttpURLConnection 快取，避免已發布的新版本仍顯示舊清單。",
     "新增 AMIN Brain 私人任務中心（app:brain-control）到 Capability BOM，補上遺漏的唯讀 Node Markdown。",
     "在狐狸控制面板加入可實際到達的 LLM 設定入口；先前 LLM 設定畫面只能從另一個替代首頁開啟，一般操作路徑走不到。",
-    "新增語意路由器（Semantic Router）v0.1 雛形：已設定 LLM API Key 時，先用一次語意分類判斷是否為能力問題、是否為特定 Node 的唯讀資料問題，取代原本部分關鍵字判斷；沒設定 Key、信心不足或模型要求執行時，一律退回原本關鍵字判斷，行為不變。",
-    "語意路由器只負責分類與 Node 選擇，不能執行、寫入、批准或發布任何東西，這些邊界仍由既有 RegistryApprovalActivity 與其他既有程式碼把關；Node 選擇只能從既有已註冊 Node 目錄挑選，不能自行發明 ID。",
+    "新增狐狸法規顧問：公司法／商業登記法／證券交易法／中小企業發展條例共 847 條全文內建於 App，回答創業與股權架構問題時只依條文回答並附法規名稱與條號，查無證據時明確拒答，不使用模型記憶硬答。",
+    "此候選版基於 release/android 目前主線（不含尚待驗收的 Semantic Router v0.1 語意路由分支）；語意路由與這次的法規顧問是兩條平行、各自獨立驗證中的候選線，尚未合併。",
     "所有路徑只引用既有 node／edge ID 與 SharedGraphSyncKernel，不建立第二套 Graph、identity、dedupe 或 Canvas；不新增 GitHub write、執行、憑證、自治、merge、正式發布或 Phase 2 能力。"
   ]
 }
