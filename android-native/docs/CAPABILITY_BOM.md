@@ -6,11 +6,11 @@ Baseline: `release/android` plus the P0 conversational capability entry.
 
 | Measure | Count | Meaning |
 | --- | ---: | --- |
-| Existing Capability total | 43 | 26 Registry capabilities plus 17 existing commands |
-| Chat-addressable | 42 | Fox can identify/read the Node context or the existing catalog can resolve the command |
+| Existing Capability total | 44 | 27 Registry capabilities plus 17 existing commands |
+| Chat-addressable | 43 | Fox can identify/read the Node context or the existing catalog can resolve the command |
 | Bridge required | 1 | The system root has no managed MD context and is not a user function |
 | Roadmap-only / not implemented | 0 | Roadmap ideas are not inserted into the runtime inventory |
-| Managed Node MD assets | 25 | Every built-in functional Node; reference Nodes are excluded from the BOM |
+| Managed Node MD assets | 26 | Every built-in functional Node; reference Nodes are excluded from the BOM |
 
 `Chat-addressable` is read/report/resolve only. It does not authorize the LLM to
 execute a command, mutate the Graph or MD, write GitHub, merge, release, extend
@@ -46,6 +46,7 @@ itself, or act autonomously.
 | `finance.storage.categories` — Categories Sheet | `NodeRegistry` virtual storage page; `GoogleSheetsAdapter` | Implemented storage record | Direct description through managed MD | Fox receives no live sheet data in P0 |
 | `finance.storage.accounts` — Accounts Sheet | `NodeRegistry` virtual storage page; `GoogleSheetsAdapter` | Implemented storage record | Direct description through managed MD | Fox receives no live sheet data in P0 |
 | `finance.storage.assets` — Assets Sheet | `NodeRegistry` virtual storage page; `GoogleSheetsAdapter` | Implemented storage record | Direct description through managed MD | Fox receives no live sheet data in P0 |
+| `app:legal-advisor` — 狐狸法規顧問 | `NodeRegistry` virtual storage page; bundled `assets/legal-corpus/*.json` via `LegalCorpusResolver` | Implemented storage record | Direct, read-only MD + existing `reads_from` relation from `app:fox-chat` | Bundled corpus only; no live network fetch, no new Router or Voice Runtime |
 
 ## Existing command capabilities
 
