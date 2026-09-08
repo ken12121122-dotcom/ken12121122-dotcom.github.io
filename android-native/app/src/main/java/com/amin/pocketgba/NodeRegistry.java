@@ -32,6 +32,7 @@ final class NodeRegistry {
             if(infos!=null)for(ActivityInfo info:infos){Bundle m=info.metaData;if(m==null||!m.getBoolean(META_VISIBLE,false))continue;pages.put(pageFromMetadata(info,m));}
             appendFinanceVirtualPages(pages);
             appendFoxPetVirtualPage(pages);
+            appendLegalAdvisorVirtualPage(pages);
             appendNodeContextVirtualPages(context,pages);
         }catch(Exception ignored){}
         try{return new JSONObject().put("format","amin-app-navigation").put("version",5).put("rootId","app-core").put("rootCapabilityId","app:app-core").put("rootTitle","Amin Pocket").put("rootDescription","Amin Pocket capability root").put("rootRoute","amin-home://open").put("pages",pages).toString();}
@@ -51,6 +52,7 @@ final class NodeRegistry {
             edges.put(GraphContract.edge("edge:finance:categories:reads-sheet","app:finance-categories","app:finance-categories-store","reads_from","active","1").put("authority","capability_projection"));
             edges.put(GraphContract.edge("edge:finance:accounts:reads-sheet","app:finance-accounts","app:finance-accounts-store","reads_from","active","1").put("authority","capability_projection"));
             edges.put(GraphContract.edge("edge:finance:assets:reads-sheet","app:finance-assets","app:finance-assets-store","reads_from","active","1").put("authority","capability_projection"));
+            edges.put(GraphContract.edge("edge:fox-chat:reads-legal-advisor","app:fox-chat","app:legal-advisor","reads_from","active","1").put("authority","capability_projection"));
             JSONArray pages=new JSONObject(navigation).optJSONArray("pages");
             if(pages!=null)for(int i=0;i<pages.length();i++){
                 JSONObject page=pages.optJSONObject(i);
@@ -112,6 +114,14 @@ final class NodeRegistry {
                 "presentation","start,stop,show,hide","","",false,"",
                 new JSONObject().put("adapter","fox_pet_overlay").put("source_id","FoxPetOverlayService")
                         .put("table",""),"bottom",1));
+    }
+
+    private static void appendLegalAdvisorVirtualPage(JSONArray pages)throws Exception{
+        pages.put(virtualPage("legal-advisor","app:legal-advisor","狐狸法規顧問",
+                "創業／股權法規查詢：公司法、商業登記法、證券交易法、中小企業發展條例共 847 條內建於 App，只依比對到的條文回答並附法規名稱與條號，查無足夠條文證據時明確拒答。","fox-chat","",
+                "storage","read","","",false,"",
+                new JSONObject().put("adapter","asset_bundle").put("source_id","legal-corpus")
+                        .put("table",""),"bottom",2));
     }
 
     private static void appendNodeContextVirtualPages(Context context,JSONArray pages)throws Exception{
