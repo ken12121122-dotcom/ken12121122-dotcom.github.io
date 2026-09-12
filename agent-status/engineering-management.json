@@ -1,0 +1,9 @@
+{
+  "id": "engineering-management",
+  "name": "工程管理助理",
+  "status": "idle",
+  "current_task": null,
+  "executor": "claude-code",
+  "last_run_at": "2026-09-12T10:17:46+08:00",
+  "last_result": null
+}
