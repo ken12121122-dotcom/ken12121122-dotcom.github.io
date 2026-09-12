@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>治理助理執行地圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #05070c;
+    --panel: #0d1119;
+    --panel-border: #1b2230;
+    --text-hi: #e8ecf3;
+    --text-lo: #7c8698;
+    --claude: #e8871e;
+    --claude-dim: #4a3720;
+    --codex: #2dd4bf;
+    --codex-dim: #1a3f3b;
+    --idle: #4b5563;
+    --error: #ef4444;
+    --done: #22c55e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(ellipse at 50% -10%, #10151f 0%, var(--bg) 60%);
+    color: var(--text-hi);
+    font-family: 'Noto Sans TC', 'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding: 28px 16px 60px;
+  }
+  .wrap{ max-width: 920px; margin: 0 auto; }
+
+  header h1{
+    font-family:'Space Grotesk','Noto Sans TC',sans-serif;
+    font-weight:700;
+    font-size: 1.5rem;
+    margin: 0 0 4px;
+    letter-spacing: 0.01em;
+  }
+  header p{
+    color: var(--text-lo);
+    font-size: 0.9rem;
+    margin: 0 0 20px;
+    line-height:1.6;
+  }
+
+  .source-row{
+    display:flex;
+    gap:8px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .source-row input{
+    flex:1;
+    min-width: 200px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text-hi);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .source-row input::placeholder{ color: #4a5568; }
+  .source-row button{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text-hi);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    cursor:pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .source-row button:active{ background:#161c28; }
+
+  .status-line{
+    font-size: 0.78rem;
+    color: var(--text-lo);
+    margin-bottom: 20px;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+  }
+  .dot-live{
+    width:7px;height:7px;border-radius:50%;
+    background: var(--text-lo);
+    display:inline-block;
+  }
+  .dot-live.live{ background: var(--codex); box-shadow: 0 0 8px var(--codex); }
+  .dot-live.demo{ background: #a78b5f; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  @media (min-width: 720px){
+    .grid{ grid-template-columns: 1fr 1fr; }
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 16px;
+    display:flex;
+    gap: 14px;
+    align-items:center;
+  }
+
+  .orbit-box{ width: 108px; height: 108px; flex-shrink:0; }
+
+  .card-body{ flex:1; min-width:0; }
+  .card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom: 6px;
+  }
+  .agent-name{
+    font-weight:500;
+    font-size: 0.98rem;
+  }
+  .exec-tag{
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space:nowrap;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .exec-tag.claude{ background: var(--claude-dim); color: var(--claude); }
+  .exec-tag.codex{ background: var(--codex-dim); color: var(--codex); }
+
+  .status-badge{
+    font-size: 0.74rem;
+    color: var(--text-lo);
+    margin-bottom: 4px;
+  }
+  .status-badge b{ color: var(--text-hi); font-weight: 500; }
+
+  .task-text{
+    font-size: 0.82rem;
+    color: var(--text-hi);
+    line-height:1.4;
+    margin-bottom: 4px;
+    min-height: 1.4em;
+  }
+  .time-text{
+    font-size: 0.7rem;
+    color: #4a5568;
+  }
+
+  footer{
+    margin-top: 26px;
+    font-size: 0.72rem;
+    color: #3d4657;
+    line-height:1.6;
+  }
+
+  /* electron pulse for running/error state, applied via JS class on the electron dot */
+  .electron.running{ filter: drop-shadow(0 0 5px currentColor); }
+  .electron.error{ animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ r: 4.5; opacity: 1; }
+    50%{ r: 6.5; opacity: 0.55; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>治理助理執行地圖</h1>
+      <p>每個原子代表一位助理，電子停在目前所在的工作環節上；執行中會持續繞行，異常時在該環節閃爍紅光。</p>
+    </header>
+
+    <div class="source-row">
+      <input id="baseUrlInput" type="text" placeholder="貼上 GitHub Pages 狀態資料夾網址，例如 https://xxx.github.io/status/">
+      <button id="saveBtn">套用</button>
+    </div>
+    <div class="status-line">
+      <span class="dot-live" id="liveDot"></span>
+      <span id="liveText">尚未設定資料來源，目前顯示示範資料</span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <footer>
+      每 15 秒自動重新讀取一次。若設定的網址讀取失敗（尚未發布 / CORS 限制），會自動退回顯示示範資料，不影響畫面正常運作。
+    </footer>
+  </div>
+
+<script>
+const AGENTS = [
+  { id: 'access-control',           name: '門禁助理',       executor: 'claude' },
+  { id: 'security-compliance',      name: '資安體系助理',   executor: 'claude' },
+  { id: 'engineering-management',   name: '工程管理助理',   executor: 'claude' },
+  { id: 'occupational-safety-system', name: '職安體系助理', executor: 'codex' },
+  { id: 'standard-time-collection', name: '標準工時蒐集助理', executor: 'codex' },
+  { id: 'fire-protection-plan',     name: '消防防護計畫助理', executor: 'codex' },
+];
+
+// 4 fixed stations around the orbit, evenly spaced
+const STATIONS = ['待命', '執行中', '產出', '完成'];
+const STATION_ANGLES = [ -90, 0, 90, 180 ]; // degrees, 0 = right, going clockwise
+
+const STATUS_COLOR = { idle: 'var(--idle)', running: null, error: 'var(--error)', success: 'var(--done)' };
+
+function demoDataFor(agent, i){
+  const patterns = [
+    { status: 'idle', current_task: null, last_result: 'success' },
+    { status: 'running', current_task: '整理資料中', last_result: null },
+    { status: 'error', current_task: '同步失敗，等待重試', last_result: 'failed' },
+    { status: 'running', current_task: '產出文件草稿', last_result: null },
+  ];
+  const p = patterns[i % patterns.length];
+  return {
+    id: agent.id, name: agent.name, status: p.status,
+    current_task: p.current_task, executor: agent.executor,
+    last_run_at: new Date(Date.now() - i*1000*60*7).toISOString(),
+    last_result: p.last_result,
+  };
+}
+
+function stationIndexFor(data){
+  if(data.status === 'idle') return data.last_result === 'success' ? 3 : 0;
+  if(data.status === 'running') return 1;
+  if(data.status === 'error') return 1;
+  if(data.status === 'fetch_failed') return 0;
+  return 2;
+}
+
+function buildAtomSVG(){
+  const ns = 'http://www.w3.org/2000/svg';
+  const size = 108, c = size/2, r = 34;
+  const svg = document.createElementNS(ns,'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+
+  const ring = document.createElementNS(ns,'circle');
+  ring.setAttribute('cx', c); ring.setAttribute('cy', c); ring.setAttribute('r', r);
+  ring.setAttribute('fill', 'none');
+  ring.setAttribute('stroke', '#1f2733');
+  ring.setAttribute('stroke-width', '1.5');
+  svg.appendChild(ring);
+
+  STATION_ANGLES.forEach(angle => {
+    const rad = angle * Math.PI/180;
+    const sx = c + r*Math.cos(rad), sy = c + r*Math.sin(rad);
+    const dot = document.createElementNS(ns,'circle');
+    dot.setAttribute('cx', sx); dot.setAttribute('cy', sy); dot.setAttribute('r', 2.2);
+    dot.setAttribute('fill', '#2a3342');
+    svg.appendChild(dot);
+  });
+
+  const nucleus = document.createElementNS(ns,'circle');
+  nucleus.setAttribute('cx', c); nucleus.setAttribute('cy', c); nucleus.setAttribute('r', 8);
+  nucleus.setAttribute('fill', '#181f2b');
+  nucleus.setAttribute('stroke', '#2a3342');
+  nucleus.setAttribute('stroke-width', '1');
+  svg.appendChild(nucleus);
+
+  const electron = document.createElementNS(ns,'circle');
+  electron.setAttribute('r', 4.5);
+  electron.classList.add('electron');
+  svg.appendChild(electron);
+
+  return { svg, electron, c, r };
+}
+
+function positionElectron(el, cx, cy, r, angleDeg){
+  const rad = angleDeg * Math.PI/180;
+  el.setAttribute('cx', cx + r*Math.cos(rad));
+  el.setAttribute('cy', cy + r*Math.sin(rad));
+}
+
+const cardRefs = {};
+
+function renderCards(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  AGENTS.forEach((agent, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const orbitBox = document.createElement('div');
+    orbitBox.className = 'orbit-box';
+    const { svg, electron, c, r } = buildAtomSVG();
+    orbitBox.appendChild(svg);
+    card.appendChild(orbitBox);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    body.innerHTML = `
+      <div class="card-top">
+        <span class="agent-name">${agent.name}</span>
+        <span class="exec-tag ${agent.executor}">${agent.executor === 'claude' ? 'Claude Code' : 'Codex'}</span>
+      </div>
+      <div class="status-badge">狀態：<b class="status-word">—</b></div>
+      <div class="task-text">—</div>
+      <div class="time-text">—</div>
+    `;
+    card.appendChild(body);
+    grid.appendChild(card);
+
+    cardRefs[agent.id] = {
+      electron, c, r,
+      statusWord: body.querySelector('.status-word'),
+      taskText: body.querySelector('.task-text'),
+      timeText: body.querySelector('.time-text'),
+      angle: STATION_ANGLES[0],
+      rafId: null,
+    };
+  });
+}
+
+function applyData(agent, data){
+  const ref = cardRefs[agent.id];
+  if(!ref) return;
+  const idx = stationIndexFor(data);
+  const targetAngle = STATION_ANGLES[idx];
+  const statusLabelMap = { idle: '待命', running: '執行中', error: '異常' };
+  let statusWord = statusLabelMap[data.status] || data.status || '—';
+  if(data.status === 'idle' && data.last_result === 'success') statusWord = '待命（上次成功）';
+  if(data.status === 'idle' && data.last_result === 'failed') statusWord = '待命（上次失敗）';
+  if(data.status === 'fetch_failed') statusWord = '讀取失敗';
+  ref.statusWord.textContent = statusWord;
+  ref.taskText.textContent = data.status === 'fetch_failed'
+    ? '無法連上狀態檔案，非真實工作內容'
+    : (data.current_task || (data.status === 'idle' ? (data.last_run_at ? '目前無任務' : '尚未執行過任務') : '—'));
+  ref.timeText.textContent = data.status === 'fetch_failed'
+    ? '請檢查網址或稍後重試'
+    : (data.last_run_at ? ('上次更新：' + new Date(data.last_run_at).toLocaleString('zh-TW', {hour12:false})) : '尚無紀錄');
+
+  ref.electron.classList.remove('running','error');
+  let color = 'var(--idle)';
+  if(data.status === 'idle' && data.last_result === 'success') color = 'var(--done)';
+  if(data.status === 'idle' && data.last_result === 'failed') color = 'var(--error)';
+  if(data.status === 'error'){ color = 'var(--error)'; ref.electron.classList.add('error'); }
+  if(data.status === 'fetch_failed'){ color = '#334155'; }
+  if(data.status === 'running'){
+    color = agent.executor === 'claude' ? 'var(--claude)' : 'var(--codex)';
+    ref.electron.classList.add('running');
+  }
+  ref.electron.setAttribute('fill', color);
+
+  if(ref.rafId) cancelAnimationFrame(ref.rafId);
+  animateElectron(ref, targetAngle, data.status === 'running');
+}
+
+function animateElectron(ref, targetAngle, keepOrbiting){
+  const start = ref.angle;
+  let diff = targetAngle - start;
+  while(diff > 180) diff -= 360;
+  while(diff < -180) diff += 360;
+  const duration = 700;
+  const t0 = performance.now();
+
+  function step(t){
+    const p = Math.min(1, (t - t0) / duration);
+    const eased = 1 - Math.pow(1-p, 3);
+    const angle = start + diff * eased;
+    positionElectron(ref.electron, ref.c, ref.c, ref.r, angle);
+    if(p < 1){
+      ref.rafId = requestAnimationFrame(step);
+    } else {
+      ref.angle = targetAngle;
+      if(keepOrbiting) driftOrbit(ref);
+    }
+  }
+  ref.rafId = requestAnimationFrame(step);
+}
+
+function driftOrbit(ref){
+  const centerAngle = ref.angle;
+  const t0 = performance.now();
+  function step(t){
+    const elapsed = (t - t0) / 1000;
+    const wobble = Math.sin(elapsed * 1.2) * 18;
+    positionElectron(ref.electron, ref.c, ref.c, ref.r, centerAngle + wobble);
+    ref.rafId = requestAnimationFrame(step);
+  }
+  ref.rafId = requestAnimationFrame(step);
+}
+
+async function fetchAgentData(baseUrl, agent, i){
+  if(!baseUrl){ return demoDataFor(agent, i); }
+  try{
+    const url = baseUrl.replace(/\/?$/, '/') + agent.id + '.json';
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    return data;
+  }catch(e){
+    return {
+      id: agent.id, name: agent.name, status: 'fetch_failed',
+      current_task: null, executor: agent.executor,
+      last_run_at: null, last_result: null,
+    };
+  }
+}
+
+async function refreshAll(){
+  const baseUrl = localStorage.getItem('agentStatusBaseUrl') || '';
+  const liveDot = document.getElementById('liveDot');
+  const liveText = document.getElementById('liveText');
+  let anyLive = false;
+
+  for(let i=0;i<AGENTS.length;i++){
+    const agent = AGENTS[i];
+    const data = await fetchAgentData(baseUrl, agent, i);
+    if(baseUrl && data && data.id && data.status !== 'fetch_failed') anyLive = true;
+    applyData(agent, data);
+  }
+
+  if(baseUrl && anyLive){
+    liveDot.className = 'dot-live live';
+    liveText.textContent = '已連線，讀取即時狀態資料';
+  } else if(baseUrl){
+    liveDot.className = 'dot-live demo';
+    liveText.textContent = '讀取失敗，顯示示範資料（檢查網址或發布狀態）';
+  } else {
+    liveDot.className = 'dot-live demo';
+    liveText.textContent = '尚未設定資料來源，目前顯示示範資料';
+  }
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const val = document.getElementById('baseUrlInput').value.trim();
+  localStorage.setItem('agentStatusBaseUrl', val);
+  refreshAll();
+});
+
+const DEFAULT_BASE_URL = 'https://ken12121122-dotcom.github.io/agent-status/';
+const savedUrl = localStorage.getItem('agentStatusBaseUrl') || DEFAULT_BASE_URL;
+document.getElementById('baseUrlInput').value = savedUrl;
+localStorage.setItem('agentStatusBaseUrl', savedUrl);
+
+renderCards();
+refreshAll();
+setInterval(refreshAll, 15000);
+</script>
+</body>
+</html>
