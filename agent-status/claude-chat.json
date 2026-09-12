@@ -1,0 +1,9 @@
+{
+  "id": "claude-chat",
+  "name": "知識庫協作（Claude chat）",
+  "status": "idle",
+  "current_task": null,
+  "executor": "claude-chat",
+  "last_run_at": "2026-09-12T17:33:26+08:00",
+  "last_result": "success"
+}
