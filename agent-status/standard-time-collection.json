@@ -1,0 +1,9 @@
+{
+  "id": "standard-time-collection",
+  "name": "標準工時蒐集助理",
+  "status": "idle",
+  "current_task": null,
+  "executor": "codex",
+  "last_run_at": "2026-09-12T10:39:48+08:00",
+  "last_result": null
+}
