@@ -403,8 +403,24 @@ async function fetchAgentData(baseUrl, agent, i){
   }
 }
 
+function getStoredBaseUrl(){
+  try{
+    return localStorage.getItem('agentStatusBaseUrl');
+  }catch(e){
+    return null;
+  }
+}
+
+function setStoredBaseUrl(val){
+  try{
+    localStorage.setItem('agentStatusBaseUrl', val);
+  }catch(e){
+    // storage unavailable (private mode, disabled cookies, etc.) — ignore
+  }
+}
+
 async function refreshAll(){
-  const baseUrl = localStorage.getItem('agentStatusBaseUrl') || '';
+  const baseUrl = getStoredBaseUrl() || '';
   const liveDot = document.getElementById('liveDot');
   const liveText = document.getElementById('liveText');
   let anyLive = false;
@@ -430,14 +446,14 @@ async function refreshAll(){
 
 document.getElementById('saveBtn').addEventListener('click', () => {
   const val = document.getElementById('baseUrlInput').value.trim();
-  localStorage.setItem('agentStatusBaseUrl', val);
+  setStoredBaseUrl(val);
   refreshAll();
 });
 
 const DEFAULT_BASE_URL = 'https://ken12121122-dotcom.github.io/agent-status/';
-const savedUrl = localStorage.getItem('agentStatusBaseUrl') || DEFAULT_BASE_URL;
+const savedUrl = getStoredBaseUrl() || DEFAULT_BASE_URL;
 document.getElementById('baseUrlInput').value = savedUrl;
-localStorage.setItem('agentStatusBaseUrl', savedUrl);
+setStoredBaseUrl(savedUrl);
 
 renderCards();
 refreshAll();
