@@ -1,9 +1,9 @@
 {
   "id": "engineering-management",
   "name": "工程管理助理",
-  "status": "running",
-  "current_task": "[能力測試] 平行派工與 git 併發 push 驗證（非正式任務，測試用，不代表實際工程管理工作）",
+  "status": "idle",
+  "current_task": null,
   "executor": "claude-code",
-  "last_run_at": "2026-09-13T06:49:41+00:00",
-  "last_result": null
+  "last_run_at": "2026-09-13T06:50:27+00:00",
+  "last_result": "success"
 }
