@@ -1,9 +1,9 @@
 {
   "id": "access-control",
   "name": "門禁助理",
-  "status": "running",
-  "current_task": "[能力測試] 平行派工與 git 併發 push 驗證（非正式任務，測試用，不代表實際門禁工作）",
+  "status": "idle",
+  "current_task": null,
   "executor": "claude-code",
-  "last_run_at": "2026-09-13T06:50:00+00:00",
+  "last_run_at": "2026-09-13T06:50:47+00:00",
   "last_result": "success"
 }
