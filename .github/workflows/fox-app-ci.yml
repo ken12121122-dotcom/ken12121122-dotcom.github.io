@@ -68,9 +68,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
+          gh release delete fox-app-latest-debug --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
           gh release create fox-app-latest-debug \
             fox-app/app/build/outputs/apk/debug/app-debug.apk \
             --repo "$GITHUB_REPOSITORY" \
             --title "FOX App debug APK (latest)" \
-            --notes "Auto-published from commit ${{ github.sha }} by fox-app-ci.yml. Debug build only — unsigned for release, do not distribute beyond testing." \
-            --clobber
+            --notes "Auto-published from commit ${{ github.sha }} by fox-app-ci.yml. Debug build only — unsigned for release, do not distribute beyond testing."
