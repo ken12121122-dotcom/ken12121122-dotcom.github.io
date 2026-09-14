@@ -1,11 +1,9 @@
 package com.fox.app.data.db
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,8 +32,7 @@ interface NodeDao {
     @Query("SELECT COUNT(*) FROM nodes")
     fun observeCount(): Flow<Int>
 
-    @Transaction
-    @Query("SELECT * FROM nodes n JOIN node_search fts ON n.node_id = fts.nodeId WHERE node_search MATCH :ftsQuery ORDER BY n.title")
+    @Query("SELECT n.* FROM nodes n JOIN node_search fts ON n.node_id = fts.nodeId WHERE node_search MATCH :ftsQuery ORDER BY n.title")
     suspend fun search(ftsQuery: String): List<NodeEntity>
 }
 
