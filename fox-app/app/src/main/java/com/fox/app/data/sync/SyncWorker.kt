@@ -7,8 +7,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.Constraints
+import androidx.work.ListenableWorker.Result
 import androidx.work.NetworkType
-import androidx.work.Result
 import com.fox.app.FoxApplication
 import java.util.concurrent.TimeUnit
 
