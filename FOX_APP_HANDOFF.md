@@ -172,11 +172,15 @@ compileSdk 35 / targetSdk 35 / minSdk 26
 
 ## 6. 下一步執行順序
 
-### 第一優先：產出可安裝的 debug APK
+### 第一優先：產出可安裝的 debug APK — 已完成，但安裝方式待確認
 
-1. 在 `fox-app-ci.yml` 的 `validate` job 加 `actions/upload-artifact@v4`，把 `:app:assembleDebug` 產出的 apk 存成 artifact。
-2. 觸發一次 build（push 或開 PR），下載 artifact。
-3. 交給 OWNER 安裝到實機。
+CI 已經會在每次 push 到 `main` 時建置 debug APK，並發布成 GitHub Release（tag `fox-app-latest-debug`，見 `fox-app-ci.yml` 最後一步）。第一版 APK（2026-09-14）是用這條路徑產出後，透過 `SendUserFile` 直接交給 OWNER 的。
+
+**但 OWNER 事後說明：「我的apk採本地直接更新，不需要下載」**——也就是說 OWNER 安裝／更新 APK 的實際方式是本地直接更新，不是透過下載連結。這代表：
+
+- 未來要交付新版 APK 時，**不要預設走「等 CI → 下載 Release asset → SendUserFile」這條路**，先跟 OWNER 確認這次要用哪種方式。
+- 「本地直接更新」的具體機制（ADB push？USB 傳檔手動安裝？類似 Amin Pocket GBA 的 `runtime-updater.js`／`native-release-manifest.json` 那種機制？）尚未問清楚，見 Drive KB 的 `MEM-CLAUDECODE-005-FOX App APK安裝方式為本地直接更新` 候選文件。
+- `fox-app-ci.yml` 的 GitHub Release 發布步驟目前**保留著**（沒有拿掉），因為不確定 OWNER 是否仍需要它作為備援；是否要移除待 OWNER／KB_COORDINATOR 決定。
 
 ### 第二優先：實機驗收
 
