@@ -1,5 +1,7 @@
 # FOX Capability / Skill Graph — Full System Dry Run v0
 
+> **2026-09-16 execution update:** OWNER reviewed this dry run and explicitly authorized direct execution on 4 of the priority items below (Runtime verification, schedule/patrol-skill cleanup, promoting the 3 candidate skills, and assistant/plugin governance gaps). Those changes have since been written directly to the live FOX Knowledge Base on Google Drive (`KB-AGENT-CAP-002`, `KB-SCHED-001`, `SKILLS_INDEX.md`, `ASSISTANT_INDEX-助理登記表.md`, `OWNER_DECISIONS_INDEX.md`, `CHANGELOG.md`, plus new files `SKILL-KB-006-知識庫巡邏與交接審核.md` and promoted `SKILL-MEDIA-001`/`SKILL-PPT-001`/`SKILL-PPT-002`). This document below is left as the original analysis snapshot for the record; see `OWNER_DECISIONS_INDEX.md` in Drive for the current status of the remaining open items (engineering-management authority source, occupational-safety-system review checklist, and the plugin-duplicate confirmation, all still requiring OWNER's own judgment).
+
 ```yaml
 mode: full_system_dry_run
 google_drive_writeback: false
