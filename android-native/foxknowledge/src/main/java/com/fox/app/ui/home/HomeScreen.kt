@@ -23,8 +23,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -32,8 +37,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.fox.app.FoxApplication
+import com.fox.app.FoxDependencies
 import com.fox.app.data.db.NodeEntity
+import com.fox.app.data.drive.buildFoxGoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.common.api.ApiException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,10 +50,11 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToDetail: (String) -> Unit,
 ) {
-    val app = LocalContext.current.applicationContext as FoxApplication
+    val context = LocalContext.current
+    val deps = FoxDependencies.get(context)
     val viewModel: HomeViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { HomeViewModel(app.database.nodeDao(), app.syncRepository) }
+            initializer { HomeViewModel(deps.database.nodeDao(), deps.syncRepository) }
         },
     )
 
@@ -54,6 +64,23 @@ fun HomeScreen(
     val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val syncSummary by viewModel.lastSyncSummary.collectAsStateWithLifecycle()
     val syncError by viewModel.syncError.collectAsStateWithLifecycle()
+
+    val signInClient = remember(context) { buildFoxGoogleSignInClient(context) }
+    var signedInAccount by remember {
+        mutableStateOf<GoogleSignInAccount?>(GoogleSignIn.getLastSignedInAccount(context))
+    }
+    var signInError by remember { mutableStateOf<String?>(null) }
+    val signInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        try {
+            signedInAccount = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                .getResult(ApiException::class.java)
+            signInError = null
+        } catch (e: ApiException) {
+            signInError = "登入失敗（code ${e.statusCode}）"
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("FOX 狐狸") }) },
@@ -77,19 +104,57 @@ fun HomeScreen(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
+                        Text("Google 帳號", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        val account = signedInAccount
+                        if (account == null) {
+                            Text("尚未登入，無法同步 Drive 知識庫。")
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = { signInLauncher.launch(signInClient.signInIntent) }) {
+                                Text("使用 Google 帳號登入")
+                            }
+                        } else {
+                            Text("已登入：${account.email ?: account.displayName ?: "未知帳號"}")
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(onClick = {
+                                signInClient.signOut().addOnCompleteListener { signedInAccount = null }
+                            }) {
+                                Text("登出")
+                            }
+                        }
+                        signInError?.let { err ->
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "登入失敗：$err（若 Google Cloud Console 尚未替此 App 設定 OAuth client，這是預期中的失敗）",
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("知識庫狀態", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         Text("節點總數：$totalCount")
                         Text("待處理事項：${pendingNodes.size}")
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            Button(onClick = viewModel::syncNow, enabled = !isSyncing) {
+                            Button(onClick = viewModel::syncNow, enabled = !isSyncing && signedInAccount != null) {
                                 Text(if (isSyncing) "同步中…" else "立即同步 Drive")
                             }
                             if (isSyncing) {
                                 Spacer(Modifier.height(0.dp))
                                 CircularProgressIndicator(modifier = Modifier.height(20.dp))
                             }
+                        }
+                        if (signedInAccount == null) {
+                            Text(
+                                "請先登入 Google 帳號才能同步。",
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            )
                         }
                         syncSummary?.let { s ->
                             Text("上次同步：掃描 ${s.scanned}／更新 ${s.updated}／未變 ${s.unchanged}／失敗 ${s.failed}")
