@@ -27,7 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.fox.app.FoxApplication
+import com.fox.app.FoxDependencies
 import com.fox.app.data.db.EdgeEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,17 +37,17 @@ fun NodeDetailScreen(
     onNavigateToDetail: (String) -> Unit,
     onBack: () -> Unit,
 ) {
-    val app = LocalContext.current.applicationContext as FoxApplication
+    val deps = FoxDependencies.get(LocalContext.current)
     val viewModel: NodeDetailViewModel = viewModel(
         key = nodeId,
         factory = viewModelFactory {
             initializer {
                 NodeDetailViewModel(
                     nodeId = nodeId,
-                    nodeDao = app.database.nodeDao(),
-                    edgeDao = app.database.edgeDao(),
-                    contentDao = app.database.contentDao(),
-                    usageLogDao = app.database.appUsageLogDao(),
+                    nodeDao = deps.database.nodeDao(),
+                    edgeDao = deps.database.edgeDao(),
+                    contentDao = deps.database.contentDao(),
+                    usageLogDao = deps.database.appUsageLogDao(),
                 )
             }
         },

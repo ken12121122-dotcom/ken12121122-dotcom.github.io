@@ -1,0 +1,67 @@
+name: FOX Knowledge (android-native) CI
+
+# FOX used to be a standalone app built by this workflow from fox-app/. It's
+# now merged into android-native/ as the :foxknowledge library module, so
+# this workflow validates android-native/ instead. It intentionally does NOT
+# auto-publish a GitHub Release on push to main — android-native is governed
+# by AGENTS.md's stricter release gates (CI-only artifacts until OWNER does
+# real-device verification and explicitly approves a Bridge), unlike the
+# standalone fox-app repo this replaces.
+
+on:
+  pull_request:
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/foxknowledge-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/foxknowledge-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foxknowledge-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Test and build (debug) — :app + :foxknowledge
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :foxknowledge:testDebugUnitTest \
+            :app:testDebugUnitTest \
+            :app:assembleDebug
+
+      - name: Upload debug APK (CI DEBUG ARTIFACT ONLY)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-native-debug-ci-only
+          path: android-native/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
