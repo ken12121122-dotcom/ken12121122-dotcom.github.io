@@ -44,6 +44,14 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # android-actions/setup-android@v3 defaults to installing "tools
+          # platform-tools" via sdkmanager. The legacy "tools" package no
+          # longer exists in Google's SDK repository (sdkmanager fails with
+          # "Failed to find package 'tools'"), so only request platform-tools
+          # here — Gradle/AGP auto-downloads the specific platform and
+          # build-tools versions it actually needs once licenses are accepted.
+          packages: 'platform-tools'
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
