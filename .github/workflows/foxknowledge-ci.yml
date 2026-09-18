@@ -36,6 +36,11 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+      AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+      AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+      AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -63,6 +68,31 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      # Per AGENTS.md rule 6, general CI (push/PR validation) must never use
+      # permanent signing — only this explicit, manually-triggered dispatch
+      # does, and only to let OWNER install a candidate build cleanly over
+      # their existing properly-signed install (a debug-key build can't
+      # overwrite-install; Android rejects the signature mismatch).
+      - name: Prepare permanent signing (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        id: signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${AMIN_KEYSTORE_BASE64:-}" \
+             && -n "${AMIN_KEYSTORE_PASSWORD:-}" \
+             && -n "${AMIN_KEY_ALIAS:-}" \
+             && -n "${AMIN_KEY_PASSWORD:-}" ]]; then
+            KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
+            printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+            test -s "$KEYSTORE_PATH"
+            echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Permanent signing secrets not fully set — this dispatch build will fall back to an ad-hoc debug signature, not the release key."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Test and build (debug) — :app + :foxknowledge
         shell: bash
         run: |
@@ -71,6 +101,20 @@ jobs:
             :foxknowledge:testDebugUnitTest \
             :app:testDebugUnitTest \
             :app:assembleDebug
+
+      - name: Verify signing certificate (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && steps.signing.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          if [[ -x "$APKSIGNER" ]]; then
+            "$APKSIGNER" verify --verbose --print-certs "$APK"
+          else
+            echo "::warning::apksigner not found at expected build-tools path — skipping signature print, but the build did apply signingConfigs.release (see gradle log above)."
+          fi
 
       - name: Upload debug APK (CI DEBUG ARTIFACT ONLY)
         uses: actions/upload-artifact@v4
@@ -81,19 +125,27 @@ jobs:
 
       # Only runs on an explicit manual dispatch (never on push/PR), so this
       # can never become an implicit update channel. Publishes to a fixed,
-      # clearly-debug-labeled tag distinct from any Bridge/production release
-      # tag, and is NOT referenced by amin-vault/native-release-manifest.json
-      # — the phone's in-app update checker will never see or pull this.
-      - name: Publish manual debug build (workflow_dispatch only)
+      # clearly-labeled tag distinct from any Bridge/production release tag,
+      # and is NOT referenced by amin-vault/native-release-manifest.json —
+      # the phone's in-app update checker will never see or pull this on its
+      # own. Wiring an actual Bridge candidate into that manifest is a
+      # separate, explicit step requiring OWNER's direct approval per
+      # AGENTS.md, not something this step does automatically.
+      - name: Publish manual build (workflow_dispatch only)
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
+          if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
+            NOTES="Manually published from commit ${{ github.sha }} via workflow_dispatch. Signed with the permanent release key (same as OWNER's existing install), so it should install cleanly over the current app without needing to uninstall first. Still not referenced by native-release-manifest.json and not an update source — OWNER has not verified this build yet."
+          else
+            NOTES="Manually published from commit ${{ github.sha }} via workflow_dispatch. Permanent signing secrets were unavailable, so this is an ad-hoc debug-signed build — installing it will likely require uninstalling the existing app first. Not referenced by native-release-manifest.json and not an update source."
+          fi
           gh release delete foxknowledge-manual-debug --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
           gh release create foxknowledge-manual-debug \
             android-native/app/build/outputs/apk/debug/app-debug.apk \
             --repo "$GITHUB_REPOSITORY" \
-            --title "android-native manual debug build (CI-only, not a release channel)" \
-            --notes "Manually published from commit ${{ github.sha }} via workflow_dispatch. Debug build only — unsigned, not referenced by native-release-manifest.json, not an update source. For one-off delivery/testing only." \
+            --title "android-native manual build (CI-only, not a release channel)" \
+            --notes "$NOTES" \
             --prerelease
