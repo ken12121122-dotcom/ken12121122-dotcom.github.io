@@ -19,9 +19,14 @@ on:
     paths:
       - 'android-native/**'
       - '.github/workflows/foxknowledge-ci.yml'
+  # Manual only — never fires on a push, so it can't become an implicit
+  # release channel. Lets a human (or Claude Code, when explicitly asked)
+  # fetch a one-off debug build without needing the Actions artifact
+  # storage host, which some sandboxes can't reach.
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: foxknowledge-ci-${{ github.ref }}
@@ -73,3 +78,22 @@ jobs:
           name: android-native-debug-ci-only
           path: android-native/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # Only runs on an explicit manual dispatch (never on push/PR), so this
+      # can never become an implicit update channel. Publishes to a fixed,
+      # clearly-debug-labeled tag distinct from any Bridge/production release
+      # tag, and is NOT referenced by amin-vault/native-release-manifest.json
+      # — the phone's in-app update checker will never see or pull this.
+      - name: Publish manual debug build (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          gh release delete foxknowledge-manual-debug --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create foxknowledge-manual-debug \
+            android-native/app/build/outputs/apk/debug/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "android-native manual debug build (CI-only, not a release channel)" \
+            --notes "Manually published from commit ${{ github.sha }} via workflow_dispatch. Debug build only — unsigned, not referenced by native-release-manifest.json, not an update source. For one-off delivery/testing only." \
+            --prerelease
