@@ -102,6 +102,21 @@ jobs:
             :app:testDebugUnitTest \
             :app:assembleDebug
 
+      # :foxknowledge has never been built as part of the `bridge` build type
+      # (matchingFallbacks=['release'] means it uses its own release variant
+      # under the hood) — this is the variant OWNER's phone actually installs
+      # via native-release-manifest.json, so confirm it resolves and packages
+      # before ever dispatching android-release.yml with this branch's code.
+      - name: Smoke-test bridge build type (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=191 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge95-smoketest \
+            :app:assembleBridge :app:lintBridge
+
       - name: Verify signing certificate (workflow_dispatch only)
         if: github.event_name == 'workflow_dispatch' && steps.signing.outputs.ready == 'true'
         shell: bash
