@@ -53,6 +53,7 @@ public final class AminPocketApplication extends Application {
 
             @Override public void onActivityStarted(Activity activity) {}
             @Override public void onActivityResumed(Activity activity) {
+                NativeUpdatePromptController.onActivityResumed(activity);
                 if (activity instanceof ControlCenterActivity) scheduleControlEntries(activity);
                 if (activity instanceof UpdateHubActivity) NativeUpdateRouter.maybeAutoAdvance((UpdateHubActivity) activity);
                 View root = activity.findViewById(android.R.id.content);
