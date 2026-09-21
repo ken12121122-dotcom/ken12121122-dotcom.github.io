@@ -352,7 +352,7 @@ jobs:
             -e class com.amin.pocketgba.WikiGraphActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/phase1-instrumentation.txt"
-          grep -Eq 'OK \(2 tests\)' "$RUNNER_TEMP/phase1-instrumentation.txt"
+          grep -Eq 'OK \(3 tests\)' "$RUNNER_TEMP/phase1-instrumentation.txt"
           adb shell am instrument -w -r \
             -e class com.amin.pocketgba.CapabilityInventoryActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \

@@ -17,6 +17,8 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.fox.app.graph.FoxGraphProfileBridge;
+
 import androidx.core.graphics.Insets;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
@@ -35,6 +37,7 @@ public final class WikiGraphActivity extends Activity {
 
     private WebView webView;
     private NodeMetadataStore nodeMetadataStore;
+    private GraphProfileStore graphProfileStore;
     private String focusNode = "";
 
     private final BroadcastReceiver graphChangedReceiver = new BroadcastReceiver() {
@@ -49,6 +52,7 @@ public final class WikiGraphActivity extends Activity {
         focusNode = getIntent().getStringExtra("focus_node");
         if (focusNode == null) focusNode = "";
         nodeMetadataStore = new NodeMetadataStore(this);
+        graphProfileStore = new GraphProfileStore(this);
 
         AminTheme.Palette palette = AminTheme.palette(this);
         getWindow().setStatusBarColor(palette.background);
@@ -79,8 +83,7 @@ public final class WikiGraphActivity extends Activity {
                 applyWebTheme();
                 GraphArchitectureVisibilityInjector.inject(WikiGraphActivity.this, view);
                 reloadUnifiedGraph();
-                requestCloudSourceSync();
-                requestGitHubWorkSync(false);
+                syncActiveGraphProfile(false);
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
@@ -115,7 +118,7 @@ public final class WikiGraphActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         reloadUnifiedGraph();
-        requestCloudSourceSync();
+        syncActiveGraphProfile(false);
     }
 
     @Override protected void onDestroy() {
@@ -147,6 +150,21 @@ public final class WikiGraphActivity extends Activity {
             if (webView == current && !isFinishing() && !isDestroyed()) {
                 current.evaluateJavascript("window.AminReloadUnifiedGraph?AminReloadUnifiedGraph():false", null);
             }
+        });
+    }
+
+    private void syncActiveGraphProfile(boolean forced) {
+        String profileId = graphProfileStore == null
+                ? GraphProfileStore.SYSTEM_PROFILE_ID
+                : graphProfileStore.activeProfileId();
+        if (GraphProfileStore.SYSTEM_PROFILE_ID.equals(profileId)) {
+            requestCloudSourceSync();
+            requestGitHubWorkSync(forced);
+            return;
+        }
+        FoxGraphProfileBridge.syncAsync(this, profileId, () -> {
+            UnifiedGraphProvider.notifyChanged(WikiGraphActivity.this);
+            reloadUnifiedGraph();
         });
     }
 
@@ -208,8 +226,31 @@ public final class WikiGraphActivity extends Activity {
         @JavascriptInterface public String getFocusNode() { return focusNode; }
         @JavascriptInterface public String getGraphSettingsJson() { return graphSettingsJson(); }
         @JavascriptInterface public void saveGraphSettingsJson(String json) { WikiGraphActivity.this.saveGraphSettingsJson(json); }
+        @JavascriptInterface public String getGraphProfilesJson() {
+            return graphProfileStore.profilesJson().toString();
+        }
+        @JavascriptInterface public String getActiveGraphProfileId() {
+            return graphProfileStore.activeProfileId();
+        }
+        @JavascriptInterface public boolean setActiveGraphProfile(String profileId) {
+            boolean changed = graphProfileStore.setActiveProfileId(profileId);
+            if (!changed) return false;
+            runOnUiThread(() -> {
+                focusNode = "";
+                reloadUnifiedGraph();
+                syncActiveGraphProfile(true);
+            });
+            return true;
+        }
+        @JavascriptInterface public void syncActiveGraphProfileNow() {
+            runOnUiThread(() -> syncActiveGraphProfile(true));
+        }
         @JavascriptInterface public String getUnifiedGraphJson() {
-            return UnifiedGraphProvider.graphJson(WikiGraphActivity.this, nodeMetadataStore);
+            return UnifiedGraphProvider.graphJson(
+                    WikiGraphActivity.this,
+                    nodeMetadataStore,
+                    graphProfileStore.activeProfileId()
+            );
         }
         @JavascriptInterface public String getSourceReviewJson() {
             return SourceGraphProvider.reviewState(WikiGraphActivity.this).toString();

@@ -7,10 +7,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 
+import com.fox.app.data.profile.KnowledgeProfile;
+import com.fox.app.data.profile.KnowledgeProfileStore;
+
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,6 +62,53 @@ public final class WikiGraphActivityTest {
             assertTrue(result, result.contains("\\\"graphControlsRelocated\\\":true"));
             assertTrue(result, result.contains("\\\"rawLogs\\\":false"));
             assertTrue(result, result.contains("single-force-canvas"));
+        }
+    }
+
+    @Test public void switchesWikiGraphSaveSlotFromSystemToFoxKnowledgeProfile() throws Exception {
+        android.content.Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        KnowledgeProfile profile = new KnowledgeProfileStore(context).createProfile("GRAPH_TEST_KB");
+        new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
+
+        try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
+            AtomicReference<WebView> webView = new AtomicReference<>();
+            scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
+            assertNotNull(webView.get());
+
+            String initial = evaluateWhenReady(scenario, webView.get(),
+                    "(()=>{const s=document.getElementById('profileSelect');"
+                            + "const g=JSON.parse(AminWiki.getUnifiedGraphJson());"
+                            + "return JSON.stringify({layout:window.AminGraphSmoke?.state().layout,"
+                            + "selector:!!s,system:[...s.options].some(o=>o.value==='AMIN_SYSTEM'),"
+                            + "fox:[...s.options].some(o=>o.value==='" + profile.getId() + "'),"
+                            + "active:s.value,type:g.graphProfile?.type,id:g.graphProfile?.id});})()");
+            JSONObject initialJson = decodeJavascriptJsonString(initial);
+            assertTrue(initial, initialJson.optBoolean("selector"));
+            assertTrue(initial, initialJson.optBoolean("system"));
+            assertTrue(initial, initialJson.optBoolean("fox"));
+            assertTrue(initial, "AMIN_SYSTEM".equals(initialJson.optString("active")));
+            assertTrue(initial, "github".equals(initialJson.optString("type")));
+
+            evaluateOnce(scenario, webView.get(),
+                    "(()=>{const s=document.getElementById('profileSelect');"
+                            + "s.value='" + profile.getId() + "';"
+                            + "s.dispatchEvent(new Event('change',{bubbles:true}));return true;})()");
+            Thread.sleep(500L);
+
+            String switched = evaluateOnce(scenario, webView.get(),
+                    "(()=>{const g=JSON.parse(AminWiki.getUnifiedGraphJson());"
+                            + "return JSON.stringify({selected:document.getElementById('profileSelect').value,"
+                            + "type:g.graphProfile?.type,id:g.graphProfile?.id,"
+                            + "workHidden:document.getElementById('workBtn').classList.contains('hidden'),"
+                            + "connectHidden:document.getElementById('connectsBtn').classList.contains('hidden')});})()");
+            JSONObject switchedJson = decodeJavascriptJsonString(switched);
+            assertTrue(switched, profile.getId().equals(switchedJson.optString("selected")));
+            assertTrue(switched, "fox".equals(switchedJson.optString("type")));
+            assertTrue(switched, profile.getId().equals(switchedJson.optString("id")));
+            assertTrue(switched, switchedJson.optBoolean("workHidden"));
+            assertTrue(switched, switchedJson.optBoolean("connectHidden"));
+        } finally {
+            new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
         }
     }
 
@@ -120,6 +173,13 @@ public final class WikiGraphActivityTest {
             assertTrue(approved, approved.contains("\\\"pinStored\\\":true"));
             assertTrue(approved, approved.contains("\\\"canvas\\\":1"));
         }
+    }
+
+    private static JSONObject decodeJavascriptJsonString(String value) throws Exception {
+        Object decoded = new JSONTokener(value == null ? "" : value).nextValue();
+        if (decoded instanceof String) return new JSONObject((String) decoded);
+        if (decoded instanceof JSONObject) return (JSONObject) decoded;
+        return new JSONObject();
     }
 
     private static String evaluateOnce(ActivityScenario<WikiGraphActivity> scenario,

@@ -3,6 +3,8 @@ package com.amin.pocketgba;
 import android.content.Context;
 import android.content.Intent;
 
+import com.fox.app.graph.FoxGraphProjection;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,9 +30,28 @@ final class UnifiedGraphProvider {
     }
 
     static String graphJson(Context context, NodeMetadataStore nodeStore) {
+        if (context == null) return emptyGraph().toString();
+        GraphProfileStore profiles = new GraphProfileStore(context);
+        return graphJson(context, nodeStore, profiles.activeProfileId());
+    }
+
+    static String graphJson(Context context, NodeMetadataStore nodeStore, String profileId) {
+        if (context == null) return emptyGraph().toString();
+        GraphProfileStore profiles = new GraphProfileStore(context);
+        if (!profiles.isSystem(profileId) && profiles.isKnowledge(profileId)) {
+            return foxGraphJson(context, profileId);
+        }
+        return systemGraphJson(context, nodeStore);
+    }
+
+    private static String systemGraphJson(Context context, NodeMetadataStore nodeStore) {
         try {
             JSONObject out = emptyGraph();
-            if (context == null) return out.toString();
+            out.put("graphProfile", new JSONObject()
+                    .put("id", GraphProfileStore.SYSTEM_PROFILE_ID)
+                    .put("name", "AMIN_SYSTEM")
+                    .put("type", "github")
+                    .put("readOnly", true));
 
             JSONArray nodes = out.getJSONArray("nodes");
             JSONArray commands = out.getJSONArray("commands");
@@ -54,6 +75,48 @@ final class UnifiedGraphProvider {
             out.put("capabilitySource", capabilitySource);
             out.put("architectureFindings", capabilitySource.optJSONArray("findings") == null
                     ? new JSONArray() : capabilitySource.optJSONArray("findings"));
+            return out.toString();
+        } catch (Exception error) {
+            return emptyGraph().toString();
+        }
+    }
+
+    private static String foxGraphJson(Context context, String profileId) {
+        try {
+            JSONObject snapshot = new JSONObject(FoxGraphProjection.snapshotJson(context, profileId));
+            JSONObject out = emptyGraph();
+            out.put("graphProfile", new JSONObject()
+                    .put("id", snapshot.optString("profileId", profileId))
+                    .put("name", snapshot.optString("profileName", profileId))
+                    .put("type", "fox")
+                    .put("sourceLabel", snapshot.optString("sourceLabel", ""))
+                    .put("configured", snapshot.optBoolean("treeUriConfigured", false))
+                    .put("readOnly", true));
+            out.put("layers", new JSONObject()
+                    .put("knowledge", new JSONObject().put("available", true).put("authoritative", false))
+                    .put("source", new JSONObject().put("available", false).put("authoritative", false))
+                    .put("runtime", new JSONObject().put("available", false).put("authoritative", false))
+                    .put("work", new JSONObject().put("available", false).put("authoritative", false)));
+            out.put("domains", new JSONArray()
+                    .put(domain("knowledge:fox", "FOX KNOWLEDGE", snapshot.optString("profileName", "FOX"))));
+            out.put("groups", new JSONArray()
+                    .put(group("group:fox-knowledge", "KNOWLEDGE", "knowledge:fox",
+                            snapshot.optString("sourceLabel", "FOX knowledge profile"))));
+            out.put("nodes", snapshot.optJSONArray("nodes") == null
+                    ? new JSONArray() : snapshot.optJSONArray("nodes"));
+            out.put("commands", new JSONArray());
+            out.put("relations", snapshot.optJSONArray("relations") == null
+                    ? new JSONArray() : snapshot.optJSONArray("relations"));
+            out.put("sourceGraph", new JSONObject().put("format", "amin-source-graph")
+                    .put("version", 1).put("entities", new JSONArray()).put("relations", new JSONArray()));
+            out.put("capabilitySource", new JSONObject().put("format", "amin-capability-source-map")
+                    .put("version", 1).put("mappings", new JSONArray()).put("findings", new JSONArray()));
+            out.put("architectureFindings", new JSONArray());
+            out.put("syncedEvidence", GraphSyncEngine.empty());
+            out.put("githubWork", new JSONObject().put("readOnly", true).put("rawLogsEnabled", false)
+                    .put("entityCount", 0).put("relationCount", 0));
+            out.put("runtimeEdges", new JSONObject().put("edges", new JSONArray()));
+            out.put("runtimeFlows", new JSONObject().put("flows", new JSONArray()));
             return out.toString();
         } catch (Exception error) {
             return emptyGraph().toString();
