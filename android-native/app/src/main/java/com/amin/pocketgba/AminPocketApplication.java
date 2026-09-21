@@ -40,7 +40,7 @@ public final class AminPocketApplication extends Application {
             }
 
             @Override public void onActivityStarted(Activity activity) {}
-            @Override public void onActivityResumed(Activity activity) {}
+            @Override\n            public void onActivityResumed(Activity activity) {\n                NativeUpdatePromptController.onActivityResumed(activity);\n            }
             @Override public void onActivityPaused(Activity activity) {}
             @Override public void onActivityStopped(Activity activity) {}
             @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
