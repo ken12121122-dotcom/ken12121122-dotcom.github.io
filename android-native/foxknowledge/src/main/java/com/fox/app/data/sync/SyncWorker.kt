@@ -1,28 +1,40 @@
 package com.fox.app.data.sync
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ListenableWorker.Result
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.Constraints
-import androidx.work.ListenableWorker.Result
-import androidx.work.NetworkType
 import com.fox.app.FoxDependencies
 import java.util.concurrent.TimeUnit
 
-/** Periodic Drive -> Room sync, requires network. Errors are recorded per-file in sync_state, not thrown to WorkManager. */
+/**
+ * Periodic read-only sync for every configured FOX knowledge save slot.
+ *
+ * Profiles without a persisted SAF source are skipped. Each profile owns its
+ * own Room database, so background refresh cannot mix nodes across knowledge bases.
+ */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val repository = FoxDependencies.get(applicationContext).syncRepository
-        return try {
-            repository.syncOnce()
-            Result.success()
-        } catch (e: Exception) {
-            Result.retry()
+        val deps = FoxDependencies.get(applicationContext)
+        val profiles = deps.profileStore.listProfiles().filter { !it.treeUri.isNullOrBlank() }
+        if (profiles.isEmpty()) return Result.success()
+
+        var failures = 0
+        for (profile in profiles) {
+            try {
+                deps.syncRepositoryFor(profile.id).syncOnce()
+            } catch (_: Exception) {
+                failures++
+            }
         }
+
+        return if (failures == profiles.size) Result.retry() else Result.success()
     }
 
     companion object {
