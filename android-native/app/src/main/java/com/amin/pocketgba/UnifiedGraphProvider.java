@@ -3,6 +3,8 @@ package com.amin.pocketgba;
 import android.content.Context;
 import android.content.Intent;
 
+import com.fox.app.graph.FoxGraphProjection;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -46,6 +48,7 @@ final class UnifiedGraphProvider {
             CapabilityInventoryProjector.append(out, capabilityState);
             addEvidence(context, out, nodes, relations, nodeIds, relationIds);
             addGitHubWork(context, out, nodes, relations, nodeIds, relationIds);
+            addFoxKnowledge(context, out, nodes, relations, nodeIds, relationIds);
 
             JSONObject sourceGraph = SourceGraphProvider.graph(context);
             out.put("sourceGraph", sourceGraph);
@@ -256,6 +259,42 @@ final class UnifiedGraphProvider {
         out.put("growthPlayback", playback);
     }
 
+    private static void addFoxKnowledge(Context context, JSONObject out, JSONArray nodes,
+                                        JSONArray relations, Set<String> nodeIds,
+                                        Set<String> relationIds) throws Exception {
+        JSONObject snapshot = new JSONObject(FoxGraphProjection.snapshotJson(context));
+        JSONArray foxNodes = snapshot.optJSONArray("nodes");
+        if (foxNodes == null) foxNodes = new JSONArray();
+        for (int i = 0; i < foxNodes.length(); i++) {
+            JSONObject source = foxNodes.optJSONObject(i);
+            if (source == null) continue;
+            String id = clean(source.optString("id", ""));
+            if (id.isEmpty() || !nodeIds.add(id)) continue;
+            nodes.put(new JSONObject(source.toString()));
+        }
+
+        JSONArray foxRelations = snapshot.optJSONArray("relations");
+        if (foxRelations == null) foxRelations = new JSONArray();
+        for (int i = 0; i < foxRelations.length(); i++) {
+            JSONObject relation = foxRelations.optJSONObject(i);
+            if (relation == null) continue;
+            String id = clean(relation.optString("id", ""));
+            String from = clean(relation.optString("from", ""));
+            String to = clean(relation.optString("to", ""));
+            if (id.isEmpty() || !nodeIds.contains(from) || !nodeIds.contains(to)
+                    || !relationIds.add(id)) continue;
+            relations.put(new JSONObject(relation.toString()));
+        }
+
+        out.put("foxKnowledge", new JSONObject()
+                .put("profileId", snapshot.optString("profileId", ""))
+                .put("profileName", snapshot.optString("profileName", ""))
+                .put("sourceLabel", snapshot.optString("sourceLabel", ""))
+                .put("nodeCount", snapshot.optInt("nodeCount", 0))
+                .put("relationCount", snapshot.optInt("relationCount", 0))
+                .put("readOnly", true));
+    }
+
     private static void addGitHubWork(Context context, JSONObject out, JSONArray nodes,
                                       JSONArray relations, Set<String> nodeIds,
                                       Set<String> relationIds) throws Exception {
@@ -347,12 +386,14 @@ final class UnifiedGraphProvider {
                     .put("domains", new JSONArray()
                             .put(domain("system:amin", "AMIN", "Unified registry graph"))
                             .put(domain("system:evidence", "SOURCE EVIDENCE", "Synchronized evidence graph"))
-                            .put(domain("system:github", "GITHUB WORK", "Read-only engineering state")))
+                            .put(domain("system:github", "GITHUB WORK", "Read-only engineering state"))
+                            .put(domain("knowledge:fox", "FOX KNOWLEDGE", "Active FOX knowledge save slot")))
                     .put("groups", new JSONArray()
                             .put(group("group:nodes", "NODE", "system:amin", "Knowledge / memory nodes"))
                             .put(group("group:commands", "COMMAND", "system:amin", "Executable commands"))
                             .put(group("group:evidence", "EVIDENCE", "system:evidence", "Verified source evidence"))
-                            .put(group("group:github-work", "WORK", "system:github", "Repository delivery state")))
+                            .put(group("group:github-work", "WORK", "system:github", "Repository delivery state"))
+                            .put(group("group:fox-knowledge", "FOX", "knowledge:fox", "Knowledge nodes from the active save slot")))
                     .put("nodes", new JSONArray())
                     .put("commands", new JSONArray())
                     .put("relations", new JSONArray())
@@ -364,6 +405,8 @@ final class UnifiedGraphProvider {
                     .put("syncedEvidence", GraphSyncEngine.empty())
                     .put("githubWork", new JSONObject().put("readOnly", true).put("rawLogsEnabled", false)
                             .put("entityCount", 0).put("relationCount", 0))
+                    .put("foxKnowledge", new JSONObject().put("readOnly", true)
+                            .put("nodeCount", 0).put("relationCount", 0))
                     .put("growthPlayback", false)
                     .put("runtimeEdges", GraphRuntimeEdgeTrace.snapshotJson())
                     .put("runtimeFlows", GraphRuntimeFlowTrace.snapshotJson());
