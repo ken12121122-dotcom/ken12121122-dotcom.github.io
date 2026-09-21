@@ -1,20 +1,19 @@
 {
-  "versionCode": 194,
-  "versionName": "0.11.22-rc9",
+  "versionCode": 195,
+  "versionName": "0.11.22-rc10",
   "channel": "release",
-  "bridge": 98,
-  "releaseSequence": 32,
+  "bridge": 99,
+  "releaseSequence": 33,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "FOX 新增多知識庫存檔槽：每個存檔槽各自記住來源資料夾與本機 Room 投影，不再把不同知識庫混在同一個資料庫。",
-    "既有單一 FOX 資料夾會自動遷移為 FOX_MAIN，並沿用原本 fox-knowledge.db，保留目前已同步的本機節點。",
-    "新增知識庫存檔後可各自選擇 Android SAF 唯讀資料夾；切換存檔時會重新載入該存檔原本記住的來源。",
-    "進入或切換已綁定來源的知識庫時自動執行增量同步，不必每次手動按同步。",
-    "背景 WorkManager 改為逐一同步所有已綁定 SAF 來源的存檔槽，每個存檔槽資料彼此隔離。",
-    "Google Drive / DocumentsProvider 仍維持唯讀；FOX 不寫回原始 Markdown，也沒有新增第二套更新或發布鏈。",
-    "本版先完成存檔槽與自動同步底層；知識 Graph 跨存檔篩選與來源刪除/stale 管理留待後續版本。"
+    "FOX 目前啟用的知識庫存檔正式接入既有 Amin Unified Graph；不新增第二套 Graph renderer。",
+    "Amin 關聯圖新增 knowledge:fox domain 與 group:fox-knowledge，顯示目前存檔槽的 FOX Node 與已解析 Edge。",
+    "FOX Graph 節點使用 profile-scoped ID，避免不同知識庫存檔或既有 Amin/System 節點發生 ID 衝突。",
+    "FOX 首頁新增「查看目前存檔的關聯圖」入口；切換存檔後開啟 Graph，會投影目前啟用存檔槽的知識資料。",
+    "FOX 同步完成後會通知 Unified Graph 重新載入；Graph 仍為唯讀視覺投影，不成為知識權威。",
+    "沿用 rc9 多知識庫存檔槽、持久 SAF 路徑與每槽獨立 Room DB；原始 Markdown 仍不寫回。"
   ]
 }
