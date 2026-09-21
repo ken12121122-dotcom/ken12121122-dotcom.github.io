@@ -15,6 +15,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -80,11 +82,12 @@ public final class WikiGraphActivityTest {
                             + "selector:!!s,system:[...s.options].some(o=>o.value==='AMIN_SYSTEM'),"
                             + "fox:[...s.options].some(o=>o.value==='" + profile.getId() + "'),"
                             + "active:s.value,type:g.graphProfile?.type,id:g.graphProfile?.id});})()");
-            assertTrue(initial, initial.contains("\"selector\":true"));
-            assertTrue(initial, initial.contains("\"system\":true"));
-            assertTrue(initial, initial.contains("\"fox\":true"));
-            assertTrue(initial, initial.contains("\"active\":\"AMIN_SYSTEM\""));
-            assertTrue(initial, initial.contains("\"type\":\"github\""));
+            JSONObject initialJson = decodeJavascriptJsonString(initial);
+            assertTrue(initial, initialJson.optBoolean("selector"));
+            assertTrue(initial, initialJson.optBoolean("system"));
+            assertTrue(initial, initialJson.optBoolean("fox"));
+            assertTrue(initial, "AMIN_SYSTEM".equals(initialJson.optString("active")));
+            assertTrue(initial, "github".equals(initialJson.optString("type")));
 
             evaluateOnce(scenario, webView.get(),
                     "(()=>{const s=document.getElementById('profileSelect');"
@@ -98,11 +101,12 @@ public final class WikiGraphActivityTest {
                             + "type:g.graphProfile?.type,id:g.graphProfile?.id,"
                             + "workHidden:document.getElementById('workBtn').classList.contains('hidden'),"
                             + "connectHidden:document.getElementById('connectsBtn').classList.contains('hidden')});})()");
-            assertTrue(switched, switched.contains("\"selected\":\"" + profile.getId() + "\""));
-            assertTrue(switched, switched.contains("\"type\":\"fox\""));
-            assertTrue(switched, switched.contains("\"id\":\"" + profile.getId() + "\""));
-            assertTrue(switched, switched.contains("\"workHidden\":true"));
-            assertTrue(switched, switched.contains("\"connectHidden\":true"));
+            JSONObject switchedJson = decodeJavascriptJsonString(switched);
+            assertTrue(switched, profile.getId().equals(switchedJson.optString("selected")));
+            assertTrue(switched, "fox".equals(switchedJson.optString("type")));
+            assertTrue(switched, profile.getId().equals(switchedJson.optString("id")));
+            assertTrue(switched, switchedJson.optBoolean("workHidden"));
+            assertTrue(switched, switchedJson.optBoolean("connectHidden"));
         } finally {
             new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
         }
@@ -169,6 +173,13 @@ public final class WikiGraphActivityTest {
             assertTrue(approved, approved.contains("\\\"pinStored\\\":true"));
             assertTrue(approved, approved.contains("\\\"canvas\\\":1"));
         }
+    }
+
+    private static JSONObject decodeJavascriptJsonString(String value) throws Exception {
+        Object decoded = new JSONTokener(value == null ? "" : value).nextValue();
+        if (decoded instanceof String) return new JSONObject((String) decoded);
+        if (decoded instanceof JSONObject) return (JSONObject) decoded;
+        return new JSONObject();
     }
 
     private static String evaluateOnce(ActivityScenario<WikiGraphActivity> scenario,
