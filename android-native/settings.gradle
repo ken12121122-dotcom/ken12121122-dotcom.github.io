@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = 'AminPocketGBA'
 include ':app'
+include ':foxknowledge'
