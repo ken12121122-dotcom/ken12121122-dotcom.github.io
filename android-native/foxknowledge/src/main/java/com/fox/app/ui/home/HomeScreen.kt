@@ -47,6 +47,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
 
+private const val UNIFIED_GRAPH_CHANGED_ACTION = "com.amin.pocketgba.UNIFIED_GRAPH_CHANGED"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -119,6 +121,14 @@ fun HomeScreen(
 
     LaunchedEffect(activeProfileId, selectedTreeUri) {
         if (selectedTreeUri != null) viewModel.syncNow()
+    }
+
+    LaunchedEffect(syncSummary) {
+        if (syncSummary != null) {
+            context.sendBroadcast(
+                Intent(UNIFIED_GRAPH_CHANGED_ACTION).setPackage(context.packageName),
+            )
+        }
     }
 
     Scaffold(
@@ -289,6 +299,21 @@ fun HomeScreen(
                         }
                         syncError?.let { err ->
                             Text("同步錯誤：$err", color = androidx.compose.material3.MaterialTheme.colorScheme.error)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                context.startActivity(
+                                    Intent().setClassName(
+                                        context.packageName,
+                                        "com.amin.pocketgba.WikiGraphActivity",
+                                    ),
+                                )
+                            },
+                            enabled = totalCount > 0,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("查看目前存檔的關聯圖")
                         }
                     }
                 }
