@@ -1,19 +1,19 @@
 {
-  "versionCode": 192,
-  "versionName": "0.11.22-rc7",
+  "versionCode": 193,
+  "versionName": "0.11.22-rc8",
   "channel": "release",
-  "bridge": 96,
-  "releaseSequence": 30,
+  "bridge": 97,
+  "releaseSequence": 31,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "FOX 知識庫新增 Android 系統資料夾（Storage Access Framework）唯讀來源，可直接選擇 Google Drive 或其他 DocumentsProvider 中的 FOX 知識庫資料夾，不再把 Google OAuth Client 設定視為唯一可用路徑。",
-    "SAF 僅取得使用者明確選定資料夾的持久唯讀 URI 權限，不要求寫入權限，不會寫回 Google Drive。",
-    "同步來源採動態選擇：已選 SAF 資料夾時優先使用 SAF；否則保留既有 Google Sign-In + Drive REST 唯讀路徑。",
-    "FOX 首頁新增「選擇 FOX 知識庫資料夾／重新選擇／清除」控制，完成授權後即可直接執行立即同步。",
-    "保留既有 FOX 本機 Room 投影、Parser、Validator、搜尋與節點關係導覽；SAF 只替換來源取得方式，不改變知識治理與正式來源內容。",
-    "沿用既有 com.amin.pocketgba、永久簽章、release/android、Android PR Validation、Android Production Release 與 native-release-manifest 單一正式發布鏈。"
+    "修正原生更新主動提醒：不再限制每個 App process 只檢查一次。",
+    "回到控制中心時可重新檢查更新，並以 5 分鐘節流避免頻繁網路請求。",
+    "只有成功讀取正式 native-release-manifest 後才記錄檢查時間；檢查失敗不鎖死本次 process，之後可再次自動重試。",
+    "同一遠端版本若已顯示提醒，仍保留 24 小時內不重複打擾的提醒節流；新 versionCode 會重新提醒。",
+    "沿用既有 UpdateHubActivity、安全下載、SHA-256、套件名稱、versionCode 與永久簽章驗證；沒有新增第二套更新來源或發布鏈。",
+    "保留 rc7 的 FOX SAF 唯讀資料夾同步能力。"
   ]
 }
