@@ -2,8 +2,11 @@ package com.fox.app
 
 import android.content.Context
 import com.fox.app.data.db.FoxDatabase
+import com.fox.app.data.drive.AdaptiveDriveAdapter
+import com.fox.app.data.drive.FoxDriveSourceStore
 import com.fox.app.data.drive.GoogleDriveAdapter
 import com.fox.app.data.drive.GoogleSignInDriveAuthTokenProvider
+import com.fox.app.data.drive.SafDriveAdapter
 import com.fox.app.data.sync.SyncRepository
 
 /**
@@ -18,8 +21,14 @@ class FoxDependencies private constructor(context: Context) {
 
     val database: FoxDatabase by lazy { FoxDatabase.getInstance(appContext) }
 
+    val driveSourceStore: FoxDriveSourceStore by lazy { FoxDriveSourceStore(appContext) }
+
     private val driveAdapter by lazy {
-        GoogleDriveAdapter(GoogleSignInDriveAuthTokenProvider(appContext))
+        AdaptiveDriveAdapter(
+            sourceStore = driveSourceStore,
+            safAdapter = SafDriveAdapter(appContext, driveSourceStore),
+            googleAdapter = GoogleDriveAdapter(GoogleSignInDriveAuthTokenProvider(appContext)),
+        )
     }
 
     val syncRepository: SyncRepository by lazy {

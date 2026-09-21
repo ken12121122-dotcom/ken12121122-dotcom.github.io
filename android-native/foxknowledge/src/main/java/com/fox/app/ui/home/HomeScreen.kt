@@ -1,5 +1,6 @@
 package com.fox.app.ui.home
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,6 +71,27 @@ fun HomeScreen(
         mutableStateOf<GoogleSignInAccount?>(GoogleSignIn.getLastSignedInAccount(context))
     }
     var signInError by remember { mutableStateOf<String?>(null) }
+    var selectedTreeUri by remember {
+        mutableStateOf(deps.driveSourceStore.getTreeUri()?.toString())
+    }
+    var sourceError by remember { mutableStateOf<String?>(null) }
+    val folderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+                deps.driveSourceStore.setTreeUri(uri)
+                selectedTreeUri = uri.toString()
+                sourceError = null
+            } catch (e: Exception) {
+                sourceError = e.message ?: e.javaClass.simpleName
+            }
+        }
+    }
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -104,11 +126,48 @@ fun HomeScreen(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
+                        Text("FOX 知識庫來源", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        if (selectedTreeUri == null) {
+                            Text("建議使用 Android 系統資料夾選擇器。你只授權一個資料夾的唯讀存取，不需要 FOX 取得 Google OAuth 權限。")
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = { folderLauncher.launch(null) }) {
+                                Text("選擇 FOX 知識庫資料夾")
+                            }
+                        } else {
+                            Text("已授權一個系統資料夾作為 FOX 唯讀來源。")
+                            Spacer(Modifier.height(8.dp))
+                            Row {
+                                Button(onClick = { folderLauncher.launch(null) }) {
+                                    Text("重新選擇")
+                                }
+                                OutlinedButton(onClick = {
+                                    deps.driveSourceStore.clearTreeUri()
+                                    selectedTreeUri = null
+                                }) {
+                                    Text("清除")
+                                }
+                            }
+                        }
+                        sourceError?.let { err ->
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "資料夾授權失敗：$err",
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("Google 帳號", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         val account = signedInAccount
                         if (account == null) {
-                            Text("尚未登入，無法同步 Drive 知識庫。")
+                            Text("Google OAuth 登入為選用來源；若尚未設定 OAuth Client，可直接使用上方「選擇 FOX 知識庫資料夾」。")
                             Spacer(Modifier.height(8.dp))
                             Button(onClick = { signInLauncher.launch(signInClient.signInIntent) }) {
                                 Text("使用 Google 帳號登入")
@@ -125,7 +184,7 @@ fun HomeScreen(
                         signInError?.let { err ->
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "登入失敗：$err（若 Google Cloud Console 尚未替此 App 設定 OAuth client，這是預期中的失敗）",
+                                "$err。你仍可使用上方系統資料夾唯讀來源，不影響 FOX 同步。",
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.error,
                             )
                         }
@@ -142,7 +201,7 @@ fun HomeScreen(
                         Text("待處理事項：${pendingNodes.size}")
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            Button(onClick = viewModel::syncNow, enabled = !isSyncing && signedInAccount != null) {
+                            Button(onClick = viewModel::syncNow, enabled = !isSyncing && (selectedTreeUri != null || signedInAccount != null)) {
                                 Text(if (isSyncing) "同步中…" else "立即同步 Drive")
                             }
                             if (isSyncing) {
@@ -150,9 +209,19 @@ fun HomeScreen(
                                 CircularProgressIndicator(modifier = Modifier.height(20.dp))
                             }
                         }
-                        if (signedInAccount == null) {
+                        if (selectedTreeUri == null && signedInAccount == null) {
                             Text(
-                                "請先登入 Google 帳號才能同步。",
+                                "請先選擇 FOX 知識庫資料夾，或完成 Google 帳號登入。",
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            )
+                        } else if (selectedTreeUri != null) {
+                            Text(
+                                "目前來源：Android 系統資料夾（唯讀）",
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            )
+                        } else {
+                            Text(
+                                "目前來源：Google Drive OAuth（唯讀）",
                                 style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
                             )
                         }
