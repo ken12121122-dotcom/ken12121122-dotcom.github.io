@@ -28,23 +28,25 @@ final class NativeUpdatePromptController {
     private static final String PREFS = "native_update_prompt";
     private static final String KEY_LAST_CODE = "last_prompted_code";
     private static final String KEY_LAST_AT = "last_prompted_at";
+    private static final String KEY_LAST_CHECK_AT = "last_check_at";
     private static final long REMIND_INTERVAL_MS = 24L * 60L * 60L * 1000L;
+    private static final long CHECK_INTERVAL_MS = 5L * 60L * 1000L;
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final AtomicBoolean CHECK_IN_FLIGHT = new AtomicBoolean(false);
-    private static final AtomicBoolean CHECKED_THIS_PROCESS = new AtomicBoolean(false);
 
     private NativeUpdatePromptController() {}
 
     static void onActivityResumed(Activity activity) {
         if (!(activity instanceof ControlCenterActivity)) return;
         if (activity.isFinishing() || activity.isDestroyed()) return;
-        if (CHECKED_THIS_PROCESS.getAndSet(true)) return;
+        if (!shouldCheck(activity)) return;
         if (!CHECK_IN_FLIGHT.compareAndSet(false, true)) return;
 
         EXECUTOR.execute(() -> {
             try {
                 JSONObject manifest = fetchManifest();
+                rememberCheck(activity);
                 if (!"amin-native-release-manifest".equals(manifest.optString("format"))) return;
                 if (!BuildConfig.APPLICATION_ID.equals(manifest.optString("packageId"))) return;
                 if (!manifest.optBoolean("enabled", false)) return;
@@ -74,12 +76,25 @@ final class NativeUpdatePromptController {
                             .show();
                 });
             } catch (Exception ignored) {
+                // Do not persist a failed check timestamp: the next Control Center resume may retry.
                 // The existing UpdateHub/ControlCenter status remains the visible error surface.
-                // A failed proactive check must never block app startup.
             } finally {
                 CHECK_IN_FLIGHT.set(false);
             }
         });
+    }
+
+    private static boolean shouldCheck(Activity activity) {
+        SharedPreferences prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE);
+        long lastCheckAt = prefs.getLong(KEY_LAST_CHECK_AT, 0L);
+        return System.currentTimeMillis() - lastCheckAt >= CHECK_INTERVAL_MS;
+    }
+
+    private static void rememberCheck(Activity activity) {
+        activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_LAST_CHECK_AT, System.currentTimeMillis())
+                .apply();
     }
 
     private static boolean shouldPrompt(Activity activity, long latestCode) {
