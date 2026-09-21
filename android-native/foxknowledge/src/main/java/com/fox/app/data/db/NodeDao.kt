@@ -29,6 +29,9 @@ interface NodeDao {
     @Query("SELECT COUNT(*) FROM nodes")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM nodes ORDER BY title")
+    suspend fun getAll(): List<NodeEntity>
+
     @Query("SELECT COUNT(*) FROM nodes")
     fun observeCount(): Flow<Int>
 
@@ -52,6 +55,9 @@ interface EdgeDao {
 
     @Query("UPDATE edges SET target_resolved = (SELECT COUNT(*) > 0 FROM nodes WHERE nodes.node_id = edges.to_node)")
     suspend fun recomputeTargetResolution()
+
+    @Query("SELECT * FROM edges ORDER BY edge_id")
+    suspend fun getAll(): List<EdgeEntity>
 }
 
 @Dao
