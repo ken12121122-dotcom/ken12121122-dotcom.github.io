@@ -7,9 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 
+import com.fox.app.data.profile.KnowledgeProfile;
+import com.fox.app.data.profile.KnowledgeProfileStore;
+
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +60,51 @@ public final class WikiGraphActivityTest {
             assertTrue(result, result.contains("\\\"graphControlsRelocated\\\":true"));
             assertTrue(result, result.contains("\\\"rawLogs\\\":false"));
             assertTrue(result, result.contains("single-force-canvas"));
+        }
+    }
+
+    @Test public void switchesWikiGraphSaveSlotFromSystemToFoxKnowledgeProfile() throws Exception {
+        android.content.Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        KnowledgeProfile profile = new KnowledgeProfileStore(context).createProfile("GRAPH_TEST_KB");
+        new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
+
+        try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
+            AtomicReference<WebView> webView = new AtomicReference<>();
+            scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
+            assertNotNull(webView.get());
+
+            String initial = evaluateWhenReady(scenario, webView.get(),
+                    "(()=>{const s=document.getElementById('profileSelect');"
+                            + "const g=JSON.parse(AminWiki.getUnifiedGraphJson());"
+                            + "return JSON.stringify({layout:window.AminGraphSmoke?.state().layout,"
+                            + "selector:!!s,system:[...s.options].some(o=>o.value==='AMIN_SYSTEM'),"
+                            + "fox:[...s.options].some(o=>o.value==='" + profile.getId() + "'),"
+                            + "active:s.value,type:g.graphProfile?.type,id:g.graphProfile?.id});})()");
+            assertTrue(initial, initial.contains("\"selector\":true"));
+            assertTrue(initial, initial.contains("\"system\":true"));
+            assertTrue(initial, initial.contains("\"fox\":true"));
+            assertTrue(initial, initial.contains("\"active\":\"AMIN_SYSTEM\""));
+            assertTrue(initial, initial.contains("\"type\":\"github\""));
+
+            evaluateOnce(scenario, webView.get(),
+                    "(()=>{const s=document.getElementById('profileSelect');"
+                            + "s.value='" + profile.getId() + "';"
+                            + "s.dispatchEvent(new Event('change',{bubbles:true}));return true;})()");
+            Thread.sleep(500L);
+
+            String switched = evaluateOnce(scenario, webView.get(),
+                    "(()=>{const g=JSON.parse(AminWiki.getUnifiedGraphJson());"
+                            + "return JSON.stringify({selected:document.getElementById('profileSelect').value,"
+                            + "type:g.graphProfile?.type,id:g.graphProfile?.id,"
+                            + "workHidden:document.getElementById('workBtn').classList.contains('hidden'),"
+                            + "connectHidden:document.getElementById('connectsBtn').classList.contains('hidden')});})()");
+            assertTrue(switched, switched.contains("\"selected\":\"" + profile.getId() + "\""));
+            assertTrue(switched, switched.contains("\"type\":\"fox\""));
+            assertTrue(switched, switched.contains("\"id\":\"" + profile.getId() + "\""));
+            assertTrue(switched, switched.contains("\"workHidden\":true"));
+            assertTrue(switched, switched.contains("\"connectHidden\":true"));
+        } finally {
+            new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
         }
     }
 
