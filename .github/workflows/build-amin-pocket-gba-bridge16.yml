@@ -44,6 +44,14 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # android-actions/setup-android@v3 defaults to installing "tools
+          # platform-tools" via sdkmanager. The legacy "tools" package no
+          # longer exists in Google's SDK repository (sdkmanager fails with
+          # "Failed to find package 'tools'"), so only request platform-tools
+          # here — the next step explicitly installs the specific platform
+          # and build-tools versions actually needed.
+          packages: 'platform-tools'
 
       - name: Install Android tools
         shell: bash
