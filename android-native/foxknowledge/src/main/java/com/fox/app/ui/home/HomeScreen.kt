@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -53,9 +55,18 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val deps = FoxDependencies.get(context)
+    var profileRevision by remember { mutableStateOf(0) }
+    var activeProfileId by remember { mutableStateOf(deps.profileStore.activeProfileId()) }
+    val profiles = remember(activeProfileId, profileRevision) { deps.profileStore.listProfiles() }
+    val activeProfile = remember(activeProfileId, profileRevision) {
+        deps.profileStore.profile(activeProfileId) ?: deps.profileStore.activeProfile()
+    }
+    val activeDatabase = remember(activeProfileId) { deps.databaseFor(activeProfileId) }
+    val activeSyncRepository = remember(activeProfileId) { deps.syncRepositoryFor(activeProfileId) }
     val viewModel: HomeViewModel = viewModel(
+        key = "fox-home-$activeProfileId",
         factory = viewModelFactory {
-            initializer { HomeViewModel(deps.database.nodeDao(), deps.syncRepository) }
+            initializer { HomeViewModel(activeDatabase.nodeDao(), activeSyncRepository) }
         },
     )
 
@@ -71,8 +82,8 @@ fun HomeScreen(
         mutableStateOf<GoogleSignInAccount?>(GoogleSignIn.getLastSignedInAccount(context))
     }
     var signInError by remember { mutableStateOf<String?>(null) }
-    var selectedTreeUri by remember {
-        mutableStateOf(deps.driveSourceStore.getTreeUri()?.toString())
+    var selectedTreeUri by remember(activeProfileId, profileRevision) {
+        mutableStateOf(deps.driveSourceStoreFor(activeProfileId).getTreeUri()?.toString())
     }
     var sourceError by remember { mutableStateOf<String?>(null) }
     val folderLauncher = rememberLauncherForActivityResult(
@@ -84,8 +95,10 @@ fun HomeScreen(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
-                deps.driveSourceStore.setTreeUri(uri)
+                val label = DocumentFile.fromTreeUri(context, uri)?.name
+                deps.driveSourceStoreFor(activeProfileId).setTreeUri(uri, label)
                 selectedTreeUri = uri.toString()
+                profileRevision += 1
                 sourceError = null
             } catch (e: Exception) {
                 sourceError = e.message ?: e.javaClass.simpleName
@@ -102,6 +115,10 @@ fun HomeScreen(
         } catch (e: ApiException) {
             signInError = "登入失敗（code ${e.statusCode}）"
         }
+    }
+
+    LaunchedEffect(activeProfileId, selectedTreeUri) {
+        if (selectedTreeUri != null) viewModel.syncNow()
     }
 
     Scaffold(
@@ -126,6 +143,47 @@ fun HomeScreen(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
+                        Text("知識庫存檔", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        Text("目前：${activeProfile.name}")
+                        activeProfile.sourceLabel?.let { Text("來源：$it") }
+                        Spacer(Modifier.height(8.dp))
+                        profiles.forEach { profile ->
+                            if (profile.id == activeProfileId) {
+                                Button(
+                                    onClick = {},
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text("✓ ${profile.name}") }
+                            } else {
+                                OutlinedButton(
+                                    onClick = {
+                                        deps.profileStore.setActive(profile.id)
+                                        activeProfileId = profile.id
+                                        selectedTreeUri = deps.driveSourceStoreFor(profile.id).getTreeUri()?.toString()
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text("讀取 ${profile.name}") }
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                val created = deps.profileStore.createProfile()
+                                activeProfileId = created.id
+                                selectedTreeUri = null
+                                profileRevision += 1
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("＋ 新增知識庫存檔")
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("FOX 知識庫來源", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         if (selectedTreeUri == null) {
@@ -142,8 +200,9 @@ fun HomeScreen(
                                     Text("重新選擇")
                                 }
                                 OutlinedButton(onClick = {
-                                    deps.driveSourceStore.clearTreeUri()
+                                    deps.driveSourceStoreFor(activeProfileId).clearTreeUri()
                                     selectedTreeUri = null
+                                    profileRevision += 1
                                 }) {
                                     Text("清除")
                                 }

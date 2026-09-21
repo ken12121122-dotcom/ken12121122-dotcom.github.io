@@ -2,33 +2,31 @@ package com.fox.app.data.drive
 
 import android.content.Context
 import android.net.Uri
+import com.fox.app.data.profile.KnowledgeProfileStore
 
 /**
- * Stores the user-selected Android Storage Access Framework tree URI.
+ * Profile-scoped Android SAF source.
  *
- * The URI is read-only from FOX's perspective. The persisted grant is issued by
- * Android's system picker and can point to a Google Drive-backed DocumentsProvider
- * without requiring FOX to own a Google OAuth client.
+ * Each knowledge profile remembers one persisted read-only tree URI. The persisted
+ * Android permission remains owned by the app; this store only records which URI
+ * belongs to which FOX save slot.
  */
-class FoxDriveSourceStore(context: Context) {
-    private val prefs = context.applicationContext
-        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+class FoxDriveSourceStore(
+    context: Context,
+    private val profileId: String,
+) {
+    private val profileStore = KnowledgeProfileStore(context.applicationContext)
 
     fun getTreeUri(): Uri? =
-        prefs.getString(KEY_TREE_URI, null)?.let(Uri::parse)
+        profileStore.profile(profileId)?.treeUri?.let(Uri::parse)
 
-    fun setTreeUri(uri: Uri) {
-        prefs.edit().putString(KEY_TREE_URI, uri.toString()).apply()
+    fun setTreeUri(uri: Uri, sourceLabel: String? = null) {
+        profileStore.updateSource(profileId, uri, sourceLabel)
     }
 
     fun clearTreeUri() {
-        prefs.edit().remove(KEY_TREE_URI).apply()
+        profileStore.clearSource(profileId)
     }
 
     fun hasTreeUri(): Boolean = getTreeUri() != null
-
-    companion object {
-        private const val PREFS_NAME = "fox_drive_source"
-        private const val KEY_TREE_URI = "saf_tree_uri"
-    }
 }
