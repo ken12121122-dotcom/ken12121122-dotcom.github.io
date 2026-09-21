@@ -1,19 +1,20 @@
 {
-  "versionCode": 193,
-  "versionName": "0.11.22-rc8",
+  "versionCode": 194,
+  "versionName": "0.11.22-rc9",
   "channel": "release",
-  "bridge": 97,
-  "releaseSequence": 31,
+  "bridge": 98,
+  "releaseSequence": 32,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "修正原生更新主動提醒：不再限制每個 App process 只檢查一次。",
-    "回到控制中心時可重新檢查更新，並以 5 分鐘節流避免頻繁網路請求。",
-    "只有成功讀取正式 native-release-manifest 後才記錄檢查時間；檢查失敗不鎖死本次 process，之後可再次自動重試。",
-    "同一遠端版本若已顯示提醒，仍保留 24 小時內不重複打擾的提醒節流；新 versionCode 會重新提醒。",
-    "沿用既有 UpdateHubActivity、安全下載、SHA-256、套件名稱、versionCode 與永久簽章驗證；沒有新增第二套更新來源或發布鏈。",
-    "保留 rc7 的 FOX SAF 唯讀資料夾同步能力。"
+    "FOX 新增多知識庫存檔槽：每個存檔槽各自記住來源資料夾與本機 Room 投影，不再把不同知識庫混在同一個資料庫。",
+    "既有單一 FOX 資料夾會自動遷移為 FOX_MAIN，並沿用原本 fox-knowledge.db，保留目前已同步的本機節點。",
+    "新增知識庫存檔後可各自選擇 Android SAF 唯讀資料夾；切換存檔時會重新載入該存檔原本記住的來源。",
+    "進入或切換已綁定來源的知識庫時自動執行增量同步，不必每次手動按同步。",
+    "背景 WorkManager 改為逐一同步所有已綁定 SAF 來源的存檔槽，每個存檔槽資料彼此隔離。",
+    "Google Drive / DocumentsProvider 仍維持唯讀；FOX 不寫回原始 Markdown，也沒有新增第二套更新或發布鏈。",
+    "本版先完成存檔槽與自動同步底層；知識 Graph 跨存檔篩選與來源刪除/stale 管理留待後續版本。"
   ]
 }
