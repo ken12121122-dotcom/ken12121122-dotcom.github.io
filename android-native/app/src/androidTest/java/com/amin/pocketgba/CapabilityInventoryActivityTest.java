@@ -10,6 +10,7 @@ import android.webkit.WebView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @LargeTest
 public final class CapabilityInventoryActivityTest {
     @Test public void rendersGovernedCapabilityInventoryInsideSingleCanvas() throws Exception {
+        android.content.Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
         try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
             AtomicReference<WebView> webView = new AtomicReference<>();
             scenario.onActivity(activity -> webView.set(findWebView(
