@@ -1,11 +1,42 @@
 name: DEV V002 Coder Lifecycle PoC
+
 on:
+  pull_request:
+    branches:
+      - release/android
+    paths:
+      - ".github/workflows/dev-v002-coder-lifecycle-poc.yml"
+      - "dev-poc/v002-coder-lifecycle.sh"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  boundary-check:
+  coder-lifecycle-poc:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
     steps:
-      - name: Boundary
-        run: echo "DEV V002 isolated read-only PoC"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify isolated PoC boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "DEV V002 isolated PoC"
+          echo "No APK, no release manifest write, no production secret, no merge/release."
+
+      - name: Run Coder lifecycle PoC
+        shell: bash
+        run: bash dev-poc/v002-coder-lifecycle.sh
+
+      - name: Upload PoC evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-v002-coder-lifecycle-evidence
+          path: /tmp/fox-v002-evidence
+          if-no-files-found: warn
+          retention-days: 3
