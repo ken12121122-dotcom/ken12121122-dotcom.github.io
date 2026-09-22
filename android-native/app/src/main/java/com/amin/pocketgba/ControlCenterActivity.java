@@ -197,6 +197,17 @@ public final class ControlCenterActivity extends Activity {
         updateCard.setOnClickListener(view -> startActivity(new Intent(this, UpdateHubActivity.class)));
         content.addView(updateCard, cardParams());
 
+        LinearLayout foxCard = actionCard(
+                "📚",
+                "FOX 知識庫",
+                "搜尋、瀏覽同步進來的知識節點",
+                "開啟",
+                false
+        );
+        foxCard.setContentDescription("開啟 FOX 知識庫");
+        foxCard.setOnClickListener(view -> startActivity(new Intent(this, com.fox.app.FoxKnowledgeActivity.class)));
+        content.addView(foxCard, cardParams());
+
         addSectionTitle(content, "進階");
         detailsButton = secondaryButton("顯示系統詳細資訊");
         detailsButton.setOnClickListener(view -> toggleTechnicalDetails());

@@ -167,6 +167,7 @@ GBA 返回應回白色原生控制中心，不要回黑色舊首頁。
 - `amin-vault/gba-signal-lab.html`
 - `amin-vault/ARCHITECTURE.md`
 - `amin-vault/architecture.json`
+- `android-native/foxknowledge/`（2026-09-18 新增：FOX 知識庫功能，以 library 模組併入本 App；控制中心首頁 `ControlCenterActivity.java` 新增一張入口卡片。**尚未經 CI、尚未經實機驗收**，細節與未決事項見 `FOX_APP_HANDOFF.md`，不要因為這一行就當作已驗證。）
 
 ## 修改規則
 

@@ -9,14 +9,14 @@ import androidx.work.WorkerParameters
 import androidx.work.Constraints
 import androidx.work.ListenableWorker.Result
 import androidx.work.NetworkType
-import com.fox.app.FoxApplication
+import com.fox.app.FoxDependencies
 import java.util.concurrent.TimeUnit
 
 /** Periodic Drive -> Room sync, requires network. Errors are recorded per-file in sync_state, not thrown to WorkManager. */
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val repository = (applicationContext as FoxApplication).syncRepository
+        val repository = FoxDependencies.get(applicationContext).syncRepository
         return try {
             repository.syncOnce()
             Result.success()
