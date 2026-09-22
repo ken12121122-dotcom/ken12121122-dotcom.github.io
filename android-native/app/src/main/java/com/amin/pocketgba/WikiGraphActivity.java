@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -34,11 +35,14 @@ import java.util.UUID;
 public final class WikiGraphActivity extends Activity {
     private static final String GRAPH_SETTINGS_PREFS = "amin_graph_settings";
     private static final String GRAPH_SETTINGS_KEY = "semantic_zoom_ui";
+    private static final int REQUEST_OPEN_KNOWLEDGE_FOLDER = 7021;
 
     private WebView webView;
     private NodeMetadataStore nodeMetadataStore;
     private GraphProfileStore graphProfileStore;
     private String focusNode = "";
+    private String pendingKnowledgeProfileName = "";
+    private String pendingAttachProfileId = "";
 
     private final BroadcastReceiver graphChangedReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -119,6 +123,72 @@ public final class WikiGraphActivity extends Activity {
         super.onResume();
         reloadUnifiedGraph();
         syncActiveGraphProfile(false);
+    }
+
+    private void launchKnowledgeFolderPicker(String preferredName, String attachProfileId) {
+        pendingKnowledgeProfileName = preferredName == null ? "" : preferredName.trim();
+        pendingAttachProfileId = attachProfileId == null ? "" : attachProfileId.trim();
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_OPEN_KNOWLEDGE_FOLDER);
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_OPEN_KNOWLEDGE_FOLDER || resultCode != RESULT_OK || data == null) return;
+        Uri uri = data.getData();
+        if (uri == null) return;
+        try {
+            getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            String label = knowledgeFolderLabel(uri);
+            boolean attached;
+            if (!pendingAttachProfileId.isEmpty()) {
+                attached = graphProfileStore.attachFolderToKnowledgeProfile(
+                        pendingAttachProfileId, uri, label);
+            } else {
+                String name = pendingKnowledgeProfileName.isEmpty() ? label : pendingKnowledgeProfileName;
+                attached = graphProfileStore.createKnowledgeProfileFromFolder(name, uri, label) != null;
+            }
+            pendingKnowledgeProfileName = "";
+            pendingAttachProfileId = "";
+            if (attached) {
+                focusNode = "";
+                refreshGraphProfilesUi();
+                reloadUnifiedGraph();
+                syncActiveGraphProfile(true);
+                Toast.makeText(this, "知識庫存檔已開啟：" + label, Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception error) {
+            Toast.makeText(this, "開啟知識庫失敗：" + error.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String knowledgeFolderLabel(Uri uri) {
+        try {
+            String id = DocumentsContract.getTreeDocumentId(uri);
+            if (id != null && !id.trim().isEmpty()) {
+                int colon = id.lastIndexOf(':');
+                String path = colon >= 0 ? id.substring(colon + 1) : id;
+                int slash = path.lastIndexOf('/');
+                String label = slash >= 0 ? path.substring(slash + 1) : path;
+                if (!label.trim().isEmpty()) return label.trim();
+            }
+        } catch (Exception ignored) { }
+        String last = uri.getLastPathSegment();
+        return last == null || last.trim().isEmpty() ? "新知識庫" : last.trim();
+    }
+
+    private void refreshGraphProfilesUi() {
+        WebView current = webView;
+        if (current == null) return;
+        current.post(() -> {
+            if (webView == current && !isFinishing() && !isDestroyed()) {
+                current.evaluateJavascript(
+                        "window.AminGraphProfilesRefresh?AminGraphProfilesRefresh():false", null);
+            }
+        });
     }
 
     @Override protected void onDestroy() {
@@ -231,6 +301,26 @@ public final class WikiGraphActivity extends Activity {
         }
         @JavascriptInterface public String getActiveGraphProfileId() {
             return graphProfileStore.activeProfileId();
+        }
+        @JavascriptInterface public String createEmptyKnowledgeProfile(String name) {
+            com.fox.app.data.profile.KnowledgeProfile profile =
+                    graphProfileStore.createEmptyKnowledgeProfile(name);
+            runOnUiThread(() -> {
+                focusNode = "";
+                refreshGraphProfilesUi();
+                reloadUnifiedGraph();
+            });
+            return profile == null ? "" : profile.getId();
+        }
+        @JavascriptInterface public boolean openKnowledgeFolder(String name) {
+            runOnUiThread(() -> launchKnowledgeFolderPicker(name, ""));
+            return true;
+        }
+        @JavascriptInterface public boolean attachFolderToActiveKnowledgeProfile() {
+            String active = graphProfileStore.activeProfileId();
+            if (!graphProfileStore.isKnowledge(active)) return false;
+            runOnUiThread(() -> launchKnowledgeFolderPicker("", active));
+            return true;
         }
         @JavascriptInterface public boolean setActiveGraphProfile(String profileId) {
             boolean changed = graphProfileStore.setActiveProfileId(profileId);
