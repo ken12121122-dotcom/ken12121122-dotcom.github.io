@@ -1,0 +1,11 @@
+name: DEV V002 Coder Lifecycle PoC
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  boundary-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Boundary
+        run: echo "DEV V002 isolated read-only PoC"
