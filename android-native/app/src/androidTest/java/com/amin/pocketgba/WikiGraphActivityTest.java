@@ -112,6 +112,49 @@ public final class WikiGraphActivityTest {
         }
     }
 
+    @Test public void createsKnowledgeSaveSlotDirectlyInsideWiki() throws Exception {
+        android.content.Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
+
+        try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
+            AtomicReference<WebView> webView = new AtomicReference<>();
+            scenario.onActivity(activity -> webView.set(findWebView(activity.findViewById(android.R.id.content))));
+            assertNotNull(webView.get());
+
+            String initial = evaluateWhenReady(scenario, webView.get(),
+                    "(()=>{document.getElementById('profileManagerBtn').click();"
+                            + "return JSON.stringify({layout:window.AminGraphSmoke?.state().layout,"
+                            + "manager:document.getElementById('profileManager').classList.contains('open'),"
+                            + "openFolder:!!document.getElementById('openKnowledgeFolder'),"
+                            + "createEmpty:!!document.getElementById('createEmptyProfile'),"
+                            + "attach:!!document.getElementById('attachActiveFolder')});})()");
+            JSONObject initialJson = decodeJavascriptJsonString(initial);
+            assertTrue(initial, initialJson.optBoolean("manager"));
+            assertTrue(initial, initialJson.optBoolean("openFolder"));
+            assertTrue(initial, initialJson.optBoolean("createEmpty"));
+            assertTrue(initial, initialJson.optBoolean("attach"));
+
+            String created = evaluateOnce(scenario, webView.get(),
+                    "(()=>{const id=AminWiki.createEmptyKnowledgeProfile('WIKI_CREATED_KB');"
+                            + "window.AminGraphProfilesRefresh();"
+                            + "const s=document.getElementById('profileSelect');"
+                            + "const state=JSON.parse(AminWiki.getGraphProfilesJson());"
+                            + "const item=state.profiles.find(p=>p.id===id);"
+                            + "return JSON.stringify({id,selected:s.value,"
+                            + "exists:!!item,name:item?.name,type:item?.type,configured:item?.configured});})()");
+            JSONObject createdJson = decodeJavascriptJsonString(created);
+            String id = createdJson.optString("id");
+            assertTrue(created, !id.isEmpty());
+            assertTrue(created, id.equals(createdJson.optString("selected")));
+            assertTrue(created, createdJson.optBoolean("exists"));
+            assertTrue(created, "WIKI_CREATED_KB".equals(createdJson.optString("name")));
+            assertTrue(created, "fox".equals(createdJson.optString("type")));
+            assertTrue(created, !createdJson.optBoolean("configured"));
+        } finally {
+            new GraphProfileStore(context).setActiveProfileId(GraphProfileStore.SYSTEM_PROFILE_ID);
+        }
+    }
+
     @Test public void confirmsAndProjectsFocusRouteInsideExistingCanvas() throws Exception {
         try (ActivityScenario<WikiGraphActivity> scenario = ActivityScenario.launch(WikiGraphActivity.class)) {
             AtomicReference<WebView> webView = new AtomicReference<>();
