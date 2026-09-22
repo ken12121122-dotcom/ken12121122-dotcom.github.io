@@ -24,13 +24,27 @@ mkdir -p /tmp/fox-v002-evidence /tmp/coder-bin
 echo "[V002] start PostgreSQL"
 docker run -d --name "$POSTGRES_NAME"   -e POSTGRES_USER=postgres   -e POSTGRES_PASSWORD=postgres   -e POSTGRES_DB=coder   -p 5432:5432   postgres:16-alpine >/tmp/fox-v002-evidence/postgres-container.txt
 
+POSTGRES_READY=0
 for i in $(seq 1 60); do
-  if docker exec "$POSTGRES_NAME" pg_isready -U postgres -d coder >/dev/null 2>&1; then
-    break
+  if docker exec "$POSTGRES_NAME" pg_isready -q -U postgres -d coder >/dev/null 2>&1 \
+    && [[ "$(docker exec "$POSTGRES_NAME" psql -U postgres -d coder -tAc 'SELECT 1' 2>/dev/null | tr -d '[:space:]')" == "1" ]]; then
+    sleep 1
+    if docker exec "$POSTGRES_NAME" pg_isready -q -U postgres -d coder >/dev/null 2>&1 \
+      && [[ "$(docker exec "$POSTGRES_NAME" psql -U postgres -d coder -tAc 'SELECT 1' 2>/dev/null | tr -d '[:space:]')" == "1" ]]; then
+      POSTGRES_READY=1
+      break
+    fi
   fi
   sleep 1
 done
+
+if [[ "$POSTGRES_READY" -ne 1 ]]; then
+  docker logs "$POSTGRES_NAME" | tee /tmp/fox-v002-evidence/postgres.log
+  exit 1
+fi
+
 docker exec "$POSTGRES_NAME" pg_isready -U postgres -d coder
+docker exec "$POSTGRES_NAME" psql -U postgres -d coder -tAc 'SELECT 1'
 
 echo "[V002] install Coder stable $CODER_VERSION"
 curl -fsSL   -o /tmp/coder.tar.gz   "https://github.com/coder/coder/releases/download/v${CODER_VERSION}/coder_${CODER_VERSION}_linux_amd64.tar.gz"
