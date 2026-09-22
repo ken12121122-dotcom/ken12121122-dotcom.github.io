@@ -1,20 +1,19 @@
 {
-  "versionCode": 195,
-  "versionName": "0.11.22-rc10",
+  "versionCode": 196,
+  "versionName": "0.11.22-rc11",
   "channel": "release",
-  "bridge": 99,
-  "releaseSequence": 33,
+  "bridge": 100,
+  "releaseSequence": 34,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "AMIN WIKI 新增 Graph 存檔槽：Wiki 本身可切換資料來源，不再固定只顯示 GitHub/System Graph。",
-    "預設 AMIN_SYSTEM 保留既有 GitHub Source Graph、GitHub Work、Registry、Runtime 與自動同步行為。",
-    "所有 FOX 知識庫存檔會自動出現在 AMIN WIKI 的 Graph 存檔槽清單；選擇後只顯示該知識庫的 Node / Edge。",
-    "FOX Graph Profile 直接沿用各知識庫已保存的 SAF 資料夾路徑與獨立 Room DB，不建立第二份來源設定。",
-    "切換到 FOX Graph 存檔槽時會立即執行該存檔的唯讀增量同步，完成後自動重載同一個 Amin Wiki Canvas。",
-    "FOX 知識圖沿用既有 Amin Wiki Renderer；知識槽隱藏 GitHub/Registry 編輯控制，避免誤改系統 Graph。",
-    "原始 Markdown 與 Google Drive / DocumentsProvider 仍為唯讀來源；本版不新增任何寫回知識檔功能。"
+    "AMIN WIKI 的 Graph 存檔槽升級為正式存檔管理入口，不再只能切換既有 FOX 知識庫。",
+    "Wiki 內可直接「開啟知識庫資料夾」：呼叫 Android 系統資料夾選擇器、保存唯讀 SAF 權限、建立 KnowledgeProfile、切換並立即同步。",
+    "Wiki 內可直接建立空白知識庫存檔，之後再用「連接／更換目前存檔資料夾」綁定來源。",
+    "Wiki 與 FOX 共用同一份 KnowledgeProfile 清單；任一邊新增的知識庫都會同步出現在另一邊，不建立第二套存檔資料。",
+    "AMIN_SYSTEM 仍保留 GitHub / Registry / Runtime / Work Graph 與既有自動更新流程。",
+    "知識庫資料夾仍為唯讀來源；本版沒有新增 Markdown 寫回或自動改檔能力。"
   ]
 }
