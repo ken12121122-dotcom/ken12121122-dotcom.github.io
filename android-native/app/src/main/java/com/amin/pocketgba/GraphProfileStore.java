@@ -1,6 +1,7 @@
 package com.amin.pocketgba;
 
 import android.content.Context;
+import android.net.Uri;
 
 import com.fox.app.data.profile.KnowledgeProfile;
 import com.fox.app.data.profile.KnowledgeProfileStore;
@@ -45,6 +46,36 @@ final class GraphProfileStore {
                 .putString(KEY_ACTIVE, clean)
                 .apply();
         return true;
+    }
+
+    KnowledgeProfile createEmptyKnowledgeProfile(String name) {
+        KnowledgeProfile profile = knowledgeProfiles.createProfile(cleanName(name));
+        knowledgeProfiles.setActive(profile.getId());
+        setActiveProfileId(profile.getId());
+        return profile;
+    }
+
+    KnowledgeProfile createKnowledgeProfileFromFolder(String name, Uri uri, String sourceLabel) {
+        if (uri == null) return null;
+        KnowledgeProfile profile = knowledgeProfiles.createProfile(cleanName(name));
+        knowledgeProfiles.updateSource(profile.getId(), uri, sourceLabel);
+        knowledgeProfiles.setActive(profile.getId());
+        setActiveProfileId(profile.getId());
+        return knowledgeProfiles.profile(profile.getId());
+    }
+
+    boolean attachFolderToKnowledgeProfile(String profileId, Uri uri, String sourceLabel) {
+        if (uri == null || !isKnowledge(profileId)) return false;
+        knowledgeProfiles.updateSource(profileId, uri, sourceLabel);
+        knowledgeProfiles.setActive(profileId);
+        setActiveProfileId(profileId);
+        return true;
+    }
+
+    private String cleanName(String name) {
+        if (name == null) return null;
+        String clean = name.trim();
+        return clean.isEmpty() ? null : clean;
     }
 
     boolean isSystem(String profileId) {
