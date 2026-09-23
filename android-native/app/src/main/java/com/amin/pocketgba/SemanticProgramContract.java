@@ -51,6 +51,15 @@ final class SemanticProgramContract {
         if (input == null || input.optString("query", "").trim().isEmpty()) {
             throw new IllegalArgumentException("SEMANTIC_PROGRAM_QUERY_REQUIRED");
         }
+        String query = input.getString("query");
+        if (!CapabilityResolver.isCapabilityQuestion(query)) {
+            throw new IllegalArgumentException("SEMANTIC_PROGRAM_UNSUPPORTED_INTENT");
+        }
+        String canonicalIntent = CapabilityResolver.isListRequest(query)
+                ? "list_capabilities" : "find_capability";
+        if (!canonicalIntent.equals(intent)) {
+            throw new IllegalArgumentException("SEMANTIC_PROGRAM_INTENT_QUERY_MISMATCH");
+        }
 
         JSONArray requirements = program.optJSONArray("capability_requirements");
         if (requirements == null || requirements.length() != 1
