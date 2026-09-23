@@ -34,8 +34,11 @@ final class ConversationalCapabilityRuntime {
         JSONObject resolution;
         try {
             JSONObject program = SemanticProgramContract.compileCapabilityQuery(query);
-            resolution = SemanticProgramRuntime.resolve(program,
+            SemanticProgramContract.validate(program);
+            resolution = CapabilityResolver.resolve(query,
                     ReadOnlyCapabilityContextBuilder.build(context, nodeStore));
+            resolution.put("semantic_program_validation", "passed");
+            resolution.put("semantic_program", new JSONObject(program.toString()));
         } catch (Exception error) {
             resolution = SemanticProgramRuntime.resolve(new JSONObject(),
                     ReadOnlyCapabilityContextBuilder.build(context, nodeStore));
