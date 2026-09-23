@@ -57,7 +57,7 @@ chmod +x "$CODER_BIN"
 echo "[V002] start isolated Coder server"
 export CODER_PG_CONNECTION_URL="postgresql://postgres:postgres@127.0.0.1:5432/coder?sslmode=disable"
 export CODER_ACCESS_URL="$CODER_URL"
-export CODER_HTTP_ADDRESS="127.0.0.1:3000"
+export CODER_HTTP_ADDRESS="0.0.0.0:3000"
 "$CODER_BIN" server >/tmp/fox-v002-evidence/coder-server.log 2>&1 &
 echo $! >/tmp/coder-server.pid
 
@@ -73,6 +73,12 @@ if [[ "$READY" -ne 1 ]]; then
   cat /tmp/fox-v002-evidence/coder-server.log
   exit 1
 fi
+
+echo "[V002] verify coderd is reachable from a bridged Docker container"
+DOCKER_GATEWAY="$(docker network inspect bridge -f '{{(index .IPAM.Config 0).Gateway}}')"
+test -n "$DOCKER_GATEWAY"
+docker exec "$POSTGRES_NAME" sh -lc "wget -qO- http://$DOCKER_GATEWAY:3000/api/v2/buildinfo" \
+  | tee /tmp/fox-v002-evidence/buildinfo-from-docker-bridge.json >/dev/null
 
 echo "[V002] bootstrap ephemeral admin"
 BOOTSTRAP_PASSWORD="$(openssl rand -hex 20)A1!"
@@ -168,8 +174,46 @@ jq -e '.latest_build.status == "running"'   /tmp/fox-v002-evidence/workspace-run
 jq -e '[.latest_build.resources[]?.agents[]?] | length > 0'   /tmp/fox-v002-evidence/workspace-running.json
 jq -e '[.latest_build.resources[]?.agents[]?.apps[]? | select(.slug == "code-server")] | length > 0'   /tmp/fox-v002-evidence/workspace-running.json
 
+echo "[V002] wait for workspace agent health"
+AGENT_READY=0
+for i in $(seq 1 60); do
+  curl -fsS \
+    "$CODER_URL/api/v2/users/me/workspace/$WORKSPACE" \
+    -H "Coder-Session-Token: $CODER_SESSION_TOKEN" \
+    >/tmp/fox-v002-evidence/workspace-agent-health.json
+  if jq -e '.health.healthy == true' /tmp/fox-v002-evidence/workspace-agent-health.json >/dev/null; then
+    AGENT_READY=1
+    break
+  fi
+  sleep 2
+done
+
+if [[ "$AGENT_READY" -ne 1 ]]; then
+  docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Status}}' \
+    | tee /tmp/fox-v002-evidence/docker-ps-agent-failure.txt
+  WORKSPACE_CONTAINER="$(docker ps -a --format '{{.ID}} {{.Names}}' | awk '$2 ~ /fox-v002-ws/ {print $1; exit}')"
+  if [[ -n "$WORKSPACE_CONTAINER" ]]; then
+    docker logs "$WORKSPACE_CONTAINER" \
+      | tee /tmp/fox-v002-evidence/workspace-container-agent-failure.log || true
+  fi
+  echo "workspace agent did not become healthy within 120s" >&2
+  exit 125
+fi
+
 echo "[V002] verify runtime command path"
-"$CODER_BIN" ssh "$WORKSPACE" -- 'printf FOX_V002_SSH_OK'   | tee /tmp/fox-v002-evidence/ssh-running.txt
+set +e
+timeout 90s "$CODER_BIN" ssh "$WORKSPACE" -- 'printf FOX_V002_SSH_OK' \
+  | tee /tmp/fox-v002-evidence/ssh-running.txt
+SSH_RC=${PIPESTATUS[0]}
+set -e
+if [[ "$SSH_RC" -eq 124 ]]; then
+  echo "coder ssh exceeded 90s timeout" >&2
+  exit 124
+fi
+if [[ "$SSH_RC" -ne 0 ]]; then
+  echo "coder ssh failed rc=$SSH_RC" >&2
+  exit "$SSH_RC"
+fi
 grep -q 'FOX_V002_SSH_OK' /tmp/fox-v002-evidence/ssh-running.txt
 
 echo "[V002] verify watch API"
