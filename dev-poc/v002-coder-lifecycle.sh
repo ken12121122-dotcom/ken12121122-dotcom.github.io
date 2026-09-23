@@ -104,7 +104,7 @@ echo "[V002] verify rich parameter surface"
 "$CODER_BIN" templates list --output json \
   | tee /tmp/fox-v002-evidence/templates.json
 
-TEMPLATE_VERSION_ID="$(jq -r --arg t "$TEMPLATE" '.[] | select(.name == $t) | .active_version_id' /tmp/fox-v002-evidence/templates.json | head -n 1)"
+TEMPLATE_VERSION_ID="$(jq -r --arg t "$TEMPLATE" '.[] | (.Template // .) | select(.name == $t) | .active_version_id' /tmp/fox-v002-evidence/templates.json | head -n 1)"
 test -n "$TEMPLATE_VERSION_ID"
 test "$TEMPLATE_VERSION_ID" != "null"
 
