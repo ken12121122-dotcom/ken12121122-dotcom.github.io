@@ -54,6 +54,30 @@ public final class SemanticProgramContractTest {
         }
     }
 
+    @Test public void rejectsIntentQueryMismatchBeforeResolution() throws Exception {
+        JSONObject program = SemanticProgramContract.compileCapabilityQuery("有沒有記帳能力");
+        program.put("intent", "list_capabilities");
+
+        JSONObject result = SemanticProgramRuntime.resolve(program, context());
+
+        assertEquals("failed", result.getString("resolution_status"));
+        assertEquals("semantic_program_validation", result.getString("resolution_stage"));
+        assertTrue(result.getJSONArray("unresolved_gaps").getString(0)
+                .contains("SEMANTIC_PROGRAM_INTENT_QUERY_MISMATCH"));
+    }
+
+    @Test public void rejectsUnsupportedQueryInjectedAfterCompilation() throws Exception {
+        JSONObject program = SemanticProgramContract.compileCapabilityQuery("有沒有記帳能力");
+        program.getJSONObject("input").put("query", "今天天氣如何");
+
+        JSONObject result = SemanticProgramRuntime.resolve(program, context());
+
+        assertEquals("failed", result.getString("resolution_status"));
+        assertEquals("semantic_program_validation", result.getString("resolution_stage"));
+        assertTrue(result.getJSONArray("unresolved_gaps").getString(0)
+                .contains("SEMANTIC_PROGRAM_UNSUPPORTED_INTENT"));
+    }
+
     @Test public void rejectsUnknownCapabilityRequirementBeforeResolution() throws Exception {
         JSONObject program = SemanticProgramContract.compileCapabilityQuery("有沒有記帳能力");
         program.put("capability_requirements", new JSONArray().put("unknown.delete_everything"));
