@@ -31,8 +31,15 @@ final class ConversationalCapabilityRuntime {
         if (!CapabilityResolver.isCapabilityQuestion(query)) {
             return new Result(false, "", "", new JSONObject());
         }
-        JSONObject resolution = CapabilityResolver.resolve(query,
-                ReadOnlyCapabilityContextBuilder.build(context, nodeStore));
+        JSONObject resolution;
+        try {
+            JSONObject program = SemanticProgramContract.compileCapabilityQuery(query);
+            resolution = SemanticProgramRuntime.resolve(program,
+                    ReadOnlyCapabilityContextBuilder.build(context, nodeStore));
+        } catch (Exception error) {
+            resolution = SemanticProgramRuntime.resolve(new JSONObject(),
+                    ReadOnlyCapabilityContextBuilder.build(context, nodeStore));
+        }
         String fallback = "能力盤點暫時無法讀取，沒有執行任何動作。";
         return new Result(true, resolution.optString("answer", fallback),
                 resolution.optString("spoken_answer", fallback), resolution);
