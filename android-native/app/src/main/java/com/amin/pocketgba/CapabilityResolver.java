@@ -72,7 +72,7 @@ final class CapabilityResolver {
         }
     }
 
-    private static boolean isListRequest(String raw) {
+    static boolean isListRequest(String raw) {
         String query = VoiceCommandParser.normalize(raw);
         return query.contains("有哪些") || query.contains("有什麼")
                 || query.contains("清單") || query.contains("盤點")
