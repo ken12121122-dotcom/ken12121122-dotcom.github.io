@@ -22,6 +22,38 @@ public final class SemanticProgramContractTest {
         assertFalse(program.getJSONObject("boundary").getBoolean("github_write_allowed"));
     }
 
+    @Test public void equivalentLanguageCompilesToStableCanonicalProgram() throws Exception {
+        JSONObject listA = SemanticProgramContract.compileCapabilityQuery("你目前有哪些能力？");
+        JSONObject listB = SemanticProgramContract.compileCapabilityQuery("能力清單");
+        JSONObject findA = SemanticProgramContract.compileCapabilityQuery("有沒有記帳能力");
+        JSONObject findB = SemanticProgramContract.compileCapabilityQuery("尋找能力 記帳");
+
+        assertEquals("list_capabilities", listA.getString("intent"));
+        assertEquals(listA.getString("intent"), listB.getString("intent"));
+        assertEquals(listA.getJSONArray("capability_requirements").toString(),
+                listB.getJSONArray("capability_requirements").toString());
+        assertEquals(listA.getJSONObject("route").getString("resolver"),
+                listB.getJSONObject("route").getString("resolver"));
+        assertEquals(listA.getJSONObject("boundary").toString(),
+                listB.getJSONObject("boundary").toString());
+
+        assertEquals("find_capability", findA.getString("intent"));
+        assertEquals(findA.getString("intent"), findB.getString("intent"));
+        assertEquals(findA.getJSONArray("capability_requirements").toString(),
+                findB.getJSONArray("capability_requirements").toString());
+        assertEquals(findA.getJSONObject("route").getString("resolver"),
+                findB.getJSONObject("route").getString("resolver"));
+    }
+
+    @Test public void ordinaryConversationDoesNotBecomeSemanticCapabilityProgram() throws Exception {
+        try {
+            SemanticProgramContract.compileCapabilityQuery("今天天氣如何");
+            throw new AssertionError("Expected unsupported intent rejection");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("SEMANTIC_PROGRAM_UNSUPPORTED_INTENT", expected.getMessage());
+        }
+    }
+
     @Test public void rejectsUnknownCapabilityRequirementBeforeResolution() throws Exception {
         JSONObject program = SemanticProgramContract.compileCapabilityQuery("有沒有記帳能力");
         program.put("capability_requirements", new JSONArray().put("unknown.delete_everything"));
