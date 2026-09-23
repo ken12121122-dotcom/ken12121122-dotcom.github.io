@@ -97,8 +97,52 @@ rm -rf /tmp/fox-v002-template
 grep -n 'module "code-server"' /tmp/fox-v002-template/main.tf   | tee /tmp/fox-v002-evidence/template-code-server.txt
 "$CODER_BIN" templates push "$TEMPLATE"   --directory /tmp/fox-v002-template   --yes   | tee /tmp/fox-v002-evidence/template-push.txt
 
-echo "[V002] create workspace"
-"$CODER_BIN" create "$WORKSPACE"   --template "$TEMPLATE"   --yes   | tee /tmp/fox-v002-evidence/create.txt
+echo "[V002] verify rich parameter surface"
+"$CODER_BIN" create --help | grep -E -- '--rich-parameter-file|--use-parameter-defaults' \
+  | tee /tmp/fox-v002-evidence/create-help-rich-parameter.txt
+
+"$CODER_BIN" templates list --output json \
+  | tee /tmp/fox-v002-evidence/templates.json
+
+TEMPLATE_VERSION_ID="$(jq -r --arg t "$TEMPLATE" '.[] | select(.name == $t) | .active_version_id' /tmp/fox-v002-evidence/templates.json | head -n 1)"
+test -n "$TEMPLATE_VERSION_ID"
+test "$TEMPLATE_VERSION_ID" != "null"
+
+curl -fsS \
+  "$CODER_URL/api/v2/templateversions/$TEMPLATE_VERSION_ID/rich-parameters" \
+  -H "Coder-Session-Token: $CODER_SESSION_TOKEN" \
+  | tee /tmp/fox-v002-evidence/rich-parameters.json >/dev/null
+
+jq -e '.[] | select(.name == "jetbrains_ides" and .type == "list(string)")' \
+  /tmp/fox-v002-evidence/rich-parameters.json >/dev/null
+
+cat >/tmp/fox-v002-params.yaml <<'YAML'
+jetbrains_ides:
+  - IU
+YAML
+cat /tmp/fox-v002-params.yaml | tee /tmp/fox-v002-evidence/rich-parameter-input.yaml
+
+echo "[V002] create workspace with explicit rich parameters"
+set +e
+timeout 180s "$CODER_BIN" create "$WORKSPACE" \
+  --template "$TEMPLATE" \
+  --rich-parameter-file /tmp/fox-v002-params.yaml \
+  --use-parameter-defaults \
+  --yes \
+  </dev/null \
+  > >(tee /tmp/fox-v002-evidence/create.txt) \
+  2> >(tee /tmp/fox-v002-evidence/create-stderr.txt >&2)
+CREATE_RC=$?
+set -e
+
+if [[ "$CREATE_RC" -eq 124 ]]; then
+  echo "workspace create exceeded step-level timeout" >&2
+  exit 124
+fi
+if [[ "$CREATE_RC" -ne 0 ]]; then
+  echo "workspace create failed rc=$CREATE_RC" >&2
+  exit "$CREATE_RC"
+fi
 
 "$CODER_BIN" list --output json   | tee /tmp/fox-v002-evidence/workspaces-running-cli.json
 
