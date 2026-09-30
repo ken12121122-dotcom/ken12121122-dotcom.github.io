@@ -18,8 +18,12 @@ jobs:
       run:
         working-directory: android/packagecanvas
     steps:
-      - name: Checkout
+      - name: Checkout Android project only
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            android/packagecanvas
+          sparse-checkout-cone-mode: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
