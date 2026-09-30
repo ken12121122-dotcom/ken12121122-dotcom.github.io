@@ -1,25 +1,23 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "release",
+  "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.22-rc11-bridge100",
-  "latestVersionCode": 196,
+  "latestVersionName": "0.11.22-rc12-bridge101",
+  "latestVersionCode": 197,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc11-bridge100.apk",
-  "apkSha256": "521c599844056a79c0480c63ac412d9efaa2cccda816d3921086ad12c361b7e7",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.22-rc12-bridge101.apk",
+  "apkSha256": "8d417b50395a6ae70134c0b82f74c09661e01c49b477f519e5a588645208b1b1",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 9204659,
-  "publishedAt": "2026-09-22T01:25:23Z",
+  "sizeBytes": 9204710,
+  "publishedAt": "2026-09-30T15:50:04Z",
   "mandatory": false,
   "releaseNotes": [
-    "AMIN WIKI 的 Graph 存檔槽升級為正式存檔管理入口，不再只能切換既有 FOX 知識庫。",
-    "Wiki 內可直接「開啟知識庫資料夾」：呼叫 Android 系統資料夾選擇器、保存唯讀 SAF 權限、建立 KnowledgeProfile、切換並立即同步。",
-    "Wiki 內可直接建立空白知識庫存檔，之後再用「連接／更換目前存檔資料夾」綁定來源。",
-    "Wiki 與 FOX 共用同一份 KnowledgeProfile 清單；任一邊新增的知識庫都會同步出現在另一邊，不建立第二套存檔資料。",
-    "AMIN_SYSTEM 仍保留 GitHub / Registry / Runtime / Work Graph 與既有自動更新流程。",
-    "知識庫資料夾仍為唯讀來源；本版沒有新增 Markdown 寫回或自動改檔能力。"
+    "候選版（實機驗收用，尚未正式發布）：控制中心「管理」區新增 PackageCanvas 卡片，開啟獨立畫面載入 GitHub Pages 上的 PackageCanvas 網頁。",
+    "PackageCanvas 可透過 Android 系統資料夾選擇器授權一個手機資料夾，唯讀讀取其中的 Markdown，產生 GEN2 知識架構畫布。",
+    "資料夾授權清單獨立於 AMIN WIKI／FOX KnowledgeProfile；移除授權只影響 PackageCanvas。",
+    "沒有新增 Android 權限，也沒有 Markdown 寫回、刪檔或其他網域存取能力；既有卡片與功能不變。"
   ]
 }
