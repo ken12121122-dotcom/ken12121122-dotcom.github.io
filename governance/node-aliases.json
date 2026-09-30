@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0-draft",
+  "status": "generated",
+  "rules": {
+    "aliases_are_candidate_hints_only": true,
+    "unknown_requests_must_not_create_nodes": true,
+    "ambiguous_requests_require_selection": true
+  },
+  "nodes": {
+    "AMIN-1110": ["語音指令", "voice command", "語音入口"],
+    "AMIN-1120": ["語音指令目錄", "語音目錄", "voice catalog"],
+    "AMIN-1130": ["語音浮球", "浮動語音", "floating voice", "ptt", "語音ptt"],
+    "AMIN-1140": ["語音球", "首頁語音球", "voice orb", "啟動問候", "startup greeting"],
+    "AMIN-1210": ["提示詞資料庫", "prompt store", "提示詞儲存"],
+    "AMIN-1220": ["提示詞鍵盤", "prompt keyboard", "鍵盤ime"],
+    "AMIN-1230": ["提示詞管理", "prompt manager", "提示詞編輯"],
+    "AMIN-1240": ["提示詞關聯", "prompt graph", "提示詞知識關聯"],
+    "AMIN-1310": ["關聯圖", "統一關聯圖", "unified graph", "graph viewer"],
+    "AMIN-1320": ["導航自動發現", "app navigation discovery", "manifest導航"],
+    "AMIN-1330": ["架構編輯器", "節點拖曳", "visual architecture editor", "分支拖曳"],
+    "AMIN-1400": ["自動更新", "版本更新", "runtime update", "apk更新"],
+    "AMIN-1500": ["app入口", "android導航", "deep link", "功能入口"],
+    "AMIN-2100": ["wiki", "知識庫", "wiki graph", "hot reload"],
+    "AMIN-3100": ["control api", "控制api", "android api"],
+    "AMIN-3110": ["http server", "websocket", "rest api", "control http"],
+    "AMIN-3120": ["input gateway", "輸入閘道", "action dispatcher", "動作分派"],
+    "AMIN-3130": ["event store", "事件紀錄", "audit log", "稽核紀錄"],
+    "AMIN-3200": ["node bridge", "電腦手機橋接", "node android bridge", "pc bridge"],
+    "AMIN-4100": ["mcp", "amin mcp", "read only mcp"],
+    "AMIN-5000": ["ci", "validation", "release pipeline", "發布流程"],
+    "AMIN-6000": ["治理", "governance", "master bom", "node registry"]
+  }
+}
