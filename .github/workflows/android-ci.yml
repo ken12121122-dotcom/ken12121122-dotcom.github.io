@@ -358,6 +358,11 @@ jobs:
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/step11-instrumentation.txt"
           grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/step11-instrumentation.txt"
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.PackageCanvasActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/packagecanvas-instrumentation.txt"
+          grep -Eq 'OK \(3 tests\)' "$RUNNER_TEMP/packagecanvas-instrumentation.txt"
 
       - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
@@ -367,6 +372,7 @@ jobs:
             ${{ runner.temp }}/phase1-step11-badging.txt
             ${{ runner.temp }}/phase1-instrumentation.txt
             ${{ runner.temp }}/step11-instrumentation.txt
+            ${{ runner.temp }}/packagecanvas-instrumentation.txt
             ${{ runner.temp }}/phase1-step11-emulator.log
           if-no-files-found: error
           retention-days: 7
