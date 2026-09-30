@@ -27,7 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.fox.app.FoxApplication
+import com.fox.app.FoxDependencies
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,10 +35,10 @@ fun SearchScreen(
     onNavigateToDetail: (String) -> Unit,
     onBack: () -> Unit,
 ) {
-    val app = LocalContext.current.applicationContext as FoxApplication
+    val deps = FoxDependencies.get(LocalContext.current)
     val viewModel: SearchViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { SearchViewModel(app.database.nodeDao()) }
+            initializer { SearchViewModel(deps.database.nodeDao()) }
         },
     )
 

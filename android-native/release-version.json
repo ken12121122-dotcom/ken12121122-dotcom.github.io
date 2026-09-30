@@ -1,0 +1,18 @@
+{
+  "versionCode": 191,
+  "versionName": "0.11.22-rc6",
+  "channel": "candidate",
+  "bridge": 95,
+  "releaseSequence": 29,
+  "minimumSupportedVersionCode": 107,
+  "minimumAndroidSdk": 26,
+  "packageId": "com.amin.pocketgba",
+  "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
+  "releaseNotes": [
+    "新增「📚 FOX 知識庫」功能，整合進控制中心首頁，可搜尋、瀏覽從 Google Drive 同步進來的知識節點，並沿關係邊在節點之間跳轉。",
+    "FOX 知識庫原本是獨立 App（com.fox.app），這次合併進 Amin Pocket GBA 成為內建功能，不再需要另外安裝、不再有第二個圖示。",
+    "新增 Google 帳號登入／登出按鈕，用於授權 FOX 知識庫的 Drive 唯讀同步；OWNER 尚未在 Google Cloud Console 設定對應 OAuth client，登入目前會失敗，屬已知限制，等設定完成後再啟用。",
+    "FOX 知識庫目前僅唯讀（瀏覽、搜尋已同步節點），不會寫回 Drive。",
+    "這是 FOX 合併進 Amin Pocket GBA 後的第一個候選版本，尚未經過真機驗收；請確認既有 GBA、存檔、手把、原生更新檢查、權限中心等功能沒有退化。"
+  ]
+}

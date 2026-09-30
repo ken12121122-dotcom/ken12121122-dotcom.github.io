@@ -1,0 +1,166 @@
+name: FOX Knowledge (android-native) CI
+
+# FOX used to be a standalone app built by this workflow from fox-app/. It's
+# now merged into android-native/ as the :foxknowledge library module, so
+# this workflow validates android-native/ instead. It intentionally does NOT
+# auto-publish a GitHub Release on push to main — android-native is governed
+# by AGENTS.md's stricter release gates (CI-only artifacts until OWNER does
+# real-device verification and explicitly approves a Bridge), unlike the
+# standalone fox-app repo this replaces.
+
+on:
+  pull_request:
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/foxknowledge-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'android-native/**'
+      - '.github/workflows/foxknowledge-ci.yml'
+  # Manual only — never fires on a push, so it can't become an implicit
+  # release channel. Lets a human (or Claude Code, when explicitly asked)
+  # fetch a one-off debug build without needing the Actions artifact
+  # storage host, which some sandboxes can't reach.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: foxknowledge-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      AMIN_KEYSTORE_BASE64: ${{ secrets.AMIN_KEYSTORE_BASE64 }}
+      AMIN_KEYSTORE_PASSWORD: ${{ secrets.AMIN_KEYSTORE_PASSWORD }}
+      AMIN_KEY_ALIAS: ${{ secrets.AMIN_KEY_ALIAS }}
+      AMIN_KEY_PASSWORD: ${{ secrets.AMIN_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # android-actions/setup-android@v3 defaults to installing "tools
+          # platform-tools" via sdkmanager. The legacy "tools" package no
+          # longer exists in Google's SDK repository (sdkmanager fails with
+          # "Failed to find package 'tools'"), so only request platform-tools
+          # here — Gradle/AGP auto-downloads the specific platform and
+          # build-tools versions it actually needs once licenses are accepted.
+          packages: 'platform-tools'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # Per AGENTS.md rule 6, general CI (push/PR validation) must never use
+      # permanent signing — only this explicit, manually-triggered dispatch
+      # does, and only to let OWNER install a candidate build cleanly over
+      # their existing properly-signed install (a debug-key build can't
+      # overwrite-install; Android rejects the signature mismatch).
+      - name: Prepare permanent signing (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        id: signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${AMIN_KEYSTORE_BASE64:-}" \
+             && -n "${AMIN_KEYSTORE_PASSWORD:-}" \
+             && -n "${AMIN_KEY_ALIAS:-}" \
+             && -n "${AMIN_KEY_PASSWORD:-}" ]]; then
+            KEYSTORE_PATH="$RUNNER_TEMP/amin-pocket-gba.jks"
+            printf '%s' "$AMIN_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+            test -s "$KEYSTORE_PATH"
+            echo "AMIN_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Permanent signing secrets not fully set — this dispatch build will fall back to an ad-hoc debug signature, not the release key."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test and build (debug) — :app + :foxknowledge
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            :foxknowledge:testDebugUnitTest \
+            :app:testDebugUnitTest \
+            :app:assembleDebug
+
+      # :foxknowledge has never been built as part of the `bridge` build type
+      # (matchingFallbacks=['release'] means it uses its own release variant
+      # under the hood) — this is the variant OWNER's phone actually installs
+      # via native-release-manifest.json, so confirm it resolves and packages
+      # before ever dispatching android-release.yml with this branch's code.
+      - name: Smoke-test bridge build type (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon --console=plain -p android-native \
+            -PAMIN_VERSION_CODE=191 \
+            -PAMIN_PREVIEW_SUFFIX=-bridge95-smoketest \
+            :app:assembleBridge :app:lintBridge
+
+      - name: Verify signing certificate (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && steps.signing.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK='android-native/app/build/outputs/apk/debug/app-debug.apk'
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          if [[ -x "$APKSIGNER" ]]; then
+            "$APKSIGNER" verify --verbose --print-certs "$APK"
+          else
+            echo "::warning::apksigner not found at expected build-tools path — skipping signature print, but the build did apply signingConfigs.release (see gradle log above)."
+          fi
+
+      - name: Upload debug APK (CI DEBUG ARTIFACT ONLY)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-native-debug-ci-only
+          path: android-native/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      # Only runs on an explicit manual dispatch (never on push/PR), so this
+      # can never become an implicit update channel. Publishes to a fixed,
+      # clearly-labeled tag distinct from any Bridge/production release tag,
+      # and is NOT referenced by amin-vault/native-release-manifest.json —
+      # the phone's in-app update checker will never see or pull this on its
+      # own. Wiring an actual Bridge candidate into that manifest is a
+      # separate, explicit step requiring OWNER's direct approval per
+      # AGENTS.md, not something this step does automatically.
+      - name: Publish manual build (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          if [[ '${{ steps.signing.outputs.ready }}' == 'true' ]]; then
+            NOTES="Manually published from commit ${{ github.sha }} via workflow_dispatch. Signed with the permanent release key (same as OWNER's existing install), so it should install cleanly over the current app without needing to uninstall first. Still not referenced by native-release-manifest.json and not an update source — OWNER has not verified this build yet."
+          else
+            NOTES="Manually published from commit ${{ github.sha }} via workflow_dispatch. Permanent signing secrets were unavailable, so this is an ad-hoc debug-signed build — installing it will likely require uninstalling the existing app first. Not referenced by native-release-manifest.json and not an update source."
+          fi
+          gh release delete foxknowledge-manual-debug --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create foxknowledge-manual-debug \
+            android-native/app/build/outputs/apk/debug/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "android-native manual build (CI-only, not a release channel)" \
+            --notes "$NOTES" \
+            --prerelease
