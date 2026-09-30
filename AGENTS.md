@@ -168,6 +168,21 @@ GBA 返回應回白色原生控制中心，不要回黑色舊首頁。
 - `amin-vault/ARCHITECTURE.md`
 - `amin-vault/architecture.json`
 
+## PackageCanvas（GEN2 知識架構工作台）
+
+PackageCanvas 是 OWNER 的 GEN2 知識架構視覺化工作台，與 GBA 遊戲 Runtime 分開。
+
+- 網頁：`packagecanvas/index.html`、`packagecanvas/gen2-source.js`、`packagecanvas/mobile.css`
+- 正式網址：`https://ken12121122-dotcom.github.io/packagecanvas/`
+- 網頁層修改推到 main 的 GitHub Pages 即生效，不需要提升 `runtime-manifest.json` 或 Bridge 版本；Amin Pocket GBA 的 WebView 只攔截 ROM 與模擬器引擎路徑，`/packagecanvas/` 直接讀 Pages。
+- 手機入口規劃：Amin Pocket GBA 白色控制中心的「PackageCanvas」卡片，開啟獨立 Activity 載入上述網址，不併入 AMIN WIKI、不共用 FOX KnowledgeProfile。
+- 原生能力只有唯讀 bridge `AminPackageCanvasFiles`（選資料夾、列出已授權資料夾、列出 `.md`、讀取文字、移除授權），只對 `ken12121122-dotcom.github.io/packagecanvas/` 開放；不得加入寫檔、刪檔或任意網域。
+- 這個 bridge 屬於 APK 變更，受本檔「不可違反的發布閘門」約束：新 Bridge 先停在 Draft PR 與 CI-only artifact，完成模擬器、實機閉環驗收與 OWNER 批准後才可更新正式 manifest。
+- GEN2 解析（frontmatter、Wiki Link、BOM、Registry、Resource、架構檢查）全部在網頁層，改規則只改 `gen2-source.js`，不改 APK。
+- 獨立 APK `android/packagecanvas/`（`tw.amin.packagecanvas`）在 GBA 入口通過實機驗收後停用；原始碼與 workflow 保留作回退，不再新增功能，也不得再建立第二套 Android 專案。
+- 隱私：本 repo 是公開 repo。GEN2 知識庫內容（含 KB-USER 個人資料）不得 commit 到本 repo；測試只用合成 fixture。未來 GitHub 端的知識庫同步、核准紀錄與 Skill 執行必須放在 OWNER 另建的私有 repo。
+- 狀態（2026-09-30）：網頁端 GEN2 資料夾讀取已完成本機與模擬 bridge 測試；GBA 原生 bridge 與控制中心卡片尚未發布、尚未實機驗證。
+
 ## 修改規則
 
 Runtime 問題優先修改 main 的 `amin-vault/` 並提升 Runtime 版本。
