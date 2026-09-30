@@ -93,6 +93,29 @@
     .ok { color: #90ee90; }
     .ng { color: #ff7b7b; }
 
+    .app-launcher {
+      display: block;
+      margin: 18px 0 8px;
+      padding: 18px;
+      border: 1px solid #3b6b70;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #10252a, #152238);
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .app-launcher strong {
+      display: block;
+      color: var(--accent);
+      font-size: 1.15rem;
+      margin-bottom: 5px;
+    }
+
+    .app-launcher span {
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
     @media (max-width: 520px) {
       .row { grid-template-columns: 70px 1fr; }
       .card-header { display: block; }
@@ -104,6 +127,11 @@
   <main>
     <h1>阿民 OS</h1>
     <p class="intro">AI 自動工作會把商機進度寫進外部記憶，這裡只負責顯示。</p>
+
+    <a class="app-launcher" href="./packagecanvas/">
+      <strong>🧠 開啟 PackageCanvas</strong>
+      <span>GEN2 知識架構／Canvas 工作台</span>
+    </a>
 
     <section aria-labelledby="market-title">
       <h2 id="market-title">市場商機</h2>
