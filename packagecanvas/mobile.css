@@ -10,3 +10,4 @@
 }
 
 @media(max-width:760px){body.panels-open .viewport{pointer-events:none}}
+.gen2-folder-body{display:grid;gap:10px;padding:14px 16px}.gen2-folder-note{margin:0;color:var(--muted);font-size:12px;line-height:1.55}.gen2-folder-list{display:grid;gap:8px;color:var(--muted);font-size:13px}.gen2-folder-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #30415d;border-radius:10px;padding:8px 10px;color:var(--text)}.gen2-folder-row b{flex:1 1 180px;overflow-wrap:anywhere}.gen2-folder-row small{color:var(--muted);font-weight:400}
