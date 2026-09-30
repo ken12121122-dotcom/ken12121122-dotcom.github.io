@@ -268,6 +268,17 @@ public final class ControlCenterActivity extends Activity {
         );
         content.addView(foxKnowledgeCard, cardParams());
 
+        LinearLayout packageCanvasCard = actionCard(
+                "🧩",
+                "PackageCanvas",
+                "GEN2 知識架構畫布；讀取手機資料夾中的 Markdown（唯讀）",
+                "開啟",
+                false
+        );
+        packageCanvasCard.setContentDescription("開啟 PackageCanvas 知識架構畫布");
+        packageCanvasCard.setOnClickListener(view -> startActivity(new Intent(this, PackageCanvasActivity.class)));
+        content.addView(packageCanvasCard, cardParams());
+
         addSectionTitle(content, "進階");
         detailsButton = secondaryButton("顯示系統詳細資訊");
         detailsButton.setOnClickListener(view -> toggleTechnicalDetails());
