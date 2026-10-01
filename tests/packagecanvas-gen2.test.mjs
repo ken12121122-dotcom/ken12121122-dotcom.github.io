@@ -115,8 +115,82 @@ test('re-reading keeps manual node positions', () => {
 
 test('PackageCanvas page loads the GEN2 folder source and keeps existing entry points', async () => {
   const html = await readFile(new URL('../packagecanvas/index.html', import.meta.url), 'utf8');
-  for (const needle of ['<script src="gen2-source.js?v=', 'id="gen2FolderBtn"', 'id="gen2FolderModal"', 'id="gen2ProjectionBtn"', "gen2_workflow:'", 'GEN2.buildProject(']) {
+  for (const needle of ['<script src="gen2-source.js?v=', 'id="gen2GhReadBtn"', 'GEN2.sources.github.collect(', 'id="gen2FolderBtn"', 'id="gen2FolderModal"', 'id="gen2ProjectionBtn"', "gen2_workflow:'", 'GEN2.buildProject(']) {
     assert.ok(html.includes(needle), 'index.html should contain ' + needle);
   }
   assert.ok(html.indexOf('gen2-source.js') < html.indexOf('const RAW_DATA='), 'parser loads before the app script');
+});
+
+// Fake GitHub REST API serving the synthetic folder above under kb/ on two branches.
+function fakeGitHub({ token = 'tok' } = {}) {
+  const enc = new TextEncoder();
+  const commits = { main: 'a'.repeat(40), 'gen2/candidate': 'b'.repeat(40) };
+  const blobs = new Map();
+  const tree = [{ path: 'README.md', type: 'blob', sha: 'r0', size: 10 }, { path: 'kb', type: 'tree', sha: 't0' }, { path: 'kb/.obsidian', type: 'tree', sha: 't1' }, { path: 'kb/.obsidian/x.md', type: 'blob', sha: 'o1', size: 3 }];
+  for (const d of dirs) tree.push({ path: 'kb/' + d, type: 'tree', sha: 'd' + d.length });
+  files.forEach((f, i) => { const sha = 'f' + i; blobs.set(sha, enc.encode(f.text)); tree.push({ path: 'kb/' + f.path, type: 'blob', sha, size: blobs.get(sha).length }); });
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    const auth = init.headers.Authorization === 'Bearer ' + token;
+    const json = (status, body) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
+    if (!auth) return json(401, {});
+    const u = new URL(url);
+    const m = u.pathname.match(/^\/repos\/ken12121122-dotcom\/gen2-knowledge\/(.*)$/);
+    if (!m) return json(404, {});
+    let r;
+    if ((r = m[1].match(/^commits\/(.+)$/))) {
+      const sha = commits[decodeURIComponent(r[1])];
+      assert.equal(init.headers.Accept, 'application/vnd.github.sha');
+      return sha ? { ok: true, status: 200, text: async () => sha } : json(404, {});
+    }
+    if ((r = m[1].match(/^git\/trees\/([0-9a-f]{40})$/))) return json(200, { sha: r[1], tree, truncated: false });
+    if ((r = m[1].match(/^git\/blobs\/(.+)$/))) {
+      const b = blobs.get(r[1]);
+      assert.equal(init.headers.Accept, 'application/vnd.github.raw+json');
+      return b ? { ok: true, status: 200, arrayBuffer: async () => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) } : json(404, {});
+    }
+    if (m[1] === 'pulls') return json(200, [
+      { number: 7, title: '候選 MD', draft: false, updated_at: '2026-10-01T00:00:00Z', head: { ref: 'gen2/candidate', repo: { full_name: 'ken12121122-dotcom/gen2-knowledge' } } },
+      { number: 8, title: 'fork', head: { ref: 'x', repo: { full_name: 'someone/fork' } } }
+    ]);
+    return json(404, {});
+  };
+  return { fetchImpl, calls };
+}
+
+test('GitHub source reads kb/ at a pinned commit and builds the same project as the folder', async () => {
+  const { fetchImpl, calls } = fakeGitHub();
+  const src = await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  assert.equal(src.key, 'github:ken12121122-dotcom/gen2-knowledge@main');
+  assert.equal(src.commit, 'a'.repeat(40));
+  assert.equal(src.layoutFrom, null);
+  assert.equal(src.files.length, files.length, 'every .md under kb/ is read, dot-folders skipped');
+  assert.ok(!src.dirs.some(d => d.startsWith('.')), 'dot dirs skipped');
+  assert.ok(calls.every(c => c.url.startsWith('https://api.github.com/')), 'only api.github.com is contacted');
+  const viaGithub = Gen2.buildProject(src, { now: '2026-09-30T00:00:00Z' });
+  const viaFolder = Gen2.buildProject({ rootName: src.rootName, files, dirs }, { now: '2026-09-30T00:00:00Z' });
+  assert.deepEqual(viaGithub.report.counts, viaFolder.report.counts);
+  assert.deepEqual(viaGithub.project.nodes.map(n => n.id).sort(), viaFolder.project.nodes.map(n => n.id).sort());
+});
+
+test('GitHub source reads a PR branch with layout seeded from main and caches blobs', async () => {
+  const { fetchImpl, calls } = fakeGitHub();
+  await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  const before = calls.length;
+  const src = await Gen2.sources.github.collect({ token: 'tok', ref: 'gen2/candidate' }, null, fetchImpl);
+  assert.equal(src.key, 'github:ken12121122-dotcom/gen2-knowledge@gen2/candidate');
+  assert.equal(src.layoutFrom, 'github:ken12121122-dotcom/gen2-knowledge@main');
+  assert.ok(calls.slice(before).some(c => c.url.endsWith('/commits/gen2/candidate')), 'branch path is not percent-encoded across slashes');
+  assert.equal(calls.length - before, 2, 'unchanged blobs come from cache');
+  const pulls = await Gen2.sources.github.listPulls({ token: 'tok' }, fetchImpl);
+  assert.deepEqual(pulls.map(p => [p.number, p.ref]), [[7, 'gen2/candidate']], 'fork PRs are ignored');
+});
+
+test('GitHub source reports token and access errors and rejects unsafe config', async () => {
+  const { fetchImpl } = fakeGitHub();
+  await assert.rejects(Gen2.sources.github.collect({ token: 'bad' }, null, fetchImpl), /token 無效/);
+  await assert.rejects(Gen2.sources.github.collect({ token: 'tok', repo: 'other' }, null, fetchImpl), /找不到/);
+  assert.throws(() => Gen2.sources.github.config({ owner: 'a/b' }), /格式/);
+  assert.throws(() => Gen2.sources.github.config({ ref: '../main' }), /格式/);
 });

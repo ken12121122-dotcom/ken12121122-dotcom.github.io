@@ -6,10 +6,11 @@
  * BOM / Registry / Resource references → Relation, plus an architecture check.
  *
  * Pure parsing (buildProject) has no DOM dependency so it can be tested in Node.
- * Folder access goes through one of three read-only sources:
+ * Knowledge-base access goes through one of four read-only sources:
  *   native   – Amin Pocket GBA `AminPackageCanvasFiles` bridge (Android SAF)
  *   picker   – desktop browser showDirectoryPicker()
  *   input    – <input webkitdirectory> fallback
+ *   github   – the official GitHub repository (read-only token, REST API)
  * Nothing here writes to the knowledge base.
  */
 (function (root, factory) {
@@ -19,7 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = 'gen2-source 0.1';
+  const VERSION = 'gen2-source 0.2';
   const MAX_FILES = 3000;
   const MAX_FILE_BYTES = 2 * 1024 * 1024;
   const NODE_W = 380, NODE_H = 240, GAP = 40, PAD_X = 45, PAD_TOP = 60, PAD_BOTTOM = 45;
@@ -656,5 +657,101 @@
     }
   };
 
-  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, sources: { native, picker, input } };
+  // ---------- GitHub source (official copy) ----------
+  // Reads the private GEN2 repository through the GitHub REST API with a
+  // read-only token. Same parser, so GitHub, the phone folder and the PR gate
+  // all show the same graph. Nothing is written back.
+  const GITHUB_API = 'https://api.github.com';
+  const GITHUB_DEFAULTS = Object.freeze({ owner: 'ken12121122-dotcom', repo: 'gen2-knowledge', ref: 'main', root: 'kb' });
+  const blobCache = new Map();
+  const NAME_RE = /^[A-Za-z0-9_.-]+$/;
+
+  function githubConfig(cfg) {
+    const c = Object.assign({}, GITHUB_DEFAULTS, cfg || {});
+    c.owner = String(c.owner || '').trim();
+    c.repo = String(c.repo || '').trim();
+    c.ref = String(c.ref || '').trim() || 'main';
+    c.root = String(c.root ?? '').trim().replace(/^\/+|\/+$/g, '');
+    if (!NAME_RE.test(c.owner) || !NAME_RE.test(c.repo)) throw new Error('GitHub owner／repo 格式不正確');
+    if (/\.\.|^\/|\s/.test(c.ref)) throw new Error('分支名稱格式不正確');
+    return c;
+  }
+
+  async function githubRequest(path, cfg, accept, fetchImpl) {
+    // Only Accept and Authorization, so the browser CORS preflight stays minimal.
+    const headers = { Accept: accept || 'application/vnd.github+json' };
+    if (cfg.token) headers.Authorization = 'Bearer ' + cfg.token;
+    const res = await (fetchImpl || fetch)(GITHUB_API + path, { headers, cache: 'no-store' });
+    if (res.ok) return res;
+    if (res.status === 401) throw new Error('GitHub token 無效或已過期');
+    if (res.status === 404) throw new Error('找不到 ' + cfg.owner + '/' + cfg.repo + '（' + cfg.ref + '）；確認 token 有此 repo 的讀取權限');
+    if (res.status === 403 || res.status === 429) throw new Error('GitHub 拒絕或超過速率限制（HTTP ' + res.status + '）');
+    throw new Error('GitHub 讀取失敗 HTTP ' + res.status);
+  }
+
+  const encodeRef = ref => ref.split('/').map(encodeURIComponent).join('/');
+
+  async function mapLimit(items, limit, fn) {
+    let next = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) { const i = next++; await fn(items[i], i); }
+    });
+    await Promise.all(workers);
+  }
+
+  const github = {
+    id: 'github',
+    label: 'GitHub 正本',
+    defaults: GITHUB_DEFAULTS,
+    available: () => typeof fetch === 'function',
+    config: githubConfig,
+    key: cfg => { const c = githubConfig(cfg); return 'github:' + c.owner + '/' + c.repo + '@' + c.ref; },
+    async listPulls(cfg, fetchImpl) {
+      const c = githubConfig(cfg);
+      const res = await githubRequest('/repos/' + c.owner + '/' + c.repo + '/pulls?state=open&per_page=30', c, null, fetchImpl);
+      const list = await res.json();
+      return (Array.isArray(list) ? list : [])
+        .filter(p => p.head && p.head.repo && p.head.repo.full_name === c.owner + '/' + c.repo)
+        .map(p => ({ number: p.number, title: p.title, ref: p.head.ref, draft: !!p.draft, updatedAt: p.updated_at }));
+    },
+    async collect(cfg, onProgress, fetchImpl) {
+      const c = githubConfig(cfg);
+      const base = '/repos/' + c.owner + '/' + c.repo;
+      const commit = (await (await githubRequest(base + '/commits/' + encodeRef(c.ref), c, 'application/vnd.github.sha', fetchImpl)).text()).trim();
+      if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error('無法取得 ' + c.ref + ' 的 commit');
+      const tree = await (await githubRequest(base + '/git/trees/' + commit + '?recursive=1', c, null, fetchImpl)).json();
+      const prefix = c.root ? c.root + '/' : '';
+      const dirs = [], wanted = [];
+      for (const e of tree.tree || []) {
+        if (prefix && !e.path.startsWith(prefix)) continue;
+        const rel = e.path.slice(prefix.length);
+        if (!rel || rel.split('/').some(seg => seg.startsWith('.'))) continue;
+        if (e.type === 'tree') dirs.push(rel);
+        else if (e.type === 'blob' && /\.md$/i.test(rel) && (e.size || 0) <= MAX_FILE_BYTES) wanted.push({ path: rel, sha: e.sha });
+      }
+      if (!dirs.length && !wanted.length) throw new Error(c.ref + ' 沒有 ' + (c.root || '根目錄') + '/ 知識庫內容');
+      const list = wanted.slice(0, MAX_FILES), files = new Array(list.length);
+      const decoder = new TextDecoder('utf-8');
+      let done = 0;
+      await mapLimit(list, 6, async (f, i) => {
+        let text = blobCache.get(f.sha);
+        if (text === undefined) {
+          const res = await githubRequest(base + '/git/blobs/' + f.sha, c, 'application/vnd.github.raw+json', fetchImpl);
+          text = decoder.decode(await res.arrayBuffer());
+          blobCache.set(f.sha, text);
+        }
+        files[i] = { path: f.path, text };
+        if (++done % 12 === 0 && onProgress) onProgress(done, list.length);
+      });
+      return {
+        key: 'github:' + c.owner + '/' + c.repo + '@' + c.ref,
+        layoutFrom: c.ref === GITHUB_DEFAULTS.ref ? null : 'github:' + c.owner + '/' + c.repo + '@' + GITHUB_DEFAULTS.ref,
+        rootName: c.repo + '@' + c.ref,
+        files, dirs, commit, ref: c.ref,
+        truncated: !!tree.truncated || wanted.length > MAX_FILES
+      };
+    }
+  };
+
+  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, sources: { native, picker, input, github } };
 });
