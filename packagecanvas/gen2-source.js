@@ -536,7 +536,22 @@
       }
     }
     if (previous.view) fresh.view = { ...previous.view };
-    if (previous.graphLayouts) fresh.graphLayouts = previous.graphLayouts;
+    if (previous.graphLayouts) {
+      // A saved graph layout is reused only when it has a position for every
+      // entity of the fresh project; otherwise the graph would be drawn with
+      // missing positions, so that level is laid out again.
+      const gl = previous.graphLayouts;
+      const covers = (layout, ids) => {
+        if (!Array.isArray(layout)) return false;
+        const have = new Set(layout.map(e => Array.isArray(e) ? e[0] : null));
+        return ids.every(id => have.has(id));
+      };
+      fresh.graphLayouts = {
+        md: covers(gl.md, fresh.nodes.map(n => n.id)) ? gl.md : null,
+        group: covers(gl.group, fresh.groups.map(g => g.id)) ? gl.group : null,
+        assistant: fresh.assistant && covers(gl.assistant, [fresh.assistant.id]) ? gl.assistant : null
+      };
+    }
     if (previous.settings) fresh.settings = previous.settings;
     return fresh;
   }
@@ -689,6 +704,28 @@
     throw new Error('GitHub 讀取失敗 HTTP ' + res.status);
   }
 
+  async function walkTree(base, sha, cfg, fetchImpl) {
+    const out = [], queue = [{ sha, prefix: '' }];
+    while (queue.length) {
+      const { sha: treeSha, prefix } = queue.shift();
+      const t = await (await githubRequest(base + '/git/trees/' + treeSha, cfg, null, fetchImpl)).json();
+      if (t.truncated) throw new Error('GitHub 樹狀結構過大，無法完整讀取');
+      for (const e of t.tree || []) {
+        const path = prefix + e.path;
+        const seg = e.path;
+        if (e.type === 'tree') {
+          if (seg.startsWith('.')) continue;
+          const inside = !cfg.root || path === cfg.root || path.startsWith(cfg.root + '/') || cfg.root.startsWith(path + '/');
+          if (!inside) continue;
+          out.push({ path, type: 'tree', sha: e.sha });
+          if (out.length > MAX_FILES * 4) throw new Error('GitHub 樹狀結構過大，無法完整讀取');
+          queue.push({ sha: e.sha, prefix: path + '/' });
+        } else out.push({ path, type: e.type, sha: e.sha, size: e.size });
+      }
+    }
+    return out;
+  }
+
   const encodeRef = ref => ref.split('/').map(encodeURIComponent).join('/');
 
   async function mapLimit(items, limit, fn) {
@@ -708,9 +745,15 @@
     key: cfg => { const c = githubConfig(cfg); return 'github:' + c.owner + '/' + c.repo + '@' + c.ref; },
     async listPulls(cfg, fetchImpl) {
       const c = githubConfig(cfg);
-      const res = await githubRequest('/repos/' + c.owner + '/' + c.repo + '/pulls?state=open&per_page=30', c, null, fetchImpl);
-      const list = await res.json();
-      return (Array.isArray(list) ? list : [])
+      const list = [];
+      for (let page = 1; page <= 10; page++) {
+        const res = await githubRequest('/repos/' + c.owner + '/' + c.repo + '/pulls?state=open&per_page=100&page=' + page, c, null, fetchImpl);
+        const batch = await res.json();
+        if (!Array.isArray(batch)) break;
+        list.push(...batch);
+        if (batch.length < 100) break;
+      }
+      return list
         .filter(p => p.head && p.head.repo && p.head.repo.full_name === c.owner + '/' + c.repo)
         .map(p => ({ number: p.number, title: p.title, ref: p.head.ref, draft: !!p.draft, updatedAt: p.updated_at }));
     },
@@ -719,7 +762,9 @@
       const base = '/repos/' + c.owner + '/' + c.repo;
       const commit = (await (await githubRequest(base + '/commits/' + encodeRef(c.ref), c, 'application/vnd.github.sha', fetchImpl)).text()).trim();
       if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error('無法取得 ' + c.ref + ' 的 commit');
-      const tree = await (await githubRequest(base + '/git/trees/' + commit + '?recursive=1', c, null, fetchImpl)).json();
+      let tree = await (await githubRequest(base + '/git/trees/' + commit + '?recursive=1', c, null, fetchImpl)).json();
+      // GitHub truncates very large recursive trees; walk them level by level instead.
+      if (tree.truncated) tree = { tree: await walkTree(base, commit, c, fetchImpl), truncated: false };
       const prefix = c.root ? c.root + '/' : '';
       const dirs = [], wanted = [];
       for (const e of tree.tree || []) {

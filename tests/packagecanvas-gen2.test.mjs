@@ -122,12 +122,15 @@ test('PackageCanvas page loads the GEN2 folder source and keeps existing entry p
 });
 
 // Fake GitHub REST API serving the synthetic folder above under kb/ on two branches.
-function fakeGitHub({ token = 'tok' } = {}) {
+function fakeGitHub({ token = 'tok', truncate = false, pullCount = 0 } = {}) {
   const enc = new TextEncoder();
   const commits = { main: 'a'.repeat(40), 'gen2/candidate': 'b'.repeat(40) };
   const blobs = new Map();
   const tree = [{ path: 'README.md', type: 'blob', sha: 'r0', size: 10 }, { path: 'kb', type: 'tree', sha: 't0' }, { path: 'kb/.obsidian', type: 'tree', sha: 't1' }, { path: 'kb/.obsidian/x.md', type: 'blob', sha: 'o1', size: 3 }];
-  for (const d of dirs) tree.push({ path: 'kb/' + d, type: 'tree', sha: 'd' + d.length });
+  // Like real GitHub: every ancestor directory of a file is a tree entry.
+  const allDirs = new Set(dirs);
+  for (const f of files) { const parts = f.path.split('/'); for (let i = 1; i < parts.length; i++) allDirs.add(parts.slice(0, i).join('/')); }
+  [...allDirs].forEach((d, i) => tree.push({ path: 'kb/' + d, type: 'tree', sha: 'd' + i }));
   files.forEach((f, i) => { const sha = 'f' + i; blobs.set(sha, enc.encode(f.text)); tree.push({ path: 'kb/' + f.path, type: 'blob', sha, size: blobs.get(sha).length }); });
   const calls = [];
   const fetchImpl = async (url, init) => {
@@ -144,11 +147,26 @@ function fakeGitHub({ token = 'tok' } = {}) {
       assert.equal(init.headers.Accept, 'application/vnd.github.sha');
       return sha ? { ok: true, status: 200, text: async () => sha } : json(404, {});
     }
-    if ((r = m[1].match(/^git\/trees\/([0-9a-f]{40})$/))) return json(200, { sha: r[1], tree, truncated: false });
+    if ((r = m[1].match(/^git\/trees\/([0-9a-f]{40})$/))) {
+      if (u.searchParams.get('recursive') && !truncate) return json(200, { sha: r[1], tree, truncated: false });
+      if (u.searchParams.get('recursive')) return json(200, { sha: r[1], tree: tree.slice(0, 3), truncated: true });
+      return json(200, { sha: r[1], tree: tree.filter(e => !e.path.includes('/')), truncated: false });
+    }
+    if ((r = m[1].match(/^git\/trees\/(t0|t1|d.+)$/))) {
+      // non-recursive subtree listing: entries directly under the directory owning this sha
+      const dir = tree.find(e => e.type === 'tree' && e.sha === r[1] && (r[1] !== 't0' || e.path === 'kb'));
+      const dirPath = r[1] === 't0' ? 'kb' : dir.path;
+      return json(200, { sha: r[1], tree: tree.filter(e => e.path.startsWith(dirPath + '/') && !e.path.slice(dirPath.length + 1).includes('/')).map(e => ({ ...e, path: e.path.slice(dirPath.length + 1) })), truncated: false });
+    }
     if ((r = m[1].match(/^git\/blobs\/(.+)$/))) {
       const b = blobs.get(r[1]);
       assert.equal(init.headers.Accept, 'application/vnd.github.raw+json');
       return b ? { ok: true, status: 200, arrayBuffer: async () => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) } : json(404, {});
+    }
+    if (m[1] === 'pulls' && pullCount) {
+      const page = Number(u.searchParams.get('page')), per = Number(u.searchParams.get('per_page'));
+      const all = Array.from({ length: pullCount }, (_, i) => ({ number: i + 1, title: 'p' + i, head: { ref: 'b' + i, repo: { full_name: 'ken12121122-dotcom/gen2-knowledge' } } }));
+      return json(200, all.slice((page - 1) * per, page * per));
     }
     if (m[1] === 'pulls') return json(200, [
       { number: 7, title: '候選 MD', draft: false, updated_at: '2026-10-01T00:00:00Z', head: { ref: 'gen2/candidate', repo: { full_name: 'ken12121122-dotcom/gen2-knowledge' } } },
@@ -193,4 +211,38 @@ test('GitHub source reports token and access errors and rejects unsafe config', 
   await assert.rejects(Gen2.sources.github.collect({ token: 'tok', repo: 'other' }, null, fetchImpl), /找不到/);
   assert.throws(() => Gen2.sources.github.config({ owner: 'a/b' }), /格式/);
   assert.throws(() => Gen2.sources.github.config({ ref: '../main' }), /格式/);
+});
+
+test('GitHub source walks the tree level by level when the recursive tree is truncated', async () => {
+  const { fetchImpl } = fakeGitHub({ truncate: true });
+  const src = await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  const full = await Gen2.sources.github.collect({ token: 'tok' }, null, fakeGitHub().fetchImpl);
+  assert.equal(src.truncated, false);
+  assert.equal(src.files.length, files.length, 'every .md is still read');
+  assert.deepEqual([...src.dirs].sort(), [...full.dirs].sort());
+  assert.deepEqual(src.files.map(f => f.path).sort(), full.files.map(f => f.path).sort());
+});
+
+test('GitHub PR list follows every page', async () => {
+  const { fetchImpl, calls } = fakeGitHub({ pullCount: 230 });
+  const pulls = await Gen2.sources.github.listPulls({ token: 'tok' }, fetchImpl);
+  assert.equal(pulls.length, 230);
+  assert.equal(calls.filter(c => c.url.includes('/pulls?')).length, 3);
+});
+
+test('saved graph layouts are dropped when the fresh project has entities they do not cover', () => {
+  const { project: prev } = build();
+  prev.graphLayouts = {
+    md: prev.nodes.map(n => [n.id, { x: 1, y: 2 }]),
+    group: prev.groups.map(g => [g.id, { x: 3, y: 4 }]),
+    assistant: [[prev.assistant.id, { x: 5, y: 6, pinned: true }]]
+  };
+  const same = Gen2.mergeLayout(build().project, prev);
+  assert.equal(same.graphLayouts.md, prev.graphLayouts.md, 'unchanged project keeps the MD graph layout');
+  assert.equal(same.graphLayouts.group, prev.graphLayouts.group);
+  const extra = { path: '02_KNOWLEDGE_BASES/KB-NEW_新/KB_CONTRACT.md', text: '---\ndocument_type: kb_contract\nkb_id: KB-NEW\n---\n\n# 新' };
+  const grown = Gen2.mergeLayout(Gen2.buildProject({ rootName: '第二代知識庫', files: files.concat([extra]), dirs }, { now: '2026-09-30T00:00:00Z' }).project, prev);
+  assert.equal(grown.graphLayouts.md, null, 'a new node forces a fresh MD graph layout');
+  assert.equal(grown.graphLayouts.group, null, 'a new group forces a fresh Group graph layout');
+  assert.deepEqual(grown.graphLayouts.assistant, prev.graphLayouts.assistant);
 });

@@ -80,12 +80,15 @@ GitHub 私有 repo `gen2-knowledge` 是 GEN2 的正式版本，Drive 和手機�
 
 ## 驗證（20261001.1）
 
-- `node --test tests/*.test.mjs`：21/21 通過，新增 3 項 GitHub 來源測試，使用模擬的 GitHub API：
+- `node --test tests/*.test.mjs`：24/24 通過，新增 6 項測試，使用模擬的 GitHub API：
   - 讀到的節點和檢查結果與資料夾來源相同
   - 只連線 api.github.com，`.obsidian` 等點開頭資料夾會略過
   - PR 分支沿用 main 的排版；沒變動的 blob 不重新下載
   - fork PR 不列出
   - token 錯誤、無權限、不安全的 owner/ref 都會被擋下
+  - 遞迴樹被 GitHub 截斷時改成逐層讀取，結果與完整讀取相同
+  - PR 清單會讀完所有分頁
+  - 重新讀取或 PR 新增了節點／Group 時，舊的 MD 關聯圖／Group 架構圖排版作廢重排（修正前切換圖面會出現 `Cannot read properties of undefined (reading 'x')`）
 - Chromium 1366×860 與 390×844，api.github.com 以 Playwright 攔截模擬：
   - 沒有 token 時打開設定
   - 儲存後列出 PR #7
