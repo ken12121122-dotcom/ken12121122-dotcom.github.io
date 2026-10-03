@@ -293,3 +293,27 @@ test('architecture check reports runnable, invalid and missing gen2-run definiti
   assert.equal(bad?.severity, 'error');
   assert.match(bad.message, /SK-DEMO-404 不存在/);
 });
+
+test('gen2-run supports skill outcomes and a cancel terminal', () => {
+  const spec = {
+    version: 1,
+    steps: [
+      { id: 'S1', type: 'skill', skill: 'SK-A', title: '寫入', outcomes: [
+        { id: 'written', label: '已寫入', next: 'G1' },
+        { id: 'conflict', label: '衝突', next: 'G2' }
+      ] },
+      { id: 'G1', type: 'gate', title: '驗收', review: 'S1', options: [{ id: 'pass', label: '通過', next: 'end' }, { id: 'reject', label: '否決', next: 'cancel' }] },
+      { id: 'G2', type: 'gate', title: '處理衝突', options: [{ id: 'retry', label: '調整', next: 'S1', comment: 'required' }, { id: 'stop', label: '停止', next: 'cancel' }] }
+    ]
+  };
+  assert.deepEqual(Gen2.validateRunSpec(spec), []);
+  const withNext = structuredClone(spec);
+  withNext.steps[0].next = 'G1';
+  assert.ok(Gen2.validateRunSpec(withNext).some(e => /不要另設 next/.test(e)));
+  const onInput = structuredClone(spec);
+  onInput.steps[0].type = 'input';
+  assert.ok(Gen2.validateRunSpec(onInput).some(e => /只有 skill 可以有 outcomes/.test(e)));
+  const cancelOnly = { version: 1, steps: [{ id: 'A', type: 'input', title: 'a', next: 'cancel' }] };
+  assert.ok(Gen2.validateRunSpec(cancelOnly).some(e => /走不到 end/.test(e)), 'a flow must still be able to complete');
+  assert.ok(Gen2.validateRunSpec({ version: 1, steps: [{ id: 'cancel', type: 'input', title: 'x' }] }).some(e => /不能是 end 或 cancel/.test(e)));
+});

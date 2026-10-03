@@ -6,8 +6,9 @@ Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bri
 
 Workflow MD 可以加一個 ```` ```gen2-run ```` JSON 區塊，把步驟定義成狀態機：
 - `input`：OWNER 提供資料
-- `skill`：Agent 執行 Skill 並回報結果
+- `skill`：Agent 執行 Skill 並回報結果；可另設 `outcomes`，依回報結果走不同分支（例如「已寫入」與「發現衝突」）
 - `gate`：OWNER 從選項中選一個，每個選項有自己的 `next`
+- 結束有兩種：`end`（完成）與 `cancel`（停止，不算完成）
 
 `parseRunSpec`／`validateRunSpec` 會檢查以下項目：
 - id 格式

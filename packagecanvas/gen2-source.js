@@ -151,13 +151,16 @@
   // ---------- executable workflow spec (gen2-run) ----------
   // A Workflow MD may carry one ```gen2-run fenced JSON block that turns its
   // steps into a state machine: input (OWNER provides material), skill (an
-  // agent runs a Skill and posts the result) and gate (OWNER picks an option).
+  // agent runs a Skill and posts the result; optional outcomes branch on what
+  // the Skill reports) and gate (OWNER picks an option). Two terminals: end
+  // (completed) and cancel (stopped without completing).
   // GitHub runs, PackageCanvas and the Amin Pocket GBA app all read this one
   // definition, so it is kept strict and dependency free.
   const RUN_BLOCK_RE = /^```gen2-run[^\S\n]*\n([\s\S]*?)^```[^\S\n]*$/m;
   const RUN_STEP_TYPES = ['input', 'skill', 'gate'];
   const RUN_ID_RE = /^[A-Za-z][A-Za-z0-9_-]{0,31}$/;
   const RUN_OPTION_RE = /^[a-z][a-z0-9_-]{0,31}$/;
+  const RUN_TERMINALS = ['end', 'cancel'];
 
   function parseRunSpec(body) {
     const text = String(body || '');
@@ -186,7 +189,7 @@
     spec.steps.forEach((st, i) => {
       const at = '步驟 ' + (i + 1);
       if (!st || typeof st !== 'object') { errors.push(at + ' 不是物件'); return; }
-      if (!RUN_ID_RE.test(st.id || '') || lc(st.id) === 'end') errors.push(at + ' 的 id 格式不正確（英文字母開頭，最多 32 字，不能是 end）');
+      if (!RUN_ID_RE.test(st.id || '') || RUN_TERMINALS.includes(lc(st.id))) errors.push(at + ' 的 id 格式不正確（英文字母開頭，最多 32 字，不能是 end 或 cancel）');
       else if (ids.has(st.id)) errors.push('步驟 id 重複：' + st.id);
       else ids.add(st.id);
       if (!RUN_STEP_TYPES.includes(st.type)) errors.push((st.id || at) + ' 的 type 必須是 input、skill 或 gate');
@@ -195,41 +198,50 @@
         if (!/^SK-[A-Za-z0-9_-]+$/.test(st.skill || '')) errors.push((st.id || at) + ' 的 skill 必須是 SK-xxx');
         else if (context.skillIds && !context.skillIds.has(lc(st.skill))) errors.push((st.id || at) + ' 使用的 ' + st.skill + ' 不存在');
       }
+      const checkChoices = (list, key, word) => {
+        if (!Array.isArray(list) || list.length < 2 || list.length > 8) { errors.push((st.id || at) + ' 的 ' + key + ' 需要 2–8 個' + word); return; }
+        const seen = new Set();
+        list.forEach((o, j) => {
+          const oat = (st.id || at) + ' ' + word + ' ' + (j + 1);
+          if (!o || !RUN_OPTION_RE.test(o.id || '')) errors.push(oat + ' 的 id 格式不正確（小寫英文字母開頭）');
+          else if (seen.has(o.id)) errors.push(oat + ' 的 id 重複：' + o.id);
+          else seen.add(o.id);
+          if (!o || !str(o.label)) errors.push(oat + ' 缺 label');
+          if (o && o.comment !== undefined && !['required', 'optional'].includes(o.comment)) errors.push(oat + ' 的 comment 只能是 required 或 optional');
+          if (!o || !str(o.next)) errors.push(oat + ' 缺 next');
+        });
+      };
       if (st.type === 'gate') {
-        if (!Array.isArray(st.options) || st.options.length < 2 || st.options.length > 8) errors.push((st.id || at) + ' 的 options 需要 2–8 個選項');
-        else {
-          const opts = new Set();
-          st.options.forEach((o, j) => {
-            const oat = (st.id || at) + ' 選項 ' + (j + 1);
-            if (!o || !RUN_OPTION_RE.test(o.id || '')) errors.push(oat + ' 的 id 格式不正確（小寫英文字母開頭）');
-            else if (opts.has(o.id)) errors.push(oat + ' 的 id 重複：' + o.id);
-            else opts.add(o.id);
-            if (!o || !str(o.label)) errors.push(oat + ' 缺 label');
-            if (o && o.comment !== undefined && !['required', 'optional'].includes(o.comment)) errors.push(oat + ' 的 comment 只能是 required 或 optional');
-            if (!o || !str(o.next)) errors.push(oat + ' 缺 next');
-          });
-        }
+        checkChoices(st.options, 'options', '選項');
         if (st.review !== undefined && !str(st.review)) errors.push((st.id || at) + ' 的 review 必須是步驟 id');
       } else if (st.options !== undefined) errors.push((st.id || at) + ' 只有 gate 可以有 options');
+      if (st.outcomes !== undefined) {
+        if (st.type !== 'skill') errors.push((st.id || at) + ' 只有 skill 可以有 outcomes');
+        else checkChoices(st.outcomes, 'outcomes', '結果');
+      }
     });
     if (errors.length) return errors;
-    const known = id => id === 'end' || ids.has(id);
+    const known = id => RUN_TERMINALS.includes(id) || ids.has(id);
+    const choicesOf = st => st.type === 'gate' ? st.options : st.outcomes;
     spec.steps.forEach((st, i) => {
-      if (st.type === 'gate') {
-        st.options.forEach(o => { if (!known(o.next)) errors.push(st.id + ' 選項 ' + o.id + ' 的 next 指向不存在的步驟：' + o.next); });
-        if (st.review !== undefined && !ids.has(st.review)) errors.push(st.id + ' 的 review 指向不存在的步驟：' + st.review);
-        if (st.next !== undefined) errors.push(st.id + ' 是 gate，請在每個選項設定 next');
+      const choices = choicesOf(st);
+      if (choices) {
+        const word = st.type === 'gate' ? '選項' : '結果';
+        choices.forEach(o => { if (!known(o.next)) errors.push(st.id + ' ' + word + ' ' + o.id + ' 的 next 指向不存在的步驟：' + o.next); });
+        if (st.next !== undefined) errors.push(st.id + ' 有' + word + '，請在每個' + word + '設定 next，不要另設 next');
       } else if (!known(runNext(spec, i))) errors.push(st.id + ' 的 next 指向不存在的步驟：' + st.next);
+      if (st.type === 'gate' && st.review !== undefined && !ids.has(st.review)) errors.push(st.id + ' 的 review 指向不存在的步驟：' + st.review);
     });
     if (spec.start !== undefined && !ids.has(spec.start)) errors.push('start 指向不存在的步驟：' + spec.start);
     if (errors.length) return errors;
     // every step reachable from start, and "end" reachable
-    const edges = new Map(spec.steps.map((st, i) => [st.id, st.type === 'gate' ? st.options.map(o => o.next) : [runNext(spec, i)]]));
+    const edges = new Map(spec.steps.map((st, i) => [st.id, choicesOf(st) ? choicesOf(st).map(o => o.next) : [runNext(spec, i)]]));
     const seen = new Set(), queue = [spec.start || spec.steps[0].id];
     let endReached = false;
     while (queue.length) {
       const id = queue.shift();
       if (id === 'end') { endReached = true; continue; }
+      if (id === 'cancel') continue;
       if (seen.has(id)) continue;
       seen.add(id);
       queue.push(...edges.get(id));
