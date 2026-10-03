@@ -65,6 +65,7 @@ public final class Gen2RunsActivity extends Activity {
     private ProgressBar progress;
     private Button refreshButton;
     private int highlightIssue;
+    private boolean linked;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +76,24 @@ public final class Gen2RunsActivity extends Activity {
         configureWindow();
         buildUi();
         Gen2NotificationCenter.ensureChannel(this);
-        boolean loggedIn = session.hasSession();
-        loginCard.setVisibility(loggedIn ? View.GONE : View.VISIBLE);
-        refreshButton.setEnabled(loggedIn);
-        if (loggedIn) {
+        applySession(true);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Coming back from AMIN Brain after linking GitHub: start without reopening this screen.
+        if (!linked && session.hasSession()) applySession(true);
+    }
+
+    private void applySession(boolean load) {
+        linked = session.hasSession();
+        loginCard.setVisibility(linked ? View.GONE : View.VISIBLE);
+        refreshButton.setEnabled(linked);
+        if (linked) {
             requestNotificationPermission();
             BrainFeedJobService.schedule(this);
-            refresh();
+            if (load) refresh();
         } else {
             statusView.setText("尚未連結 GitHub。 ");
         }
