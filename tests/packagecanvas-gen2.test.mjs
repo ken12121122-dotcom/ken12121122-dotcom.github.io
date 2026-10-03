@@ -115,8 +115,205 @@ test('re-reading keeps manual node positions', () => {
 
 test('PackageCanvas page loads the GEN2 folder source and keeps existing entry points', async () => {
   const html = await readFile(new URL('../packagecanvas/index.html', import.meta.url), 'utf8');
-  for (const needle of ['<script src="gen2-source.js?v=', 'id="gen2FolderBtn"', 'id="gen2FolderModal"', 'id="gen2ProjectionBtn"', "gen2_workflow:'", 'GEN2.buildProject(']) {
+  for (const needle of ['<script src="gen2-source.js?v=', 'id="gen2GhReadBtn"', 'GEN2.sources.github.collect(', 'id="gen2FolderBtn"', 'id="gen2FolderModal"', 'id="gen2ProjectionBtn"', "gen2_workflow:'", 'GEN2.buildProject(']) {
     assert.ok(html.includes(needle), 'index.html should contain ' + needle);
   }
   assert.ok(html.indexOf('gen2-source.js') < html.indexOf('const RAW_DATA='), 'parser loads before the app script');
+});
+
+// Fake GitHub REST API serving the synthetic folder above under kb/ on two branches.
+function fakeGitHub({ token = 'tok', truncate = false, pullCount = 0 } = {}) {
+  const enc = new TextEncoder();
+  const commits = { main: 'a'.repeat(40), 'gen2/candidate': 'b'.repeat(40) };
+  const blobs = new Map();
+  const tree = [{ path: 'README.md', type: 'blob', sha: 'r0', size: 10 }, { path: 'kb', type: 'tree', sha: 't0' }, { path: 'kb/.obsidian', type: 'tree', sha: 't1' }, { path: 'kb/.obsidian/x.md', type: 'blob', sha: 'o1', size: 3 }];
+  // Like real GitHub: every ancestor directory of a file is a tree entry.
+  const allDirs = new Set(dirs);
+  for (const f of files) { const parts = f.path.split('/'); for (let i = 1; i < parts.length; i++) allDirs.add(parts.slice(0, i).join('/')); }
+  [...allDirs].forEach((d, i) => tree.push({ path: 'kb/' + d, type: 'tree', sha: 'd' + i }));
+  files.forEach((f, i) => { const sha = 'f' + i; blobs.set(sha, enc.encode(f.text)); tree.push({ path: 'kb/' + f.path, type: 'blob', sha, size: blobs.get(sha).length }); });
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    const auth = init.headers.Authorization === 'Bearer ' + token;
+    const json = (status, body) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
+    if (!auth) return json(401, {});
+    const u = new URL(url);
+    const m = u.pathname.match(/^\/repos\/ken12121122-dotcom\/gen2-knowledge\/(.*)$/);
+    if (!m) return json(404, {});
+    let r;
+    if ((r = m[1].match(/^commits\/(.+)$/))) {
+      const sha = commits[decodeURIComponent(r[1])];
+      assert.equal(init.headers.Accept, 'application/vnd.github.sha');
+      return sha ? { ok: true, status: 200, text: async () => sha } : json(404, {});
+    }
+    if ((r = m[1].match(/^git\/trees\/([0-9a-f]{40})$/))) {
+      if (u.searchParams.get('recursive') && !truncate) return json(200, { sha: r[1], tree, truncated: false });
+      if (u.searchParams.get('recursive')) return json(200, { sha: r[1], tree: tree.slice(0, 3), truncated: true });
+      return json(200, { sha: r[1], tree: tree.filter(e => !e.path.includes('/')), truncated: false });
+    }
+    if ((r = m[1].match(/^git\/trees\/(t0|t1|d.+)$/))) {
+      // non-recursive subtree listing: entries directly under the directory owning this sha
+      const dir = tree.find(e => e.type === 'tree' && e.sha === r[1] && (r[1] !== 't0' || e.path === 'kb'));
+      const dirPath = r[1] === 't0' ? 'kb' : dir.path;
+      return json(200, { sha: r[1], tree: tree.filter(e => e.path.startsWith(dirPath + '/') && !e.path.slice(dirPath.length + 1).includes('/')).map(e => ({ ...e, path: e.path.slice(dirPath.length + 1) })), truncated: false });
+    }
+    if ((r = m[1].match(/^git\/blobs\/(.+)$/))) {
+      const b = blobs.get(r[1]);
+      assert.equal(init.headers.Accept, 'application/vnd.github.raw+json');
+      return b ? { ok: true, status: 200, arrayBuffer: async () => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) } : json(404, {});
+    }
+    if (m[1] === 'pulls' && pullCount) {
+      const page = Number(u.searchParams.get('page')), per = Number(u.searchParams.get('per_page'));
+      const all = Array.from({ length: pullCount }, (_, i) => ({ number: i + 1, title: 'p' + i, head: { ref: 'b' + i, repo: { full_name: 'ken12121122-dotcom/gen2-knowledge' } } }));
+      return json(200, all.slice((page - 1) * per, page * per));
+    }
+    if (m[1] === 'pulls') return json(200, [
+      { number: 7, title: '候選 MD', draft: false, updated_at: '2026-10-01T00:00:00Z', head: { ref: 'gen2/candidate', repo: { full_name: 'ken12121122-dotcom/gen2-knowledge' } } },
+      { number: 8, title: 'fork', head: { ref: 'x', repo: { full_name: 'someone/fork' } } }
+    ]);
+    return json(404, {});
+  };
+  return { fetchImpl, calls };
+}
+
+test('GitHub source reads kb/ at a pinned commit and builds the same project as the folder', async () => {
+  const { fetchImpl, calls } = fakeGitHub();
+  const src = await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  assert.equal(src.key, 'github:ken12121122-dotcom/gen2-knowledge@main');
+  assert.equal(src.commit, 'a'.repeat(40));
+  assert.equal(src.layoutFrom, null);
+  assert.equal(src.files.length, files.length, 'every .md under kb/ is read, dot-folders skipped');
+  assert.ok(!src.dirs.some(d => d.startsWith('.')), 'dot dirs skipped');
+  assert.ok(calls.every(c => c.url.startsWith('https://api.github.com/')), 'only api.github.com is contacted');
+  const viaGithub = Gen2.buildProject(src, { now: '2026-09-30T00:00:00Z' });
+  const viaFolder = Gen2.buildProject({ rootName: src.rootName, files, dirs }, { now: '2026-09-30T00:00:00Z' });
+  assert.deepEqual(viaGithub.report.counts, viaFolder.report.counts);
+  assert.deepEqual(viaGithub.project.nodes.map(n => n.id).sort(), viaFolder.project.nodes.map(n => n.id).sort());
+});
+
+test('GitHub source reads a PR branch with layout seeded from main and caches blobs', async () => {
+  const { fetchImpl, calls } = fakeGitHub();
+  await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  const before = calls.length;
+  const src = await Gen2.sources.github.collect({ token: 'tok', ref: 'gen2/candidate' }, null, fetchImpl);
+  assert.equal(src.key, 'github:ken12121122-dotcom/gen2-knowledge@gen2/candidate');
+  assert.equal(src.layoutFrom, 'github:ken12121122-dotcom/gen2-knowledge@main');
+  assert.ok(calls.slice(before).some(c => c.url.endsWith('/commits/gen2/candidate')), 'branch path is not percent-encoded across slashes');
+  assert.equal(calls.length - before, 2, 'unchanged blobs come from cache');
+  const pulls = await Gen2.sources.github.listPulls({ token: 'tok' }, fetchImpl);
+  assert.deepEqual(pulls.map(p => [p.number, p.ref]), [[7, 'gen2/candidate']], 'fork PRs are ignored');
+});
+
+test('GitHub source reports token and access errors and rejects unsafe config', async () => {
+  const { fetchImpl } = fakeGitHub();
+  await assert.rejects(Gen2.sources.github.collect({ token: 'bad' }, null, fetchImpl), /token 無效/);
+  await assert.rejects(Gen2.sources.github.collect({ token: 'tok', repo: 'other' }, null, fetchImpl), /找不到/);
+  assert.throws(() => Gen2.sources.github.config({ owner: 'a/b' }), /格式/);
+  assert.throws(() => Gen2.sources.github.config({ ref: '../main' }), /格式/);
+});
+
+test('GitHub source walks the tree level by level when the recursive tree is truncated', async () => {
+  const { fetchImpl } = fakeGitHub({ truncate: true });
+  const src = await Gen2.sources.github.collect({ token: 'tok' }, null, fetchImpl);
+  const full = await Gen2.sources.github.collect({ token: 'tok' }, null, fakeGitHub().fetchImpl);
+  assert.equal(src.truncated, false);
+  assert.equal(src.files.length, files.length, 'every .md is still read');
+  assert.deepEqual([...src.dirs].sort(), [...full.dirs].sort());
+  assert.deepEqual(src.files.map(f => f.path).sort(), full.files.map(f => f.path).sort());
+});
+
+test('GitHub PR list follows every page', async () => {
+  const { fetchImpl, calls } = fakeGitHub({ pullCount: 230 });
+  const pulls = await Gen2.sources.github.listPulls({ token: 'tok' }, fetchImpl);
+  assert.equal(pulls.length, 230);
+  assert.equal(calls.filter(c => c.url.includes('/pulls?')).length, 3);
+});
+
+test('saved graph layouts are dropped when the fresh project has entities they do not cover', () => {
+  const { project: prev } = build();
+  prev.graphLayouts = {
+    md: prev.nodes.map(n => [n.id, { x: 1, y: 2 }]),
+    group: prev.groups.map(g => [g.id, { x: 3, y: 4 }]),
+    assistant: [[prev.assistant.id, { x: 5, y: 6, pinned: true }]]
+  };
+  const same = Gen2.mergeLayout(build().project, prev);
+  assert.equal(same.graphLayouts.md, prev.graphLayouts.md, 'unchanged project keeps the MD graph layout');
+  assert.equal(same.graphLayouts.group, prev.graphLayouts.group);
+  const extra = { path: '02_KNOWLEDGE_BASES/KB-NEW_新/KB_CONTRACT.md', text: '---\ndocument_type: kb_contract\nkb_id: KB-NEW\n---\n\n# 新' };
+  const grown = Gen2.mergeLayout(Gen2.buildProject({ rootName: '第二代知識庫', files: files.concat([extra]), dirs }, { now: '2026-09-30T00:00:00Z' }).project, prev);
+  assert.equal(grown.graphLayouts.md, null, 'a new node forces a fresh MD graph layout');
+  assert.equal(grown.graphLayouts.group, null, 'a new group forces a fresh Group graph layout');
+  assert.deepEqual(grown.graphLayouts.assistant, prev.graphLayouts.assistant);
+});
+
+// ---------- gen2-run executable workflow spec ----------
+const RUN_SPEC = {
+  version: 1,
+  steps: [
+    { id: 'S1', type: 'input', title: '提供來源', prompt: '貼上工作紀錄' },
+    { id: 'S2', type: 'skill', skill: 'SK-DEMO-001', title: '擷取' },
+    { id: 'G1', type: 'gate', title: '審核', review: 'S2', options: [
+      { id: 'approve', label: '核准', next: 'end' },
+      { id: 'revise', label: '退回', next: 'S2', comment: 'required' }
+    ] }
+  ]
+};
+const runBlock = spec => '\n## 執行定義\n\n```gen2-run\n' + JSON.stringify(spec, null, 2) + '\n```\n';
+
+test('gen2-run spec parses and validates the step graph', () => {
+  const ok = Gen2.parseRunSpec('# WF\n' + runBlock(RUN_SPEC));
+  assert.equal(ok.found, true);
+  assert.deepEqual(ok.errors, []);
+  assert.equal(Gen2.parseRunSpec('# 沒有定義').found, false);
+  assert.match(Gen2.parseRunSpec('```gen2-run\n{bad\n```').errors[0], /JSON/);
+  const bad = structuredClone(RUN_SPEC);
+  bad.steps[2].options[1].next = 'S9';
+  bad.steps.push({ id: 'S2', type: 'skill', skill: 'X', title: '' });
+  const errs = Gen2.validateRunSpec(bad);
+  assert.ok(errs.some(e => /重複/.test(e)) && errs.some(e => /SK-xxx/.test(e)) && errs.some(e => /缺 title/.test(e)), errs.join('\n'));
+  const loop = { version: 1, steps: [{ id: 'A', type: 'skill', skill: 'SK-A', title: 'a', next: 'B' }, { id: 'B', type: 'skill', skill: 'SK-B', title: 'b', next: 'A' }] };
+  assert.ok(Gen2.validateRunSpec(loop).some(e => /走不到 end/.test(e)));
+  const orphan = { version: 1, steps: [{ id: 'A', type: 'input', title: 'a', next: 'end' }, { id: 'B', type: 'input', title: 'b' }] };
+  assert.ok(Gen2.validateRunSpec(orphan).some(e => /B 從起點走不到/.test(e)));
+  assert.ok(Gen2.validateRunSpec(RUN_SPEC, { skillIds: new Set(['sk-other']) }).some(e => /SK-DEMO-001 不存在/.test(e)));
+});
+
+test('architecture check reports runnable, invalid and missing gen2-run definitions', () => {
+  const withRun = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(RUN_SPEC) } : f);
+  const r1 = Gen2.buildProject({ rootName: 'x', files: withRun, dirs }).report;
+  assert.ok(!r1.issues.some(i => i.code === 'run_spec_invalid'));
+  assert.ok(r1.issues.some(i => i.code === 'workflow_not_runnable' && /WF-DEMO-002/.test(i.message)));
+  assert.ok(!r1.issues.some(i => i.code === 'workflow_not_runnable' && /WF-DEMO-001/.test(i.message)));
+  const broken = structuredClone(RUN_SPEC);
+  broken.steps[1].skill = 'SK-DEMO-404';
+  const withBad = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(broken) } : f);
+  const r2 = Gen2.buildProject({ rootName: 'x', files: withBad, dirs }).report;
+  const bad = r2.issues.find(i => i.code === 'run_spec_invalid');
+  assert.equal(bad?.severity, 'error');
+  assert.match(bad.message, /SK-DEMO-404 不存在/);
+});
+
+test('gen2-run supports skill outcomes and a cancel terminal', () => {
+  const spec = {
+    version: 1,
+    steps: [
+      { id: 'S1', type: 'skill', skill: 'SK-A', title: '寫入', outcomes: [
+        { id: 'written', label: '已寫入', next: 'G1' },
+        { id: 'conflict', label: '衝突', next: 'G2' }
+      ] },
+      { id: 'G1', type: 'gate', title: '驗收', review: 'S1', options: [{ id: 'pass', label: '通過', next: 'end' }, { id: 'reject', label: '否決', next: 'cancel' }] },
+      { id: 'G2', type: 'gate', title: '處理衝突', options: [{ id: 'retry', label: '調整', next: 'S1', comment: 'required' }, { id: 'stop', label: '停止', next: 'cancel' }] }
+    ]
+  };
+  assert.deepEqual(Gen2.validateRunSpec(spec), []);
+  const withNext = structuredClone(spec);
+  withNext.steps[0].next = 'G1';
+  assert.ok(Gen2.validateRunSpec(withNext).some(e => /不要另設 next/.test(e)));
+  const onInput = structuredClone(spec);
+  onInput.steps[0].type = 'input';
+  assert.ok(Gen2.validateRunSpec(onInput).some(e => /只有 skill 可以有 outcomes/.test(e)));
+  const cancelOnly = { version: 1, steps: [{ id: 'A', type: 'input', title: 'a', next: 'cancel' }] };
+  assert.ok(Gen2.validateRunSpec(cancelOnly).some(e => /走不到 end/.test(e)), 'a flow must still be able to complete');
+  assert.ok(Gen2.validateRunSpec({ version: 1, steps: [{ id: 'cancel', type: 'input', title: 'x' }] }).some(e => /不能是 end 或 cancel/.test(e)));
 });
