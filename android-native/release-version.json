@@ -1,19 +1,20 @@
 {
-  "versionCode": 196,
-  "versionName": "0.11.22-rc11",
-  "channel": "release",
-  "bridge": 100,
-  "releaseSequence": 34,
+  "versionCode": 199,
+  "versionName": "0.11.22-rc14",
+  "channel": "candidate",
+  "bridge": 103,
+  "releaseSequence": 37,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "AMIN WIKI 的 Graph 存檔槽升級為正式存檔管理入口，不再只能切換既有 FOX 知識庫。",
-    "Wiki 內可直接「開啟知識庫資料夾」：呼叫 Android 系統資料夾選擇器、保存唯讀 SAF 權限、建立 KnowledgeProfile、切換並立即同步。",
-    "Wiki 內可直接建立空白知識庫存檔，之後再用「連接／更換目前存檔資料夾」綁定來源。",
-    "Wiki 與 FOX 共用同一份 KnowledgeProfile 清單；任一邊新增的知識庫都會同步出現在另一邊，不建立第二套存檔資料。",
-    "AMIN_SYSTEM 仍保留 GitHub / Registry / Runtime / Work Graph 與既有自動更新流程。",
-    "知識庫資料夾仍為唯讀來源；本版沒有新增 Markdown 寫回或自動改檔能力。"
+    "候選版（實機驗收用，尚未正式發布）：GEN2 語音核准。狐狸會念出等你處理的流程、摘要待審內容並給建議，你可以用聊天的方式追問。",
+    "你說出決定後，狐狸會把要送出的指令念一遍；只有你說「確定」或按「確定送出」才會送出，說「取消」「等一下」就不送。",
+    "三個入口：點 GEN2 通知直接進語音、對狐狸說「有什麼要我處理的」、在「GEN2 待核准」頁按「🎙 用說的」。通知上也有「用按的」可開核准頁。",
+    "新增連結 amin-gen2://run/編號，可由 ntfy 推播直接打開那一筆流程。",
+    "PackageCanvas 網頁可請 App 打開某一筆流程的核准頁或語音畫面；網頁本身拿不到 GitHub 權杖，也不能送出任何指令。",
+    "摘要與建議使用語音球已設定的 AI 與你的 API Key，待審內容會送到該服務；沒設定時只聽選項名稱。",
+    "保留 Bridge 102 的 GEN2 待核准畫面、通知與 Bridge 101 的 PackageCanvas 功能；既有卡片與功能不變。"
   ]
 }

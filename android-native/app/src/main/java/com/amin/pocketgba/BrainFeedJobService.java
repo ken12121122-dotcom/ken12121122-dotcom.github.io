@@ -35,9 +35,13 @@ public final class BrainFeedJobService extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         executor.execute(() -> {
-            try { new BrainFeedRepository(this).refresh(true); }
-            catch (Exception ignored) { }
-            finally { jobFinished(params, false); }
+            try {
+                try { new BrainFeedRepository(this).refresh(true); }
+                catch (Exception ignored) { }
+                // GEN2 runs share the OWNER GitHub login; a failure here never blocks Brain.
+                try { new Gen2RunRepository(this).refresh(true); }
+                catch (Exception ignored) { }
+            } finally { jobFinished(params, false); }
         });
         return true;
     }

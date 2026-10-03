@@ -92,6 +92,22 @@ public final class ControlCenterActivityTest {
         );
     }
 
+    @Test
+    public void packageCanvasCardRoutesToPackageCanvas() {
+        assertCardRoutesTo(
+                "開啟 PackageCanvas 知識架構畫布",
+                PackageCanvasActivity.class.getName()
+        );
+    }
+
+    @Test
+    public void gen2RunsCardRoutesToGen2Runs() {
+        assertCardRoutesTo(
+                "開啟 GEN2 待核准流程",
+                Gen2RunsActivity.class.getName()
+        );
+    }
+
     private void assertCardRoutesTo(String contentDescription, String componentName) {
         intending(hasComponent(componentName))
                 .respondWith(new ActivityResult(Activity.RESULT_OK, null));

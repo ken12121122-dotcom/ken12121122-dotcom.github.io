@@ -81,7 +81,8 @@ public final class WikiGraphActivityTest {
                             + "return JSON.stringify({layout:window.AminGraphSmoke?.state().layout,"
                             + "selector:!!s,system:[...s.options].some(o=>o.value==='AMIN_SYSTEM'),"
                             + "fox:[...s.options].some(o=>o.value==='" + profile.getId() + "'),"
-                            + "active:s.value,type:g.graphProfile?.type,id:g.graphProfile?.id});})()");
+                            + "active:s.value,type:g.graphProfile?.type,id:g.graphProfile?.id});})()",
+                    "\\\"system\\\":true");
             JSONObject initialJson = decodeJavascriptJsonString(initial);
             assertTrue(initial, initialJson.optBoolean("selector"));
             assertTrue(initial, initialJson.optBoolean("system"));
@@ -239,6 +240,13 @@ public final class WikiGraphActivityTest {
 
     private static String evaluateWhenReady(ActivityScenario<WikiGraphActivity> scenario,
                                             WebView webView, String script) throws Exception {
+        return evaluateWhenReady(scenario, webView, script, "single-force-canvas");
+    }
+
+    // The page reports its constant layout before its first setTimeout fills the
+    // save-slot selector, so callers that read the selector wait for their own marker.
+    private static String evaluateWhenReady(ActivityScenario<WikiGraphActivity> scenario,
+                                            WebView webView, String script, String readyMarker) throws Exception {
         String latest = "";
         for (int attempt = 0; attempt < 30; attempt++) {
             CountDownLatch latch = new CountDownLatch(1);
@@ -252,7 +260,7 @@ public final class WikiGraphActivityTest {
                 continue;
             }
             latest = result.get();
-            if (latest.contains("single-force-canvas")) return latest;
+            if (latest.contains("single-force-canvas") && latest.contains(readyMarker)) return latest;
             Thread.sleep(250L);
         }
         return latest;
