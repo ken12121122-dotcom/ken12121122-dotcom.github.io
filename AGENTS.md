@@ -176,7 +176,7 @@ PackageCanvas 是 OWNER 的 GEN2 知識架構視覺化工作台，與 GBA 遊戲
 - 正式網址：`https://ken12121122-dotcom.github.io/packagecanvas/`
 - 網頁層修改推到 main 的 GitHub Pages 即生效，不需要提升 `runtime-manifest.json` 或 Bridge 版本；Amin Pocket GBA 的 WebView 只攔截 ROM 與模擬器引擎路徑，`/packagecanvas/` 直接讀 Pages。
 - 手機入口規劃：Amin Pocket GBA 白色控制中心的「PackageCanvas」卡片，開啟獨立 Activity 載入上述網址，不併入 AMIN WIKI、不共用 FOX KnowledgeProfile。
-- 知識庫來源（web 層）：GitHub 私有 repo `ken12121122-dotcom/gen2-knowledge` 的 `kb/` 是正本（OWNER 2026-10-01 決定：GPT／Claude 的工作直接送 GitHub PR，不再寫 Drive）；畫布以唯讀 token 經 `api.github.com` 讀取 main 或待審 PR 分支，`?gen2ref=<分支>` 可直接開啟。手機資料夾保留作離線鏡像。
+- 知識庫來源（web 層）：GitHub 私有 repo `ken12121122-dotcom/gen2-knowledge` 的 `kb/` 是正本（OWNER 2026-10-01 決定：GPT／Claude 的工作直接送 GitHub PR，不再寫 Drive）；畫布以唯讀 token 經 `api.github.com` 讀取 main 或待審 PR 分支，`?gen2ref=<分支>` 可直接開啟；GitHub 畫布讀取 gen2-run Issue（有進行中執行每 10 秒、否則每 60 秒），以步驟卡片發光、連線亮點與 Agent 狀態面板顯示流程執行狀態（唯讀）。手機資料夾保留作離線鏡像。
 - 原生能力只有唯讀 bridge `AminPackageCanvasFiles`（選資料夾、列出已授權資料夾、列出 `.md`、讀取文字、移除授權），只對 `ken12121122-dotcom.github.io/packagecanvas/` 開放；不得加入寫檔、刪檔或任意網域。
 - 這個 bridge 屬於 APK 變更，受本檔「不可違反的發布閘門」約束：新 Bridge 先停在 Draft PR 與 CI-only artifact，完成模擬器、實機閉環驗收與 OWNER 批准後才可更新正式 manifest。
 - GEN2 解析（frontmatter、Wiki Link、BOM、Registry、Resource、架構檢查）全部在網頁層，改規則只改 `gen2-source.js`，不改 APK。

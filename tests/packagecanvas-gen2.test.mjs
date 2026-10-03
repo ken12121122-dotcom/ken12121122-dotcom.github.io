@@ -317,3 +317,136 @@ test('gen2-run supports skill outcomes and a cancel terminal', () => {
   assert.ok(Gen2.validateRunSpec(cancelOnly).some(e => /走不到 end/.test(e)), 'a flow must still be able to complete');
   assert.ok(Gen2.validateRunSpec({ version: 1, steps: [{ id: 'cancel', type: 'input', title: 'x' }] }).some(e => /不能是 end 或 cancel/.test(e)));
 });
+
+// ---------- live run status overlay ----------
+function runIssue(number, view, extra = {}) {
+  const body = '## ▶ run\n\n<!-- gen2-run-view:' + Buffer.from(JSON.stringify(view)).toString('base64') + ' -->\n';
+  return { number, state: 'open', html_url: 'https://github.com/ken12121122-dotcom/gen2-knowledge/issues/' + number, updated_at: '2026-10-03T13:00:00Z', user: { login: 'github-actions[bot]' }, labels: [{ name: 'gen2-run' }], body, ...extra };
+}
+function runView(status, current, extra = {}) {
+  return {
+    format: 'gen2-run-view', version: 1, runId: 'r', workflow: { id: 'WF-DEMO-001', title: '示範流程' }, status, current, seq: 1, updatedAt: '2026-10-03T13:00:00Z',
+    pending: current ? { step: current, type: 'gate', title: '審核', options: [{ id: 'approve', label: '核准' }, { id: 'revise', label: '退回' }], review: { step: 'S2', title: '擷取', output: { text: '候選內容' } } } : null,
+    steps: [{ id: 'S1', type: 'input', title: '來源', status: 'done', attempts: 1, result: null }, { id: 'G1', type: 'gate', title: '審核', status: current ? 'active' : 'done', attempts: 1, result: current ? null : '核准' }],
+    ...extra
+  };
+}
+
+test('runsFromIssues keeps engine-opened runs with a valid view, open first', () => {
+  const issues = [
+    runIssue(9, runView('done', null), { state: 'closed' }),
+    runIssue(7, runView('waiting_owner', 'G1')),
+    runIssue(8, runView('waiting_owner', 'G1'), { user: { login: 'someone' } }),
+    { ...runIssue(10, runView('waiting_owner', 'G1')), body: 'no view' },
+    { ...runIssue(11, runView('waiting_owner', 'G1')), pull_request: {} }
+  ];
+  const runs = Gen2.runsFromIssues(issues);
+  assert.deepEqual(runs.map(r => r.number), [7, 9]);
+  assert.equal(runs[0].view.pending.step, 'G1');
+  assert.notEqual(Gen2.runSignature(runs), Gen2.runSignature([runs[0]]));
+});
+
+test('run overlay draws a lane of step cards with the current step active', () => {
+  const { project } = build();
+  project.graphLayouts = { md: project.nodes.map(n => [n.id, { x: 0, y: 0 }]), group: project.groups.map(g => [g.id, { x: 0, y: 0 }]), assistant: null };
+  const wf = project.nodes.find(n => n.gen2?.docId === 'WF-DEMO-001');
+  const runs = Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1')), runIssue(9, runView('stopped', null), { state: 'closed' })]);
+  const a = Gen2.applyRunOverlay(project, runs);
+  assertValidProject(a);
+  const head = a.nodes.find(n => n.id === 'g2run_7');
+  assert.match(head.title, /^🟠 #7｜WF-DEMO-001｜等待你核准/);
+  const s1 = a.nodes.find(n => n.id === 'g2run_7_S1'), g1 = a.nodes.find(n => n.id === 'g2run_7_G1');
+  assert.ok(s1.tags.includes('gen2-done') && /^✅ S1/.test(s1.title));
+  assert.ok(g1.tags.includes('gen2-active') && g1.tags.includes('gen2-owner') && /^🟠 G1/.test(g1.title));
+  assert.match(g1.md, /- 核准/);
+  assert.match(g1.md, /> 候選內容/);
+  assert.ok(g1.w > s1.w, 'the current step card is opened larger');
+  assert.match(a.nodes.find(n => n.id === wf.id).title, /^▶ /, 'workflow with an open run is marked');
+  assert.ok(a.links.some(l => l.from === wf.id && l.to === 'g2run_7' && l.label === '等待你核准'));
+  assert.ok(a.links.some(l => l.id === 'g2rl_7__start' && l.to === 'g2run_7_S1'));
+  assert.ok(a.links.some(l => l.id === 'g2rl_7_S1_G1'), 'steps chained in order without a definition');
+  assert.ok(a.nodes.find(n => n.id === 'g2run_9_G1').tags.includes('gen2-done'), 'closed runs have no active step');
+  assert.equal(a.graphLayouts.md, null, 'graph layout is rebuilt for the new nodes');
+  // OWNER moves the G1 card; when the run finishes the card keeps its place and shrinks to a done card.
+  a.nodes.find(n => n.id === 'g2run_7_G1').x = 123;
+  const b = Gen2.applyRunOverlay(a, Gen2.runsFromIssues([runIssue(7, runView('done', null), { state: 'closed' })]));
+  assertValidProject(b);
+  const g1b = b.nodes.find(n => n.id === 'g2run_7_G1');
+  assert.equal(g1b.x, 123);
+  assert.ok(g1b.tags.includes('gen2-done') && g1b.w < g1.w);
+  assert.match(b.nodes.find(n => n.id === 'g2run_7').title, /^✅ #7/);
+  assert.ok(!b.nodes.some(n => n.id.startsWith('g2run_9')), 'runs no longer listed are removed');
+  assert.ok(!/^▶ /.test(b.nodes.find(n => n.id === wf.id).title), 'marker removed when no run is open');
+  const empty = Gen2.applyRunOverlay(b, []);
+  assert.ok(!empty.nodes.some(n => n.id.startsWith('g2run_')) && !empty.groups.some(g => g.id === 'g2grp_runs'));
+  const fresh = build().project;
+  Gen2.keepRunOverlay(fresh, b);
+  assertValidProject(fresh);
+  assert.equal(fresh.nodes.find(n => n.id === 'g2run_7_G1').x, 123);
+});
+
+test('run overlay follows the workflow definition for branch connections', () => {
+  const spec = { version: 1, steps: [
+    { id: 'S1', type: 'input', title: '來源' },
+    { id: 'G1', type: 'gate', title: '審核', options: [{ id: 'approve', label: '核准', next: 'end' }, { id: 'revise', label: '退回', next: 'S1', comment: 'required' }] }
+  ] };
+  const withRun = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(spec) } : f);
+  const { project } = Gen2.buildProject({ rootName: 'x', files: withRun, dirs });
+  const a = Gen2.applyRunOverlay(project, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))]));
+  const back = a.links.find(l => l.id === 'g2rl_7_G1_S1');
+  assert.ok(back, 'gate option back to S1 is drawn');
+  assert.equal(back.label, '退回');
+  assert.equal(back.type, 'resolve');
+  assert.equal(a.links.find(l => l.id === 'g2rl_7_S1_G1').type, 'main');
+});
+
+test('agent status lists who each open run waits for and for how long', () => {
+  const runs = Gen2.runsFromIssues([
+    runIssue(7, runView('waiting_owner', 'G1')),
+    runIssue(8, { ...runView('waiting_skill', 'S2'), pending: { step: 'S2', type: 'skill', title: '擷取', skill: 'SK-TIME-001' } }),
+    runIssue(9, runView('done', null), { state: 'closed' })
+  ]);
+  const rows = Gen2.runAgentStatus(runs, '2026-10-03T13:05:00Z');
+  assert.deepEqual(rows.map(r => [r.run, r.who, r.minutes]), [[7, 'owner', 5], [8, 'agent', 5]]);
+  assert.match(rows[0].doing, /^等你核准：G1/);
+  assert.match(rows[1].doing, /^執行 SK-TIME-001/);
+  assert.equal(rows[1].focusId, 'g2run_8_S2');
+});
+
+test('listRuns explains a token without Issues permission', async () => {
+  const fetchImpl = async url => ({ ok: false, status: 403, json: async () => ({}), text: async () => '' });
+  await assert.rejects(Gen2.sources.github.listRuns({ token: 't' }, fetchImpl), /Issues 的 Read-only/);
+  const ok = async () => ({ ok: true, status: 200, json: async () => [runIssue(7, runView('waiting_owner', 'G1'))] });
+  assert.equal((await Gen2.sources.github.listRuns({ token: 't' }, ok)).length, 1);
+});
+
+test('listRuns reads every page of open runs and the latest closed ones', async () => {
+  const urls = [];
+  const fetchImpl = async url => {
+    urls.push(url);
+    const u = new URL(url), state = u.searchParams.get('state'), page = Number(u.searchParams.get('page') || 1);
+    let list = [];
+    if (state === 'open') list = page === 1 ? Array.from({ length: 100 }, (_, i) => runIssue(200 - i, runView('waiting_owner', 'G1'))) : [runIssue(3, runView('waiting_skill', 'G1'))];
+    if (state === 'closed') list = [runIssue(50, runView('done', null), { state: 'closed' }), runIssue(3, runView('waiting_skill', 'G1'))];
+    return { ok: true, status: 200, json: async () => list };
+  };
+  const runs = await Gen2.sources.github.listRuns({ token: 't' }, fetchImpl);
+  assert.ok(urls.every(u => !/state=all/.test(u)));
+  assert.equal(runs.filter(r => r.state === 'open').length, 101);
+  assert.ok(runs.some(r => r.number === 3 && r.state === 'open'));
+  assert.deepEqual(runs.filter(r => r.state !== 'open').map(r => r.number), [50]);
+});
+
+test('run overlay drops relations drawn to a run card that went away and links the Issue', () => {
+  const { project } = build();
+  const a = Gen2.applyRunOverlay(project, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))]));
+  assert.equal(a.nodes.find(n => n.id === 'g2run_7').source, 'https://github.com/ken12121122-dotcom/gen2-knowledge/issues/7');
+  const keep = a.nodes.find(n => !String(n.id).startsWith('g2run_'));
+  a.links.push({ id: 'user_rel', from: keep.id, to: 'g2run_7_G1', type: 'main', label: '', visibility: 'visible' });
+  a.links.push({ id: 'user_keep', from: keep.id, to: keep.id === a.nodes[1].id ? a.nodes[2].id : a.nodes[1].id, type: 'main', label: '', visibility: 'visible' });
+  assert.ok(Gen2.applyRunOverlay(a, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))])).links.some(l => l.id === 'user_rel'));
+  const b = Gen2.applyRunOverlay(a, []);
+  assertValidProject(b);
+  assert.ok(!b.links.some(l => l.id === 'user_rel'));
+  assert.ok(b.links.some(l => l.id === 'user_keep'));
+});
