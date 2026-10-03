@@ -894,6 +894,7 @@
     const p = JSON.parse(JSON.stringify(project));
     const prev = new Map(p.nodes.filter(n => String(n.id).startsWith('g2run_')).map(n => [n.id, n]));
     p.nodes = p.nodes.filter(n => !String(n.id).startsWith('g2run_'));
+    const isRun = id => String(id).startsWith('g2run_');
     p.links = p.links.filter(l => !String(l.id).startsWith('g2rl_'));
     p.groups = (p.groups || []).filter(g => g.id !== 'g2grp_runs');
     const workflows = new Map();
@@ -920,7 +921,7 @@
         const laneY = y0 + lane * RUN_LANE;
         const head = {
           id: headId, title: runTitle(r), kind: 'gen2_run', semanticType: 'Run', groupId: 'g2grp_runs', md: runHeadMarkdown(r),
-          status: v.status, source_status: '', review_status: '', sourcePath: r.url || ('#' + r.number), sourceOrigin: 'gen2_run',
+          status: v.status, source_status: '', review_status: '', sourcePath: r.url || ('#' + r.number), source: r.url || '', sourceOrigin: 'gen2_run',
           gen2: { docType: 'run', docId: '#' + r.number, workflowId: v.workflow?.id || '', run: r.number, current: v.current || null, status: v.status },
           tags: ['gen2-run', 'gen2-run-head', open ? 'gen2-open' : 'gen2-closed'], order: lane * 100,
           ...place(headId, x0, laneY, RUN_HEAD)
@@ -940,7 +941,7 @@
           const icon = active ? (v.status === 'waiting_skill' ? '🔵' : v.status === 'waiting_input' ? '🟡' : '🟠') : state === 'done' ? '✅' : '⬜';
           const node = {
             id, title: (icon + ' ' + st.id + '｜' + (st.title || '')).slice(0, 90), kind: 'gen2_run', semanticType: 'RunStep', groupId: 'g2grp_runs',
-            md: runStepMarkdown(r, st), status: state, source_status: '', review_status: '', sourcePath: (r.url || '#' + r.number) + '#' + st.id, sourceOrigin: 'gen2_run',
+            md: runStepMarkdown(r, st), status: state, source_status: '', review_status: '', sourcePath: (r.url || '#' + r.number) + '#' + st.id, source: r.url || '', sourceOrigin: 'gen2_run',
             gen2: { docType: 'run_step', docId: '#' + r.number + '/' + st.id, run: r.number, step: st.id, state },
             tags: ['gen2-run', 'gen2-step', 'gen2-' + state].concat(who ? [who] : []), order: lane * 100 + j + 1,
             ...place(id, x0 + RUN_HEAD.w + 80 + j * RUN_COL, laneY, RUN_STEP_SIZE[state])
@@ -959,6 +960,9 @@
         x: gx, y: gy, w: Math.max(...added.map(n => n.x + n.w)) + PAD_X - gx, h: Math.max(...added.map(n => n.y + n.h)) + PAD_BOTTOM - gy
       });
     }
+    // Relations the OWNER drew to a run card go away with the card.
+    const ids = new Set(p.nodes.map(n => n.id));
+    p.links = p.links.filter(l => !(isRun(l.from) && !ids.has(l.from)) && !(isRun(l.to) && !ids.has(l.to)));
     if (p.graphLayouts) {
       const covers = (layout, ids) => Array.isArray(layout) && ids.every(id => layout.some(e => Array.isArray(e) && e[0] === id));
       p.graphLayouts = {
@@ -1086,17 +1090,30 @@
         .filter(p => p.head && p.head.repo && p.head.repo.full_name === c.owner + '/' + c.repo)
         .map(p => ({ number: p.number, title: p.title, ref: p.head.ref, draft: !!p.draft, updatedAt: p.updated_at }));
     },
-    // Needs Issues: Read on the token.
+    // Needs Issues: Read on the token. Every open run (all pages) plus the
+    // five most recently updated closed ones.
     async listRuns(cfg, fetchImpl) {
       const c = githubConfig(cfg);
-      let res;
-      try {
-        res = await githubRequest('/repos/' + c.owner + '/' + c.repo + '/issues?labels=gen2-run&state=all&sort=updated&direction=desc&per_page=30', c, null, fetchImpl);
-      } catch (e) {
-        if (/HTTP 403|找不到/.test(e.message)) throw new Error('讀不到執行狀態：token 需要 Issues 的 Read-only 權限');
-        throw e;
+      const base = '/repos/' + c.owner + '/' + c.repo + '/issues?labels=gen2-run&sort=updated&direction=desc';
+      const get = async path => {
+        try { return await (await githubRequest(path, c, null, fetchImpl)).json(); }
+        catch (e) {
+          if (/HTTP 403|找不到/.test(e.message)) throw new Error('讀不到執行狀態：token 需要 Issues 的 Read-only 權限');
+          throw e;
+        }
+      };
+      const open = [];
+      for (let page = 1; page <= 10; page++) {
+        const batch = await get(base + '&state=open&per_page=100&page=' + page);
+        if (!Array.isArray(batch)) break;
+        open.push(...batch.filter(i => i && i.state === 'open'));
+        if (batch.length < 100) break;
       }
-      return runsFromIssues(await res.json());
+      const closed = await get(base + '&state=closed&per_page=10');
+      const seen = new Set();
+      const all = open.concat((Array.isArray(closed) ? closed : []).filter(i => i && i.state !== 'open'))
+        .filter(i => i && !seen.has(i.number) && seen.add(i.number));
+      return runsFromIssues(all);
     },
     async collect(cfg, onProgress, fetchImpl) {
       const c = githubConfig(cfg);

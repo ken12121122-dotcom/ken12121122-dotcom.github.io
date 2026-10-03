@@ -419,3 +419,34 @@ test('listRuns explains a token without Issues permission', async () => {
   const ok = async () => ({ ok: true, status: 200, json: async () => [runIssue(7, runView('waiting_owner', 'G1'))] });
   assert.equal((await Gen2.sources.github.listRuns({ token: 't' }, ok)).length, 1);
 });
+
+test('listRuns reads every page of open runs and the latest closed ones', async () => {
+  const urls = [];
+  const fetchImpl = async url => {
+    urls.push(url);
+    const u = new URL(url), state = u.searchParams.get('state'), page = Number(u.searchParams.get('page') || 1);
+    let list = [];
+    if (state === 'open') list = page === 1 ? Array.from({ length: 100 }, (_, i) => runIssue(200 - i, runView('waiting_owner', 'G1'))) : [runIssue(3, runView('waiting_skill', 'G1'))];
+    if (state === 'closed') list = [runIssue(50, runView('done', null), { state: 'closed' }), runIssue(3, runView('waiting_skill', 'G1'))];
+    return { ok: true, status: 200, json: async () => list };
+  };
+  const runs = await Gen2.sources.github.listRuns({ token: 't' }, fetchImpl);
+  assert.ok(urls.every(u => !/state=all/.test(u)));
+  assert.equal(runs.filter(r => r.state === 'open').length, 101);
+  assert.ok(runs.some(r => r.number === 3 && r.state === 'open'));
+  assert.deepEqual(runs.filter(r => r.state !== 'open').map(r => r.number), [50]);
+});
+
+test('run overlay drops relations drawn to a run card that went away and links the Issue', () => {
+  const { project } = build();
+  const a = Gen2.applyRunOverlay(project, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))]));
+  assert.equal(a.nodes.find(n => n.id === 'g2run_7').source, 'https://github.com/ken12121122-dotcom/gen2-knowledge/issues/7');
+  const keep = a.nodes.find(n => !String(n.id).startsWith('g2run_'));
+  a.links.push({ id: 'user_rel', from: keep.id, to: 'g2run_7_G1', type: 'main', label: '', visibility: 'visible' });
+  a.links.push({ id: 'user_keep', from: keep.id, to: keep.id === a.nodes[1].id ? a.nodes[2].id : a.nodes[1].id, type: 'main', label: '', visibility: 'visible' });
+  assert.ok(Gen2.applyRunOverlay(a, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))])).links.some(l => l.id === 'user_rel'));
+  const b = Gen2.applyRunOverlay(a, []);
+  assertValidProject(b);
+  assert.ok(!b.links.some(l => l.id === 'user_rel'));
+  assert.ok(b.links.some(l => l.id === 'user_keep'));
+});

@@ -32,3 +32,4 @@
 .gen2-agent-row span{overflow-wrap:anywhere}.gen2-agent-row small{color:var(--muted)}
 @media (max-width:760px){.gen2-agent-panel{top:auto;bottom:calc(64px + env(safe-area-inset-bottom));left:12px;right:12px;width:auto;z-index:56}}
 @media (prefers-reduced-motion:reduce){.node-card.gen2-active,.node-card.gen2-opening{animation:none;box-shadow:0 0 0 2px var(--glow)}.node-card.gen2-step{transition:none}}
+.gen2-edge-label{font-size:13px;font-weight:600;fill:var(--muted,#667);paint-order:stroke;stroke:var(--bg,#fff);stroke-width:4px;pointer-events:none}
