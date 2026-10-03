@@ -9,9 +9,6 @@ import org.json.JSONObject;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class AminInputGateway {
     public interface Callback { void onComplete(ExecutionResult result); }
@@ -55,30 +52,54 @@ public final class AminInputGateway {
     public ExecutionResult executeBlocking(AminAction action, long timeoutMs) {
         String startedAt = Instant.now().toString();
         if (Looper.myLooper() == Looper.getMainLooper()) return executeOnMainThread(action, startedAt);
-        AtomicReference<ExecutionResult> resultRef = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
-        mainHandler.post(() -> {
-            try { resultRef.set(executeOnMainThread(action, startedAt)); }
-            finally { latch.countDown(); }
-        });
+        AminPendingExecution<ExecutionResult> pending = new AminPendingExecution<>();
+        Runnable task = () -> {
+            if (!pending.tryStart()) return;
+            ExecutionResult result = null;
+            try { result = executeOnMainThread(action, startedAt); }
+            finally { pending.complete(result); }
+        };
+        if (!mainHandler.post(task)) {
+            pending.cancelBeforeStart();
+            ExecutionResult rejected = ExecutionResult.failure(
+                    action, startedAt, "EXECUTION_QUEUE_UNAVAILABLE", "Main action queue is unavailable"
+            );
+            eventStore.recordExecution(rejected);
+            return rejected;
+        }
         try {
-            if (!latch.await(Math.max(250L, timeoutMs), TimeUnit.MILLISECONDS)) {
-                ExecutionResult timeout = ExecutionResult.timeout(action, startedAt);
-                eventStore.recordExecution(timeout);
-                return timeout;
+            if (!pending.await(timeoutMs)) {
+                return stopWaiting(pending, task, action, startedAt, false);
             }
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
-            ExecutionResult interrupted = ExecutionResult.failure(
-                    action, startedAt, "EXECUTION_INTERRUPTED", "Action execution was interrupted"
-            );
-            eventStore.recordExecution(interrupted);
-            return interrupted;
+            return stopWaiting(pending, task, action, startedAt, true);
         }
-        ExecutionResult result = resultRef.get();
+        ExecutionResult result = pending.completedResult();
         return result == null
                 ? ExecutionResult.failure(action, startedAt, "EXECUTION_EMPTY", "No execution result")
                 : result;
+    }
+
+    private ExecutionResult stopWaiting(
+            AminPendingExecution<ExecutionResult> pending, Runnable task,
+            AminAction action, String startedAt, boolean interrupted
+    ) {
+        if (pending.cancelBeforeStart()) {
+            // CAS prevents execution even if Handler has already dequeued the callback.
+            mainHandler.removeCallbacks(task);
+            ExecutionResult cancelled = interrupted
+                    ? ExecutionResult.failure(action, startedAt, "EXECUTION_INTERRUPTED",
+                            "Action was cancelled before execution because the caller was interrupted")
+                    : ExecutionResult.timeout(action, startedAt);
+            eventStore.recordExecution(cancelled);
+            return cancelled;
+        }
+        ExecutionResult completed = pending.completedResult();
+        if (completed != null) return completed;
+        // Dispatch has started and cannot be rolled back here. Only its actual result is audited.
+        return ExecutionResult.failure(action, startedAt, "EXECUTION_OUTCOME_PENDING",
+                "Action already started; outcome is pending. Check events by requestId before retrying");
     }
 
     public AminAction createAction(String requestedName, JSONObject parameters, String source, double confidence) {
