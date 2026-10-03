@@ -20,7 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = 'gen2-source 0.3';
+  const VERSION = 'gen2-source 0.4';
   const MAX_FILES = 3000;
   const MAX_FILE_BYTES = 2 * 1024 * 1024;
   const NODE_W = 380, NODE_H = 240, GAP = 40, PAD_X = 45, PAD_TOP = 60, PAD_BOTTOM = 45;
@@ -781,6 +781,155 @@
     }
   };
 
+  // ---------- live run status (gen2-run Issues) ----------
+  // The run engine keeps a display copy of each run (gen2-run-view v1) in its
+  // Issue body. The canvas only shows it; decisions still go through /gen2
+  // comments that the engine re-validates.
+  const RUN_ENGINE = 'github-actions[bot]';
+  const RUN_VIEW_RE = /<!--\s*gen2-run-view:([A-Za-z0-9+/=]+)\s*-->/;
+  const RUN_STATUS = {
+    waiting_input: { icon: '🟡', text: '等待你提供資料' },
+    waiting_skill: { icon: '🔵', text: '等待 Agent 執行' },
+    waiting_owner: { icon: '🟠', text: '等待你核准' },
+    done: { icon: '✅', text: '已完成' },
+    stopped: { icon: '⛔', text: '已停止' }
+  };
+  const RUN_STEP_MARK = { active: '⏳ 進行中', done: '✅', pending: '⬜' };
+  const RUN_TYPE_TEXT = { input: '提供資料', skill: 'Skill', gate: 'OWNER Gate' };
+
+  function decodeBase64Utf8(b64) {
+    if (typeof Buffer !== 'undefined') return Buffer.from(b64, 'base64').toString('utf8');
+    const bin = atob(b64);
+    return new TextDecoder('utf-8').decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  }
+
+  function readRunView(body) {
+    const m = String(body || '').match(RUN_VIEW_RE);
+    if (!m) return null;
+    try {
+      const v = JSON.parse(decodeBase64Utf8(m[1]));
+      return v && v.format === 'gen2-run-view' && v.version === 1 && v.status ? v : null;
+    } catch (e) { return null; }
+  }
+
+  // GitHub issues → runs opened by the engine, open ones first, then the most recent closed ones.
+  function runsFromIssues(issues, { closedLimit = 5 } = {}) {
+    const runs = [];
+    for (const i of Array.isArray(issues) ? issues : []) {
+      if (!i || i.pull_request || i.user?.login !== RUN_ENGINE) continue;
+      if (!(i.labels || []).some(l => l && l.name === 'gen2-run')) continue;
+      const view = readRunView(i.body);
+      if (!view || !(Number(i.number) > 0)) continue;
+      runs.push({ number: Number(i.number), url: String(i.html_url || '').startsWith('https://github.com/') ? i.html_url : '', state: i.state, updatedAt: i.updated_at || '', view });
+    }
+    const open = runs.filter(r => r.state === 'open');
+    const closed = runs.filter(r => r.state !== 'open').slice(0, closedLimit);
+    return open.concat(closed);
+  }
+
+  function runSignature(runs) {
+    return JSON.stringify((runs || []).map(r => [r.number, r.state, r.view.status, r.view.current, r.view.seq]));
+  }
+
+  function runTitle(r) {
+    const s = RUN_STATUS[r.view.status] || { icon: '•', text: r.view.status };
+    return (s.icon + ' #' + r.number + '｜' + (r.view.workflow?.id || '') + '｜' + s.text).slice(0, 90);
+  }
+
+  function runMarkdown(r) {
+    const v = r.view, s = RUN_STATUS[v.status] || { icon: '•', text: v.status };
+    const out = ['# ' + s.icon + ' ' + (v.workflow?.id || '') + '｜' + (v.workflow?.title || ''), ''];
+    const pending = v.pending;
+    out.push('- 狀態：**' + s.text + '**' + (pending ? '（' + pending.step + '｜' + pending.title + '）' : ''));
+    out.push('- 執行：#' + r.number + (v.updatedAt ? ' · 更新 ' + v.updatedAt : '') + (r.url ? ' · [在 GitHub 開啟](' + r.url + ')' : ''));
+    if (pending?.type === 'gate' && Array.isArray(pending.options)) out.push('- 可選：' + pending.options.map(o => o.label).join('／'));
+    if (pending?.type === 'skill' && pending.skill) out.push('- 正在等：' + pending.skill);
+    out.push('', '## 步驟', '', '| 步驟 | 類型 | 內容 | 狀態 |', '|---|---|---|---|');
+    for (const st of Array.isArray(v.steps) ? v.steps : []) {
+      out.push('| ' + st.id + ' | ' + (RUN_TYPE_TEXT[st.type] || st.type) + ' | ' + String(st.title || '').replace(/\|/g, '\\|') + ' | ' +
+        (RUN_STEP_MARK[st.status] || st.status) + (st.result ? ' ' + String(st.result).replace(/\|/g, '\\|') : '') + (st.attempts > 1 ? '（第 ' + st.attempts + ' 次）' : '') + ' |');
+    }
+    const review = pending?.review?.output?.text;
+    if (review) out.push('', '## 待審內容（' + pending.review.step + '）', '', String(review).split('\n').map(l => '> ' + l).join('\n'));
+    return out.join('\n');
+  }
+
+  const RUN_PREFIX_RE = /^▶ /;
+  const RUN_NODE_W = 420, RUN_NODE_H = 300;
+
+  // Returns a copy of `project` with one node per run (group 執行狀態), linked
+  // from its Workflow node; Workflows with an open run get a ▶ title prefix.
+  // Earlier run nodes are replaced; their positions are kept.
+  function applyRunOverlay(project, runs) {
+    const p = JSON.parse(JSON.stringify(project));
+    const prev = new Map(p.nodes.filter(n => String(n.id).startsWith('g2run_')).map(n => [n.id, n]));
+    p.nodes = p.nodes.filter(n => !String(n.id).startsWith('g2run_'));
+    p.links = p.links.filter(l => !String(l.id).startsWith('g2rl_'));
+    p.groups = (p.groups || []).filter(g => g.id !== 'g2grp_runs');
+    const workflows = new Map();
+    for (const n of p.nodes) {
+      if (n.gen2?.docType !== 'workflow') continue;
+      n.title = String(n.title || '').replace(RUN_PREFIX_RE, '');
+      if (n.gen2.docId) workflows.set(n.gen2.docId, n);
+    }
+    const list = Array.isArray(runs) ? runs : [];
+    if (list.length) {
+      const boxes = p.nodes.concat(p.groups).filter(b => [b.x, b.y, b.w, b.h].every(Number.isFinite));
+      const x0 = boxes.length ? Math.max(...boxes.map(b => b.x + b.w)) + 180 : ORIGIN.x;
+      const y0 = boxes.length ? Math.min(...boxes.map(b => b.y)) : ORIGIN.y;
+      const added = [];
+      list.forEach((r, i) => {
+        const id = 'g2run_' + r.number, old = prev.get(id);
+        const node = {
+          id, title: runTitle(r), kind: 'gen2_run', semanticType: 'Run', groupId: 'g2grp_runs', md: runMarkdown(r),
+          status: r.view.status, source_status: '', review_status: '', sourcePath: r.url || ('#' + r.number), sourceOrigin: 'gen2_run',
+          gen2: { docType: 'run', docId: '#' + r.number, workflowId: r.view.workflow?.id || '' }, tags: ['gen2-run'], order: i,
+          x: old && Number.isFinite(old.x) ? old.x : x0 + PAD_X,
+          y: old && Number.isFinite(old.y) ? old.y : y0 + PAD_TOP + i * (RUN_NODE_H + GAP),
+          w: old && Number.isFinite(old.w) ? old.w : RUN_NODE_W,
+          h: old && Number.isFinite(old.h) ? old.h : RUN_NODE_H
+        };
+        p.nodes.push(node);
+        added.push(node);
+        const wf = workflows.get(node.gen2.workflowId);
+        if (wf) {
+          if (r.state === 'open' && !RUN_PREFIX_RE.test(wf.title)) wf.title = '▶ ' + wf.title;
+          p.links.push({ id: 'g2rl_' + r.number, from: wf.id, to: id, type: 'main', label: (RUN_STATUS[r.view.status] || {}).text || r.view.status, layer: 'gen2', visibility: 'visible', origin: 'gen2_run', reviewStatus: 'source' });
+        }
+      });
+      const gx = Math.min(...added.map(n => n.x)) - PAD_X, gy = Math.min(...added.map(n => n.y)) - PAD_TOP;
+      p.groups.push({
+        id: 'g2grp_runs', title: '執行狀態（GitHub）', color: '#e0955a', type: 'workflow', parentId: p.assistant?.id || 'assistant_gen2',
+        x: gx, y: gy, w: Math.max(...added.map(n => n.x + n.w)) + PAD_X - gx, h: Math.max(...added.map(n => n.y + n.h)) + PAD_BOTTOM - gy
+      });
+    }
+    if (p.graphLayouts) {
+      const covers = (layout, ids) => Array.isArray(layout) && ids.every(id => layout.some(e => Array.isArray(e) && e[0] === id));
+      p.graphLayouts = {
+        ...p.graphLayouts,
+        md: covers(p.graphLayouts.md, p.nodes.map(n => n.id)) ? p.graphLayouts.md : null,
+        group: covers(p.graphLayouts.group, p.groups.map(g => g.id)) ? p.graphLayouts.group : null
+      };
+    }
+    return p;
+  }
+
+  // Re-reading a GitHub canvas rebuilds it from Markdown; keep the run nodes
+  // (and where the OWNER moved them) until the next status refresh replaces them.
+  function keepRunOverlay(fresh, previous) {
+    if (!previous) return fresh;
+    const ids = new Set(fresh.nodes.map(n => n.id));
+    const runNodes = (previous.nodes || []).filter(n => String(n.id).startsWith('g2run_') && !ids.has(n.id));
+    if (!runNodes.length) return fresh;
+    fresh.nodes.push(...runNodes.map(n => ({ ...n })));
+    const all = new Set(fresh.nodes.map(n => n.id));
+    fresh.links.push(...(previous.links || []).filter(l => String(l.id).startsWith('g2rl_') && all.has(l.from) && all.has(l.to)).map(l => ({ ...l })));
+    const g = (previous.groups || []).find(x => x.id === 'g2grp_runs');
+    if (g && !fresh.groups.some(x => x.id === g.id)) fresh.groups.push({ ...g });
+    if (fresh.graphLayouts) fresh.graphLayouts = { ...fresh.graphLayouts, md: null, group: null };
+    return fresh;
+  }
+
   // ---------- GitHub source (official copy) ----------
   // Reads the private GEN2 repository through the GitHub REST API with a
   // read-only token. Same parser, so GitHub, the phone folder and the PR gate
@@ -866,6 +1015,18 @@
         .filter(p => p.head && p.head.repo && p.head.repo.full_name === c.owner + '/' + c.repo)
         .map(p => ({ number: p.number, title: p.title, ref: p.head.ref, draft: !!p.draft, updatedAt: p.updated_at }));
     },
+    // Needs Issues: Read on the token.
+    async listRuns(cfg, fetchImpl) {
+      const c = githubConfig(cfg);
+      let res;
+      try {
+        res = await githubRequest('/repos/' + c.owner + '/' + c.repo + '/issues?labels=gen2-run&state=all&sort=updated&direction=desc&per_page=30', c, null, fetchImpl);
+      } catch (e) {
+        if (/HTTP 403|找不到/.test(e.message)) throw new Error('讀不到執行狀態：token 需要 Issues 的 Read-only 權限');
+        throw e;
+      }
+      return runsFromIssues(await res.json());
+    },
     async collect(cfg, onProgress, fetchImpl) {
       const c = githubConfig(cfg);
       const base = '/repos/' + c.owner + '/' + c.repo;
@@ -907,5 +1068,5 @@
     }
   };
 
-  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, sources: { native, picker, input, github } };
+  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, sources: { native, picker, input, github } };
 });
