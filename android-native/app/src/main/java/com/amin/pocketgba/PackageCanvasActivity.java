@@ -46,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class PackageCanvasActivity extends Activity {
     static final String BRIDGE_NAME = "AminPackageCanvasFiles";
+    static final String GEN2_BRIDGE_NAME = "AminGen2";
     private static final String PREFS = "amin_packagecanvas_folders";
     private static final String KEY_FOLDERS = "folders";
     private static final int REQUEST_FOLDER = 5101;
@@ -114,6 +115,7 @@ public final class PackageCanvasActivity extends Activity {
             }
         });
         webView.addJavascriptInterface(new FolderBridge(), BRIDGE_NAME);
+        webView.addJavascriptInterface(new Gen2Bridge(), GEN2_BRIDGE_NAME);
 
         FrameLayout root = new FrameLayout(this);
         root.addView(webView, new FrameLayout.LayoutParams(
@@ -150,6 +152,7 @@ public final class PackageCanvasActivity extends Activity {
     @Override protected void onDestroy() {
         if (webView != null) {
             webView.removeJavascriptInterface(BRIDGE_NAME);
+            webView.removeJavascriptInterface(GEN2_BRIDGE_NAME);
             webView.stopLoading();
             webView.loadUrl("about:blank");
             webView.destroy();
@@ -332,6 +335,28 @@ public final class PackageCanvasActivity extends Activity {
             return new JSONObject().put("ok", false).put("error", message).toString();
         } catch (Exception ignored) {
             return "{\"ok\":false}";
+        }
+    }
+
+    /**
+     * GEN2 runs: the canvas can only ask the app to open a run in the approval
+     * page or the voice screen. It gets no token and posts nothing; any decision
+     * is made and confirmed in those native screens.
+     */
+    final class Gen2Bridge {
+        @JavascriptInterface public boolean isAvailable() {
+            return PackageCanvasFolderPolicy.isTrustedPage(committedUrl);
+        }
+
+        @JavascriptInterface public boolean openRun(int issue, String mode) {
+            if (!PackageCanvasFolderPolicy.isTrustedPage(committedUrl)) return false;
+            if (issue <= 0 || issue > 9_999_999) return false;
+            Class<?> target = "voice".equals(mode) ? Gen2VoiceActivity.class : Gen2RunsActivity.class;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                startActivity(new Intent(PackageCanvasActivity.this, target).putExtra(Gen2RunsActivity.EXTRA_ISSUE, issue));
+            });
+            return true;
         }
     }
 

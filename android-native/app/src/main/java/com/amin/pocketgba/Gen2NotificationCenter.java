@@ -32,10 +32,16 @@ final class Gen2NotificationCenter {
                 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) return;
         ensureChannel(context);
-        Intent intent = new Intent(context, Gen2RunsActivity.class)
+        // Tapping talks it through with the fox; "用按的" opens the approval page.
+        Intent voice = new Intent(context, Gen2VoiceActivity.class)
+                .putExtra(Gen2VoiceActivity.EXTRA_ISSUE, run.number)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pending = PendingIntent.getActivity(context, notificationId(run.number), voice,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Intent page = new Intent(context, Gen2RunsActivity.class)
                 .putExtra(Gen2RunsActivity.EXTRA_ISSUE, run.number)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pending = PendingIntent.getActivity(context, notificationId(run.number), intent,
+        PendingIntent pagePending = PendingIntent.getActivity(context, notificationId(run.number) + 1, page,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         String title = "GEN2 · " + run.statusText();
         String text = run.workflowId + "｜" + run.pending.title;
@@ -46,6 +52,7 @@ final class Gen2NotificationCenter {
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text
                         + (run.pending.reviewText.isEmpty() ? "" : "\n\n" + preview(run.pending.reviewText))))
                 .setContentIntent(pending)
+                .addAction(0, "用按的", pagePending)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true);
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

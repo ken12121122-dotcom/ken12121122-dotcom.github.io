@@ -155,9 +155,15 @@ public final class Gen2RunsActivity extends Activity {
         statusView = text("", 13f, false, COLOR_MUTED);
         statusView.setContentDescription("gen2-status");
         header.addView(statusView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button voiceButton = secondaryButton("🎙 用說的");
+        voiceButton.setContentDescription("gen2-voice");
+        voiceButton.setOnClickListener(view -> openVoice(highlightIssue));
+        header.addView(voiceButton, wrap());
         refreshButton = secondaryButton("重新整理");
         refreshButton.setOnClickListener(view -> refresh());
-        header.addView(refreshButton, wrap());
+        LinearLayout.LayoutParams refreshParams = wrap();
+        refreshParams.leftMargin = dp(6);
+        header.addView(refreshButton, refreshParams);
         content.addView(header, top(18));
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
@@ -272,6 +278,12 @@ public final class Gen2RunsActivity extends Activity {
             open.setOnClickListener(view -> openUrl(run.htmlUrl));
             row.addView(open, wrap());
         }
+        if (run.needsOwner()) {
+            Button talk = textButton("用說的");
+            talk.setContentDescription("gen2-voice-" + run.number);
+            talk.setOnClickListener(view -> openVoice(run.number));
+            row.addView(talk, wrap());
+        }
         Button stop = textButton("停止這次流程");
         stop.setTextColor(COLOR_WARNING);
         stop.setContentDescription("gen2-cancel-" + run.number);
@@ -324,6 +336,12 @@ public final class Gen2RunsActivity extends Activity {
                 });
             }
         });
+    }
+
+    private void openVoice(int issue) {
+        Intent intent = new Intent(this, Gen2VoiceActivity.class);
+        if (issue > 0) intent.putExtra(Gen2VoiceActivity.EXTRA_ISSUE, issue);
+        startActivity(intent);
     }
 
     private void openUrl(String url) {

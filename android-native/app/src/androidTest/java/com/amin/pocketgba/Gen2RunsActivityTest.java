@@ -61,6 +61,17 @@ public final class Gen2RunsActivityTest {
     }
 
     @Test
+    public void offersTheVoiceScreenForRunsThatWait() throws Exception {
+        List<Gen2RunView> runs = Gen2RunView.fromIssues(new JSONArray().put(issue(7, gateView())));
+        activityRule.getScenario().onActivity(activity -> {
+            activity.showRuns(runs);
+            View root = activity.findViewById(android.R.id.content);
+            assertNotNull(find(root, "gen2-voice"));
+            assertNotNull(find(root, "gen2-voice-7"));
+        });
+    }
+
+    @Test
     public void rendersAnInputStepAndRefusesEmptyMaterial() throws Exception {
         JSONObject view = gateView().put("status", "waiting_input").put("current", "S1");
         view.put("pending", new JSONObject().put("step", "S1").put("type", "input")
@@ -79,7 +90,7 @@ public final class Gen2RunsActivityTest {
         });
     }
 
-    private static JSONObject gateView() throws Exception {
+    static JSONObject gateView() throws Exception {
         return new JSONObject()
                 .put("format", "gen2-run-view").put("version", 1)
                 .put("runId", "WF-TIME-001-test")
@@ -96,7 +107,7 @@ public final class Gen2RunsActivityTest {
                 .put("steps", new JSONArray());
     }
 
-    private static JSONObject issue(int number, JSONObject view) throws Exception {
+    static JSONObject issue(int number, JSONObject view) throws Exception {
         String body = "<!-- gen2-run-view:"
                 + Base64.getEncoder().encodeToString(view.toString().getBytes(StandardCharsets.UTF_8)) + " -->";
         return new JSONObject().put("number", number).put("title", "▶ WF-TIME-001")
@@ -106,7 +117,7 @@ public final class Gen2RunsActivityTest {
                 .put("body", body);
     }
 
-    private static View find(View view, String description) {
+    static View find(View view, String description) {
         CharSequence value = view.getContentDescription();
         if (value != null && description.contentEquals(value)) return view;
         if (view instanceof ViewGroup) {

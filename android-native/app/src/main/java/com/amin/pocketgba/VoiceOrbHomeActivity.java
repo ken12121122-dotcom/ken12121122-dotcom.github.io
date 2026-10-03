@@ -247,6 +247,12 @@ public final class VoiceOrbHomeActivity extends Activity implements RecognitionL
         }
         if (spoken.contains("功能地圖") || spoken.contains("節點地圖")) { openSystemFeatureMap(); return; }
         if (spoken.equals("關閉") || spoken.equals("回控制台") || spoken.contains("關閉語音球")) { finish(); return; }
+        if (Gen2VoiceBrain.asksForPendingWork(spoken)) {
+            stopListeningQuietly();
+            launchedFeature = true;
+            startActivity(new Intent(this, Gen2VoiceActivity.class));
+            return;
+        }
 
         ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
                 this, nodeMetadataStore, spoken);
