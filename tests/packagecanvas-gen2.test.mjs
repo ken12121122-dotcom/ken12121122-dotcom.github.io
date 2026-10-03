@@ -346,37 +346,71 @@ test('runsFromIssues keeps engine-opened runs with a valid view, open first', ()
   assert.notEqual(Gen2.runSignature(runs), Gen2.runSignature([runs[0]]));
 });
 
-test('run overlay adds run nodes linked to their workflow and keeps positions', () => {
+test('run overlay draws a lane of step cards with the current step active', () => {
   const { project } = build();
   project.graphLayouts = { md: project.nodes.map(n => [n.id, { x: 0, y: 0 }]), group: project.groups.map(g => [g.id, { x: 0, y: 0 }]), assistant: null };
   const wf = project.nodes.find(n => n.gen2?.docId === 'WF-DEMO-001');
   const runs = Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1')), runIssue(9, runView('stopped', null), { state: 'closed' })]);
   const a = Gen2.applyRunOverlay(project, runs);
   assertValidProject(a);
-  const node = a.nodes.find(n => n.id === 'g2run_7');
-  assert.equal(node.kind, 'gen2_run');
-  assert.match(node.title, /^🟠 #7｜WF-DEMO-001｜等待你核准/);
-  assert.match(node.md, /\| G1 \| OWNER Gate \| 審核 \| ⏳ 進行中/);
-  assert.match(node.md, /> 候選內容/);
+  const head = a.nodes.find(n => n.id === 'g2run_7');
+  assert.match(head.title, /^🟠 #7｜WF-DEMO-001｜等待你核准/);
+  const s1 = a.nodes.find(n => n.id === 'g2run_7_S1'), g1 = a.nodes.find(n => n.id === 'g2run_7_G1');
+  assert.ok(s1.tags.includes('gen2-done') && /^✅ S1/.test(s1.title));
+  assert.ok(g1.tags.includes('gen2-active') && g1.tags.includes('gen2-owner') && /^🟠 G1/.test(g1.title));
+  assert.match(g1.md, /- 核准/);
+  assert.match(g1.md, /> 候選內容/);
+  assert.ok(g1.w > s1.w, 'the current step card is opened larger');
   assert.match(a.nodes.find(n => n.id === wf.id).title, /^▶ /, 'workflow with an open run is marked');
   assert.ok(a.links.some(l => l.from === wf.id && l.to === 'g2run_7' && l.label === '等待你核准'));
-  assert.ok(a.groups.some(g => g.id === 'g2grp_runs'));
+  assert.ok(a.links.some(l => l.id === 'g2rl_7__start' && l.to === 'g2run_7_S1'));
+  assert.ok(a.links.some(l => l.id === 'g2rl_7_S1_G1'), 'steps chained in order without a definition');
+  assert.ok(a.nodes.find(n => n.id === 'g2run_9_G1').tags.includes('gen2-done'), 'closed runs have no active step');
   assert.equal(a.graphLayouts.md, null, 'graph layout is rebuilt for the new nodes');
-  // OWNER moves the run node; the next refresh keeps it there and updates the content.
-  a.nodes.find(n => n.id === 'g2run_7').x = 123;
+  // OWNER moves the G1 card; when the run finishes the card keeps its place and shrinks to a done card.
+  a.nodes.find(n => n.id === 'g2run_7_G1').x = 123;
   const b = Gen2.applyRunOverlay(a, Gen2.runsFromIssues([runIssue(7, runView('done', null), { state: 'closed' })]));
   assertValidProject(b);
-  assert.equal(b.nodes.find(n => n.id === 'g2run_7').x, 123);
+  const g1b = b.nodes.find(n => n.id === 'g2run_7_G1');
+  assert.equal(g1b.x, 123);
+  assert.ok(g1b.tags.includes('gen2-done') && g1b.w < g1.w);
   assert.match(b.nodes.find(n => n.id === 'g2run_7').title, /^✅ #7/);
-  assert.ok(!b.nodes.some(n => n.id === 'g2run_9'), 'runs no longer listed are removed');
+  assert.ok(!b.nodes.some(n => n.id.startsWith('g2run_9')), 'runs no longer listed are removed');
   assert.ok(!/^▶ /.test(b.nodes.find(n => n.id === wf.id).title), 'marker removed when no run is open');
   const empty = Gen2.applyRunOverlay(b, []);
   assert.ok(!empty.nodes.some(n => n.id.startsWith('g2run_')) && !empty.groups.some(g => g.id === 'g2grp_runs'));
-  // Re-reading the canvas keeps the run nodes until the next refresh.
   const fresh = build().project;
   Gen2.keepRunOverlay(fresh, b);
   assertValidProject(fresh);
-  assert.equal(fresh.nodes.find(n => n.id === 'g2run_7').x, 123);
+  assert.equal(fresh.nodes.find(n => n.id === 'g2run_7_G1').x, 123);
+});
+
+test('run overlay follows the workflow definition for branch connections', () => {
+  const spec = { version: 1, steps: [
+    { id: 'S1', type: 'input', title: '來源' },
+    { id: 'G1', type: 'gate', title: '審核', options: [{ id: 'approve', label: '核准', next: 'end' }, { id: 'revise', label: '退回', next: 'S1', comment: 'required' }] }
+  ] };
+  const withRun = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(spec) } : f);
+  const { project } = Gen2.buildProject({ rootName: 'x', files: withRun, dirs });
+  const a = Gen2.applyRunOverlay(project, Gen2.runsFromIssues([runIssue(7, runView('waiting_owner', 'G1'))]));
+  const back = a.links.find(l => l.id === 'g2rl_7_G1_S1');
+  assert.ok(back, 'gate option back to S1 is drawn');
+  assert.equal(back.label, '退回');
+  assert.equal(back.type, 'resolve');
+  assert.equal(a.links.find(l => l.id === 'g2rl_7_S1_G1').type, 'main');
+});
+
+test('agent status lists who each open run waits for and for how long', () => {
+  const runs = Gen2.runsFromIssues([
+    runIssue(7, runView('waiting_owner', 'G1')),
+    runIssue(8, { ...runView('waiting_skill', 'S2'), pending: { step: 'S2', type: 'skill', title: '擷取', skill: 'SK-TIME-001' } }),
+    runIssue(9, runView('done', null), { state: 'closed' })
+  ]);
+  const rows = Gen2.runAgentStatus(runs, '2026-10-03T13:05:00Z');
+  assert.deepEqual(rows.map(r => [r.run, r.who, r.minutes]), [[7, 'owner', 5], [8, 'agent', 5]]);
+  assert.match(rows[0].doing, /^等你核准：G1/);
+  assert.match(rows[1].doing, /^執行 SK-TIME-001/);
+  assert.equal(rows[1].focusId, 'g2run_8_S2');
 });
 
 test('listRuns explains a token without Issues permission', async () => {

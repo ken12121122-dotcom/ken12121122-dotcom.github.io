@@ -836,30 +836,60 @@
     return (s.icon + ' #' + r.number + '｜' + (r.view.workflow?.id || '') + '｜' + s.text).slice(0, 90);
   }
 
-  function runMarkdown(r) {
+  const RUN_PREFIX_RE = /^▶ /;
+  const RUN_HEAD = { w: 340, h: 200 };
+  const RUN_STEP_SIZE = { active: { w: 340, h: 260 }, done: { w: 300, h: 170 }, pending: { w: 260, h: 110 } };
+  const RUN_COL = 380, RUN_LANE = 320;
+
+  function runHeadMarkdown(r) {
     const v = r.view, s = RUN_STATUS[v.status] || { icon: '•', text: v.status };
     const out = ['# ' + s.icon + ' ' + (v.workflow?.id || '') + '｜' + (v.workflow?.title || ''), ''];
-    const pending = v.pending;
-    out.push('- 狀態：**' + s.text + '**' + (pending ? '（' + pending.step + '｜' + pending.title + '）' : ''));
-    out.push('- 執行：#' + r.number + (v.updatedAt ? ' · 更新 ' + v.updatedAt : '') + (r.url ? ' · [在 GitHub 開啟](' + r.url + ')' : ''));
-    if (pending?.type === 'gate' && Array.isArray(pending.options)) out.push('- 可選：' + pending.options.map(o => o.label).join('／'));
-    if (pending?.type === 'skill' && pending.skill) out.push('- 正在等：' + pending.skill);
-    out.push('', '## 步驟', '', '| 步驟 | 類型 | 內容 | 狀態 |', '|---|---|---|---|');
-    for (const st of Array.isArray(v.steps) ? v.steps : []) {
-      out.push('| ' + st.id + ' | ' + (RUN_TYPE_TEXT[st.type] || st.type) + ' | ' + String(st.title || '').replace(/\|/g, '\\|') + ' | ' +
-        (RUN_STEP_MARK[st.status] || st.status) + (st.result ? ' ' + String(st.result).replace(/\|/g, '\\|') : '') + (st.attempts > 1 ? '（第 ' + st.attempts + ' 次）' : '') + ' |');
-    }
-    const review = pending?.review?.output?.text;
-    if (review) out.push('', '## 待審內容（' + pending.review.step + '）', '', String(review).split('\n').map(l => '> ' + l).join('\n'));
+    out.push('- 狀態：**' + s.text + '**' + (v.pending ? '（' + v.pending.step + '｜' + v.pending.title + '）' : ''));
+    out.push('- 執行：#' + r.number + (v.updatedAt ? ' · 更新 ' + v.updatedAt : ''));
+    if (r.url) out.push('- [在 GitHub 開啟](' + r.url + ')');
     return out.join('\n');
   }
 
-  const RUN_PREFIX_RE = /^▶ /;
-  const RUN_NODE_W = 420, RUN_NODE_H = 300;
+  function runStepMarkdown(r, st) {
+    const v = r.view, active = v.current === st.id && v.pending && v.pending.step === st.id;
+    const out = ['**' + (RUN_TYPE_TEXT[st.type] || st.type) + '**' + (st.attempts > 1 ? ' · 第 ' + st.attempts + ' 次' : '')];
+    if (st.result) out.push('', '結果：' + st.result);
+    if (active) {
+      const pd = v.pending;
+      if (pd.type === 'skill') out.push('', '🔵 Agent 執行中：' + (pd.skill || ''));
+      if (pd.type === 'input') out.push('', '🟡 等你提供資料' + (pd.prompt ? '：' + pd.prompt : ''));
+      if (pd.type === 'gate') {
+        out.push('', '🟠 等你核准');
+        if (Array.isArray(pd.options)) out.push(...pd.options.map(o => '- ' + o.label + (o.comment === 'required' ? '（必須寫說明）' : '')));
+        const review = pd.review?.output?.text;
+        if (review) out.push('', '待審（' + pd.review.step + '）：', '', String(review).split('\n').slice(0, 12).map(l => '> ' + l).join('\n'));
+      }
+    }
+    return out.join('\n');
+  }
 
-  // Returns a copy of `project` with one node per run (group 執行狀態), linked
-  // from its Workflow node; Workflows with an open run get a ▶ title prefix.
-  // Earlier run nodes are replaced; their positions are kept.
+  // Step edges from the Workflow's gen2-run definition when it matches the
+  // run's steps; otherwise the steps are chained in order.
+  function runEdges(r, workflowNode) {
+    const ids = (r.view.steps || []).map(s => s.id);
+    const spec = workflowNode ? parseRunSpec(workflowNode.md).spec : null;
+    const edges = [];
+    if (spec && Array.isArray(spec.steps) && spec.steps.length === ids.length && spec.steps.every((s, i) => s && s.id === ids[i])) {
+      spec.steps.forEach((st, i) => {
+        const choices = st.type === 'gate' ? st.options : st.outcomes;
+        if (Array.isArray(choices)) choices.forEach(o => edges.push({ from: st.id, to: o.next, label: o.label }));
+        else edges.push({ from: st.id, to: st.next !== undefined ? st.next : (spec.steps[i + 1] ? spec.steps[i + 1].id : 'end'), label: '' });
+      });
+    } else ids.forEach((id, i) => edges.push({ from: id, to: ids[i + 1] || 'end', label: '' }));
+    const seen = new Set();
+    return edges.filter(e => ids.includes(e.to) && !seen.has(e.from + '>' + e.to) && seen.add(e.from + '>' + e.to));
+  }
+
+  // Returns a copy of `project` showing each run as a lane of step cards:
+  // a run head card linked from its Workflow, then one card per step linked
+  // by the run's own edges. The current step is tagged gen2-active (the page
+  // makes it glow), finished steps gen2-done, the rest gen2-pending (shown
+  // small until they become current). Positions moved by the OWNER are kept.
   function applyRunOverlay(project, runs) {
     const p = JSON.parse(JSON.stringify(project));
     const prev = new Map(p.nodes.filter(n => String(n.id).startsWith('g2run_')).map(n => [n.id, n]));
@@ -875,26 +905,52 @@
     const list = Array.isArray(runs) ? runs : [];
     if (list.length) {
       const boxes = p.nodes.concat(p.groups).filter(b => [b.x, b.y, b.w, b.h].every(Number.isFinite));
-      const x0 = boxes.length ? Math.max(...boxes.map(b => b.x + b.w)) + 180 : ORIGIN.x;
-      const y0 = boxes.length ? Math.min(...boxes.map(b => b.y)) : ORIGIN.y;
+      const x0 = (boxes.length ? Math.max(...boxes.map(b => b.x + b.w)) + 180 : ORIGIN.x) + PAD_X;
+      const y0 = (boxes.length ? Math.min(...boxes.map(b => b.y)) : ORIGIN.y) + PAD_TOP;
       const added = [];
-      list.forEach((r, i) => {
-        const id = 'g2run_' + r.number, old = prev.get(id);
-        const node = {
-          id, title: runTitle(r), kind: 'gen2_run', semanticType: 'Run', groupId: 'g2grp_runs', md: runMarkdown(r),
-          status: r.view.status, source_status: '', review_status: '', sourcePath: r.url || ('#' + r.number), sourceOrigin: 'gen2_run',
-          gen2: { docType: 'run', docId: '#' + r.number, workflowId: r.view.workflow?.id || '' }, tags: ['gen2-run'], order: i,
-          x: old && Number.isFinite(old.x) ? old.x : x0 + PAD_X,
-          y: old && Number.isFinite(old.y) ? old.y : y0 + PAD_TOP + i * (RUN_NODE_H + GAP),
-          w: old && Number.isFinite(old.w) ? old.w : RUN_NODE_W,
-          h: old && Number.isFinite(old.h) ? old.h : RUN_NODE_H
+      const place = (id, x, y, size) => {
+        const old = prev.get(id);
+        return { x: old && Number.isFinite(old.x) ? old.x : x, y: old && Number.isFinite(old.y) ? old.y : y, w: size.w, h: size.h };
+      };
+      const linkOf = (id, from, to, label, type) => p.links.push({ id, from, to, type: type || 'main', label, layer: 'gen2', visibility: 'visible', origin: 'gen2_run', reviewStatus: 'source' });
+      list.forEach((r, lane) => {
+        const v = r.view, s = RUN_STATUS[v.status] || { icon: '•', text: v.status };
+        const open = r.state === 'open';
+        const headId = 'g2run_' + r.number;
+        const laneY = y0 + lane * RUN_LANE;
+        const head = {
+          id: headId, title: runTitle(r), kind: 'gen2_run', semanticType: 'Run', groupId: 'g2grp_runs', md: runHeadMarkdown(r),
+          status: v.status, source_status: '', review_status: '', sourcePath: r.url || ('#' + r.number), sourceOrigin: 'gen2_run',
+          gen2: { docType: 'run', docId: '#' + r.number, workflowId: v.workflow?.id || '', run: r.number, current: v.current || null, status: v.status },
+          tags: ['gen2-run', 'gen2-run-head', open ? 'gen2-open' : 'gen2-closed'], order: lane * 100,
+          ...place(headId, x0, laneY, RUN_HEAD)
         };
-        p.nodes.push(node);
-        added.push(node);
-        const wf = workflows.get(node.gen2.workflowId);
+        p.nodes.push(head); added.push(head);
+        const wf = workflows.get(head.gen2.workflowId);
         if (wf) {
-          if (r.state === 'open' && !RUN_PREFIX_RE.test(wf.title)) wf.title = '▶ ' + wf.title;
-          p.links.push({ id: 'g2rl_' + r.number, from: wf.id, to: id, type: 'main', label: (RUN_STATUS[r.view.status] || {}).text || r.view.status, layer: 'gen2', visibility: 'visible', origin: 'gen2_run', reviewStatus: 'source' });
+          if (open && !RUN_PREFIX_RE.test(wf.title)) wf.title = '▶ ' + wf.title;
+          linkOf('g2rl_' + r.number, wf.id, headId, s.text);
+        }
+        const steps = Array.isArray(v.steps) ? v.steps : [];
+        steps.forEach((st, j) => {
+          const active = open && v.current === st.id;
+          const state = active ? 'active' : st.status === 'done' ? 'done' : 'pending';
+          const id = headId + '_' + st.id;
+          const who = active ? (v.status === 'waiting_skill' ? 'gen2-agent' : 'gen2-owner') : null;
+          const icon = active ? (v.status === 'waiting_skill' ? '🔵' : v.status === 'waiting_input' ? '🟡' : '🟠') : state === 'done' ? '✅' : '⬜';
+          const node = {
+            id, title: (icon + ' ' + st.id + '｜' + (st.title || '')).slice(0, 90), kind: 'gen2_run', semanticType: 'RunStep', groupId: 'g2grp_runs',
+            md: runStepMarkdown(r, st), status: state, source_status: '', review_status: '', sourcePath: (r.url || '#' + r.number) + '#' + st.id, sourceOrigin: 'gen2_run',
+            gen2: { docType: 'run_step', docId: '#' + r.number + '/' + st.id, run: r.number, step: st.id, state },
+            tags: ['gen2-run', 'gen2-step', 'gen2-' + state].concat(who ? [who] : []), order: lane * 100 + j + 1,
+            ...place(id, x0 + RUN_HEAD.w + 80 + j * RUN_COL, laneY, RUN_STEP_SIZE[state])
+          };
+          p.nodes.push(node); added.push(node);
+        });
+        if (steps.length) linkOf('g2rl_' + r.number + '__start', headId, headId + '_' + steps[0].id, '', 'main');
+        const order = new Map(steps.map((st, j) => [st.id, j]));
+        for (const e of runEdges(r, wf)) {
+          linkOf('g2rl_' + r.number + '_' + e.from + '_' + e.to, headId + '_' + e.from, headId + '_' + e.to, e.label, order.get(e.to) > order.get(e.from) ? 'main' : 'resolve');
         }
       });
       const gx = Math.min(...added.map(n => n.x)) - PAD_X, gy = Math.min(...added.map(n => n.y)) - PAD_TOP;
@@ -912,6 +968,21 @@
       };
     }
     return p;
+  }
+
+  // What the Agent status panel shows: one row per open run.
+  function runAgentStatus(runs, now) {
+    const t = Date.parse(now || new Date().toISOString());
+    return (Array.isArray(runs) ? runs : []).filter(r => r.state === 'open').map(r => {
+      const v = r.view, pd = v.pending;
+      const since = Date.parse(v.updatedAt || '');
+      const minutes = Number.isFinite(since) && Number.isFinite(t) ? Math.max(0, Math.round((t - since) / 60000)) : null;
+      const who = v.status === 'waiting_skill' ? 'agent' : 'owner';
+      const doing = !pd ? (RUN_STATUS[v.status] || {}).text || v.status
+        : pd.type === 'skill' ? '執行 ' + (pd.skill || pd.step) + '｜' + pd.title
+          : (pd.type === 'gate' ? '等你核准：' : '等你提供資料：') + pd.step + '｜' + pd.title;
+      return { run: r.number, workflowId: v.workflow?.id || '', who, icon: who === 'agent' ? '🔵' : v.status === 'waiting_input' ? '🟡' : '🟠', doing, minutes, focusId: 'g2run_' + r.number + (v.current ? '_' + v.current : ''), url: r.url };
+    });
   }
 
   // Re-reading a GitHub canvas rebuilds it from Markdown; keep the run nodes
@@ -1068,5 +1139,5 @@
     }
   };
 
-  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, sources: { native, picker, input, github } };
+  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, runAgentStatus, sources: { native, picker, input, github } };
 });
