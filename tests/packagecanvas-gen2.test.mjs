@@ -246,3 +246,50 @@ test('saved graph layouts are dropped when the fresh project has entities they d
   assert.equal(grown.graphLayouts.group, null, 'a new group forces a fresh Group graph layout');
   assert.deepEqual(grown.graphLayouts.assistant, prev.graphLayouts.assistant);
 });
+
+// ---------- gen2-run executable workflow spec ----------
+const RUN_SPEC = {
+  version: 1,
+  steps: [
+    { id: 'S1', type: 'input', title: '提供來源', prompt: '貼上工作紀錄' },
+    { id: 'S2', type: 'skill', skill: 'SK-DEMO-001', title: '擷取' },
+    { id: 'G1', type: 'gate', title: '審核', review: 'S2', options: [
+      { id: 'approve', label: '核准', next: 'end' },
+      { id: 'revise', label: '退回', next: 'S2', comment: 'required' }
+    ] }
+  ]
+};
+const runBlock = spec => '\n## 執行定義\n\n```gen2-run\n' + JSON.stringify(spec, null, 2) + '\n```\n';
+
+test('gen2-run spec parses and validates the step graph', () => {
+  const ok = Gen2.parseRunSpec('# WF\n' + runBlock(RUN_SPEC));
+  assert.equal(ok.found, true);
+  assert.deepEqual(ok.errors, []);
+  assert.equal(Gen2.parseRunSpec('# 沒有定義').found, false);
+  assert.match(Gen2.parseRunSpec('```gen2-run\n{bad\n```').errors[0], /JSON/);
+  const bad = structuredClone(RUN_SPEC);
+  bad.steps[2].options[1].next = 'S9';
+  bad.steps.push({ id: 'S2', type: 'skill', skill: 'X', title: '' });
+  const errs = Gen2.validateRunSpec(bad);
+  assert.ok(errs.some(e => /重複/.test(e)) && errs.some(e => /SK-xxx/.test(e)) && errs.some(e => /缺 title/.test(e)), errs.join('\n'));
+  const loop = { version: 1, steps: [{ id: 'A', type: 'skill', skill: 'SK-A', title: 'a', next: 'B' }, { id: 'B', type: 'skill', skill: 'SK-B', title: 'b', next: 'A' }] };
+  assert.ok(Gen2.validateRunSpec(loop).some(e => /走不到 end/.test(e)));
+  const orphan = { version: 1, steps: [{ id: 'A', type: 'input', title: 'a', next: 'end' }, { id: 'B', type: 'input', title: 'b' }] };
+  assert.ok(Gen2.validateRunSpec(orphan).some(e => /B 從起點走不到/.test(e)));
+  assert.ok(Gen2.validateRunSpec(RUN_SPEC, { skillIds: new Set(['sk-other']) }).some(e => /SK-DEMO-001 不存在/.test(e)));
+});
+
+test('architecture check reports runnable, invalid and missing gen2-run definitions', () => {
+  const withRun = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(RUN_SPEC) } : f);
+  const r1 = Gen2.buildProject({ rootName: 'x', files: withRun, dirs }).report;
+  assert.ok(!r1.issues.some(i => i.code === 'run_spec_invalid'));
+  assert.ok(r1.issues.some(i => i.code === 'workflow_not_runnable' && /WF-DEMO-002/.test(i.message)));
+  assert.ok(!r1.issues.some(i => i.code === 'workflow_not_runnable' && /WF-DEMO-001/.test(i.message)));
+  const broken = structuredClone(RUN_SPEC);
+  broken.steps[1].skill = 'SK-DEMO-404';
+  const withBad = files.map(f => f.path.endsWith('WF-DEMO-001.md') ? { ...f, text: f.text + runBlock(broken) } : f);
+  const r2 = Gen2.buildProject({ rootName: 'x', files: withBad, dirs }).report;
+  const bad = r2.issues.find(i => i.code === 'run_spec_invalid');
+  assert.equal(bad?.severity, 'error');
+  assert.match(bad.message, /SK-DEMO-404 不存在/);
+});

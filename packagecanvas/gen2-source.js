@@ -20,7 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = 'gen2-source 0.2';
+  const VERSION = 'gen2-source 0.3';
   const MAX_FILES = 3000;
   const MAX_FILE_BYTES = 2 * 1024 * 1024;
   const NODE_W = 380, NODE_H = 240, GAP = 40, PAD_X = 45, PAD_TOP = 60, PAD_BOTTOM = 45;
@@ -146,6 +146,97 @@
 
   function isTrash(path) {
     return normPath(path).split('/').some(seg => /^09_/.test(seg) || seg === '.obsidian' || seg === '.trash');
+  }
+
+  // ---------- executable workflow spec (gen2-run) ----------
+  // A Workflow MD may carry one ```gen2-run fenced JSON block that turns its
+  // steps into a state machine: input (OWNER provides material), skill (an
+  // agent runs a Skill and posts the result) and gate (OWNER picks an option).
+  // GitHub runs, PackageCanvas and the Amin Pocket GBA app all read this one
+  // definition, so it is kept strict and dependency free.
+  const RUN_BLOCK_RE = /^```gen2-run[^\S\n]*\n([\s\S]*?)^```[^\S\n]*$/m;
+  const RUN_STEP_TYPES = ['input', 'skill', 'gate'];
+  const RUN_ID_RE = /^[A-Za-z][A-Za-z0-9_-]{0,31}$/;
+  const RUN_OPTION_RE = /^[a-z][a-z0-9_-]{0,31}$/;
+
+  function parseRunSpec(body) {
+    const text = String(body || '');
+    const m = text.match(RUN_BLOCK_RE);
+    if (!m) return { found: false, spec: null, errors: [] };
+    if ((text.match(/^```gen2-run/gm) || []).length > 1) return { found: true, spec: null, errors: ['只能有一個 gen2-run 區塊'] };
+    let spec;
+    try { spec = JSON.parse(m[1]); } catch (e) { return { found: true, spec: null, errors: ['gen2-run 不是有效的 JSON：' + e.message] }; }
+    return { found: true, spec, errors: validateRunSpec(spec) };
+  }
+
+  function runNext(spec, index) {
+    const step = spec.steps[index];
+    if (step.next !== undefined) return step.next;
+    return index + 1 < spec.steps.length ? spec.steps[index + 1].id : 'end';
+  }
+
+  function validateRunSpec(spec, context = {}) {
+    const errors = [];
+    const str = v => typeof v === 'string' && v.trim() !== '';
+    if (!spec || typeof spec !== 'object' || Array.isArray(spec)) return ['gen2-run 必須是 JSON 物件'];
+    if (spec.version !== 1) errors.push('version 必須是 1');
+    if (!Array.isArray(spec.steps) || !spec.steps.length) return errors.concat('steps 至少要有一個步驟');
+    if (spec.steps.length > 50) errors.push('steps 最多 50 個');
+    const ids = new Set();
+    spec.steps.forEach((st, i) => {
+      const at = '步驟 ' + (i + 1);
+      if (!st || typeof st !== 'object') { errors.push(at + ' 不是物件'); return; }
+      if (!RUN_ID_RE.test(st.id || '') || lc(st.id) === 'end') errors.push(at + ' 的 id 格式不正確（英文字母開頭，最多 32 字，不能是 end）');
+      else if (ids.has(st.id)) errors.push('步驟 id 重複：' + st.id);
+      else ids.add(st.id);
+      if (!RUN_STEP_TYPES.includes(st.type)) errors.push((st.id || at) + ' 的 type 必須是 input、skill 或 gate');
+      if (!str(st.title)) errors.push((st.id || at) + ' 缺 title');
+      if (st.type === 'skill') {
+        if (!/^SK-[A-Za-z0-9_-]+$/.test(st.skill || '')) errors.push((st.id || at) + ' 的 skill 必須是 SK-xxx');
+        else if (context.skillIds && !context.skillIds.has(lc(st.skill))) errors.push((st.id || at) + ' 使用的 ' + st.skill + ' 不存在');
+      }
+      if (st.type === 'gate') {
+        if (!Array.isArray(st.options) || st.options.length < 2 || st.options.length > 8) errors.push((st.id || at) + ' 的 options 需要 2–8 個選項');
+        else {
+          const opts = new Set();
+          st.options.forEach((o, j) => {
+            const oat = (st.id || at) + ' 選項 ' + (j + 1);
+            if (!o || !RUN_OPTION_RE.test(o.id || '')) errors.push(oat + ' 的 id 格式不正確（小寫英文字母開頭）');
+            else if (opts.has(o.id)) errors.push(oat + ' 的 id 重複：' + o.id);
+            else opts.add(o.id);
+            if (!o || !str(o.label)) errors.push(oat + ' 缺 label');
+            if (o && o.comment !== undefined && !['required', 'optional'].includes(o.comment)) errors.push(oat + ' 的 comment 只能是 required 或 optional');
+            if (!o || !str(o.next)) errors.push(oat + ' 缺 next');
+          });
+        }
+        if (st.review !== undefined && !str(st.review)) errors.push((st.id || at) + ' 的 review 必須是步驟 id');
+      } else if (st.options !== undefined) errors.push((st.id || at) + ' 只有 gate 可以有 options');
+    });
+    if (errors.length) return errors;
+    const known = id => id === 'end' || ids.has(id);
+    spec.steps.forEach((st, i) => {
+      if (st.type === 'gate') {
+        st.options.forEach(o => { if (!known(o.next)) errors.push(st.id + ' 選項 ' + o.id + ' 的 next 指向不存在的步驟：' + o.next); });
+        if (st.review !== undefined && !ids.has(st.review)) errors.push(st.id + ' 的 review 指向不存在的步驟：' + st.review);
+        if (st.next !== undefined) errors.push(st.id + ' 是 gate，請在每個選項設定 next');
+      } else if (!known(runNext(spec, i))) errors.push(st.id + ' 的 next 指向不存在的步驟：' + st.next);
+    });
+    if (spec.start !== undefined && !ids.has(spec.start)) errors.push('start 指向不存在的步驟：' + spec.start);
+    if (errors.length) return errors;
+    // every step reachable from start, and "end" reachable
+    const edges = new Map(spec.steps.map((st, i) => [st.id, st.type === 'gate' ? st.options.map(o => o.next) : [runNext(spec, i)]]));
+    const seen = new Set(), queue = [spec.start || spec.steps[0].id];
+    let endReached = false;
+    while (queue.length) {
+      const id = queue.shift();
+      if (id === 'end') { endReached = true; continue; }
+      if (seen.has(id)) continue;
+      seen.add(id);
+      queue.push(...edges.get(id));
+    }
+    for (const st of spec.steps) if (!seen.has(st.id)) errors.push('步驟 ' + st.id + ' 從起點走不到');
+    if (!endReached) errors.push('流程永遠走不到 end');
+    return errors;
   }
 
   // ---------- main builder ----------
@@ -389,8 +480,14 @@
         }
       } else if (workflows.length || skills.length) issue('kb_missing_bom', 'warn', kbId + ' 有 Workflow/Skill 但沒有 Workflow BOM', [anchor]);
 
+      const kbSkillIds = new Set(skills.map(s => lc(s.docId)).filter(Boolean));
       for (const w of workflows) {
         if (!/^##\s*OWNER\s*Gate/im.test(w.body)) issue('workflow_no_gate', 'warn', 'Governance 缺口：' + w.title + ' 沒有「OWNER Gate」段落', [w.nodeId]);
+        const run = parseRunSpec(w.body);
+        if (!run.found) { issue('workflow_not_runnable', 'info', w.title + ' 尚未定義可執行流程（gen2-run）', [w.nodeId]); continue; }
+        const errs = run.spec && !run.errors.length ? validateRunSpec(run.spec, { skillIds: kbSkillIds }) : run.errors;
+        if (errs.length) issue('run_spec_invalid', 'error', w.title + ' 的 gen2-run 定義有誤：' + errs.join('；'), [w.nodeId]);
+        else if (!run.spec.steps.some(st => st.type === 'gate')) issue('run_spec_no_gate', 'warn', w.title + ' 的 gen2-run 沒有任何 OWNER gate 步驟', [w.nodeId]);
       }
       for (const s of skills) {
         const usedBy = workflows.some(w => links.has(w.nodeId + '>' + s.nodeId));
@@ -798,5 +895,5 @@
     }
   };
 
-  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, sources: { native, picker, input, github } };
+  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, sources: { native, picker, input, github } };
 });

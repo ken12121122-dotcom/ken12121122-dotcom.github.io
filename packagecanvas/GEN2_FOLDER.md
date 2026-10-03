@@ -2,6 +2,29 @@
 
 Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bridge。
 
+## gen2-source 0.3：可執行流程定義（gen2-run）
+
+Workflow MD 可以加一個 ```` ```gen2-run ```` JSON 區塊，把步驟定義成狀態機：
+- `input`：OWNER 提供資料
+- `skill`：Agent 執行 Skill 並回報結果
+- `gate`：OWNER 從選項中選一個，每個選項有自己的 `next`
+
+`parseRunSpec`／`validateRunSpec` 會檢查以下項目：
+- id 格式
+- 步驟類型
+- Skill 是否存在於同一個 KB
+- 選項設定
+- `next` 是否指到存在的步驟
+- 每個步驟是否從起點走得到
+- 流程是否走得到 `end`
+
+架構檢查新增：
+- `run_spec_invalid`（錯誤）：定義寫錯
+- `run_spec_no_gate`（警告）：沒有任何 OWNER gate
+- `workflow_not_runnable`（提示）：還沒定義 gen2-run
+
+執行引擎、格式說明與 GitHub Actions 在私有 repo `gen2-knowledge`。
+
 ## 20261001.1：GitHub 正本來源
 
 GitHub 私有 repo `gen2-knowledge` 是 GEN2 的正式版本，Drive 和手機資料夾只是鏡像。這次讓畫布可以直接讀 GitHub，所以畫布上看到的就是流程實際使用的版本。
