@@ -1,17 +1,19 @@
 {
-  "versionCode": 197,
-  "versionName": "0.11.22-rc12",
+  "versionCode": 198,
+  "versionName": "0.11.22-rc13",
   "channel": "candidate",
-  "bridge": 101,
-  "releaseSequence": 35,
+  "bridge": 102,
+  "releaseSequence": 36,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "候選版（實機驗收用，尚未正式發布）：控制中心「管理」區新增 PackageCanvas 卡片，開啟獨立畫面載入 GitHub Pages 上的 PackageCanvas 網頁。",
-    "PackageCanvas 可透過 Android 系統資料夾選擇器授權一個手機資料夾，唯讀讀取其中的 Markdown，產生 GEN2 知識架構畫布。",
-    "資料夾授權清單獨立於 AMIN WIKI／FOX KnowledgeProfile；移除授權只影響 PackageCanvas。",
-    "沒有新增 Android 權限，也沒有 Markdown 寫回、刪檔或其他網域存取能力；既有卡片與功能不變。"
+    "候選版（實機驗收用，尚未正式發布）：控制中心新增「GEN2 待核准」卡片。",
+    "GEN2 流程在 GitHub（gen2-knowledge）跑到需要 OWNER 核准或提供資料的步驟時，App 每 15 分鐘檢查一次並發出通知。",
+    "待核准畫面顯示要審核的內容與選項按鈕；按下後以 OWNER 的 GitHub 帳號在流程 Issue 留言 /gen2 指令，由 GitHub 端驗證後才繼續。",
+    "需要說明的選項（例如退回）未填說明時不會送出；每次送出前都會再確認一次。",
+    "沿用 AMIN Brain 的 GitHub 登入，只能存取 gen2-knowledge 的 Issue；不會修改知識庫、合併 PR 或寫入 Calendar。",
+    "保留 Bridge 101 的 PackageCanvas 卡片與唯讀資料夾功能；既有卡片與功能不變。"
   ]
 }
