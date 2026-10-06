@@ -81,3 +81,22 @@ test('growth keeps finished history beyond the recent-run list', async () => {
   assert.equal(p.events.filter(e => e.kind === 'w').length, 100);
   assert.equal(p.stage, 2);
 });
+
+test('the fox comes to find you when a run needs you or finishes', () => {
+  const waiting = M.questsFromRuns([run(4, 'waiting_owner', 'G1', STEPS(['done'], ['active'], ['pending'])),
+    run(5, 'waiting_skill', 'S2', STEPS(['active'], ['pending'], ['pending']))]);
+  const memo = qs => new Map(qs.map(q => [q.number, { status: q.status, step: q.pending?.step || '', who: q.who, open: q.open }]));
+  // First read: only what already waits for you, once.
+  assert.deepEqual(M.callouts(new Map(), waiting).map(c => c.number + ':' + c.kind), ['4:needs_owner']);
+  // Nothing moved: silent.
+  assert.deepEqual(M.callouts(memo(waiting), waiting), []);
+  // The Agent finished S2 and the run now waits at G1 for you; #4 finished.
+  const later = M.questsFromRuns([run(4, 'done', null, STEPS(['done'], ['done', '核准'], ['done', '已寫入'])),
+    run(5, 'waiting_owner', 'G1', STEPS(['done'], ['active'], ['pending']))]);
+  const out = M.callouts(memo(waiting), later);
+  // What waits for you comes first.
+  assert.deepEqual(out.map(c => c.number + ':' + c.kind), ['5:needs_owner', '4:done']);
+  assert.match(out[0].text, /#5 WF-DEMO-001 在等你：G1「審查」/);
+  // Sent back to the same gate after a revise counts as a new call only if the step changed.
+  assert.deepEqual(M.callouts(memo(later), later), []);
+});

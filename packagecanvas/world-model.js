@@ -137,10 +137,31 @@
     return '';
   }
 
+  // When the fox should come and find the player: a run that starts waiting
+  // for the OWNER (or waits at a new step), and a run that just finished.
+  // prev: Map(number -> {status, step, who, open}) from the last read; the
+  // first read (prev empty) only reports runs already waiting, once.
+  function callouts(prev, quests) {
+    const out = [];
+    const first = !prev || prev.size === 0;
+    for (const q of quests || []) {
+      const before = prev && prev.get(q.number);
+      const step = q.pending?.step || '';
+      if (q.open && q.who === 'owner' && (first || !before || before.who !== 'owner' || before.step !== step)) {
+        out.push({ number: q.number, kind: 'needs_owner', where: q.where, step, title: q.pending?.title || '',
+          text: '#' + q.number + ' ' + q.workflowId + ' 在等你：' + step + '「' + (q.pending?.title || '') + '」' });
+      } else if (!first && before && before.open && !q.open) {
+        out.push({ number: q.number, kind: q.status === 'done' ? 'done' : 'stopped', where: null, step: '', title: '',
+          text: '#' + q.number + ' ' + q.workflowId + (q.status === 'done' ? ' 完成了！' : ' 已經停止。') });
+      }
+    }
+    return out;
+  }
+
   // Signature of what the world shows, to know when something moved.
   function worldSignature(quests) {
     return quests.map(q => [q.number, q.status, q.pending?.step || '', q.attempt].join(':')).join('|');
   }
 
-  return { BUILDINGS, STAGES, mergeRuns, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
+  return { BUILDINGS, STAGES, callouts, mergeRuns, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
 });

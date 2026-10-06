@@ -164,7 +164,7 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
 </div>
 
 <script src="./gen2-source.js?v=20261006.2"></script>
-<script src="./world-model.js?v=20261006.2"></script>
+<script src="./world-model.js?v=20261007.1"></script>
 <script src="./vendor/nacl-fast.min.js?v=1.0.3"></script>
 <script src="./gen2-secrets.js?v=20261007.1"></script>
 <script>
@@ -305,7 +305,7 @@ const S = {
   hero:{x:6, y:8, px:6*T, py:8*T, dir:'down', moving:false, from:null},
   trail:[], fox:{px:5*T, py:8*T, flip:false},
   runs:[], history:[], historyAt:0, quests:[], focus:null, sig:'', last:new Map(), error:'', loading:false, loadedAt:null,
-  watching:null, victory:null, menuSel:0, menuPage:'main'
+  watching:null, victory:null, menuSel:0, menuPage:'main', calls:[], called:new Set()
 };
 const STAGES = M.STAGES;
 const MONSTER = {
@@ -319,6 +319,28 @@ const GH_KEY = 'packagecanvas-gen2-github-v1';
 function ghCfg(){ let s = {}; try { s = JSON.parse(localStorage.getItem(GH_KEY)||'null') || {}; } catch(_){}
   const d = GEN2.sources.github.defaults; return { owner:s.owner||d.owner, repo:s.repo||d.repo, token:s.token||'' }; }
 function appBridge(){ try { const a = window.AminGen2; return a && typeof a.openRun==='function' && a.isAvailable() ? a : null; } catch(_){ return null; } }
+// Bridge 104+: the app's fox chat (AI judges what you mean, scopes tasks, starts runs). Opening only.
+function chatBridge(){ const a = appBridge(); return a && typeof a.openChat==='function' ? a : null; }
+// The fox runs up to you with "!" and tells you what happened.
+function foxCallout(c){
+  const h = S.hero; S.fox.px = h.px + (S.fox.px < h.px ? -T : T); S.fox.py = h.py; S.fox.flip = S.fox.px > h.px; S.fox.alertUntil = S.t + 900;
+  jingle(c.kind==='needs_owner' ? [784,988] : [523,659,784]);
+  setTimeout(() => {
+    if (S.scene!=='world' || D || KEYS.open){ S.calls.unshift(c); return; }
+    const q = S.quests.find(x => x.number===c.number);
+    const acts = [];
+    if (c.kind==='needs_owner'){
+      if (chatBridge()) acts.push(['🦊 跟我聊這件', () => openChat(c.number)]);
+      if (q && q.pending) acts.push(['看內容和處理方式', () => ownerDialog(q)]);
+      acts.push(['等一下再說', closeDialog]);
+    } else {
+      if (chatBridge()) acts.push(['🦊 聽我報告', () => openChat(c.number)]);
+      acts.push(['好', closeDialog]);
+    }
+    ask('主人！' + c.text + (c.kind==='needs_owner' ? '' : (c.kind==='done' ? '我們一起完成了。' : '')), acts.map(a=>a[0]), i => { closeDialog(); acts[i][1](); }, {onBack: closeDialog});
+  }, 700);
+}
+function openChat(issue){ const a = chatBridge(); if (a && a.openChat(issue||0)) return true; say('狐狸聊天要在 Amin App（Bridge 104 起）裡開知識世界才能用，App 會用你設定的 AI。'); return false; }
 let pollTimer = 0;
 async function refresh(quiet){
   if (S.loading || S.paused) return;
@@ -359,6 +381,8 @@ function applyRuns(runs, quiet){
       if (!q.open && prev.open) toast(q.status==='done' ? '🏁 #'+q.number+' 任務完成！' : '#'+q.number+' 已停止');
     }
   }
+  // The fox comes to find you (each run and step once).
+  for (const c of M.callouts(S.last, quests)){ const k = c.number+':'+c.kind+':'+c.step; if (!S.called.has(k)){ S.called.add(k); S.calls.push(c); } }
   S.quests = quests; S.sig = sig;
   S.last = new Map(quests.map(q=>[q.number,{status:q.status, step:q.pending?.step||'', who:q.who, where:q.where, open:q.open}]));
   if (!S.focus || !quests.some(q=>q.number===S.focus && q.open)) S.focus = (quests.find(q=>q.open)||quests[0]||{}).number || null;
@@ -429,6 +453,17 @@ function interact(){
     if (b.id==='shop') return ask(b.name+'：'+b.cap+'。\n現在沒有工作。後面有個上鎖的櫃子，放著 Agent 的鑰匙。', ['🔑 打開 Agent 鑰匙櫃','離開'], i => { closeDialog(); if (i===0) openKeys(); }, {onBack: closeDialog});
     return say(b.name+'：'+b.cap+'。\n現在沒有工作。');
   }
+  // Nothing in front: talk to the fox.
+  return foxTalk();
+}
+function foxTalk(){
+  const acts = [];
+  if (chatBridge()) acts.push(['🦊 聊天、交代新任務', () => openChat(0)]);
+  acts.push(['現在任務狀況', foxStatus]);
+  acts.push(['離開', closeDialog]);
+  ask(chatBridge() ? '主人，想聊什麼？要交給我的事，直接跟我說就好。' : '主人，我在。（聊天要在 Amin App 裡打開知識世界）', acts.map(a=>a[0]), i => { closeDialog(); acts[i][1](); }, {onBack: closeDialog});
+}
+function foxStatus(){
   const q = focusQuest();
   say(q ? (q.open ? '#'+q.number+' '+q.workflowId+'：'+(q.who==='owner' ? '在等你，到「'+bName(q.where)+'」處理。' : 'KB 正在「'+bName(q.where)+'」工作，'+(q.minutes!=null?'已 '+q.minutes+' 分鐘。':'')) : '#'+q.number+' 已'+(q.status==='done'?'完成':'停止')+'。') : '目前沒有任務。我陪你逛逛。');
 }
@@ -557,6 +592,7 @@ function drawWorld(){
   if (questsAt('board').length) bang(BOARD.x*T+6, BOARD.y*T-10);
   const fb = Math.floor(S.t/500)%2;
   sprite(Math.floor(S.t/220)%2 && (Math.abs(S.fox.px-h.px)+Math.abs(S.fox.py-h.py))>T+2 ? FOX2 : FOX, Math.round(S.fox.px), Math.round(S.fox.py)-3-fb, S.fox.flip);
+  if (S.fox.alertUntil > S.t) bang(Math.round(S.fox.px)+6, Math.round(S.fox.py)-14);
   const [hs, hf] = heroSprite(); sprite(hs, Math.round(h.px), Math.round(h.py)-4, hf);
   for (const b of BUILDINGS){ const dr = door(b); if (Math.abs(h.x-dr.x)<=1 && Math.abs(h.y-dr.y)<=1){ g.fillStyle='rgba(31,27,51,.85)'; const w = 8*b.name.length+8; g.fillRect(b.x*T+24-w/2, b.y*T+50, w, 12); g.textAlign='center'; txt(b.name, b.x*T+24, b.y*T+59, C.paper, 8); g.textAlign='left'; } }
   g.restore();
@@ -644,6 +680,7 @@ function drawMenu(){
   txt('世界：'+(S.paused?'⏸ 已暫停':'● 運轉中')+'（關掉畫面就暫停）', 32, 138, S.paused?C.red:'#2f8a48', 7);
 }
 const MENU = () => [
+  ['🦊 跟狐狸聊天', () => { S.scene='world'; openChat(0); }],
   ['任務清單', () => S.menuPage='quests'],
   ['角色卡', () => S.menuPage='card'],
   ['立即重新讀取', () => { S.scene='world'; refresh(false); }],
@@ -720,6 +757,7 @@ function frame(now){
   pollPad();
   if (D && D.shown < D.text.length){ D.shown = Math.min(D.text.length, D.shown + dt/28); renderDialog(); }
   if (!S.paused && S.scene==='world') updateHero(dt);
+  if (!S.paused && S.scene==='world' && !D && !S.hero.moving && !KEYS.open && S.calls.length && !(S.fox.alertUntil > S.t)) foxCallout(S.calls.shift());
   g.clearRect(0,0,W,H);
   if (S.scene==='title') drawTitle(); else if (S.scene==='battle') drawBattle(); else if (S.scene==='menu') drawMenu(); else drawWorld();
   requestAnimationFrame(frame);
