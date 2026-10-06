@@ -114,8 +114,8 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
 </div>
 
 
-<script src="./gen2-source.js?v=20261006.1"></script>
-<script src="./world-model.js?v=20261006.1"></script>
+<script src="./gen2-source.js?v=20261006.2"></script>
+<script src="./world-model.js?v=20261006.2"></script>
 <script>
 (() => {
 'use strict';
@@ -253,7 +253,7 @@ const S = {
   scene:'title', t:0, paused:false, sound:true, demo:false,
   hero:{x:6, y:8, px:6*T, py:8*T, dir:'down', moving:false, from:null},
   trail:[], fox:{px:5*T, py:8*T, flip:false},
-  runs:[], quests:[], focus:null, sig:'', last:new Map(), error:'', loading:false, loadedAt:null,
+  runs:[], history:[], historyAt:0, quests:[], focus:null, sig:'', last:new Map(), error:'', loading:false, loadedAt:null,
   watching:null, victory:null, menuSel:0, menuPage:'main'
 };
 const STAGES = M.STAGES;
@@ -275,7 +275,12 @@ async function refresh(quiet){
   const cfg = ghCfg();
   S.loading = true;
   try {
-    const runs = S.demo || !cfg.token ? demoRuns() : await GEN2.sources.github.listRuns(cfg);
+    const live = !(S.demo || !cfg.token);
+    const runs = live ? await GEN2.sources.github.listRuns(cfg) : demoRuns();
+    // Growth needs every finished run, not only the recent ones: reread it when a run finished or every 10 minutes.
+    const finished = runs.some(r => r.state !== 'open' && !S.history.some(h => h.number === r.number));
+    if (live && (finished || Date.now() - S.historyAt > 600000)){ S.history = await GEN2.sources.github.listFinishedRuns(cfg); S.historyAt = Date.now(); }
+    if (!live){ S.history = []; S.historyAt = 0; }
     S.error = ''; applyRuns(runs, quiet);
   } catch (e) {
     S.error = e.message || String(e); if (!quiet) toast('⚠ '+S.error, 4000);
@@ -369,7 +374,7 @@ function interact(){
   for (const b of BUILDINGS){
     const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
     const list = questsAt(b.id);
-    if (list.length) return pickQuest(list, q => { if (q.who==='agent'){ S.watching = {number:q.number, where:b.id}; S.scene='battle'; } else ownerDialog(q); });
+    if (list.length) return pickQuest(list, q => { closeDialog(); if (q.who==='agent'){ S.watching = {number:q.number, where:b.id}; S.scene='battle'; } else ownerDialog(q); });
     return say(b.name+'：'+b.cap+'。\n現在沒有工作。');
   }
   const q = focusQuest();
@@ -447,7 +452,8 @@ function drawTitle(){
   txt(ghCfg().token ? '已連到 '+ghCfg().repo : '尚未設定 token：用示範資料', 120, 128, C.paper, 8);
   if (Math.floor(S.t/500)%2) txt('PRESS START', 120, 150, C.paper, 9); g.textAlign='left';
 }
-function profileOf(name){ return M.profiles(S.runs)[name]; }
+const allRuns = () => M.mergeRuns(S.runs, S.history);
+function profileOf(name){ return M.profiles(allRuns())[name]; }
 function card(c, x, y, w, title, sub){
   g.fillStyle=C.paper; g.fillRect(x,y,w,72); g.fillStyle=C.ink; g.fillRect(x+1,y+1,w-2,70); g.fillStyle=C.paper; g.fillRect(x+2,y+2,w-4,68);
   txt(title, x+6, y+13, C.ink, 9); txt(sub, x+6, y+24, '#6a5fd0', 8);
@@ -456,7 +462,7 @@ function card(c, x, y, w, title, sub){
 function drawMenu(){
   drawWorld(); g.fillStyle='rgba(15,12,30,.8)'; g.fillRect(0,0,W,H);
   if (S.menuPage==='card'){
-    const names = Object.keys(M.profiles(S.runs)); const name = (focusQuest()||{}).creature || names[0];
+    const names = Object.keys(M.profiles(allRuns())); const name = (focusQuest()||{}).creature || names[0];
     const p = (name && profileOf(name)) || {name:'—', k:0, w:0, s:0, stage:0, events:[], gap:'還沒有任務資料'};
     card(p, 6, 10, 112, p.name, STAGES[p.stage]);
     card({k:62,w:20,s:35}, 122, 10, 112, 'FOX（夥伴）', 'L1 學徒・嚮導');

@@ -52,3 +52,32 @@ test('growth comes only from validated results, once each', () => {
   assert.match(p.gap, /目前 1 次/);
   assert.equal(M.profiles([runs[2]])['KB-DEMO'].stage, 0);
 });
+
+test('retry and unknown gate outcomes are not counted as a passed review', () => {
+  const gates = [step('S1', 'input', '接收資料', 'done'), step('G1', 'gate', '審查', 'done', '核准，交給 SK 寫入'),
+    step('S3', 'skill', '寫入', 'done', '發現時段衝突，未寫入'), step('G3', 'gate', '衝突處理', 'done', '依指示調整、覆蓋或另找時間後重新寫入'),
+    step('G2', 'gate', '驗收', 'done', '通過，採用'), step('G4', 'gate', '其他', 'done', '看起來可以')];
+  const ev = M.growthFromRuns([run(9, 'waiting_skill', null, gates)]);
+  assert.deepEqual(ev.map(e => e.id), ['GE-9-G1', 'GE-9-G2']);
+});
+
+test('growth keeps finished history beyond the recent-run list', async () => {
+  const G = require('../packagecanvas/gen2-source.js');
+  const enc = v => Buffer.from(JSON.stringify(v)).toString('base64');
+  const finished = n => ({ number: n, state: 'closed', html_url: 'https://github.com/o/r/issues/' + n, user: { login: 'github-actions[bot]' }, labels: [{ name: 'gen2-run' }, { name: 'gen2:done' }],
+    body: '<!-- gen2-run-view:' + enc({ format: 'gen2-run-view', version: 1, workflow: { id: 'WF-DEMO-001' }, status: 'done', current: null, pending: null,
+      steps: [step('G1', 'gate', '審查', 'done', '核准'), step('S3', 'skill', '寫入', 'done', '已寫入並回讀驗證一致')] }) + ' -->' });
+  const urls = [];
+  const fetchImpl = async url => { urls.push(url); const page = Number(new URL(url).searchParams.get('page'));
+    const list = page === 1 ? Array.from({ length: 100 }, (_, i) => finished(300 - i)) : page === 2 ? [finished(1)] : [];
+    return { ok: true, status: 200, json: async () => list }; };
+  const history = await G.sources.github.listFinishedRuns({ token: 't' }, fetchImpl);
+  assert.equal(history.length, 101);
+  assert.ok(urls.every(u => /labels=gen2-run,gen2:done&state=closed/.test(u)));
+  const recent = [run(1, 'waiting_owner', 'G1', STEPS(['done'], ['active'], ['pending']))];
+  const merged = M.mergeRuns(recent, history);
+  assert.equal(merged.find(r => r.number === 1).state, 'open', 'the recent view of a run wins');
+  const p = M.profiles(merged)['KB-DEMO'];
+  assert.equal(p.events.filter(e => e.kind === 'w').length, 100);
+  assert.equal(p.stage, 2);
+});

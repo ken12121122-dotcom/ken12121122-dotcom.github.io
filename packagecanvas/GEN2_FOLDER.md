@@ -17,9 +17,10 @@ Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bri
   - 在 Amin Pocket GBA（Bridge 103 起）裡：「🎙 跟狐狸用說的處理」「✋ 打開核准頁」，由 App 確認後送出。
   - 在一般瀏覽器：只能複製 `/gen2` 指令或開 GitHub Issue。網頁本身不送出任何指令。
 - 角色卡：每個知識庫一隻知識生物（WF-TIME → KB-TIME）。三條經驗（🧠 知識、💼 工作、✨ 技能）與發展階段（L0 種子起），只從驗證過的結果計算：
-  - 通過 OWNER 審查的閘門
+  - 通過 OWNER 審查的閘門：選項要明確寫核准、通過或採用。「調整後重做」這類重試不算
   - 完成且最後一步回報成功的流程
   - 停止的流程不算
+  - 成長從全部已完成的流程計算（另外分頁讀取），不只最近幾筆，所以舊的成長不會消失
 - 沿用 PackageCanvas 的 GitHub token（同一個網站），需要 Issues 讀取權限。沒有 token 時用示範資料。
 - 有進行中的任務時每 10 秒更新，沒有時每 60 秒；畫面關掉就暫停（Knowledge World V0：線上才運轉）。
 - 規則在 `packagecanvas/world-model.js`，測試在 `tests/packagecanvas-world.test.mjs`。

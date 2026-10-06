@@ -20,7 +20,9 @@
     [/研究|搜尋|蒐集|來源|調查|research|search|source/i, 'lab']
   ];
   const STAGES = ['L0 種子', 'L1 學徒', 'L2 工人', 'L3 專家', 'L4 整合者', 'L5 導師'];
-  const NEGATIVE = /退回|重做|不寫入|停止|中止|拒絕|取消|revise|reject|stop|cancel|conflict|blocked|衝突|阻擋/i;
+  const NEGATIVE = /退回|重做|不寫入|未寫入|未完成|停止|中止|拒絕|否決|取消|調整|重新|revise|reject|stop|cancel|conflict|blocked|retry|adjust|衝突|阻擋/i;
+  // A gate counts as passed only when its decision says so; retries and unknown labels do not.
+  const PASSED = /^(核准|通過|同意|採用|驗收通過|批准)|approve|accept|\bpass/i;
   const SUCCESS = /寫入|完成|成功|通過|一致|written|done|pass|ok/i;
 
   function buildingFor(step) {
@@ -78,7 +80,7 @@
       const steps = Array.isArray(v.steps) ? v.steps : [];
       if (v.status === 'stopped') continue; // a stopped run produced no validated result
       for (const s of steps) {
-        if (s.type === 'gate' && s.status === 'done' && s.result && !NEGATIVE.test(s.result)) {
+        if (s.type === 'gate' && s.status === 'done' && s.result && PASSED.test(s.result) && !NEGATIVE.test(s.result)) {
           events.push({ id: `GE-${r.number}-${s.id}`, creature, run: r.number, kind: 'k', amount: 30, what: `${s.id} 通過 OWNER 審查（${s.result}）` });
         }
       }
@@ -92,6 +94,14 @@
     }
     const seen = new Set();
     return events.filter(e => !seen.has(e.id) && seen.add(e.id));
+  }
+
+  // Recent runs plus the finished-run history, newest view of each run wins.
+  function mergeRuns(recent, history) {
+    const byNumber = new Map();
+    for (const r of Array.isArray(history) ? history : []) byNumber.set(r.number, r);
+    for (const r of Array.isArray(recent) ? recent : []) byNumber.set(r.number, r);
+    return [...byNumber.values()];
   }
 
   // Character sheets: three EXP channels and a development stage.
@@ -132,5 +142,5 @@
     return quests.map(q => [q.number, q.status, q.pending?.step || '', q.attempt].join(':')).join('|');
   }
 
-  return { BUILDINGS, STAGES, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
+  return { BUILDINGS, STAGES, mergeRuns, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
 });
