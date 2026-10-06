@@ -20,10 +20,11 @@ Bridge 102/103 on-device acceptance by the OWNER, 2026-10-03 and 2026-10-04 (rec
 - Fox voice approval: the command is read back and sent only after spoken or tapped confirmation
 - Asking the fox "有什麼要我處理的" opens voice approval
 - GBA, saves, controller, universal overlay and the PackageCanvas card did not regress
+- 2026-10-06: the PackageCanvas "🎙 用說的" button (`AminGen2`, web `20261006.3`) opens the app's voice approval
 
 Not yet confirmed on a device:
 - background 15-minute notifications
-- PackageCanvas buttons that open the app (`AminGen2`)
+- the PackageCanvas "✋ 核准頁" button (`AminGen2` page mode)
 - cancelling with "等一下"
 
 Bridge 16 hardware verification (Samsung SM-A5560, Android 15):
@@ -252,7 +253,7 @@ Supabase
 - In-app Bluetooth scanning and pairing are not implemented; Android system pairing is used.
 - Automatic IG/Facebook short-video mode is not implemented.
 - The physical controller and universal overlay do not yet share one unified action core.
-- Bridge 103 items not yet confirmed on a device: background 15-minute notifications, PackageCanvas buttons that open the app, and cancelling by voice with "等一下".
+- Bridge 103 items not yet confirmed on a device: background 15-minute notifications, the PackageCanvas "✋ 核准頁" button, and cancelling by voice with "等一下".
 
 ## Next Architecture Milestones
 
