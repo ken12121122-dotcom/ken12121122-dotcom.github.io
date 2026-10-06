@@ -1,20 +1,23 @@
 {
   "name": "Amin Universal Vault and Pocket GBA",
-  "architecture_version": 3,
-  "last_verified_at": "2026-07-19T20:55:00+08:00",
+  "architecture_version": 4,
+  "last_verified_at": "2026-10-06T16:13:29+08:00",
   "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
   "default_branch": "main",
   "principle": "資料屬於 Vault，不屬於任何單一 App。",
   "release_state": {
     "android": {
       "package_id": "com.amin.pocketgba",
-      "version_name": "0.9.2-bridge16",
-      "version_code": 112,
+      "version_name": "0.11.22-rc14-bridge103",
+      "version_code": 199,
       "channel_enabled": true,
       "minimum_supported_version_code": 107,
-      "source_branch": "agent/amin-pocket-gba-universal-control-v01",
+      "source_branch": "release/android",
       "manifest": "/amin-vault/native-release-manifest.json",
-      "signer_certificate_sha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7"
+      "signer_certificate_sha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
+      "channel": "release",
+      "published_at": "2026-10-06T08:13:29Z",
+      "release_workflow": ".github/workflows/android-release.yml"
     },
     "runtime": {
       "version": "0.9.2-rc19",
@@ -22,15 +25,6 @@
       "manifest": "/amin-vault/runtime-manifest.json",
       "hot_update": true
     }
-  },
-  "physical_verification": {
-    "device": "Samsung SM-A5560",
-    "android": "15",
-    "wired_controller_native_detection": true,
-    "controller_binding": true,
-    "controller_test_feedback": true,
-    "controller_in_game": true,
-    "universal_overlay": true
   },
   "product_surfaces": [
     {
@@ -46,6 +40,20 @@
       "name": "Legacy Pocket OS",
       "visual": "black",
       "role": "archived or experimental entry, not the default return target"
+    },
+    {
+      "name": "PackageCanvas",
+      "path": "/packagecanvas/",
+      "role": "GEN2 knowledge architecture workbench with live GEN2 run progress"
+    },
+    {
+      "name": "Knowledge World",
+      "path": "/packagecanvas/world.html",
+      "role": "GBA-style game view of GEN2 runs; fox partner; Agent work as auto battles; Agent key cabinet"
+    },
+    {
+      "name": "GEN2 native screens",
+      "role": "pending approvals and fox voice approval; the only place OWNER decisions are sent from the app"
     }
   ],
   "gamepad_input": {
@@ -81,24 +89,53 @@
     ],
     "profile_storage_key": "amin-gba-controller-profile-v1",
     "default_native_mapping": {
-      "A": ["KEYCODE_BUTTON_2", "KEYCODE_BUTTON_A"],
-      "B": ["KEYCODE_BUTTON_3", "KEYCODE_BUTTON_B"],
-      "START": ["KEYCODE_BUTTON_START", "KEYCODE_BUTTON_10"],
-      "SELECT": ["KEYCODE_BUTTON_SELECT", "KEYCODE_BUTTON_9"],
-      "L": ["KEYCODE_BUTTON_L1", "KEYCODE_BUTTON_5"],
-      "R": ["KEYCODE_BUTTON_R1", "KEYCODE_BUTTON_6"],
-      "DIRECTIONS": ["DPAD", "AXIS_X_Y", "AXIS_HAT_X_Y"]
+      "A": [
+        "KEYCODE_BUTTON_2",
+        "KEYCODE_BUTTON_A"
+      ],
+      "B": [
+        "KEYCODE_BUTTON_3",
+        "KEYCODE_BUTTON_B"
+      ],
+      "START": [
+        "KEYCODE_BUTTON_START",
+        "KEYCODE_BUTTON_10"
+      ],
+      "SELECT": [
+        "KEYCODE_BUTTON_SELECT",
+        "KEYCODE_BUTTON_9"
+      ],
+      "L": [
+        "KEYCODE_BUTTON_L1",
+        "KEYCODE_BUTTON_5"
+      ],
+      "R": [
+        "KEYCODE_BUTTON_R1",
+        "KEYCODE_BUTTON_6"
+      ],
+      "DIRECTIONS": [
+        "DPAD",
+        "AXIS_X_Y",
+        "AXIS_HAT_X_Y"
+      ]
     }
   },
   "universal_control_overlay": {
     "status": "active",
     "service": "UniversalControlAccessibilityService",
-    "modes": ["cursor", "scroll"],
+    "modes": [
+      "cursor",
+      "scroll"
+    ],
     "cursor_step_dp": {
       "minimum": 2,
       "default": 16,
       "maximum": 64,
-      "presets": [8, 16, 32]
+      "presets": [
+        8,
+        16,
+        32
+      ]
     },
     "wake_bubble_fade_ms": 2000,
     "reads_other_app_content": false,
@@ -112,7 +149,11 @@
     "core": "mGBA",
     "rom_source": "user-selected local files",
     "rom_storage": "IndexedDB and native vault adapters",
-    "accepted_formats": [".gba", ".bin", ".zip"],
+    "accepted_formats": [
+      ".gba",
+      ".bin",
+      ".zip"
+    ],
     "bios": "optional and not distributed",
     "rom_distribution": false
   },
@@ -125,7 +166,14 @@
     {
       "order": 2,
       "name": "Governance",
-      "flow": ["capture", "change_request", "review", "publish", "version_snapshot", "audit_log"]
+      "flow": [
+        "capture",
+        "change_request",
+        "review",
+        "publish",
+        "version_snapshot",
+        "audit_log"
+      ]
     },
     {
       "order": 3,
@@ -144,7 +192,11 @@
     {
       "order": 4,
       "name": "Mirror and Recovery",
-      "flow": ["Supabase", "Google Drive Markdown Mirror", "Obsidian"]
+      "flow": [
+        "Supabase",
+        "Google Drive Markdown Mirror",
+        "Obsidian"
+      ]
     }
   ],
   "contracts": {
@@ -157,7 +209,13 @@
     "architecture_json": "/amin-vault/architecture.json",
     "architecture_markdown": "/amin-vault/ARCHITECTURE.md",
     "native_manifest": "/amin-vault/native-release-manifest.json",
-    "runtime_manifest": "/amin-vault/runtime-manifest.json"
+    "runtime_manifest": "/amin-vault/runtime-manifest.json",
+    "apk_release_workflow": "/.github/workflows/android-release.yml",
+    "packagecanvas": "/packagecanvas/index.html",
+    "gen2_parser": "/packagecanvas/gen2-source.js",
+    "knowledge_world": "/packagecanvas/world.html",
+    "knowledge_world_rules": "/packagecanvas/world-model.js",
+    "agent_key_cabinet": "/packagecanvas/gen2-secrets.js"
   },
   "known_limitations": [
     "Web Gamepad API may return no devices inside Android WebView",
@@ -166,7 +224,8 @@
     "Multiple-controller switching is not implemented",
     "In-app Bluetooth scanning and pairing are not implemented",
     "Automatic Instagram and Facebook short-video mode is not implemented",
-    "Physical controllers and virtual overlay buttons do not yet share one common action core"
+    "Physical controllers and virtual overlay buttons do not yet share one common action core",
+    "Bridge 103 items not yet confirmed on a device: background 15-minute notifications, PackageCanvas AminGen2 buttons, voice cancel with 等一下"
   ],
   "next_milestones": [
     "Controller Lab with device naming and raw input monitoring",
@@ -174,5 +233,56 @@
     "Short-video mode",
     "Repair Signal Lab Android JSON download and share",
     "Unified action core for virtual buttons physical controllers and future remotes"
-  ]
+  ],
+  "physical_verification": {
+    "bridge103_acceptance": {
+      "dates": [
+        "2026-10-03",
+        "2026-10-04"
+      ],
+      "record": "PR #169",
+      "verified": [
+        "GEN2 pending-approval screen (input, approve, revise with reason, stop)",
+        "ntfy push opens a run via amin-gen2://run/<number>",
+        "fox voice approval with read-back and confirmation",
+        "asking the fox for pending work opens voice approval",
+        "GBA, saves, controller, universal overlay and PackageCanvas card did not regress"
+      ],
+      "not_yet_confirmed": [
+        "background 15-minute notifications",
+        "PackageCanvas AminGen2 buttons",
+        "voice cancel with 等一下"
+      ]
+    },
+    "bridge16_hardware": {
+      "device": "Samsung SM-A5560",
+      "android": "15",
+      "wired_controller_native_detection": true,
+      "controller_binding": true,
+      "controller_test_feedback": true,
+      "controller_in_game": true,
+      "universal_overlay": true
+    }
+  },
+  "gen2": {
+    "repository": "ken12121122-dotcom/gen2-knowledge",
+    "visibility": "private",
+    "source_of_truth": "kb/ on main",
+    "run_flow": [
+      "GEN2 Run Start (Actions, main only)",
+      "gen2-run Issue",
+      "/gen2 comments replayed by the run engine",
+      "ntfy push → amin-gen2://run/<number> → native approval or fox voice",
+      "GEN2 Agent (Claude; Google Calendar service account) runs skill steps and stops at OWNER gates",
+      "PackageCanvas and Knowledge World read the same Issues"
+    ],
+    "web_posts_commands": false,
+    "web_writes": [
+      "Knowledge World Agent key cabinet: ANTHROPIC_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, GEN2_CALENDAR_ID sealed into gen2-knowledge Actions secrets with a one-time OWNER token"
+    ],
+    "native_bridges": {
+      "AminPackageCanvasFiles": "read-only folder access",
+      "AminGen2": "open a run in the native approval page or voice screen only"
+    }
+  }
 }
