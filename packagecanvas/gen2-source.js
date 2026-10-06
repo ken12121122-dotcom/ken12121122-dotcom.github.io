@@ -1115,6 +1115,25 @@
         .filter(i => i && !seen.has(i.number) && seen.add(i.number));
       return runsFromIssues(all);
     },
+    // Every finished (done) run, for history such as Knowledge World growth.
+    // Needs Issues: Read; reads up to maxPages × 100 runs.
+    async listFinishedRuns(cfg, fetchImpl, maxPages = 10) {
+      const c = githubConfig(cfg);
+      const all = [];
+      for (let page = 1; page <= maxPages; page++) {
+        let batch;
+        try {
+          batch = await (await githubRequest('/repos/' + c.owner + '/' + c.repo + '/issues?labels=gen2-run,gen2:done&state=closed&sort=updated&direction=desc&per_page=100&page=' + page, c, null, fetchImpl)).json();
+        } catch (e) {
+          if (/HTTP 403|找不到/.test(e.message)) throw new Error('讀不到執行狀態：token 需要 Issues 的 Read-only 權限');
+          throw e;
+        }
+        if (!Array.isArray(batch)) break;
+        all.push(...batch);
+        if (batch.length < 100) break;
+      }
+      return runsFromIssues(all.filter(i => i && i.state !== 'open'), { closedLimit: Infinity });
+    },
     async collect(cfg, onProgress, fetchImpl) {
       const c = githubConfig(cfg);
       const base = '/repos/' + c.owner + '/' + c.repo;

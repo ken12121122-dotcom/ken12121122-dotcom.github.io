@@ -2,6 +2,29 @@
 
 Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bridge。
 
+## 20261006.1 · 知識世界（Knowledge World）遊戲畫面
+
+`packagecanvas/world.html`：GBA 掌機風格的遊戲畫面，顯示 GEN2 流程（gen2-run Issue）的真實進度。PackageCanvas「GEN2 知識庫來源」對話框裡的「🎮 知識世界」可以進入。
+- 你是玩家，狐狸是夥伴。用螢幕上的十字鍵走動，A 互動，B 返回，L／R 切換追蹤的任務，START 開選單。
+- 每個流程步驟發生在一棟建築（依 Knowledge World「建築＝能力」）：
+  - 提供資料：任務告示板
+  - 審查閘門：驗證殿堂
+  - 寫入或執行類的 Skill：自動化工坊
+  - 研究或蒐集類的 Skill：研究所
+  - 其他 Skill：知識鍛造所
+- Agent 執行中的步驟顯示成建築裡的自動戰鬥（⚔ 和血條）。你可以進去看，按 B 離開也會繼續。步驟完成時，戰鬥結束並跳出提示。
+- 等你處理的地方頭上有黃色「！」。進去會看到待審內容與處理方式：
+  - 在 Amin Pocket GBA（Bridge 103 起）裡：「🎙 跟狐狸用說的處理」「✋ 打開核准頁」，由 App 確認後送出。
+  - 在一般瀏覽器：只能複製 `/gen2` 指令或開 GitHub Issue。網頁本身不送出任何指令。
+- 角色卡：每個知識庫一隻知識生物（WF-TIME → KB-TIME）。三條經驗（🧠 知識、💼 工作、✨ 技能）與發展階段（L0 種子起），只從驗證過的結果計算：
+  - 通過 OWNER 審查的閘門：選項要明確寫核准、通過或採用。「調整後重做」這類重試不算
+  - 完成且最後一步回報成功的流程
+  - 停止的流程不算
+  - 成長從全部已完成的流程計算（另外分頁讀取），不只最近幾筆，所以舊的成長不會消失
+- 沿用 PackageCanvas 的 GitHub token（同一個網站），需要 Issues 讀取權限。沒有 token 時用示範資料。
+- 有進行中的任務時每 10 秒更新，沒有時每 60 秒；畫面關掉就暫停（Knowledge World V0：線上才運轉）。
+- 規則在 `packagecanvas/world-model.js`，測試在 `tests/packagecanvas-world.test.mjs`。
+
 ## 20261003.2 · gen2-source 0.4：畫布上的流程執行狀態（步驟卡片＋動畫）
 
 讀 GitHub 正本的畫布會即時顯示 GEN2 流程跑到哪裡：
