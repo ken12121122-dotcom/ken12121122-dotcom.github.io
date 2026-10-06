@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>知識世界 Knowledge World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap">
+<style>
+/* Layout: one handheld, portrait. LCD on top (3:2, 240x160 internal), control deck below. Single committed dark look. */
+:root{
+  --room:#14121c; --shell:#4b3fa6; --shell-hi:#6a5fd0; --shell-lo:#2f2775; --bezel:#1c1a29;
+  --lcd-ink:#f4f1e6; --btn:#26213f; --ab:#c8325a; --ab-hi:#e8577c; --label:#bdb5ef;
+  --pixel:"DotGothic16","Noto Sans TC","PingFang TC","Microsoft JhengHei",monospace;
+  --arcade:"Press Start 2P","DotGothic16",monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+html{background:var(--room)}
+body{background:var(--room);color:var(--lcd-ink);font-family:var(--pixel);display:flex;justify-content:center;align-items:flex-start;padding-inline:16px;padding-block:12px;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+*{box-sizing:border-box}
+.wrap{display:flex;flex-direction:column;gap:12px;width:min(100%,460px)}
+.gba{display:flex;flex-direction:column;gap:14px;background:linear-gradient(160deg,var(--shell-hi),var(--shell) 40%,var(--shell-lo));border-radius:22px 22px 46px 46px;padding:16px 14px 22px;box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -6px 0 rgba(0,0,0,.25),0 18px 40px rgba(0,0,0,.55)}
+.shoulders{display:flex;justify-content:space-between;margin:-8px -4px 0}
+.shoulder{width:34%;height:30px;border:0;border-radius:14px 14px 6px 6px;background:var(--btn);color:var(--label);font:12px var(--arcade);box-shadow:inset 0 -3px 0 rgba(0,0,0,.4)}
+.bezel{background:var(--bezel);border-radius:12px 12px 26px 12px;padding:12px 12px 8px}
+.bezel-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font:9px var(--arcade);color:#8c86b5;letter-spacing:.08em}
+.led{width:7px;height:7px;border-radius:50%;background:#5be38c;box-shadow:0 0 6px #5be38c}
+.led.off{background:#f0b030;box-shadow:0 0 6px #f0b030}
+.screen{position:relative;width:100%;aspect-ratio:3/2;background:#000;overflow:hidden;border-radius:3px;max-width:100%}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.brand{text-align:center;font:10px var(--arcade);color:#8c86b5;margin-top:8px;letter-spacing:.12em}
+.brand b{color:#e8577c;font-weight:400}
+.dlg{position:absolute;left:3%;right:3%;bottom:4%;max-height:74%;overflow:auto;background:#f4f1e6;color:#1f1b33;border:3px solid #1f1b33;box-shadow:0 0 0 2px #f4f1e6;border-radius:4px;padding:2.2% 3%;font-size:clamp(11px,3.3vw,15px);line-height:1.45}
+.dlg .who{font-size:.85em;color:#c8325a}
+.dlg .txt{white-space:pre-wrap;min-height:2.6em}
+.dlg ul{list-style:none;margin:.3em 0 0;padding:0;display:grid;gap:.1em}
+.dlg li{padding-left:1.2em;position:relative}
+.dlg li.sel::before{content:"▶";position:absolute;left:0;color:#c8325a;animation:blink .8s steps(2) infinite}
+.dlg .more{position:absolute;right:.6em;bottom:.2em;font-size:.8em;animation:blink .8s steps(2) infinite}
+.dlg table{border-collapse:collapse;margin:.3em 0;font-size:.8em;width:100%}
+.dlg td,.dlg th{border:1px solid #1f1b33;padding:.1em .3em;text-align:left;font-weight:400}
+.dlg th{background:#d9d3f2}
+.dlg .warn{color:#c8325a}
+.toast{position:absolute;top:13%;left:50%;transform:translateX(-50%);background:#1f1b33;color:#f4f1e6;border:2px solid #f4f1e6;padding:.2em .6em;font-size:clamp(10px,2.9vw,13px);white-space:nowrap;border-radius:3px;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+@keyframes blink{50%{opacity:0}}
+.deck{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 4px 0}
+.dpad{position:relative;width:120px;height:120px}
+.dpad button{position:absolute;width:42px;height:42px;border:0;background:var(--btn);color:var(--label);font-size:14px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.45)}
+.dpad .up{left:39px;top:0;border-radius:8px 8px 0 0}
+.dpad .down{left:39px;bottom:0;border-radius:0 0 8px 8px}
+.dpad .left{left:0;top:39px;border-radius:8px 0 0 8px}
+.dpad .right{right:0;top:39px;border-radius:0 8px 8px 0}
+.dpad .hub{position:absolute;left:39px;top:39px;width:42px;height:42px;background:var(--btn)}
+.ab{position:relative;width:118px;height:108px}
+.ab button{position:absolute;width:54px;height:54px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,var(--ab-hi),var(--ab) 60%);color:#fff;font:15px var(--arcade);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),0 3px 0 rgba(0,0,0,.35)}
+.ab .a{right:0;top:0}
+.ab .b{left:0;bottom:0}
+.mid{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:40px;min-width:0}
+.pills{display:flex;gap:14px}
+.pills div{display:flex;flex-direction:column;align-items:center;gap:6px;font:8px var(--arcade);color:var(--label)}
+.pills button{width:46px;height:14px;border-radius:7px;border:0;background:var(--btn);box-shadow:inset 0 -2px 0 rgba(0,0,0,.45);transform:rotate(-24deg)}
+.speaker{display:grid;grid-template-columns:repeat(4,6px);gap:5px;opacity:.5}
+.speaker i{width:6px;height:6px;border-radius:50%;background:var(--shell-lo)}
+button{cursor:pointer;touch-action:none}
+button:focus-visible{outline:3px solid #ffd447;outline-offset:2px}
+button.pressed{filter:brightness(1.35);transform:translateY(2px)}
+.pills button.pressed{transform:rotate(-24deg) translateY(2px)}
+.note{font-size:12px;color:#8c86b5;text-align:center;line-height:1.5;margin:0}
+@media (prefers-reduced-motion:reduce){.dlg li.sel::before,.dlg .more{animation:none}}
+@media (max-width:360px){.dpad{transform:scale(.88);transform-origin:left center}.ab{transform:scale(.88);transform-origin:right center}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="gba" id="gba">
+    <div class="shoulders">
+      <button class="shoulder" data-k="L" aria-label="L">L</button>
+      <button class="shoulder" data-k="R" aria-label="R">R</button>
+    </div>
+    <div class="bezel">
+      <div class="bezel-top"><span class="led" id="led"></span><span id="ledText">WORLD ACTIVE</span></div>
+      <div class="screen" id="screen">
+        <canvas id="cv" width="240" height="160" aria-label="遊戲畫面"></canvas>
+        <div class="dlg" id="dlg" hidden></div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+      <div class="brand">AMIN <b>KNOWLEDGE</b> WORLD</div>
+    </div>
+    <div class="deck">
+      <div class="dpad">
+        <button class="up" data-k="UP" aria-label="上">▲</button>
+        <button class="left" data-k="LEFT" aria-label="左">◀</button>
+        <div class="hub"></div>
+        <button class="right" data-k="RIGHT" aria-label="右">▶</button>
+        <button class="down" data-k="DOWN" aria-label="下">▼</button>
+      </div>
+      <div class="mid">
+        <div class="pills">
+          <div><button data-k="SELECT" aria-label="SELECT"></button>SELECT</div>
+          <div><button data-k="START" aria-label="START"></button>START</div>
+        </div>
+        <div class="speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="ab">
+        <button class="b" data-k="B" aria-label="B">B</button>
+        <button class="a" data-k="A" aria-label="A">A</button>
+      </div>
+    </div>
+  </div>
+  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；網頁只讀不寫，決定在 App 裡確認後才送出。<br>十字鍵走路 · A 對話／進入 · B 返回 · L／R 切換任務 · START 選單<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
+</div>
+
+
+<script src="./gen2-source.js?v=20261006.1"></script>
+<script src="./world-model.js?v=20261006.1"></script>
+<script>
+(() => {
+'use strict';
+const GEN2 = window.PackageCanvasGen2, M = window.KWModel;
+const cv = document.getElementById('cv'), g = cv.getContext('2d');
+const dlgEl = document.getElementById('dlg'), toastEl = document.getElementById('toast');
+const W = 240, H = 160, T = 16, MW = 22, MH = 14;
+g.imageSmoothingEnabled = false;
+if (!GEN2 || !M){ document.getElementById('toast').hidden = false; document.getElementById('toast').textContent = '載入失敗，請重新整理'; return; }
+
+const C = {
+  grass1:'#5aa84a', grass2:'#4c9440', grass3:'#78c25c', path:'#d8b878', path2:'#c4a062',
+  tree:'#2f6b3a', tree2:'#3f8a48', trunk:'#6b4a2a', water:'#3c7fd0', water2:'#6aa6ec',
+  ink:'#1f1b33', paper:'#f4f1e6', gold:'#ffd447', red:'#e8577c', fox:'#ee8a2c', fox2:'#c4621a',
+  white:'#fff8ec', pink:'#f2a0a8', skin:'#f3c9a0', hair:'#3a2a20', shirt:'#3f6fd0', pants:'#2b2f55',
+  clock:'#8fd3f0', clock2:'#4aa3cf'
+};
+
+// ---------- sprites (16x16, '.' = transparent) ----------
+const PAL = {o:C.fox,d:C.fox2,w:C.white,k:C.ink,p:C.pink,s:C.skin,h:C.hair,b:C.shirt,n:C.pants,c:C.clock,e:C.clock2,y:C.gold,r:C.red};
+const FOX = ['................','..o.......o.....','..oo.....oo.....','..owo...owo.....','..ooooooooo.....','.ooowoooowoo....','.oookoooookoo...','.ooooopwooooo..d','..ooowwkwwoo..dd','...oowwwwwo..ddo','....oooooooodooo','...oooooooooooww','...oooooooooo.ww','...ooo.ooo.oo...','...kk..kk..kk...','................'];
+const FOX2 = FOX.slice(0,13).concat(['....oo.ooo.oo...','....kk.kk..kk...','................']);
+const HERO_D = ['................','.....hhhhhh.....','....hhhhhhhh....','....hssssssh....','....sksssskS....','....ssssssss....','.....ssrrss.....','....bbbbbbbb....','...bbbbbbbbbb...','...sbbbbbbbbs...','...sbbbbbbbbs...','....nnnnnnnn....','....nnn..nnn....','....nnn..nnn....','....kkk..kkk....','................'].map(r=>r.replace('S','s'));
+const HERO_D2 = HERO_D.slice(0,12).concat(['....nnn...nn....','....kkk...kk....','...........k....','................']);
+const HERO_U = ['................','.....hhhhhh.....','....hhhhhhhh....','....hhhhhhhh....','....hhhhhhhh....','....shhhhhhs....','.....ssssss.....','....bbbbbbbb....','...bbbbbbbbbb...','...sbbbbbbbbs...','...sbbbbbbbbs...','....nnnnnnnn....','....nnn..nnn....','....nnn..nnn....','....kkk..kkk....','................'];
+const HERO_U2 = HERO_U.slice(0,12).concat(['....nn...nnn....','....kk...kkk....','................','................']);
+const HERO_S = ['................','.....hhhhhh.....','....hhhhhhhh....','....hhhsssss....','....hhhsskss....','....hhssssss....','.....sssrr......','.....bbbbbb.....','....bbbbbbbb....','....bbbbsbbb....','....bbbbsbbb....','.....nnnnnn.....','.....nnn.nn.....','.....nnn.nn.....','.....kkk.kk.....','................'];
+const HERO_S2 = HERO_S.slice(0,12).concat(['....nnn...nn....','....kkk...kk....','................','................']);
+const CLOCKY = ['................','......kkkk......','....kkcccckk....','...kcccccccck...','..kccwccccwcck..','..kcckcyyckcck..','.kccccyykccccck.','.kccccckyccccck.','.kcccccccccccck.','..kceccccccecck.','..kcceeeeeeccck.','...kkcccccckk...','....kekkkkek....','....kk....kk....','................','................'];
+function sprite(rows, x, y, flip, scale=1){
+  for (let r=0;r<rows.length;r++) for (let c=0;c<16;c++){
+    const ch = rows[r][flip?15-c:c]; const col = PAL[ch]; if (!col) continue;
+    g.fillStyle = col; g.fillRect(x+c*scale, y+r*scale, scale, scale);
+  }
+}
+
+// ---------- world ----------
+// Buildings are Capabilities (Knowledge World spec). 3x3 tiles each, door below the middle.
+const BUILDINGS = [
+  {id:'lab',   name:'研究所',     en:'Research Lab',        x:2,  y:2, roof:'#7a5cc8', sign:'📖', cap:'研究・找來源・彙整'},
+  {id:'forge', name:'知識鍛造所', en:'Knowledge Forge',     x:9,  y:2, roof:'#c8643c', sign:'⚒', cap:'蒸餾・萃取節點・建立關聯'},
+  {id:'hall',  name:'驗證殿堂',   en:'Validation Hall',     x:16, y:2, roof:'#d8b030', sign:'⚖', cap:'驗證・OWNER 審查'},
+  {id:'shop',  name:'自動化工坊', en:'Automation Workshop', x:16, y:8, roof:'#3c86c8', sign:'⚙', cap:'執行流程・寫入外部系統'}];
+const BOARD = {x:6, y:9, name:'任務告示板'};
+const solid = new Set(), deco = [];
+const key = (x,y) => x+','+y;
+for (let x=0;x<MW;x++){ solid.add(key(x,0)); solid.add(key(x,MH-1)); deco.push({x,y:0,t:'tree'},{x,y:MH-1,t:'tree'}); }
+for (let y=1;y<MH-1;y++){ solid.add(key(0,y)); solid.add(key(MW-1,y)); deco.push({x:0,y,t:'tree'},{x:MW-1,y,t:'tree'}); }
+for (const b of BUILDINGS) for (let dx=0;dx<3;dx++) for (let dy=0;dy<3;dy++) solid.add(key(b.x+dx,b.y+dy));
+solid.add(key(BOARD.x,BOARD.y));
+for (let x=9;x<=12;x++) for (let y=9;y<=11;y++){ solid.add(key(x,y)); deco.push({x,y,t:'water'}); }
+[[5,5],[14,6],[3,11],[19,12],[13,12],[7,6]].forEach(([x,y])=>{ solid.add(key(x,y)); deco.push({x,y,t:'tree'}); });
+[[4,7],[12,7],[18,6],[8,12],[2,8]].forEach(([x,y])=>deco.push({x,y,t:'flower'}));
+const PATH = new Set();
+const pathLine = (x1,y1,x2,y2)=>{ for (let x=Math.min(x1,x2);x<=Math.max(x1,x2);x++) for (let y=Math.min(y1,y2);y<=Math.max(y1,y2);y++) PATH.add(key(x,y)); };
+pathLine(3,5,3,7); pathLine(3,7,17,7); pathLine(10,5,10,7); pathLine(17,5,17,7); pathLine(15,7,15,11); pathLine(15,11,17,11); pathLine(6,7,6,8);
+const door = b => ({x:b.x+1, y:b.y+3});
+
+let mapCache = null;
+function buildMap(){
+  const off = document.createElement('canvas'); off.width = MW*T; off.height = MH*T; const o = off.getContext('2d');
+  for (let y=0;y<off.height;y+=2) for (let x=0;x<off.width;x+=2){ o.fillStyle = ((x*7+y*13)%11<2)?C.grass2:((x*5+y*3)%17<1?C.grass3:C.grass1); o.fillRect(x,y,2,2); }
+  for (const k of PATH){ const [x,y]=k.split(',').map(Number); o.fillStyle=C.path; o.fillRect(x*T,y*T,T,T); o.fillStyle=C.path2; for(let i=0;i<5;i++) o.fillRect(x*T+((i*7+x*3)%14)+1, y*T+((i*5+y*7)%14)+1, 2, 1); }
+  for (const d of deco){ const px=d.x*T, py=d.y*T;
+    if (d.t==='water'){ o.fillStyle=C.water; o.fillRect(px,py,T,T); o.fillStyle=C.water2; o.fillRect(px+3,py+5,6,1); o.fillRect(px+8,py+11,5,1); }
+    if (d.t==='tree'){ o.fillStyle=C.trunk; o.fillRect(px+7,py+11,3,5); o.fillStyle=C.tree; o.fillRect(px+2,py+1,12,11); o.fillStyle=C.tree2; o.fillRect(px+4,py+3,6,4); }
+    if (d.t==='flower'){ o.fillStyle=C.paper; o.fillRect(px+5,py+8,2,2); o.fillStyle=C.red; o.fillRect(px+10,py+5,2,2); } }
+  for (const b of BUILDINGS){ const px=b.x*T, py=b.y*T;
+    o.fillStyle='rgba(0,0,0,.25)'; o.fillRect(px+3,py+46,44,3);
+    o.fillStyle='#e9dcc0'; o.fillRect(px+2,py+16,44,30); o.fillStyle='#cdbb98'; for (let i=0;i<5;i++) o.fillRect(px+2,py+20+i*6,44,1);
+    o.fillStyle=C.ink; o.fillRect(px,py+4,48,14); o.fillStyle=b.roof; o.fillRect(px+1,py+5,46,12); o.fillStyle='rgba(255,255,255,.25)'; o.fillRect(px+1,py+5,46,2);
+    o.fillStyle=C.ink; o.fillRect(px+19,py+30,10,16); o.fillStyle='#7a4a2a'; o.fillRect(px+20,py+31,8,15);
+    o.fillStyle='#9fd0f0'; o.fillRect(px+6,py+24,8,7); o.fillRect(px+34,py+24,8,7); }
+  o.fillStyle=C.trunk; o.fillRect(BOARD.x*T+7,BOARD.y*T+8,2,8); o.fillStyle='#b98a50'; o.fillRect(BOARD.x*T+1,BOARD.y*T+1,14,9); o.fillStyle=C.paper; o.fillRect(BOARD.x*T+3,BOARD.y*T+3,4,5); o.fillRect(BOARD.x*T+9,BOARD.y*T+3,4,4);
+  mapCache = off;
+}
+
+
+// ---------- sound ----------
+let ac = null;
+function beep(f=660, d=.06, type='square', v=.05){
+  if (!S.sound) return;
+  try { ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), gn=ac.createGain(); o.type=type; o.frequency.value=f; gn.gain.value=v;
+    o.connect(gn); gn.connect(ac.destination); o.start(); gn.gain.exponentialRampToValueAtTime(.0001, ac.currentTime+d); o.stop(ac.currentTime+d+.02);
+  } catch(e){}
+}
+const jingle = notes => notes.forEach((f,i)=>setTimeout(()=>beep(f,.1,'square',.06), i*110));
+
+
+// ---------- dialog ----------
+let D = null;
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function dialog(o){ D = Object.assign({who:'狐狸', text:'', shown:0, options:null, sel:0, html:''}, o); renderDialog(); }
+function closeDialog(){ D = null; dlgEl.hidden = true; }
+function renderDialog(){
+  if (!D){ dlgEl.hidden = true; return; }
+  dlgEl.hidden = false;
+  const full = D.shown >= D.text.length;
+  const opts = full && D.options ? '<ul>'+D.options.map((o,i)=>`<li class="${i===D.sel?'sel':''}">${esc(o)}</li>`).join('')+'</ul>' : '';
+  dlgEl.innerHTML = (D.who?`<div class="who">${esc(D.who)}</div>`:'') + (full ? D.html : '') + `<div class="txt">${esc(D.text.slice(0,Math.floor(D.shown)))}</div>` + opts + (full && !D.options ? '<span class="more">▼</span>' : '');
+  const sel = dlgEl.querySelector('li.sel'); if (sel) sel.scrollIntoView({block:'nearest'});
+}
+const say = (text, then, who) => dialog({text, who: who===undefined?'狐狸':who, onNext: then});
+const ask = (text, options, onPick, extra={}) => dialog(Object.assign({text, options, onPick}, extra));
+let toastTimer = 0;
+function toast(msg, ms=2200){ toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>toastEl.hidden=true, ms); }
+
+// ---------- movement ----------
+const DIRS = {UP:[0,-1,'up'], DOWN:[0,1,'down'], LEFT:[-1,0,'left'], RIGHT:[1,0,'right']};
+const held = new Set();
+function tryMove(){
+  const h = S.hero; if (h.moving || D || S.scene!=='world') return;
+  const k = ['UP','DOWN','LEFT','RIGHT'].find(x=>held.has(x)); if (!k) return;
+  const [dx,dy,dir] = DIRS[k]; h.dir = dir;
+  const nx = h.x+dx, ny = h.y+dy;
+  if (solid.has(key(nx,ny))) return;
+  S.trail.unshift({x:h.x, y:h.y}); if (S.trail.length>4) S.trail.pop();
+  h.from = {x:h.x, y:h.y}; h.x = nx; h.y = ny; h.moving = true; h.mt = 0;
+}
+function updateHero(dt){
+  const h = S.hero;
+  if (h.moving){ h.mt += dt; const p = Math.min(1, h.mt/150);
+    h.px = (h.from.x + (h.x-h.from.x)*p)*T; h.py = (h.from.y + (h.y-h.from.y)*p)*T;
+    if (p>=1){ h.moving=false; tryMove(); } }
+  else tryMove();
+  const target = S.trail[0] ? {px:S.trail[0].x*T, py:S.trail[0].y*T} : {px:h.px-T, py:h.py};
+  const f = S.fox, dx = target.px - f.px, dy = target.py - f.py;
+  if (Math.abs(dx) > .5) f.flip = dx < 0;
+  f.px += dx*Math.min(1, dt/140); f.py += dy*Math.min(1, dt/140);
+}
+
+// ---------- state ----------
+const S = {
+  scene:'title', t:0, paused:false, sound:true, demo:false,
+  hero:{x:6, y:8, px:6*T, py:8*T, dir:'down', moving:false, from:null},
+  trail:[], fox:{px:5*T, py:8*T, flip:false},
+  runs:[], quests:[], focus:null, sig:'', last:new Map(), error:'', loading:false, loadedAt:null,
+  watching:null, victory:null, menuSel:0, menuPage:'main'
+};
+const STAGES = M.STAGES;
+const MONSTER = {
+  forge:{name:'雜亂紀錄', color:'#8a7fb0', moves:['時間切分','欄位對齊','格式校正','去除重複']},
+  shop:{name:'外部系統塔', color:'#3c7fd0', moves:['寫入事件','回讀比對','時區校正','衝突檢查']},
+  lab:{name:'未知文獻', color:'#5a8a6a', moves:['來源搜尋','交叉比對','摘要萃取','可信度檢查']}};
+const bName = id => id==='board' ? '任務告示板' : (BUILDINGS.find(b=>b.id===id)||{}).name || id;
+
+// ---------- data: real gen2-run Issues through gen2-source.js ----------
+const GH_KEY = 'packagecanvas-gen2-github-v1';
+function ghCfg(){ let s = {}; try { s = JSON.parse(localStorage.getItem(GH_KEY)||'null') || {}; } catch(_){}
+  const d = GEN2.sources.github.defaults; return { owner:s.owner||d.owner, repo:s.repo||d.repo, token:s.token||'' }; }
+function appBridge(){ try { const a = window.AminGen2; return a && typeof a.openRun==='function' && a.isAvailable() ? a : null; } catch(_){ return null; } }
+let pollTimer = 0;
+async function refresh(quiet){
+  if (S.loading || S.paused) return;
+  clearTimeout(pollTimer);
+  const cfg = ghCfg();
+  S.loading = true;
+  try {
+    const runs = S.demo || !cfg.token ? demoRuns() : await GEN2.sources.github.listRuns(cfg);
+    S.error = ''; applyRuns(runs, quiet);
+  } catch (e) {
+    S.error = e.message || String(e); if (!quiet) toast('⚠ '+S.error, 4000);
+  } finally {
+    S.loading = false; S.loadedAt = new Date();
+    const anyOpen = S.quests.some(q=>q.open);
+    pollTimer = setTimeout(()=>refresh(true), anyOpen ? 10000 : 60000);
+  }
+}
+function applyRuns(runs, quiet){
+  S.runs = runs;
+  const quests = M.questsFromRuns(runs, new Date().toISOString());
+  const sig = M.worldSignature(quests);
+  const changed = sig !== S.sig;
+  // what moved since the last read
+  if (S.sig && changed){
+    for (const q of quests){
+      const prev = S.last.get(q.number);
+      if (!prev){ if (q.open){ jingle([392,523,659]); toast('⚔ 新任務出現！#'+q.number+' '+q.workflowId); } continue; }
+      if (prev.status==='waiting_skill' && (q.status!=='waiting_skill' || q.pending?.step!==prev.step)){
+        const at = prev.where; if (S.watching && S.watching.number===q.number){ S.victory = {at, until:S.t+1600}; }
+        jingle([659,784,1046]); toast('✔ '+bName(at)+'：#'+q.number+' '+prev.step+' 完成');
+      }
+      if (q.open && q.who==='owner' && (prev.who!=='owner' || prev.step!==q.pending?.step)){ beep(988,.1); setTimeout(()=>toast('！#'+q.number+' 需要你：到'+bName(q.where)), 1200); }
+      if (!q.open && prev.open) toast(q.status==='done' ? '🏁 #'+q.number+' 任務完成！' : '#'+q.number+' 已停止');
+    }
+  }
+  S.quests = quests; S.sig = sig;
+  S.last = new Map(quests.map(q=>[q.number,{status:q.status, step:q.pending?.step||'', who:q.who, where:q.where, open:q.open}]));
+  if (!S.focus || !quests.some(q=>q.number===S.focus && q.open)) S.focus = (quests.find(q=>q.open)||quests[0]||{}).number || null;
+  if (!quiet && S.scene==='world') toast(quests.filter(q=>q.open).length ? '已讀取 '+quests.filter(q=>q.open).length+' 個進行中的任務' : '目前沒有進行中的任務');
+}
+const focusQuest = () => S.quests.find(q=>q.number===S.focus) || null;
+const openQuests = () => S.quests.filter(q=>q.open);
+const questsAt = where => openQuests().filter(q=>q.where===where);
+
+// Sample runs for demo mode (no token / outside GitHub), same format as real ones.
+function demoRuns(){
+  const steps = [
+    {id:'S1',type:'input',title:'接收工作紀錄來源',status:'done',attempts:1,result:null},
+    {id:'S2',type:'skill',title:'產出標準化候選工作紀錄',status:'done',attempts:1,result:null},
+    {id:'G1',type:'gate',title:'OWNER 審核候選工作紀錄',status:'active',attempts:1,result:null},
+    {id:'S3',type:'skill',title:'寫入 Google Calendar 並回讀驗證',status:'pending',attempts:0,result:null}];
+  const now = new Date(Date.now()-4*60000).toISOString();
+  return [{number:101, state:'open', url:'', updatedAt:now, view:{workflow:{id:'WF-TIME-001',title:'工作紀錄寫入行事曆（示範）'}, status:'waiting_owner', current:'G1', updatedAt:now,
+    pending:{step:'G1',type:'gate',title:'OWNER 審核候選工作紀錄',attempt:1,options:[{id:'approve',label:'核准寫入',comment:null},{id:'revise',label:'退回重做',comment:'required'},{id:'stop',label:'這次不寫入',comment:'optional'}],
+      review:{step:'S2',title:'產出標準化候選',output:{text:'| 09:00 | 10:00 | 巡檢 |\n| 10:00 | 11:00 | 開會 |'}}}, steps}},
+   {number:102, state:'open', url:'', updatedAt:now, view:{workflow:{id:'WF-USER-001',title:'更新個人履歷（示範）'}, status:'waiting_skill', current:'S2', updatedAt:now,
+    pending:{step:'S2',type:'skill',title:'彙整新經歷',attempt:1,skill:'SK-USER-001'},
+    steps:[{id:'S1',type:'input',title:'提供新經歷',status:'done',attempts:1,result:null},{id:'S2',type:'skill',title:'彙整新經歷',status:'active',attempts:1,result:null}]}}];
+}
+
+// ---------- OWNER actions: open the app's screens, or copy the command ----------
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); toast('已複製指令，到 GitHub Issue 留言貼上'); }
+  catch(_){ say('複製不了，請手動輸入：\n'+text); }
+}
+function ownerActions(q){
+  const app = appBridge(), acts = [];
+  if (app){
+    acts.push(['🎙 跟狐狸用說的處理', () => app.openRun(q.number,'voice') || toast('App 無法開啟')]);
+    acts.push(['✋ 打開核准頁', () => app.openRun(q.number,'page') || toast('App 無法開啟')]);
+  }
+  if (q.pending.type==='gate') for (const o of q.pending.options||[]) acts.push(['📋 複製「'+o.label+'」指令'+(o.comment==='required'?'（要說明）':''), () => copy(M.commandFor(q,o.id))]);
+  if (q.pending.type==='input') acts.push(['📋 複製提供資料指令', () => copy(M.commandFor(q))]);
+  if (q.url) acts.push(['🔗 到 GitHub 開啟 #'+q.number, () => { const w = window.open(q.url,'_blank','noopener'); if (!w) toast(q.url, 5000); }]);
+  acts.push(['離開', closeDialog]);
+  return acts;
+}
+function ownerDialog(q){
+  const p = q.pending, review = p.review?.output?.text || '';
+  const intro = (q.who==='owner' && p.type==='gate' ? '【'+p.step+' OWNER 審查】' : '【'+p.step+' 需要你提供資料】') + '#'+q.number+' '+q.workflowId+'\n'+p.title+(p.prompt?'\n'+p.prompt:'');
+  const html = review ? '<pre style="white-space:pre-wrap;font:inherit;font-size:.82em;margin:.3em 0;max-height:7em;overflow:auto;border:1px solid #1f1b33;padding:.2em .4em">'+esc(review.slice(0,1500))+'</pre>' : '';
+  const acts = ownerActions(q);
+  const tip = appBridge() ? '' : '\n（瀏覽器只能看和複製指令；在 Amin App 裡可以直接用說的或按的處理）';
+  dialog({who: bName(q.where), text: intro, html, onNext: () => ask('要怎麼處理？'+tip, acts.map(a=>a[0]), i => { closeDialog(); acts[i][1](); }, {onBack: closeDialog})});
+}
+
+// ---------- world interaction ----------
+function facing(){ const h=S.hero, d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[h.dir]; return {x:h.x+d[0], y:h.y+d[1]}; }
+function pickQuest(list, then){
+  if (list.length===1) return then(list[0]);
+  ask('這裡有 '+list.length+' 件任務：', list.map(q=>'#'+q.number+' '+q.workflowId+' '+(q.pending?.step||'')), i => then(list[i]), {onBack: closeDialog});
+}
+function interact(){
+  const f = facing(), h = S.hero;
+  if (f.x===BOARD.x && f.y===BOARD.y){
+    const list = questsAt('board'); if (list.length) return pickQuest(list, ownerDialog);
+    return say(openQuests().length ? '任務告示板：\n'+openQuests().map(q=>'#'+q.number+' '+q.workflowId+'｜'+(q.who==='owner'?'等你：':'Agent：')+bName(q.where)).join('\n') : '任務告示板：目前沒有進行中的任務。\n在 GitHub Actions 執行「GEN2 Run Start」就會出現新任務。');
+  }
+  for (const b of BUILDINGS){
+    const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
+    const list = questsAt(b.id);
+    if (list.length) return pickQuest(list, q => { if (q.who==='agent'){ S.watching = {number:q.number, where:b.id}; S.scene='battle'; } else ownerDialog(q); });
+    return say(b.name+'：'+b.cap+'。\n現在沒有工作。');
+  }
+  const q = focusQuest();
+  say(q ? (q.open ? '#'+q.number+' '+q.workflowId+'：'+(q.who==='owner' ? '在等你，到「'+bName(q.where)+'」處理。' : 'KB 正在「'+bName(q.where)+'」工作，'+(q.minutes!=null?'已 '+q.minutes+' 分鐘。':'')) : '#'+q.number+' 已'+(q.status==='done'?'完成':'停止')+'。') : '目前沒有任務。我陪你逛逛。');
+}
+
+// ---------- drawing ----------
+function txt(s,x,y,color,size){ g.fillStyle=color; g.font = size+'px DotGothic16, "Noto Sans TC", monospace'; g.textBaseline='alphabetic'; g.fillText(s,x,y); }
+function bar(x,y,w,h,v,col){ g.fillStyle='#3a3550'; g.fillRect(x,y,w,h); g.fillStyle=col; g.fillRect(x,y,Math.round(w*Math.max(0,Math.min(1,v))),h); }
+function heroSprite(){ const h=S.hero, step = h.moving && Math.floor(S.t/120)%2;
+  if (h.dir==='up') return [step?HERO_U2:HERO_U,false]; if (h.dir==='down') return [step?HERO_D2:HERO_D,false];
+  return [step?HERO_S2:HERO_S, h.dir==='left']; }
+function bang(x,y){ if (Math.floor(S.t/400)%2){ g.fillStyle=C.gold; g.fillRect(x,y,4,6); g.fillRect(x,y+8,4,2); } }
+function drawWorld(){
+  if (!mapCache) buildMap();
+  const h = S.hero;
+  const camX = Math.max(0, Math.min(MW*T-W, Math.round(h.px - W/2 + 8)));
+  const camY = Math.max(0, Math.min(MH*T-H+14, Math.round(h.py - H/2 + 8)));
+  g.drawImage(mapCache, -camX, -camY+14);
+  g.save(); g.translate(-camX, -camY+14);
+  for (const b of BUILDINGS){
+    const px=b.x*T, py=b.y*T, list = questsAt(b.id);
+    txt(b.sign, px+18, py+15, C.paper, 10);
+    if (list.some(q=>q.who==='agent')){ if (Math.floor(S.t/300)%2) txt('⚔', px+40, py-2, C.gold, 11); bar(px+4, py-3, 30, 3, .5+.4*Math.sin(S.t/500), C.red); }
+    if (list.some(q=>q.who==='owner')) bang(px+22, py-12);
+  }
+  if (questsAt('board').length) bang(BOARD.x*T+6, BOARD.y*T-10);
+  const fb = Math.floor(S.t/500)%2;
+  sprite(Math.floor(S.t/220)%2 && (Math.abs(S.fox.px-h.px)+Math.abs(S.fox.py-h.py))>T+2 ? FOX2 : FOX, Math.round(S.fox.px), Math.round(S.fox.py)-3-fb, S.fox.flip);
+  const [hs, hf] = heroSprite(); sprite(hs, Math.round(h.px), Math.round(h.py)-4, hf);
+  for (const b of BUILDINGS){ const dr = door(b); if (Math.abs(h.x-dr.x)<=1 && Math.abs(h.y-dr.y)<=1){ g.fillStyle='rgba(31,27,51,.85)'; const w = 8*b.name.length+8; g.fillRect(b.x*T+24-w/2, b.y*T+50, w, 12); g.textAlign='center'; txt(b.name, b.x*T+24, b.y*T+59, C.paper, 8); g.textAlign='left'; } }
+  g.restore();
+  g.fillStyle='rgba(31,27,51,.9)'; g.fillRect(0,0,W,14);
+  const q = focusQuest();
+  const head = S.paused ? '⏸ 世界暫停' : S.error ? '⚠ '+S.error : q ? '#'+q.number+' '+(q.open ? (q.pending?.step||'')+' '+(q.who==='owner'?'等你：':'')+bName(q.where) : (q.status==='done'?'已完成':'已停止')) : (S.loading?'讀取中…':'沒有進行中的任務');
+  txt((S.demo?'[示範] ':'')+head, 4, 10, S.paused||S.error?C.gold:C.paper, 8);
+  const n = openQuests().length; if (n){ g.fillStyle=C.red; g.fillRect(W-30,3,26,8); txt('⚔'+n, W-26, 10, C.paper, 8); }
+}
+function drawBattle(){
+  const w = S.watching, q = w && S.quests.find(x=>x.number===w.number);
+  const won = S.victory && S.t < S.victory.until;
+  if (!won && (!q || q.who!=='agent')){ S.watching=null; S.victory=null; S.scene='world'; return; }
+  const where = won ? S.victory.at : q.where, m = MONSTER[where] || MONSTER.forge;
+  g.fillStyle='#2a2456'; g.fillRect(0,0,W,H);
+  for (let i=0;i<14;i++){ g.fillStyle = i%2?'#332c66':'#2a2456'; g.fillRect(0,i*12,W,6); }
+  g.fillStyle='#4a7a3a'; g.fillRect(0,96,W,64);
+  const hop = won ? 0 : Math.abs(Math.sin(S.t/160))*4;
+  sprite(CLOCKY, 34, 52-hop, false, 2); sprite(FOX, 4, 70, false, 1);
+  if (!won){ const shake = Math.sin(S.t/40)*2; g.save(); g.translate(158+shake, 40);
+    g.fillStyle=m.color; g.fillRect(0,10,44,40); g.fillRect(6,4,32,8);
+    g.fillStyle=C.paper; g.fillRect(8,18,10,8); g.fillRect(26,18,10,8);
+    g.fillStyle=C.ink; g.fillRect(12,21,3,3); g.fillRect(30,21,3,3); g.fillRect(14,34,16,3); g.restore();
+    if (Math.floor(S.t/90)%3===0){ g.fillStyle=C.gold; g.fillRect(150+Math.random()*50, 44+Math.random()*40, 3, 3); } }
+  panel(132, 18, 100, 22, m.name, won ? 0 : .45+.35*Math.sin(S.t/700));
+  panel(8, 18, 100, 22, (q?q.creature:'KB')+' '+STAGES[(profileOf(q?q.creature:'')||{stage:0}).stage].split(' ')[0], 1);
+  g.fillStyle=C.ink; g.fillRect(0,0,W,14); txt('⚔ 自動工作中｜'+bName(where)+(q?'｜#'+q.number+' '+(q.pending?.step||''):''), 4, 10, C.paper, 8);
+  g.fillStyle=C.paper; g.fillRect(4,104,232,52); g.fillStyle=C.ink; g.fillRect(6,106,228,48); g.fillStyle=C.paper; g.fillRect(8,108,224,44);
+  if (won){ txt('勝利！這一步完成了，下一步已經開始。', 14, 124, C.ink, 8); }
+  else {
+    txt('Agent 執行 '+(q.pending?.skill||q.pending?.step||'')+'｜'+(q.pending?.title||'').slice(0,16), 14, 119, C.ink, 8);
+    txt('KB 使出「'+m.moves[Math.floor(S.t/1400)%m.moves.length]+'」！'+(q.minutes!=null?'（已 '+q.minutes+' 分鐘）':''), 14, 131, '#6a6588', 8);
+    txt('真實進度看 GitHub；做完會自動結束這場戰鬥。', 14, 142, '#6a6588', 7);
+  }
+  g.textAlign='right'; txt('B：離開（會繼續自動打）', 228, 151, '#6a6588', 7); g.textAlign='left';
+}
+function panel(x,y,w,h,label,hp){
+  g.fillStyle=C.ink; g.fillRect(x,y,w,h); g.fillStyle=C.paper; g.fillRect(x+2,y+2,w-4,h-4);
+  txt(label, x+5, y+11, C.ink, 8); bar(x+5,y+14,w-10,4,hp, hp>.5?'#4caf50':hp>.2?'#f0b030':C.red);
+}
+function drawTitle(){
+  g.fillStyle='#2a2456'; g.fillRect(0,0,W,H);
+  for (let i=0;i<40;i++){ g.fillStyle = i%3?'#3e3680':'#ffd447'; g.fillRect((i*53+S.t/40)%W, (i*29)%H, 1, 1); }
+  sprite(HERO_D, 84, 40, false, 3); sprite(Math.floor(S.t/300)%2?FOX:FOX2, 132, 58, true, 2);
+  g.textAlign='center'; txt('知識世界', 120, 114, C.gold, 18);
+  txt(ghCfg().token ? '已連到 '+ghCfg().repo : '尚未設定 token：用示範資料', 120, 128, C.paper, 8);
+  if (Math.floor(S.t/500)%2) txt('PRESS START', 120, 150, C.paper, 9); g.textAlign='left';
+}
+function profileOf(name){ return M.profiles(S.runs)[name]; }
+function card(c, x, y, w, title, sub){
+  g.fillStyle=C.paper; g.fillRect(x,y,w,72); g.fillStyle=C.ink; g.fillRect(x+1,y+1,w-2,70); g.fillStyle=C.paper; g.fillRect(x+2,y+2,w-4,68);
+  txt(title, x+6, y+13, C.ink, 9); txt(sub, x+6, y+24, '#6a5fd0', 8);
+  [['🧠 知識','k','#7a5cc8'],['💼 工作','w','#c8643c'],['✨ 技能','s','#d8b030']].forEach(([l,k,col],i)=>{ txt(l, x+6, y+38+i*11, C.ink, 7); bar(x+40, y+33+i*11, w-50, 5, (c[k]||0)/100, col); });
+}
+function drawMenu(){
+  drawWorld(); g.fillStyle='rgba(15,12,30,.8)'; g.fillRect(0,0,W,H);
+  if (S.menuPage==='card'){
+    const names = Object.keys(M.profiles(S.runs)); const name = (focusQuest()||{}).creature || names[0];
+    const p = (name && profileOf(name)) || {name:'—', k:0, w:0, s:0, stage:0, events:[], gap:'還沒有任務資料'};
+    card(p, 6, 10, 112, p.name, STAGES[p.stage]);
+    card({k:62,w:20,s:35}, 122, 10, 112, 'FOX（夥伴）', 'L1 學徒・嚮導');
+    g.fillStyle=C.paper; g.fillRect(6,86,228,66); g.fillStyle=C.ink; g.fillRect(7,87,226,64); g.fillStyle=C.paper; g.fillRect(8,88,224,62);
+    txt('成長事件（只有通過驗證才記錄）', 12, 99, C.ink, 8);
+    const ev = (p.events||[]).slice(-3); if (!ev.length) txt('還沒有。通過審查、完成並驗證的工作才會出現。', 12, 113, '#6a6588', 7);
+    ev.forEach((e,i)=>txt(e.id+' '+({k:'知識',w:'工作',s:'技能'}[e.kind])+' +'+e.amount+'｜'+e.what.slice(0,22), 12, 113+i*11, C.ink, 7));
+    txt('缺口：'+(p.gap||''), 12, 146, C.red, 7);
+    return;
+  }
+  if (S.menuPage==='quests'){
+    g.fillStyle=C.paper; g.fillRect(10,12,220,136); g.fillStyle=C.ink; g.fillRect(12,14,216,132); g.fillStyle=C.paper; g.fillRect(14,16,212,128);
+    txt('任務清單（L／R 切換追蹤）', 20, 28, C.ink, 9);
+    S.quests.slice(0,8).forEach((q,i)=>{ const y = 44+i*12; if (q.number===S.focus){ g.fillStyle=C.red; g.fillRect(18,y-7,3,6); }
+      txt('#'+q.number+' '+q.workflowId+' '+(q.open ? (q.pending?.step||'')+(q.who==='owner'?' 等你':' Agent') : (q.status==='done'?' 完成':' 停止')), 24, y, q.open?C.ink:'#8a86a0', 8); });
+    if (!S.quests.length) txt('沒有任務。', 24, 44, '#6a6588', 8);
+    txt('B：返回', 186, 140, '#6a6588', 7);
+    return;
+  }
+  g.fillStyle=C.paper; g.fillRect(20,14,200,132); g.fillStyle=C.ink; g.fillRect(22,16,196,128); g.fillStyle=C.paper; g.fillRect(24,18,192,124);
+  txt('選單', 32, 32, C.ink, 10);
+  const items = MENU();
+  items.forEach((it,i)=>{ const y = 50+i*15; if (i===S.menuSel){ g.fillStyle=C.red; g.fillRect(28,y-8,4,6); } txt(it[0], 36, y, C.ink, 8); });
+  const src = S.demo || !ghCfg().token ? '示範資料' : ghCfg().owner+'/'+ghCfg().repo;
+  txt('資料：'+src+(S.loadedAt?' · '+S.loadedAt.toTimeString().slice(0,5)+' 更新':''), 32, 128, '#6a6588', 7);
+  txt('世界：'+(S.paused?'⏸ 已暫停':'● 運轉中')+'（關掉畫面就暫停）', 32, 138, S.paused?C.red:'#2f8a48', 7);
+}
+const MENU = () => [
+  ['任務清單', () => S.menuPage='quests'],
+  ['角色卡', () => S.menuPage='card'],
+  ['立即重新讀取', () => { S.scene='world'; refresh(false); }],
+  ['音效：'+(S.sound?'開':'關'), () => { S.sound=!S.sound; }],
+  [S.demo ? '切換到真實資料' : '切換到示範資料', () => { S.demo=!S.demo; S.sig=''; S.focus=null; S.scene='world'; refresh(false); }],
+  ['回到 PackageCanvas', () => { location.href = './'; }]];
+
+// ---------- input ----------
+function cycleFocus(d){ const list = S.quests; if (!list.length) return; const i = list.findIndex(q=>q.number===S.focus); S.focus = list[(i+d+list.length)%list.length].number; toast('追蹤 #'+S.focus); }
+function press(k){
+  beep(k==='A'?880:k==='B'?440:600, .03, 'square', .03);
+  if (S.scene==='title'){ if (k==='START'||k==='A'){ S.scene='world'; S.demo = !ghCfg().token; refresh(false);
+      say(S.demo ? '主人，還沒設定 GitHub token，先帶你看示範任務。\n到 PackageCanvas「GEN2 知識庫來源 › 設定」填 token（要有 Issues 讀取權限），這裡就會顯示真的任務。' : '主人，歡迎回來。我去看看知識世界裡有哪些任務在跑…'); } return; }
+  if (S.scene==='menu'){
+    if (S.menuPage!=='main'){ if (k==='L') cycleFocus(-1); else if (k==='R') cycleFocus(1); else if (k==='B'||k==='A'||k==='START') S.menuPage='main'; return; }
+    const items = MENU();
+    if (k==='UP') S.menuSel=(S.menuSel+items.length-1)%items.length; if (k==='DOWN') S.menuSel=(S.menuSel+1)%items.length;
+    if (k==='B'||k==='START') S.scene='world';
+    if (k==='A') items[S.menuSel][1]();
+    return;
+  }
+  if (k==='SELECT'){ S.sound=!S.sound; toast('音效：'+(S.sound?'開':'關')); return; }
+  if (S.scene==='battle'){ if (k==='B'||k==='START'){ S.watching=null; S.victory=null; S.scene='world'; toast('KB 會繼續自動工作'); } return; }
+  if (D){
+    if (D.shown < D.text.length){ if (k==='A'||k==='B'){ D.shown = D.text.length; renderDialog(); } return; }
+    if (D.options){
+      if (k==='UP'){ D.sel=(D.sel+D.options.length-1)%D.options.length; renderDialog(); }
+      if (k==='DOWN'){ D.sel=(D.sel+1)%D.options.length; renderDialog(); }
+      if (k==='A'){ const d=D; d.onPick(d.sel); if (D===d) renderDialog(); }
+      if (k==='B' && D.onBack) D.onBack();
+      if (k==='L'||k==='R') dlgEl.scrollTop += k==='R'?40:-40;
+      return;
+    }
+    if (k==='A'||k==='B'){ const n=D.onNext; closeDialog(); n && n(); }
+    return;
+  }
+  if (S.scene==='world'){
+    if (k==='START'){ S.menuSel=0; S.menuPage='main'; S.scene='menu'; return; }
+    if (k==='L') return cycleFocus(-1); if (k==='R') return cycleFocus(1);
+    if (k==='A' && !S.hero.moving) interact();
+  }
+}
+const KEYMAP = {ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',z:'A',Z:'A',j:'A',x:'B',X:'B',k:'B',Enter:'START',Shift:'SELECT',q:'L',w:'R'};
+function down(k){ if (k in DIRS) held.add(k); press(k); }
+function up(k){ held.delete(k); }
+addEventListener('keydown', e => { const k = KEYMAP[e.key]; if (!k) return; e.preventDefault(); if (e.repeat) return; flash(k); down(k); });
+addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) up(k); });
+function flash(k){ document.querySelectorAll(`[data-k="${k}"]`).forEach(b=>{ b.classList.add('pressed'); setTimeout(()=>b.classList.remove('pressed'),120); }); }
+document.querySelectorAll('[data-k]').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(_){} b.classList.add('pressed'); try{ navigator.vibrate && navigator.vibrate(8); }catch(_){} down(k); });
+  const rel = () => { b.classList.remove('pressed'); up(k); };
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev => b.addEventListener(ev, rel));
+  b.addEventListener('click', e => { if (e.detail===0) press(k); });
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+const GP = {0:'A',1:'B',4:'L',5:'R',8:'SELECT',9:'START',12:'UP',13:'DOWN',14:'LEFT',15:'RIGHT'};
+const gpPrev = {};
+function pollPad(){
+  let pads = []; try { pads = navigator.getGamepads ? navigator.getGamepads() : []; } catch(_){}
+  for (const p of pads || []) if (p) for (const [i,k] of Object.entries(GP)){ const on = !!(p.buttons[i] && p.buttons[i].pressed); const id = p.index+':'+i; if (on && !gpPrev[id]){ flash(k); down(k); } if (!on && gpPrev[id]) up(k); gpPrev[id] = on; }
+}
+
+// ---------- online-active world (Knowledge World V0): hidden page = paused ----------
+function setPaused(p){ S.paused = p; document.getElementById('led').classList.toggle('off', p); document.getElementById('ledText').textContent = p ? 'WORLD PAUSED' : 'WORLD ACTIVE'; }
+document.addEventListener('visibilitychange', () => { const p = document.visibilityState !== 'visible'; setPaused(p); held.clear(); if (!p && S.scene!=='title') refresh(true); });
+
+// ---------- loop ----------
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(50, now-last); last = now; S.t += dt;
+  pollPad();
+  if (D && D.shown < D.text.length){ D.shown = Math.min(D.text.length, D.shown + dt/28); renderDialog(); }
+  if (!S.paused && S.scene==='world') updateHero(dt);
+  g.clearRect(0,0,W,H);
+  if (S.scene==='title') drawTitle(); else if (S.scene==='battle') drawBattle(); else if (S.scene==='menu') drawMenu(); else drawWorld();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__kw = { get hero(){ return {x:S.hero.x, y:S.hero.y, dir:S.hero.dir}; }, get scene(){ return S.scene; }, get quests(){ return S.quests.map(q=>({n:q.number,who:q.who,where:q.where,step:q.pending?.step})); } };
+
+})();
+</script>
+</body>
+</html>
