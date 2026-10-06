@@ -158,10 +158,46 @@
     return out;
   }
 
+  // Shortest walk on the tile grid (4 directions). isSolid(x, y) → blocked.
+  // Returns the tiles after `from` up to `to`, [] when already there, null when unreachable.
+  function findPath(isSolid, from, to, w, h) {
+    if (from.x === to.x && from.y === to.y) return [];
+    if (isSolid(to.x, to.y)) return null;
+    const k = (x, y) => x + ',' + y, prev = new Map([[k(from.x, from.y), null]]), queue = [from];
+    while (queue.length) {
+      const c = queue.shift();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const n = { x: c.x + dx, y: c.y + dy };
+        if (n.x < 0 || n.y < 0 || n.x >= w || n.y >= h || prev.has(k(n.x, n.y)) || isSolid(n.x, n.y)) continue;
+        prev.set(k(n.x, n.y), c);
+        if (n.x === to.x && n.y === to.y) {
+          const path = [n];
+          for (let p = prev.get(k(n.x, n.y)); p && !(p.x === from.x && p.y === from.y); p = prev.get(k(p.x, p.y))) path.unshift(p);
+          return path;
+        }
+        queue.push(n);
+      }
+    }
+    return null;
+  }
+
+  // Where the free-roaming fox goes next, by priority: to the player when
+  // called or when it has news, to the building where an Agent is working
+  // (the tracked run first), otherwise wander.
+  // doors: { lab: {x, y}, ... } (tile in front of each building).
+  function foxGoal({ quests, focus, called, news, doors }) {
+    if (called) return { kind: 'come', reason: 'called' };
+    if (news) return { kind: 'come', reason: 'news' };
+    const working = (quests || []).filter(q => q.open && q.who === 'agent' && doors && doors[q.where]);
+    const q = working.find(x => x.number === focus) || working[0];
+    if (q) return { kind: 'work', number: q.number, where: q.where, tile: doors[q.where] };
+    return { kind: 'wander' };
+  }
+
   // Signature of what the world shows, to know when something moved.
   function worldSignature(quests) {
     return quests.map(q => [q.number, q.status, q.pending?.step || '', q.attempt].join(':')).join('|');
   }
 
-  return { BUILDINGS, STAGES, callouts, mergeRuns, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
+  return { BUILDINGS, STAGES, callouts, findPath, foxGoal, mergeRuns, buildingFor, creatureFor, questFromRun, questsFromRuns, growthFromRuns, profiles, commandFor, worldSignature };
 });

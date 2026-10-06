@@ -100,3 +100,28 @@ test('the fox comes to find you when a run needs you or finishes', () => {
   // Sent back to the same gate after a revise counts as a new call only if the step changed.
   assert.deepEqual(M.callouts(memo(later), later), []);
 });
+
+test('the fox finds its way around buildings', () => {
+  // 5x4 grid with a wall in column 2 except the bottom row.
+  const wall = new Set(['2,0', '2,1', '2,2']);
+  const solid = (x, y) => wall.has(x + ',' + y);
+  const path = M.findPath(solid, { x: 0, y: 0 }, { x: 4, y: 0 }, 5, 4);
+  assert.equal(path.length, 10);
+  assert.deepEqual(path.at(-1), { x: 4, y: 0 });
+  assert.ok(path.every(p => !solid(p.x, p.y)));
+  assert.deepEqual(M.findPath(solid, { x: 1, y: 1 }, { x: 1, y: 1 }, 5, 4), []);
+  assert.equal(M.findPath(solid, { x: 0, y: 0 }, { x: 2, y: 1 }, 5, 4), null);
+  assert.equal(M.findPath((x, y) => x === 2, { x: 0, y: 0 }, { x: 4, y: 0 }, 5, 4), null);
+});
+
+test('the fox chooses: come when called or with news, otherwise go to work, otherwise wander', () => {
+  const doors = { forge: { x: 10, y: 5 }, shop: { x: 17, y: 11 } };
+  const quests = M.questsFromRuns([run(3, 'waiting_skill', 'S3', STEPS(['done'], ['done', '核准'], ['active'])),
+    run(5, 'waiting_skill', 'S2', STEPS(['active'], ['pending'], ['pending']))]);
+  assert.deepEqual(M.foxGoal({ quests, called: true, news: true, doors }), { kind: 'come', reason: 'called' });
+  assert.deepEqual(M.foxGoal({ quests, news: true, doors }), { kind: 'come', reason: 'news' });
+  assert.deepEqual(M.foxGoal({ quests, doors }), { kind: 'work', number: 5, where: 'forge', tile: { x: 10, y: 5 } });
+  assert.equal(M.foxGoal({ quests, focus: 3, doors }).where, 'shop');
+  const owner = M.questsFromRuns([run(4, 'waiting_owner', 'G1', STEPS(['done'], ['active'], ['pending']))]);
+  assert.deepEqual(M.foxGoal({ quests: owner, doors }), { kind: 'wander' });
+});
