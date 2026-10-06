@@ -343,6 +343,9 @@ jobs:
           adb shell monkey -p com.amin.pocketgba -c android.intent.category.LAUNCHER 1
           adb shell am start -W -a android.intent.action.VIEW -d 'amin-graph://open' \
             -p com.amin.pocketgba | grep -F 'Status: ok'
+          adb shell am start -W -a android.intent.action.VIEW -d 'amin-gen2://run/7' \
+            -p com.amin.pocketgba | tee "$RUNNER_TEMP/gen2-voice-deeplink.txt" | grep -F 'Status: ok'
+          grep -F 'Gen2VoiceActivity' "$RUNNER_TEMP/gen2-voice-deeplink.txt"
 
       - name: Run GitHub Work, Step 11, and Focus Chain mobile acceptance tests
         shell: bash
@@ -358,6 +361,21 @@ jobs:
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/step11-instrumentation.txt"
           grep -Eq 'OK \(1 test\)' "$RUNNER_TEMP/step11-instrumentation.txt"
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.PackageCanvasActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/packagecanvas-instrumentation.txt"
+          grep -Eq 'OK \(3 tests\)' "$RUNNER_TEMP/packagecanvas-instrumentation.txt"
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.Gen2RunsActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/gen2runs-instrumentation.txt"
+          grep -Eq 'OK \(4 tests\)' "$RUNNER_TEMP/gen2runs-instrumentation.txt"
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.Gen2VoiceActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/gen2voice-instrumentation.txt"
+          grep -Eq 'OK \(2 tests\)' "$RUNNER_TEMP/gen2voice-instrumentation.txt"
 
       - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
@@ -367,6 +385,10 @@ jobs:
             ${{ runner.temp }}/phase1-step11-badging.txt
             ${{ runner.temp }}/phase1-instrumentation.txt
             ${{ runner.temp }}/step11-instrumentation.txt
+            ${{ runner.temp }}/packagecanvas-instrumentation.txt
+            ${{ runner.temp }}/gen2runs-instrumentation.txt
+            ${{ runner.temp }}/gen2voice-instrumentation.txt
+            ${{ runner.temp }}/gen2-voice-deeplink.txt
             ${{ runner.temp }}/phase1-step11-emulator.log
           if-no-files-found: error
           retention-days: 7

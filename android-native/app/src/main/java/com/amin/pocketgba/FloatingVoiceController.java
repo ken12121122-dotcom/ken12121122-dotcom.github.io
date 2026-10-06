@@ -375,6 +375,14 @@ final class FloatingVoiceController implements RecognitionListener {
 
     private void routeTranscript(String spoken, double confidence) {
         appendChat("你：" + spoken);
+        if (Gen2VoiceBrain.asksForPendingWork(spoken)) {
+            appendChat("AI：打開 GEN2 語音核准");
+            finishTurn("GEN2 語音核准");
+            Intent intent = new Intent(service, Gen2VoiceActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            service.startActivity(intent);
+            return;
+        }
         ConversationalCapabilityRuntime.Result capability = ConversationalCapabilityRuntime.resolve(
                 service, nodeMetadataStore, spoken);
         if (capability.isHandled()) {

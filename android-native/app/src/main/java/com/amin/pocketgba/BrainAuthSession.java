@@ -27,6 +27,13 @@ final class BrainAuthSession {
         return api;
     }
 
+    /** Same OWNER login, scoped to the private gen2-knowledge repository. */
+    GitHubGen2Api requireGen2Api() throws Exception {
+        GitHubGen2Api api = new GitHubGen2Api(new GitHubUrlConnectionTransport(), requireToken().accessToken());
+        api.verifySession();
+        return api;
+    }
+
     void verifyAndSave(GitHubDeviceFlowProtocol.Token token) throws Exception {
         if (token == null) throw new IllegalArgumentException("GitHub 登入資料不可為空。 ");
         GitHubBrainApi api = new GitHubBrainApi(new GitHubUrlConnectionTransport(), token.accessToken());
