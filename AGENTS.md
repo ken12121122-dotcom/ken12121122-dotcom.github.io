@@ -58,11 +58,10 @@ OWNER 2026-10-03／2026-10-04 實機驗收 Bridge 102／103（紀錄見 PR #169�
 - 狐狸語音核准：讀回指令，口頭確認後送出
 - 對狐狸說「有什麼要我處理的」進入語音核准
 - GBA、存檔、手把、全域控制盤與 PackageCanvas 卡片沒有退化
-- 2026-10-06：PackageCanvas 網頁 `20261006.3` 的「🎙 用說的」按鈕（`AminGen2`）可打開 App 的語音核准
+- 2026-10-06：PackageCanvas 網頁 `20261006.3` 的「🎙 用說的」與「✋ 核准頁」按鈕（`AminGen2`）可分別打開 App 的語音核准與 GEN2 待核准頁
 
 Bridge 103 尚未實機確認：
 - 背景 15 分鐘檢查的通知
-- PackageCanvas「✋ 核准頁」按鈕（`AminGen2` 的 page 模式）
 - 語音說「等一下」取消
 
 Bridge 16 時已在 Samsung SM-A5560、Android 15 實機驗證（Runtime `0.9.2-rc19`）：
@@ -196,7 +195,7 @@ PackageCanvas 是 OWNER 的 GEN2 知識架構視覺化工作台，與 GBA 遊戲
 - GEN2 解析（frontmatter、Wiki Link、BOM、Registry、Resource、架構檢查）全部在網頁層，改規則只改 `gen2-source.js`，不改 APK。
 - 獨立 APK `android/packagecanvas/`（`tw.amin.packagecanvas`）在 GBA 入口通過實機驗收後停用；原始碼與 workflow 保留作回退，不再新增功能，也不得再建立第二套 Android 專案。
 - 隱私：本 repo 是公開 repo。GEN2 知識庫內容（含 KB-USER 個人資料）不得 commit 到本 repo；測試只用合成 fixture。未來 GitHub 端的知識庫同步、核准紀錄與 Skill 執行必須放在 OWNER 另建的私有 repo。
-- 狀態（2026-10-06）：`AminPackageCanvasFiles` 與控制中心 PackageCanvas 卡片自 Bridge 101 起包含在 App 裡，已隨 Bridge 103 正式發布。OWNER 2026-10-03 回報 PackageCanvas 正常。`AminGen2` 的「🎙 用說的」已於 2026-10-06 實機確認，「✋ 核准頁」尚未確認。
+- 狀態（2026-10-06）：`AminPackageCanvasFiles` 與控制中心 PackageCanvas 卡片自 Bridge 101 起包含在 App 裡，已隨 Bridge 103 正式發布。OWNER 2026-10-03 回報 PackageCanvas 正常。`AminGen2` 的「🎙 用說的」與「✋ 核准頁」都已於 2026-10-06 實機確認。
 
 ## 修改規則
 
