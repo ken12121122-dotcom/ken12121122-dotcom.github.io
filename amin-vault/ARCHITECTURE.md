@@ -1,6 +1,6 @@
 # Amin Universal Vault and Pocket GBA Architecture
 
-Last updated: 2026-07-19, Asia/Taipei
+Last updated: 2026-10-06, Asia/Taipei
 
 ## Principle
 
@@ -9,11 +9,24 @@ Last updated: 2026-07-19, Asia/Taipei
 ## Current Verified State
 
 - Android package: `com.amin.pocketgba`
-- APK release: `0.9.2-bridge16`, versionCode `112`
+- APK release: `0.11.22-rc14-bridge103`, versionCode `199`, channel `release`, published 2026-10-06
 - Runtime release: `0.9.2-rc19`
 - Android release channel: enabled
 - Permanent signer SHA-256: `3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7`
-- Physical device: Samsung SM-A5560, Android 15
+
+Bridge 102/103 on-device acceptance by the OWNER, 2026-10-03 and 2026-10-04 (recorded on PR #169):
+- GEN2 pending-approval screen: provide input, approve, revise (reason required), stop
+- ntfy push opening a run through `amin-gen2://run/<number>`
+- Fox voice approval: the command is read back and sent only after spoken or tapped confirmation
+- Asking the fox "有什麼要我處理的" opens voice approval
+- GBA, saves, controller, universal overlay and the PackageCanvas card did not regress
+
+Not yet confirmed on a device:
+- background 15-minute notifications
+- PackageCanvas buttons that open the app (`AminGen2`)
+- cancelling with "等一下"
+
+Bridge 16 hardware verification (Samsung SM-A5560, Android 15):
 - Wired controller: native detection, binding, test feedback, and in-game control verified
 - Universal control overlay: active with cursor and scroll modes
 
@@ -25,11 +38,14 @@ Release truth lives in:
 
 ## Product Surfaces
 
-The project currently has three visual layers:
+The project currently has these visual layers:
 
 1. White Android native control center: canonical app entry and version management.
 2. GBA Runtime: ROM library, controller settings, EmulatorJS, and mGBA.
 3. Black legacy Pocket OS shell: archived or experimental surface, not the default return target.
+4. PackageCanvas (`/packagecanvas/`): GEN2 knowledge architecture workbench on GitHub Pages, opened from the control center card. It shows live GEN2 run progress.
+5. Knowledge World (`/packagecanvas/world.html`): GBA-style game view of the same GEN2 runs. You are the player and the fox is your partner; Agent work shows as auto battles.
+6. GEN2 native screens: the pending-approval page and fox voice approval, where OWNER decisions are confirmed and sent.
 
 Returning from GBA should lead to the white native control center.
 
@@ -41,17 +57,41 @@ Android APK
 ├─ file picker and native ROM staging
 ├─ APK update center
 ├─ KeyEvent / MotionEvent gamepad bridge
-└─ AccessibilityService universal control overlay
+├─ AccessibilityService universal control overlay
+├─ GEN2 pending approvals, notifications and fox voice approval
+├─ amin-gen2://run/<number> deep link
+└─ PackageCanvas bridges: AminPackageCanvasFiles (read-only folders), AminGen2 (open a run only)
 
 GitHub Pages Runtime
 ├─ ROM library and save protection
 ├─ controller configuration
 ├─ EmulatorJS frontend
 ├─ mGBA WebAssembly core
-└─ hot-update assets controlled by runtime-manifest.json
+├─ hot-update assets controlled by runtime-manifest.json
+└─ PackageCanvas and Knowledge World (/packagecanvas/, live on merge to main)
 ```
 
 Java, Manifest, native Activity, AccessibilityService, or APK-bundled asset changes require a new Bridge APK. JavaScript, HTML, CSS, and controller mapping fixes should normally use the Runtime hot-update channel.
+
+## GEN2 Run Loop
+
+GEN2 knowledge and workflow runs live in the private repository `ken12121122-dotcom/gen2-knowledge`. Its `kb/` folder is the source of truth; no knowledge content is committed to this public repository.
+
+```text
+GEN2 Run Start (Actions, main only)
+→ gen2-run Issue
+→ /gen2 comments, replayed by the run engine (OWNER decides; the agent reports skill results)
+→ ntfy push when the OWNER is needed → amin-gen2://run/<n> → native approval or fox voice
+→ GEN2 Agent (Claude; Google Calendar through a service account) runs skill steps and stops at OWNER gates
+→ PackageCanvas / Knowledge World read the same Issues (read-only)
+```
+
+The web layer never posts `/gen2` commands. Decisions are confirmed in the native screens.
+
+The only web write is the Knowledge World "Agent key cabinet":
+- It seals three named agent secrets for gen2-knowledge Actions.
+- It uses a one-time token the OWNER pastes in.
+- It stores nothing.
 
 ## Gamepad Input Architecture
 
@@ -198,6 +238,10 @@ Supabase
 - Architecture Markdown: `/amin-vault/ARCHITECTURE.md`
 - APK manifest: `/amin-vault/native-release-manifest.json`
 - Runtime manifest: `/amin-vault/runtime-manifest.json`
+- APK release path: PR into `release/android` → `.github/workflows/android-release.yml` (permanent signing, writes the manifest to main). Candidates go through `workflow_dispatch` only.
+- PackageCanvas: `/packagecanvas/index.html`, parser `/packagecanvas/gen2-source.js`
+- Knowledge World: `/packagecanvas/world.html`, rules `/packagecanvas/world-model.js`, key cabinet `/packagecanvas/gen2-secrets.js`
+- GEN2 knowledge and run engine: private repository `ken12121122-dotcom/gen2-knowledge`
 
 ## Known Limitations
 
@@ -208,6 +252,7 @@ Supabase
 - In-app Bluetooth scanning and pairing are not implemented; Android system pairing is used.
 - Automatic IG/Facebook short-video mode is not implemented.
 - The physical controller and universal overlay do not yet share one unified action core.
+- Bridge 103 items not yet confirmed on a device: background 15-minute notifications, PackageCanvas buttons that open the app, and cancelling by voice with "等一下".
 
 ## Next Architecture Milestones
 
