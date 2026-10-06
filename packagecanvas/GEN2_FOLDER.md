@@ -2,6 +2,26 @@
 
 Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bridge。
 
+## 20261007.1 · 知識世界：Agent 鑰匙櫃
+
+在知識世界裡把 GEN2 Agent 需要的鑰匙放進 gen2-knowledge 的 GitHub Actions secrets，不用到 GitHub 網頁操作。
+- 入口：START 選單「🔑 Agent 鑰匙櫃」，或走進沒有工作的「自動化工坊」。
+- 只能寫這三個名稱：`ANTHROPIC_API_KEY`、`GOOGLE_SERVICE_ACCOUNT_JSON`、`GEN2_CALENDAR_ID`。其他名稱一律拒絕。
+- 存入前先檢查格式：
+  - Claude key 必須以 `sk-ant-` 開頭，並先向 Claude 確認可用（只列模型，不花 token）。被拒絕就不存。
+  - 服務帳號 JSON 必須是 `service_account`，含 email 與私密金鑰。存好後，狐狸會顯示並複製服務帳號 email，提醒你把行事曆共用給它，權限選「變更活動」。
+  - 行事曆 ID 必須是 email 格式。
+- 加密：值在頁面裡用 repo 的公開金鑰封裝（libsodium sealed box，GitHub 規定的格式），只送到 `api.github.com`。網頁不儲存、不顯示、讀不回來；GitHub 也只回傳名稱和更新日期。
+- 授權：只用在鑰匙櫃裡貼的一次性 fine-grained token，限 gen2-knowledge 一個 repo：
+  - 存鑰匙要 Secrets：Read and write
+  - 「讓 Agent 接手」要 Actions：Read and write
+  - 關閉鑰匙櫃就清掉，不寫入 localStorage
+  - 畫布已存的 token 維持唯讀，鑰匙櫃不會拿它來寫入
+- 鑰匙都設定好，而且有任務在等 Agent 時，可以按「讓 Agent 接手 #N」。它會在 main 上執行 Actions › GEN2 Agent。
+- 加密元件：`packagecanvas/gen2-secrets.js`（BLAKE2b 與 sealed box）與 `packagecanvas/vendor/nacl-fast.min.js`（tweetnacl 1.0.3，public domain）。測試在 `tests/packagecanvas-secrets.test.mjs`：
+  - 測試向量取自 RFC 7693 與 libsodium。
+  - 另外在本機確認過：libsodium 能解開這裡封裝的值。
+
 ## 20261006.1 · 知識世界（Knowledge World）遊戲畫面
 
 `packagecanvas/world.html`：GBA 掌機風格的遊戲畫面，顯示 GEN2 流程（gen2-run Issue）的真實進度。PackageCanvas「GEN2 知識庫來源」對話框裡的「🎮 知識世界」可以進入。

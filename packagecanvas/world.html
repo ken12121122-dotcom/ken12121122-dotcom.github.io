@@ -44,6 +44,28 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rend
 .dlg th{background:#d9d3f2}
 .dlg .warn{color:#c8325a}
 .toast{position:absolute;top:13%;left:50%;transform:translateX(-50%);background:#1f1b33;color:#f4f1e6;border:2px solid #f4f1e6;padding:.2em .6em;font-size:clamp(10px,2.9vw,13px);white-space:nowrap;border-radius:3px;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.sheet{position:fixed;inset:0;background:rgba(10,8,22,.78);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto;z-index:10;-webkit-user-select:text;user-select:text}
+.sheet[hidden]{display:none}
+.sheet-card{width:min(100%,460px);background:#f4f1e6;color:#1f1b33;border:3px solid #1f1b33;box-shadow:0 0 0 2px #f4f1e6,0 18px 40px rgba(0,0,0,.6);border-radius:6px;padding:14px 14px 12px;font-size:15px;line-height:1.5}
+.sheet-card h2{margin:0 0 6px;font:14px var(--arcade);color:#4b3fa6;line-height:1.6}
+.sheet-card .who{margin:0;font-size:.85em;color:#c8325a}
+.sheet-card .fox{margin:0 0 10px;white-space:pre-wrap}
+.sheet-card ul{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:4px}
+.sheet-card li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed #b9b2d6;padding-bottom:2px}
+.sheet-card li b{font-weight:400}
+.sheet-card li span{white-space:nowrap;font-size:.85em}
+.sheet-card label{display:block;margin:8px 0 2px;font-size:.9em}
+.sheet-card select,.sheet-card input,.sheet-card textarea{width:100%;font:15px var(--pixel);color:#1f1b33;background:#fff;border:2px solid #1f1b33;border-radius:3px;padding:6px}
+.sheet-card textarea{min-height:7em;resize:vertical;font-size:12px}
+.sheet-card .hint{margin:2px 0 0;font-size:.8em;color:#6a6588}
+.sheet-card details{margin-top:10px;font-size:.9em}
+.sheet-card summary{cursor:pointer;color:#4b3fa6}
+.sheet-card .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sheet-card .row button{flex:1 1 auto;min-height:40px;border:2px solid #1f1b33;border-radius:4px;background:#c8325a;color:#fff;font:14px var(--pixel);touch-action:manipulation}
+.sheet-card .row button.alt{background:#fff;color:#1f1b33}
+.sheet-card .row button:disabled{opacity:.5}
+.sheet-card .msg{margin:10px 0 0;white-space:pre-wrap;font-size:.9em;min-height:1.2em}
+.sheet-card .msg.err{color:#c8325a}
 @keyframes blink{50%{opacity:0}}
 .deck{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 4px 0}
 .dpad{position:relative;width:120px;height:120px}
@@ -110,12 +132,41 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
       </div>
     </div>
   </div>
-  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；網頁只讀不寫，決定在 App 裡確認後才送出。<br>十字鍵走路 · A 對話／進入 · B 返回 · L／R 切換任務 · START 選單<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
+  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>十字鍵走路 · A 對話／進入 · B 返回 · L／R 切換任務 · START 選單<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
 </div>
 
 
+<div class="sheet" id="keys" hidden role="dialog" aria-modal="true" aria-labelledby="keysTitle">
+  <div class="sheet-card">
+    <h2 id="keysTitle">🔑 Agent 鑰匙櫃</h2>
+    <p class="who">狐狸</p>
+    <p class="fox" id="keysSay"></p>
+    <ul id="keysStatus"></ul>
+    <label for="keysName">要放哪一把鑰匙</label>
+    <select id="keysName"></select>
+    <label for="keysLine" id="keysValueLabel">內容</label>
+    <input id="keysLine" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <textarea id="keysText" autocomplete="off" autocapitalize="off" spellcheck="false" hidden></textarea>
+    <p class="hint" id="keysHint"></p>
+    <details id="keysAuth" open>
+      <summary>GitHub 授權（一次性 token，不會儲存）</summary>
+      <label for="keysToken">一次性 GitHub token（不會儲存）</label>
+      <input id="keysToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+      <p class="hint">GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token：Repository access 只選 gen2-knowledge；Permissions 選 <b>Secrets：Read and write</b>（要讓 Agent 立刻接手，再加 <b>Actions：Read and write</b>）。用完可以刪掉。</p>
+    </details>
+    <div class="row">
+      <button id="keysSave" type="button">存進 GitHub</button>
+      <button id="keysRun" type="button" class="alt" hidden>讓 Agent 接手</button>
+      <button id="keysClose" type="button" class="alt">關閉</button>
+    </div>
+    <p class="msg" id="keysMsg" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
 <script src="./gen2-source.js?v=20261006.2"></script>
 <script src="./world-model.js?v=20261006.2"></script>
+<script src="./vendor/nacl-fast.min.js?v=1.0.3"></script>
+<script src="./gen2-secrets.js?v=20261007.1"></script>
 <script>
 (() => {
 'use strict';
@@ -375,11 +426,113 @@ function interact(){
     const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
     const list = questsAt(b.id);
     if (list.length) return pickQuest(list, q => { closeDialog(); if (q.who==='agent'){ S.watching = {number:q.number, where:b.id}; S.scene='battle'; } else ownerDialog(q); });
+    if (b.id==='shop') return ask(b.name+'：'+b.cap+'。\n現在沒有工作。後面有個上鎖的櫃子，放著 Agent 的鑰匙。', ['🔑 打開 Agent 鑰匙櫃','離開'], i => { closeDialog(); if (i===0) openKeys(); }, {onBack: closeDialog});
     return say(b.name+'：'+b.cap+'。\n現在沒有工作。');
   }
   const q = focusQuest();
   say(q ? (q.open ? '#'+q.number+' '+q.workflowId+'：'+(q.who==='owner' ? '在等你，到「'+bName(q.where)+'」處理。' : 'KB 正在「'+bName(q.where)+'」工作，'+(q.minutes!=null?'已 '+q.minutes+' 分鐘。':'')) : '#'+q.number+' 已'+(q.status==='done'?'完成':'停止')+'。') : '目前沒有任務。我陪你逛逛。');
 }
+
+// ---------- Agent key cabinet: OWNER puts the agent's keys into gen2-knowledge Actions secrets ----------
+// Values are sealed in the page with the repo's public key and sent only to GitHub; nothing is stored.
+const SEC = window.Gen2Secrets, NACL = window.nacl;
+const $ = id => document.getElementById(id);
+const KEYS = { open:false, busy:false, status:null, serviceAccount:'' };
+// Writes only with a one-time token typed here; the canvas's saved token stays read-only and is never used.
+function keysCfg(){ const c = ghCfg(); return { owner:c.owner, repo:c.repo, token:$('keysToken').value.trim() }; }
+function keysSay(text){ $('keysSay').textContent = text; }
+function keysMsg(text, err){ const m = $('keysMsg'); m.textContent = text; m.classList.toggle('err', !!err); }
+function keysField(){
+  const def = SEC.AGENT_SECRETS.find(d => d.name === $('keysName').value);
+  $('keysLine').hidden = def.multiline; $('keysText').hidden = !def.multiline; $('keysLine').type = def.plain ? 'text' : 'password';
+  $('keysValueLabel').htmlFor = def.multiline ? 'keysText' : 'keysLine';
+  $('keysValueLabel').textContent = def.label; $('keysHint').textContent = def.hint + '。存進去之後誰都讀不出來（包括這個畫面），只能覆蓋。';
+}
+function keysRenderStatus(){
+  const ul = $('keysStatus'); ul.innerHTML = '';
+  for (const d of SEC.AGENT_SECRETS){
+    const st = KEYS.status && KEYS.status.find(x => x.name === d.name);
+    const li = document.createElement('li');
+    li.innerHTML = '<b></b><span></span>';
+    li.firstChild.textContent = d.label;
+    li.lastChild.textContent = !KEYS.status ? '？' : st.set ? '✅ 已設定 ' + (st.updatedAt||'').slice(0,10) : '⬜ 未設定';
+    ul.appendChild(li);
+  }
+  const waiting = openQuests().filter(q => q.who==='agent');
+  $('keysRun').hidden = !(KEYS.status && KEYS.status.every(x => x.set) && waiting.length);
+  $('keysRun').textContent = '讓 Agent 接手 ' + waiting.map(q => '#'+q.number).join('、');
+}
+async function keysRefresh(){
+  if (!keysCfg().token){ KEYS.status = null; $('keysAuth').open = true; keysRenderStatus(); keysSay('主人，先在下面「GitHub 授權」貼一把一次性 token，我才能幫你看鑰匙、放鑰匙。'); return; }
+  try { KEYS.status = await SEC.status(keysCfg()); }
+  catch (e) {
+    KEYS.status = null; if (e.needsToken || !keysCfg().token) $('keysAuth').open = true;
+    keysMsg(e.needsToken ? '看不到目前設定：' + e.message + '。' : '⚠ ' + e.message, true);
+    keysSay('主人，我需要一把能管理 Secrets 的 GitHub token，才能幫你把鑰匙放進去。');
+  }
+  keysRenderStatus();
+  if (KEYS.status){
+    const missing = KEYS.status.filter(x => !x.set).map(x => x.label);
+    keysSay(missing.length ? '主人，Agent 還缺：' + missing.join('、') + '。\n一次放一把，我會加密後直接交給 GitHub 保管。' : '鑰匙都放好了！Agent 會在你每次回覆 /gen2 指令後自動工作。' + (openQuests().some(q => q.who==='agent') ? '\n有任務正在等 Agent，可以按「讓 Agent 接手」。' : ''));
+  }
+}
+function openKeys(){
+  if (!SEC || !NACL){ toast('鑰匙櫃載入失敗，請重新整理'); return; }
+  closeDialog(); held.clear();
+  KEYS.open = true; $('keys').hidden = false; keysMsg('');
+  keysSay('主人，我幫你看看 Agent 的鑰匙…'); keysRenderStatus();
+  if (!$('keysName').options.length) for (const d of SEC.AGENT_SECRETS){ const o = document.createElement('option'); o.value = d.name; o.textContent = d.label; $('keysName').appendChild(o); }
+  keysField(); keysRefresh(); setTimeout(() => $('keysName').focus(), 0);
+}
+function closeKeys(){
+  KEYS.open = false; $('keys').hidden = true;
+  $('keysLine').value = ''; $('keysText').value = ''; $('keysToken').value = ''; // never keep keys or tokens around
+}
+async function keysSave(){
+  if (KEYS.busy) return;
+  const name = $('keysName').value, def = SEC.AGENT_SECRETS.find(d => d.name === name);
+  const raw = (def.multiline ? $('keysText') : $('keysLine')).value;
+  const ok = SEC.check(name, raw); if (ok.error){ keysMsg('⚠ ' + ok.error, true); return; }
+  const cfg = keysCfg(); if (!cfg.token){ $('keysAuth').open = true; keysMsg('需要 GitHub token：在「GitHub 授權」貼一次性 token。', true); $('keysToken').focus(); return; }
+  KEYS.busy = true; $('keysSave').disabled = true;
+  try {
+    if (name === 'ANTHROPIC_API_KEY'){
+      keysMsg('先請 Claude 確認這把 key…');
+      const v = await SEC.verifyClaudeKey(ok.value);
+      if (v.ok === false){ keysMsg('⚠ ' + v.message + '，沒有存入。', true); return; }
+      keysMsg(v.message + '，加密並存入 GitHub…');
+    } else keysMsg('加密並存入 GitHub…');
+    const r = await SEC.save(cfg, name, raw, NACL);
+    (def.multiline ? $('keysText') : $('keysLine')).value = '';
+    jingle([523,659,784]);
+    if (r.info && r.info.serviceAccount){
+      KEYS.serviceAccount = r.info.serviceAccount;
+      keysMsg('✅ 已存入 ' + name + '。\n最後一步：Google 日曆 → 你的行事曆 → 設定和共用 → 與特定使用者共用，加入\n' + r.info.serviceAccount + '\n權限選「變更活動」。');
+      try { await navigator.clipboard.writeText(r.info.serviceAccount); toast('已複製服務帳號 email'); } catch(_){}
+    } else keysMsg('✅ 已存入 ' + name + '。');
+    await keysRefresh();
+    const next = KEYS.status && KEYS.status.find(x => !x.set); // move on to the next missing key
+    if (next){ $('keysName').value = next.name; keysField(); }
+  } catch (e) {
+    if (e.needsToken){ $('keysAuth').open = true; $('keysToken').focus(); }
+    keysMsg('⚠ ' + e.message, true);
+  } finally { KEYS.busy = false; $('keysSave').disabled = false; }
+}
+async function keysRun(){
+  if (KEYS.busy) return;
+  const list = openQuests().filter(q => q.who==='agent'); if (!list.length) return;
+  KEYS.busy = true; $('keysRun').disabled = true;
+  try { for (const q of list) await SEC.dispatchAgent(keysCfg(), q.number); keysMsg('✅ 已請 Agent 接手 ' + list.map(q => '#'+q.number).join('、') + '。\n一兩分鐘後回到世界就會看到戰鬥結果。'); jingle([392,523,659]); }
+  catch (e) { if (e.needsToken){ $('keysAuth').open = true; $('keysToken').focus(); } keysMsg('⚠ ' + e.message, true); }
+  finally { KEYS.busy = false; $('keysRun').disabled = false; }
+}
+$('keysName').addEventListener('change', () => { keysField(); keysMsg(''); });
+$('keysSave').addEventListener('click', keysSave);
+$('keysToken').addEventListener('change', () => { keysMsg(''); keysRefresh(); });
+$('keysRun').addEventListener('click', keysRun);
+$('keysClose').addEventListener('click', closeKeys);
+$('keys').addEventListener('keydown', e => { if (e.key === 'Escape'){ e.preventDefault(); closeKeys(); } });
+$('keys').addEventListener('click', e => { if (e.target === $('keys')) closeKeys(); });
 
 // ---------- drawing ----------
 function txt(s,x,y,color,size){ g.fillStyle=color; g.font = size+'px DotGothic16, "Noto Sans TC", monospace'; g.textBaseline='alphabetic'; g.fillText(s,x,y); }
@@ -494,6 +647,7 @@ const MENU = () => [
   ['任務清單', () => S.menuPage='quests'],
   ['角色卡', () => S.menuPage='card'],
   ['立即重新讀取', () => { S.scene='world'; refresh(false); }],
+  ['🔑 Agent 鑰匙櫃', () => { S.scene='world'; openKeys(); }],
   ['音效：'+(S.sound?'開':'關'), () => { S.sound=!S.sound; }],
   [S.demo ? '切換到真實資料' : '切換到示範資料', () => { S.demo=!S.demo; S.sig=''; S.focus=null; S.scene='world'; refresh(false); }],
   ['回到 PackageCanvas', () => { location.href = './'; }]];
@@ -501,6 +655,7 @@ const MENU = () => [
 // ---------- input ----------
 function cycleFocus(d){ const list = S.quests; if (!list.length) return; const i = list.findIndex(q=>q.number===S.focus); S.focus = list[(i+d+list.length)%list.length].number; toast('追蹤 #'+S.focus); }
 function press(k){
+  if (KEYS.open) return;
   beep(k==='A'?880:k==='B'?440:600, .03, 'square', .03);
   if (S.scene==='title'){ if (k==='START'||k==='A'){ S.scene='world'; S.demo = !ghCfg().token; refresh(false);
       say(S.demo ? '主人，還沒設定 GitHub token，先帶你看示範任務。\n到 PackageCanvas「GEN2 知識庫來源 › 設定」填 token（要有 Issues 讀取權限），這裡就會顯示真的任務。' : '主人，歡迎回來。我去看看知識世界裡有哪些任務在跑…'); } return; }
@@ -536,7 +691,7 @@ function press(k){
 const KEYMAP = {ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',z:'A',Z:'A',j:'A',x:'B',X:'B',k:'B',Enter:'START',Shift:'SELECT',q:'L',w:'R'};
 function down(k){ if (k in DIRS) held.add(k); press(k); }
 function up(k){ held.delete(k); }
-addEventListener('keydown', e => { const k = KEYMAP[e.key]; if (!k) return; e.preventDefault(); if (e.repeat) return; flash(k); down(k); });
+addEventListener('keydown', e => { if (KEYS.open || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; const k = KEYMAP[e.key]; if (!k) return; e.preventDefault(); if (e.repeat) return; flash(k); down(k); });
 addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) up(k); });
 function flash(k){ document.querySelectorAll(`[data-k="${k}"]`).forEach(b=>{ b.classList.add('pressed'); setTimeout(()=>b.classList.remove('pressed'),120); }); }
 document.querySelectorAll('[data-k]').forEach(b => {
