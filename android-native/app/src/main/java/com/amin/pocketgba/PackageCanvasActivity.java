@@ -358,6 +358,17 @@ public final class PackageCanvasActivity extends Activity {
             });
             return true;
         }
+
+        /** Opens the fox chat, optionally about one run (0 = just talk). Opening only; the page sends nothing. */
+        @JavascriptInterface public boolean openChat(int issue) {
+            if (!PackageCanvasFolderPolicy.isTrustedPage(committedUrl)) return false;
+            if (issue < 0 || issue > 9_999_999) return false;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                startActivity(Gen2ChatActivity.intent(PackageCanvasActivity.this, issue));
+            });
+            return true;
+        }
     }
 
     /** Read-only bridge. Every call re-checks that the committed page is PackageCanvas. */
