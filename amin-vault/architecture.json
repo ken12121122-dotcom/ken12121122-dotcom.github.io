@@ -225,7 +225,7 @@
     "In-app Bluetooth scanning and pairing are not implemented",
     "Automatic Instagram and Facebook short-video mode is not implemented",
     "Physical controllers and virtual overlay buttons do not yet share one common action core",
-    "Bridge 103 items not yet confirmed on a device: background 15-minute notifications, PackageCanvas 核准頁 button (AminGen2 page mode), voice cancel with 等一下"
+    "Bridge 103 items not yet confirmed on a device: background 15-minute notifications, voice cancel with 等一下"
   ],
   "next_milestones": [
     "Controller Lab with device naming and raw input monitoring",
@@ -248,11 +248,11 @@
         "fox voice approval with read-back and confirmation",
         "asking the fox for pending work opens voice approval",
         "GBA, saves, controller, universal overlay and PackageCanvas card did not regress",
-        "PackageCanvas 用說的 button (AminGen2 voice mode, web 20261006.3) opens the app voice approval"
+        "PackageCanvas 用說的 button (AminGen2 voice mode, web 20261006.3) opens the app voice approval",
+        "PackageCanvas 核准頁 button (AminGen2 page mode) opens the app pending-approval page"
       ],
       "not_yet_confirmed": [
         "background 15-minute notifications",
-        "PackageCanvas 核准頁 button (AminGen2 page mode)",
         "voice cancel with 等一下"
       ]
     },
