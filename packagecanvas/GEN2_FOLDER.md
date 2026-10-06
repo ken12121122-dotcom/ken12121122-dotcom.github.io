@@ -2,6 +2,14 @@
 
 Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bridge。
 
+## 20261006.3 · 在 App 裡開啟核准
+
+在 Amin Pocket GBA（Bridge 103 起）裡開 PackageCanvas 時，Agent 狀態面板中「等你處理」的流程下方會多兩個按鈕：
+- 「🎙 用說的」：打開狐狸語音核准，直接從這一筆開始聊。
+- 「✋ 核准頁」：打開 App 的「GEN2 待核准」，並標出這一筆。
+
+網頁只是請 App 打開畫面，拿不到 GitHub 權杖，也不會送出任何指令；決定一律在 App 裡確認後才送出。一般瀏覽器沒有這兩個按鈕。
+
 ## 20261007.1 · 知識世界：Agent 鑰匙櫃
 
 在知識世界裡把 GEN2 Agent 需要的鑰匙放進 gen2-knowledge 的 GitHub Actions secrets，不用到 GitHub 網頁操作。
