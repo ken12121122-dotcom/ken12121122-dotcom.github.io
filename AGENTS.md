@@ -2,7 +2,7 @@
 
 新 AI、Codex、ChatGPT 或 GitHub Actions 在修改程式前，必須先完整閱讀本檔。
 
-最後人工驗證：2026-07-19，Asia/Taipei  
+最後人工驗證：2026-10-04（Bridge 103 實機驗收），2026-10-06 正式發布，Asia/Taipei  
 Repository：`ken12121122-dotcom/ken12121122-dotcom.github.io`  
 Default branch：`main`
 
@@ -50,10 +50,21 @@ Amin 不是單一 GBA App，也不是一次性語音 Demo。它是 Android 手�
 
 Amin Pocket GBA 是 Android 原生外殼、GitHub Pages 熱更新 Runtime、EmulatorJS/mGBA，以及 Android 無障礙全域控制盤組成的個人系統。
 
-已在 Samsung SM-A5560、Android 15 實機驗證：
+正式版：APK `0.11.22-rc14-bridge103`（versionCode `199`），2026-10-06 正式發布。
 
-- APK：`0.9.2-bridge16`，versionCode `112`
-- Runtime：`0.9.2-rc19`
+OWNER 2026-10-03／2026-10-04 實機驗收 Bridge 102／103（紀錄見 PR #169）：
+- GEN2 待核准畫面：提供資料、核准、退回（必須寫說明）、停止流程
+- ntfy 推播以 `amin-gen2://run/編號` 開啟流程
+- 狐狸語音核准：讀回指令，口頭確認後送出
+- 對狐狸說「有什麼要我處理的」進入語音核准
+- GBA、存檔、手把、全域控制盤與 PackageCanvas 卡片沒有退化
+
+Bridge 103 尚未實機確認：
+- 背景 15 分鐘檢查的通知
+- PackageCanvas「用說的／核准頁」按鈕（`AminGen2`）
+- 語音說「等一下」取消
+
+Bridge 16 時已在 Samsung SM-A5560、Android 15 實機驗證（Runtime `0.9.2-rc19`）：
 - 有線遊戲手柄可由 Android 原生層收到按鍵與搖桿
 - 手把設定頁可綁定，測試區可顯示原生輸入
 - 實體手把可控制 GBA 遊戲
@@ -66,12 +77,14 @@ Android WebView 的 `navigator.getGamepads()` 可能是空的。不要因此判�
 APK 權威檔案：`amin-vault/native-release-manifest.json`
 
 - package：`com.amin.pocketgba`
-- verified latest：`0.9.2-bridge16`
-- verified code：`112`
+- verified latest：`0.11.22-rc14-bridge103`（channel `release`）
+- verified code：`199`
 - signer SHA-256：`3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7`
-- 原生功能分支：`agent/amin-pocket-gba-universal-control-v01`
+- 原生發布分支：`release/android`。PR 合併後由 `android-release.yml` 建置、永久簽章，並寫入 main 的 manifest。
+  - `channel: candidate` 只能用 workflow_dispatch 發候選版。
+  - 推到 `release/android` 的必須是正式通道。
 
-在使用者完成新的實機驗收並明確批准前，正式 manifest 必須維持 Bridge 16。
+在使用者完成新的實機驗收並明確批准前，正式 manifest 必須維持 Bridge 103。
 
 Runtime 權威檔案：`amin-vault/runtime-manifest.json`
 
@@ -182,7 +195,7 @@ PackageCanvas 是 OWNER 的 GEN2 知識架構視覺化工作台，與 GBA 遊戲
 - GEN2 解析（frontmatter、Wiki Link、BOM、Registry、Resource、架構檢查）全部在網頁層，改規則只改 `gen2-source.js`，不改 APK。
 - 獨立 APK `android/packagecanvas/`（`tw.amin.packagecanvas`）在 GBA 入口通過實機驗收後停用；原始碼與 workflow 保留作回退，不再新增功能，也不得再建立第二套 Android 專案。
 - 隱私：本 repo 是公開 repo。GEN2 知識庫內容（含 KB-USER 個人資料）不得 commit 到本 repo；測試只用合成 fixture。未來 GitHub 端的知識庫同步、核准紀錄與 Skill 執行必須放在 OWNER 另建的私有 repo。
-- 狀態（2026-09-30）：網頁端 GEN2 資料夾讀取已完成本機與模擬 bridge 測試；GBA 原生 bridge 與控制中心卡片尚未發布、尚未實機驗證。
+- 狀態（2026-10-06）：`AminPackageCanvasFiles` 與控制中心 PackageCanvas 卡片自 Bridge 101 起包含在 App 裡，已隨 Bridge 103 正式發布。OWNER 2026-10-03 回報 PackageCanvas 正常。`AminGen2` 畫布按鈕尚未實機確認。
 
 ## 修改規則
 
