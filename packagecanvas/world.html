@@ -134,7 +134,7 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
       </div>
     </div>
   </div>
-  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>你待在家；狐狸自己去工作，有事會跑來找你。<br>A 呼叫狐狸 · 十字鍵看看四周 · B 看狐狸 · L／R 切換任務 · START 選單（任務清單可打開任務）<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
+  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>十字鍵走路；狐狸自己去工作，有事會跑來找你。<br>A 調查／跟面前的狐狸說話，面前沒東西就叫狐狸過來 · B 鏡頭回到你 · L／R 切換任務 · START 選單（任務清單可打開任務）<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
 </div>
 
 
@@ -280,9 +280,9 @@ function toast(msg, ms=2200){ toastEl.textContent = msg; toastEl.hidden = false;
 // ---------- movement ----------
 const DIRS = {UP:[0,-1,'up'], DOWN:[0,1,'down'], LEFT:[-1,0,'left'], RIGHT:[1,0,'right']};
 const held = new Set();
-// You stay at home in front of the quest board. The fox is a free assistant:
-// it walks to wherever an Agent is working, wanders when there is nothing to
-// do, and runs back to you when you call it (A) or when it has news.
+// You walk around with the D-pad. The fox is a free assistant: it walks to
+// wherever an Agent is working, wanders when there is nothing to do, and runs
+// to you when you call it (A with nothing in front) or when it has news.
 const FOX_STEP_MS = 210;
 const doorTiles = () => Object.fromEntries(BUILDINGS.map(b => [b.id, door(b)]));
 const blocked = (x,y) => solid.has(key(x,y)) || (x===S.hero.x && y===S.hero.y);
@@ -314,7 +314,9 @@ function foxThink(){
   else { f.path = wanderTarget() || []; f.waitUntil = S.t + 2000; }
 }
 function arrive(goal){
-  const f = S.fox, h = S.hero; f.flip = h.x < f.x; f.goal = null;
+  const f = S.fox, h = S.hero;
+  if (goal.kind==='come' && Math.abs(f.x-h.x)+Math.abs(f.y-h.y)!==1){ f.goal = null; return; } // you walked away: re-plan
+  f.flip = h.x < f.x; f.goal = null;
   if (goal.reason==='called'){ f.summoned = false; foxTalk(); }
   else if (S.calls.length) foxCallout(S.calls.shift());
 }
@@ -336,13 +338,27 @@ function callFox(){
   if (Math.abs(f.x-h.x)+Math.abs(f.y-h.y)===1 && !f.moving){ f.flip = h.x < f.x; return foxTalk(); }
   f.summoned = true; f.goal = null; f.path = []; toast('🦊 狐狸，過來一下！');
 }
-// Camera: follows the fox; the D-pad looks around; B looks back at the fox.
+const HERO_STEP_MS = 150;
+function tryMove(){
+  const h = S.hero; if (h.moving || D || KEYS.open || S.scene!=='world') return;
+  const k = ['UP','DOWN','LEFT','RIGHT'].find(x=>held.has(x)); if (!k) return;
+  const [dx,dy,dir] = DIRS[k]; h.dir = dir; S.cam.free = false;
+  const nx = h.x+dx, ny = h.y+dy, f = S.fox;
+  if (solid.has(key(nx,ny)) || (nx===f.x && ny===f.y)) return;
+  h.from = {x:h.x, y:h.y}; h.x = nx; h.y = ny; h.moving = true; h.mt = 0;
+}
+function updateHero(dt){
+  const h = S.hero;
+  if (h.moving){ h.mt += dt; const p = Math.min(1, h.mt/HERO_STEP_MS);
+    h.px = (h.from.x + (h.x-h.from.x)*p)*T; h.py = (h.from.y + (h.y-h.from.y)*p)*T;
+    if (p>=1){ h.moving = false; tryMove(); } }
+  else tryMove();
+}
+// Camera: follows you; L/R looks at the tracked quest's building for a while; B looks back at you.
 function updateCam(dt){
-  const c = S.cam, step = dt*0.12;
-  const k = ['UP','DOWN','LEFT','RIGHT'].filter(x=>held.has(x));
-  if (k.length && S.scene==='world' && !D){ c.free = true; c.idleAt = S.t; for (const d of k){ c.x += DIRS[d][0]*step; c.y += DIRS[d][1]*step; } }
-  else if (c.free && S.t - c.idleAt > 6000) c.free = false;
-  if (!c.free){ const tx = S.fox.px - W/2 + 8, ty = S.fox.py - H/2 + 8; c.x += (tx-c.x)*Math.min(1, dt/250); c.y += (ty-c.y)*Math.min(1, dt/250); }
+  const c = S.cam;
+  if (c.free && S.t - c.idleAt > 6000) c.free = false;
+  if (!c.free){ const tx = S.hero.px - W/2 + 8, ty = S.hero.py - H/2 + 8; c.x += (tx-c.x)*Math.min(1, dt/250); c.y += (ty-c.y)*Math.min(1, dt/250); }
   c.x = Math.max(0, Math.min(MW*T-W, c.x)); c.y = Math.max(0, Math.min(MH*T-H+14, c.y));
 }
 function lookAt(where){
@@ -490,6 +506,24 @@ function ownerDialog(q){
 function pickQuest(list, then){
   if (list.length===1) return then(list[0]);
   ask('這裡有 '+list.length+' 件任務：', list.map(q=>'#'+q.number+' '+q.workflowId+' '+(q.pending?.step||'')), i => then(list[i]), {onBack: closeDialog});
+}
+// ---------- world interaction ----------
+function facing(){ const h=S.hero, d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[h.dir]; return {x:h.x+d[0], y:h.y+d[1]}; }
+function interact(){
+  const f = facing(), h = S.hero, fox = S.fox;
+  if (f.x===fox.x && f.y===fox.y && !fox.moving){ fox.flip = h.x < fox.x; fox.summoned = false; fox.goal = null; fox.path = []; return foxTalk(); }
+  if (f.x===BOARD.x && f.y===BOARD.y){
+    const list = questsAt('board'); if (list.length) return pickQuest(list, ownerDialog);
+    return say(openQuests().length ? '任務告示板：\n'+openQuests().map(q=>'#'+q.number+' '+q.workflowId+'｜'+(q.who==='owner'?'等你：':'Agent：')+bName(q.where)).join('\n') : '任務告示板：目前沒有進行中的任務。\n跟狐狸聊天就能交代新任務。');
+  }
+  for (const b of BUILDINGS){
+    const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
+    const list = questsAt(b.id);
+    if (list.length) return pickQuest(list, openQuest);
+    if (b.id==='shop') return ask(b.name+'：'+b.cap+'。\n現在沒有工作。後面有個上鎖的櫃子，放著 Agent 的鑰匙。', ['🔑 打開 Agent 鑰匙櫃','離開'], i => { closeDialog(); if (i===0) openKeys(); }, {onBack: closeDialog});
+    return say(b.name+'：'+b.cap+'。\n現在沒有工作。');
+  }
+  return callFox(); // nothing in front: call the fox over
 }
 function openQuest(q){
   closeDialog();
@@ -780,12 +814,12 @@ function press(k){
   if (S.scene==='world'){
     if (k==='START'){ S.menuSel=0; S.menuPage='main'; S.scene='menu'; return; }
     if (k==='L'||k==='R'){ cycleFocus(k==='L'?-1:1); const q = focusQuest(); if (q && q.where) lookAt(q.where); return; }
-    if (k==='A') return callFox();
+    if (k==='A'){ if (!S.hero.moving) interact(); return; }
     if (k==='B'){ S.cam.free = false; return; }
   }
 }
 const KEYMAP = {ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',z:'A',Z:'A',j:'A',x:'B',X:'B',k:'B',Enter:'START',Shift:'SELECT',q:'L',w:'R'};
-function down(k){ if (k in DIRS) held.add(k); press(k); }
+function down(k){ if (k in DIRS){ held.add(k); tryMove(); } press(k); } // step on press so a quick tap still walks
 function up(k){ held.delete(k); }
 addEventListener('keydown', e => { if (KEYS.open || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; const k = KEYMAP[e.key]; if (!k) return; e.preventDefault(); if (e.repeat) return; flash(k); down(k); });
 addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) up(k); });
@@ -815,7 +849,7 @@ function frame(now){
   const dt = Math.min(50, now-last); last = now; S.t += dt;
   pollPad();
   if (D && D.shown < D.text.length){ D.shown = Math.min(D.text.length, D.shown + dt/28); renderDialog(); }
-  if (!S.paused && S.scene==='world') updateFox(dt);
+  if (!S.paused && S.scene==='world'){ updateHero(dt); updateFox(dt); }
   updateCam(dt);
   g.clearRect(0,0,W,H);
   if (S.scene==='title') drawTitle(); else if (S.scene==='battle') drawBattle(); else if (S.scene==='menu') drawMenu(); else drawWorld();
