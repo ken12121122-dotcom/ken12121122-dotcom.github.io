@@ -380,7 +380,7 @@ jobs:
             -e class com.amin.pocketgba.Gen2ChatActivityTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/gen2chat-instrumentation.txt"
-          grep -Eq 'OK \(3 tests\)' "$RUNNER_TEMP/gen2chat-instrumentation.txt"
+          grep -Eq 'OK \(4 tests\)' "$RUNNER_TEMP/gen2chat-instrumentation.txt"
 
       - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
