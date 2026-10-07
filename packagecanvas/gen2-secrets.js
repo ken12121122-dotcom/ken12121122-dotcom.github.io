@@ -79,14 +79,14 @@
   const AGENT_SECRETS = [
     { name: 'CLAUDE_CODE_OAUTH_TOKEN', group: 'claude', label: 'Claude 訂閱 token（Claude Code）', hint: '在電腦執行 npx @anthropic-ai/claude-code setup-token 取得，以 sk-ant-oat 開頭', multiline: false,
       check(v) {
-        const s = v.trim();
+        const s = v.replace(/\s+/g, ''); // a copy from a wrapped terminal line can carry breaks
         if (/^sk-ant-api/.test(s)) return { error: '這是 Claude API key，請改選「Claude API key」' };
         if (!/^sk-ant-oat[A-Za-z0-9_-]{20,}$/.test(s)) return { error: '看起來不是 Claude 訂閱 token（setup-token 產生的值以 sk-ant-oat 開頭，沒有空白）' };
         return { value: s };
       } },
     { name: 'ANTHROPIC_API_KEY', group: 'claude', label: 'Claude API key（備用）', hint: '以 sk-ant- 開頭；有訂閱 token 就不需要', multiline: false,
       check(v) {
-        const s = v.trim();
+        const s = v.replace(/\s+/g, ''); // a copy from a wrapped terminal line can carry breaks
         if (/^sk-ant-oat/.test(s)) return { error: '這是 Claude 訂閱 token，請改選「Claude 訂閱 token」' };
         if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(s)) return { error: '看起來不是 Claude API key（應以 sk-ant- 開頭，沒有空白）' };
         return { value: s };

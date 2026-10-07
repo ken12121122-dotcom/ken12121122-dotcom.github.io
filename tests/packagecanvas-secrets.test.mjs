@@ -41,6 +41,7 @@ test('only the agent secrets can be written, and each value is checked', () => {
   assert.equal(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', ' sk-ant-oat01-' + 'b'.repeat(40) + '\n').value, 'sk-ant-oat01-' + 'b'.repeat(40));
   assert.match(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', 'sk-ant-api03-' + 'a'.repeat(40)).error, /Claude API key/);
   assert.match(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', 'abc').error, /sk-ant-oat/);
+  assert.equal(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', 'sk-ant-oat01-' + 'b'.repeat(30) + '\n' + 'b'.repeat(30) + ' ').value, 'sk-ant-oat01-' + 'b'.repeat(60));
   assert.match(Sec.check('ANTHROPIC_API_KEY', 'sk-ant-oat01-' + 'b'.repeat(40)).error, /訂閱 token/);
   assert.match(Sec.check('GITHUB_TOKEN', 'x').error, /不能寫入/);
   assert.match(Sec.check('ANTHROPIC_API_KEY', '').error, /沒有輸入/);
