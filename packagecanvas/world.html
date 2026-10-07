@@ -166,7 +166,7 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
 <script src="./gen2-source.js?v=20261006.2"></script>
 <script src="./world-model.js?v=20261007.1"></script>
 <script src="./vendor/nacl-fast.min.js?v=1.0.3"></script>
-<script src="./gen2-secrets.js?v=20261007.1"></script>
+<script src="./gen2-secrets.js?v=20261007.2"></script>
 <script>
 (() => {
 'use strict';
@@ -532,11 +532,14 @@ function keysRenderStatus(){
     const li = document.createElement('li');
     li.innerHTML = '<b></b><span></span>';
     li.firstChild.textContent = d.label;
-    li.lastChild.textContent = !KEYS.status ? '？' : st.set ? '✅ 已設定 ' + (st.updatedAt||'').slice(0,10) : '⬜ 未設定';
+    const alt = d.group && KEYS.status && KEYS.status.some(x => x.set && x.name !== d.name && (SEC.AGENT_SECRETS.find(o => o.name === x.name) || {}).group === d.group);
+    li.lastChild.textContent = !KEYS.status ? '？' : st.set ? '✅ 已設定 ' + (st.updatedAt||'').slice(0,10) : alt ? '— 不需要（已有另一把）' : '⬜ 未設定';
     ul.appendChild(li);
   }
   const waiting = openQuests().filter(q => q.who==='agent');
-  $('keysRun').hidden = !(KEYS.status && KEYS.status.every(x => x.set) && waiting.length);
+  // SK-TIME-001 only needs Claude; the agent itself skips a step whose keys are missing.
+  const claudeSet = KEYS.status && KEYS.status.some(x => x.set && (SEC.AGENT_SECRETS.find(d => d.name === x.name) || {}).group === 'claude');
+  $('keysRun').hidden = !(claudeSet && waiting.length);
   $('keysRun').textContent = '讓 Agent 接手 ' + waiting.map(q => '#'+q.number).join('、');
 }
 async function keysRefresh(){
@@ -549,7 +552,7 @@ async function keysRefresh(){
   }
   keysRenderStatus();
   if (KEYS.status){
-    const missing = KEYS.status.filter(x => !x.set).map(x => x.label);
+    const missing = SEC.missing(KEYS.status);
     keysSay(missing.length ? '主人，Agent 還缺：' + missing.join('、') + '。\n一次放一把，我會加密後直接交給 GitHub 保管。' : '鑰匙都放好了！Agent 會在你每次回覆 /gen2 指令後自動工作。' + (openQuests().some(q => q.who==='agent') ? '\n有任務正在等 Agent，可以按「讓 Agent 接手」。' : ''));
   }
 }
@@ -588,7 +591,8 @@ async function keysSave(){
       try { await navigator.clipboard.writeText(r.info.serviceAccount); toast('已複製服務帳號 email'); } catch(_){}
     } else keysMsg('✅ 已存入 ' + name + '。');
     await keysRefresh();
-    const next = KEYS.status && KEYS.status.find(x => !x.set); // move on to the next missing key
+    const lack = KEYS.status ? SEC.missing(KEYS.status) : [];
+    const next = SEC.AGENT_SECRETS.find(d => d.label === lack[0]); // move on to the next missing key
     if (next){ $('keysName').value = next.name; keysField(); }
   } catch (e) {
     if (e.needsToken){ $('keysAuth').open = true; $('keysToken').focus(); }

@@ -35,11 +35,18 @@ Web 層更新。Android 殼層與 build workflow 沒有改動，不需要新 Bri
 
 網頁只是請 App 打開畫面，拿不到 GitHub 權杖，也不會送出任何指令；決定一律在 App 裡確認後才送出。一般瀏覽器沒有這兩個按鈕。
 
+## 20261007.2 · 鑰匙櫃：Claude 訂閱 token
+
+OWNER 2026-10-07 決定：GEN2 Agent 用 Claude 訂閱（Claude Code），不另付 API 費用。
+- 鑰匙櫃多一個可寫名稱 `CLAUDE_CODE_OAUTH_TOKEN`，排第一個。取得方式：在有 Node 的電腦執行 `npx @anthropic-ai/claude-code setup-token`，登入後複製 `sk-ant-oat…` 開頭的值。
+- `ANTHROPIC_API_KEY` 變成備用：兩把有一把就算 Claude 已設定，另一把顯示「不需要」。
+- 兩把貼錯欄位會被擋下並提示改選另一個。訂閱 token 不做事先驗證（Claude 沒有可從瀏覽器驗證它的端點），Agent 第一次執行時才知道能不能用。
+
 ## 20261007.1 · 知識世界：Agent 鑰匙櫃
 
 在知識世界裡把 GEN2 Agent 需要的鑰匙放進 gen2-knowledge 的 GitHub Actions secrets，不用到 GitHub 網頁操作。
 - 入口：START 選單「🔑 Agent 鑰匙櫃」，或走進沒有工作的「自動化工坊」。
-- 只能寫這三個名稱：`ANTHROPIC_API_KEY`、`GOOGLE_SERVICE_ACCOUNT_JSON`、`GEN2_CALENDAR_ID`。其他名稱一律拒絕。
+- 只能寫這幾個名稱：`CLAUDE_CODE_OAUTH_TOKEN`（20261007.2 起）、`ANTHROPIC_API_KEY`、`GOOGLE_SERVICE_ACCOUNT_JSON`、`GEN2_CALENDAR_ID`。其他名稱一律拒絕。
 - 存入前先檢查格式：
   - Claude key 必須以 `sk-ant-` 開頭，並先向 Claude 確認可用（只列模型，不花 token）。被拒絕就不存。
   - 服務帳號 JSON 必須是 `service_account`，含 email 與私密金鑰。存好後，狐狸會顯示並複製服務帳號 email，提醒你把行事曆共用給它，權限選「變更活動」。
