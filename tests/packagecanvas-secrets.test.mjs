@@ -37,7 +37,11 @@ test('sealed box opens with the repository key and is fresh every time', () => {
 const SA = { type: 'service_account', project_id: 'p', client_email: 'gen2-agent@p.iam.gserviceaccount.com', private_key: '-----BEGIN PRIVATE KEY-----\nMII\n-----END PRIVATE KEY-----\n' };
 
 test('only the agent secrets can be written, and each value is checked', () => {
-  assert.deepEqual(Sec.AGENT_SECRETS.map(s => s.name), ['ANTHROPIC_API_KEY', 'GOOGLE_SERVICE_ACCOUNT_JSON', 'GEN2_CALENDAR_ID']);
+  assert.deepEqual(Sec.AGENT_SECRETS.map(s => s.name), ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY', 'GOOGLE_SERVICE_ACCOUNT_JSON', 'GEN2_CALENDAR_ID']);
+  assert.equal(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', ' sk-ant-oat01-' + 'b'.repeat(40) + '\n').value, 'sk-ant-oat01-' + 'b'.repeat(40));
+  assert.match(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', 'sk-ant-api03-' + 'a'.repeat(40)).error, /Claude API key/);
+  assert.match(Sec.check('CLAUDE_CODE_OAUTH_TOKEN', 'abc').error, /sk-ant-oat/);
+  assert.match(Sec.check('ANTHROPIC_API_KEY', 'sk-ant-oat01-' + 'b'.repeat(40)).error, /訂閱 token/);
   assert.match(Sec.check('GITHUB_TOKEN', 'x').error, /不能寫入/);
   assert.match(Sec.check('ANTHROPIC_API_KEY', '').error, /沒有輸入/);
   assert.match(Sec.check('ANTHROPIC_API_KEY', 'sk-proj-abc').error, /sk-ant-/);
@@ -85,7 +89,15 @@ test('missing permissions ask for a token; status lists names and dates only', a
   await assert.rejects(Sec.dispatchAgent(CFG, 12, denied.f), e => e.needsToken && /Actions：Read and write/.test(e.message));
   const gh = github(() => [200, { secrets: [{ name: 'ANTHROPIC_API_KEY', updated_at: '2026-10-07T01:00:00Z' }, { name: 'NTFY_TOPIC', updated_at: 'x' }] }]);
   const st = await Sec.status(CFG, gh.f);
-  assert.deepEqual(st.map(s => [s.name, s.set]), [['ANTHROPIC_API_KEY', true], ['GOOGLE_SERVICE_ACCOUNT_JSON', false], ['GEN2_CALENDAR_ID', false]]);
+  assert.deepEqual(st.map(s => [s.name, s.set]), [['CLAUDE_CODE_OAUTH_TOKEN', false], ['ANTHROPIC_API_KEY', true], ['GOOGLE_SERVICE_ACCOUNT_JSON', false], ['GEN2_CALENDAR_ID', false]]);
+});
+
+test('either Claude secret is enough; the subscription token is asked for first', () => {
+  const st = names => Sec.AGENT_SECRETS.map(d => ({ name: d.name, set: names.includes(d.name) }));
+  const label = n => Sec.AGENT_SECRETS.find(d => d.name === n).label;
+  assert.deepEqual(Sec.missing(st([])), [label('CLAUDE_CODE_OAUTH_TOKEN'), label('GOOGLE_SERVICE_ACCOUNT_JSON'), label('GEN2_CALENDAR_ID')]);
+  assert.deepEqual(Sec.missing(st(['ANTHROPIC_API_KEY'])), [label('GOOGLE_SERVICE_ACCOUNT_JSON'), label('GEN2_CALENDAR_ID')]);
+  assert.deepEqual(Sec.missing(st(['CLAUDE_CODE_OAUTH_TOKEN', 'GOOGLE_SERVICE_ACCOUNT_JSON', 'GEN2_CALENDAR_ID'])), []);
 });
 
 test('dispatch runs GEN2 Agent on main for one Issue', async () => {

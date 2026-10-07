@@ -74,10 +74,20 @@
 
   // ---- what can be written ----
   const SERVICE = /^[a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$/;
+  // Entries sharing a group are alternatives: the agent needs any one of them
+  // (the Claude subscription token first, the API key as a fallback).
   const AGENT_SECRETS = [
-    { name: 'ANTHROPIC_API_KEY', label: 'Claude API key', hint: '以 sk-ant- 開頭', multiline: false,
+    { name: 'CLAUDE_CODE_OAUTH_TOKEN', group: 'claude', label: 'Claude 訂閱 token（Claude Code）', hint: '在電腦執行 npx @anthropic-ai/claude-code setup-token 取得，以 sk-ant-oat 開頭', multiline: false,
       check(v) {
         const s = v.trim();
+        if (/^sk-ant-api/.test(s)) return { error: '這是 Claude API key，請改選「Claude API key」' };
+        if (!/^sk-ant-oat[A-Za-z0-9_-]{20,}$/.test(s)) return { error: '看起來不是 Claude 訂閱 token（setup-token 產生的值以 sk-ant-oat 開頭，沒有空白）' };
+        return { value: s };
+      } },
+    { name: 'ANTHROPIC_API_KEY', group: 'claude', label: 'Claude API key（備用）', hint: '以 sk-ant- 開頭；有訂閱 token 就不需要', multiline: false,
+      check(v) {
+        const s = v.trim();
+        if (/^sk-ant-oat/.test(s)) return { error: '這是 Claude 訂閱 token，請改選「Claude 訂閱 token」' };
         if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(s)) return { error: '看起來不是 Claude API key（應以 sk-ant- 開頭，沒有空白）' };
         return { value: s };
       } },
@@ -101,6 +111,20 @@
     if (!def) return { error: '不能寫入 ' + name };
     if (!String(raw || '').trim()) return { error: '沒有輸入內容' };
     return def.check(String(raw));
+  }
+
+  // Labels of what the agent still lacks; a group counts once, by its first entry.
+  function missing(st) {
+    const out = [], groups = new Set();
+    for (const d of AGENT_SECRETS) {
+      const set = name => (st || []).some(x => x.name === name && x.set);
+      if (d.group) {
+        if (groups.has(d.group)) continue;
+        groups.add(d.group);
+        if (!AGENT_SECRETS.some(o => o.group === d.group && set(o.name))) out.push(d.label);
+      } else if (!set(d.name)) out.push(d.label);
+    }
+    return out;
   }
 
   // ---- GitHub ----
@@ -148,5 +172,5 @@
     return res.ok ? { ok: true, message: 'Claude 確認 key 可用' } : { ok: null, message: 'Claude 回應 HTTP ' + res.status + '，無法確認' };
   }
 
-  return { AGENT_SECRETS, blake2b, seal, check, status, save, dispatchAgent, verifyClaudeKey, b64encode, b64decode };
+  return { AGENT_SECRETS, missing, blake2b, seal, check, status, save, dispatchAgent, verifyClaudeKey, b64encode, b64decode };
 });
