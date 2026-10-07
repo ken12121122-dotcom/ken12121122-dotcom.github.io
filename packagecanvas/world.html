@@ -284,18 +284,21 @@ const held = new Set();
 // wherever an Agent is working, wanders when there is nothing to do, and runs
 // to you when you call it (A with nothing in front) or when it has news.
 const FOX_STEP_MS = 210;
-const doorTiles = () => Object.fromEntries(BUILDINGS.map(b => [b.id, door(b)]));
+// The fox never stands on a door: it waits beside it, so you can always walk in.
+const isDoor = (x,y) => BUILDINGS.some(b => { const d = door(b); return d.x===x && d.y===y; });
+const spotBeside = b => { const d = door(b); return [{x:d.x+1,y:d.y},{x:d.x-1,y:d.y},{x:d.x,y:d.y+1}].find(t => !solid.has(key(t.x,t.y))) || d; };
+const doorTiles = () => Object.fromEntries(BUILDINGS.map(b => [b.id, spotBeside(b)]));
 const blocked = (x,y) => solid.has(key(x,y)) || (x===S.hero.x && y===S.hero.y);
 function besideHero(){
   const f = S.fox, h = S.hero; let best = null;
-  for (const [dx,dy] of [[-1,0],[1,0],[0,-1]]){ const t = {x:h.x+dx, y:h.y+dy}; if (blocked(t.x,t.y)) continue;
+  for (const [dx,dy] of [[-1,0],[1,0],[0,-1]]){ const t = {x:h.x+dx, y:h.y+dy}; if (blocked(t.x,t.y) || isDoor(t.x,t.y)) continue;
     const p = M.findPath(blocked, f, t, MW, MH); if (p && (!best || p.length < best.path.length)) best = {tile:t, path:p}; }
   return best;
 }
 function wanderTarget(){
   const f = S.fox;
   for (let i=0;i<20;i++){ const t = {x:f.x+Math.round(Math.random()*12-6), y:f.y+Math.round(Math.random()*8-4)};
-    if (t.x<1||t.y<1||t.x>=MW-1||t.y>=MH-1||blocked(t.x,t.y)) continue;
+    if (t.x<1||t.y<1||t.x>=MW-1||t.y>=MH-1||blocked(t.x,t.y)||isDoor(t.x,t.y)) continue;
     const p = M.findPath(blocked, f, t, MW, MH); if (p && p.length && p.length<=10) return p; }
   return null;
 }
@@ -344,8 +347,17 @@ function tryMove(){
   const k = ['UP','DOWN','LEFT','RIGHT'].find(x=>held.has(x)); if (!k) return;
   const [dx,dy,dir] = DIRS[k]; h.dir = dir; S.cam.free = false;
   const nx = h.x+dx, ny = h.y+dy, f = S.fox;
-  if (solid.has(key(nx,ny)) || (nx===f.x && ny===f.y)) return;
+  if (solid.has(key(nx,ny))) return;
+  if (nx===f.x && ny===f.y){ foxStepAside(h, dx, dy); return; } // the fox makes way; you step next frame
   h.from = {x:h.x, y:h.y}; h.x = nx; h.y = ny; h.moving = true; h.mt = 0;
+}
+function foxStepAside(h, dx, dy){
+  const f = S.fox; if (f.moving) return;
+  const free = t => !blocked(t.x,t.y) && !isDoor(t.x,t.y);
+  // sideways first, then further along your way; never back onto you
+  const opts = [{x:f.x+dy, y:f.y+dx}, {x:f.x-dy, y:f.y-dx}, {x:f.x+dx, y:f.y+dy}].filter(free);
+  if (!opts.length) return;
+  f.path = [opts[0]]; f.goal = f.goal && f.goal.kind==='come' ? f.goal : null; f.waitUntil = S.t + 2500;
 }
 function updateHero(dt){
   const h = S.hero;
