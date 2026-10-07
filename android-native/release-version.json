@@ -1,19 +1,18 @@
 {
-  "versionCode": 201,
-  "versionName": "0.11.22-rc16",
+  "versionCode": 202,
+  "versionName": "0.11.22-rc17",
   "channel": "candidate",
-  "bridge": 105,
-  "releaseSequence": 39,
+  "bridge": 106,
+  "releaseSequence": 40,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "候選版（實機驗收用，尚未正式發布）：狐狸聊天改用你的 Claude 訂閱當大腦（gen2-knowledge 的 GEN2 Fox），不再需要在語音球設定 API Key。回覆約半分鐘到一分鐘。",
-    "狐狸有長期記憶：記得你的背景、偏好、目標和還沒做完的事，換手機也記得；記憶存在私有 gen2-knowledge 的 fox-memory 分支，不會放進知識庫或公開 repo。",
-    "狐狸會從長期對話推算你需要什麼，讀得到知識庫所有技能與流程，能直接啟動流程，或把技能組合成臨時流程（每個技能後面都有你的審核點）。",
-    "做事前一定先提議：卡片列出要用的流程或技能組合與範圍，你回「好」或按「就這樣做」才開始；同一句話不會既提出又開始。",
-    "聊天紀錄在 gen2-knowledge 的「🦊 狐狸聊天」Issue；第一次打開會自動建立。需要 GitHub App 的 Issues（Read and write）權限（已有）。",
+    "候選版（實機驗收用，尚未正式發布）：狐狸筆記本。一本筆記本一個任務，可以同時進行好幾件事；點上方 📒 切換或建立新筆記本。",
+    "關於你本人的記憶（背景、偏好、目標）所有筆記本共用；每本的事實、待辦和摘要只屬於那本，狐狸會專心談那本的主題。",
+    "點 🧠 看狐狸記得的事和這本的摘要，點一條可以叫狐狸忘掉。",
+    "狐狸用你的 Claude 訂閱回答（GEN2 Fox），會提議流程或技能組合，你同意後才開始。",
     "既有 GBA、存檔、手把、全域控制盤、PackageCanvas、GEN2 待核准畫面與語音核准維持不變。"
   ]
 }

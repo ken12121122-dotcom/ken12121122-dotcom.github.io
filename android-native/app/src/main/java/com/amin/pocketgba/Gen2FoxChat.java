@@ -111,6 +111,78 @@ final class Gen2FoxChat {
         return planId;
     }
 
+    static final Pattern MEMORY_ID = Pattern.compile("m\\d{1,6}");
+
+    static String forget(String memoryId) {
+        if (memoryId == null || !MEMORY_ID.matcher(memoryId).matches()) throw new IllegalArgumentException("記憶編號無效。 ");
+        return "/fox forget " + memoryId;
+    }
+
+    static String notebookTitle(String title) {
+        String value = title == null ? "" : title.replaceAll("\\s+", " ").trim();
+        if (value.isEmpty()) throw new IllegalArgumentException("請幫筆記本取個名字。 ");
+        if (value.length() > 60) throw new IllegalArgumentException("名字太長了（上限 60 字）。 ");
+        return value;
+    }
+
+    /** A notebook as the app lists it. */
+    static final class Notebook {
+        final int number;
+        final String title;
+        Notebook(int number, String title) { this.number = number; this.title = title; }
+    }
+
+    static List<Notebook> notebooks(JSONArray issues) {
+        List<Notebook> out = new ArrayList<>();
+        for (int i = 0; issues != null && i < issues.length(); i++) {
+            JSONObject issue = issues.optJSONObject(i);
+            if (issue == null || issue.has("pull_request") || issue.optInt("number", 0) <= 0) continue;
+            out.add(new Notebook(issue.optInt("number"), issue.optString("title", "").replaceFirst("^🦊\\s*", "")));
+        }
+        return out;
+    }
+
+    /** A memory item the OWNER can see and forget. */
+    static final class Memory {
+        final String id;
+        final String kind;
+        final String text;
+        final boolean shared;
+        Memory(String id, String kind, String text, boolean shared) { this.id = id; this.kind = kind; this.text = text; this.shared = shared; }
+
+        String label() {
+            String k;
+            switch (kind) {
+                case "profile": k = "背景"; break;
+                case "preference": k = "偏好"; break;
+                case "goal": k = "目標"; break;
+                case "thread": k = "待辦"; break;
+                default: k = "事實";
+            }
+            return (shared ? "（共用）" : "") + k + "：" + text;
+        }
+    }
+
+    /** What the fox remembers in one notebook: shared items and that notebook's own. */
+    static List<Memory> memoryFor(JSONObject memory, int notebook) {
+        List<Memory> out = new ArrayList<>();
+        JSONArray items = memory == null ? null : memory.optJSONArray("items");
+        for (int i = 0; items != null && i < items.length(); i++) {
+            JSONObject item = items.optJSONObject(i);
+            if (item == null || !MEMORY_ID.matcher(item.optString("id", "")).matches()) continue;
+            String kind = item.optString("kind", "fact");
+            boolean shared = !item.has("chat") || "profile".equals(kind) || "preference".equals(kind) || "goal".equals(kind);
+            if (shared || item.optInt("chat", 0) == notebook) out.add(new Memory(item.optString("id"), kind, item.optString("text", ""), shared));
+        }
+        return out;
+    }
+
+    static String notebookSummary(JSONObject memory, int notebook) {
+        JSONObject books = memory == null ? null : memory.optJSONObject("notebooks");
+        JSONObject book = books == null ? null : books.optJSONObject(String.valueOf(notebook));
+        return book == null ? "" : book.optString("summary", "");
+    }
+
     /** What the OWNER may post: plain words, never a /gen2 run command. */
     static String message(String text) {
         String value = text == null ? "" : text.trim();

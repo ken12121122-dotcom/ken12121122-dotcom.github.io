@@ -132,6 +132,22 @@ public class GitHubGen2ApiTest {
     }
 
     @Test
+    public void notebooksAndMemoryAreReadOnlyExceptOpeningANotebook() throws Exception {
+        FakeTransport list = new FakeTransport().reply(200, "[{\"number\":40,\"title\":\"🦊 消防演練\"}]");
+        assertEquals("消防演練", Gen2FoxChat.notebooks(new GitHubGen2Api(list, "t").notebooks()).get(0).title);
+        assertTrue(list.requests.get(0).url().contains("/issues?labels=gen2-chat&state=open"));
+        FakeTransport open = new FakeTransport().reply(201, "{\"number\":41}");
+        assertEquals(41, new GitHubGen2Api(open, "t").newNotebook(" 巡檢 週報 "));
+        assertEquals("🦊 巡檢 週報", new JSONObject(open.requests.get(0).body()).getString("title"));
+        assertThrows(IllegalArgumentException.class, () -> new GitHubGen2Api(new FakeTransport(), "t").newNotebook(" "));
+        String memory = java.util.Base64.getMimeEncoder().encodeToString("{\"version\":1,\"items\":[{\"id\":\"m1\",\"kind\":\"profile\",\"text\":\"職安主管\"}]}".getBytes(StandardCharsets.UTF_8));
+        FakeTransport read = new FakeTransport().reply(200, new JSONObject().put("content", memory).toString());
+        assertEquals("m1", new GitHubGen2Api(read, "t").foxMemory().getJSONArray("items").getJSONObject(0).getString("id"));
+        assertTrue(read.requests.get(0).url().endsWith("/contents/memory.json?ref=fox-memory"));
+        assertEquals(0, new GitHubGen2Api(new FakeTransport().reply(404, "{}"), "t").foxMemory().length());
+    }
+
+    @Test
     public void gen2ApiCannotReachOtherRepositoriesOrMutateCode() throws Exception {
         String api = read("src/main/java/com/amin/pocketgba/GitHubGen2Api.java");
         String activity = read("src/main/java/com/amin/pocketgba/Gen2RunsActivity.java");
@@ -145,7 +161,7 @@ public class GitHubGen2ApiTest {
         java.util.regex.Matcher contents = java.util.regex.Pattern.compile("request\\(\"([A-Z]+)\", REPOSITORY_PATH \\+ \"/(contents|git)/").matcher(api);
         int reads = 0;
         while (contents.find()) { assertEquals("GET", contents.group(1)); reads++; }
-        assertEquals(2, reads);
+        assertEquals(3, reads); // workflow tree, workflow file, fox memory (Bridge 106)
         assertTrue(api.contains("\"ref\", \"main\""));
         assertFalse(api.contains("\"PATCH\""));
         assertFalse(api.contains("\"DELETE\""));

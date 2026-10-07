@@ -67,6 +67,23 @@ final class Gen2RunRepository {
         return issue;
     }
 
+    /** Bridge 106: switch to another notebook (chat Issue). */
+    void useNotebook(int issue) { if (issue > 0) preferences.edit().putInt(CHAT_ISSUE, issue).apply(); }
+
+    List<Gen2FoxChat.Notebook> notebooks() throws Exception {
+        return Gen2FoxChat.notebooks(new BrainAuthSession(context).requireGen2Api().notebooks());
+    }
+
+    int newNotebook(String title) throws Exception {
+        int issue = new BrainAuthSession(context).requireGen2Api().newNotebook(title);
+        useNotebook(issue);
+        return issue;
+    }
+
+    org.json.JSONObject foxMemory() throws Exception {
+        return new BrainAuthSession(context).requireGen2Api().foxMemory();
+    }
+
     /** Forgets the chat Issue (e.g. it was closed), so the next call finds or opens one. */
     void forgetChat() { preferences.edit().remove(CHAT_ISSUE).apply(); }
 

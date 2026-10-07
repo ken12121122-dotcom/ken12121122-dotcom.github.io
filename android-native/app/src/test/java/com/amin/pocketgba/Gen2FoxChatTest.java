@@ -55,4 +55,23 @@ public class Gen2FoxChatTest {
         assertThrows(IllegalArgumentException.class, () -> Gen2FoxChat.message("  "));
         assertEquals("你好", Gen2FoxChat.message(" 你好 "));
     }
+
+    @Test
+    public void memoryShowsSharedItemsAndThisNotebooksOwn() throws Exception {
+        org.json.JSONObject memory = new org.json.JSONObject("{\"version\":1,\"items\":["
+                + "{\"id\":\"m1\",\"kind\":\"profile\",\"text\":\"職安主管\"},"
+                + "{\"id\":\"m2\",\"kind\":\"thread\",\"text\":\"週報還差週五\",\"chat\":38},"
+                + "{\"id\":\"m3\",\"kind\":\"fact\",\"text\":\"演練在 11 月\",\"chat\":40},"
+                + "{\"id\":\"x\",\"kind\":\"fact\",\"text\":\"壞資料\"}],"
+                + "\"notebooks\":{\"38\":{\"title\":\"週報\",\"summary\":\"整理巡檢週報\"}}}");
+        List<Gen2FoxChat.Memory> items = Gen2FoxChat.memoryFor(memory, 38);
+        assertEquals(2, items.size());
+        assertEquals("（共用）背景：職安主管", items.get(0).label());
+        assertEquals("待辦：週報還差週五", items.get(1).label());
+        assertEquals("m3", Gen2FoxChat.memoryFor(memory, 40).get(1).id);
+        assertEquals("整理巡檢週報", Gen2FoxChat.notebookSummary(memory, 38));
+        assertEquals("", Gen2FoxChat.notebookSummary(memory, 40));
+        assertEquals("/fox forget m2", Gen2FoxChat.forget("m2"));
+        assertThrows(IllegalArgumentException.class, () -> Gen2FoxChat.forget("m2 m3"));
+    }
 }

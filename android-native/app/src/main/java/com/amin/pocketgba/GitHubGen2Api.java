@@ -78,6 +78,32 @@ final class GitHubGen2Api {
         return object(success(request("POST", REPOSITORY_PATH + "/issues", body.toString()), 201, "無法建立狐狸聊天")).optInt("number");
     }
 
+    /** Bridge 106: every open gen2-chat Issue is one notebook (number, title, updated_at), newest first. */
+    JSONArray notebooks() throws Exception {
+        return array(success(request("GET", REPOSITORY_PATH + "/issues?labels=" + Gen2FoxChat.LABEL + "&state=open&per_page=50&sort=updated&direction=desc", ""), 200, "無法讀取筆記本"));
+    }
+
+    /** Opens a new notebook for one task or topic. */
+    int newNotebook(String title) throws Exception {
+        String name = Gen2FoxChat.notebookTitle(title);
+        JSONObject body = new JSONObject().put("title", "🦊 " + name)
+                .put("body", "狐狸筆記本：" + name + "。在這裡跟狐狸聊這件事；關於你本人的記憶所有筆記本共用。")
+                .put("labels", new JSONArray().put(Gen2FoxChat.LABEL));
+        return object(success(request("POST", REPOSITORY_PATH + "/issues", body.toString()), 201, "無法建立筆記本")).optInt("number");
+    }
+
+    /** The fox's long-term memory (read only; changes go through "/fox forget" in the chat). */
+    JSONObject foxMemory() throws Exception {
+        GitHubHttpResponse response = request("GET", REPOSITORY_PATH + "/contents/memory.json?ref=fox-memory", "");
+        if (response.statusCode() == 404) return new JSONObject();
+        String content = object(success(response, 200, "無法讀取狐狸的記憶")).optString("content", "");
+        try {
+            return new JSONObject(new String(java.util.Base64.getMimeDecoder().decode(content), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException | org.json.JSONException error) {
+            throw new IllegalStateException("狐狸的記憶格式不正確。 ");
+        }
+    }
+
     /** The latest chat comments (up to the last 200), oldest first. */
     JSONArray chatComments(int issue) throws Exception {
         if (issue <= 0) throw new IllegalArgumentException("Issue 編號無效。 ");

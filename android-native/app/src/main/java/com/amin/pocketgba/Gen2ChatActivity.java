@@ -91,6 +91,8 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     private int chatIssue;
     private String remotePlan;
     private TextView model;
+    private TextView title;
+    private final List<Gen2FoxChat.Notebook> notebooks = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -141,11 +143,23 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
         LinearLayout head = new LinearLayout(this);
         head.setOrientation(LinearLayout.HORIZONTAL);
         head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = text("🦊 狐狸", 18, true, PAPER);
+        title = text("🦊 狐狸", 18, true, PAPER);
         head.addView(title, new LinearLayout.LayoutParams(0, -2, 1f));
+        Button books = button("📒", false);
+        books.setContentDescription("gen2-chat-notebooks");
+        books.setOnClickListener(v -> pickNotebook());
+        head.addView(books, new LinearLayout.LayoutParams(dp(48), dp(40)));
+        Button memoryButton = button("🧠", false);
+        memoryButton.setContentDescription("gen2-chat-memory");
+        memoryButton.setOnClickListener(v -> showMemory());
+        LinearLayout.LayoutParams memoryParams = new LinearLayout.LayoutParams(dp(48), dp(40));
+        memoryParams.leftMargin = dp(6);
+        head.addView(memoryButton, memoryParams);
         Button close = button("回到世界", false);
         close.setOnClickListener(v -> finish());
-        head.addView(close, new LinearLayout.LayoutParams(-2, dp(40)));
+        LinearLayout.LayoutParams closeParams = new LinearLayout.LayoutParams(-2, dp(40));
+        closeParams.leftMargin = dp(6);
+        head.addView(close, closeParams);
         content.addView(head, full());
         model = text("🟢 Claude 訂閱（GEN2 Fox）· 對話與記憶存在私有 gen2-knowledge · 回覆約半分鐘到一分鐘", 11, false, 0xff8c86b5);
         content.addView(model, top(2));
@@ -252,8 +266,9 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
             }
             int issue = 0;
             List<Gen2FoxChat.Turn> chatTurns = new ArrayList<>();
+            List<Gen2FoxChat.Notebook> books = new ArrayList<>();
             if (remote && problem == null) {
-                try { issue = repository.chatIssue(); chatTurns = repository.chat(issue); }
+                try { issue = repository.chatIssue(); chatTurns = repository.chat(issue); books = repository.notebooks(); }
                 catch (Exception error) { problem = "讀不到狐狸聊天：" + safe(error) + "。若是剛更新，請到 GitHub App 安裝頁接受 Issues 的 Read and write。"; }
             }
             final String note = problem;
@@ -261,6 +276,7 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
             final List<Gen2WorkflowCatalog.Workflow> loadedWorkflows = catalog;
             final int loadedIssue = issue;
             final List<Gen2FoxChat.Turn> loadedTurns = chatTurns;
+            final List<Gen2FoxChat.Notebook> loadedBooks = books;
             handler.post(() -> {
                 if (destroyed) return;
                 busy = false;
@@ -268,6 +284,8 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
                 setStatus("");
                 useState(loadedRuns, loadedWorkflows);
                 if (remote) {
+                    notebooks.clear();
+                    notebooks.addAll(loadedBooks);
                     useChat(loadedIssue, loadedTurns);
                     if (loadedTurns.isEmpty() || focusIssue > 0) fox(Gen2ChatBrain.greeting(runs, Gen2ChatBrain.findRun(runs, focusIssue)), true);
                 } else {
@@ -292,6 +310,9 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     /** Load result and instrumentation hook: the chat so far and the plan waiting for the OWNER. */
     void useChat(int issue, List<Gen2FoxChat.Turn> turns) {
         chatIssue = issue;
+        String name = "";
+        for (Gen2FoxChat.Notebook b : notebooks) if (b.number == issue) name = b.title;
+        title.setText(name.isEmpty() ? "🦊 狐狸" : "🦊 " + name);
         int from = Math.max(0, turns.size() - SHOWN_TURNS);
         for (Gen2FoxChat.Turn t : turns.subList(from, turns.size())) showTurn(t, false);
         showRemoteCard(Gen2FoxChat.pending(turns));
@@ -311,6 +332,111 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     }
 
     String remotePlan() { return remotePlan; }
+
+    // ---------------------------------------------------------------- notebooks & memory (Bridge 106)
+
+    private void pickNotebook() {
+        if (!remote || busy) return;
+        List<String> names = new ArrayList<>();
+        for (Gen2FoxChat.Notebook b : notebooks) names.add((b.number == chatIssue ? "▶ " : "") + b.title + "  #" + b.number);
+        names.add("＋ 新筆記本");
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("筆記本（一本一個任務，可以同時進行）")
+                .setItems(names.toArray(new String[0]), (d, which) -> {
+                    if (which == notebooks.size()) newNotebook();
+                    else openNotebook(notebooks.get(which).number);
+                })
+                .show();
+    }
+
+    private void newNotebook() {
+        EditText name = new EditText(this);
+        name.setHint("例如：巡檢週報、消防演練");
+        name.setContentDescription("gen2-chat-notebook-name");
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("新筆記本")
+                .setView(name)
+                .setPositiveButton("建立", (d, w) -> {
+                    String value = name.getText().toString();
+                    busy = true;
+                    setStatus("建立筆記本…");
+                    executor.execute(() -> {
+                        try {
+                            int issue = repository.newNotebook(value);
+                            List<Gen2FoxChat.Notebook> books = repository.notebooks();
+                            handler.post(() -> { if (destroyed) return; busy = false; notebooks.clear(); notebooks.addAll(books); openNotebook(issue); });
+                        } catch (Exception error) {
+                            handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); fox("筆記本沒建立成功：" + safe(error), false); });
+                        }
+                    });
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void openNotebook(int issue) {
+        repository.useNotebook(issue);
+        busy = true;
+        setStatus("打開筆記本…");
+        executor.execute(() -> {
+            try {
+                List<Gen2FoxChat.Turn> turns = repository.chat(issue);
+                handler.post(() -> {
+                    if (destroyed) return;
+                    busy = false;
+                    setStatus("");
+                    transcript.removeAllViews();
+                    useChat(issue, turns);
+                    if (turns.isEmpty()) fox("這本是新的。跟我說說這件事想做到什麼程度？", false);
+                });
+            } catch (Exception error) {
+                handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); fox("打不開這本：" + safe(error), false); });
+            }
+        });
+    }
+
+    private void showMemory() {
+        if (!remote || busy || chatIssue <= 0) return;
+        busy = true;
+        setStatus("翻狐狸的記憶…");
+        final int issue = chatIssue;
+        executor.execute(() -> {
+            try {
+                org.json.JSONObject memory = repository.foxMemory();
+                List<Gen2FoxChat.Memory> items = Gen2FoxChat.memoryFor(memory, issue);
+                String summary = Gen2FoxChat.notebookSummary(memory, issue);
+                handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); memoryDialog(items, summary); });
+            } catch (Exception error) {
+                handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); fox("讀不到記憶：" + safe(error), false); });
+            }
+        });
+    }
+
+    private void memoryDialog(List<Gen2FoxChat.Memory> items, String summary) {
+        android.app.AlertDialog.Builder dialog = new android.app.AlertDialog.Builder(this)
+                .setTitle("🧠 狐狸記得的事")
+                .setNegativeButton("關閉", null);
+        if (items.isEmpty()) {
+            dialog.setMessage((summary.isEmpty() ? "" : "📝 這本的摘要：" + summary + "\n\n") + "還沒有記住任何事。");
+        } else {
+            // The summary is the first, inert line; tapping an item asks whether to forget it.
+            List<String> lines = new ArrayList<>();
+            int offset = summary.isEmpty() ? 0 : 1;
+            if (offset == 1) lines.add("📝 這本的摘要：" + summary);
+            for (Gen2FoxChat.Memory m : items) lines.add(m.label());
+            dialog.setItems(lines.toArray(new String[0]), (d, which) -> { if (which >= offset) confirmForget(items.get(which - offset)); });
+        }
+        dialog.show();
+    }
+
+    private void confirmForget(Gen2FoxChat.Memory item) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("要狐狸忘掉這條嗎？")
+                .setMessage(item.label())
+                .setPositiveButton("忘掉", (d, w) -> sendRemote(Gen2FoxChat.forget(item.id), false))
+                .setNegativeButton("留著", null)
+                .show();
+    }
 
     private void answerPlan(boolean yes) {
         String plan = remotePlan;
