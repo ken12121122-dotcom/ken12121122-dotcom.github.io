@@ -10,7 +10,9 @@ import java.util.Map;
 /**
  * GitHub access for GEN2 runs. Limited to the OWNER account and the private
  * ken12121122-dotcom/gen2-knowledge repository: list open run Issues and post
- * a comment on one of them. Nothing else can be reached through this class.
+ * a comment on one of them, start an approved run, read Workflow files on
+ * main, and talk in the fox chat Issue. Nothing else can be reached through
+ * this class.
  */
 final class GitHubGen2Api {
     static final String REPOSITORY = "ken12121122-dotcom/gen2-knowledge";
@@ -57,6 +59,120 @@ final class GitHubGen2Api {
         JSONObject body = new JSONObject().put("body", command);
         success(request("POST", REPOSITORY_PATH + "/issues/" + issueNumber + "/comments", body.toString()),
                 201, "指令送出失敗");
+    }
+
+    /**
+     * Bridge 105: the fox chat Issue (label gen2-chat). The oldest open one is
+     * the chat; the first time, the app opens it. Needs Issues: write.
+     */
+    int chatIssue() throws Exception {
+        GitHubHttpResponse response = request("GET", REPOSITORY_PATH + "/issues?labels=" + Gen2FoxChat.LABEL + "&state=open&per_page=10&sort=created&direction=asc", "");
+        JSONArray list = array(success(response, 200, "無法讀取狐狸聊天"));
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject issue = list.optJSONObject(i);
+            if (issue != null && !issue.has("pull_request") && issue.optInt("number", 0) > 0) return issue.optInt("number");
+        }
+        JSONObject body = new JSONObject().put("title", "🦊 狐狸聊天")
+                .put("body", "OWNER 和狐狸的聊天室。狐狸由 Actions › GEN2 Fox 用 Claude 訂閱回覆，長期記憶在 fox-memory 分支。")
+                .put("labels", new JSONArray().put(Gen2FoxChat.LABEL));
+        return object(success(request("POST", REPOSITORY_PATH + "/issues", body.toString()), 201, "無法建立狐狸聊天")).optInt("number");
+    }
+
+    /** Bridge 106: every open gen2-chat Issue is one notebook (number, title, updated_at), newest first. */
+    JSONArray notebooks() throws Exception {
+        return array(success(request("GET", REPOSITORY_PATH + "/issues?labels=" + Gen2FoxChat.LABEL + "&state=open&per_page=50&sort=updated&direction=desc", ""), 200, "無法讀取筆記本"));
+    }
+
+    /** Opens a new notebook for one task or topic. */
+    int newNotebook(String title) throws Exception {
+        String name = Gen2FoxChat.notebookTitle(title);
+        JSONObject body = new JSONObject().put("title", "🦊 " + name)
+                .put("body", "狐狸筆記本：" + name + "。在這裡跟狐狸聊這件事；關於你本人的記憶所有筆記本共用。")
+                .put("labels", new JSONArray().put(Gen2FoxChat.LABEL));
+        return object(success(request("POST", REPOSITORY_PATH + "/issues", body.toString()), 201, "無法建立筆記本")).optInt("number");
+    }
+
+    /** The fox's long-term memory (read only; changes go through "/fox forget" in the chat). */
+    JSONObject foxMemory() throws Exception {
+        GitHubHttpResponse response = request("GET", REPOSITORY_PATH + "/contents/memory.json?ref=fox-memory", "");
+        if (response.statusCode() == 404) return new JSONObject();
+        String content = object(success(response, 200, "無法讀取狐狸的記憶")).optString("content", "");
+        try {
+            return new JSONObject(new String(java.util.Base64.getMimeDecoder().decode(content), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException | org.json.JSONException error) {
+            throw new IllegalStateException("狐狸的記憶格式不正確。 ");
+        }
+    }
+
+    /** The latest chat comments (up to the last 200), oldest first. */
+    JSONArray chatComments(int issue) throws Exception {
+        if (issue <= 0) throw new IllegalArgumentException("Issue 編號無效。 ");
+        int count = object(success(request("GET", REPOSITORY_PATH + "/issues/" + issue, ""), 200, "無法讀取狐狸聊天")).optInt("comments", 0);
+        int last = Math.max(1, (count + 99) / 100);
+        JSONArray out = new JSONArray();
+        for (int page = Math.max(1, last - 1); page <= last; page++) {
+            JSONArray batch = array(success(request("GET", REPOSITORY_PATH + "/issues/" + issue + "/comments?per_page=100&page=" + page, ""), 200, "無法讀取狐狸聊天"));
+            for (int i = 0; i < batch.length(); i++) out.put(batch.get(i));
+        }
+        return out;
+    }
+
+    /** Posts the OWNER's words (or a /fox confirm|reject) to the chat; returns the comment id. */
+    long postChat(int issue, String text) throws Exception {
+        if (issue <= 0) throw new IllegalArgumentException("Issue 編號無效。 ");
+        JSONObject body = new JSONObject().put("body", Gen2FoxChat.message(text));
+        return object(success(request("POST", REPOSITORY_PATH + "/issues/" + issue + "/comments", body.toString()), 201, "訊息送出失敗")).optLong("id", 0L);
+    }
+
+    private static JSONArray array(GitHubHttpResponse response) {
+        try { return new JSONArray(response.body()); }
+        catch (Exception error) { throw new IllegalStateException("GitHub 回應格式不正確。 "); }
+    }
+
+    /** Starts a run of an approved Workflow (Actions › GEN2 Run Start on main). Needs Actions: write. */
+    void startRun(String workflowId, String note) throws Exception {
+        if (workflowId == null || !Gen2WorkflowCatalog.WORKFLOW_ID.matcher(workflowId).matches()) {
+            throw new IllegalArgumentException("Workflow ID 無效。 ");
+        }
+        String text = note == null ? "" : note.trim();
+        if (text.length() > Gen2ChatBrain.MAX_SCOPE) throw new IllegalArgumentException("範圍說明太長。 ");
+        JSONObject body = new JSONObject().put("ref", "main")
+                .put("inputs", new JSONObject().put("workflow_id", workflowId).put("note", text));
+        GitHubHttpResponse response = request("POST", REPOSITORY_PATH + "/actions/workflows/gen2-run-start.yml/dispatches", body.toString());
+        if (response.statusCode() == 403 || response.statusCode() == 404) {
+            throw new SecurityException("GitHub App 沒有啟動流程的權限：請在 GitHub App 設定加上 Actions 的 Read and write，並在安裝頁接受新權限。 ");
+        }
+        success(response, 204, "無法啟動流程");
+    }
+
+    /** Workflows on main that the fox can start (files with a gen2-run block). Needs Contents: read. */
+    List<Gen2WorkflowCatalog.Workflow> workflows() throws Exception {
+        GitHubHttpResponse tree = request("GET", REPOSITORY_PATH + "/git/trees/main?recursive=1", "");
+        if (tree.statusCode() == 403 || tree.statusCode() == 404) {
+            throw new SecurityException("GitHub App 沒有讀取 gen2-knowledge 內容的權限（Contents：Read）。 ");
+        }
+        java.util.ArrayList<Gen2WorkflowCatalog.Workflow> out = new java.util.ArrayList<>();
+        for (String path : Gen2WorkflowCatalog.workflowPaths(object(success(tree, 200, "無法讀取知識庫清單")))) {
+            GitHubHttpResponse file = request("GET", REPOSITORY_PATH + "/contents/" + encodePath(path) + "?ref=main", "");
+            if (file.statusCode() != 200) continue;
+            String content = object(file).optString("content", ""); // base64 with line breaks; the MIME decoder accepts them
+            try {
+                String markdown = new String(java.util.Base64.getMimeDecoder().decode(content), java.nio.charset.StandardCharsets.UTF_8);
+                Gen2WorkflowCatalog.Workflow workflow = Gen2WorkflowCatalog.parse(markdown);
+                if (workflow != null) out.add(workflow);
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return out;
+    }
+
+    static String encodePath(String path) throws Exception {
+        StringBuilder out = new StringBuilder();
+        for (String part : path.split("/")) {
+            if (part.isEmpty() || part.equals("..") || part.equals(".")) throw new IllegalArgumentException("路徑無效。 ");
+            if (out.length() > 0) out.append('/');
+            out.append(java.net.URLEncoder.encode(part, "UTF-8").replace("+", "%20"));
+        }
+        return out.toString();
     }
 
     private GitHubHttpResponse request(String method, String path, String body) throws Exception {
