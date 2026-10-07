@@ -1,20 +1,19 @@
 {
-  "versionCode": 200,
-  "versionName": "0.11.22-rc15",
+  "versionCode": 201,
+  "versionName": "0.11.22-rc16",
   "channel": "candidate",
-  "bridge": 104,
-  "releaseSequence": 38,
+  "bridge": 105,
+  "releaseSequence": 39,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "候選版（實機驗收用，尚未正式發布）：狐狸聊天助理。用打字或說話都可以，狐狸自己判斷你的意思，不需要講特定關鍵字。",
-    "交代新任務時，狐狸會跟你聊清楚範圍和完成條件（一次最多問一件事），整理成一張卡片；你同意後才在 GitHub 開始 GEN2 流程，並把資料交給第一步。",
-    "會改動 GitHub 的事（開始任務、核准、提供資料、停止）一律先顯示卡片，你下一句表示同意（或按卡片）才送出；同一句話不會既提出又送出。",
-    "語音核准也改成由 AI 判斷你的回覆是不是同意；沒有設定 AI 時才用原本的選項名稱。",
-    "PackageCanvas 知識世界可以請 App 打開狐狸聊天；網頁本身仍拿不到 GitHub 權杖，也不能送出任何指令。",
-    "需要 GitHub App 加上 Actions（Read and write）與 Contents（Read）權限，才能從 App 開始流程與讀取可執行的流程清單。",
-    "既有 GBA、存檔、手把、全域控制盤、PackageCanvas 與 GEN2 待核准畫面維持不變。"
+    "候選版（實機驗收用，尚未正式發布）：狐狸聊天改用你的 Claude 訂閱當大腦（gen2-knowledge 的 GEN2 Fox），不再需要在語音球設定 API Key。回覆約半分鐘到一分鐘。",
+    "狐狸有長期記憶：記得你的背景、偏好、目標和還沒做完的事，換手機也記得；記憶存在私有 gen2-knowledge 的 fox-memory 分支，不會放進知識庫或公開 repo。",
+    "狐狸會從長期對話推算你需要什麼，讀得到知識庫所有技能與流程，能直接啟動流程，或把技能組合成臨時流程（每個技能後面都有你的審核點）。",
+    "做事前一定先提議：卡片列出要用的流程或技能組合與範圍，你回「好」或按「就這樣做」才開始；同一句話不會既提出又開始。",
+    "聊天紀錄在 gen2-knowledge 的「🦊 狐狸聊天」Issue；第一次打開會自動建立。需要 GitHub App 的 Issues（Read and write）權限（已有）。",
+    "既有 GBA、存檔、手把、全域控制盤、PackageCanvas、GEN2 待核准畫面與語音核准維持不變。"
   ]
 }

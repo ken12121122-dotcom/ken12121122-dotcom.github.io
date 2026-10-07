@@ -33,7 +33,16 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 /**
- * The fox assistant: chat (typed or spoken) about GEN2 work. The AI decides
+ * The fox assistant: chat (typed or spoken) about GEN2 work.
+ *
+ * Bridge 105: by default the fox's brain is GEN2 Fox in gen2-knowledge
+ * (Claude on the OWNER's subscription, long-term memory, plans that combine
+ * knowledge-base skills). The app posts the OWNER's words to the fox chat
+ * Issue, waits for the reply, and shows a waiting plan as a card whose
+ * buttons post "/fox confirm|reject". The local mode below (an AI set in the
+ * voice ball) remains for instrumentation and as a fallback.
+ *
+ * Local mode: the AI decides
  * what the OWNER means; there are no command words. New tasks are scoped in
  * conversation and started as GEN2 runs; the GEN2 Agent then works on them
  * and the OWNER is called back by push and in Knowledge World.
@@ -48,6 +57,9 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     private static final int MAX_HISTORY = 20;
     private static final int START_POLLS = 24;
     private static final long START_POLL_MS = 5000L;
+    private static final int REPLY_POLLS = 45;
+    private static final long REPLY_POLL_MS = 4000L;
+    private static final int SHOWN_TURNS = 12;
     private static final String SPEAK_ID = "amin_gen2_chat";
     private static final Pattern SENSITIVE = Pattern.compile(
             "(?i)(gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|Bearer\\s+[A-Za-z0-9._~-]+|sk-[A-Za-z0-9_-]+)");
@@ -75,6 +87,10 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     private volatile boolean loaded;
     private int focusIssue;
     private Gen2ChatBrain.Proposal waiting;
+    private boolean remote = true;
+    private int chatIssue;
+    private String remotePlan;
+    private TextView model;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -131,8 +147,7 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
         close.setOnClickListener(v -> finish());
         head.addView(close, new LinearLayout.LayoutParams(-2, dp(40)));
         content.addView(head, full());
-        TextView model = text((LlmConfigStore.hasApiKey(this) ? "🟢 " : "⚪ 未設定 AI · ")
-                + LlmConfigStore.label(this) + " · 對話內容會送到這個 AI", 11, false, 0xff8c86b5);
+        model = text("🟢 Claude 訂閱（GEN2 Fox）· 對話與記憶存在私有 gen2-knowledge · 回覆約半分鐘到一分鐘", 11, false, 0xff8c86b5);
         content.addView(model, top(2));
 
         transcriptScroll = new ScrollView(this);
@@ -155,10 +170,10 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
         cardRow.setOrientation(LinearLayout.HORIZONTAL);
         Button yes = button("就這樣做", true);
         yes.setContentDescription("gen2-chat-card-yes");
-        yes.setOnClickListener(v -> runWaiting(""));
+        yes.setOnClickListener(v -> { if (remote) answerPlan(true); else runWaiting(""); });
         Button no = button("先不要", false);
         no.setContentDescription("gen2-chat-card-no");
-        no.setOnClickListener(v -> { clearCard(); fox("好，不做。想怎麼改再跟我說。", false); });
+        no.setOnClickListener(v -> { if (remote) answerPlan(false); else { clearCard(); fox("好，不做。想怎麼改再跟我說。", false); } });
         cardRow.addView(yes, new LinearLayout.LayoutParams(0, dp(44), 1f));
         LinearLayout.LayoutParams noParams = new LinearLayout.LayoutParams(0, dp(44), 1f);
         noParams.leftMargin = dp(8);
@@ -235,23 +250,107 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
                 try { catalog = repository.workflows(false); }
                 catch (Exception error) { problem = "讀不到可啟動的流程：" + safe(error); }
             }
+            int issue = 0;
+            List<Gen2FoxChat.Turn> chatTurns = new ArrayList<>();
+            if (remote && problem == null) {
+                try { issue = repository.chatIssue(); chatTurns = repository.chat(issue); }
+                catch (Exception error) { problem = "讀不到狐狸聊天：" + safe(error) + "。若是剛更新，請到 GitHub App 安裝頁接受 Issues 的 Read and write。"; }
+            }
             final String note = problem;
             final List<Gen2RunView> loadedRuns = fresh;
             final List<Gen2WorkflowCatalog.Workflow> loadedWorkflows = catalog;
+            final int loadedIssue = issue;
+            final List<Gen2FoxChat.Turn> loadedTurns = chatTurns;
             handler.post(() -> {
                 if (destroyed) return;
                 busy = false;
                 loaded = true;
                 setStatus("");
                 useState(loadedRuns, loadedWorkflows);
-                fox(Gen2ChatBrain.greeting(runs, Gen2ChatBrain.findRun(runs, focusIssue)), true);
+                if (remote) {
+                    useChat(loadedIssue, loadedTurns);
+                    if (loadedTurns.isEmpty() || focusIssue > 0) fox(Gen2ChatBrain.greeting(runs, Gen2ChatBrain.findRun(runs, focusIssue)), true);
+                } else {
+                    fox(Gen2ChatBrain.greeting(runs, Gen2ChatBrain.findRun(runs, focusIssue)), true);
+                    if (!LlmConfigStore.hasApiKey(this)) bubble("⚙", "還沒設定 AI，狐狸聽不懂聊天。請到語音球設定 AI 和 API Key。", true);
+                }
                 if (note != null) bubble("⚙", note, true);
-                if (!LlmConfigStore.hasApiKey(this)) bubble("⚙", "還沒設定 AI，狐狸聽不懂聊天。請到語音球設定 AI 和 API Key。", true);
             });
         });
     }
 
     boolean isLoaded() { return loaded; }
+
+    /** Instrumentation hook: use the AI set in the voice ball instead of GEN2 Fox. */
+    void useLocalBrain() {
+        remote = false;
+        if (model != null) model.setText((LlmConfigStore.hasApiKey(this) ? "🟢 " : "⚪ 未設定 AI · ") + LlmConfigStore.label(this) + " · 對話內容會送到這個 AI");
+    }
+
+    // ---------------------------------------------------------------- GEN2 Fox (Bridge 105)
+
+    /** Load result and instrumentation hook: the chat so far and the plan waiting for the OWNER. */
+    void useChat(int issue, List<Gen2FoxChat.Turn> turns) {
+        chatIssue = issue;
+        int from = Math.max(0, turns.size() - SHOWN_TURNS);
+        for (Gen2FoxChat.Turn t : turns.subList(from, turns.size())) showTurn(t, false);
+        showRemoteCard(Gen2FoxChat.pending(turns));
+    }
+
+    private void showTurn(Gen2FoxChat.Turn t, boolean speakIt) {
+        if (!t.fox) { bubble("你", t.text, false); return; }
+        if (!t.text.isEmpty()) fox(t.text, speakIt);
+        if (!t.note.isEmpty()) bubble("⚙", t.note, true);
+    }
+
+    private void showRemoteCard(Gen2FoxChat.Pending pending) {
+        remotePlan = pending == null ? null : pending.planId;
+        if (pending == null) { card.setVisibility(View.GONE); return; }
+        cardText.setText("📋 狐狸的提議\n" + pending.readBack);
+        card.setVisibility(View.VISIBLE);
+    }
+
+    String remotePlan() { return remotePlan; }
+
+    private void answerPlan(boolean yes) {
+        String plan = remotePlan;
+        if (plan == null || busy) return;
+        card.setVisibility(View.GONE);
+        bubble("你", yes ? "就這樣做" : "先不要", false);
+        sendRemote(yes ? Gen2FoxChat.confirm(plan) : Gen2FoxChat.reject(plan), true);
+    }
+
+    /** Posts to the fox chat and waits for GEN2 Fox to answer. */
+    private void sendRemote(String text, boolean echoed) {
+        if (chatIssue <= 0) { fox("我還連不上聊天室，請重新打開這個畫面。", false); return; }
+        if (!echoed) bubble("你", text, false);
+        busy = true;
+        setStatus("狐狸在想…（約半分鐘到一分鐘）");
+        final int issue = chatIssue;
+        executor.execute(() -> {
+            try {
+                long mine = repository.say(issue, text);
+                for (int i = 0; i < REPLY_POLLS && !destroyed; i++) {
+                    Thread.sleep(REPLY_POLL_MS);
+                    List<Gen2FoxChat.Turn> turns = repository.chat(issue);
+                    Gen2FoxChat.Turn reply = Gen2FoxChat.replyAfter(turns, mine);
+                    if (reply == null) continue;
+                    Gen2FoxChat.Pending pending = Gen2FoxChat.pending(turns);
+                    handler.post(() -> {
+                        if (destroyed) return;
+                        busy = false;
+                        setStatus("");
+                        showTurn(reply, true);
+                        showRemoteCard(pending);
+                    });
+                    return;
+                }
+                handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); fox("我想比較久，等一下重新打開這個畫面就會看到我的回答。", false); });
+            } catch (Exception error) {
+                handler.post(() -> { if (destroyed) return; busy = false; setStatus(""); fox("沒送出去：" + safe(error), true); });
+            }
+        });
+    }
 
     /** Instrumentation hook and load result: the runs and workflows the fox knows about. */
     void useState(List<Gen2RunView> openRuns, List<Gen2WorkflowCatalog.Workflow> catalog) {
@@ -275,6 +374,7 @@ public final class Gen2ChatActivity extends Activity implements RecognitionListe
     void hear(String spoken) {
         String text = spoken == null ? "" : spoken.trim();
         if (text.isEmpty()) return;
+        if (remote) { if (!busy) sendRemote(text, false); return; }
         bubble("你", text, false);
         if (!LlmConfigStore.hasApiKey(this)) {
             fox("我還沒有 AI 可以用，聽不懂聊天。請到語音球設定 AI；卡片上的按鈕還是可以按。", true);

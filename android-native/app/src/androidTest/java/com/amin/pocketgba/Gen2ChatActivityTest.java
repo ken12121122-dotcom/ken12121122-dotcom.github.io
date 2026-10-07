@@ -101,4 +101,26 @@ public final class Gen2ChatActivityTest {
             });
         }
     }
+
+    @Test
+    public void gen2FoxPlanShowsAsACardUntilItIsResolved() throws Exception {
+        String plan = "{\"v\":1,\"say\":\"要用技能組合嗎？\",\"plan\":{\"kind\":\"compose\"},\"planId\":\"pabc123\",\"readBack\":\"組合技能「週報」\"}";
+        String done = "{\"v\":1,\"say\":\"好\",\"resolved\":{\"planId\":\"pabc123\",\"outcome\":\"started\",\"issue\":60},\"note\":\"已開始 #60\"}";
+        JSONArray comments = new JSONArray()
+                .put(Gen2FoxChatTestData.comment(1, GitHubBrainApi.OWNER, "幫我做週報"))
+                .put(Gen2FoxChatTestData.comment(2, Gen2FoxChat.BOT, Gen2FoxChatTestData.fox(plan)));
+        try (ActivityScenario<Gen2ChatActivity> scenario = ActivityScenario.launch(chat(0))) {
+            waitLoaded(scenario);
+            scenario.onActivity(activity -> {
+                activity.useChat(50, Gen2FoxChat.turns(comments, GitHubBrainApi.OWNER));
+                assertEquals("pabc123", activity.remotePlan());
+                assertEquals(View.VISIBLE, card(activity).getVisibility());
+                try { comments.put(Gen2FoxChatTestData.comment(3, Gen2FoxChat.BOT, Gen2FoxChatTestData.fox(done))); }
+                catch (Exception error) { throw new AssertionError(error); }
+                activity.useChat(50, Gen2FoxChat.turns(comments, GitHubBrainApi.OWNER));
+                assertNull(activity.remotePlan());
+                assertEquals(View.GONE, card(activity).getVisibility());
+            });
+        }
+    }
 }

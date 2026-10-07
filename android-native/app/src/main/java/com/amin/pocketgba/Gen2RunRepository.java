@@ -15,6 +15,7 @@ final class Gen2RunRepository {
     private static final String WAITING = "waiting_keys";
     private static final String WORKFLOWS = "workflows_json";
     private static final String WORKFLOWS_AT = "workflows_at";
+    private static final String CHAT_ISSUE = "chat_issue";
     private static final long WORKFLOWS_TTL_MS = 60L * 60L * 1000L;
     private final Context context;
     private final SharedPreferences preferences;
@@ -55,6 +56,26 @@ final class Gen2RunRepository {
         List<Gen2WorkflowCatalog.Workflow> fresh = new BrainAuthSession(context).requireGen2Api().workflows();
         preferences.edit().putString(WORKFLOWS, Gen2WorkflowCatalog.toJson(fresh).toString()).putLong(WORKFLOWS_AT, now).apply();
         return fresh;
+    }
+
+    /** Bridge 105: the fox chat Issue number, remembered once found. */
+    synchronized int chatIssue() throws Exception {
+        int known = preferences.getInt(CHAT_ISSUE, 0);
+        if (known > 0) return known;
+        int issue = new BrainAuthSession(context).requireGen2Api().chatIssue();
+        preferences.edit().putInt(CHAT_ISSUE, issue).apply();
+        return issue;
+    }
+
+    /** Forgets the chat Issue (e.g. it was closed), so the next call finds or opens one. */
+    void forgetChat() { preferences.edit().remove(CHAT_ISSUE).apply(); }
+
+    List<Gen2FoxChat.Turn> chat(int issue) throws Exception {
+        return Gen2FoxChat.turns(new BrainAuthSession(context).requireGen2Api().chatComments(issue), GitHubBrainApi.OWNER);
+    }
+
+    long say(int issue, String text) throws Exception {
+        return new BrainAuthSession(context).requireGen2Api().postChat(issue, text);
     }
 
     void startRun(String workflowId, String note) throws Exception {

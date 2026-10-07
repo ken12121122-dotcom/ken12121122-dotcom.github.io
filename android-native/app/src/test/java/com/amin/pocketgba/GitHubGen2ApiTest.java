@@ -111,6 +111,27 @@ public class GitHubGen2ApiTest {
     }
 
     @Test
+    public void foxChatFindsOrOpensTheChatIssueAndPostsWords() throws Exception {
+        FakeTransport found = new FakeTransport().reply(200, "[{\"number\":9,\"pull_request\":{}},{\"number\":50}]");
+        assertEquals(50, new GitHubGen2Api(found, "t").chatIssue());
+        assertTrue(found.requests.get(0).url().endsWith("/repos/ken12121122-dotcom/gen2-knowledge/issues?labels=gen2-chat&state=open&per_page=10&sort=created&direction=asc"));
+        FakeTransport open = new FakeTransport().reply(200, "[]").reply(201, "{\"number\":51}");
+        assertEquals(51, new GitHubGen2Api(open, "t").chatIssue());
+        assertEquals("POST", open.requests.get(1).method());
+        assertTrue(new JSONObject(open.requests.get(1).body()).getJSONArray("labels").toString().contains("gen2-chat"));
+
+        FakeTransport post = new FakeTransport().reply(201, "{\"id\":777}");
+        assertEquals(777L, new GitHubGen2Api(post, "t").postChat(50, "幫我做週報"));
+        assertTrue(post.requests.get(0).url().endsWith("/repos/ken12121122-dotcom/gen2-knowledge/issues/50/comments"));
+        assertThrows(IllegalArgumentException.class, () -> new GitHubGen2Api(new FakeTransport(), "t").postChat(50, "/gen2 cancel"));
+
+        FakeTransport read = new FakeTransport().reply(200, "{\"comments\":150}").reply(200, "[{\"id\":1}]").reply(200, "[{\"id\":2}]");
+        assertEquals(2, new GitHubGen2Api(read, "t").chatComments(50).length());
+        assertTrue(read.requests.get(1).url().endsWith("/issues/50/comments?per_page=100&page=1"));
+        assertTrue(read.requests.get(2).url().endsWith("/issues/50/comments?per_page=100&page=2"));
+    }
+
+    @Test
     public void gen2ApiCannotReachOtherRepositoriesOrMutateCode() throws Exception {
         String api = read("src/main/java/com/amin/pocketgba/GitHubGen2Api.java");
         String activity = read("src/main/java/com/amin/pocketgba/Gen2RunsActivity.java");
