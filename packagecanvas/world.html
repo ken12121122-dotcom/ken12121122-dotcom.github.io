@@ -134,7 +134,7 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
       </div>
     </div>
   </div>
-  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>十字鍵走路；狐狸自己去工作，有事會跑來找你。<br>A 調查／跟面前的狐狸說話，面前沒東西就叫狐狸過來 · B 鏡頭回到你 · L／R 切換任務 · START 選單（任務清單可打開任務）<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT</p>
+  <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>十字鍵走路；狐狸自己去工作，有事會跑來找你。<br>A 調查／跟面前的狐狸說話，面前沒東西就叫狐狸過來 · B 鏡頭回到你 · L／R 切換任務 · START 選單（任務清單可打開任務）<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT<br><a href="./research-navigation-v04.html" style="color:#ffe19c;text-decoration:underline;font-weight:700;display:inline-block;margin-top:8px;padding:8px">📚 工作進度／研究導航與心智圖</a></p>
 </div>
 
 
@@ -514,6 +514,30 @@ function ownerDialog(q){
   dialog({who: bName(q.where), text: intro, html, onNext: () => ask('要怎麼處理？'+tip, acts.map(a=>a[0]), i => { closeDialog(); acts[i][1](); }, {onBack: closeDialog})});
 }
 
+// ---------- read-only work progress in the ORIGINAL Knowledge World ----------
+const WORK_SNAPSHOT_URL = './data/project-world-snapshot-v01.json';
+async function browseWorkProjects(){
+  try {
+    const response = await fetch(WORK_SNAPSHOT_URL,{cache:'no-store'});
+    if (!response.ok) throw new Error('HTTP '+response.status);
+    const data = await response.json();
+    const projects = (data.projects||[]).filter(p=>p.id==='hours'||p.id==='access');
+    if (!projects.length) throw new Error('無可用專案');
+    ask('現實工作進度｜'+(data.snapshot_date||'未標日期')+' 唯讀快照。\n不代表 GEN2 工作流已執行，也不是主管核准紀錄。\n請選擇要查看的工作專案：',
+      projects.map(p=>p.name+'｜'+p.stage).concat(['返回地圖']),
+      i=>{closeDialog();if(i<projects.length)showWorkProject(projects[i]);},{onBack:closeDialog});
+  } catch (e) {
+    say('工作快照讀取失敗：'+(e.message||e)+'。\n可從畫面下方「📚 研究導航」直接查看既有網頁。');
+  }
+}
+function showWorkProject(p){
+  const desc=p.name+'\n目前：'+p.position+'\n阻塞：'+p.blocker+'\n下一步：'+p.next+'\n目的地：'+p.destination+'\n（來源：'+p.source+'；快照非即時同步）';
+  ask(desc,['📚 開啟 GPS／心智圖','回到知識世界'],i=>{
+    closeDialog();
+    if(i===0) location.href='./research-navigation-v04.html?project='+encodeURIComponent(p.id);
+  },{onBack:closeDialog});
+}
+
 // ---------- world interaction ----------
 function pickQuest(list, then){
   if (list.length===1) return then(list[0]);
@@ -526,7 +550,10 @@ function interact(){
   if (f.x===fox.x && f.y===fox.y && !fox.moving){ fox.flip = h.x < fox.x; fox.summoned = false; fox.goal = null; fox.path = []; return foxTalk(); }
   if (f.x===BOARD.x && f.y===BOARD.y){
     const list = questsAt('board'); if (list.length) return pickQuest(list, ownerDialog);
-    return say(openQuests().length ? '任務告示板：\n'+openQuests().map(q=>'#'+q.number+' '+q.workflowId+'｜'+(q.who==='owner'?'等你：':'Agent：')+bName(q.where)).join('\n') : '任務告示板：目前沒有進行中的任務。\n跟狐狸聊天就能交代新任務。');
+    const summary = openQuests().length ? 'GEN2 正在進行 '+openQuests().length+' 件任務，可前往各能力建築查看。' : 'GEN2 目前沒有進行中的任務。';
+    return ask('任務告示板：\n'+summary+'\n也可以查閱現實工作專案的唯讀進度快照。',['📜 查閱工作進度','🦊 叫狐狸','離開'],i=>{
+      closeDialog();if(i===0)browseWorkProjects();else if(i===1)callFox();
+    },{onBack:closeDialog});
   }
   for (const b of BUILDINGS){
     const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
@@ -548,6 +575,7 @@ function foxTalk(){
   const acts = [];
   if (chatBridge()) acts.push(['🦊 聊天、交代新任務', () => openChat(0)]);
   acts.push(['現在任務狀況', foxStatus]);
+  acts.push(['📜 現實工作進度', browseWorkProjects]);
   acts.push(['🔑 Agent 鑰匙櫃', openKeys]);
   acts.push(['離開', closeDialog]);
   ask(chatBridge() ? '主人，想聊什麼？要交給我的事，直接跟我說就好。' : '主人，我在。（聊天要在 Amin App 裡打開知識世界）', acts.map(a=>a[0]), i => { closeDialog(); acts[i][1](); }, {onBack: closeDialog});
