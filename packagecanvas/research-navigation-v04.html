@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<meta name="description" content="ChatGPT 圖書館專案進度快照：標準工時改善、嘉義門禁改善與 PROJECT-STATE 候選治理任務，單頁長捲動資訊網站。" />
+<title>雙模式知識世界｜GBA 工作投影 × 研究導航 v0.4</title>
+<style>
+:root{
+ --paper:#F7F6F2;--white:#FFFEFB;--ink:#16231F;--text:#26342F;--sub:#65716C;--muted:#89938D;
+ --line:#DDE2DB;--lineDark:#BAC7BD;--green:#1D6650;--paleGreen:#E7F1EA;--amber:#A85D26;--paleAmber:#FBF0DD;--red:#AA4C43;--paleRed:#F7E8E5;
+ --accent:#CC793E;--dark:#152B25;--dark2:#1D3B31;--cream:#F2EBD9;--max:1456px;
+ --shadow:0 18px 48px rgba(25,46,35,.055);--r:18px;
+}
+*,*:before,*:after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:102px}
+body{margin:0;background:var(--paper);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:#e8c6a7;color:var(--ink)}
+a{color:inherit}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #cf985d;outline-offset:3px}
+button{font:inherit;cursor:pointer}button:disabled{cursor:not-allowed}
+svg{display:block;max-width:100%}p{margin:0}h1,h2,h3,h4{line-height:1.23;letter-spacing:-.035em;margin:0;color:var(--ink)}
+.noise{position:fixed;inset:0;pointer-events:none;opacity:.14;z-index:10;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E")}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(247,246,242,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(18px)}
+.topbar-in{height:73px;max-width:var(--max);padding:0 42px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;text-decoration:none;white-space:nowrap}.brand-mark{display:grid;place-items:center;background:var(--dark);color:#F0D4AB;font-weight:900;font-size:14px;border-radius:9px;width:36px;height:36px;letter-spacing:-.07em}.brand-name{font-weight:800;letter-spacing:-.02em;color:var(--ink);font-size:14px}.brand-desc{font-size:11px;color:var(--muted);letter-spacing:.08em;margin-left:10px;border-left:1px solid var(--lineDark);padding-left:13px;font-weight:600}
+.top-right{display:flex;align-items:center;gap:15px}.top-meta{font-size:11px;color:var(--sub);font-weight:650;letter-spacing:.045em}.top-meta b{color:var(--green);font-weight:750}.print-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--lineDark);background:transparent;color:var(--ink);padding:8px 12px;border-radius:9px;font-size:12px;font-weight:700;transition:background .2s}.print-btn:hover{background:white}.print-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+.mobile-nav{display:none}.shell{max-width:var(--max);margin:auto;padding:0 42px;display:grid;grid-template-columns:210px minmax(0,1fr);gap:54px}
+.sidebar{min-width:0}.side-inner{position:sticky;top:105px;padding-top:46px;padding-bottom:34px}.sidebar-eyebrow{font-size:10px;color:var(--muted);letter-spacing:.2em;font-weight:800;margin:0 0 22px}.side-nav{display:flex;flex-direction:column;gap:3px}.side-nav a{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 13px 10px 16px;border-left:2px solid transparent;color:#69756e;font-size:12px;text-decoration:none;transition:all .2s;border-radius:0 8px 8px 0;font-weight:650}.side-nav a span{opacity:.52;font-size:10px;font-family:ui-monospace,Consolas,monospace}.side-nav a:hover{background:#e9eee7;color:var(--ink)}.side-nav a.active{background:#e6ede5;border-color:var(--green);color:var(--green)}.side-nav a.active span{opacity:1}
+.sidebar-note{margin-top:42px;padding-top:24px;border-top:1px solid var(--line)}.side-note-label{color:var(--muted);font-size:10px;letter-spacing:.14em;font-weight:800;margin-bottom:9px}.sidebar-note p{font-size:12px;color:var(--sub);line-height:1.85}.side-date{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--ink);font-weight:600;margin-top:9px}
+.content{min-width:0;padding-bottom:90px}.page-section{scroll-margin-top:110px}.section-header{padding-top:80px;margin-bottom:30px;display:flex;gap:18px;align-items:baseline;justify-content:space-between;border-top:1px solid var(--line)}.section-header .heading-wrap{max-width:690px}.sec-index{font-family:ui-monospace,Consolas,monospace;font-size:12px;font-weight:750;color:var(--amber);letter-spacing:.025em;margin-bottom:11px}.section-header h2{font-size:clamp(28px,3.15vw,43px);font-weight:850;letter-spacing:-.055em}.section-header p{color:var(--sub);font-size:14px;margin-top:13px;max-width:670px;line-height:1.9}.section-side{font:700 10px ui-monospace,Consolas,monospace;letter-spacing:.11em;color:#9da8a0;white-space:nowrap}
+.hero{min-height:590px;padding:77px 0 0;position:relative}.hero-kicker{display:flex;align-items:center;gap:11px;color:var(--amber);font-size:11px;letter-spacing:.18em;font-weight:800}.hero-kicker:before{content:"";display:block;width:32px;height:2px;background:var(--accent)}
+.hero-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:40px;align-items:center;margin-top:22px}
+.hero h1{font-size:clamp(47px,5.8vw,83px);font-weight:880;line-height:1.11;letter-spacing:-.073em;max-width:780px}
+.hero h1 em{font-style:normal;color:var(--green);position:relative;display:inline-block}.hero h1 em:after{content:"";height:8px;width:100%;position:absolute;bottom:-7px;left:0;background:#e4c29e;z-index:-1;border-radius:8px;transform:rotate(-1deg)}
+.hero-lead{font-size:16px;color:#617069;margin-top:28px;max-width:560px;line-height:1.95}.hero-stamp{display:flex;align-items:center;gap:11px;margin-top:26px;flex-wrap:wrap}.small-tag{display:inline-flex;align-items:center;padding:6px 10px;background:#E7EEE7;color:#276A52;border:1px solid #CEDED1;border-radius:20px;font-size:11px;font-weight:700}.small-tag.alt{background:transparent;color:var(--sub);border-color:var(--lineDark)}
+.hero-art{position:relative;min-height:358px;background:var(--dark);border-radius:18px;padding:28px;overflow:hidden;box-shadow:0 26px 60px rgba(8,36,24,.14)}.hero-art:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 100% 0%,#456955 0,transparent 50%),repeating-linear-gradient(0deg,transparent 0 34px,rgba(244,230,210,.035) 34px 35px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(244,230,210,.035) 34px 35px)}.art-content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:36px}.art-top{display:flex;align-items:center;justify-content:space-between;gap:15px}.art-kicker{font-size:10px;font-weight:800;color:#d1d9ce;letter-spacing:.14em}.art-sync{font-size:10px;letter-spacing:.06em;color:#edc89b;background:rgba(246,224,193,.1);padding:5px 9px;border:1px solid rgba(250,218,172,.22);border-radius:30px}.art-lanes{display:flex;flex-direction:column;gap:17px}.art-lane{display:grid;grid-template-columns:86px minmax(0,1fr);gap:16px;align-items:center}.lane-name{font-size:11px;font-weight:800;color:#e8ece6}.lane-steps{display:flex;gap:5px;align-items:center}.lane-steps span{display:block;height:9px;border-radius:2px;flex:1;background:rgba(250,248,235,.10);position:relative}.lane-steps span.done{background:#9FBBA8}.lane-steps span.now{background:#D6A86E;box-shadow:0 0 0 3px rgba(214,168,110,.14)}.lane-steps span.block{background:rgba(219,138,110,.4);background-image:repeating-linear-gradient(45deg,transparent 0 4px,rgba(255,255,255,.2) 4px 6px)}.art-bottom{padding-top:20px;border-top:1px solid rgba(255,255,255,.18)}.art-number{font-family:Georgia,serif;font-size:49px;line-height:1;color:#F1D3A5}.art-number em{font:600 12px sans-serif;color:#cbd8cd;font-style:normal;margin-left:10px}.art-caption{color:#d1d9ce;font-size:11px;margin-top:13px;line-height:1.8}.art-watermark{position:absolute;font-size:124px;font-weight:900;letter-spacing:-.14em;color:rgba(253,234,199,.045);bottom:-56px;right:0}
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);overflow:hidden;margin-top:56px}.summary-item{padding:24px 25px;border-right:1px solid var(--line);min-width:0}.summary-item:last-child{border-right:0}.summary-num{font-family:Georgia,serif;font-size:36px;color:var(--ink);line-height:1}.summary-num small{font-family:inherit;font-size:18px;margin-left:3px}.summary-text{font-size:11px;font-weight:700;color:var(--sub);margin-top:10px;line-height:1.6}.summary-item:first-child .summary-num{color:var(--green)}
+.projects{display:grid;grid-template-columns:1fr 1fr;gap:17px}.project-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:29px 29px 27px;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:480px}.project-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--green)}.project-card.door::before{background:#B67A55}.project-card .proj-top{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}.proj-label{font:750 11px ui-monospace,Consolas,monospace;color:var(--muted);letter-spacing:.11em}.project-card h3{font-size:27px;font-weight:850;letter-spacing:-.052em;margin-top:20px}.proj-overview{font-size:13px;color:var(--sub);line-height:1.85;margin-top:14px}.status{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:750;line-height:1.6;border:1px solid transparent}.status i{display:block;width:6px;height:6px;border-radius:50%;background:currentColor}.status.pending{color:#98601F;background:var(--paleAmber);border-color:#ecd8b7}.status.blocked{color:#9F4640;background:var(--paleRed);border-color:#f0ceca}.status.idle{color:#62736c;background:#ECF0EB;border-color:#dce5db}.status.ok{color:#247054;background:#e9f3eb;border-color:#c9e4d2}
+.metric-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.mini-metric{background:#f6f8f4;border:1px solid #edf0e9;border-radius:10px;padding:14px}.metric-val{font-family:Georgia,serif;font-size:26px;color:var(--ink);line-height:1}.metric-label{font-size:10px;font-weight:650;color:#75837a;margin-top:7px;line-height:1.6}.project-card.door .mini-metric{background:#faf7f3;border-color:#f1e9df}
+.proj-footer{margin-top:auto;padding-top:24px}.sub-label{font-size:10px;letter-spacing:.12em;font-weight:850;color:#9A7B60}.proj-footer strong{display:block;color:var(--ink);font-size:14px;line-height:1.6;margin-top:7px}.proj-footer .proj-links{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px}.small-link{font-size:11px;color:var(--green);font-weight:750;text-decoration:none;border-bottom:1px solid #8ab5a4;padding-bottom:2px}.small-link:hover{color:#174c39;border-color:currentColor}
+.ladder{margin-top:20px;background:#fffefa;border:1px solid var(--line);border-radius:15px;display:grid;grid-template-columns:190px 1fr;overflow:hidden}.ladder-rail{padding:30px;background:#f0f2ec;border-right:1px solid var(--line)}.ladder-rail h3{font-size:20px;letter-spacing:-.03em}.ladder-rail p{font-size:12px;color:var(--sub);margin-top:13px;line-height:1.85}.ladder-grid{display:grid;grid-template-columns:repeat(3,1fr)}.ladder-cell{position:relative;padding:31px 22px;border-right:1px solid var(--line);min-width:0}.ladder-cell:last-child{border-right:0}.ladder-cell h4{font-size:14px;margin-bottom:8px}.ladder-cell p{font-size:12px;color:var(--sub);line-height:1.75}.ladder-small{display:block;font:800 10px ui-monospace,Consolas,monospace;color:var(--amber);margin-bottom:12px}
+.path-panel{background:var(--dark);border-radius:18px;padding:35px 37px;color:#e9efe9;overflow:hidden;position:relative}.path-panel::after{content:"";position:absolute;right:-110px;top:-110px;width:380px;height:380px;border:1px solid rgba(255,255,255,.09);border-radius:50%;box-shadow:0 0 0 80px rgba(255,255,255,.025),0 0 0 160px rgba(255,255,255,.018)}.path-title{font-size:11px;letter-spacing:.16em;color:#d2bb99;font-weight:850}.path-panel h3{font-size:27px;color:#fff;margin-top:12px;max-width:560px;line-height:1.38}.path-lines{margin-top:38px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative;z-index:1}.path-step{border-top:1px solid rgba(255,255,255,.18);padding-top:17px}.step-n{font:700 11px ui-monospace,Consolas,monospace;color:#E3C29A}.path-step h4{font-size:14px;color:#F6F7EF;margin-top:14px}.path-step p{font-size:11px;color:#B6C9BD;margin-top:9px;line-height:1.85}.step-line{height:4px;background:rgba(255,255,255,.13);border-radius:6px;margin-top:19px}.step-line.done{background:#A0BDAA}.step-line.now{background:#CEAD7C}.step-line.block{background:repeating-linear-gradient(90deg,#a85e52 0 7px,rgba(255,255,255,.12) 7px 14px)}
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.info-card{border:1px solid var(--line);background:#fffefa;border-radius:14px;padding:25px}.info-card h3{font-size:17px}.info-card p{font-size:12px;color:var(--sub);line-height:1.9;margin-top:11px}.info-flag{margin-bottom:15px;font-size:10px;color:var(--amber);letter-spacing:.12em;font-weight:850}
+.tasks-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:13px}.filterbar{display:flex;gap:7px;flex-wrap:wrap}.filter-btn{border:1px solid var(--lineDark);color:#637069;background:transparent;border-radius:100px;font-size:11px;padding:7px 13px;font-weight:700;transition:background .18s,color .18s}.filter-btn:hover{background:#e9eee7;color:var(--ink)}.filter-btn[aria-pressed="true"]{background:var(--dark);color:#fff;border-color:var(--dark)}.task-count{font:700 11px ui-monospace,Consolas,monospace;color:var(--sub)}
+.task-grid{display:grid;gap:10px}.task-card{background:var(--white);border:1px solid var(--line);border-radius:12px;display:grid;grid-template-columns:132px 1fr;gap:0;overflow:hidden;transition:border-color .2s,box-shadow .2s}.task-card:hover{border-color:#c6d4c8;box-shadow:0 6px 18px rgba(17,37,27,.03)}.task-card[hidden]{display:none}.task-index{padding:24px 17px;background:#f4f6f1;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:9px}.task-index .mono{font:750 12px ui-monospace,Consolas,monospace;color:var(--green);letter-spacing:-.025em}.task-cat{font-size:10px;color:var(--muted);font-weight:750}.task-main{padding:21px 24px}.task-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}.task-heading h3{font-size:17px;font-weight:830}.task-main>p{color:var(--sub);font-size:12px;margin-top:10px;line-height:1.85}.next-action{display:grid;grid-template-columns:100px 1fr;gap:12px;margin-top:15px;padding:13px 14px;border-left:2px solid #d4aa84;background:#FBF7F1}.next-label{font-size:10px;font-weight:750;color:var(--amber)}.next-action strong{font-size:12px;color:#424b40;font-weight:750;line-height:1.7}.detail-toggle{margin-top:13px}.detail-toggle summary{display:flex;justify-content:flex-start;align-items:center;gap:6px;cursor:pointer;color:var(--green);font-size:11px;font-weight:750;list-style:none;width:fit-content}.detail-toggle summary::-webkit-details-marker{display:none}.detail-toggle summary svg{height:14px;width:14px;fill:none;stroke:currentColor;stroke-width:1.7;transition:transform .2s}.detail-toggle[open] summary svg{transform:rotate(180deg)}.detail-body{background:#F6F8F4;border:1px solid var(--line);padding:12px 15px;margin-top:12px;border-radius:8px}.detail-body p{font-size:11px;color:var(--sub);line-height:1.9}.detail-body b{color:var(--text)}
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.risk-card{padding:25px;background:white;border:1px solid var(--line);border-radius:14px;min-height:184px}.risk-card .risk-count{font:750 11px ui-monospace,Consolas,monospace;color:var(--amber)}.risk-card h3{font-size:18px;margin-top:15px}.risk-card p{font-size:12px;color:var(--sub);line-height:1.85;margin-top:11px}.risk-card strong{color:var(--ink)}.risk-wide{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:28px;background:#f5f7f1}.risk-pair{border-left:2px solid #b6c7b9;padding-left:18px}.risk-pair h3{margin-top:0}
+.resume-card{display:grid;grid-template-columns:1fr 1fr;gap:16px}.resume-box{background:#fffefa;border:1px solid var(--line);border-radius:14px;padding:26px}.resume-box h3{font-size:20px;margin-bottom:12px}.resume-box .resume-lead{font-size:12px;color:var(--sub);margin-bottom:18px}.resume-box .resume-section{border-top:1px solid var(--line);padding:13px 0}.resume-box .resume-section span{display:block;font-size:10px;letter-spacing:.09em;color:#8d9a91;font-weight:800;margin-bottom:4px}.resume-box .resume-section p{font-size:12px;line-height:1.8}.copy-btn{margin-top:16px;padding:10px 15px;background:var(--dark);color:white;border:0;border-radius:8px;font-size:11px;font-weight:750;transition:background .2s}.copy-btn:hover{background:#2E5948}.copy-btn[data-copied="true"]{background:#477f5a}
+.decision-board{display:grid;grid-template-columns:1.07fr .93fr;gap:16px}.decision-main{background:#172E27;padding:30px;color:white;border-radius:15px}.decision-main .dec-kicker{font:800 11px ui-monospace,Consolas,monospace;color:#d8b88e;letter-spacing:.1em}.decision-main h3{font-size:27px;color:white;margin-top:18px;max-width:480px}.decision-main p{font-size:13px;color:#bacfc1;margin-top:18px;max-width:490px;line-height:1.95}.decision-list{display:flex;flex-direction:column;gap:10px;margin-top:26px}.decision-item{display:flex;gap:12px;align-items:start;padding:13px 0;border-top:1px solid rgba(255,255,255,.19);font-size:12px;color:#f4f5ec}.decision-item .d-code{font:750 10px ui-monospace,Consolas,monospace;color:#edc59c;min-width:37px;padding-top:3px}.decision-note{border:1px solid var(--line);border-radius:15px;background:white;padding:27px}.decision-note h3{font-size:19px}.decision-note ul{padding-left:18px;color:var(--sub);font-size:12px;line-height:2.2;margin:18px 0}.decision-note .tiny{font-size:11px;color:var(--amber);border-top:1px solid var(--line);padding-top:16px;line-height:1.85}
+.source-list{display:grid;gap:9px}.source-entry{display:grid;grid-template-columns:81px 1fr auto;align-items:start;gap:19px;padding:20px 21px;background:white;border:1px solid var(--line);border-radius:10px}.source-id{font:800 11px ui-monospace,Consolas,monospace;color:var(--green);padding-top:3px}.source-entry h3{font-size:13px;font-weight:790;line-height:1.6;letter-spacing:0}.source-entry p{font-size:11px;color:var(--sub);line-height:1.8;margin-top:6px;overflow-wrap:anywhere}.source-entry a{font-size:11px;white-space:nowrap;text-decoration:none;color:var(--green);font-weight:750;border-bottom:1px solid #a3c7af;padding-bottom:2px}.source-entry a:hover{border-color:var(--green)}.source-entry .no-link{font-size:10px;color:#9a9f99;white-space:nowrap}
+.qa-card{margin-top:19px;background:#EDF1EB;border:1px solid #D5DFD5;border-radius:12px;padding:25px;display:grid;grid-template-columns:146px 1fr;gap:20px}.qa-card h3{font-size:15px}.qa-card p{font-size:12px;color:#63716a;line-height:1.85}.footer{padding-top:55px;margin-top:75px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}.footer-logo{font-weight:900;color:var(--ink);font-size:17px}.footer-note{font-size:11px;color:#8b978f;line-height:1.9;max-width:500px}.to-top{position:fixed;right:22px;bottom:22px;border:1px solid #bfd0c5;box-shadow:0 8px 20px rgba(15,36,24,.08);border-radius:50%;width:43px;height:43px;display:grid;place-items:center;background:#fff;color:var(--dark);z-index:35;opacity:0;transform:translateY(15px);pointer-events:none;transition:opacity .2s,transform .2s}.to-top.visible{opacity:1;transform:translateY(0);pointer-events:auto}.to-top svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+@media(max-width:1190px){.shell{gap:30px;grid-template-columns:175px minmax(0,1fr);padding:0 28px}.topbar-in{padding:0 28px}.sidebar .side-nav a{font-size:11px;padding-left:11px}.hero-layout{grid-template-columns:1fr .85fr;gap:22px}.hero h1{font-size:clamp(47px,5vw,65px)}.hero-art{padding:22px}.project-card{padding:23px}.metric-row{grid-template-columns:1fr 1fr}}
+@media(max-width:930px){.mobile-nav{position:sticky;top:73px;z-index:29;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:rgba(247,246,242,.96);border-bottom:1px solid var(--line);padding:7px 27px;backdrop-filter:blur(12px)}.mobile-nav::-webkit-scrollbar{display:none}.mobile-nav a{flex:0 0 auto;text-decoration:none;padding:7px 13px;font-size:11px;font-weight:750;color:var(--sub);border-radius:22px;white-space:nowrap}.mobile-nav a.active{background:var(--dark);color:#fff}.shell{grid-template-columns:1fr;padding:0 30px}.sidebar{display:none}.topbar-in{padding:0 30px}.brand-desc{display:none}.hero{padding-top:55px;min-height:auto}.hero-layout{grid-template-columns:1fr 310px;gap:24px}.hero h1{font-size:55px}.hero-art{min-height:330px}.summary-strip{margin-top:47px}.summary-item{padding:21px 15px}.section-header{padding-top:72px}.section-side{display:none}}
+@media(max-width:720px){html{scroll-padding-top:122px}.mobile-nav{top:64px;padding:7px 12px}.topbar-in{height:64px;padding:0 18px}.top-meta{display:none}.brand-name{font-size:13px}.print-btn{font-size:11px;padding:7px 10px}.shell{padding:0 18px}.hero{padding-top:41px}.hero-layout{grid-template-columns:1fr;gap:32px}.hero h1{font-size:clamp(46px,11.2vw,72px)}.hero-lead{font-size:14px;margin-top:19px}.hero-art{min-height:278px;padding:24px}.art-content{gap:26px}.summary-strip{grid-template-columns:1fr 1fr;margin-top:36px}.summary-item{padding:20px 18px}.summary-item:nth-child(2){border-right:0}.summary-item:nth-child(-n+2){border-bottom:1px solid var(--line)}.summary-num{font-size:31px}.summary-text{font-size:10px}.section-header{padding-top:58px;margin-bottom:22px}.section-header h2{font-size:31px}.section-header p{font-size:13px}.projects,.info-row,.risk-grid,.resume-card,.decision-board{grid-template-columns:1fr}.project-card{min-height:430px}.risk-wide{grid-column:span 1;grid-template-columns:1fr;gap:18px}.ladder{grid-template-columns:1fr}.ladder-rail{padding:22px;border-right:0;border-bottom:1px solid var(--line)}.ladder-grid{grid-template-columns:1fr}.ladder-cell{padding:20px 21px;border-right:0;border-bottom:1px solid var(--line)}.ladder-cell:last-child{border-bottom:0}.path-panel{padding:26px 20px}.path-panel h3{font-size:22px}.path-lines{grid-template-columns:1fr 1fr;gap:21px 12px;margin-top:24px}.task-card{grid-template-columns:1fr}.task-index{border-right:0;border-bottom:1px solid var(--line);padding:10px 18px;flex-direction:row;justify-content:space-between}.task-main{padding:18px}.task-heading h3{font-size:16px}.task-heading{align-items:center}.next-action{grid-template-columns:1fr;gap:2px}.source-entry{grid-template-columns:54px 1fr;gap:12px;padding:17px}.source-entry a,.source-entry .no-link{grid-column:2;justify-self:start}.qa-card{grid-template-columns:1fr;gap:10px}.footer{margin-top:55px;padding-top:32px}.to-top{right:12px;bottom:12px}}
+@media(max-width:400px){.task-heading{flex-direction:column;align-items:flex-start}.hero h1{font-size:45px}.metric-row{gap:7px}.mini-metric{padding:11px}.source-entry{grid-template-columns:48px 1fr}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+@media print{html{scroll-behavior:auto}body{background:white;font-size:11pt}.noise,.topbar,.mobile-nav,.sidebar,.to-top,.filterbar,.copy-btn,.print-btn{display:none!important}.shell{display:block;padding:0;max-width:none}.content{padding-bottom:0}.hero{min-height:0;padding:20px 0}.hero-layout{grid-template-columns:1fr 260px}.hero h1{font-size:40pt}.hero-art{box-shadow:none}.page-section{break-inside:auto}.section-header{padding-top:32px}.task-card,.project-card,.risk-card,.source-entry,.info-card,.decision-main{break-inside:avoid}.task-card[hidden]{display:grid!important}.detail-toggle .detail-body{display:block!important}.detail-toggle summary{display:none}.source-entry a{color:var(--ink)}.summary-strip{box-shadow:none}.footer{padding-top:20px}}
+
+/* NAVIGATION EXPANSION v0.2 — appended to original style without replacing legacy sections */
+.hero-link{color:#f7f7f2;background:var(--green);border-color:var(--green);text-decoration:none}.hero-link:hover{background:var(--dark)}
+.nav-section-header{border-top:1px solid #c5cfc5}.nav-console{overflow:hidden;border-radius:22px;background:#142820;color:#f6f5ef;box-shadow:0 22px 55px rgba(18,44,32,.12);border:1px solid #274439}
+.nav-console-top{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:25px 30px;border-bottom:1px solid #385046;background:#152d24}
+.nav-eyebrow{font:800 10px ui-monospace,Consolas,monospace;color:#e2bd89;letter-spacing:.13em;display:flex;align-items:center;gap:8px}.nav-live-dot{display:inline-block;width:7px;height:7px;background:#bcaa75;border-radius:50%}.nav-muted{color:#91a99c;letter-spacing:0}
+.nav-console-top h3{color:#fff;font-size:24px;letter-spacing:-.035em;margin-top:10px}.nav-console-top h3 span{font-weight:400;font-size:13px;color:#9cb7a8;letter-spacing:0}
+.nav-switch{display:flex;gap:3px;border:1px solid #496453;padding:4px;border-radius:11px;background:#203a30;flex:none}.nav-project-btn{background:transparent;color:#bdcfc3;border:0;border-radius:8px;font-size:12px;font-weight:750;padding:10px 16px}.nav-project-btn.active{background:#dfbf90;color:#1d3029}.nav-project-btn:hover:not(.active){background:#2c4a3b;color:#fff}
+.nav-destination-strip{padding:25px 30px;display:grid;grid-template-columns:1fr 1px 1fr;gap:27px;border-bottom:1px solid #355044;background:linear-gradient(110deg,#172d25,#1e4132)}
+.nav-data-label{font-size:10px;letter-spacing:.14em;font-weight:800;color:#a9c1b1;display:block;margin-bottom:8px}.nav-dest strong{display:block;font-size:17px;font-weight:780;line-height:1.48;color:#faf8ee}.nav-dest-divider{background:#577565;opacity:.7}
+.nav-console-main{padding:28px 29px 30px;display:grid;grid-template-columns:minmax(0,1.23fr) minmax(260px,.77fr);gap:24px;background:radial-gradient(circle at 12% 50%,rgba(80,115,83,.13),transparent 63%)}
+.route-wrap{min-width:0}.route-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;letter-spacing:.12em;color:#b6cbbc;font-weight:800}.nav-route-note{font-size:10px;font-weight:500;color:#9eb2a6;letter-spacing:0}
+.route-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:30px 0 27px;position:relative}
+.route-track:before{content:"";position:absolute;top:19px;left:10%;right:10%;height:2px;background:#65826f;z-index:0}
+.route-stop{min-width:0;position:relative;z-index:1;text-align:left;border:1px solid transparent;background:transparent;color:#c7d8cb;border-radius:12px;padding:0 5px 12px;display:flex;flex-direction:column;align-items:center;gap:9px;transition:background .18s,border-color .18s}
+.route-stop:hover{background:rgba(233,244,233,.06)}.route-stop[aria-pressed="true"]{border-color:rgba(221,197,148,.55);background:rgba(220,199,161,.085)}
+.route-node{display:grid;place-items:center;width:39px;height:39px;border:2px solid #557562;border-radius:50%;background:#193528;font:800 12px ui-monospace,Consolas,monospace;color:#bdcfc2}
+.route-stop.done .route-node{background:#6f9e84;border-color:#89bd9a;color:#133025}.route-stop.now .route-node{border-color:#f0c783;color:#f4cf9c;box-shadow:0 0 0 5px rgba(234,200,133,.09)}.route-stop.block .route-node{border-color:#d79976;color:#e8b097}.route-stop.future .route-node{border-color:#50695b;color:#889d91}
+.route-state{font:800 9px ui-monospace,Consolas,monospace;color:#98bc9b;letter-spacing:.05em}.route-stop.now .route-state{color:#e4c48b}.route-stop.block .route-state{color:#e2a18a}.route-stop.future .route-state{color:#8b9e91}.route-title{color:#fff;font-size:12px;line-height:1.4;font-weight:750;text-align:center;min-height:36px}.route-note{font-size:10px;line-height:1.5;color:#a4baaa;text-align:center}
+.nav-route-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid #3c5948;padding-top:17px}.nav-route-bottom div span{display:block;font-size:10px;color:#9eb7a4;margin-bottom:4px}.nav-route-bottom div strong{font-size:12px;color:#f1ddd0;font-weight:650}.nav-route-tag{font-size:10px;font-weight:750;border:1px solid #bf9272;color:#efc5a3;padding:5px 10px;border-radius:40px;white-space:nowrap}
+.nav-focus-card{background:#f3f2e9;color:#23352b;padding:23px 23px 19px;border-radius:14px;min-height:347px;display:flex;flex-direction:column;box-shadow:0 14px 25px rgba(4,18,12,.16)}.focus-hdr{display:flex;justify-content:space-between;gap:8px;align-items:center}.focus-overline,.focus-count{font:800 10px ui-monospace,Consolas,monospace;letter-spacing:.04em;color:#66806d}.nav-focus-card h4{font-size:25px;color:#173328;line-height:1.28;margin-top:14px}.nav-focus-card>p{font-size:12px;color:#66766a;margin-top:11px;line-height:1.8}.focus-rule{height:1px;background:#cdd6c9;margin:16px 0 11px}.focus-field{display:flex;flex-direction:column;gap:2px;padding:9px 0}.focus-field span{font-size:10px;color:#6a7f6d;font-weight:700}.focus-field strong{font-size:12px;font-weight:770;color:#294032}.focus-footer{display:flex;gap:14px;justify-content:space-between;align-items:center;margin-top:auto;border-top:1px solid #d5ddd1;padding-top:15px;font-size:10px;color:#6c8071;font-weight:700}.focus-footer a{color:#1b6047;text-decoration:none}
+.nav-console-foot{display:flex;justify-content:space-between;align-items:center;gap:20px;background:#dfc296;color:#1d3029;padding:19px 29px}.nav-console-foot>div{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}.nav-foot-icon{font-size:20px}.nav-console-foot span:not(.nav-foot-icon){font-size:11px;font-weight:750}.nav-console-foot strong{font-size:12px;line-height:1.55;font-weight:800}.nav-console-foot>a{font-size:11px;color:#24392d;text-decoration:none;border-bottom:1px solid #7d745b;white-space:nowrap;font-weight:800}
+.nav-tools-row{display:grid;grid-template-columns:1fr 1fr;gap:19px;margin-top:20px}.flow-panel,.decision-compass{background:#fffefb;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:25px;min-width:0}.tool-head{display:flex;align-items:start;justify-content:space-between;gap:10px}.tool-kicker{display:block;font:800 10px ui-monospace,Consolas,monospace;letter-spacing:.11em;color:#a56b43;margin-bottom:10px}.tool-head h3{font-size:20px;line-height:1.45}.tool-chip{border:1px solid #dae4d8;background:#f0f4eb;border-radius:50px;font-size:10px;padding:4px 9px;color:#476753;font-weight:800;white-space:nowrap}
+.flow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:22px}.flow-step{border:1px solid #dee5da;background:#f7f8f3;color:#647267;border-radius:9px;font-size:12px;font-weight:750;text-align:left;padding:11px 9px;display:flex;gap:8px;align-items:center}.flow-step span{font:800 10px ui-monospace,Consolas,monospace;color:#a4afa5}.flow-step.active{background:#1d5945;border-color:#1d5945;color:#fff}.flow-step.active span{color:#cfdfd2}.flow-step:hover:not(.active){border-color:#8caf95}
+.flow-result{background:#f2f4ed;padding:18px 19px;border-radius:12px;margin-top:17px;min-height:198px;display:flex;flex-direction:column}.flow-result-index{font:800 10px ui-monospace,Consolas,monospace;color:#63806b;letter-spacing:.1em}.flow-result h4{font-size:18px;margin-top:9px;color:#243f31}.flow-result p{font-size:12px;color:#536559;line-height:1.9;margin-top:8px}.flow-result-btm{margin-top:auto;padding-top:18px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:10px;color:#7c8d80}
+.compass-intro{font-size:12px;color:#6d796e;margin-top:14px}.compass-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:25px}.compass-opt{border:1px solid #dfe6dd;background:#f7f8f3;color:#506553;border-radius:11px;padding:13px 9px;display:flex;flex-direction:column;align-items:flex-start;gap:11px;text-align:left}.compass-opt.active{background:#e3ece4;border-color:#91b8a0;color:#1b5942}.compass-opt:hover:not(.active){border-color:#91b8a0}.loop-icon{font-size:20px;font-weight:800}.compass-opt b{font-size:12px;display:block}.compass-opt small{display:block;font-size:10px;white-space:nowrap;color:#839387;margin-top:2px}.loop-detail{border-top:1px solid var(--line);padding-top:22px;margin-top:18px}.loop-detail>span{display:block;font:800 10px ui-monospace,Consolas,monospace;color:#977049;letter-spacing:.1em}.loop-detail h4{font-size:18px;margin-top:9px}.loop-detail p{font-size:12px;color:#657166;margin-top:9px;line-height:1.85}.loop-gate{margin-top:16px;border-left:3px solid #d2a46b;background:#f9f6ee;padding:11px 12px;font-size:11px;line-height:1.8;color:#5e665b}
+.nav-source-strip{margin-top:16px;border:1px solid #d9e1d7;background:#edf2e9;padding:17px 20px;border-radius:12px;display:flex;justify-content:space-between;gap:20px;align-items:center}.nav-source-label{font:800 10px ui-monospace,Consolas,monospace;color:#6d806f;letter-spacing:.12em;display:block}.nav-source-strip strong{display:block;font-size:12px;color:#2c4a39;margin-top:4px}.nav-source-strip p{font-size:11px;margin-top:3px;color:#667b69;line-height:1.6}.nav-source-links{display:flex;flex-wrap:wrap;justify-content:end;gap:9px}.nav-source-links a{border:1px solid #c0d1c2;border-radius:8px;padding:7px 9px;text-decoration:none;font-size:10px;color:#336e53;font-weight:750;white-space:nowrap;background:#fffefa}
+@media(max-width:1190px){.nav-console-main{grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);gap:16px;padding:24px}.nav-tools-row{grid-template-columns:1fr}.nav-focus-card{min-height:340px}}
+@media(max-width:720px){.nav-console-top{padding:20px;align-items:flex-start;flex-direction:column}.nav-console-top h3{font-size:22px}.nav-switch{width:100%;justify-content:stretch}.nav-project-btn{flex:1}.nav-destination-strip{padding:20px;display:grid;grid-template-columns:1fr;gap:14px}.nav-dest-divider{height:1px}.nav-dest strong{font-size:15px}.nav-console-main{display:grid;grid-template-columns:1fr;padding:21px 16px;gap:20px}.route-track{gap:2px;margin:23px 0}.route-stop{padding:0 2px 8px}.route-node{width:32px;height:32px;font-size:11px}.route-track:before{top:15px}.route-title{font-size:11px;min-height:46px}.route-note{font-size:9px}.route-state{font-size:8px}.nav-focus-card{min-height:290px}.nav-console-foot{padding:18px;flex-direction:column;align-items:flex-start;gap:10px}.nav-tools-row{grid-template-columns:1fr}.flow-panel,.decision-compass{padding:20px}.flow-steps{gap:6px}.flow-step{padding:9px 7px;font-size:11px}.tool-head{flex-direction:column}.nav-source-strip{flex-direction:column;align-items:stretch}.nav-source-links{justify-content:flex-start}.compass-opt{padding:9px 6px}.compass-opt small{font-size:9px}.focus-footer{flex-wrap:wrap}}
+@media print{.nav-console{background:#fff;color:#111;box-shadow:none}.nav-console-top,.nav-destination-strip,.nav-console-main,.nav-console-foot{background:#fff;color:#111}.nav-console-top h3,.nav-dest strong,.route-title,.nav-route-bottom div strong{color:#111}.route-node{color:#111;border-color:#999}.nav-project-btn,.flow-step,.compass-opt{display:none}.nav-project-btn.active,.flow-step.active,.compass-opt.active{display:flex}.nav-tools-row{grid-template-columns:1fr 1fr}.nav-console{break-inside:avoid}.flow-panel,.decision-compass{break-inside:avoid}.nav-source-strip{break-inside:avoid}}
+
+
+/* MIND MAP / expectation ↔ reality — self-contained, no external resources */
+.mindmap-sec{padding-top:94px}
+.mindmap-note{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:740;color:#3c6b50;background:#e6eee5;border:1px solid #d3e1d3;border-radius:50px;padding:7px 11px;margin-bottom:18px}
+.map-shell{border:1px solid var(--line);border-radius:21px;overflow:hidden;background:#fffefb;box-shadow:var(--shadow)}
+.map-head{padding:24px 27px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid #e0e6df;background:#fcfcf8}
+.map-head h3{font-size:20px;margin:4px 0 3px}.map-head p{font-size:11px;color:#748077}
+.map-head-kicker{font:800 10px ui-monospace,Consolas,monospace;letter-spacing:.14em;color:#9c724e}
+.map-pick{display:flex;gap:4px;border:1px solid #d6dfd5;border-radius:10px;padding:4px;background:#f3f6f1}
+.map-pick button{border:0;background:transparent;border-radius:7px;padding:8px 13px;color:#6c7c6d;font-size:12px;font-weight:800}
+.map-pick button.active{background:#245940;color:#fff;box-shadow:0 3px 8px rgba(29,78,57,.1)}
+.map-tools{padding:12px 27px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e3e8e1;background:#f8faf6;flex-wrap:wrap}
+.map-legend{display:flex;align-items:center;gap:15px;flex-wrap:wrap;font-size:10px;color:#607265;font-weight:760}
+.map-legend span{display:flex;align-items:center;gap:5px}
+.map-dot{width:9px;height:9px;display:inline-block;border-radius:50%}.map-dot.expect{background:#cc9152}.map-dot.actual{background:#548b75}.map-dot.gap{background:#ba6454}
+.map-controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.map-controls button{border:1px solid #d4dfd5;border-radius:7px;background:white;color:#385846;padding:6px 9px;font-size:11px;font-weight:800;min-width:30px;line-height:1.5}
+.map-controls button:hover{background:#ecf4ed;border-color:#94b69d}.map-controls button:focus-visible{outline:3px solid #cc985d}
+.map-canvas{position:relative;background:radial-gradient(ellipse at 44% 46%,#fffefa 0,#f5f8f1 65%,#f0f5ed 100%);overflow:hidden}
+.map-canvas::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(#b6c5ba .7px,transparent .7px);background-size:22px 22px}
+#mindSvg{height:570px;width:100%;display:block;position:relative;touch-action:none;cursor:grab;user-select:none}
+#mindSvg.is-panning{cursor:grabbing}
+.mnode{cursor:pointer}.mnode .node-outline{transition:stroke .16s,stroke-width .16s,filter .16s}.mnode:hover .node-outline,.mnode:focus .node-outline{stroke-width:3;filter:drop-shadow(0 3px 8px rgba(0,0,0,.12))}.mnode.selected .node-outline{stroke:#d57a3a;stroke-width:4}.mnode:focus{outline:none}
+.map-canvas-help{position:absolute;right:13px;bottom:13px;pointer-events:none;font-size:10px;font-weight:750;color:#577163;background:#fffffff0;border:1px solid #dbe4d9;border-radius:9px;padding:6px 9px;box-shadow:0 2px 8px #1536220a}
+.map-insight{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(230px,.65fr);gap:0;background:#fffefa;border-top:1px solid #dfe5dc}
+.map-insight-main{padding:23px 27px 25px;min-width:0}.map-insight-brow{font:800 10px ui-monospace,Consolas,monospace;letter-spacing:.12em;color:#8a7763}.map-insight-main h4{font-size:20px;margin:7px 0 10px}.map-insight-main p{font-size:12px;color:#5c6c61;line-height:1.9;max-width:720px}
+.map-insight-side{padding:23px 27px;border-left:1px solid #dfe5dc;background:#f5f7f1;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.map-insight-side span{font-size:10px;letter-spacing:.06em;font-weight:800;color:#748373}.map-insight-side strong{font-size:12px;color:#294634;line-height:1.7}.map-jump{display:inline-flex;align-items:center;gap:7px;margin-top:auto;color:#1c664e;text-decoration:none;font-size:11px;font-weight:850;border-bottom:1px solid #89ad9a;padding:4px 0;cursor:pointer;background:transparent;border-top:0;border-left:0;border-right:0}
+.map-below{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 20px;border-top:1px solid #e5e9e0;background:#f8f9f4}
+.map-below p{font-size:11px;color:#748078}.map-below a{font-size:11px;font-weight:800;color:#28634e;white-space:nowrap;text-decoration:none}
+@media(max-width:930px){.mindmap-sec{padding-top:75px}.map-head,.map-tools{padding-left:18px;padding-right:18px}.map-insight-main,.map-insight-side{padding:20px}}
+@media(max-width:650px){.mindmap-sec{padding-top:60px}.map-head{display:block}.map-pick{margin-top:15px;width:100%}.map-pick button{flex:1}.map-tools{gap:12px}.map-controls{width:100%;justify-content:flex-start}.map-legend{gap:11px}.map-legend span{font-size:9px}#mindSvg{height:470px}.map-canvas-help{bottom:8px;right:8px;font-size:9px}.map-insight{grid-template-columns:1fr}.map-insight-side{border-left:0;border-top:1px solid #dfe5dc}.map-below{align-items:flex-start;flex-direction:column}.map-below a{white-space:normal}}
+@media print{.map-controls,.map-canvas-help,.map-pick{display:none!important}#mindSvg{height:400px}.map-shell{break-inside:avoid}.map-insight{grid-template-columns:1.4fr .6fr}.map-canvas{background:white}}
+
+
+
+/* ===== KNOWLEDGE WORLD | non-destructive game projection ===== */
+:root{--g-bg:#15172a;--g-blue:#34457c;--g-text:#f8f0dc;--g-green:#8bcfa4;--g-gold:#efca80}
+.mode-selector{display:flex;gap:5px;border:1px solid #d8ded6;background:#f0f3ef;padding:4px;border-radius:999px;align-items:center;flex-wrap:nowrap}
+.mode-selector button{background:transparent;border:0;cursor:pointer;color:#41594f;padding:9px 13px;border-radius:999px;white-space:nowrap;font-size:12px;font-weight:800}
+.mode-selector button[aria-pressed="true"]{background:#1c614a;color:#fff;box-shadow:0 2px 8px #133b2c2e}
+#worldRoot{display:none}
+body.game-mode{background:#101624}
+body.game-mode .noise,body.game-mode .mobile-nav,body.game-mode .shell{display:none!important}
+body.game-mode #worldRoot{display:block}
+body.game-mode .topbar{background:#111d2b;border-bottom-color:#324255;color:#e7f1e9}
+body.game-mode .brand-desc,body.game-mode .brand-name{color:#f5f0dd}
+body.game-mode .top-meta{color:#c5cfe0}
+body.game-mode .print-btn{display:none}
+body.game-mode .mode-selector{background:#182735;border-color:#34495a}
+body.game-mode .mode-selector button{color:#b6c6cd}
+body.game-mode .mode-selector button[aria-pressed="true"]{background:#dfbb72;color:#18212f}
+.gw{max-width:1360px;margin:0 auto;padding:23px 22px 85px;color:var(--g-text);font-family:system-ui,"Microsoft JhengHei",sans-serif}
+.gw-hero{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:6px 0 22px;flex-wrap:wrap}
+.gw-eyebrow{color:#89c1b1;letter-spacing:.2em;font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:8px}
+.gw h1{font-family:system-ui,"Microsoft JhengHei",sans-serif;font-size:clamp(28px,4.6vw,54px);line-height:1.15;letter-spacing:-.055em;margin:0 0 10px;color:#f5efd8}
+.gw-sub{font-size:14px;color:#aebcc9;max-width:700px;line-height:1.8;margin:0}
+.gw-readonly{border:1px solid #5d6d78;color:#d9d2b2;border-radius:10px;padding:10px 13px;font-size:12px;background:#213040}
+.gw-screen-layout{display:grid;grid-template-columns:minmax(0,1fr) 312px;align-items:start;gap:17px}
+.gw-stage{min-width:0;border-radius:19px;background:linear-gradient(145deg,#35457a 0%,#242a54 65%,#1c2749);border:1px solid #6079a5;box-shadow:0 12px 40px #060b1a55;padding:16px}
+.gw-frame-top{display:flex;justify-content:space-between;gap:10px;color:#e6ddaa;font-size:11px;letter-spacing:.13em;margin:0 2px 11px;font-weight:800}
+.gw-frame-top .power{display:inline-flex;gap:8px;align-items:center}
+.gw-frame-top .power:before{content:"";background:#6ee59d;box-shadow:0 0 9px #6ee59d;width:7px;height:7px;border-radius:50%}
+.gw-display{border:10px solid #121d33;border-radius:10px;overflow:hidden;position:relative;background:#1c4639;outline:2px solid #576690;box-shadow:inset 0 0 0 2px #111a25;isolation:isolate}
+.gw-display canvas{width:100%;height:auto;aspect-ratio:576 / 360;image-rendering:pixelated;display:block;touch-action:manipulation;cursor:crosshair;outline:none}
+.gw-location{position:absolute;left:12px;top:12px;padding:6px 10px;border-radius:5px;background:#162638e6;color:#ffebad;border:1px solid #dfc1828c;font-weight:800;letter-spacing:.03em;font-size:12px;pointer-events:none;max-width:75%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gw-floathelp{position:absolute;bottom:9px;left:10px;right:10px;padding:7px 10px;background:#152838df;color:#faf2df;border:1px solid #ffffff30;border-radius:5px;font-size:11px;pointer-events:none}
+.gw-controls{display:flex;align-items:center;justify-content:space-between;padding:16px 4px 4px;gap:15px;flex-wrap:wrap}
+.gw-dpad{width:138px;height:116px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px}
+.gw-dpad button,.gw-a,.gw-b,.gw-start{border:0;cursor:pointer;touch-action:manipulation;user-select:none;box-shadow:inset 0 -3px 0 #0a1022a8,0 2px 1px #080a17a0;color:#f6f2e6;font-weight:900}
+.gw-dpad button{background:#161b38;border-radius:6px;font-size:17px;min-width:0}
+.gw-dpad .up{grid-area:1/2}.gw-dpad .left{grid-area:2/1}.gw-dpad .center{grid-area:2/2;background:#10172d;cursor:default}.gw-dpad .right{grid-area:2/3}.gw-dpad .down{grid-area:3/2}
+.gw-ab{display:flex;gap:12px;align-items:center}
+.gw-a,.gw-b{width:56px;height:56px;border-radius:50%;font:800 18px system-ui;transform:rotate(-17deg)}
+.gw-a{background:#c8486a}.gw-b{background:#5866a9}
+.gw-mid{display:flex;gap:8px;flex-direction:column;align-items:center}
+.gw-start{padding:9px 12px;background:#1b223e;border-radius:30px;font-size:11px}
+.gw-caption{font-size:10px;color:#bcc9da;letter-spacing:.07em;line-height:1.5;text-align:center}
+.gw-right{display:flex;flex-direction:column;gap:12px}
+.gw-box{background:#1c2839;border:1px solid #394b5d;border-radius:12px;padding:16px;min-width:0}
+.gw-box h2,.gw-box h3{color:#f8efd5;font-size:16px;margin:0 0 10px;line-height:1.5;font-weight:800}
+.gw-box .gk{font-size:10px;letter-spacing:.12em;color:#8ac8af;font-weight:900;margin-bottom:7px}
+.gw-area-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;color:#f3f4ec;background:#263b45;border:1px solid #4a6570;border-radius:7px;padding:12px;margin:7px 0;cursor:pointer;text-align:left;font:700 13px system-ui}
+.gw-area-btn.current{border-color:#e8c77c;background:#405048}
+.gw-area-btn small{font-size:10px;color:#f6cf8c;font-weight:700}
+.gw-status-pill{display:inline-block;padding:5px 8px;border-radius:50px;background:#59402f;color:#ffdf9e;border:1px solid #8a6b45;font-size:11px;font-weight:800;margin-bottom:9px}
+.gw-dest-label{display:block;color:#9badaf;font-size:11px;margin:8px 0 3px}
+.gw-dest{color:#e7ead8;font-size:13px;line-height:1.65;margin:0;overflow-wrap:anywhere}
+.gw-source{color:#9eadbc;font-size:11px;line-height:1.6;margin-top:10px}
+.gw-mini-action{border:1px solid #a8b7b2;background:#f0e7ce;color:#1a3540;border-radius:8px;padding:11px 13px;cursor:pointer;font-weight:800;width:100%;margin-top:11px}
+.gw-legend{margin-top:15px;display:flex;gap:8px;flex-wrap:wrap}
+.gw-legend span{padding:8px 10px;border-radius:7px;border:1px solid #3e5264;color:#c1ccd0;background:#1b2837;font-size:11px}
+.gw-story{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.gw-story .gw-box{padding:14px}
+.gw-story b{color:#e9d7a3;font-size:13px}
+.gw-story p{font-size:12px;color:#b9c8d0;line-height:1.7;margin:6px 0 0}
+.gw-dialog{position:absolute;inset:auto 10px 10px;background:#f6f0db;color:#25332c;border:4px solid #304d52;box-shadow:0 0 0 2px #f3ead5;z-index:4;padding:15px 16px 12px;border-radius:3px;max-height:85%;overflow:auto}
+.gw-dialog[hidden]{display:none}
+.gw-dialog-title{font-weight:900;font-size:14px;margin-bottom:6px;color:#204637}
+.gw-dialog-description{font-size:12px;line-height:1.8;white-space:pre-wrap;margin-bottom:10px}
+.gw-dialog .d-actions{display:flex;gap:7px;flex-wrap:wrap}
+.gw-dialog button{padding:9px 11px;border:1px solid #487162;border-radius:5px;cursor:pointer;background:#e2e9d9;color:#193b2c;font-weight:800;font-size:12px}
+.gw-dialog button.primary{background:#256b53;color:white}
+.gw-dialog button:focus-visible,.mode-selector button:focus-visible,.gw button:focus-visible{outline:3px solid #e0b85f;outline-offset:2px}
+@media (max-width:960px){.gw-screen-layout{grid-template-columns:1fr}.gw-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.gw-right .gw-box:last-child{grid-column:span 2}.gw-story{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.topbar-in{gap:8px}.topbar .brand-desc,.topbar .brand-name,.top-meta{display:none!important}.mode-selector{gap:3px}.mode-selector button{font-size:11px;padding:10px 11px}.gw{padding:15px 9px 65px}.gw-hero{margin:6px 3px 14px}.gw h1{font-size:30px}.gw-sub{font-size:12px}.gw-readonly{font-size:10px}.gw-stage{padding:8px;border-radius:12px}.gw-display{border-width:5px}.gw-display canvas{aspect-ratio:576/360}.gw-location{font-size:10px;padding:5px 7px;left:6px;top:6px}.gw-floathelp{font-size:9px;padding:5px;bottom:5px;left:5px;right:5px}.gw-controls{gap:6px;padding-top:12px}.gw-dpad{height:102px;width:120px}.gw-a,.gw-b{width:48px;height:48px}.gw-ab{gap:6px}.gw-mid{gap:5px}.gw-start{padding:8px;font-size:9px}.gw-caption{font-size:9px}.gw-right{grid-template-columns:1fr}.gw-right .gw-box:last-child{grid-column:auto}.gw-story{grid-template-columns:1fr}.gw-dialog{padding:10px;max-height:94%;inset:auto 4px 4px;border-width:3px}.gw-dialog-title{font-size:13px}.gw-dialog-description{font-size:11px;line-height:1.6}.gw-dialog button{font-size:11px;padding:8px}}
+@media print{#worldRoot,.mode-selector{display:none!important}body.game-mode .shell{display:flex!important}body.game-mode .mobile-nav{display:none!important}}
+
+</style>
+</head>
+<body>
+<div class="noise" aria-hidden="true"></div>
+<header class="topbar"><div class="topbar-in">
+<a href="#top" class="brand" aria-label="回到首頁"><span class="brand-mark">KM</span><span class="brand-name">KNOWLEDGE / OPERATIONS</span><span class="brand-desc">RESEARCH NAVIGATION · v0.4</span></a>
+<div class="top-right"><div class="mode-selector" role="group" aria-label="知識世界與研究導航切換"><button type="button" id="goGameMode" aria-pressed="true">🎮 知識世界</button><button type="button" id="goKnowledgeMode" aria-pressed="false">📚 研究導航</button></div><span class="top-meta"><b>●</b> PUBLIC TEST SNAPSHOT <span aria-hidden="true">/</span> 2026.10.12</span><button class="print-btn" id="printBtn" title="使用瀏覽器列印或另存 PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 15h12v6H6z"/></svg>列印 / PDF</button></div></div></header>
+<nav class="mobile-nav" aria-label="手機章節捷徑"><a class="active" href="#top">首頁</a><a href="#navigator">導航儀表</a><a href="#mindmap">心智地圖</a><a href="#overview">兩案概覽</a><a href="#reading-progress">進度解讀</a><a href="#task-board">執行任務</a><a href="#risks">關鍵缺口</a><a href="#resume">恢復工作</a><a href="#decisions">主管決策</a><a href="#sources">證據來源</a></nav>
+
+<div id="worldRoot" aria-label="知識世界遊戲探索模式">
+<div class="gw">
+  <div class="gw-hero"><div><div class="gw-eyebrow">Knowledge Map Projection · Phase 01</div><h1>讓工作，長成一個世界。</h1><p class="gw-sub">現實中的專案、阻塞與驗收，投影為地圖上的建築、道路和任務。走近建築按 A 調查；在同一頁切換正式研究導航與心智圖。</p></div><div class="gw-readonly"><a href="./" style="color:inherit;text-decoration:underline">← 返回 PackageCanvas</a><br>唯讀快照 · 2026 / 10 / 12<br>沒有即時同步／不會修改知識庫</div></div>
+  <div class="gw-screen-layout">
+    <section class="gw-stage" aria-label="可操作的像素知識世界"><div class="gw-frame-top"><span>AMIN / KNOWLEDGE WORLD · PROJECT MAP</span><span class="power">WORLD ACTIVE</span></div>
+      <div class="gw-display"><canvas id="worldCanvas" width="576" height="360" tabindex="0" role="img" aria-label="可使用方向鍵走動的工作進度地圖；點擊建築或使用右側區域清單查看內容"></canvas><div class="gw-location" id="worldLocation">中央廣場 · 工作進度投影</div><div class="gw-floathelp">方向鍵／WASD 移動 · A／空白鍵調查 · 點擊建築選擇 · B 返回</div>
+      <div class="gw-dialog" id="worldDialog" hidden role="dialog" aria-modal="false" aria-labelledby="worldDialogTitle"><div class="gw-dialog-title" id="worldDialogTitle"></div><div class="gw-dialog-description" id="worldDialogText"></div><div class="d-actions"><button class="primary" id="worldDialogNavigate">📚 開啟研究導航</button><button id="worldDialogClose">關閉／繼續探索</button></div></div></div>
+      <div class="gw-controls"><div class="gw-dpad" role="group" aria-label="行走方向"><button class="up" data-move="up" aria-label="向上">▲</button><button class="left" data-move="left" aria-label="向左">◀</button><button class="center" aria-hidden="true" tabindex="-1" disabled>✣</button><button class="right" data-move="right" aria-label="向右">▶</button><button class="down" data-move="down" aria-label="向下">▼</button></div><div class="gw-mid"><button class="gw-start" id="worldMapReset">START<br>回廣場</button><span class="gw-caption">主角／狐狸<br>任務進度快照</span></div><div class="gw-ab"><button class="gw-b" id="worldB">B</button><button class="gw-a" id="worldA">A</button></div></div>
+    </section>
+    <aside class="gw-right" aria-label="遊戲世界專案與導航資訊">
+      <div class="gw-box"><div class="gk">WORLD MAP / 區域選擇</div><h2>🏘️ 探索知識領地</h2><button class="gw-area-btn" data-world-target="hours"><span>🏭 標準工時工廠</span><small>文件 QC</small></button><button class="gw-area-btn" data-world-target="door"><span>🏰 嘉義門禁城堡</span><small>來源核對</small></button><button class="gw-area-btn" data-world-target="library"><span>📚 中央圖書館</span><small>導航／心智圖</small></button><button class="gw-area-btn" data-world-target="workshop"><span>⚒️ 技能工坊</span><small>驗證能力</small></button></div>
+      <div class="gw-box" aria-live="polite"><div class="gk">PROJECT HUD / 目前追蹤</div><h3 id="worldProjectTitle">標準工時管理改善</h3><span class="gw-status-pill" id="worldStatus">等待驗證 · 尚未授權</span><span class="gw-dest-label">🎯 目的地</span><p id="worldDestination" class="gw-dest"></p><span class="gw-dest-label">📍 目前位置</span><p id="worldPosition" class="gw-dest"></p><span class="gw-dest-label">🚧 前方路況</span><p id="worldTraffic" class="gw-dest"></p><span class="gw-dest-label">➡️ 下一步</span><p id="worldNext" class="gw-dest"></p><button id="worldOpenKnowledge" class="gw-mini-action">開啟這個專案的研究導航 ↗</button><p class="gw-source">資料取自同頁 v0.3 的導航狀態；遊戲不自行判斷「完成」，也不產生新正式進度。</p></div>
+      <div class="gw-box"><div class="gk">GAME RULES / 地圖規則</div><h3>🦊 狐狸只負責導航</h3><p class="gw-dest">霧＝資料缺口；路障＝待處理問題；關閉的城門＝待核准；證據通過後才能解除。這版只展示已知狀態，不會因為點擊就解鎖。</p></div>
+    </aside>
+  </div>
+  <div class="gw-legend"><span>🌫️ 迷霧：來源未齊</span><span>🚧 路障：工作阻塞</span><span>🔒 城門：權限閘門</span><span>📚 建築：可開啟文件與研究導航</span></div>
+  <div class="gw-story"><div class="gw-box"><b>01 · 發現問題</b><p>遊戲世界把現實專案的問題轉成場景，不把假想任務當真實完成紀錄。</p></div><div class="gw-box"><b>02 · 查看證據</b><p>切換「研究導航」，直接定位同一專案的 GPS、FlowCard、心智圖與來源。</p></div><div class="gw-box"><b>03 · 回到世界</b><p>確認現實資料及核准後，下一版投影才改變地圖。遊戲點擊本身不修改工作狀態。</p></div></div>
+</div>
+</div>
+
+<div class="shell">
+<aside class="sidebar" aria-label="章節導覽"><div class="side-inner"><div class="sidebar-eyebrow">CONTENTS / 目錄</div><nav class="side-nav">
+<a href="#top" class="active">進度首頁 <span>00</span></a>
+<a href="#navigator">研究導航 <span>GPS</span></a>
+<a href="#mindmap">互動心智圖 <span>MAP</span></a>
+<a href="#overview">專案總覽 <span>01</span></a>
+<a href="#reading-progress">如何判讀進度 <span>02</span></a>
+<a href="#task-board">執行佇列 <span>03</span></a>
+<a href="#risks">關鍵缺口 <span>04</span></a>
+<a href="#resume">工作恢復點 <span>05</span></a>
+<a href="#decisions">主管決策 <span>06</span></a>
+<a href="#sources">來源與限制 <span>07</span></a>
+</nav><div class="sidebar-note"><div class="side-note-label">SNAPSHOT / 快照</div><p>依圖書館 PROJECT-STATE v0.2 候選規則及專案來源整理。不是正式主管核准或即時同步畫面。</p><div class="side-date">2026 / 10 / 12</div></div></div></aside>
+<main class="content" id="main">
+<section id="top" class="hero page-section" aria-labelledby="heroTitle"><div class="hero-kicker">PROJECT INTELLIGENCE / 專案快照</div><div class="hero-layout"><div>
+<h1 id="heroTitle">看得見進度，<br/>也<em>找得到下一步。</em></h1>
+<p class="hero-lead">兩個持續探索中的公司專案，一份可追溯的狀態快照。新增 FOX / GEN2 研究導航及雙向互動心智圖：目的地、目前位置、期望與現實、證據阻塞、主路線與改道條件。保留完整進度與來源，不使用缺乏證據的完成百分比。</p>
+<div class="hero-stamp"><span class="small-tag">唯讀資料快照</span><span class="small-tag alt">PROJECT-STATE v0.2｜候選治理</span><a class="small-tag hero-link" href="#navigator">探索研究導航 ↗</a></div>
+</div><div class="hero-art" role="img" aria-label="示意的工作推進路徑：兩案均已完成初步資料整理；標準工時等待文件品質檢查與授權，嘉義門禁等待來源一致性和現場確認。非量化完成率。"><span class="art-watermark" aria-hidden="true">KM</span><div class="art-content"><div class="art-top"><span class="art-kicker">EVIDENCE → ACTION</span><span class="art-sync">非即時資料</span></div><div class="art-lanes"><div class="art-lane"><span class="lane-name">標準工時</span><div class="lane-steps"><span class="done"></span><span class="now"></span><span class="block"></span><span></span></div></div><div class="art-lane"><span class="lane-name">嘉義門禁</span><div class="lane-steps"><span class="done"></span><span class="block"></span><span></span><span></span></div></div><div class="art-lane"><span class="lane-name">跨工具治理</span><div class="lane-steps"><span class="done"></span><span></span><span></span><span></span></div></div></div><div class="art-bottom"><div class="art-number">02<em>ACTIVE CASES</em></div><div class="art-caption">已定位的雙專案案例，並非「兩案進入正式執行」的核准聲明。</div></div></div></div></div>
+<div class="summary-strip" aria-label="進度摘要"><div class="summary-item"><div class="summary-num">02</div><div class="summary-text">本次聚焦專案</div></div><div class="summary-item"><div class="summary-num">08</div><div class="summary-text">候選驗證任務 · 00–07</div></div><div class="summary-item"><div class="summary-num">02</div><div class="summary-text">阻塞任務 · 主檔與授權</div></div><div class="summary-item"><div class="summary-num">v0.2</div><div class="summary-text">治理測試基準 · 待驗收</div></div></div>
+</section>
+
+
+<section id="navigator" class="page-section" aria-labelledby="navigation-title">
+  <div class="section-header nav-section-header"><div class="heading-wrap"><div class="sec-index">NAV / RESEARCH GPS · FOX × GEN2</div><h2 id="navigation-title">把進度變成路線，<br/>把阻塞變成下一步。</h2><p>依據一代「事 → 象 → 勢 → 判 → 決 → 行 → 驗」與二代「目的地／位置／路況／Active Route」轉成可互動的專案導航。選擇專案，再點選路線節點查看依據與抵達條件。</p></div><div class="section-side">ROUTE IS NOT COMPLETION %</div></div>
+
+  <div class="nav-console" id="navConsole" data-current-project="hours">
+    <div class="nav-console-top">
+      <div><div class="nav-eyebrow"><span class="nav-live-dot" aria-hidden="true"></span> NAVIGATION SYSTEM <span class="nav-muted">/ 資料快照 · 非即時</span></div><h3>工作導航台 <span>· 研究與執行</span></h3></div>
+      <div class="nav-switch" role="group" aria-label="選擇專案">
+        <button type="button" class="nav-project-btn active" data-nav-project="hours" aria-pressed="true">標準工時</button>
+        <button type="button" class="nav-project-btn" data-nav-project="door" aria-pressed="false">嘉義門禁</button>
+      </div>
+    </div>
+    <div class="nav-destination-strip">
+      <div class="nav-dest"><span class="nav-data-label">DESTINATION / 目的地</span><strong id="navDestination">取得授權後執行可驗證的一站一週試行</strong></div>
+      <span class="nav-dest-divider" aria-hidden="true"></span>
+      <div class="nav-dest"><span class="nav-data-label">POSITION / 目前位置</span><strong id="navPosition">v0.5 文件品質尚待驗證</strong></div>
+    </div>
+    <div class="nav-console-main">
+      <div class="route-wrap"><div class="route-head"><span>ACTIVE ROUTE / 當前候選路線</span><span class="nav-route-note">點節點查看證據</span></div>
+        <div class="route-track" id="routeTrack" aria-label="專案導航路線"></div>
+        <div class="nav-route-bottom"><div><span>目前阻塞 · TRAFFIC</span><strong id="navTraffic">文件品質尚未閉環／跨部門授權未確認</strong></div><span id="navRouteTag" class="nav-route-tag">待驗證</span></div>
+      </div>
+      <div class="nav-focus-card" aria-live="polite">
+        <div class="focus-hdr"><span class="focus-overline">CHECKPOINT / 目前查看</span><span class="focus-count" id="focusCount">02 / 04</span></div>
+        <h4 id="focusTitle">v0.5 文件 QC</h4>
+        <p id="focusDescription">核對封面版本、空白頁及實際渲染頁數。</p>
+        <div class="focus-rule"></div>
+        <div class="focus-field"><span>需要什麼證據</span><strong id="focusEvidence">逐頁渲染記錄與可重現缺陷表</strong></div>
+        <div class="focus-field"><span>如何才算抵達</span><strong id="focusArrival">渲染結果與版本一致，缺陷可定位</strong></div>
+        <div class="focus-footer"><span id="focusSource">G-01 / W-01</span><a id="focusRelated" href="#task-board">查看相關任務 ↗</a></div>
+      </div>
+    </div>
+    <div class="nav-console-foot"><div><span class="nav-foot-icon">↗</span><span>建議下一步</span><strong id="navNext">對 v0.5 Word 做逐頁 QC；先不修改原件。</strong></div><a href="#resume">前往工作恢復卡 →</a></div>
+  </div>
+
+  <div class="nav-tools-row">
+    <article class="flow-panel">
+      <div class="tool-head"><div><span class="tool-kicker">FLOWCARD / 問題導航</span><h3>把模糊問題拆成可驗證的資料流</h3></div><span class="tool-chip">6 個研究切面</span></div>
+      <div class="flow-steps" role="group" aria-label="研究流程卡的切面">
+        <button type="button" class="flow-step active" data-flow="question" aria-pressed="true"><span>01</span>問題</button>
+        <button type="button" class="flow-step" data-flow="evidence" aria-pressed="false"><span>02</span>證據</button>
+        <button type="button" class="flow-step" data-flow="friction" aria-pressed="false"><span>03</span>阻力</button>
+        <button type="button" class="flow-step" data-flow="fork" aria-pressed="false"><span>04</span>分流</button>
+        <button type="button" class="flow-step" data-flow="action" aria-pressed="false"><span>05</span>驗證</button>
+        <button type="button" class="flow-step" data-flow="feedback" aria-pressed="false"><span>06</span>回饋</button>
+      </div>
+      <div class="flow-result" aria-live="polite"><div class="flow-result-index" id="flowResultIndex">01 / 問題定義</div><h4 id="flowResultTitle">問題是否足夠明確？</h4><p id="flowResultText">文件與工時方法已形成提案，但尚未確認完整文件的品質以及執行權限。</p><div class="flow-result-btm"><span id="flowResultSource">來源 G-01 / W-01</span><span>研究模型轉譯 · 非自動判定</span></div></div>
+    </article>
+    <article class="decision-compass">
+      <div class="tool-head"><div><span class="tool-kicker">REROUTE / 導航決策</span><h3>遇到障礙，應修正哪一層？</h3></div></div>
+      <p class="compass-intro">一代 FOX 將變化分為三個尺度。以下是切換判斷的參考，不代表 AI 已對目前專案做出正式改道決策。</p>
+      <div class="compass-options" role="group" aria-label="選擇研究路線修正尺度">
+        <button type="button" data-loop="micro" aria-pressed="true" class="compass-opt active"><span class="loop-icon">↻</span><span><b>微調</b><small>原路線修正</small></span></button>
+        <button type="button" data-loop="meso" aria-pressed="false" class="compass-opt"><span class="loop-icon">↗</span><span><b>改道</b><small>重要假設改變</small></span></button>
+        <button type="button" data-loop="macro" aria-pressed="false" class="compass-opt"><span class="loop-icon">◎</span><span><b>重新立事</b><small>目標需重新核准</small></span></button>
+      </div>
+      <div class="loop-detail" aria-live="polite"><span id="loopCaption">MICRO LOOP / 修</span><h4 id="loopTitle">保留目的地，修正局部執行</h4><p id="loopDescription">例如文件渲染發現分頁問題，重新排版並複驗。原本的試行目標不因此變更。</p><div class="loop-gate" id="loopGate">守則：修正後必須重新驗證，不憑修正次數宣告完成。</div></div>
+    </article>
+  </div>
+  <div class="nav-source-strip"><div><span class="nav-source-label">設計來源</span><strong>FOX-KERNEL-001 · KB-DEV-002 · FlowCard 研究</strong><p>基於已研究的導航理論轉換成 UI，沒有啟動自主調度或重寫既有 PROJECT-STATE。</p></div><div class="nav-source-links"><a href="https://drive.google.com/file/d/1ywwPxN2jTsf25CWFCmXT79eRBBH2vUxW/view" target="_blank" rel="noopener noreferrer">一代核心 ↗</a><a href="https://drive.google.com/file/d/1XkcHjPbqyrUHSnJs0oxkRhYPZM_tPvGK/view" target="_blank" rel="noopener noreferrer">二代導航 ↗</a><a href="https://docs.google.com/presentation/d/1njy-ZAKJf9j8P2tuRbxtXX8tcILekbmOuTTAGdib16U/edit" target="_blank" rel="noopener noreferrer">FlowCard ↗</a></div></div>
+</section>
+
+
+<section id="mindmap" class="page-section mindmap-sec" aria-labelledby="mindmap-title">
+  <div class="mindmap-note">◎ 研究理論導航 × 雙向心智圖</div>
+  <div class="section-header"><div class="heading-wrap"><div class="sec-index">MAP / EXPECTATION ↔ REALITY</div>
+    <h2 id="mindmap-title">把期望和現實攤開，<br/>下一步才有方向。</h2>
+    <p>不是一張無法操作的插圖。從中央專案向左看目標、預期路線與驗收邊界，向右看實際資料、阻塞與最小驗證。點擊節點閱讀依據，也能返回上方 GPS 導航的對應站點。</p></div><div class="section-side">INTERACTIVE / OFFLINE</div></div>
+  <div class="map-shell">
+    <div class="map-head"><div><span class="map-head-kicker">LIVE DIAGRAM / 靜態資料 · 動態操作</span><h3>專案脈絡心智圖</h3><p>可切換專案、收合分支、拖曳與縮放；沒有同步圖書館或修改正式紀錄的能力。</p></div>
+      <div class="map-pick" role="group" aria-label="選擇心智圖專案"><button class="active" type="button" data-map-project="hours" aria-pressed="true">標準工時</button><button type="button" data-map-project="door" aria-pressed="false">嘉義門禁</button></div>
+    </div>
+    <div class="map-tools"><div class="map-legend"><span><i class="map-dot expect"></i>左：期望與目標</span><span><i class="map-dot actual"></i>右：現實與證據</span><span><i class="map-dot gap"></i>待核對的缺口</span></div>
+      <div class="map-controls" role="group" aria-label="心智圖操作"><button id="mapCollapse" type="button">收合分支</button><button id="mapExpand" type="button">全部展開</button><button id="mapZoomOut" type="button" title="縮小">－</button><button id="mapZoomIn" type="button" title="放大">＋</button><button id="mapReset" type="button" title="置中復原">置中</button></div></div>
+    <div class="map-canvas"><svg id="mindSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 840" role="group" aria-label="可互動的期望與現實雙向心智圖；用 Tab 選擇節點，Enter 開啟詳情，拖曳地圖移動"></svg><div class="map-canvas-help">拖曳移動 · 點擊節點 · ＋／－ 縮放</div></div>
+    <div class="map-insight" role="status" aria-live="polite"><div class="map-insight-main"><span class="map-insight-brow" id="mapDetailType">核心專案 / CONTEXT</span><h4 id="mapDetailTitle">標準工時管理改善</h4><p id="mapDetailDescription">從期望結果到目前證據，查看專案兩側的關聯與阻塞。</p></div>
+    <div class="map-insight-side"><span>來源與判斷邊界</span><strong id="mapDetailSource">G-01 / W-01 / W-02</strong><button class="map-jump" type="button" id="mapToRoute">在上方 GPS 導航查看對應站點 ↗</button></div></div>
+    <div class="map-below"><p>左側為規劃意圖，並不代表已核准；右側為本次已知狀態、待驗證條件與風險。線條僅代表概念關聯，不代表工作完成率。</p><a href="#sources">查閱來源與限制 ↗</a></div>
+  </div>
+</section>
+
+<section id="overview" class="page-section" aria-labelledby="overviewTitle"><div class="section-header"><div class="heading-wrap"><div class="sec-index">01 / PORTFOLIO</div><h2 id="overviewTitle">專案不是卡住了。<br/>而是正在等待不同的答案。</h2><p>同樣是「進度未完成」，背後可能是文件品質、來源衝突、現場條件或主管授權。把阻塞原因直接顯示，才能知道下一步該找誰、做什麼。</p></div><div class="section-side">TWO DISTINCT WORKSTREAMS</div></div>
+<div class="projects">
+<article class="project-card hours"><div class="proj-top"><span class="proj-label">PROJECT / 01 · OPERATIONS</span><span class="status pending"><i></i>文件待驗證</span></div><h3>標準工時管理改善</h3><p class="proj-overview">已整理標準工時蒐集方法與「一站一週」有限試行提案。關鍵不是先產生一個標準數字，而是證明現場資料能否被追溯、審核與持續蒐集。</p><div class="metric-row"><div class="mini-metric"><div class="metric-val">v0.5</div><div class="metric-label">完整提案的審閱基準<br/>尚未經主管核准</div></div><div class="mini-metric"><div class="metric-val">1 × 1</div><div class="metric-label">候選試行：一工站 × 一週<br/>未取得執行授權</div></div></div><div class="proj-footer"><div class="sub-label">NEXT / 下一個可執行動作</div><strong>先逐頁渲染檢查 v0.5，再以可核對版本進入主管審議。</strong><div class="proj-links"><a class="small-link" href="#task-board">檢視 PS-TEST-03 ↗</a><a class="small-link" target="_blank" rel="noopener noreferrer" href="https://docs.google.com/document/d/1ZgyUm_UT8n04vf3f7kYuyrSfZS-_CFYX/edit?usp=drivesdk">開啟工作文件 ↗</a></div></div></article>
+<article class="project-card door"><div class="proj-top"><span class="proj-label">PROJECT / 02 · FACILITY</span><span class="status blocked"><i></i>來源一致性阻塞</span></div><h3>嘉義廠區門禁改善</h3><p class="proj-overview">已形成區域、動線、門位與設備候選方案。但 Google Docs 工作版、圖書館報告框架及本機原始 XMind 尚未完成三方一致性核對。</p><div class="metric-row"><div class="mini-metric"><div class="metric-val">14</div><div class="metric-label">A 系列門禁需求記錄<br/>非已核定施工門數</div></div><div class="mini-metric"><div class="metric-val">07</div><div class="metric-label">核心門雙向刷卡需求<br/>仍需配對設備</div></div></div><div class="proj-footer"><div class="sub-label">NEXT / 下一個可執行動作</div><strong>保留既有工作版，先釐清 XMind 主檔缺口與逐門證據。</strong><div class="proj-links"><a class="small-link" href="#task-board">檢視 PS-TEST-01 ↗</a><a class="small-link" target="_blank" rel="noopener noreferrer" href="https://docs.google.com/document/d/1PQ-NaKD1liru6W3yY953BhAvpwB6aA5Qr_YtJvb03Sg/edit">開啟設計工作版 ↗</a></div></div></article>
+</div>
+<div class="ladder"><div class="ladder-rail"><h3>先辨識證據，<br/>再談完成。</h3><p>不同層級不能混為一談；完成初稿不等於文件驗收，更不等於主管核准。</p></div><div class="ladder-grid"><div class="ladder-cell"><span class="ladder-small">LEVEL 01</span><h4>工作成果已存在</h4><p>有草稿、方法、圖面或分析。可引用，但需說明證據範圍。</p></div><div class="ladder-cell"><span class="ladder-small">LEVEL 02</span><h4>資料通過驗證</h4><p>來源、版本與現況一致；有測試或現場佐證。</p></div><div class="ladder-cell"><span class="ladder-small">LEVEL 03</span><h4>取得正式授權</h4><p>決策者核准範圍、資源或導入；不得以文件完成取代。</p></div></div></div>
+</section>
+
+<section id="reading-progress" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">02 / EVIDENCE FLOW</div><h2>進度是一條證據鏈，<br/>不是一條百分比。</h2><p>這張圖表達的是「工作的依賴順序」，不是工程完成率。只有前一階段取得充分證據，後續工作才有可靠的啟動條件。</p></div><div class="section-side">NO FABRICATED PERCENTAGES</div></div>
+<div class="path-panel"><div class="path-title">STANDARD HOURS / 標準工時</div><h3>有方法 → 驗證文件 → 取得授權 → 小範圍試行</h3><div class="path-lines"><div class="path-step"><div class="step-n">01 / EXISTING</div><h4>方法與提案</h4><p>內容已形成工作稿；不是完成正式審批。</p><div class="step-line done"></div></div><div class="path-step"><div class="step-n">02 / NOW</div><h4>v0.5 文件 QC</h4><p>頁數、封面版號與疑似空白頁需渲染確認。</p><div class="step-line now"></div></div><div class="path-step"><div class="step-n">03 / BLOCKED</div><h4>主管／跨部門授權</h4><p>研發、生產及管理決策尚無可核實核准。</p><div class="step-line block"></div></div><div class="path-step"><div class="step-n">04 / FUTURE</div><h4>一站一週驗證</h4><p>取得授權後才可安排實際蒐集與驗收。</p><div class="step-line"></div></div></div></div>
+<div class="info-row"><div class="info-card"><div class="info-flag">ACCESS CONTROL / 嘉義門禁</div><h3>目前卡在「來源與現場能否對得起來」</h3><p>目前已存在完整程度不同的 Google Docs 工作版及圖書館框架，XMind v4 仍未取得。即使設計方向合理，也不能直接當成施工圖或核准配置。</p></div><div class="info-card"><div class="info-flag">GOVERNANCE / 專案治理</div><h3>規則已形成，跨工具能力尚未證明</h3><p>PROJECT-STATE v0.2 已定義單一入口、狀態、證據與交接規則；但它目前仍是候選治理文件，未驗證 ChatGPT ↔ Codex 自動交接或正式寫回。</p></div></div>
+</section>
+
+<section id="task-board" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">03 / EXECUTION QUEUE</div><h2>下一個動作，<br/>必須能夠直接執行。</h2><p>根據 PROJECT-STATE v0.2 的原始測試佇列重建。點選分類可查看不同工作流；展開每張任務卡，能查閱前置條件和來源。</p></div><div class="section-side">PS-TEST-00 → PS-TEST-07</div></div>
+<div class="tasks-head"><div class="filterbar" role="group" aria-label="依專案篩選任務"><button class="filter-btn" data-filter="all" aria-pressed="true">全部任務</button><button class="filter-btn" data-filter="hours" aria-pressed="false">標準工時</button><button class="filter-btn" data-filter="door" aria-pressed="false">嘉義門禁</button><button class="filter-btn" data-filter="governance" aria-pressed="false">治理與交接</button></div><div class="task-count" id="taskCount" aria-live="polite">SHOWING 08 / 08</div></div>
+<div class="task-grid" id="taskGrid"><article class="task-card" data-category="governance" aria-labelledby="title-PS-TEST-00">
+      <div class="task-index"><span class="mono">PS-TEST-00</span><span class="task-cat">治理</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-00">治理相容性檢查</h3><span class="status idle"><i></i>未開始</span></div>
+      <p>核對 KB_REGISTRY、FOX、GEN2 與權限邊界，確認唯一進度入口不與既有主檔衝突。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>完成相容性對照與衝突清單；僅唯讀。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>無前置依賴</p><p><b>來源：</b>G-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="door" aria-labelledby="title-PS-TEST-01">
+      <div class="task-index"><span class="mono">PS-TEST-01</span><span class="task-cat">嘉義門禁</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-01">門禁主檔三方比對</h3><span class="status blocked"><i></i>阻塞</span></div>
+      <p>比對 Google Docs 設計工作版、圖書館 V0.5 架構版，以及尚未取得的 XMind v4 原始主檔。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>取得可讀 XMind v4，列出門號、版次與來源衝突。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-00 與 XMind 存取</p><p><b>來源：</b>G-01 / D-01 / D-02 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="door" aria-labelledby="title-PS-TEST-02">
+      <div class="task-index"><span class="mono">PS-TEST-02</span><span class="task-cat">嘉義門禁</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-02">現場與設計缺口核對</h3><span class="status pending"><i></i>待驗證</span></div>
+      <p>釐清 D029、A014、雙向刷卡、逃生動線與逐門設備配對等工作版未結案事項。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>依現勘逐項確認來源、責任與閉環條件。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-01</p><p><b>來源：</b>G-01 / D-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="hours" aria-labelledby="title-PS-TEST-03">
+      <div class="task-index"><span class="mono">PS-TEST-03</span><span class="task-cat">標準工時</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-03">v0.5 Word 文件品質檢查</h3><span class="status pending"><i></i>待驗證</span></div>
+      <p>確認解析出的 12 頁、疑似空白頁、封面版次標示與實際渲染是否一致。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>實際渲染逐頁檢視，提供可重現的修正清單。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>可獨立執行</p><p><b>來源：</b>G-01 / W-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="hours" aria-labelledby="title-PS-TEST-04">
+      <div class="task-index"><span class="mono">PS-TEST-04</span><span class="task-cat">標準工時</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-04">跨部門試行授權</h3><span class="status blocked"><i></i>阻塞</span></div>
+      <p>提請研發處長、廠長審議，經適當管道確認生產部協作、一站一週與資料使用界線。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>先完成 QC；再取得主管可核實意見或正式授權。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-03 + 管理決策</p><p><b>來源：</b>G-01 / W-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="governance" aria-labelledby="title-PS-TEST-05">
+      <div class="task-index"><span class="mono">PS-TEST-05</span><span class="task-cat">切換測試</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-05">跨案切換與恢復測試</h3><span class="status pending"><i></i>待驗證</span></div>
+      <p>進行「門禁 → 工時 → 門禁」唯讀切換，檢查來源、權責與 Return Address 是否混用。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>在隔離快照中保留回讀證據與錯誤紀錄。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-00 / 來源快照</p><p><b>來源：</b>G-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="governance" aria-labelledby="title-PS-TEST-06">
+      <div class="task-index"><span class="mono">PS-TEST-06</span><span class="task-cat">跨工具</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-06">ChatGPT ↔ Codex 交接測試</h3><span class="status idle"><i></i>未開始</span></div>
+      <p>用隔離測試資料核對入口、未決事項、版本衝突、回復及寫入權限。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>先通過切換測試，不直接寫回正式主檔。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-05</p><p><b>來源：</b>G-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article>
+<article class="task-card" data-category="governance" aria-labelledby="title-PS-TEST-07">
+      <div class="task-index"><span class="mono">PS-TEST-07</span><span class="task-cat">決策</span></div>
+      <div class="task-main"><div class="task-heading"><h3 id="title-PS-TEST-07">是否正式導入 PROJECT-STATE</h3><span class="status idle"><i></i>未開始</span></div>
+      <p>待完成足夠測試證據後，交由使用者決定是否建立兩案各自的正式進度入口。</p><div class="next-action"><span class="next-label">下一個明確動作</span><strong>提供測試紀錄與衝突評估，待明確核准。</strong></div>
+      <details class="detail-toggle"><summary>查看前置條件與證據 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg></summary><div class="detail-body"><p><b>前置依賴：</b>依賴 PS-TEST-01～06 的充分證據</p><p><b>來源：</b>G-01 · PROJECT-STATE v0.2 候選測試佇列</p><p>此編號屬測試條目，不代表公司正式任務編號。</p></div></details></div>
+    </article></div>
+</section>
+
+<section id="risks" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">04 / CRITICAL GAPS</div><h2>這些不是備註，<br/>而是會改變下一步的問題。</h2><p>將最容易在工作交接時被遺忘的衝突獨立列示，讓主管知道哪些問題需要資料、現場或授權，而不是再次要求「快一點完成」。</p></div><div class="section-side">EVIDENCE NOT ASSUMPTIONS</div></div>
+<div class="risk-grid"><article class="risk-card"><div class="risk-count">AC / 01</div><h3>D029 門號重複</h3><p>C 棟與 B 倉均使用 D029；不可直接將 46 筆編號記錄當成 46 道唯一實體門。</p></article><article class="risk-card"><div class="risk-count">AC / 02</div><h3>A014 門型未定</h3><p>電動捲門或把手門尚未確認，會影響鎖具、控制、安全與施工範圍。</p></article><article class="risk-card"><div class="risk-count">AC / 03</div><h3>14 讀卡點 vs 13 台候選設備</h3><p>七道門需進出雙向紀錄；現候選清單列 13 台 AR327E，須核對控制器／附掛讀卡機組合，<strong>不能直接認定缺購一台。</strong></p></article><article class="risk-card"><div class="risk-count">AC / 04</div><h3>逃生門與樓層引用差異</h3><p>F 系列逃生引用和門位樓層資料尚未一致；緊急功能須由現勘及專業廠商確認。</p></article>
+<div class="risk-card risk-wide"><div class="risk-pair"><div class="risk-count">WH / 01</div><h3>工時 v0.5 文件品質未閉環</h3><p>先前解析為 12 頁，與早期 9 頁描述不符；封面版本標示與檔案版次不一致，需渲染確認是否存在非預期空白頁。</p></div><div class="risk-pair"><div class="risk-count">WH / 02</div><h3>版型核准不等於試行核准</h3><p>使用者核准的是 v0.4 兩頁版型。v0.5 完整正文仍待審閱；生產部協作與一站一週試行尚未確認授權。</p></div></div></div>
+</section>
+
+<section id="resume" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">05 / RETURN ADDRESS</div><h2>暫停工作時，<br/>留下可以回來的位置。</h2><p>每份專案都應有自己的來源、已確認原則、阻塞與第一個恢復動作。以下是本次資料的「工作恢復卡」示範；複製後可交給 ChatGPT 或 Codex 查核。</p></div><div class="section-side">CROSS-TOOL HANDOFF / CANDIDATE</div></div>
+<div class="resume-card"><article class="resume-box"><div class="proj-label">RESUME / STANDARD HOURS</div><h3>回到標準工時</h3><p class="resume-lead">讀取 v0.5 與 PROJECT-STATE 候選快照，避免重談已形成的方法。</p><div class="resume-section"><span>已知的工作基礎</span><p>蒐集方法與有限試行提案已有草案，不能把歷史報工直接當成正式標準。</p></div><div class="resume-section"><span>目前阻塞</span><p>文件實際渲染 QC 尚未完成；主管授權尚未取得。</p></div><div class="resume-section"><span>恢復的第一步</span><p><b>完成 v0.5 逐頁 QC，提出修正清單，不覆蓋原始 Word。</b></p></div><button class="copy-btn" data-copy="請依 ChatGPT 圖書館 PROJECT-STATE v0.2 候選狀態與已建立 Google Drive 來源，恢復『標準工時管理改善』。先唯讀核對 v0.5 審閱稿的實際版次與渲染品質，定位疑似空白頁及封面版次問題，提出修正清單。保留原件；不要視 v0.4 版型核准為主管試行授權。">複製工作恢復指令 ↗</button></article><article class="resume-box"><div class="proj-label">RESUME / ACCESS CONTROL</div><h3>回到嘉義門禁</h3><p class="resume-lead">從已建立的來源關聯索引恢復，不重複詢問 Google Docs 工作版。</p><div class="resume-section"><span>已知的工作基礎</span><p>已有 14 筆 A 系列需求與 7 道核心門雙向紀錄的工作版分析。</p></div><div class="resume-section"><span>目前阻塞</span><p>XMind v4 尚未取得；D029、A014、逃生及設備配對仍待查。</p></div><div class="resume-section"><span>恢復的第一步</span><p><b>以已確認來源做唯讀核對，只針對 XMind 特有資料補缺。</b></p></div><button class="copy-btn" data-copy="請從圖書館『嘉義門禁_來源關聯索引_2026-10-12.md』與 PROJECT-STATE v0.2 候選狀態恢復『嘉義廠區門禁改善』。優先讀取已確認的 Google Docs 設計工作版及圖書館報告框架；不用再問我已經提供的工作版。查明 XMind v4 缺口，列 D029、A014、逃生門與七門雙向讀卡的待驗證項目。只讀，不批准採購或施工。">複製工作恢復指令 ↗</button></article></div>
+</section>
+
+<section id="decisions" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">06 / MANAGEMENT BRIEF</div><h2>向主管報告，<br/>最需要的是清楚的決策入口。</h2><p>主管可以快速區分：目前成果已有什麼、哪些工作受制於外部資源、有哪些事項尚未取得權責授權。</p></div><div class="section-side">DECISION-READY SUMMARY</div></div>
+<div class="decision-board"><div class="decision-main"><div class="dec-kicker">DECISIONS REQUESTED / 候選請求</div><h3>三件需要安排，<br/>但不能預設已經核准的事。</h3><p>目前已有具體工作文件與問題清單；真正的下一步是以可靠版本向負責人確認資料、資源與權限。</p><div class="decision-list"><div class="decision-item"><span class="d-code">01</span><span>標準工時：完成文件審閱後，確認研發／生產協作窗口及「一站一週」試行範圍。</span></div><div class="decision-item"><span class="d-code">02</span><span>嘉義門禁：確認原始門位來源、底圖和聯合現勘的必要資源。</span></div><div class="decision-item"><span class="d-code">03</span><span>PROJECT-STATE v0.2：先完成跨案隔離與交接測試，再由使用者決定是否正式導入。</span></div></div></div><div class="decision-note"><h3>本期可報告的成果</h3><ul><li>兩案已有可讀取的工作文件與相關來源定位。</li><li>標準工時的試行方法已形成提案。</li><li>嘉義門禁已有需求、門位、動線與設備候選分析。</li><li>跨案測試已有具體的 8 筆驗證佇列。</li></ul><div class="tiny">「已形成草案」與「已核准執行」是兩種狀態。本頁未宣稱任何主管已批准試行或施工。</div></div></div>
+</section>
+
+<section id="sources" class="page-section"><div class="section-header"><div class="heading-wrap"><div class="sec-index">07 / TRACEABILITY</div><h2>每一項進度，<br/>都要能回到來源。</h2><p>下列來源按治理、標準工時、嘉義門禁分開列示。本網頁為本次生成的靜態快照，不會在開啟時重新讀取圖書館，也不具備主檔寫入權限。</p></div><div class="section-side">SOURCE MANIFEST / READ-ONLY</div></div>
+<div class="source-list"><div class="source-entry"><span class="source-id">N-01</span><div><h3>FOX-KERNEL-001｜易變知識導航核心 v0.2</h3><p>一代 FOX：事／象／勢／判／決／行／驗，以及 Micro、Meso、Macro 三尺度循環。研究框架，非已上線的導航引擎。</p></div><a target="_blank" rel="noopener noreferrer" href="https://drive.google.com/file/d/1ywwPxN2jTsf25CWFCmXT79eRBBH2vUxW/view">查看來源 ↗</a></div>
+<div class="source-entry"><span class="source-id">N-02</span><div><h3>KB-DEV-002｜Research Navigation and Direction Alignment v0.3</h3><p>二代 DEV：Destination / Position / Map / Traffic / Active Route / Reroute / Arrival。Active Route 是本輪如何走，不等於完整 Roadmap。</p></div><a target="_blank" rel="noopener noreferrer" href="https://drive.google.com/file/d/1XkcHjPbqyrUHSnJs0oxkRhYPZM_tPvGK/view">查看來源 ↗</a></div>
+<div class="source-entry"><span class="source-id">N-03</span><div><h3>流卡域研究理論導航系統｜FlowCard 候選</h3><p>概念節點、資料需求、阻力、分流、最小驗證及回饋循環。成熟度分數仍屬候選研究構想，本版不採用數值打分。</p></div><a target="_blank" rel="noopener noreferrer" href="https://docs.google.com/presentation/d/1njy-ZAKJf9j8P2tuRbxtXX8tcILekbmOuTTAGdib16U/edit">查看來源 ↗</a></div><div class="source-entry"><span class="source-id">G-01</span><div><h3>PROJECT-STATE v0.2｜全知識庫統一進度與交接規則</h3><p>ChatGPT 圖書館 /30_KNOWLEDGE/PROJECT-STATE_全知識庫統一進度與交接規則_v0.2_雙專案驗證排程.md。候選治理文件，尚未正式採用；本頁 8 個 PS-TEST 均源自此檔。</p></div><span class="no-link">Library 內部檔案</span></div>
+<div class="source-entry"><span class="source-id">W-01</span><div><h3>標準工時管理改善暨跨部門試行提案 v0.5</h3><p>Google Drive 工作副本與 ChatGPT 圖書館 /40_PROJECTS/標準工時管理與AI助理權限/。完整正文待審、文件品質待驗。</p></div><a target="_blank" rel="noopener noreferrer" href="https://docs.google.com/document/d/1ZgyUm_UT8n04vf3f7kYuyrSfZS-_CFYX/edit?usp=drivesdk">檢視文件 ↗</a></div>
+<div class="source-entry"><span class="source-id">W-02</span><div><h3>標準工時 v0.4 已核准版型樣張</h3><p>圖書館同專案 STYLE-TEMPLATE-001_v0.4_已核准兩頁樣張.docx。核准範圍僅限視覺版型。</p></div><span class="no-link">Library 內部檔案</span></div>
+<div class="source-entry"><span class="source-id">D-01</span><div><h3>嘉義廠區空間管制暨門禁改善設計提案_工作版</h3><p>Google Docs 現行工作來源，已建立圖書館索引；其內容屬初步設計，不能當作現勘簽認、施工圖或主管核准。</p></div><a target="_blank" rel="noopener noreferrer" href="https://docs.google.com/document/d/1PQ-NaKD1liru6W3yY953BhAvpwB6aA5Qr_YtJvb03Sg/edit">檢視文件 ↗</a></div>
+<div class="source-entry"><span class="source-id">D-02</span><div><h3>嘉義門禁｜來源關聯索引與 V0.5 報告框架</h3><p>圖書館 /40_PROJECTS/門禁&辦公室/；原始 XMind v4 未取得。門禁來源衝突未完成三方驗證。</p></div><span class="no-link">Library 內部檔案</span></div>
+<div class="source-entry"><span class="source-id">S-01</span><div><h3>WEB-KNOWLEDGE-001｜知識庫轉單頁長捲動網頁</h3><p>圖書館 /30_KNOWLEDGE/Rules_Skills/；本頁沿用 v0.1 的版型、狀態分層、任務清單、來源回溯，並追加研究導航互動區；技能仍為候選。</p></div><span class="no-link">候選技能文件</span></div></div>
+<div class="qa-card"><h3>交付與安全界線</h3><p>此頁依 2026-10-12 的圖書館材料整理，供私人審閱的靜態候選版。各項狀態是該次資料快照，不表示截至開啟當下的最新結果。未執行 GitHub Skill 安裝、未連線 ERP、未驗證 Codex 寫入同步、未修改 Google Drive 或圖書館原始資料。包含公司內部流程資訊，請避免未經授權公開分享。</p></div>
+</section>
+<footer class="footer"><div><div class="footer-logo">KM / KNOWLEDGE WEB</div><div class="footer-note">Single-page knowledge snapshot · Navigation + mind map concept v0.3 · WEB-KNOWLEDGE-001 reference</div></div><div class="footer-note">資料基準 2026.10.12　｜　輸出：導航增強版 v0.2｜靜態單頁 HTML<br/>只讀呈現 · 來源可追溯 · 無假進度百分比 · 無正式核准宣稱</div></footer>
+</main></div>
+<button id="toTop" class="to-top" aria-label="回到頁面頂端" title="回到頂端"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 15 7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+<script>
+(function(){'use strict';
+ const filters=[...document.querySelectorAll('[data-filter]')],cards=[...document.querySelectorAll('.task-card')],count=document.getElementById('taskCount');
+ let selected='all';
+ function setFilter(next){selected=next;filters.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===next)));let visible=0;cards.forEach(c=>{let show=next==='all'||c.dataset.category===next;c.hidden=!show;if(show)visible++;});count.textContent=`SHOWING ${String(visible).padStart(2,'0')} / 08`}
+ filters.forEach(b=>b.addEventListener('click',()=>setFilter(b.dataset.filter)));
+ document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{
+  const s=b.dataset.copy;try{if(navigator.clipboard && window.isSecureContext){await navigator.clipboard.writeText(s)}else{const t=document.createElement('textarea');t.value=s;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('copy unsupported');t.remove()}b.textContent='已複製，可貼到對話中';b.dataset.copied='true';setTimeout(()=>{b.textContent='複製工作恢復指令 ↗';b.dataset.copied='false'},2400)}catch(e){b.textContent='無法自動複製，請手動選取';setTimeout(()=>b.textContent='複製工作恢復指令 ↗',3000)}}));
+ const back=document.getElementById('toTop');function updateBack(){back.classList.toggle('visible',window.scrollY>650)}window.addEventListener('scroll',updateBack,{passive:true});updateBack();back.addEventListener('click',()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}));
+ const nav=[...document.querySelectorAll('.side-nav a, .mobile-nav a')],sections=[...document.querySelectorAll('main .page-section')];function updateNav(){let current='top';for(let s of sections){if(s.getBoundingClientRect().top<160)current=s.id}nav.forEach(a=>{const active=a.getAttribute('href')==='#'+current;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')})}window.addEventListener('scroll',updateNav,{passive:true});updateNav();
+ document.getElementById('printBtn').addEventListener('click',()=>window.print());window.addEventListener('beforeprint',()=>{cards.forEach(c=>c.hidden=false)});window.addEventListener('afterprint',()=>setFilter(selected));
+})();
+</script>
+<script>
+(function(){'use strict';
+const navigation={
+ hours:{
+  destination:'取得授權後執行可驗證的一站一週試行',position:'v0.5 文件品質尚待驗證',traffic:'文件品質尚未閉環／跨部門授權未確認',routeTag:'待驗證',next:'對 v0.5 Word 做逐頁 QC；先不修改原件。',
+  stations:[
+   {state:'done',label:'工作稿已形成',title:'方法與提案',note:'現有成果',detail:'工時蒐集方法和有限試行提案已整理成工作稿，並非正式標準或已核准導入。',evidence:'v0.5 提案、決策紀錄與版型核准範圍',arrival:'內容具備可審閱來源；不能宣稱已試行',source:'G-01 / W-01 / W-02',target:'#overview'},
+   {state:'now',label:'待驗證',title:'文件品質 QC',note:'目前位置',detail:'逐頁確認 v0.5 實際版面、解析頁數差異、封面版號與疑似空白頁。',evidence:'逐頁渲染記錄與可重現缺陷表',arrival:'渲染結果、版本標示和修正項目完成核對',source:'G-01 / W-01 · PS-TEST-03',target:'#task-board'},
+   {state:'block',label:'待核准',title:'主管授權',note:'外部阻塞',detail:'文件審閱後，取得研發處長、廠長及生產協作範圍的可核實意見；版型核准不能替代試行核准。',evidence:'主管決策、跨部門協作窗口及資料權限',arrival:'有可核實的試行授權和資料使用邊界',source:'G-01 / W-01 · PS-TEST-04',target:'#decisions'},
+   {state:'future',label:'尚未開始',title:'一站一週試行',note:'未來目標',detail:'取得正式授權後，才可安排限定範圍的現場資料蒐集、核對與驗收。',evidence:'事前授權、試行記錄、驗收證據',arrival:'按已核准準則完成資料檢查',source:'W-01 · 候選試行方案',target:'#decisions'}],
+  flows:{question:['01 / 問題定義','究竟要解決哪種工時失真？','既有報工資料不一定等於真實加工時間。已形成方法與提案，但仍需文件品質及執行權限驗證。','G-01 / W-01'],evidence:['02 / 資料需求','哪些證據能支撐工時方法？','需可追溯的現場紀錄、製令與工時定義；混合製令與人機重疊不得在無依據下硬性分攤。','W-01 / 既有方法討論'],friction:['03 / 阻力定位','目前真正阻塞在哪裡？','文件渲染品質尚未閉環；即使修復，跨部門授權仍是另一個獨立門檻。','G-01 · PS-TEST-03/04'],fork:['04 / 分流判斷','先修文件還是直接試行？','目前路線是先完成 QC，再提交主管審議；未取得授權前不得自行改道至現場執行。','G-01 · 既有依賴關係'],action:['05 / 最小驗證','下一個低風險可行動作','渲染 v0.5 並逐頁核對頁數、空白頁、版號；記錄缺陷與修正建議，不覆蓋原文件。','G-01 · PS-TEST-03'],feedback:['06 / 學習回饋','如何把結果帶回下一輪？','文件 QC 有結果後，更新候選進度證據，再評估是否進入主管審議；不能由檔案更新時間推定通過。','G-01 / PROJECT-STATE 規則']}
+ },
+ door:{
+  destination:'完成門位與設備一致性核對，取得必要現勘及設計確認',position:'XMind v4 主檔尚未取得，三方比對阻塞',traffic:'來源缺口／門號衝突／逃生與設備相容性未確認',routeTag:'來源阻塞',next:'定位 XMind v4，與既有 Google Docs 工作版和報告框架比對。',
+  stations:[
+   {state:'done',label:'工作稿已形成',title:'門禁設計工作版',note:'現有成果',detail:'已有空間管制、14 筆 A 系列需求、7 道核心門雙向刷卡候選分析；仍是工作設計，不是核定施工。',evidence:'Google Docs 工作版與 Library 框架',arrival:'能定位候選需求與對應工作來源',source:'D-01 / D-02',target:'#overview'},
+   {state:'block',label:'來源阻塞',title:'三方主檔比對',note:'目前位置',detail:'必須取得 XMind v4 才能與 Google Docs 工作版、圖書館架構版對照來源及門號，不可自行推定唯一主檔。',evidence:'XMind v4 原始檔、版次、差異對照表',arrival:'三方來源差異與暫定有效依據經確認',source:'G-01 / D-01 / D-02 · PS-TEST-01',target:'#task-board'},
+   {state:'now',label:'待現勘',title:'現場與設備核對',note:'條件性下一段',detail:'D029 重複、A014 門型、F 系列逃生引用，以及 14 讀卡點對 13 台候選設備的配對需逐項查證。',evidence:'逐門現勘、設備相容性、消防逃生核對資料',arrival:'每項差異都有來源、確認角色與閉環條件',source:'G-01 / D-01 · PS-TEST-02',target:'#risks'},
+   {state:'future',label:'待核准',title:'設計決策與導入',note:'未來目標',detail:'在來源、現場與設備條件查清後，才能把候選設計提交有權核准的人員。',evidence:'主管核准、圖面與設備清單確認',arrival:'有正式可核實的核准與實施邊界',source:'G-01 · 未核准',target:'#decisions'}],
+  flows:{question:['01 / 問題定義','門禁設計究竟卡在哪裡？','已有工作版，但門位資料、原始 XMind 與現場條件尚未對齊；設計稿不能視為施工核准。','G-01 / D-01 / D-02'],evidence:['02 / 資料需求','最欠缺哪份關鍵證據？','原始 XMind v4 是三方比對的重要缺口；也需逐門實際尺寸、門型與逃生條件。','D-01 / D-02'],friction:['03 / 阻力定位','哪些衝突會讓路線中斷？','D029 重複、A014 門型未定、F 系列逃生引用、14 讀卡點與 13 台候選設備差異均未閉環。','G-01 / 門禁來源索引'],fork:['04 / 分流判斷','沒有 XMind，可以先做什麼？','可先用已確認的 Google Docs 工作版整理待現勘清單；不可把這份清單當作已完成三方比對。','G-01 · PS-TEST-01/02'],action:['05 / 最小驗證','下一個可執行的低風險動作','定位 XMind v4；如果暫無檔案，只讀整理 D029、A014 與設備數量差異，等待現場及來源核對。','G-01 / D-01'],feedback:['06 / 學習回饋','得到新資料後如何回寫？','形成來源差異紀錄並提交驗收，確認後才修訂候選進度；不自行替換任何正式設計文件。','G-01 / 門禁來源索引']}
+ }};
+ const titles={done:'已形成工作稿',now:'待驗證',block:'阻塞／待授權',future:'尚未開始'};
+ let project='hours',checkpoint=1,flow='question';
+ const $=id=>document.getElementById(id);
+ function renderStations(){const data=navigation[project];$('routeTrack').replaceChildren();data.stations.forEach((node,i)=>{const b=document.createElement('button');b.type='button';b.className='route-stop '+node.state;b.setAttribute('aria-pressed',String(i===checkpoint));b.setAttribute('aria-label',`第${i+1}站，${node.title}，${node.label}`);b.innerHTML=`<span class="route-node" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><span class="route-state">${node.label}</span><span class="route-title">${node.title}</span><span class="route-note">${node.note}</span>`;b.addEventListener('click',()=>{checkpoint=i;renderStations();renderFocus()});$('routeTrack').appendChild(b)});}
+ function renderFocus(){const d=navigation[project].stations[checkpoint];$('focusCount').textContent=String(checkpoint+1).padStart(2,'0')+' / 04';$('focusTitle').textContent=d.title;$('focusDescription').textContent=d.detail;$('focusEvidence').textContent=d.evidence;$('focusArrival').textContent=d.arrival;$('focusSource').textContent=d.source;$('focusRelated').href=d.target;}
+ function renderFlow(){const d=navigation[project].flows[flow];$('flowResultIndex').textContent=d[0];$('flowResultTitle').textContent=d[1];$('flowResultText').textContent=d[2];$('flowResultSource').textContent='來源 '+d[3];document.querySelectorAll('[data-flow]').forEach(b=>{const is=b.dataset.flow===flow;b.classList.toggle('active',is);b.setAttribute('aria-pressed',String(is))})}
+ function setProject(p){project=p;checkpoint=p==='hours'?1:1;document.querySelectorAll('[data-nav-project]').forEach(b=>{const is=b.dataset.navProject===p;b.classList.toggle('active',is);b.setAttribute('aria-pressed',String(is))});$('navConsole').dataset.currentProject=p;const d=navigation[p];$('navDestination').textContent=d.destination;$('navPosition').textContent=d.position;$('navTraffic').textContent=d.traffic;$('navRouteTag').textContent=d.routeTag;$('navNext').textContent=d.next;renderStations();renderFocus();renderFlow();document.dispatchEvent(new CustomEvent('km:project',{detail:{project:p}}));}
+ document.querySelectorAll('[data-nav-project]').forEach(b=>b.addEventListener('click',()=>setProject(b.dataset.navProject)));
+ document.querySelectorAll('[data-flow]').forEach(b=>b.addEventListener('click',()=>{flow=b.dataset.flow;renderFlow()}));
+ const loops={micro:['MICRO LOOP / 修','保留目的地，修正局部執行','例如文件渲染發現分頁問題，重新排版並複驗。原本試行目標不因此變更。','守則：修正後必須重新驗證，不憑修正次數宣告完成。'],meso:['MESO LOOP / 變','重要證據改變，才評估改道','例如現勘證明門型或設備假設不成立，須重新比較設計方案和依賴順序。','守則：保留原假設與新證據；涉及權限、成本或設計重大變更須回到決策門檻。'],macro:['MACRO LOOP / 重新立事','目標改變，必須先取得 OWNER 決策','例如原定改善目標失效，必須關閉原狀態鏈，重新定義目的地，不由 AI 自行重設。','守則：新的主要目標及高風險、不可逆行動，均需 OWNER 明確核准。']};
+ document.querySelectorAll('[data-loop]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-loop]').forEach(x=>{const yes=x===b;x.classList.toggle('active',yes);x.setAttribute('aria-pressed',String(yes))});const d=loops[b.dataset.loop];$('loopCaption').textContent=d[0];$('loopTitle').textContent=d[1];$('loopDescription').textContent=d[2];$('loopGate').textContent=d[3]}));
+ setProject('hours');
+})();
+</script>
+
+<script>
+(function(){'use strict';
+ // Project-specific projection of existing PROJECT-STATE and GPS navigation facts.
+ // Mind map is a read-only visualization, not a replacement canonical document.
+ const models={
+  hours:{name:'標準工時管理改善',sub:'工作進度 × 理想／現實',overview:'目的地是一站一週的可驗證試行，但需要先完成文件 QC 並取得跨部門授權；目前沒有核准試行。',source:'G-01 / W-01 / W-02 · PROJECT-STATE v0.2 候選',stop:1,
+   left:[
+    {id:'h-desire',title:'期望成果',desc:'建立比既有報工更可追溯的工時管理方法；最終要透過有限範圍的現場試行驗證，而非只產出一份文件。',source:'W-01 · 提案工作版',stop:3,items:[
+     {id:'h-d1',title:'可追溯工時',desc:'目標是釐清製令、工序、加工與人機重疊資料的定義及追溯方式。此為改善目標，非已驗證成效。',source:'W-01 · 工時方法討論',stop:0},
+     {id:'h-d2',title:'一站一週試行',desc:'限定一個工作站、一週的候選試行範圍；沒有管理層授權前不得開始。',source:'W-01 / G-01 · 候選範圍',stop:3}]},
+    {id:'h-route',title:'預期路線',desc:'先補齊文件品質與可審閱性，再提出授權審議；核准後才進入現場資料試行。',source:'G-01 · PS-TEST-03/04',stop:1,items:[
+     {id:'h-r1',title:'文件 QC → 審議',desc:'針對 v0.5 Word 逐頁檢查版號、空白頁與呈現品質，確認後才具備審議條件。',source:'G-01 · PS-TEST-03',stop:1},
+     {id:'h-r2',title:'授權 → 試行',desc:'需要清楚的主管與跨部門授權，才可設定場域、人員與資料取得範圍。',source:'G-01 · PS-TEST-04',stop:2}]},
+    {id:'h-accept',title:'驗收條件',desc:'工作推進取決於證據與正式權限，不以百分比或修改次數判斷完成。',source:'FOX-KERNEL-001 / W-01',stop:3,items:[
+     {id:'h-a1',title:'文件可核對',desc:'逐頁渲染、版號、頁數及缺陷核對具備可重現的檢驗結果。',source:'G-01 · PS-TEST-03',stop:1},
+     {id:'h-a2',title:'試行證據完整',desc:'在取得授權後，才蒐集、比對並依已核准條件驗收試行資料。',source:'W-01 · 候選驗收',stop:3}]}
+   ],
+   right:[
+    {id:'h-current',title:'目前現實',desc:'已有 v0.5 提案工作稿，但文件品質檢查未閉環，且設計版型核准不等於試行核准。',source:'W-01 / W-02 / G-01',stop:1,items:[
+     {id:'h-c1',title:'v0.5 工作稿',desc:'既有 Word 提案已有內容，仍需逐頁檢查分頁、封面版號、頁數差異與可能的空白頁。',source:'W-01 · v0.5',stop:1},
+     {id:'h-c2',title:'版型不等於授權',desc:'v0.4 的視覺樣式曾獲同意，不可推定 v0.5 內容、試行或權限亦已核准。',source:'W-02 / G-01',stop:2}]},
+    {id:'h-friction',title:'關鍵阻塞',kind:'gap',desc:'品質檢查和正式授權是兩個不同門檻。先修正其中一項不代表另一項自動通過。',source:'G-01 · PS-TEST-03/04',stop:2,items:[
+     {id:'h-f1',title:'文件版面待 QC',kind:'gap',desc:'先做 v0.5 逐頁渲染與缺陷記錄，不能因已生成檔案就推定版面通過。',source:'G-01 · PS-TEST-03',stop:1},
+     {id:'h-f2',title:'跨部門授權',kind:'gap',desc:'主管審議與協作窗口尚待確認，未授權前不安排現場一站一週試行。',source:'G-01 · PS-TEST-04',stop:2}]},
+    {id:'h-next',title:'下一步驗證',desc:'先執行可以獨立完成、風險低且有明確輸出的文件品質確認。',source:'G-01 / W-01',stop:1,items:[
+     {id:'h-n1',title:'逐頁渲染比對',desc:'保留原件，產生頁面檢查結果與修正清單，不直接覆蓋正式來源。',source:'G-01 · PS-TEST-03',stop:1},
+     {id:'h-n2',title:'整理決策清單',desc:'將資料範圍、場域、試行授權與責任窗口整理給具權限者審議。',source:'G-01 · PS-TEST-04',stop:2}]}
+   ]},
+  door:{name:'嘉義門禁改善',sub:'門位設計 × 來源驗證',overview:'已存在門禁設計工作版，但原始 XMind v4 尚未取得；必須區分候選需求、待現勘事項與真正核准的施工設計。',source:'G-01 / D-01 / D-02 · 來源關聯索引',stop:1,
+   left:[
+    {id:'d-desire',title:'期望成果',desc:'以可追溯的門位配置、設備數量與消防逃生條件形成可供正式決策的設計依據。',source:'D-01 · 門禁設計工作版',stop:3,items:[
+     {id:'d-d1',title:'門位來源一致',desc:'XMind、Google Docs 與知識庫工作架構對應清楚，不把候選門位當成已核准清單。',source:'D-01 / D-02',stop:1},
+     {id:'d-d2',title:'具備現勘依據',desc:'需現場門型、尺寸、讀卡配置與逃生條件的查證資料，才能支持後續方案定案。',source:'D-01 · 待現勘',stop:2}]},
+    {id:'d-route',title:'預期路線',desc:'先完成原始主檔定位及三方比對，再核對現場與設備差異，最後由具權限者作正式設計決策。',source:'G-01 · PS-TEST-01/02',stop:1,items:[
+     {id:'d-r1',title:'三方來源比對',desc:'取得 XMind v4 後與 Google Docs 工作版、圖書館架構進行逐門差異確認。',source:'G-01 / D-01 / D-02',stop:1},
+     {id:'d-r2',title:'現勘 → 決策',desc:'完成門型、數量、逃生與設備相容性核對後，才提交正式審議與核准。',source:'G-01 / D-01',stop:2}]},
+    {id:'d-accept',title:'驗收邊界',desc:'來源一致性、現場資料、設備數量和權責核准均需具備證據；尚未完成不能宣稱可以施工。',source:'G-01 / D-01',stop:3,items:[
+     {id:'d-a1',title:'設備數量核對',desc:'核對 7 道核心門雙向刷卡需求形成的 14 個讀卡點，與候選報價 13 台的差異。',source:'D-01 / 門禁來源索引',stop:2},
+     {id:'d-a2',title:'消防逃生確認',desc:'涉及 F 系列逃生引用與緊急開門條件，須依現場及正式規範確認。',source:'D-01 · 待查證',stop:2}]}
+   ],
+   right:[
+    {id:'d-current',title:'目前現實',desc:'已有 Google Docs 工作版及圖書館關聯索引；原始 XMind v4 仍在本機，尚未取得可完整比對的來源。',source:'D-01 / D-02 / G-01',stop:1,items:[
+     {id:'d-c1',title:'Google Docs 工作版',desc:'可作為只讀整理與討論之依據，但目前不是經三方核實的唯一主檔。',source:'D-01',stop:0},
+     {id:'d-c2',title:'XMind v4 未取得',kind:'gap',desc:'原始門位心智圖目前無法與其他兩份來源完成完整核對；此節點不是 XMind 原圖。',source:'D-02 / G-01',stop:1}]},
+    {id:'d-friction',title:'關鍵阻塞',kind:'gap',desc:'D029、A014、逃生引用和設備讀卡點數量差異尚未完成現場與來源閉環。',source:'G-01 / D-01',stop:2,items:[
+     {id:'d-f1',title:'D029 / A014',kind:'gap',desc:'D029 有重複門號問題；A014 門型尚待現勘確認，不能自行指定唯一答案。',source:'D-01 / 門禁來源索引',stop:2},
+     {id:'d-f2',title:'14 點 vs 13 台',kind:'gap',desc:'7 道核心門雙向刷卡可形成 14 個讀卡點，與候選設備 13 台存在差異，需確認報價口徑。',source:'D-01 · 設備候選差異',stop:2}]},
+    {id:'d-next',title:'下一步驗證',desc:'優先定位原始 XMind，若暫時無法取得，僅整理已確認來源的待現勘差異清單。',source:'G-01 · PS-TEST-01/02',stop:1,items:[
+     {id:'d-n1',title:'定位 XMind 主檔',desc:'取得 XMind v4 原件並保存其版次與來源，不推測或重畫成原始門位圖。',source:'D-02 · 尚未取得',stop:1},
+     {id:'d-n2',title:'現場與消防核對',desc:'先列出需要現場確認的門型、逃生開啟方式、設備數量及對應人員。',source:'D-01 / G-01',stop:2}]}
+   ]}
+ };
+ const NS='http://www.w3.org/2000/svg',svg=document.getElementById('mindSvg'),scene=document.createElementNS(NS,'g');svg.appendChild(scene);
+ const el=id=>document.getElementById(id);const cx=740,cy=415,W=1480;
+ let active='hours',selected=null,collapsed=new Set(),zoom=1,pan={x:0,y:0};
+ const lookup=new Map();
+ function dom(name,attributes={},content){const n=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attributes))n.setAttribute(k,String(v));if(content!==undefined)n.textContent=content;return n}
+ function path(x1,y1,x2,y2,color,thin=false){const mid=(x1+x2)/2;const d=`M${x1} ${y1} C${mid} ${y1},${mid} ${y2},${x2} ${y2}`;return dom('path',{d,fill:'none',stroke:color,'stroke-width':thin?2.5:4,'stroke-linecap':'round',opacity:thin?.56:.78})}
+ function adjustViewBox(){const rect=svg.getBoundingClientRect();const ratio=rect.width>0?rect.height/rect.width:0.6;const h=W*ratio;svg.setAttribute('viewBox',`0 ${cy-h/2} ${W} ${h}`);updateTransform()}
+ function updateTransform(){scene.setAttribute('transform',`translate(${cx+pan.x} ${cy+pan.y}) scale(${zoom}) translate(${-cx} ${-cy})`)}
+ function resetView(){zoom=svg.clientWidth<600?2.5:1;pan={x:0,y:0};adjustViewBox()}
+ function textNode(group,x,y,text,color,size=16,weight=800){group.appendChild(dom('text',{x,y,fill:color,'font-size':size,'font-weight':weight,'text-anchor':'middle','dominant-baseline':'middle','pointer-events':'none'},text))}
+ function node(id,x,y,w,h,title,sub,side,kind='default',root=false){
+  const palette=root?{bg:'#1d4031',border:'#1d4031',ink:'#fffef7',hint:'#ccdfd0'}:side==='left'?{bg:'#fff8ed',border:'#dfba8e',ink:'#68462e',hint:'#a47848'}:{bg:kind==='gap'?'#fff1e8':'#eff7f0',border:kind==='gap'?'#cf9986':'#9cbea7',ink:kind==='gap'?'#814d3e':'#244c38',hint:kind==='gap'?'#ae705e':'#598069'};
+  const g=dom('g',{class:'mnode'+(selected===id?' selected':''),role:'button',tabindex:'0','aria-label':title+'，按 Enter 查看詳情',transform:`translate(${x-w/2} ${y-h/2})`,'data-node':id});
+  g.appendChild(dom('rect',{class:'node-outline',x:0,y:0,width:w,height:h,rx:root?19:13,ry:root?19:13,fill:palette.bg,stroke:palette.border,'stroke-width':root?1.5:1.7}));
+  if(root){textNode(g,w/2,h*.39,title,palette.ink,23,850);textNode(g,w/2,h*.70,sub,palette.hint,12,650)}
+  else {textNode(g,w/2,h*(sub?.45:.53),title,palette.ink,sub?17:16,820);if(sub)textNode(g,w/2,h*.75,sub,palette.hint,11,650)}
+  g.addEventListener('click',e=>{e.stopPropagation();select(id)});
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id)}});
+  scene.appendChild(g);return g;
+ }
+ function select(id){selected=id;const d=lookup.get(id);if(!d)return;document.querySelectorAll('.mnode').forEach(n=>n.classList.toggle('selected',n.dataset.node===id));el('mapDetailType').textContent=d.type;el('mapDetailTitle').textContent=d.title;el('mapDetailDescription').textContent=d.desc;el('mapDetailSource').textContent=d.source;el('mapToRoute').dataset.stop=String(d.stop??1);}
+ function draw(){scene.replaceChildren();lookup.clear();const model=models[active],base={title:model.name,desc:model.overview,source:model.source,stop:model.stop,type:'專案中心 / CURRENT MATTER'};lookup.set('root',base);
+  const connectors=dom('g',{'aria-hidden':'true'});scene.appendChild(connectors);
+  for(const side of ['left','right']){
+   const isLeft=side==='left',sx=isLeft?434:1046,leafX=isLeft?152:1328;
+   const items=model[side],hues=isLeft?['#c38c50','#cda36d','#b59165']:['#508d71','#6c9c7d','#4a8069'];
+   items.forEach((b,i)=>{
+    const y=165+i*245,col=hues[i];
+    connectors.appendChild(path(isLeft?606:874,cy,isLeft?sx+104:sx-104,y,col));
+    const branchExpanded=!collapsed.has(b.id);
+    if(branchExpanded){b.items.forEach((leaf,j)=>{const ly=y+(j===0?-64:64);connectors.appendChild(path(isLeft?sx-104:sx+104,y,isLeft?leafX+106:leafX-106,ly,col,true))})}
+   })
+  }
+  // Branches and children are rendered on top of all connector strokes.
+  for(const side of ['left','right']){
+   const isLeft=side==='left',sx=isLeft?434:1046,leafX=isLeft?152:1328;
+   const items=model[side];items.forEach((b,i)=>{
+    const y=165+i*245;
+    lookup.set(b.id,{title:b.title,type:(isLeft?'期望／規劃':'現實／證據')+' · 主分支',desc:b.desc,source:b.source,stop:b.stop});
+    b.items.forEach(leaf=>lookup.set(leaf.id,{title:leaf.title,type:(isLeft?'期望／規劃':'現實／證據')+' · '+(leaf.kind==='gap'?'待釐清缺口':'細項'),desc:leaf.desc,source:leaf.source,stop:leaf.stop}));
+    if(!collapsed.has(b.id)){b.items.forEach((leaf,j)=>node(leaf.id,leafX,y+(j===0?-64:64),210,59,leaf.title,leaf.kind==='gap'?'待驗證':'查看依據',side,leaf.kind));}
+    const bg=node(b.id,sx,y,208,76,b.title,collapsed.has(b.id)?'＋ 點擊展開':'－ 點擊收合',side,b.kind);
+    bg.addEventListener('click',()=>{collapsed.has(b.id)?collapsed.delete(b.id):collapsed.add(b.id);draw();select(b.id)});
+    bg.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){/* node handler already selected; branch toggles on click as keyboard activation */ collapsed.has(b.id)?collapsed.delete(b.id):collapsed.add(b.id);draw();select(b.id)}});
+   })
+  }
+  node('root',cx,cy,268,105,model.name,model.sub,'root','default',true);
+  // Labels at the top of each hemisphere.
+  textNode(scene,300,76,'EXPECTATION  /  期望・目的・路線','#ab7850',17,800);
+  textNode(scene,1190,76,'REALITY  /  現實・阻塞・驗證','#538267',17,800);
+  if(!lookup.has(selected))selected='root';select(selected);
+  updateTransform();
+ }
+ function chooseProject(p){if(!models[p])return;active=p;selected='root';collapsed.clear();document.querySelectorAll('[data-map-project]').forEach(b=>{const yes=b.dataset.mapProject===p;b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes))});draw();resetView()}
+ document.querySelectorAll('[data-map-project]').forEach(b=>b.addEventListener('click',()=>{const other=document.querySelector(`[data-nav-project="${b.dataset.mapProject}"]`);if(other)other.click();else chooseProject(b.dataset.mapProject)}));
+ document.addEventListener('km:project',e=>chooseProject(e.detail.project));
+ el('mapCollapse').addEventListener('click',()=>{collapsed=new Set([...models[active].left,...models[active].right].map(b=>b.id));selected='root';draw()});
+ el('mapExpand').addEventListener('click',()=>{collapsed.clear();draw()});
+ el('mapZoomOut').addEventListener('click',()=>{zoom=Math.max(.55,zoom/1.25);updateTransform()});
+ el('mapZoomIn').addEventListener('click',()=>{zoom=Math.min(4.3,zoom*1.25);updateTransform()});
+ el('mapReset').addEventListener('click',resetView);
+ el('mapToRoute').addEventListener('click',()=>{const gps=document.querySelector(`[data-nav-project="${active}"]`);if(gps&&!gps.classList.contains('active'))gps.click();const stop=Number(el('mapToRoute').dataset.stop||'1');const route=document.querySelectorAll('#routeTrack .route-stop')[stop];if(route)route.click();el('navigator').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})});
+ // Drag the background of the SVG; retain node keyboard and click interaction.
+ let pointer=null;
+ svg.addEventListener('pointerdown',e=>{if(e.target.closest('.mnode')||e.button!==0)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,startX:pan.x,startY:pan.y};svg.setPointerCapture(e.pointerId);svg.classList.add('is-panning')});
+ svg.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const rect=svg.getBoundingClientRect(),scale=W/rect.width;pan.x=pointer.startX+(e.clientX-pointer.x)*scale;pan.y=pointer.startY+(e.clientY-pointer.y)*scale;updateTransform()});
+ const stopPan=e=>{if(pointer&&(e.pointerId===undefined||pointer.id===e.pointerId)){pointer=null;svg.classList.remove('is-panning')}};
+ svg.addEventListener('pointerup',stopPan);svg.addEventListener('pointercancel',stopPan);svg.addEventListener('lostpointercapture',stopPan);
+ if('ResizeObserver' in window)new ResizeObserver(adjustViewBox).observe(svg);else window.addEventListener('resize',adjustViewBox);
+ chooseProject(document.querySelector('#navConsole')?.dataset.currentProject||'hours');
+})();
+</script>
+
+<script>
+(function(){'use strict';
+  // World is a READ-ONLY projection. It reads the same existing v0.3 navigation DOM
+  // to avoid becoming a competing source of truth. No network, writeback, or credential use.
+  const el=id=>document.getElementById(id);
+  const game=el('goGameMode'),knowledge=el('goKnowledgeMode'),root=el('worldRoot'),cv=el('worldCanvas'),g=cv.getContext('2d');
+  const TILE=24,W=45,H=32,VW=24,VH=15;
+  const places=[
+    {id:'hours',x:10,y:12,w:6,h:4,emoji:'🏭',name:'標準工時工廠',kind:'factory'},
+    {id:'door',x:31,y:12,w:6,h:4,emoji:'🏰',name:'嘉義門禁城堡',kind:'castle'},
+    {id:'library',x:20,y:4,w:6,h:4,emoji:'📚',name:'中央圖書館',kind:'library'},
+    {id:'workshop',x:20,y:23,w:6,h:4,emoji:'⚒️',name:'技能工坊',kind:'workshop'}
+  ];
+  let player={x:22,y:18,face:'up'},follow='hours',selected='hours',dlgOpen=false,fox={x:23,y:18,frame:0},frame=0;
+  const fmt=s=>String(s||'尚待確認').replace(/\s+/g,' ').trim();
+  function projectFromSource(p){
+    let b=document.querySelector('[data-nav-project="'+p+'"]');if(b)b.click();
+    return {destination:fmt(el('navDestination')?.textContent),position:fmt(el('navPosition')?.textContent),traffic:fmt(el('navTraffic')?.textContent),next:fmt(el('navNext')?.textContent)};
+  }
+  function chooseProject(id){
+    if(id==='hours'||id==='door'){
+      follow=id;selected=id;const d=projectFromSource(id);
+      el('worldProjectTitle').textContent=id==='hours'?'標準工時管理改善':'嘉義門禁改善';
+      el('worldStatus').textContent=id==='hours'?'文件 QC 待驗證 · 試行未授權':'門位來源待核對 · 施工未授權';
+      for(const [field,value] of [['worldDestination',d.destination],['worldPosition',d.position],['worldTraffic',d.traffic],['worldNext',d.next]])el(field).textContent=value;
+    }
+    document.querySelectorAll('[data-world-target]').forEach(b=>b.classList.toggle('current',b.dataset.worldTarget===id));
+    draw();
+  }
+  function showKnowledge(section){
+    document.body.classList.remove('game-mode');
+    game.setAttribute('aria-pressed','false');knowledge.setAttribute('aria-pressed','true');
+    if(follow==='hours'||follow==='door')document.querySelector('[data-nav-project="'+follow+'"]')?.click();
+    requestAnimationFrame(()=>{document.getElementById(section||'navigator')?.scrollIntoView({behavior:'smooth',block:'start'})});
+  }
+  function showGame(){
+    document.body.classList.add('game-mode');game.setAttribute('aria-pressed','true');knowledge.setAttribute('aria-pressed','false');
+    window.scrollTo({top:0,behavior:'instant'});closeDialog();chooseProject(follow);draw();cv.focus({preventScroll:true});
+  }
+  function grass(x,y){
+    const h=Math.abs((x*31+y*47+x*y*17)%101);return h<6?'#6c9e65':h<26?'#79aa6d':h<58?'#82b070':'#86b774';
+  }
+  function rect(x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+  function pxCircle(x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}
+  function tree(x,y,sx,sy){
+    rect(sx+9,sy+12,8,15,'#6b4e31');rect(sx+2,sy+2,20,14,'#2e6746');rect(sx+6,sy,12,20,'#377650');rect(sx+4,sy+2,8,8,'#4b9660');rect(sx+12,sy+10,10,6,'#265f43');
+  }
+  function building(p,sx,sy){
+    const wid=p.w*TILE,hei=p.h*TILE;
+    rect(sx+3,sy+25,wid-6,hei-24,'#bfb18d');rect(sx+5,sy+30,wid-10,hei-29,'#e2d2a7');
+    const roof=p.kind==='castle'?'#6d6d95':p.kind==='factory'?'#a6654d':p.kind==='workshop'?'#9a7246':'#466e82';
+    rect(sx,sy+10,wid,24,roof);rect(sx+10,sy+1,wid-20,12,roof);rect(sx+6,sy+7,wid-12,7,'#ffffff24');
+    if(p.kind==='castle'){for(let i=0;i<p.w;i+=2)rect(sx+i*TILE+2,sy-5,22,15,'#777aa3')}
+    if(p.kind==='factory'){
+      for(let i=0;i<3;i++)rect(sx+18+i*40,sy+42,24,18,'#6eafa8');rect(sx+wid-30,sy-21,17,32,'#b58d78');
+    } else if(p.kind==='library'){
+      for(let i=0;i<4;i++)rect(sx+18+i*28,sy+41,18,21,'#8fb9bd');
+    } else {for(let i=0;i<3;i++)rect(sx+18+i*40,sy+45,20,18,'#b7d2a0')}
+    rect(sx+wid/2-14,sy+hei-34,28,34,'#46554f');rect(sx+wid/2-9,sy+hei-29,18,29,'#835d48');
+    if(p.id==='door'){rect(sx+wid/2-18,sy+hei-35,36,35,'#45475b');rect(sx+wid/2-14,sy+hei-30,28,25,'#545d69');rect(sx+wid/2-7,sy+hei-20,14,19,'#313541')}
+    rect(sx+7,sy+hei-11,wid-14,11,'#343a36aa');
+    g.fillStyle='#fff4da';g.font='bold 13px "Microsoft JhengHei",sans-serif';g.textAlign='center';g.fillText(p.name,sx+wid/2,sy+hei-2);
+    if(p.id==='door'||p.id==='hours'){
+      rect(sx+wid-17,sy+hei-28,17,17,'#2a2a37');g.fillStyle='#ffd071';g.font='13px sans-serif';g.fillText('!',sx+wid-8,sy+hei-15);
+    }
+  }
+  function landscape(x,y){
+    // Park paths create an actual walkable visible connection between real project sites.
+    if((y===18&&x>=10&&x<=36)||(x===22&&y>=7&&y<=27)||(x===13&&y>=15&&y<=18)||(x===34&&y>=15&&y<=18)||(y===22&&x>=20&&x<=24))return 'road';
+    if(x>38&&y>22)return 'water';
+    return 'grass';
+  }
+  function isTree(x,y){if(x<2||y<2||x>=W-2||y>=H-2)return true;if(landscape(x,y)!=='grass')return false;if(places.some(p=>x>=p.x-1&&x<=p.x+p.w&&y>=p.y-1&&y<=p.y+p.h+1))return false;return Math.abs((x*43+y*29+x*y*7)%79)<6}
+  function blocked(x,y){if(x<1||y<1||x>W-2||y>H-2)return true;if(places.some(p=>x>=p.x&&x<p.x+p.w&&y>=p.y&&y<p.y+p.h))return true;if(landscape(x,y)==='water'||isTree(x,y))return true;return false}
+  function drawPerson(x,y,shirt,hat){
+    rect(x+5,y+16,6,7,'#343d58');rect(x+13,y+16,6,7,'#343d58');rect(x+5,y+10,14,8,shirt);rect(x+7,y+4,10,9,'#ecc79c');rect(x+5,y+2,14,5,hat);rect(x+7,y+7,2,2,'#283439');rect(x+15,y+7,2,2,'#283439');
+  }
+  function mapCamera(){return {x:Math.max(0,Math.min(W*TILE-cv.width,player.x*TILE-cv.width/2)),y:Math.max(0,Math.min(H*TILE-cv.height,player.y*TILE-cv.height/2))}}
+  let camera={x:0,y:0};
+  function draw(){
+    frame++;g.imageSmoothingEnabled=false;camera=mapCamera();g.clearRect(0,0,cv.width,cv.height);
+    const x0=Math.floor(camera.x/TILE),y0=Math.floor(camera.y/TILE);
+    for(let y=y0;y<=y0+VH+2;y++)for(let x=x0;x<=x0+VW+2;x++){
+      if(x<0||y<0||x>=W||y>=H)continue;const sx=x*TILE-camera.x,sy=y*TILE-camera.y,l=landscape(x,y);
+      if(l==='road'){rect(sx,sy,TILE,TILE,'#c5ad86');if((x+y)%3===0)rect(sx+4,sy+4,6,3,'#b79c77')}
+      else if(l==='water'){rect(sx,sy,TILE,TILE,(x+y)%3?'#4c98ae':'#5ba8b3');rect(sx+3,sy+7,10,2,'#acdcd6')}
+      else {rect(sx,sy,TILE,TILE,grass(x,y));if((x*7+y*11)%17===0)rect(sx+11,sy+4,4,4,'#c0c176')}
+      if(isTree(x,y))tree(x,y,sx,sy);
+    }
+    for(const p of places)building(p,p.x*TILE-camera.x,p.y*TILE-camera.y);
+    // Road works: two independent unresolved project conditions, no fake unlock.
+    for(const [x,y] of [[13,17],[34,17]]){
+      const sx=x*TILE-camera.x,sy=y*TILE-camera.y;
+      if(sx>-25&&sy>-30&&sx<cv.width+25&&sy<cv.height+25){rect(sx,sy+11,24,7,'#ad6a40');for(let i=1;i<24;i+=8)rect(sx+i,sy+7,4,17,'#eac982');g.fillStyle='#fff9dc';g.font='bold 12px sans-serif';g.fillText('!',sx+12,sy+5)}
+    }
+    // Fog is deliberately a visual indication of a real evidence gap.
+    for(const p of [places[0],places[1]]){
+      const sx=p.x*TILE-camera.x,sy=p.y*TILE-camera.y;
+      rect(sx-7,sy-7,p.w*TILE+14,7,'#eeeecc60');rect(sx-7,sy,p.w*TILE+14,13,'#eeeecc18');
+    }
+    const fx=fox.x*TILE-camera.x,fy=fox.y*TILE-camera.y;drawPerson(fx,fy,'#d18d60','#9b4d35');
+    g.fillStyle='#fff6de';g.font='bold 11px sans-serif';g.textAlign='center';g.fillText('🦊',fx+12,fy-3);
+    const sx=player.x*TILE-camera.x,sy=player.y*TILE-camera.y;drawPerson(sx,sy,'#3f719c','#2c415c');
+    const p=places.find(p=>selected===p.id);if(p){const ax=p.x*TILE-camera.x+p.w*TILE/2,ay=p.y*TILE-camera.y-14;g.fillStyle='#fff0b0';g.font='bold 13px sans-serif';g.fillText('▼',ax,ay)}
+  }
+  function nearest(){let best=null,d=5;for(const p of places){const px=p.x+p.w/2,py=p.y+p.h+.5,dist=Math.abs(player.x-px)+Math.abs(player.y-py);if(dist<d){best=p;d=dist}}return best}
+  function openPlace(id){
+    const p=places.find(p=>p.id===id);if(!p)return;selected=p.id;
+    let title,body;if(id==='hours'||id==='door'){
+      chooseProject(id);const d=projectFromSource(id);title=p.name+'｜任務看板';body='📍 目前位置：'+d.position+'\n\n🚧 阻塞／路況：'+d.traffic+'\n\n➡️ 下一步：'+d.next+'\n\n📜 點「開啟研究導航」查看來源、雙向心智圖與完整任務。現實未完成核准之前，不會開放城門。';
+    } else if(id==='library'){
+      title='📚 中央圖書館｜知識入口';body='這裡連接已建立的研究導航網頁：GPS 工作路線、雙向心智圖、FlowCard 與證據來源。\n\n同一筆專案狀態，在兩種模式呈現。';
+    } else {
+      title='⚒️ 技能工坊｜能力驗證';body='技能不以「寫好說明」為完成。必須有可重複執行的輸入／輸出、驗收證據與授權邊界。\n\n這一版工坊僅展示知識轉技能的概念，不聲稱新技能已獲核准。';
+    }
+    el('worldDialogTitle').textContent=title;el('worldDialogText').textContent=body;
+    el('worldDialogNavigate').textContent=(id==='library'||id==='workshop')?'📚 查看研究導航':'📚 查看此專案的研究導航';
+    el('worldLocation').textContent=p.emoji+' '+p.name+' · 工作狀態快照';
+    dlgOpen=true;el('worldDialog').hidden=false;draw();
+  }
+  function closeDialog(){el('worldDialog').hidden=true;dlgOpen=false;el('worldLocation').textContent='中央廣場 · 工作進度投影';cv.focus({preventScroll:true})}
+  function move(dx,dy){if(dlgOpen)return;const nx=player.x+dx,ny=player.y+dy;if(!blocked(nx,ny)){player.x=nx;player.y=ny;fox.x=nx+1;fox.y=ny+1;if(blocked(fox.x,fox.y)){fox.x=nx;fox.y=ny-1}}
+    const n=nearest();if(n)el('worldLocation').textContent='接近 '+n.name+' · 按 A 調查';else el('worldLocation').textContent='中央廣場 · 工作進度投影';draw();}
+  function investigate(){if(dlgOpen){closeDialog();return}const n=nearest();if(n)openPlace(n.id);else openPlace(selected==='door'?'door':'hours')}
+  document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('click',()=>{const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[b.dataset.move];move(...d)}));
+  document.querySelectorAll('[data-world-target]').forEach(b=>b.addEventListener('click',()=>openPlace(b.dataset.worldTarget)));
+  game.addEventListener('click',showGame);knowledge.addEventListener('click',()=>showKnowledge('navigator'));
+  el('worldOpenKnowledge').addEventListener('click',()=>showKnowledge('navigator'));
+  el('worldDialogNavigate').addEventListener('click',()=>showKnowledge(selected==='library'?'mindmap':'navigator'));
+  el('worldDialogClose').addEventListener('click',closeDialog);el('worldA').addEventListener('click',investigate);
+  el('worldB').addEventListener('click',()=>dlgOpen?closeDialog():showKnowledge('navigator'));
+  el('worldMapReset').addEventListener('click',()=>{player={x:22,y:18,face:'up'};fox={x:23,y:18,frame:0};closeDialog();draw()});
+  cv.addEventListener('click',e=>{if(dlgOpen)return;const rect=cv.getBoundingClientRect();const x=(e.clientX-rect.left)*cv.width/rect.width+camera.x,y=(e.clientY-rect.top)*cv.height/rect.height+camera.y;const p=places.find(p=>x>=p.x*TILE-8&&x<=(p.x+p.w)*TILE+8&&y>=p.y*TILE-8&&y<=(p.y+p.h)*TILE+8);if(p)openPlace(p.id);else {let gx=Math.floor(x/TILE),gy=Math.floor(y/TILE);const dx=Math.sign(gx-player.x),dy=Math.sign(gy-player.y);if(Math.abs(gx-player.x)>=Math.abs(gy-player.y))move(dx,0);else move(0,dy)}});
+  window.addEventListener('keydown',e=>{if(!document.body.classList.contains('game-mode')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+    const key=e.key.toLowerCase(),dirs={arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]};
+    if(dirs[key]){e.preventDefault();move(...dirs[key])}else if([' ','enter','z'].includes(key)){e.preventDefault();investigate()}else if(['escape','x','backspace'].includes(key)){e.preventDefault();if(dlgOpen)closeDialog();else showKnowledge('navigator')}
+  });
+  document.addEventListener('km:project',e=>{if(e.detail?.project==='hours'||e.detail?.project==='door'){follow=e.detail.project;if(document.body.classList.contains('game-mode')){const p=follow;const d={destination:fmt(el('navDestination')?.textContent),position:fmt(el('navPosition')?.textContent),traffic:fmt(el('navTraffic')?.textContent),next:fmt(el('navNext')?.textContent)};el('worldProjectTitle').textContent=p==='hours'?'標準工時管理改善':'嘉義門禁改善';for(const [k,v] of [['worldDestination',d.destination],['worldPosition',d.position],['worldTraffic',d.traffic],['worldNext',d.next]])el(k).textContent=v;}}});
+  // Choose the initial world view without changing the saved/canonical project data.
+  chooseProject('hours');showGame();
+})();
+</script>
+
+</body></html>
