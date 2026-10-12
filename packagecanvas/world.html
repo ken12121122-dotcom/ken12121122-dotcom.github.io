@@ -534,7 +534,7 @@ function showWorkProject(p){
   const desc=p.name+'\n目前：'+p.position+'\n阻塞：'+p.blocker+'\n下一步：'+p.next+'\n目的地：'+p.destination+'\n（來源：'+p.source+'；快照非即時同步）';
   ask(desc,['📚 開啟 GPS／心智圖','回到知識世界'],i=>{
     closeDialog();
-    if(i===0) location.href='./research-navigation-v04.html?project='+encodeURIComponent(p.id);
+    if(i===0) location.href='./research-navigation-v04.html?project='+encodeURIComponent(p.id==='access'?'door':p.id);
   },{onBack:closeDialog});
 }
 
