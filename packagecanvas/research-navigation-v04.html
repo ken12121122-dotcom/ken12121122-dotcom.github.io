@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="light" />
 <meta name="description" content="ChatGPT 圖書館專案進度快照：標準工時改善、嘉義門禁改善與 PROJECT-STATE 候選治理任務，單頁長捲動資訊網站。" />
-<title>雙模式知識世界｜GBA 工作投影 × 研究導航 v0.4</title>
+<title>研究導航工作台｜與原本 GBA 知識世界連動 v0.4</title>
 <style>
 :root{
  --paper:#F7F6F2;--white:#FFFEFB;--ink:#16231F;--text:#26342F;--sub:#65716C;--muted:#89938D;
@@ -120,109 +120,14 @@ svg{display:block;max-width:100%}p{margin:0}h1,h2,h3,h4{line-height:1.23;letter-
 @media(max-width:650px){.mindmap-sec{padding-top:60px}.map-head{display:block}.map-pick{margin-top:15px;width:100%}.map-pick button{flex:1}.map-tools{gap:12px}.map-controls{width:100%;justify-content:flex-start}.map-legend{gap:11px}.map-legend span{font-size:9px}#mindSvg{height:470px}.map-canvas-help{bottom:8px;right:8px;font-size:9px}.map-insight{grid-template-columns:1fr}.map-insight-side{border-left:0;border-top:1px solid #dfe5dc}.map-below{align-items:flex-start;flex-direction:column}.map-below a{white-space:normal}}
 @media print{.map-controls,.map-canvas-help,.map-pick{display:none!important}#mindSvg{height:400px}.map-shell{break-inside:avoid}.map-insight{grid-template-columns:1.4fr .6fr}.map-canvas{background:white}}
 
-
-
-/* ===== KNOWLEDGE WORLD | non-destructive game projection ===== */
-:root{--g-bg:#15172a;--g-blue:#34457c;--g-text:#f8f0dc;--g-green:#8bcfa4;--g-gold:#efca80}
-.mode-selector{display:flex;gap:5px;border:1px solid #d8ded6;background:#f0f3ef;padding:4px;border-radius:999px;align-items:center;flex-wrap:nowrap}
-.mode-selector button{background:transparent;border:0;cursor:pointer;color:#41594f;padding:9px 13px;border-radius:999px;white-space:nowrap;font-size:12px;font-weight:800}
-.mode-selector button[aria-pressed="true"]{background:#1c614a;color:#fff;box-shadow:0 2px 8px #133b2c2e}
-#worldRoot{display:none}
-body.game-mode{background:#101624}
-body.game-mode .noise,body.game-mode .mobile-nav,body.game-mode .shell{display:none!important}
-body.game-mode #worldRoot{display:block}
-body.game-mode .topbar{background:#111d2b;border-bottom-color:#324255;color:#e7f1e9}
-body.game-mode .brand-desc,body.game-mode .brand-name{color:#f5f0dd}
-body.game-mode .top-meta{color:#c5cfe0}
-body.game-mode .print-btn{display:none}
-body.game-mode .mode-selector{background:#182735;border-color:#34495a}
-body.game-mode .mode-selector button{color:#b6c6cd}
-body.game-mode .mode-selector button[aria-pressed="true"]{background:#dfbb72;color:#18212f}
-.gw{max-width:1360px;margin:0 auto;padding:23px 22px 85px;color:var(--g-text);font-family:system-ui,"Microsoft JhengHei",sans-serif}
-.gw-hero{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:6px 0 22px;flex-wrap:wrap}
-.gw-eyebrow{color:#89c1b1;letter-spacing:.2em;font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:8px}
-.gw h1{font-family:system-ui,"Microsoft JhengHei",sans-serif;font-size:clamp(28px,4.6vw,54px);line-height:1.15;letter-spacing:-.055em;margin:0 0 10px;color:#f5efd8}
-.gw-sub{font-size:14px;color:#aebcc9;max-width:700px;line-height:1.8;margin:0}
-.gw-readonly{border:1px solid #5d6d78;color:#d9d2b2;border-radius:10px;padding:10px 13px;font-size:12px;background:#213040}
-.gw-screen-layout{display:grid;grid-template-columns:minmax(0,1fr) 312px;align-items:start;gap:17px}
-.gw-stage{min-width:0;border-radius:19px;background:linear-gradient(145deg,#35457a 0%,#242a54 65%,#1c2749);border:1px solid #6079a5;box-shadow:0 12px 40px #060b1a55;padding:16px}
-.gw-frame-top{display:flex;justify-content:space-between;gap:10px;color:#e6ddaa;font-size:11px;letter-spacing:.13em;margin:0 2px 11px;font-weight:800}
-.gw-frame-top .power{display:inline-flex;gap:8px;align-items:center}
-.gw-frame-top .power:before{content:"";background:#6ee59d;box-shadow:0 0 9px #6ee59d;width:7px;height:7px;border-radius:50%}
-.gw-display{border:10px solid #121d33;border-radius:10px;overflow:hidden;position:relative;background:#1c4639;outline:2px solid #576690;box-shadow:inset 0 0 0 2px #111a25;isolation:isolate}
-.gw-display canvas{width:100%;height:auto;aspect-ratio:576 / 360;image-rendering:pixelated;display:block;touch-action:manipulation;cursor:crosshair;outline:none}
-.gw-location{position:absolute;left:12px;top:12px;padding:6px 10px;border-radius:5px;background:#162638e6;color:#ffebad;border:1px solid #dfc1828c;font-weight:800;letter-spacing:.03em;font-size:12px;pointer-events:none;max-width:75%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gw-floathelp{position:absolute;bottom:9px;left:10px;right:10px;padding:7px 10px;background:#152838df;color:#faf2df;border:1px solid #ffffff30;border-radius:5px;font-size:11px;pointer-events:none}
-.gw-controls{display:flex;align-items:center;justify-content:space-between;padding:16px 4px 4px;gap:15px;flex-wrap:wrap}
-.gw-dpad{width:138px;height:116px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px}
-.gw-dpad button,.gw-a,.gw-b,.gw-start{border:0;cursor:pointer;touch-action:manipulation;user-select:none;box-shadow:inset 0 -3px 0 #0a1022a8,0 2px 1px #080a17a0;color:#f6f2e6;font-weight:900}
-.gw-dpad button{background:#161b38;border-radius:6px;font-size:17px;min-width:0}
-.gw-dpad .up{grid-area:1/2}.gw-dpad .left{grid-area:2/1}.gw-dpad .center{grid-area:2/2;background:#10172d;cursor:default}.gw-dpad .right{grid-area:2/3}.gw-dpad .down{grid-area:3/2}
-.gw-ab{display:flex;gap:12px;align-items:center}
-.gw-a,.gw-b{width:56px;height:56px;border-radius:50%;font:800 18px system-ui;transform:rotate(-17deg)}
-.gw-a{background:#c8486a}.gw-b{background:#5866a9}
-.gw-mid{display:flex;gap:8px;flex-direction:column;align-items:center}
-.gw-start{padding:9px 12px;background:#1b223e;border-radius:30px;font-size:11px}
-.gw-caption{font-size:10px;color:#bcc9da;letter-spacing:.07em;line-height:1.5;text-align:center}
-.gw-right{display:flex;flex-direction:column;gap:12px}
-.gw-box{background:#1c2839;border:1px solid #394b5d;border-radius:12px;padding:16px;min-width:0}
-.gw-box h2,.gw-box h3{color:#f8efd5;font-size:16px;margin:0 0 10px;line-height:1.5;font-weight:800}
-.gw-box .gk{font-size:10px;letter-spacing:.12em;color:#8ac8af;font-weight:900;margin-bottom:7px}
-.gw-area-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;color:#f3f4ec;background:#263b45;border:1px solid #4a6570;border-radius:7px;padding:12px;margin:7px 0;cursor:pointer;text-align:left;font:700 13px system-ui}
-.gw-area-btn.current{border-color:#e8c77c;background:#405048}
-.gw-area-btn small{font-size:10px;color:#f6cf8c;font-weight:700}
-.gw-status-pill{display:inline-block;padding:5px 8px;border-radius:50px;background:#59402f;color:#ffdf9e;border:1px solid #8a6b45;font-size:11px;font-weight:800;margin-bottom:9px}
-.gw-dest-label{display:block;color:#9badaf;font-size:11px;margin:8px 0 3px}
-.gw-dest{color:#e7ead8;font-size:13px;line-height:1.65;margin:0;overflow-wrap:anywhere}
-.gw-source{color:#9eadbc;font-size:11px;line-height:1.6;margin-top:10px}
-.gw-mini-action{border:1px solid #a8b7b2;background:#f0e7ce;color:#1a3540;border-radius:8px;padding:11px 13px;cursor:pointer;font-weight:800;width:100%;margin-top:11px}
-.gw-legend{margin-top:15px;display:flex;gap:8px;flex-wrap:wrap}
-.gw-legend span{padding:8px 10px;border-radius:7px;border:1px solid #3e5264;color:#c1ccd0;background:#1b2837;font-size:11px}
-.gw-story{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
-.gw-story .gw-box{padding:14px}
-.gw-story b{color:#e9d7a3;font-size:13px}
-.gw-story p{font-size:12px;color:#b9c8d0;line-height:1.7;margin:6px 0 0}
-.gw-dialog{position:absolute;inset:auto 10px 10px;background:#f6f0db;color:#25332c;border:4px solid #304d52;box-shadow:0 0 0 2px #f3ead5;z-index:4;padding:15px 16px 12px;border-radius:3px;max-height:85%;overflow:auto}
-.gw-dialog[hidden]{display:none}
-.gw-dialog-title{font-weight:900;font-size:14px;margin-bottom:6px;color:#204637}
-.gw-dialog-description{font-size:12px;line-height:1.8;white-space:pre-wrap;margin-bottom:10px}
-.gw-dialog .d-actions{display:flex;gap:7px;flex-wrap:wrap}
-.gw-dialog button{padding:9px 11px;border:1px solid #487162;border-radius:5px;cursor:pointer;background:#e2e9d9;color:#193b2c;font-weight:800;font-size:12px}
-.gw-dialog button.primary{background:#256b53;color:white}
-.gw-dialog button:focus-visible,.mode-selector button:focus-visible,.gw button:focus-visible{outline:3px solid #e0b85f;outline-offset:2px}
-@media (max-width:960px){.gw-screen-layout{grid-template-columns:1fr}.gw-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.gw-right .gw-box:last-child{grid-column:span 2}.gw-story{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:640px){.topbar-in{gap:8px}.topbar .brand-desc,.topbar .brand-name,.top-meta{display:none!important}.mode-selector{gap:3px}.mode-selector button{font-size:11px;padding:10px 11px}.gw{padding:15px 9px 65px}.gw-hero{margin:6px 3px 14px}.gw h1{font-size:30px}.gw-sub{font-size:12px}.gw-readonly{font-size:10px}.gw-stage{padding:8px;border-radius:12px}.gw-display{border-width:5px}.gw-display canvas{aspect-ratio:576/360}.gw-location{font-size:10px;padding:5px 7px;left:6px;top:6px}.gw-floathelp{font-size:9px;padding:5px;bottom:5px;left:5px;right:5px}.gw-controls{gap:6px;padding-top:12px}.gw-dpad{height:102px;width:120px}.gw-a,.gw-b{width:48px;height:48px}.gw-ab{gap:6px}.gw-mid{gap:5px}.gw-start{padding:8px;font-size:9px}.gw-caption{font-size:9px}.gw-right{grid-template-columns:1fr}.gw-right .gw-box:last-child{grid-column:auto}.gw-story{grid-template-columns:1fr}.gw-dialog{padding:10px;max-height:94%;inset:auto 4px 4px;border-width:3px}.gw-dialog-title{font-size:13px}.gw-dialog-description{font-size:11px;line-height:1.6}.gw-dialog button{font-size:11px;padding:8px}}
-@media print{#worldRoot,.mode-selector{display:none!important}body.game-mode .shell{display:flex!important}body.game-mode .mobile-nav{display:none!important}}
-
 </style>
 </head>
 <body>
 <div class="noise" aria-hidden="true"></div>
 <header class="topbar"><div class="topbar-in">
 <a href="#top" class="brand" aria-label="回到首頁"><span class="brand-mark">KM</span><span class="brand-name">KNOWLEDGE / OPERATIONS</span><span class="brand-desc">RESEARCH NAVIGATION · v0.4</span></a>
-<div class="top-right"><div class="mode-selector" role="group" aria-label="知識世界與研究導航切換"><button type="button" id="goGameMode" aria-pressed="true">🎮 知識世界</button><button type="button" id="goKnowledgeMode" aria-pressed="false">📚 研究導航</button></div><span class="top-meta"><b>●</b> PUBLIC TEST SNAPSHOT <span aria-hidden="true">/</span> 2026.10.12</span><button class="print-btn" id="printBtn" title="使用瀏覽器列印或另存 PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 15h12v6H6z"/></svg>列印 / PDF</button></div></div></header>
-<nav class="mobile-nav" aria-label="手機章節捷徑"><a class="active" href="#top">首頁</a><a href="#navigator">導航儀表</a><a href="#mindmap">心智地圖</a><a href="#overview">兩案概覽</a><a href="#reading-progress">進度解讀</a><a href="#task-board">執行任務</a><a href="#risks">關鍵缺口</a><a href="#resume">恢復工作</a><a href="#decisions">主管決策</a><a href="#sources">證據來源</a></nav>
-
-<div id="worldRoot" aria-label="知識世界遊戲探索模式">
-<div class="gw">
-  <div class="gw-hero"><div><div class="gw-eyebrow">Knowledge Map Projection · Phase 01</div><h1>讓工作，長成一個世界。</h1><p class="gw-sub">現實中的專案、阻塞與驗收，投影為地圖上的建築、道路和任務。走近建築按 A 調查；在同一頁切換正式研究導航與心智圖。</p></div><div class="gw-readonly"><a href="./" style="color:inherit;text-decoration:underline">← 返回 PackageCanvas</a><br>唯讀快照 · 2026 / 10 / 12<br>沒有即時同步／不會修改知識庫</div></div>
-  <div class="gw-screen-layout">
-    <section class="gw-stage" aria-label="可操作的像素知識世界"><div class="gw-frame-top"><span>AMIN / KNOWLEDGE WORLD · PROJECT MAP</span><span class="power">WORLD ACTIVE</span></div>
-      <div class="gw-display"><canvas id="worldCanvas" width="576" height="360" tabindex="0" role="img" aria-label="可使用方向鍵走動的工作進度地圖；點擊建築或使用右側區域清單查看內容"></canvas><div class="gw-location" id="worldLocation">中央廣場 · 工作進度投影</div><div class="gw-floathelp">方向鍵／WASD 移動 · A／空白鍵調查 · 點擊建築選擇 · B 返回</div>
-      <div class="gw-dialog" id="worldDialog" hidden role="dialog" aria-modal="false" aria-labelledby="worldDialogTitle"><div class="gw-dialog-title" id="worldDialogTitle"></div><div class="gw-dialog-description" id="worldDialogText"></div><div class="d-actions"><button class="primary" id="worldDialogNavigate">📚 開啟研究導航</button><button id="worldDialogClose">關閉／繼續探索</button></div></div></div>
-      <div class="gw-controls"><div class="gw-dpad" role="group" aria-label="行走方向"><button class="up" data-move="up" aria-label="向上">▲</button><button class="left" data-move="left" aria-label="向左">◀</button><button class="center" aria-hidden="true" tabindex="-1" disabled>✣</button><button class="right" data-move="right" aria-label="向右">▶</button><button class="down" data-move="down" aria-label="向下">▼</button></div><div class="gw-mid"><button class="gw-start" id="worldMapReset">START<br>回廣場</button><span class="gw-caption">主角／狐狸<br>任務進度快照</span></div><div class="gw-ab"><button class="gw-b" id="worldB">B</button><button class="gw-a" id="worldA">A</button></div></div>
-    </section>
-    <aside class="gw-right" aria-label="遊戲世界專案與導航資訊">
-      <div class="gw-box"><div class="gk">WORLD MAP / 區域選擇</div><h2>🏘️ 探索知識領地</h2><button class="gw-area-btn" data-world-target="hours"><span>🏭 標準工時工廠</span><small>文件 QC</small></button><button class="gw-area-btn" data-world-target="door"><span>🏰 嘉義門禁城堡</span><small>來源核對</small></button><button class="gw-area-btn" data-world-target="library"><span>📚 中央圖書館</span><small>導航／心智圖</small></button><button class="gw-area-btn" data-world-target="workshop"><span>⚒️ 技能工坊</span><small>驗證能力</small></button></div>
-      <div class="gw-box" aria-live="polite"><div class="gk">PROJECT HUD / 目前追蹤</div><h3 id="worldProjectTitle">標準工時管理改善</h3><span class="gw-status-pill" id="worldStatus">等待驗證 · 尚未授權</span><span class="gw-dest-label">🎯 目的地</span><p id="worldDestination" class="gw-dest"></p><span class="gw-dest-label">📍 目前位置</span><p id="worldPosition" class="gw-dest"></p><span class="gw-dest-label">🚧 前方路況</span><p id="worldTraffic" class="gw-dest"></p><span class="gw-dest-label">➡️ 下一步</span><p id="worldNext" class="gw-dest"></p><button id="worldOpenKnowledge" class="gw-mini-action">開啟這個專案的研究導航 ↗</button><p class="gw-source">資料取自同頁 v0.3 的導航狀態；遊戲不自行判斷「完成」，也不產生新正式進度。</p></div>
-      <div class="gw-box"><div class="gk">GAME RULES / 地圖規則</div><h3>🦊 狐狸只負責導航</h3><p class="gw-dest">霧＝資料缺口；路障＝待處理問題；關閉的城門＝待核准；證據通過後才能解除。這版只展示已知狀態，不會因為點擊就解鎖。</p></div>
-    </aside>
-  </div>
-  <div class="gw-legend"><span>🌫️ 迷霧：來源未齊</span><span>🚧 路障：工作阻塞</span><span>🔒 城門：權限閘門</span><span>📚 建築：可開啟文件與研究導航</span></div>
-  <div class="gw-story"><div class="gw-box"><b>01 · 發現問題</b><p>遊戲世界把現實專案的問題轉成場景，不把假想任務當真實完成紀錄。</p></div><div class="gw-box"><b>02 · 查看證據</b><p>切換「研究導航」，直接定位同一專案的 GPS、FlowCard、心智圖與來源。</p></div><div class="gw-box"><b>03 · 回到世界</b><p>確認現實資料及核准後，下一版投影才改變地圖。遊戲點擊本身不修改工作狀態。</p></div></div>
-</div>
-</div>
-
+<div class="top-right"><a href="./world.html" style="display:inline-flex;align-items:center;min-height:38px;padding:6px 12px;border:1px solid #adc5bb;border-radius:12px;color:#1d6650;background:#edf5f0;text-decoration:none;font-weight:700;font-size:12px;white-space:nowrap">🎮 原本的知識世界</a><span class="top-meta"><b>●</b> READ-ONLY SNAPSHOT <span aria-hidden="true">/</span> 2026.10.12</span><button class="print-btn" id="printBtn" title="使用瀏覽器列印或另存 PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 15h12v6H6z"/></svg>列印 / PDF</button></div></div></header>
+<nav class="mobile-nav" aria-label="手機章節捷徑"><a href="./world.html" style="font-weight:800">🎮 返回知識世界</a><a class="active" href="#top">首頁</a><a href="#navigator">導航儀表</a><a href="#mindmap">心智地圖</a><a href="#overview">兩案概覽</a><a href="#reading-progress">進度解讀</a><a href="#task-board">執行任務</a><a href="#risks">關鍵缺口</a><a href="#resume">恢復工作</a><a href="#decisions">主管決策</a><a href="#sources">證據來源</a></nav>
 <div class="shell">
 <aside class="sidebar" aria-label="章節導覽"><div class="side-inner"><div class="sidebar-eyebrow">CONTENTS / 目錄</div><nav class="side-nav">
 <a href="#top" class="active">進度首頁 <span>00</span></a>
@@ -591,148 +496,13 @@ const navigation={
  chooseProject(document.querySelector('#navConsole')?.dataset.currentProject||'hours');
 })();
 </script>
-
 <script>
-(function(){'use strict';
-  // World is a READ-ONLY projection. It reads the same existing v0.3 navigation DOM
-  // to avoid becoming a competing source of truth. No network, writeback, or credential use.
-  const el=id=>document.getElementById(id);
-  const game=el('goGameMode'),knowledge=el('goKnowledgeMode'),root=el('worldRoot'),cv=el('worldCanvas'),g=cv.getContext('2d');
-  const TILE=24,W=45,H=32,VW=24,VH=15;
-  const places=[
-    {id:'hours',x:10,y:12,w:6,h:4,emoji:'🏭',name:'標準工時工廠',kind:'factory'},
-    {id:'door',x:31,y:12,w:6,h:4,emoji:'🏰',name:'嘉義門禁城堡',kind:'castle'},
-    {id:'library',x:20,y:4,w:6,h:4,emoji:'📚',name:'中央圖書館',kind:'library'},
-    {id:'workshop',x:20,y:23,w:6,h:4,emoji:'⚒️',name:'技能工坊',kind:'workshop'}
-  ];
-  let player={x:22,y:18,face:'up'},follow='hours',selected='hours',dlgOpen=false,fox={x:23,y:18,frame:0},frame=0;
-  const fmt=s=>String(s||'尚待確認').replace(/\s+/g,' ').trim();
-  function projectFromSource(p){
-    let b=document.querySelector('[data-nav-project="'+p+'"]');if(b)b.click();
-    return {destination:fmt(el('navDestination')?.textContent),position:fmt(el('navPosition')?.textContent),traffic:fmt(el('navTraffic')?.textContent),next:fmt(el('navNext')?.textContent)};
+document.addEventListener('DOMContentLoaded',()=>{
+  const project = new URLSearchParams(location.search).get('project');
+  if(project==='hours'||project==='door'){
+    const btn = document.querySelector('[data-nav-project="'+project+'"]');
+    if(btn) btn.click();
   }
-  function chooseProject(id){
-    if(id==='hours'||id==='door'){
-      follow=id;selected=id;const d=projectFromSource(id);
-      el('worldProjectTitle').textContent=id==='hours'?'標準工時管理改善':'嘉義門禁改善';
-      el('worldStatus').textContent=id==='hours'?'文件 QC 待驗證 · 試行未授權':'門位來源待核對 · 施工未授權';
-      for(const [field,value] of [['worldDestination',d.destination],['worldPosition',d.position],['worldTraffic',d.traffic],['worldNext',d.next]])el(field).textContent=value;
-    }
-    document.querySelectorAll('[data-world-target]').forEach(b=>b.classList.toggle('current',b.dataset.worldTarget===id));
-    draw();
-  }
-  function showKnowledge(section){
-    document.body.classList.remove('game-mode');
-    game.setAttribute('aria-pressed','false');knowledge.setAttribute('aria-pressed','true');
-    if(follow==='hours'||follow==='door')document.querySelector('[data-nav-project="'+follow+'"]')?.click();
-    requestAnimationFrame(()=>{document.getElementById(section||'navigator')?.scrollIntoView({behavior:'smooth',block:'start'})});
-  }
-  function showGame(){
-    document.body.classList.add('game-mode');game.setAttribute('aria-pressed','true');knowledge.setAttribute('aria-pressed','false');
-    window.scrollTo({top:0,behavior:'instant'});closeDialog();chooseProject(follow);draw();cv.focus({preventScroll:true});
-  }
-  function grass(x,y){
-    const h=Math.abs((x*31+y*47+x*y*17)%101);return h<6?'#6c9e65':h<26?'#79aa6d':h<58?'#82b070':'#86b774';
-  }
-  function rect(x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
-  function pxCircle(x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}
-  function tree(x,y,sx,sy){
-    rect(sx+9,sy+12,8,15,'#6b4e31');rect(sx+2,sy+2,20,14,'#2e6746');rect(sx+6,sy,12,20,'#377650');rect(sx+4,sy+2,8,8,'#4b9660');rect(sx+12,sy+10,10,6,'#265f43');
-  }
-  function building(p,sx,sy){
-    const wid=p.w*TILE,hei=p.h*TILE;
-    rect(sx+3,sy+25,wid-6,hei-24,'#bfb18d');rect(sx+5,sy+30,wid-10,hei-29,'#e2d2a7');
-    const roof=p.kind==='castle'?'#6d6d95':p.kind==='factory'?'#a6654d':p.kind==='workshop'?'#9a7246':'#466e82';
-    rect(sx,sy+10,wid,24,roof);rect(sx+10,sy+1,wid-20,12,roof);rect(sx+6,sy+7,wid-12,7,'#ffffff24');
-    if(p.kind==='castle'){for(let i=0;i<p.w;i+=2)rect(sx+i*TILE+2,sy-5,22,15,'#777aa3')}
-    if(p.kind==='factory'){
-      for(let i=0;i<3;i++)rect(sx+18+i*40,sy+42,24,18,'#6eafa8');rect(sx+wid-30,sy-21,17,32,'#b58d78');
-    } else if(p.kind==='library'){
-      for(let i=0;i<4;i++)rect(sx+18+i*28,sy+41,18,21,'#8fb9bd');
-    } else {for(let i=0;i<3;i++)rect(sx+18+i*40,sy+45,20,18,'#b7d2a0')}
-    rect(sx+wid/2-14,sy+hei-34,28,34,'#46554f');rect(sx+wid/2-9,sy+hei-29,18,29,'#835d48');
-    if(p.id==='door'){rect(sx+wid/2-18,sy+hei-35,36,35,'#45475b');rect(sx+wid/2-14,sy+hei-30,28,25,'#545d69');rect(sx+wid/2-7,sy+hei-20,14,19,'#313541')}
-    rect(sx+7,sy+hei-11,wid-14,11,'#343a36aa');
-    g.fillStyle='#fff4da';g.font='bold 13px "Microsoft JhengHei",sans-serif';g.textAlign='center';g.fillText(p.name,sx+wid/2,sy+hei-2);
-    if(p.id==='door'||p.id==='hours'){
-      rect(sx+wid-17,sy+hei-28,17,17,'#2a2a37');g.fillStyle='#ffd071';g.font='13px sans-serif';g.fillText('!',sx+wid-8,sy+hei-15);
-    }
-  }
-  function landscape(x,y){
-    // Park paths create an actual walkable visible connection between real project sites.
-    if((y===18&&x>=10&&x<=36)||(x===22&&y>=7&&y<=27)||(x===13&&y>=15&&y<=18)||(x===34&&y>=15&&y<=18)||(y===22&&x>=20&&x<=24))return 'road';
-    if(x>38&&y>22)return 'water';
-    return 'grass';
-  }
-  function isTree(x,y){if(x<2||y<2||x>=W-2||y>=H-2)return true;if(landscape(x,y)!=='grass')return false;if(places.some(p=>x>=p.x-1&&x<=p.x+p.w&&y>=p.y-1&&y<=p.y+p.h+1))return false;return Math.abs((x*43+y*29+x*y*7)%79)<6}
-  function blocked(x,y){if(x<1||y<1||x>W-2||y>H-2)return true;if(places.some(p=>x>=p.x&&x<p.x+p.w&&y>=p.y&&y<p.y+p.h))return true;if(landscape(x,y)==='water'||isTree(x,y))return true;return false}
-  function drawPerson(x,y,shirt,hat){
-    rect(x+5,y+16,6,7,'#343d58');rect(x+13,y+16,6,7,'#343d58');rect(x+5,y+10,14,8,shirt);rect(x+7,y+4,10,9,'#ecc79c');rect(x+5,y+2,14,5,hat);rect(x+7,y+7,2,2,'#283439');rect(x+15,y+7,2,2,'#283439');
-  }
-  function mapCamera(){return {x:Math.max(0,Math.min(W*TILE-cv.width,player.x*TILE-cv.width/2)),y:Math.max(0,Math.min(H*TILE-cv.height,player.y*TILE-cv.height/2))}}
-  let camera={x:0,y:0};
-  function draw(){
-    frame++;g.imageSmoothingEnabled=false;camera=mapCamera();g.clearRect(0,0,cv.width,cv.height);
-    const x0=Math.floor(camera.x/TILE),y0=Math.floor(camera.y/TILE);
-    for(let y=y0;y<=y0+VH+2;y++)for(let x=x0;x<=x0+VW+2;x++){
-      if(x<0||y<0||x>=W||y>=H)continue;const sx=x*TILE-camera.x,sy=y*TILE-camera.y,l=landscape(x,y);
-      if(l==='road'){rect(sx,sy,TILE,TILE,'#c5ad86');if((x+y)%3===0)rect(sx+4,sy+4,6,3,'#b79c77')}
-      else if(l==='water'){rect(sx,sy,TILE,TILE,(x+y)%3?'#4c98ae':'#5ba8b3');rect(sx+3,sy+7,10,2,'#acdcd6')}
-      else {rect(sx,sy,TILE,TILE,grass(x,y));if((x*7+y*11)%17===0)rect(sx+11,sy+4,4,4,'#c0c176')}
-      if(isTree(x,y))tree(x,y,sx,sy);
-    }
-    for(const p of places)building(p,p.x*TILE-camera.x,p.y*TILE-camera.y);
-    // Road works: two independent unresolved project conditions, no fake unlock.
-    for(const [x,y] of [[13,17],[34,17]]){
-      const sx=x*TILE-camera.x,sy=y*TILE-camera.y;
-      if(sx>-25&&sy>-30&&sx<cv.width+25&&sy<cv.height+25){rect(sx,sy+11,24,7,'#ad6a40');for(let i=1;i<24;i+=8)rect(sx+i,sy+7,4,17,'#eac982');g.fillStyle='#fff9dc';g.font='bold 12px sans-serif';g.fillText('!',sx+12,sy+5)}
-    }
-    // Fog is deliberately a visual indication of a real evidence gap.
-    for(const p of [places[0],places[1]]){
-      const sx=p.x*TILE-camera.x,sy=p.y*TILE-camera.y;
-      rect(sx-7,sy-7,p.w*TILE+14,7,'#eeeecc60');rect(sx-7,sy,p.w*TILE+14,13,'#eeeecc18');
-    }
-    const fx=fox.x*TILE-camera.x,fy=fox.y*TILE-camera.y;drawPerson(fx,fy,'#d18d60','#9b4d35');
-    g.fillStyle='#fff6de';g.font='bold 11px sans-serif';g.textAlign='center';g.fillText('🦊',fx+12,fy-3);
-    const sx=player.x*TILE-camera.x,sy=player.y*TILE-camera.y;drawPerson(sx,sy,'#3f719c','#2c415c');
-    const p=places.find(p=>selected===p.id);if(p){const ax=p.x*TILE-camera.x+p.w*TILE/2,ay=p.y*TILE-camera.y-14;g.fillStyle='#fff0b0';g.font='bold 13px sans-serif';g.fillText('▼',ax,ay)}
-  }
-  function nearest(){let best=null,d=5;for(const p of places){const px=p.x+p.w/2,py=p.y+p.h+.5,dist=Math.abs(player.x-px)+Math.abs(player.y-py);if(dist<d){best=p;d=dist}}return best}
-  function openPlace(id){
-    const p=places.find(p=>p.id===id);if(!p)return;selected=p.id;
-    let title,body;if(id==='hours'||id==='door'){
-      chooseProject(id);const d=projectFromSource(id);title=p.name+'｜任務看板';body='📍 目前位置：'+d.position+'\n\n🚧 阻塞／路況：'+d.traffic+'\n\n➡️ 下一步：'+d.next+'\n\n📜 點「開啟研究導航」查看來源、雙向心智圖與完整任務。現實未完成核准之前，不會開放城門。';
-    } else if(id==='library'){
-      title='📚 中央圖書館｜知識入口';body='這裡連接已建立的研究導航網頁：GPS 工作路線、雙向心智圖、FlowCard 與證據來源。\n\n同一筆專案狀態，在兩種模式呈現。';
-    } else {
-      title='⚒️ 技能工坊｜能力驗證';body='技能不以「寫好說明」為完成。必須有可重複執行的輸入／輸出、驗收證據與授權邊界。\n\n這一版工坊僅展示知識轉技能的概念，不聲稱新技能已獲核准。';
-    }
-    el('worldDialogTitle').textContent=title;el('worldDialogText').textContent=body;
-    el('worldDialogNavigate').textContent=(id==='library'||id==='workshop')?'📚 查看研究導航':'📚 查看此專案的研究導航';
-    el('worldLocation').textContent=p.emoji+' '+p.name+' · 工作狀態快照';
-    dlgOpen=true;el('worldDialog').hidden=false;draw();
-  }
-  function closeDialog(){el('worldDialog').hidden=true;dlgOpen=false;el('worldLocation').textContent='中央廣場 · 工作進度投影';cv.focus({preventScroll:true})}
-  function move(dx,dy){if(dlgOpen)return;const nx=player.x+dx,ny=player.y+dy;if(!blocked(nx,ny)){player.x=nx;player.y=ny;fox.x=nx+1;fox.y=ny+1;if(blocked(fox.x,fox.y)){fox.x=nx;fox.y=ny-1}}
-    const n=nearest();if(n)el('worldLocation').textContent='接近 '+n.name+' · 按 A 調查';else el('worldLocation').textContent='中央廣場 · 工作進度投影';draw();}
-  function investigate(){if(dlgOpen){closeDialog();return}const n=nearest();if(n)openPlace(n.id);else openPlace(selected==='door'?'door':'hours')}
-  document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('click',()=>{const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[b.dataset.move];move(...d)}));
-  document.querySelectorAll('[data-world-target]').forEach(b=>b.addEventListener('click',()=>openPlace(b.dataset.worldTarget)));
-  game.addEventListener('click',showGame);knowledge.addEventListener('click',()=>showKnowledge('navigator'));
-  el('worldOpenKnowledge').addEventListener('click',()=>showKnowledge('navigator'));
-  el('worldDialogNavigate').addEventListener('click',()=>showKnowledge(selected==='library'?'mindmap':'navigator'));
-  el('worldDialogClose').addEventListener('click',closeDialog);el('worldA').addEventListener('click',investigate);
-  el('worldB').addEventListener('click',()=>dlgOpen?closeDialog():showKnowledge('navigator'));
-  el('worldMapReset').addEventListener('click',()=>{player={x:22,y:18,face:'up'};fox={x:23,y:18,frame:0};closeDialog();draw()});
-  cv.addEventListener('click',e=>{if(dlgOpen)return;const rect=cv.getBoundingClientRect();const x=(e.clientX-rect.left)*cv.width/rect.width+camera.x,y=(e.clientY-rect.top)*cv.height/rect.height+camera.y;const p=places.find(p=>x>=p.x*TILE-8&&x<=(p.x+p.w)*TILE+8&&y>=p.y*TILE-8&&y<=(p.y+p.h)*TILE+8);if(p)openPlace(p.id);else {let gx=Math.floor(x/TILE),gy=Math.floor(y/TILE);const dx=Math.sign(gx-player.x),dy=Math.sign(gy-player.y);if(Math.abs(gx-player.x)>=Math.abs(gy-player.y))move(dx,0);else move(0,dy)}});
-  window.addEventListener('keydown',e=>{if(!document.body.classList.contains('game-mode')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
-    const key=e.key.toLowerCase(),dirs={arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]};
-    if(dirs[key]){e.preventDefault();move(...dirs[key])}else if([' ','enter','z'].includes(key)){e.preventDefault();investigate()}else if(['escape','x','backspace'].includes(key)){e.preventDefault();if(dlgOpen)closeDialog();else showKnowledge('navigator')}
-  });
-  document.addEventListener('km:project',e=>{if(e.detail?.project==='hours'||e.detail?.project==='door'){follow=e.detail.project;if(document.body.classList.contains('game-mode')){const p=follow;const d={destination:fmt(el('navDestination')?.textContent),position:fmt(el('navPosition')?.textContent),traffic:fmt(el('navTraffic')?.textContent),next:fmt(el('navNext')?.textContent)};el('worldProjectTitle').textContent=p==='hours'?'標準工時管理改善':'嘉義門禁改善';for(const [k,v] of [['worldDestination',d.destination],['worldPosition',d.position],['worldTraffic',d.traffic],['worldNext',d.next]])el(k).textContent=v;}}});
-  // Choose the initial world view without changing the saved/canonical project data.
-  chooseProject('hours');showGame();
-})();
+});
 </script>
-
 </body></html>

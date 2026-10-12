@@ -1,0 +1,29 @@
+{
+  "schema": "amin-project-world-snapshot-v1",
+  "snapshot_date": "2026-10-12",
+  "read_only": true,
+  "sync": "manual_snapshot_not_live",
+  "notice": "此資料是已整理的工作進度快照，並非即時連線、核准證明或 GEN2 執行任務。",
+  "projects": [
+    {
+      "id": "hours",
+      "name": "標準工時管理改善",
+      "position": "v0.5 提案文件仍待品質檢查",
+      "blocker": "跨部門試行尚未獲得核准，文件 QC 尚未完成",
+      "next": "逐頁確認 v0.5 Word 版面與內容，整理主管決策條件",
+      "destination": "取得授權後，執行單站一週的有限試行並收集證據",
+      "stage": "待驗證",
+      "source": "PROJECT-STATE 候選／工時提案"
+    },
+    {
+      "id": "access",
+      "name": "嘉義廠門禁改善",
+      "position": "門位與需求仍在確認階段",
+      "blocker": "D029 重複、A014 待確認、A003–A009 七門雙讀頭範圍不一致",
+      "next": "核對門位清單、平面配置與實際門禁需求",
+      "destination": "完成範圍確認及經授權的改善方案",
+      "stage": "資料核對中",
+      "source": "嘉義門禁專案來源關聯索引"
+    }
+  ]
+}
