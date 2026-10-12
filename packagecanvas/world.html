@@ -91,6 +91,11 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 button:focus-visible{outline:3px solid #ffd447;outline-offset:2px}
 button.pressed{filter:brightness(1.35);transform:translateY(2px)}
 .pills button.pressed{transform:rotate(-24deg) translateY(2px)}
+.work-projection-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;color:#f7dd9e;font-size:12px;font-weight:700}.work-projection-title span{color:#b4a9d8;font-size:10px;font-weight:400}
+.work-sites{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
+.work-sites button{border:2px solid #8579ca;border-radius:6px;background:#302a59;color:#fff1c9;padding:9px 5px;min-height:54px;text-align:center;font:700 13px var(--pixel);touch-action:manipulation}
+.work-sites button small{display:block;color:#e1b6ad;font:11px var(--pixel);margin-top:4px}
+.work-sites button:focus-visible{outline:3px solid #ffd447;outline-offset:2px}
 .note{font-size:12px;color:#8c86b5;text-align:center;line-height:1.5;margin:0}
 @media (prefers-reduced-motion:reduce){.dlg li.sel::before,.dlg .more{animation:none}}
 @media (max-width:360px){.dpad{transform:scale(.88);transform-origin:left center}.ab{transform:scale(.88);transform-origin:right center}}
@@ -112,6 +117,11 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
         <div class="toast" id="toast" hidden></div>
       </div>
       <div class="brand">AMIN <b>KNOWLEDGE</b> WORLD</div>
+      <div class="work-projection-title">🌏 現實工作投影 <span>2026/10/12 快照 · 非即時同步</span></div>
+      <div class="work-sites" aria-label="工作專案地圖捷徑">
+        <button type="button" data-work-site="hours">🏭 工時測量站<small id="workStageHours">進度載入中</small></button>
+        <button type="button" data-work-site="access">🏰 門禁關卡<small id="workStageAccess">進度載入中</small></button>
+      </div>
     </div>
     <div class="deck">
       <div class="dpad">
@@ -213,11 +223,18 @@ const BUILDINGS = [
   {id:'hall',  name:'驗證殿堂',   en:'Validation Hall',     x:16, y:2, roof:'#d8b030', sign:'⚖', cap:'驗證・OWNER 審查'},
   {id:'shop',  name:'自動化工坊', en:'Automation Workshop', x:16, y:8, roof:'#3c86c8', sign:'⚙', cap:'執行流程・寫入外部系統'}];
 const BOARD = {x:6, y:9, name:'任務告示板'};
+// Existing world map projection: two distinct locations, not copies of GEN2 capability buildings.
+// Both are unverified project snapshots, NOT completed tasks or unlocked achievements.
+const WORK_SITES = [
+  {id:'hours',label:'工時',x:2,y:9,w:3,h:2,gate:{x:3,y:8},roof:'#bd713d',wall:'#f5d7a1'},
+  {id:'access',label:'門禁',x:19,y:9,w:2,h:2,gate:{x:19,y:8},roof:'#6979c9',wall:'#bdc9ee'}
+];
 const solid = new Set(), deco = [];
 const key = (x,y) => x+','+y;
 for (let x=0;x<MW;x++){ solid.add(key(x,0)); solid.add(key(x,MH-1)); deco.push({x,y:0,t:'tree'},{x,y:MH-1,t:'tree'}); }
 for (let y=1;y<MH-1;y++){ solid.add(key(0,y)); solid.add(key(MW-1,y)); deco.push({x:0,y,t:'tree'},{x:MW-1,y,t:'tree'}); }
 for (const b of BUILDINGS) for (let dx=0;dx<3;dx++) for (let dy=0;dy<3;dy++) solid.add(key(b.x+dx,b.y+dy));
+for (const p of WORK_SITES) for (let dx=0;dx<p.w;dx++) for (let dy=0;dy<p.h;dy++) solid.add(key(p.x+dx,p.y+dy));
 solid.add(key(BOARD.x,BOARD.y));
 for (let x=9;x<=12;x++) for (let y=9;y<=11;y++){ solid.add(key(x,y)); deco.push({x,y,t:'water'}); }
 [[5,5],[14,6],[3,11],[19,12],[13,12],[7,6]].forEach(([x,y])=>{ solid.add(key(x,y)); deco.push({x,y,t:'tree'}); });
@@ -243,6 +260,22 @@ function buildMap(){
     o.fillStyle=C.ink; o.fillRect(px+19,py+30,10,16); o.fillStyle='#7a4a2a'; o.fillRect(px+20,py+31,8,15);
     o.fillStyle='#9fd0f0'; o.fillRect(px+6,py+24,8,7); o.fillRect(px+34,py+24,8,7); }
   o.fillStyle=C.trunk; o.fillRect(BOARD.x*T+7,BOARD.y*T+8,2,8); o.fillStyle='#b98a50'; o.fillRect(BOARD.x*T+1,BOARD.y*T+1,14,9); o.fillStyle=C.paper; o.fillRect(BOARD.x*T+3,BOARD.y*T+3,4,5); o.fillRect(BOARD.x*T+9,BOARD.y*T+3,4,4);
+  // Draw two permanent project buildings onto the ORIGINAL world map.
+  // Their yellow/purple caution trims represent unverified blockers, not completion.
+  for (const p of WORK_SITES){
+    const px=p.x*T, py=p.y*T, pw=p.w*T, ph=p.h*T, doorX=px+Math.floor(pw/2)-4;
+    o.fillStyle='#211c35'; o.fillRect(px-2,py-2,pw+4,ph+4);
+    o.fillStyle=p.wall; o.fillRect(px+1,py+8,pw-2,ph-9);
+    o.fillStyle=p.roof; o.fillRect(px,py+2,pw,11);
+    o.fillStyle='#ffffff55'; o.fillRect(px+2,py+3,pw-4,2);
+    o.fillStyle='#271e42'; o.fillRect(doorX,py+8,8,7);
+    o.fillStyle='#f6e0a2'; o.fillRect(doorX+2,py+9,3,3);
+    o.fillStyle='#b08446'; o.fillRect(px+4,py+17,8,6);
+    o.fillStyle='#5c689a'; o.fillRect(px+pw-12,py+17,7,6);
+    // striped field barrier at the unverified project site
+    o.fillStyle='#372b38'; o.fillRect(px+2,py+ph-4,pw-4,3);
+    for(let x=px+3;x<px+pw-3;x+=7){o.fillStyle='#ffd447';o.fillRect(x,py+ph-4,4,2);}
+  }
   mapCache = off;
 }
 
@@ -285,7 +318,7 @@ const held = new Set();
 // to you when you call it (A with nothing in front) or when it has news.
 const FOX_STEP_MS = 210;
 // The fox never stands on a door: it waits beside it, so you can always walk in.
-const isDoor = (x,y) => BUILDINGS.some(b => { const d = door(b); return d.x===x && d.y===y; });
+const isDoor = (x,y) => BUILDINGS.some(b => { const d = door(b); return d.x===x && d.y===y; }) || WORK_SITES.some(p=>p.gate.x===x&&p.gate.y===y);
 const spotBeside = b => { const d = door(b); return [{x:d.x+1,y:d.y},{x:d.x-1,y:d.y},{x:d.x,y:d.y+1}].find(t => !solid.has(key(t.x,t.y))) || d; };
 const doorTiles = () => Object.fromEntries(BUILDINGS.map(b => [b.id, spotBeside(b)]));
 const blocked = (x,y) => solid.has(key(x,y)) || (x===S.hero.x && y===S.hero.y);
@@ -516,20 +549,63 @@ function ownerDialog(q){
 
 // ---------- read-only work progress in the ORIGINAL Knowledge World ----------
 const WORK_SNAPSHOT_URL = './data/project-world-snapshot-v01.json';
-async function browseWorkProjects(){
-  try {
+let workSnapshot = null, workLoading = null;
+function workEntry(id){ return workSnapshot?.projects?.find(p=>p.id===id) || null; }
+async function loadWorkSnapshot(){
+  if (workSnapshot) return workSnapshot;
+  if (workLoading) return workLoading;
+  workLoading = (async()=>{
     const response = await fetch(WORK_SNAPSHOT_URL,{cache:'no-store'});
     if (!response.ok) throw new Error('HTTP '+response.status);
     const data = await response.json();
-    const projects = (data.projects||[]).filter(p=>p.id==='hours'||p.id==='access');
+    if (data.schema!=='amin-project-world-snapshot-v1' || !data.read_only || !Array.isArray(data.projects)) throw new Error('工作快照格式不正確');
+    workSnapshot = data;
+    for(const site of WORK_SITES){
+      const label=document.getElementById(site.id==='hours'?'workStageHours':'workStageAccess');
+      if(label) label.textContent=workEntry(site.id)?.stage || '無資料';
+    }
+    return data;
+  })();
+  try { return await workLoading; }
+  catch(e){
+    for(const id of ['workStageHours','workStageAccess']){
+      const label=document.getElementById(id);
+      if(label) label.textContent='暫無進度資料';
+    }
+    throw e;
+  } finally { workLoading=null; }
+}
+async function browseWorkProjects(){
+  try{
+    const data=await loadWorkSnapshot(),projects=data.projects.filter(p=>p.id==='hours'||p.id==='access');
     if (!projects.length) throw new Error('無可用專案');
-    ask('現實工作進度｜'+(data.snapshot_date||'未標日期')+' 唯讀快照。\n不代表 GEN2 工作流已執行，也不是主管核准紀錄。\n請選擇要查看的工作專案：',
+    ask('現實工作進度｜'+data.snapshot_date+' 唯讀快照。\n不代表 GEN2 工作流已執行，也不是主管核准紀錄。\n請選擇要查看的工作專案：',
       projects.map(p=>p.name+'｜'+p.stage).concat(['返回地圖']),
       i=>{closeDialog();if(i<projects.length)showWorkProject(projects[i]);},{onBack:closeDialog});
-  } catch (e) {
-    say('工作快照讀取失敗：'+(e.message||e)+'。\n可從畫面下方「📚 研究導航」直接查看既有網頁。');
-  }
+  }catch(e){say('工作快照讀取失敗：'+(e.message||e)+'。');}
 }
+async function openWorkSite(id){
+  if(KEYS.open) return;
+  try {
+    const data=await loadWorkSnapshot(),p=data.projects.find(item=>item.id===id);
+    if(!p) throw new Error('找不到對應的工作專案');
+    // Focus the current world camera on the existing map tile, without moving the hero.
+    const site=WORK_SITES.find(x=>x.id===id);
+    if(site){
+      S.cam.free=true;S.cam.idleAt=S.t;
+      S.cam.x=Math.max(0,Math.min(MW*T-W,(site.x+site.w/2)*T-W/2));
+      S.cam.y=Math.max(0,Math.min(MH*T-H+14,(site.y+site.h/2)*T-H/2));
+    }
+    if(S.scene==='title'){S.scene='world';S.demo=!ghCfg().token;refresh(false);}
+    else if(S.scene==='battle'||S.scene==='menu') S.scene='world';
+    closeDialog();showWorkProject(p);
+  }catch(e){say('目前無法顯示專案進度：'+(e.message||e));}
+}
+document.querySelectorAll('[data-work-site]').forEach(button=>{
+  button.addEventListener('click',()=>openWorkSite(button.dataset.workSite));
+});
+loadWorkSnapshot().catch(()=>{}); // public snapshot may not be available offline
+
 function showWorkProject(p){
   const desc=p.name+'\n目前：'+p.position+'\n阻塞：'+p.blocker+'\n下一步：'+p.next+'\n目的地：'+p.destination+'\n（來源：'+p.source+'；快照非即時同步）';
   ask(desc,['📚 開啟 GPS／心智圖','回到知識世界'],i=>{
@@ -554,6 +630,9 @@ function interact(){
     return ask('任務告示板：\n'+summary+'\n也可以查閱現實工作專案的唯讀進度快照。',['📜 查閱工作進度','🦊 叫狐狸','離開'],i=>{
       closeDialog();if(i===0)browseWorkProjects();else if(i===1)callFox();
     },{onBack:closeDialog});
+  }
+  for (const site of WORK_SITES){
+    if(h.x===site.gate.x && h.y===site.gate.y && h.dir==='down') return openWorkSite(site.id);
   }
   for (const b of BUILDINGS){
     const dr = door(b); if (!(h.x===dr.x && h.y===dr.y && h.dir==='up')) continue;
@@ -710,6 +789,18 @@ function drawWorld(){
     if (list.some(q=>q.who==='agent')){ if (Math.floor(S.t/300)%2) txt('⚔', px+40, py-2, C.gold, 11); bar(px+4, py-3, 30, 3, .5+.4*Math.sin(S.t/500), C.red); }
     if (list.some(q=>q.who==='owner')) bang(px+22, py-12);
   }
+  // Status banners and warning signals are drawn onto the original scrolling map.
+  for(const p of WORK_SITES){
+    const px=p.x*T,py=p.y*T,entry=workEntry(p.id),w=p.w*T;
+    g.fillStyle='#211c35';g.fillRect(px-3,py-16,w+6,13);
+    g.fillStyle=p.roof;g.fillRect(px-2,py-15,w+4,11);
+    g.textAlign='center';
+    txt(p.label,px+w/2,py-7,C.paper,8);
+    g.textAlign='left';
+    // Red-orange exclamation: outstanding validation or source questions.
+    if(Math.floor(S.t/420)%2===0) bang(px+w-7,py-24);
+    if(entry){g.fillStyle='#ffe28b';g.fillRect(px+2,py+1,4,4);}
+  }
   if (questsAt('board').length) bang(BOARD.x*T+6, BOARD.y*T-10);
   const fb = Math.floor(S.t/500)%2;
   sprite(S.fox.moving && Math.floor(S.t/150)%2 ? FOX2 : FOX, Math.round(S.fox.px), Math.round(S.fox.py)-3-fb, S.fox.flip);
@@ -724,6 +815,8 @@ function drawWorld(){
   const head = S.paused ? '⏸ 世界暫停' : S.error ? '⚠ '+S.error : foxNow && !q?.open ? foxNow : q ? '#'+q.number+' '+(q.open ? (q.pending?.step||'')+' '+(q.who==='owner'?'等你：':'')+bName(q.where) : (q.status==='done'?'已完成':'已停止')) : (S.loading?'讀取中…':'沒有進行中的任務');
   txt((S.demo?'[示範] ':'')+head, 4, 10, S.paused||S.error?C.gold:C.paper, 8);
   const n = openQuests().length; if (n){ g.fillStyle=C.red; g.fillRect(W-30,3,26,8); txt('⚔'+n, W-26, 10, C.paper, 8); }
+  g.fillStyle='rgba(31,27,51,.88)';g.fillRect(0,H-12,W,12);
+  txt('🌏 工作投影：🏭工時 · 🏰門禁｜10/12 快照',5,H-4,C.gold,8);
 }
 function drawBattle(){
   const w = S.watching, q = w && S.quests.find(x=>x.number===w.number);
@@ -762,6 +855,7 @@ function drawTitle(){
   sprite(HERO_D, 84, 40, false, 3); sprite(Math.floor(S.t/300)%2?FOX:FOX2, 132, 58, true, 2);
   g.textAlign='center'; txt('知識世界', 120, 114, C.gold, 18);
   txt(ghCfg().token ? '已連到 '+ghCfg().repo : '尚未設定 token：用示範資料', 120, 128, C.paper, 8);
+  txt('工作地圖：工時測量站＋門禁關卡',120,138,'#baf5c4',8);
   if (Math.floor(S.t/500)%2) txt('PRESS START', 120, 150, C.paper, 9); g.textAlign='left';
 }
 const allRuns = () => M.mergeRuns(S.runs, S.history);
