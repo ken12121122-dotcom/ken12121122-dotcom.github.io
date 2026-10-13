@@ -612,7 +612,11 @@ document.addEventListener('keyup',e=>{
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender();});
 function stepAvatar(dt){
- if(!hasWalkInput())return false;
+ if(!hasWalkInput()){
+  // The avatar rests on the ground when the joystick or keys are released.
+  if(exploring)keeper.position.y=.46;
+  return false;
+ }
  const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
@@ -836,10 +840,13 @@ const mobile=window.innerWidth<650||window.matchMedia('(pointer: coarse)').match
 const frameInterval=1000/(mobile?30:60);
 let elapsed=0,last=performance.now(),lastPaint=0,running=false;
 function overlayActive(){
- return document.hidden ||
+ const overlay=document.hidden ||
    document.getElementById('drawerWrap').classList.contains('open') ||
    document.getElementById('mdSearch').open ||
    document.getElementById('gen2Auth').open;
+ // Stop any held movement immediately when the reader / dialogs take focus.
+ if(overlay&&hasWalkInput()){walkKeys.clear();resetJoystick()}
+ return overlay;
 }
 function stopRenderLoop(){
  if(!running)return;
