@@ -12,10 +12,12 @@ const featureManifest=async()=>JSON.parse(await getText('living-library/public-c
 
 test('public capabilities retain canonical unique IDs and valid existing endpoints',async()=>{
   const x=await featureManifest();
-  assert.equal(x.capabilities.length,7,'7 existing functional entries are protected');
+  assert.equal(x.capabilities.length,8,'7 legacy entries plus new GPT navigation card are protected');
+  assert.equal(x.originalProtectedCount,7,'the 7 original functional entries remain a distinct non-regression baseline');
   const ids=x.capabilities.map(c=>c.id);
   assert.equal(new Set(ids).size,ids.length,'each public function has exactly one canonical ID');
   assert.deepEqual([...x.requiredWithoutGen2].sort(),[...required].sort());
+  assert.ok(ids.includes('public.gpt.bridge'),'GPT bridge is a separate public function; never a formal GEN2 Skill');
   for(const c of x.capabilities){
     assert.ok(c.name&&c.book&&c.url,'missing capability descriptor for '+c.id);
     if(!c.external){
@@ -113,4 +115,20 @@ test('GEN2 authorization adds cards without deleting public books or startup tas
   get('disconnectGen2').click();
   verifyPublicBooks(window.LivingLibrary.books);
   assert.ok(!window.LivingLibrary.books.some(b=>b.privateOnly),'private cards must clear on disconnect');
+});
+
+test('GPT book is available without GEN2 and preserved across authorization changes',async()=>{
+ const {window,get}=await ui();
+ assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'&&b.name==='GPT 之書'),'GPT book is available to everyone');
+ window.LivingLibrary.select('gpt');get('openBtn').click();
+ const card=get('drawerFunctions').children.find(x=>x.dataset.cardId==='public.gpt.bridge');
+ assert.ok(card,'GPT source navigation card is clickable');
+ card.click();
+ assert.equal(get('readerShell').hidden,false);
+ assert.equal(get('readerFrame').src,'./gpt-library-bridge.html','guide opens in the existing in-book reader');
+ get('readerBack').click();
+ get('gen2Token').value='synthetic-only';get('readGen2').click();await new Promise(resolve=>setImmediate(resolve));
+ assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'),'GEN2 may add private books but not remove GPT book');
+ get('disconnectGen2').click();
+ assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'),'disconnect only removes private projection');
 });
