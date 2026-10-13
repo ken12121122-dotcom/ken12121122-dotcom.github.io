@@ -1,17 +1,17 @@
 {
-  "versionCode": 202,
-  "versionName": "0.11.23-rc1",
+  "versionCode": 203,
+  "versionName": "0.11.24-rc1",
   "channel": "candidate",
-  "bridge": 106,
-  "releaseSequence": 40,
+  "bridge": 107,
+  "releaseSequence": 41,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "候選驗收版：App 名稱與桌面圖示改為念動圖書館；開啟後以 3D 圖書館作為唯一工作台。",
-    "安卓之書提供原控制台功能入口；遊戲之書透過原生 GBA 畫面保留存檔與手把操作。",
-    "保留公開工作入口及授權後的 GEN2 讀取時投影；不加入私有文件或憑證，不擴大原生 Bridge。",
-    "尚待 OWNER 手機驗收：圖書館顯示、卡片開啟、返回、GEN2 授權與 GBA 存檔及手把回歸。"
+    "候選架構調整：念動圖書館優先載入 GitHub Pages 線上 3D 知識世界與卡片；新增網頁內容不再需要 Android 簽章更新。",
+    "斷線或遠端首頁載入失敗時，自動使用 APK 內建離線圖書館；離線索引亦含「知識城堡｜遊戲設計」卡。",
+    "只允許精確可信的線上圖書館首頁在使用者點擊後開啟既有原生入口；未新增系統權限與 JS Bridge。",
+    "原生 GBA 存檔／手把／PackageCanvas／控制中心保持現有路徑；Android 107 真機驗收與原地更新仍待完成。"
   ]
 }
