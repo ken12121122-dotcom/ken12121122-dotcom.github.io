@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1423">
+<meta name="description" content="念動圖書館・遊戲之書設計卡：知識城堡、記憶宮殿、主角技能、AI 寵物、工具武器與卡片召喚的候選架構。">
+<title>知識城堡｜記憶宮殿遊戲設計卡 v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#09111e;--panel:#111e30;--panel2:#17293b;--gold:#e7c88e;--line:#3d4b5d;--muted:#b4c4d0;--text:#f0f3ed;--teal:#97d8d4;--violet:#b9acff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 82% 0%,#243955 0%,#0c192b 38%,var(--bg) 75%);font:15px/1.75 -apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text)}button,a{font:inherit}a{color:var(--gold)}button{cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.55}
+.wrap{width:min(1080px,calc(100% - 36px));margin:auto}.mast{border-bottom:1px solid #ffffff22;background:#0c1727aa}.mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0}.brand{color:#f3e7d1;letter-spacing:.15em;font-size:11px;font-weight:800}.back{font-size:12px;text-decoration:none;border:1px solid #b39a7066;border-radius:999px;padding:7px 13px}
+.hero{position:relative;padding:69px 0 52px;overflow:hidden}.hero::after{content:"♜";position:absolute;right:5%;top:-92px;font-family:Georgia,serif;font-size:420px;line-height:1;color:#ddc2900a;pointer-events:none}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.22em;color:var(--teal)}h1,h2,h3,p{margin-top:0}h1{font-family:Georgia,"Noto Serif TC",serif;font-weight:500;font-size:clamp(38px,7vw,76px);line-height:1.15;letter-spacing:.025em;margin:16px 0 20px}h1 em{font-style:normal;color:var(--gold)}.lead{max-width:760px;color:#c8d7de;font-size:clamp(15px,2.2vw,20px);line-height:1.8}.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.pill{padding:5px 10px;border-radius:999px;font-size:11px;color:#e6ddc7;border:1px solid #bda57b66;background:#121d2b}.pill.warn{color:#f2c9ad;border-color:#af7b61}
+.statement{border:1px solid #c9ac7c73;border-radius:18px;padding:22px 26px;background:linear-gradient(110deg,#382b284f,#172b3659);font-family:Georgia,"Noto Serif TC",serif;font-size:clamp(17px,2.4vw,25px);line-height:1.8}.statement b{color:var(--gold);font-weight:600}
+.section{padding:38px 0 24px}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:18px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:24px}.sectionhead span{font:800 11px/1.4 ui-monospace,Consolas,monospace;color:var(--teal);letter-spacing:.1em}.sectionhead h2{font-size:clamp(23px,3.2vw,33px);font-family:Georgia,"Noto Serif TC",serif;font-weight:500;margin:8px 0 0}.sectionhead p{color:var(--muted);font-size:12px;margin:0;max-width:320px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.room{display:flex;flex-direction:column;text-align:left;gap:6px;border-radius:16px;border:1px solid #43556d;background:linear-gradient(135deg,#1b3145,#132234);color:var(--text);min-height:125px;padding:15px;transition:border-color .15s,transform .15s,background .15s}.room:hover{border-color:#bca37c;transform:translateY(-2px)}.room[aria-pressed="true"]{border-color:var(--gold);background:linear-gradient(135deg,#3b3b43,#183f4c);box-shadow:0 0 0 2px #e7c88e22}.room .emoji{font-size:27px;line-height:1.2}.room strong{font-size:14px}.room small{font-size:11px;color:#becbd1}
+.details{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;background:linear-gradient(135deg,#15283d,#152233);border:1px solid #b69a685e;border-radius:18px;margin-top:15px;padding:24px}.details h3{font-size:25px;font-family:Georgia,"Noto Serif TC",serif;font-weight:500;margin:0 0 12px}.details p{color:#c9d5dd;margin-bottom:8px}.smallcaps{color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.14em}.panelcap{color:var(--teal);font-size:12px;margin-bottom:10px;font-weight:700}.callout{border-left:3px solid #c9a96d;padding:10px 16px;background:#0b14245c;color:#d7e3e7}
+.object-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.object{background:#122137;border-radius:14px;border:1px solid #40536d;padding:18px}.object header{display:flex;align-items:center;gap:9px;font-weight:700;margin-bottom:10px}.object header span{font-size:23px}.object p{color:#b9cbd7;font-size:13px;margin:0}.mapping{display:block;color:var(--gold);font-size:12px;margin:10px 0}
+.spell{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.step{border-radius:13px;border:1px solid #4d6479;background:#142438;color:var(--text);padding:16px 12px;text-align:left;min-height:128px}.step[aria-pressed="true"]{background:#283b4d;border-color:var(--gold)}.step b{font-size:13px;display:block;margin-bottom:8px}.step small{color:var(--muted);font-size:12px}.step .num{display:block;font:800 11px ui-monospace,monospace;color:var(--gold);margin-bottom:9px}.spell-description{margin-top:14px;border:1px solid #776b5980;border-radius:14px;background:#171f32;padding:20px}.spell-description strong{color:var(--gold)}.spell-description p{color:#cdd9e0;margin:8px 0 0}
+.arch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.arch article{border:1px solid #455568;border-radius:12px;padding:19px;background:#101f31}.arch strong{color:#e8d7b7}.arch p{color:#bbced9;font-size:13px;margin:7px 0 0}
+.road{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.road article{border:1px solid #43536b;background:#172537;padding:17px;border-radius:14px}.road b{color:var(--gold)}.road p{font-size:13px;color:#c1cfda;margin:8px 0 0}
+footer{margin-top:50px;padding:25px 0 40px;border-top:1px solid #40536b;color:#93aabe;font-size:12px}.status{color:#f2c89d;font-weight:700}.escape{overflow-wrap:anywhere}
+@media(max-width:750px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.object-grid,.road{grid-template-columns:repeat(2,minmax(0,1fr))}.details{grid-template-columns:1fr}.spell{grid-template-columns:repeat(2,minmax(0,1fr))}.sectionhead{align-items:start;flex-direction:column}.hero{padding:44px 0 35px}}
+@media(max-width:490px){.wrap{width:min(100% - 26px,1080px)}.grid,.object-grid,.road{grid-template-columns:1fr 1fr;gap:8px}.room{min-height:112px;padding:11px}.object{padding:13px}.object header{font-size:12px}.object p{font-size:12px}.mast .wrap{gap:8px}.brand{letter-spacing:.05em}.back{padding:6px 10px}.details{padding:17px}.statement{padding:16px}.section{padding-top:26px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.room{transition:none}.room:hover{transform:none}}
+</style>
+</head>
+<body>
+<header class="mast"><div class="wrap"><div class="brand">♜ NEN-DONG LIBRARY / GAME COMPENDIUM</div><a class="back" href="../living-library/index.html">↶ 返回圖書館</a></div></header>
+<main class="wrap">
+<section class="hero">
+<div class="eyebrow">GAME DESIGN CARD / V0.1 / 2026-10-14</div>
+<h1>知識城堡 <em>・</em><br>記憶宮殿</h1>
+<p class="lead">讓現有的網頁工作台，成為真正遊戲世界裡的「物件介紹與操作介面」。玩家在城堡中探索、開書、召喚卡片、裝備工具、派遣 AI 寵物，再把驗證後的真實成果映射回世界。</p>
+<div class="pillrow"><span class="pill">♜ 遊戲之書 / 第三張卡</span><span class="pill warn">設計草案・尚未實作完整遊戲</span><span class="pill">公開設計，不含 GEN2 私有資料</span></div>
+</section>
+<div class="statement"><b>核心規則：</b>世界負責探索與互動；遊戲物件承載身分；<b>網頁負責顯示資料與操作</b>。真實來源、權限、技能執行及驗收，不能由遊戲動畫取代。</div>
+<section class="section" id="rooms">
+<div class="sectionhead"><div><span>01 / MEMORY PALACE</span><h2>城堡的八個房間</h2></div><p>點選房間查看用途。這是互動式空間規劃，不代表目前已有八個可遊玩場景。</p></div>
+<div class="grid" id="roomGrid" role="group" aria-label="記憶宮殿房間選擇">
+<button class="room" data-room="library" aria-pressed="true"><span class="emoji">📚</span><strong>藏書圖書館</strong><small>知識與書中世界</small></button>
+<button class="room" data-room="summon" aria-pressed="false"><span class="emoji">🔮</span><strong>召喚殿</strong><small>主角技能與卡片</small></button>
+<button class="room" data-room="familiar" aria-pressed="false"><span class="emoji">🐾</span><strong>使魔庭園</strong><small>AI 寵物與隊伍</small></button>
+<button class="room" data-room="forge" aria-pressed="false"><span class="emoji">⚒️</span><strong>鍛造工坊</strong><small>工具武器與組合</small></button>
+<button class="room" data-room="guild" aria-pressed="false"><span class="emoji">📜</span><strong>任務公會</strong><small>現實專案與委派</small></button>
+<button class="room" data-room="trial" aria-pressed="false"><span class="emoji">⚖️</span><strong>驗證殿堂</strong><small>證據、反證與核准</small></button>
+<button class="room" data-room="map" aria-pressed="false"><span class="emoji">🗺️</span><strong>導航塔</strong><small>研究路線與世界圖</small></button>
+<button class="room" data-room="history" aria-pressed="false"><span class="emoji">⌛</span><strong>時間迴廊</strong><small>版本、決策與失敗</small></button>
+</div>
+<div class="details" aria-live="polite"><div><div class="smallcaps" id="roomId">ROOM 01 / LIBRARY</div><h3 id="roomName">藏書圖書館</h3><p id="roomDescription">收藏不同知識領域的書籍；召喚、歸架、查閱目錄，也能把特定書本作為另一個世界的入口。</p></div><div><div class="panelcap">對應的真實資料／能力</div><div class="callout" id="roomData">公開功能書、授權後的正式知識投影與現有書內網頁閱讀器。原始資料來源保持獨立。</div></div></div>
+</section>
+<section class="section" id="objects">
+<div class="sectionhead"><div><span>02 / OBJECT PROTOCOL</span><h2>六種基礎遊戲物件</h2></div><p>同一筆資料只維持一個真實身分，不因為換造型就複製成第二份正本。</p></div>
+<div class="object-grid">
+<article class="object"><header><span>📖</span>Book｜書籍</header><span class="mapping">知識領域 / 文件索引 / 書內入口</span><p>顯示書名、分類、來源、關聯與書頁；現有 3D 書可直接沿用。</p></article>
+<article class="object"><header><span>🗡️</span>Tool｜武器・工具</header><span class="mapping">工具能力 / Connector / API</span><p>顯示效果、輸入、限制、裝備位置與可使用權限；外觀不代表已取得執行能力。</p></article>
+<article class="object"><header><span>🐉</span>Familiar｜使魔・寵物</header><span class="mapping">AI 助理 / Agent 身分</span><p>角色、擅長領域、可派遣任務、工作流及狀態；模型可替換，角色身分不變。</p></article>
+<article class="object"><header><span>✨</span>Skill｜角色技能</header><span class="mapping">可重複方法 / Skill / Workflow</span><p>主角或寵物的能力；描述觸發條件、工具需求、風險與驗收。施放不等於執行成功。</p></article>
+<article class="object"><header><span>🃏</span>Card｜召喚卡</header><span class="mapping">技能入口 / 指令 / 工作台</span><p>從書本飛出的視覺媒介，點擊後打開既有網頁面板或經授權的執行流程。</p></article>
+<article class="object"><header><span>📜</span>Quest｜任務</header><span class="mapping">真實工作 / 專案 / 驗收</span><p>記錄目標、所需資料、依賴能力、證據與完成條件；未驗證不能單靠動畫給予完成狀態。</p></article>
+</div>
+</section>
+<section class="section" id="spell">
+<div class="sectionhead"><div><span>03 / CASTING SEQUENCE</span><h2>書本飛出卡片的技能施放</h2></div><p>點選四個階段，閱讀預期互動；動畫層與真正執行層必須分離。</p></div>
+<div class="spell" id="spellSteps" role="group" aria-label="卡片召喚步驟">
+<button class="step" data-step="0" aria-pressed="true"><span class="num">01 / OPEN</span><b>打開書本</b><small>主角選擇研究之書</small></button>
+<button class="step" data-step="1" aria-pressed="false"><span class="num">02 / SUMMON</span><b>卡片飛出</b><small>技能卡圍繞主角</small></button>
+<button class="step" data-step="2" aria-pressed="false"><span class="num">03 / PREPARE</span><b>選卡與裝備</b><small>確認助理、工具、輸入</small></button>
+<button class="step" data-step="3" aria-pressed="false"><span class="num">04 / VERIFY</span><b>執行與驗收</b><small>取得證據，回寫狀態</small></button>
+</div>
+<div class="spell-description" aria-live="polite"><strong id="spellTitle">01｜打開研究之書</strong><p id="spellText">主角點擊或召喚既有《研究之書》，書籍仍是單一資料身分。遊戲動畫開始，但不會因此直接呼叫外部工具。</p></div>
+</section>
+<section class="section">
+<div class="sectionhead"><div><span>04 / TRUTH BOUNDARY</span><h2>四層資料與權限分離</h2></div><p>這是讓城堡可以不斷擴張，卻不破壞原知識庫與 Android 更新鏈的基礎。</p></div>
+<div class="arch">
+<article><strong>① 知識正本層</strong><p>Google Drive 一代研究材料、正式 GEN2 知識與文件來源。保留版本、來源、狀態與權責。</p></article>
+<article><strong>② 遊戲投影層</strong><p>把原始知識、能力與任務投影成書、武器、寵物、技能卡、房間及地圖；不得反向竄改知識真相。</p></article>
+<article><strong>③ 執行層</strong><p>AI Agent、Workflow、工具、權限和真正的外部服務。畫面上的召喚只是要求執行，必須先通過可用能力與授權檢查。</p></article>
+<article><strong>④ 驗證與狀態層</strong><p>實際完成證據、失敗原因、OWNER Gate、進度與經驗成長。未完成、未授權、已驗證三種狀態必須分開。</p></article>
+</div>
+</section>
+<section class="section">
+<div class="sectionhead"><div><span>05 / BUILD ORDER</span><h2>從現有圖書館逐步擴建</h2></div><p>避免先建空蕩蕩的城堡或用虛構功能填滿地圖。</p></div>
+<div class="road">
+<article><b>第一階段 · 現有</b><p>3D 圖書館、公開功能書、書內卡片、原生 GBA 入口、研究導航、GEN2 授權投影。以實際版本與裝置測試為準。</p></article>
+<article><b>第二階段 · 候選</b><p>建立共同物件契約，讓工具、寵物、技能與任務使用不同資料面板；可先用 2D 房間入口驗證。</p></article>
+<article><b>第三階段 · 候選</b><p>加入人物走動、房間探索、卡片召喚動畫、任務與 AI 工作流連動；通過實際授權與驗收後才顯示成功。</p></article>
+</div>
+</section>
+</main>
+<footer><div class="wrap"><div class="status">設計卡狀態：generated / experimental candidate / 未核准正式實作</div><p style="margin-top:9px">本頁僅整理 OWNER 於 2026-10-14 討論的公開遊戲設計概念，不建立新 GEN2 Skill、不呼叫 AI／工具、不讀取私有資料、不修改主程式及 Android 權限。既有 GBA 存檔與更新鏈應維持不變。</p><a href="../living-library/index.html">↶ 回到念動圖書館</a></div></footer>
+<script>
+(()=>{'use strict';
+const rooms={
+library:['ROOM 01 / LIBRARY','藏書圖書館','收藏不同知識領域的書籍；召喚、歸架、查閱目錄，也能把特定書本作為另一個世界的入口。','公開功能書、授權後的正式知識投影與現有書內網頁閱讀器。原始資料來源保持獨立。'],
+summon:['ROOM 02 / SUMMON','召喚殿','主角選擇技能時，書中卡片可以飛出並形成召喚圈；選卡後才進入操作介面與執行判斷。','主角技能、卡片資料、Input／Output、Workflow 定義、所需工具及明確的授權 Gate。'],
+familiar:['ROOM 03 / FAMILIAR','使魔庭園','以不同助理作為可互動的寵物／夥伴。玩家查看技能、裝備工具、安排派遣，並取得執行狀態回報。','AI Agent 角色、可用模型與工具、Workflow、失敗邊界、權限、執行結果與任務紀錄。'],
+forge:['ROOM 04 / FORGE','鍛造工坊','把工具知識視覺化為武器或裝備；玩家嘗試將不同工具與方法組成新的可重複技能。','Tool／Connector 能力、組合前提、資料契約、最小測試以及 Skill Promotion 驗證。'],
+guild:['ROOM 05 / GUILD','任務公會','接取真實工作、學習作業、研究課題與專案，選擇夥伴、檢視下一步和驗收要求。','現實任務來源、目標、阻塞、證據要求、實際截止日期與可確認的完成狀態。'],
+trial:['ROOM 06 / VALIDATION','驗證殿堂','以反證、衝突檢查和 Boss 挑戰測試假設；需要人員核准的情況由 OWNER 決定。','Source Evidence、反例、驗收條件、風險、決策歷史與 OWNER Gate。'],
+map:['ROOM 07 / NAVIGATION','導航塔','從期望、現實、知識缺口與能力現況推導研究路線；地圖可展示尚未探索的區域。','一代研究導航、FlowCard、Current State、Active Route、Micro／Meso／Macro Loop。'],
+history:['ROOM 08 / HISTORY','時間迴廊','重訪歷史版本與失敗遺跡，查看當時掌握了哪些資料、做過哪些判斷與修正。','版本紀錄、證據時間戳記、失敗事件、Decision Delta、追溯及復原資訊。']
+};
+const stages=[
+['01｜打開研究之書','主角點擊或召喚既有《研究之書》，書籍仍是單一資料身分。遊戲動畫開始，但不會因此直接呼叫外部工具。'],
+['02｜書中卡片飛出','研究導航、證據檢查、AI 研究員等卡片以動畫從書頁飛出、環繞主角。這些卡片是真實功能與資料的視覺入口，不代表技能已施放成功。'],
+['03｜選卡、裝備與召喚','玩家選擇卡片，必要時召喚 AI 寵物、裝備工具並補齊任務輸入；查核模型、工具可用性、風險及 OWNER 權限後才允許執行。'],
+['04｜執行結果與驗收','執行成功需有對應的輸出與證據；失敗則保留原因與重試路線。通過驗收後才解鎖相關成長、成就或新的區域。']
+];
+const $=s=>document.getElementById(s);
+$('roomGrid').addEventListener('click',e=>{const b=e.target.closest('button[data-room]');if(!b)return;const v=rooms[b.dataset.room];if(!v)return;for(const item of $('roomGrid').querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===b));$('roomId').textContent=v[0];$('roomName').textContent=v[1];$('roomDescription').textContent=v[2];$('roomData').textContent=v[3]});
+$('spellSteps').addEventListener('click',e=>{const b=e.target.closest('button[data-step]');if(!b)return;const v=stages[Number(b.dataset.step)];if(!v)return;for(const item of $('spellSteps').querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===b));$('spellTitle').textContent=v[0];$('spellText').textContent=v[1]});
+})();
+</script>
+</body>
+</html>
