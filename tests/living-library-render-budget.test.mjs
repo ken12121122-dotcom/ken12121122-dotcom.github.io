@@ -30,6 +30,7 @@ function harness(html,{mobile=true,motion=true,reduced=false}={}){
       if(id==='drawerWrap')return {classList:{contains:name=>name==='open'&&bookOpen}};
       if(id==='mdSearch')return {get open(){return searchOpen}};
       if(id==='gen2Auth')return {get open(){return authOpen}};
+      if(id==='livingReleaseProof')return null; // optional ?verify=1-only badge
       throw Error('unexpected element: '+id);
     },
     addEventListener:listeners('document')
