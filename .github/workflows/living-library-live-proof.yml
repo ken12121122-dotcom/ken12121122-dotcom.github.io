@@ -1,0 +1,41 @@
+name: Living Library deployed website proof
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'living-library/**'
+      - '.github/workflows/living-library-live-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-live-github-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Fetch actual public GitHub Pages HTML after deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          page="https://ken12121122-dotcom.github.io/living-library/index.html"
+          module="https://ken12121122-dotcom.github.io/living-library/avatar-movement.js"
+          for attempt in $(seq 1 32); do
+            url="${page}?verify=1&liveproof=${GITHUB_SHA}-${GITHUB_RUN_ID}-${attempt}"
+            echo "Live Pages verification attempt ${attempt}: ${url}"
+            if curl -fLsS --max-time 15 "$url" -o /tmp/living-library-live.html \
+              && grep -Fq 'living-library-release" content="2026-10-14.following-orbit.2' /tmp/living-library-live.html \
+              && grep -Fq 'p.x+bookOrbitAnchor.x' /tmp/living-library-live.html \
+              && grep -Fq 'torus(i*1.9,.013,0,-.24,0,stone2,scene' /tmp/living-library-live.html \
+              && curl -fLsS --max-time 15 "${module}?liveproof=${GITHUB_SHA}-${GITHUB_RUN_ID}-${attempt}" -o /tmp/living-avatar-movement-live.js \
+              && grep -Fq 'const WALK_SPEED=' /tmp/living-avatar-movement-live.js; then
+              echo 'PASS: actual PUBLIC website contains the current published follow-orbit version and movement module'
+              echo "HTML bytes: $(wc -c </tmp/living-library-live.html)"
+              exit 0
+            fi
+            if (( attempt < 32 )); then sleep 15; fi
+          done
+          echo 'FAIL: GitHub Pages did not serve new HTML and movement module despite deployment window'
+          exit 1
