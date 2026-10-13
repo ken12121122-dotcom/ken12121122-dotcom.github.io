@@ -24,7 +24,19 @@ public final class LivingLibraryActivityTest {
         assertFalse(LivingLibraryActivity.canOpenNative("", true, true));
     }
     @Test public void realWebViewOpensAndroidBookAndReturnsWithoutPrivateAuthorization() throws Exception {
-        long deadline = System.currentTimeMillis() + 15000;
+        // evaluateJavascript callbacks can be discarded while the initial load is navigating.
+        // Wait for an actual committed bundled HOME before testing live DOM interactions.
+        long navigationDeadline = System.currentTimeMillis() + 30000;
+        boolean committed = false;
+        while (System.currentTimeMillis() < navigationDeadline) {
+            final boolean[] home = {false};
+            rule.getScenario().onActivity(activity ->
+                home[0] = LivingLibraryPolicy.isHome(activity.committedUrl));
+            if (home[0]) { committed = true; break; }
+            Thread.sleep(100);
+        }
+        assertTrue("Bundled Living Library home never committed", committed);
+        long deadline = System.currentTimeMillis() + 30000;
         String result = "";
         while (System.currentTimeMillis() < deadline) {
             java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
@@ -38,7 +50,7 @@ public final class LivingLibraryActivityTest {
                 + "document.getElementById('readerBack').click();if(!document.getElementById('readerShell').hidden)return 'broken-back';"
                 + "document.getElementById('closeDrawer').click();return 'ok';})()",
                 answer -> { value.set(answer); latch.countDown(); }));
-            assertTrue("WebView callback timed out", latch.await(3, java.util.concurrent.TimeUnit.SECONDS));
+            assertTrue("WebView callback timed out", latch.await(8, java.util.concurrent.TimeUnit.SECONDS));
             result = value.get();
             if ("\"ok\"".equals(result)) return;
             if (!"\"loading\"".equals(result)) break;
