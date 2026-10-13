@@ -69,3 +69,12 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 - 回歸基線從 **12 本舊書＋7 張原有功能入口** 加到 **13 本公開書＋8 個公開功能入口**（另有原創業研究候選卡），GEN2 授權只會追加；斷線保留 GPT 之書與原本公開功能。
 - 此變更仍在 Draft PR；尚需 Node 回歸測試、真實瀏覽器與手機 WebView 驗收，不以靜態檔案存在代表正式發布。
 
+
+## 2026-10-13 行動裝置渲染節能候選（本 PR 未發布）
+- 探索狀態：行動裝置（小螢幕或 coarse pointer）Three.js 以最高約 30 FPS 節流；桌面上限約 60 FPS。這是幀間隔控制，實際 FPS 受硬體、場景複雜度與瀏覽器影響。
+- 書本展開、MD 搜尋或 GEN2 授權對話框開啟時，停止 WebGL 連續渲染；關閉且回到可見場景時才恢復。
+- 點選「暫停漂浮」、系統偏好 reduced-motion 時，改為僅在需要時繪製單幀；鏡頭、選書、歸架仍可刷新畫面。瀏覽器背景／pagehide 同樣停繪。
+- 新增 `tests/living-library-render-budget.test.mjs`，覆蓋讀書／對話框／頁面可見性／靜態按需重繪。另在隔離 JS 環境對實際程式渲染控制段落完成 30 項邏輯檢查，均通過。
+- 本項目前未執行真機 WebGL、iframe 滑動、耗電與記憶體測量；整套 node --test 測試未確認由 CI 執行。不得標記 OWNER acceptance PASS。
+- 獨立 `chatgpt.site` 預覽與 GitHub Draft PR 是不同的部署目標；本修改只在 GitHub 候選分支，沒有更新那個網址，也沒有合併 main。
+- 不修改 GEN2 正本、Android Bridge、公開書本／卡片 Registry 或任何技能執行權限。
