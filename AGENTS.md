@@ -234,3 +234,12 @@ CI 不得寫死 Bridge 版本。應從實際 APK 讀取 package、versionName、
 - 安全回退點
 
 每次完成實機驗證或正式發布後，才同步更新本檔、兩份 manifest 與架構文件。
+
+
+## Living Library 特別保護（所有 Agent 必读）
+
+修改 `living-library/**`、其使用的 `packagecanvas/gen2-source.js` 或相關測試時，先閱讀 **[`living-library/AGENTS.md`](living-library/AGENTS.md)** 和 `living-library/public-capabilities.json`，並遵守其中的「功能保留與回歸測試」要求。
+
+**強制要求：新增私有 GEN2 KB／Skill／Workflow 動態投影，不得取代原本未登入即可使用的公開功能書、創業任務、研究導航、知識世界、GBA 及 Vault 等入口。** 私有內容斷線清除，公開功能必須留下。《創業之書》應是公用創業入口與授權後 GEN2 `KB-STARTUP` 的同一閱讀容器，不得拆成互相取代的兩本書。
+
+PR 必須提供新舊功能覆蓋對照與互動回歸結果；任一既有功能遺失即 FAIL，維持 Draft，先修復才請 OWNER 驗收。這是對本檔「未經使用者明確要求，不得移除既有可用 UI」的具體化，不能以「無示範書」之類的測試反向解讀。

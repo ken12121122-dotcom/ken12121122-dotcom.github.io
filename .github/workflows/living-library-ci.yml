@@ -1,0 +1,36 @@
+name: Living Library web regression
+
+on:
+  pull_request:
+    paths:
+      - 'living-library/**'
+      - 'tests/living-library-*.test.mjs'
+      - '.github/workflows/living-library-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'living-library/**'
+      - 'tests/living-library-*.test.mjs'
+      - '.github/workflows/living-library-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute Living Library Node regression
+        run: node --test tests/living-library-*.test.mjs
+      - name: Confirm all public standalone site entrypoints exist
+        run: |
+          test -f living-library/index.html
+          test -f living-library/avatar-movement.js
+          test -f living-library/book-placement.js
+          test -f living-library/gpt-library-bridge.html
