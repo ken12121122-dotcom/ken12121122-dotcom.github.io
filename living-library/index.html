@@ -470,7 +470,9 @@ function cameraUpdate(){
  // Pitch is wide but bounded so visitors do not clip through the floor.
  const tilt=THREE.MathUtils.clamp(phi,-.07,1.27);
  const horizontal=distance*Math.cos(tilt);
- camera.position.set(Math.sin(theta)*horizontal,look.y+Math.sin(tilt)*distance,Math.cos(theta)*horizontal);
+ // Third-person follow needs the camera's WORLD position to translate with its target.
+ // Previous implementation updated lookAt() only and left X/Z orbiting the map origin.
+ camera.position.set(look.x+Math.sin(theta)*horizontal,look.y+Math.sin(tilt)*distance,look.z+Math.cos(theta)*horizontal);
  camera.lookAt(look);
  window.LivingScene?.invalidate?.();
 }
@@ -562,11 +564,11 @@ function showExploreMode(enabled){
  exploreToggle.textContent=exploring?'◉ 返回自由觀看':'🎮 人物探索';
  walkPad.hidden=!exploring;walkHint.hidden=!exploring;
  if(exploring){
-  distanceBeforeExplore=distance;distance=Math.min(distance,9.2);
+  distanceBeforeExplore=distance;distance=6.8;
   look.set(keeper.position.x,2.1,keeper.position.z);
  }else{
   distance=distanceBeforeExplore;
-  look.set(0,2.1,0);
+  look.set(0,2.9,0);
   keeper.position.y=.46;
  }
  cameraUpdate();syncRender();
@@ -827,11 +829,11 @@ function pick(e){
 }
 const touchPoints=new Map();
 renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
-renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,exploring?4.5:7.5,exploring?13:27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}}});
 renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
 renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
-renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,7.5,27);cameraUpdate()},{passive:false});
-function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,exploring?4.5:7.5,exploring?13:27);cameraUpdate()},{passive:false});
+function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));if(exploring)distance=THREE.MathUtils.clamp(distance,4.5,13);else distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
 // Open books/dialogs take priority over a constantly redrawing background.
@@ -893,7 +895,7 @@ notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
- reset(){theta=0;phi=.17;distance=exploring?9.2:(window.innerWidth<650?15.8:14.1);look.set(exploring?keeper.position.x:0,2.1,exploring?keeper.position.z:0);cameraUpdate();invalidate()},
+ reset(){theta=0;phi=.17;distance=exploring?6.8:(window.innerWidth<650?15.8:14.1);look.set(exploring?keeper.position.x:0,exploring?2.1:2.9,exploring?keeper.position.z:0);cameraUpdate();invalidate()},
  isExploreMode(){return exploring},
  syncRender,invalidate
 });
