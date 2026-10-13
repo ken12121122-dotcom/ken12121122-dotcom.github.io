@@ -2,16 +2,69 @@
   "schema": "living-library/public-capabilities-v1",
   "description": "Public pre-existing UI capabilities; not GEN2 Skills, Workflow or private knowledge.",
   "capabilities": [
-    {"id":"public.research.navigation","name":"研究導航","url":"/packagecanvas/research-navigation-v04.html","book":"research"},
-    {"id":"public.canvas.workbench","name":"PackageCanvas 知識工作台","url":"/packagecanvas/","book":"research"},
-    {"id":"public.startup.tasks","name":"公司設立任務","url":"/packagecanvas/startup.html","book":"startup"},
-    {"id":"public.calendar","name":"Google 日曆","url":"https://calendar.google.com/calendar/u/0/r/","book":"startup","external":true},
-    {"id":"public.knowledge.world","name":"知識世界","url":"/packagecanvas/world.html","book":"knowledge"},
-    {"id":"public.gba.runtime","name":"GBA 遊戲庫","url":"/amin-vault/gba.html","book":"gaming"},
-    {"id":"public.vault.web","name":"Pocket Vault 網頁入口","url":"/amin-vault/","book":"gaming"}
+    {
+      "id": "public.research.navigation",
+      "name": "研究導航",
+      "url": "/packagecanvas/research-navigation-v04.html",
+      "book": "research"
+    },
+    {
+      "id": "public.canvas.workbench",
+      "name": "PackageCanvas 知識工作台",
+      "url": "/packagecanvas/",
+      "book": "research"
+    },
+    {
+      "id": "public.startup.tasks",
+      "name": "公司設立任務",
+      "url": "/packagecanvas/startup.html",
+      "book": "startup"
+    },
+    {
+      "id": "public.calendar",
+      "name": "Google 日曆",
+      "url": "https://calendar.google.com/calendar/u/0/r/",
+      "book": "startup",
+      "external": true
+    },
+    {
+      "id": "public.knowledge.world",
+      "name": "知識世界",
+      "url": "/packagecanvas/world.html",
+      "book": "knowledge"
+    },
+    {
+      "id": "public.gba.runtime",
+      "name": "GBA 遊戲庫",
+      "url": "/amin-vault/gba.html",
+      "book": "gaming"
+    },
+    {
+      "id": "public.vault.web",
+      "name": "Pocket Vault 網頁入口",
+      "url": "/amin-vault/",
+      "book": "gaming"
+    },
+    {
+      "id": "public.gpt.bridge",
+      "name": "GPT 知識庫連結導覽",
+      "url": "/living-library/gpt-library-bridge.html",
+      "book": "gpt",
+      "description": "公開導航頁；不包含或公開 ChatGPT Library / 私有 GEN2 資料"
+    }
   ],
-  "requiredWithoutGen2":["public.research.navigation","public.startup.tasks","public.knowledge.world","public.gba.runtime"],
-  "aliases":[
-    {"publicBook":"startup","formalKb":"KB-STARTUP","label":"創業之書"}
-  ]
+  "requiredWithoutGen2": [
+    "public.research.navigation",
+    "public.startup.tasks",
+    "public.knowledge.world",
+    "public.gba.runtime"
+  ],
+  "aliases": [
+    {
+      "publicBook": "startup",
+      "formalKb": "KB-STARTUP",
+      "label": "創業之書"
+    }
+  ],
+  "originalProtectedCount": 7
 }
