@@ -43,8 +43,10 @@
   const within=index%shelfBlock;
   const row=ROWS[Math.floor(within/SLOTS_PER_ROW)];
   const position=within%SLOTS_PER_ROW;
-  const col=3+position*4;
-  return {shelfIndex,row,col,x:-3.12+(col+1)*.277,y:.72+row*1.43+.50,z:.72};
+  const col=position;
+  // Exactly five physical compartments across each of five shelves per cabinet.
+  // Front-facing book covers make stored titles distinguishable on phones.
+  return {shelfIndex,row,col,x:-2.68+col*1.34,y:.72+row*1.43+.58,z:.64};
  }
  return {ring,ringCount,orbitPosition,shelfSlot,SHELF_CAPACITY};
 });
