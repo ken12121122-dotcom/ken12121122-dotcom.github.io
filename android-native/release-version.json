@@ -1,20 +1,18 @@
 {
-  "versionCode": 199,
-  "versionName": "0.11.22-rc14",
+  "versionCode": 203,
+  "versionName": "0.11.24-rc1",
   "channel": "release",
-  "bridge": 103,
-  "releaseSequence": 37,
+  "bridge": 107,
+  "releaseSequence": 41,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "GEN2 語音核准：狐狸會念出等你處理的流程、摘要待審內容並給建議，你可以用聊天的方式追問。",
-    "你說出決定後，狐狸會把要送出的指令念一遍；只有你說「確定」或按「確定送出」才會送出。",
-    "入口：點 GEN2 推播直接進語音、對狐狸說「有什麼要我處理的」、在「GEN2 待核准」頁按「🎙 用說的」。",
-    "新增連結 amin-gen2://run/編號，ntfy 推播可以直接打開那一筆流程。",
-    "GEN2 待核准畫面：可在 App 內提供資料、核准、退回（必須寫說明）或停止流程。",
-    "摘要與建議使用語音球已設定的 AI 與你的 API Key，待審內容會送到該服務；沒設定時只聽選項名稱。",
-    "既有 GBA、存檔、手把、全域控制盤與 PackageCanvas 卡片維持不變。"
+    "念動圖書館現在優先載入 GitHub Pages 線上 3D 圖書館；一般書籍、卡片、網頁 UI 與城堡房間後續透過網頁更新，不需為每張卡片更新 APK。",
+    "《遊戲之書》新增「知識城堡｜遊戲設計」卡片及記憶宮殿介紹；原有 GBA、Pocket Vault 卡片與存檔／手把功能保留。",
+    "保留 Bridge 106 的 3D 書架、書名、安卓之書16項原生入口、GEN2 授權後投影；網路載入失敗時使用 APK 內建離線書庫。",
+    "安全：線上圖書館僅有既有白名單原生路由，須主框架真實點擊；未新增 Android 權限、JS Bridge 或私有知識封裝。",
+    "版本 0.11.24-rc1-bridge107 / code203；Android CI 與模擬器已驗證，OWNER 手機網路切換、GBA 存檔與原地更新仍需實機驗收。"
   ]
 }

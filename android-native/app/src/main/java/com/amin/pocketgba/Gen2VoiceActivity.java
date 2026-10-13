@@ -277,25 +277,30 @@ public final class Gen2VoiceActivity extends Activity implements RecognitionList
         String text = spoken == null ? "" : spoken.trim();
         if (text.isEmpty()) { enterIdle(); return; }
         line("你：", text);
-        switch (Gen2VoiceBrain.local(text, proposal != null)) {
-            case CONFIRM: confirm(); return;
-            case CANCEL: cancelProposal(true); return;
-            case OPEN_PAGE: openPage(); return;
-            case NEXT: nextRun(""); return;
-            case END: endAfterSpeech = true; say("好，先這樣。"); return;
-            case LIST: listAll(); return;
-            default: break;
+        boolean ai = LlmConfigStore.hasApiKey(this);
+        if (!ai) {
+            // Without an AI the fox can only match words; with one, the AI judges what the OWNER means.
+            switch (Gen2VoiceBrain.local(text, proposal != null)) {
+                case CONFIRM: confirm(); return;
+                case CANCEL: cancelProposal(true); return;
+                case OPEN_PAGE: openPage(); return;
+                case NEXT: nextRun(""); return;
+                case END: endAfterSpeech = true; say("好，先這樣。"); return;
+                case LIST: listAll(); return;
+                default: break;
+            }
+            clearProposal();
         }
-        clearProposal();
         Gen2RunView run = current();
         if (run == null) { endAfterSpeech = true; say("目前沒有等你處理的流程。"); return; }
-        if (!LlmConfigStore.hasApiKey(this)) { fallback(run, text); return; }
+        if (!ai) { fallback(run, text); return; }
         history.add(new LlmClient.Message("user", text));
         while (history.size() > MAX_HISTORY) history.remove(0);
         busy = true;
         status("狐狸思考中…", VoiceOrbView.Phase.PROCESSING);
         List<LlmClient.Message> snapshot = new ArrayList<>(history);
-        LlmClient.send(this, Gen2VoiceBrain.systemPrompt(run, queue), snapshot, new LlmClient.Callback() {
+        String waitingReadBack = proposal == null ? null : proposal.readBack;
+        LlmClient.send(this, Gen2VoiceBrain.systemPrompt(run, queue, waitingReadBack), snapshot, new LlmClient.Callback() {
             @Override public void onSuccess(String reply) { handler.post(() -> onModelReply(run, reply)); }
             @Override public void onError(String message) {
                 handler.post(() -> {
@@ -315,7 +320,10 @@ public final class Gen2VoiceActivity extends Activity implements RecognitionList
         Gen2VoiceBrain.Reply reply = Gen2VoiceBrain.parseReply(raw);
         history.add(new LlmClient.Message("assistant", reply.say));
         if (run != current()) return; // the queue moved on meanwhile
+        if (proposal != null && Boolean.TRUE.equals(reply.confirm)) { confirm(); return; }
+        if (proposal != null && Boolean.FALSE.equals(reply.confirm)) clearProposal();
         String type = reply.action == null ? "" : reply.action.optString("type", "");
+        if ("open_page".equals(type)) { if (!reply.say.isEmpty()) line("狐狸：", reply.say); openPage(); return; }
         if ("next".equals(type)) { nextRun(reply.say.isEmpty() ? "" : reply.say + " "); return; }
         if ("end".equals(type)) { endAfterSpeech = true; say(reply.say.isEmpty() ? "好，先這樣。" : reply.say); return; }
         offer(run, reply.action, reply.say);

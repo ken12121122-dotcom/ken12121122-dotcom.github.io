@@ -102,6 +102,11 @@ final class Gen2VoiceBrain {
 
     /** System prompt for the model: the current run, the rest of the queue, and the reply format. */
     static String systemPrompt(Gen2RunView current, List<Gen2RunView> queue) {
+        return systemPrompt(current, queue, null);
+    }
+
+    /** waitingReadBack: the command the app already read back and is waiting for the OWNER to agree to. */
+    static String systemPrompt(Gen2RunView current, List<Gen2RunView> queue, String waitingReadBack) {
         StringBuilder text = new StringBuilder();
         text.append("你是 OWNER 的語音助理「狐狸」，用繁體中文、口語、簡短（每次 1 到 3 句）跟 OWNER 聊 GEN2 流程。\n")
             .append("你的工作：說明目前這一筆在等什麼、摘要待審內容、依內容給建議與理由，回答 OWNER 的追問。\n")
@@ -109,11 +114,16 @@ final class Gen2VoiceBrain {
             .append("1. 只根據下面提供的資料回答，資料裡沒有的就說不知道，不要編造。\n")
             .append("2. 你不能自己做決定。OWNER 明確說出要選哪個選項（或要提供什麼資料）時，才在 action 填入；App 會念給他確認後才送出。\n")
             .append("3. 選項標示 comment=required 時，comment 必須填 OWNER 說的理由；OWNER 沒講理由就先問他。\n")
-            .append("4. 只輸出一個 JSON 物件，不要其他文字：\n")
-            .append("{\"say\":\"要念給 OWNER 聽的話\",\"action\":null}\n")
+            .append("4. 自己理解 OWNER 的意思，不要等特定關鍵字。有「等待 OWNER 同意的動作」時，判斷他最新這句話：")
+            .append("明確同意填 \"confirm\":\"yes\"；拒絕、想修改或猶豫填 \"no\"（想修改就同時提出新的 action）；無關填 null。不確定就問，絕不要猜同意。\n")
+            .append("5. 只輸出一個 JSON 物件，不要其他文字：\n")
+            .append("{\"say\":\"要念給 OWNER 聽的話\",\"confirm\":null,\"action\":null}\n")
             .append("action 可用：{\"type\":\"decide\",\"option\":\"選項id\",\"comment\":\"說明\"}、")
             .append("{\"type\":\"input\",\"text\":\"OWNER 口述的資料\"}、{\"type\":\"cancel\",\"reason\":\"原因\"}、")
-            .append("{\"type\":\"next\"}（換下一筆）、{\"type\":\"end\"}（結束對話）。\n\n");
+            .append("{\"type\":\"next\"}（換下一筆）、{\"type\":\"end\"}（結束對話）、{\"type\":\"open_page\"}（OWNER 想用按的）。\n\n");
+        if (waitingReadBack != null && !waitingReadBack.isEmpty()) {
+            text.append("等待 OWNER 同意的動作（App 已念給他）：").append(waitingReadBack).append("\n\n");
+        }
         if (current == null) {
             text.append("目前沒有等 OWNER 處理的流程。\n");
             return text.toString();
@@ -168,7 +178,9 @@ final class Gen2VoiceBrain {
     static final class Reply {
         final String say;
         final JSONObject action;
-        Reply(String say, JSONObject action) { this.say = say; this.action = action; }
+        final Boolean confirm;
+        Reply(String say, JSONObject action) { this(say, action, null); }
+        Reply(String say, JSONObject action, Boolean confirm) { this.say = say; this.action = action; this.confirm = confirm; }
     }
 
     static Reply parseReply(String raw) {
@@ -180,7 +192,10 @@ final class Gen2VoiceBrain {
                 JSONObject json = new JSONObject(text.substring(start, end + 1));
                 String say = json.optString("say", "").trim();
                 JSONObject action = json.optJSONObject("action");
-                return new Reply(say.isEmpty() && action == null ? text : say, action);
+                Object c = json.opt("confirm");
+                Boolean confirm = "yes".equals(c) || Boolean.TRUE.equals(c) ? Boolean.TRUE
+                        : "no".equals(c) || Boolean.FALSE.equals(c) ? Boolean.FALSE : null;
+                return new Reply(say.isEmpty() && action == null && confirm == null ? text : say, action, confirm);
             } catch (Exception ignored) { }
         }
         return new Reply(text.replaceAll("```[a-z]*", "").trim(), null);

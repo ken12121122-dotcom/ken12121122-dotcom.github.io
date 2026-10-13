@@ -103,7 +103,7 @@ public final class LaunchGateActivity extends Activity {
         TextView mark = text("AMIN", 13, true, ACCENT);
         mark.setGravity(Gravity.CENTER);
         root.addView(mark, fullWidth());
-        TextView title = text("Pocket GBA", 32, true, TEXT);
+        TextView title = text("念動圖書館", 32, true, TEXT);
         title.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams titleParams = fullWidth();
         titleParams.topMargin = dp(8);
@@ -176,7 +176,7 @@ public final class LaunchGateActivity extends Activity {
         notesParams.topMargin = dp(10);
         card.addView(receiptNotesView, notesParams);
         Button enter = new Button(this);
-        enter.setText("進入遊戲控制台");
+        enter.setText("進入念動圖書館");
         enter.setAllCaps(false);
         enter.setTextSize(16);
         enter.setTypeface(Typeface.DEFAULT_BOLD);
@@ -208,7 +208,7 @@ public final class LaunchGateActivity extends Activity {
                         handler.postDelayed(this::openUpdater, 250);
                     } else {
                         statusView.setText("版本檢查完成");
-                        detailView.setText("正在進入遊戲控制台");
+                        detailView.setText("正在進入念動圖書館");
                         progressBar.setProgress(100);
                         handler.postDelayed(this::openControlCenter, 300);
                     }
@@ -302,7 +302,7 @@ public final class LaunchGateActivity extends Activity {
     private void openControlCenter() {
         if (leaving) return;
         leaving = true;
-        Intent intent = new Intent(this, ControlCenterActivity.class);
+        Intent intent = new Intent(this, LivingLibraryActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();

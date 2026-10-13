@@ -61,10 +61,8 @@ public final class ControlCenterActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        configureWindow();
-        buildUi();
-        detectEverything();
+        startActivity(new Intent(this, LivingLibraryActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+        finish();
     }
 
     @Override
