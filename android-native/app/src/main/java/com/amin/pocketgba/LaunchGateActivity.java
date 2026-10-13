@@ -103,7 +103,7 @@ public final class LaunchGateActivity extends Activity {
         TextView mark = text("AMIN", 13, true, ACCENT);
         mark.setGravity(Gravity.CENTER);
         root.addView(mark, fullWidth());
-        TextView title = text("Pocket GBA", 32, true, TEXT);
+        TextView title = text("念動圖書館", 32, true, TEXT);
         title.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams titleParams = fullWidth();
         titleParams.topMargin = dp(8);
@@ -302,7 +302,7 @@ public final class LaunchGateActivity extends Activity {
     private void openControlCenter() {
         if (leaving) return;
         leaving = true;
-        Intent intent = new Intent(this, ControlCenterActivity.class);
+        Intent intent = new Intent(this, LivingLibraryActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();

@@ -347,6 +347,16 @@ jobs:
             -p com.amin.pocketgba | tee "$RUNNER_TEMP/gen2-voice-deeplink.txt" | grep -F 'Status: ok'
           grep -F 'Gen2VoiceActivity' "$RUNNER_TEMP/gen2-voice-deeplink.txt"
 
+      - name: Run Living Library workbench acceptance
+        shell: bash
+        run: |
+          set -euxo pipefail
+          adb shell am instrument -w -r \
+            -e class com.amin.pocketgba.LivingLibraryActivityTest \
+            com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
+            | tee "$RUNNER_TEMP/living-library-instrumentation.txt"
+          grep -Eq 'OK \(2 tests\)' "$RUNNER_TEMP/living-library-instrumentation.txt"
+
       - name: Run GitHub Work, Step 11, and Focus Chain mobile acceptance tests
         shell: bash
         run: |

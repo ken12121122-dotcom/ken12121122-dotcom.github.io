@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090e19">
+<title>Living Library｜念動圖書館 • 3D 概念場景</title>
+<meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。沒有連接正式知識庫。">
+<style>
+:root{--bg:#070e1b;--panel:rgba(12,22,35,.87);--line:rgba(188,166,123,.29);--gold:#e5c28d;--gold2:#bb9563;--muted:#b4becb;--ink:#e9e8e5;--teal:#9ce0d5}
+*{box-sizing:border-box}html,body{height:100%;width:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+#stage{position:fixed;inset:0;z-index:0;touch-action:none;background:radial-gradient(ellipse at 50% 46%,#28354b 0%,#11192a 40%,#080d18 80%)}
+#stage canvas{display:block;width:100%;height:100%;outline:0}
+.vignette{pointer-events:none;position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,6,12,.50) 0%,transparent 28%,transparent 66%,rgba(3,5,11,.80) 100%),radial-gradient(ellipse at center,transparent 25%,rgba(3,5,12,.40) 100%)}
+.mist{pointer-events:none;position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 80%,rgba(43,148,153,.08),transparent 40%)}
+.top{position:fixed;z-index:5;top:0;left:0;right:0;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:24px 27px;pointer-events:none}
+.top>*{pointer-events:auto}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+.emblem{display:grid;place-items:center;width:39px;height:39px;border:1px solid rgba(239,205,140,.67);transform:rotate(45deg);border-radius:5px;color:var(--gold);background:rgba(13,22,29,.8);box-shadow:0 0 23px rgba(222,185,122,.15)}
+.emblem span{transform:rotate(-45deg);font:21px Georgia,serif}
+.kicker{color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.29em}.headline{font:500 24px/1.15 Georgia,"Noto Serif TC",serif;letter-spacing:.07em;margin-top:2px}
+.meta{margin-top:6px;color:#bcc4cb;font-size:10px;letter-spacing:.13em}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:rgba(15,25,39,.76);border:1px solid rgba(209,195,167,.3);color:#ece7df;padding:9px 12px;border-radius:10px;backdrop-filter:blur(14px);font-size:12px}
+.chip:hover{border-color:var(--gold)}
+.side{position:fixed;z-index:4;left:23px;top:50%;width:224px;transform:translateY(-36%);pointer-events:none}
+.side>*{pointer-events:auto}
+.side .eyebrow{font-size:10px;font-weight:800;color:#b0d5d0;letter-spacing:.19em}
+.side h2{font:400 32px/1.23 Georgia,"Noto Serif TC",serif;letter-spacing:.08em;margin:10px 0;color:#f1ebdf;text-shadow:0 3px 22px #080d19}
+.side p{max-width:208px;color:#c2c5c8;font-size:12px;margin:12px 0;line-height:1.8}
+.gold-rule{width:65px;height:1px;background:var(--gold);opacity:.65;margin:17px 0}
+.legend{display:grid;gap:10px;margin-top:20px;color:#aeb6bd;font-size:11px}
+.legend span{display:flex;align-items:center;gap:9px}.legend i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px #6dd2d4}
+.catalog{position:fixed;right:22px;top:110px;bottom:112px;z-index:5;width:216px;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(20,31,44,.83),rgba(7,15,28,.84));border:1px solid var(--line);border-radius:15px;box-shadow:0 22px 65px #04070f88;overflow:hidden;backdrop-filter:blur(20px)}
+.catalog-head{padding:16px 16px 11px;border-bottom:1px solid rgba(215,185,135,.13)}.catalog-head small{font-size:9px;letter-spacing:.22em;color:var(--gold)}.catalog-head h2{font:normal 18px Georgia,"Noto Serif TC",serif;margin:4px 0}.catalog-head p{font-size:10px;color:var(--muted);margin:4px 0 0}
+.book-list{overflow:auto;flex:1;padding:8px;scrollbar-width:thin;scrollbar-color:#51515a transparent}
+.book-entry{width:100%;display:flex;align-items:center;gap:11px;border:1px solid transparent;background:transparent;border-radius:9px;padding:9px 8px;text-align:left}
+.book-entry:hover,.book-entry.active{border-color:rgba(218,182,117,.3);background:rgba(255,241,218,.06)}
+.book-entry .swatch{flex:none;width:25px;height:34px;border-radius:2px 5px 5px 2px;border-left:5px solid rgba(0,0,0,.36);box-shadow:2px 4px 13px #04060a99}
+.book-entry strong{font-size:12px;display:block;font-weight:700;color:#ede5da}.book-entry small{font-size:10px;color:#aab2c1;display:block;line-height:1.45}.book-entry svg{margin-left:auto;flex:none;opacity:.6}
+.catalog-bottom{padding:10px 13px;border-top:1px solid rgba(215,185,135,.12);color:#b4c0c7;font-size:10px;display:flex;justify-content:space-between}
+.bottom{position:fixed;z-index:5;left:0;right:0;bottom:0;display:flex;align-items:end;justify-content:center;pointer-events:none;padding:20px 18px 22px}
+.bottom>*{pointer-events:auto}
+.hud{min-width:min(480px,90vw);max-width:550px;display:flex;flex-direction:column;align-items:center;gap:9px}
+.current{display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;color:#dbd6c9;text-shadow:0 3px 9px #02040e}
+.current .spark{color:var(--gold);font-size:16px}.current b{font:500 16px Georgia,"Noto Serif TC",serif}.current small{display:block;font-size:10px;letter-spacing:.10em;color:#b9bfc3}
+.pillbar{display:flex;align-items:center;gap:3px;padding:6px;background:rgba(13,23,35,.84);border:1px solid rgba(193,169,128,.35);border-radius:15px;box-shadow:0 20px 48px #03060f88;backdrop-filter:blur(20px)}
+.action{background:transparent;border:0;border-radius:9px;padding:11px 15px;font-size:12px;white-space:nowrap}
+.action:hover{background:rgba(255,255,255,.08)}
+.action.main{background:#c4a276;color:#15232a;font-weight:850;border:1px solid #ecd1a1}.action.main:hover{background:#efd6af}
+.divider{width:1px;height:26px;background:#556070;opacity:.55}
+.note{font-size:10px;color:#b8b9bf;text-align:center;letter-spacing:.03em}
+.drawer-wrap{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(2,5,11,.62);backdrop-filter:blur(9px);padding:16px}
+.drawer-wrap.open{display:flex}
+.drawer{position:relative;max-height:min(90vh,850px);overflow:auto;width:min(890px,100%);background:linear-gradient(150deg,#1a2739,#0c1829);border:1px solid #8e7657;border-radius:18px;padding:33px 35px;box-shadow:0 27px 100px #03060add,inset 0 0 70px rgba(240,192,113,.045)}
+.drawer::before{content:"";position:absolute;left:28px;right:28px;top:14px;height:1px;background:linear-gradient(90deg,transparent,#d8af7d,transparent)}
+.drawer .close{position:absolute;right:17px;top:14px;width:35px;height:35px;border:1px solid #4a5264;border-radius:8px;background:#192a3e;font-size:18px}
+.drawer .book-icon{display:grid;place-items:center;width:72px;height:92px;margin-bottom:20px;font-size:30px;background:#46626d;border:2px solid #dfcba8;box-shadow:6px 6px 0 #0a1320;border-radius:2px 10px 10px 2px}
+.drawer .eyebrow{color:var(--teal);font-size:10px;letter-spacing:.19em;font-weight:bold}
+.drawer h2{font:400 32px/1.35 Georgia,"Noto Serif TC",serif;margin:7px 0 8px}.drawer p{color:#c4d1dc;line-height:1.85}
+.drawer .layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
+.detail-cell{border:1px solid #425069;padding:13px;border-radius:10px;background:rgba(9,18,30,.55)}.detail-cell small{display:block;color:var(--gold);font-size:10px;letter-spacing:.10em;margin-bottom:6px}.detail-cell strong{font-weight:550;font-size:12px}
+.skill-actions{margin:18px 0;padding:14px 0;border-top:1px solid #606078;border-bottom:1px solid #606078}.skill-actions h3{margin:0 0 12px;font:500 18px Georgia,"Noto Serif TC",serif;color:#f3dfb8}.function-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.function-link{display:flex;flex-direction:column;justify-content:center;min-height:69px;padding:11px 12px;text-decoration:none;background:rgba(47,72,88,.78);border:1px solid #506e79;color:#f5efe5;border-radius:9px}.function-link:hover,.function-link:focus-visible{border-color:#e5c28d;background:#304b5b}.function-link strong{font-size:12px;font-weight:750}.function-link small{font-size:10px;line-height:1.4;color:#b9c8ce;margin-top:5px}.skill-footnote{font-size:11px;color:#a5bdc3!important;margin:9px 0 0!important}.drawer-actions{display:flex;gap:10px;flex-wrap:wrap}.drawer-actions button{border-radius:9px;padding:12px 15px;border:1px solid #806c51;background:#253548}
+.drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
+.blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
+.fallback{pointer-events:none;display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}#fallbackOpen{pointer-events:auto}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.toast{position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #90775c;border-radius:10px;background:#112235ee;padding:10px 15px;font-size:12px;opacity:0;transition:opacity .3s;white-space:nowrap}.toast.show{opacity:1}
+.quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
+@media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
+@media(max-width:650px){.top{padding:13px 13px}.emblem{width:31px;height:31px}.emblem span{font-size:16px}.headline{font-size:16px}.meta{font-size:8px;letter-spacing:.06em}.kicker{font-size:8px}.top-actions #homeBtn{display:none}.chip{padding:8px;font-size:10px}.side{left:13px;top:103px;width:145px}.side h2{font-size:22px}.side p{font-size:10px;max-width:140px}.side .gold-rule{margin:10px 0}.catalog{right:10px;left:10px;bottom:104px;width:auto;max-height:110px;border-radius:12px;display:block;overflow:hidden;transition:max-height .25s}.catalog.open{max-height:58vh;overflow:auto}.catalog-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer}.catalog-head h2{margin:0;font-size:14px}.catalog-head small,.catalog-head p{display:none}.catalog-head::after{content:"書庫 ▴";font-size:11px;color:#e2c79c}.catalog.open .catalog-head::after{content:"收合 ▾"}.book-list{display:none;padding:8px;max-height:40vh}.catalog.open .book-list{display:block}.catalog-bottom{display:none}.catalog.open .catalog-bottom{display:flex}.bottom{padding:0 6px calc(13px + env(safe-area-inset-bottom))}.hud{gap:5px}.current b{font-size:14px}.action{padding:11px 11px;font-size:11px}.pillbar{gap:0;padding:5px}.note{display:none}.drawer-wrap{align-items:flex-end;padding:0}.drawer{border-radius:20px 20px 0 0;width:100%;max-height:88dvh;padding:26px 19px calc(22px + env(safe-area-inset-bottom))}.drawer .layout{gap:8px}.detail-cell{padding:10px}.drawer h2{font-size:26px}.toast{top:81px;max-width:90vw;white-space:normal;text-align:center}}
+@media(max-width:390px){.function-list{grid-template-columns:1fr}}
+/* The opened book is now a compendium, not a conventional settings dialog. */
+.drawer{padding:19px 23px}
+.drawer .layout{display:none}
+.drawer .book-icon{width:41px;height:52px;margin:5px 0 9px;font-size:21px}
+.drawer h2{font-size:23px;margin:1px 0 6px}
+.drawer #drawerDesc{font-size:12px;line-height:1.5;margin:0 0 4px;color:#bdc8d0}
+@media(max-width:650px){.drawer{padding:20px 13px calc(16px + env(safe-area-inset-bottom))}.drawer .book-icon{width:33px;height:43px;font-size:16px;margin:4px 0 6px}.drawer h2{font-size:20px}.drawer #drawerDesc{display:none}.drawer .blank{font-size:10px;line-height:1.45}}
+/* Game-style compendium; card numbers are book crests + in-world slots, not data IDs. */
+.compendium{margin:18px 0 21px;border:1px solid #b39870;border-radius:13px;overflow:hidden;background:#17212c;box-shadow:inset 0 0 26px #11171e}
+.compendium-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 16px;background:linear-gradient(90deg,#685136,#302c2b 70%);border-bottom:2px solid #b69b77;color:#ffebc6}
+.compendium-top strong{font:500 18px Georgia,"Noto Serif TC",serif;letter-spacing:.09em}
+.compendium-top small{font:600 10px system-ui,sans-serif;letter-spacing:.12em;color:#f0d3a7}
+.compendium-pages{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);background:linear-gradient(90deg,#e5d7b9,#bba77f 39.9%,#765f48 40.1%,#decdaa 41.2%,#efe0bf 100%);color:#302a22;min-height:350px}
+.compendium-leaf{position:relative;padding:21px 17px;min-width:0}
+.compendium-leaf:first-child{border-right:2px solid #85684b;box-shadow:9px 0 15px #4b342244}
+.compendium-mark{font-size:10px;font-weight:750;letter-spacing:.14em;color:#715638}
+.compendium-crest{font:normal 65px/1 Georgia,serif;text-align:center;margin:35px 0 20px;color:#815e38;text-shadow:0 3px 0 #f8e8c9}
+.compendium-quote{text-align:center;font:normal 15px/1.75 Georgia,"Noto Serif TC",serif;margin:10px 0;color:#6c5537}
+.compendium-foil{border-top:1px solid #a88b66;margin-top:25px;padding-top:14px;font-size:11px;color:#65543c}
+.compendium-index{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:11px}
+.compendium-index strong{font-size:13px;letter-spacing:.06em}.compendium-index span{font-size:10px;color:#745941}
+.card-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.codex-slot{position:relative;min-width:0;min-height:137px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 5px 9px;border:2px solid #a38c62;border-radius:9px;background:linear-gradient(145deg,#fff2d4,#decdab);box-shadow:0 3px 0 #aa9069,inset 0 0 0 3px #e9d8b7;color:#534027;text-align:center}
+.codex-slot:focus-visible{outline:3px solid #547a83;outline-offset:2px}
+.codex-slot.unfilled{opacity:.63;background:repeating-linear-gradient(135deg,#d6c4a2,#d6c4a2 6px,#e6d6b8 6px,#e6d6b8 12px);border-style:dashed}
+.codex-slot:not(.unfilled):hover,.codex-slot.selected{border-color:#5b8e89;transform:translateY(-2px);box-shadow:0 4px 0 #4f7e7b,0 5px 15px #83684955}
+.codex-slot.selected::after{content:"✦";position:absolute;right:3px;top:0;color:#448580;font-size:15px}
+.codex-index{display:block;align-self:flex-start;padding-left:5px;font:700 13px Georgia,serif;color:#6d5030}
+.codex-symbol{display:block;font:normal 30px/1 Georgia,serif;color:#70543a;text-shadow:0 1px #fff2de}
+.codex-title{font-weight:800;line-height:1.25;font-size:11px}
+.codex-rank{font-size:9px;letter-spacing:.09em;color:#7a5d40;border-top:1px solid #b9a47d;width:80%;padding-top:4px}
+.card-reveal{margin-top:15px;border-radius:10px;padding:14px;background:#f5e8c8;border:2px solid #b6956a;box-shadow:0 3px 0 #8c6b40;color:#46331d}
+.card-reveal[hidden]{display:none}
+.card-reveal-head{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.card-reveal-head h3{margin:0;font-size:16px;font-weight:800}
+.card-reveal-head small{display:block;font:700 10px Georgia,serif;color:#8a6739;letter-spacing:.1em;margin-bottom:3px}
+.card-reveal-desc{color:#61513c!important;font-size:12px;margin:8px 0 11px!important}
+.card-reveal .function-link{width:100%;display:block;min-height:0;margin-top:7px;color:#ffebc8;background:#314f53;border-color:#547f80;text-decoration:none}
+.card-reveal .function-link strong{display:block;font-size:12px}.card-reveal .function-link small{display:block;color:#c5e0dc}
+.card-reveal .function-link:focus-visible{outline:3px solid #bc7a42}
+.card-reveal button{border:1px solid #9e7e50;background:#efe0be;color:#614627;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700}
+.catalog-note{font-size:10px;color:#755d3d;margin:10px 0 0}
+@media(max-width:650px){.compendium-pages{grid-template-columns:1fr;background:#eadbb9}.compendium-leaf{padding:14px 11px}.compendium-leaf:first-child{display:none}.compendium-top{padding:8px 10px}.compendium-top strong{font-size:15px}.card-slots{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.codex-slot{min-height:126px;padding:9px 3px 7px}.codex-index{font-size:11px}.codex-title{font-size:10px}.codex-symbol{font-size:27px}.codex-rank{font-size:8px}}
+@media(max-width:360px){.card-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* In-world book reader: the 3D library remains mounted behind this parchment frame. */
+.drawer-wrap.reader-mode{background:rgba(3,7,14,.35);backdrop-filter:blur(2px)}
+.reader-shell[hidden]{display:none!important}
+.drawer.reader-active{width:min(1120px,calc(100vw - 24px));height:min(94dvh,960px);max-height:94dvh;overflow:hidden;display:flex;flex-direction:column;padding:15px 18px 14px;background:linear-gradient(140deg,#2d2a30,#100f19);border:2px solid #b69b67;box-shadow:0 28px 110px #000b,0 0 40px #d6b27b25,inset 0 0 22px #8d634d33}
+.drawer.reader-active .book-icon,.drawer.reader-active #drawerDesc,.drawer.reader-active .layout,.drawer.reader-active .compendium,.drawer.reader-active .drawer-actions,.drawer.reader-active .blank{display:none}
+.drawer.reader-active .eyebrow{font-size:9px;line-height:1.4;margin:0 37px 3px 0;color:#dfb87b}
+.drawer.reader-active h2{font:500 19px Georgia,"Noto Serif TC",serif;margin:0 40px 8px 0;color:#f8e5bb}
+.reader-shell{display:flex;flex:1;min-height:0;flex-direction:column;border-radius:11px;overflow:hidden;border:1px solid #bf9b62;background:#d9c9a4;box-shadow:inset 0 0 0 5px #6b4e32}
+.reader-toolbar{flex:none;display:flex;align-items:center;gap:9px;justify-content:space-between;padding:9px 13px;color:#f3e3c4;background:linear-gradient(100deg,#715237,#40342e 48%,#3a302d);border-bottom:2px solid #b18f60}
+.reader-toolbar-title{min-width:0;flex:1;display:flex;flex-direction:column}
+.reader-toolbar-title strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reader-toolbar-title small{font-size:10px;color:#e6cbaa}
+.reader-back{border:1px solid #b69b6f;border-radius:7px;padding:8px 10px;color:#f8e9c7;background:#514031;font-size:12px;flex:none}
+.reader-back:hover{background:#745b43}
+.reader-viewport{position:relative;flex:1;min-height:0;display:flex;overflow:hidden;background:#1b2229;border:7px solid #d1bc92;border-left-width:15px;border-right-width:9px;box-shadow:inset 0 0 0 2px #775636}
+.reader-viewport::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(90deg,#66503f,#b9a77f);z-index:2;pointer-events:none}
+.reader-frame{display:block;width:100%;height:100%;flex:1;border:0;background:#101829;overflow:auto}
+.reader-foot{display:flex;flex:none;align-items:center;justify-content:space-between;gap:9px;padding:7px 12px;background:linear-gradient(180deg,#ebd9b5,#c7af82);color:#654d2e;font-size:10px}
+.reader-external{color:#59452b;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;font-weight:700}
+@media(max-width:650px){
+.drawer.reader-active{width:calc(100vw - 26px);height:calc(100dvh - 56px - env(safe-area-inset-bottom));max-height:none;padding:10px 8px;border-radius:15px}
+.drawer.reader-active h2{font-size:15px;margin-bottom:6px}
+.reader-toolbar{padding:8px;gap:6px}.reader-toolbar-title strong{font-size:11px}.reader-toolbar-title small{font-size:9px}
+.reader-back{padding:8px 8px;font-size:11px}.reader-viewport{border:4px solid #d1bc92;border-left-width:8px}
+.reader-foot{padding:6px 8px;font-size:9px}
+}
+
+@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
+#gen2Auth,#mdSearch{max-width:min(500px,90vw);background:#e9d9b7;color:#473421;border:2px solid #b08d5e;border-radius:15px;padding:22px}#gen2Auth::backdrop,#mdSearch::backdrop{background:#0009}#gen2Auth input{box-sizing:border-box;width:100%;padding:10px}#gen2Auth button{margin:4px;padding:10px;min-height:44px}#gen2Status{font-size:11px;overflow-wrap:anywhere;margin:8px 12px}.source-page{box-sizing:border-box;flex:1;min-width:0;overflow:auto;background:#ecdfc4;color:#473421;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 sans-serif}.source-page a{color:#624522}.source-page button{padding:12px;margin:12px 0} .reader-frame[hidden]{display:none}
+#mdSearch{width:min(750px,92vw);max-height:85dvh;overflow:auto}#mdSearch input,#mdSearch select{box-sizing:border-box;max-width:100%;padding:10px}#mdResults button{display:block;width:100%;text-align:left;margin:7px 0;padding:10px;overflow-wrap:anywhere}#mdSearch button{min-height:44px} .md-editor[hidden],.source-page[hidden]{display:none!important}.md-editor{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:auto;padding:12px;background:#e9d9b7;color:#473421}.md-editor textarea{box-sizing:border-box;flex:1;min-height:200px;width:100%;resize:none;font:14px/1.6 monospace;background:#fff9eb;color:#302416;padding:12px}.editor-controls,.submit-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.editor-controls button,.submit-controls button{min-height:44px;padding:10px}.submit-controls input{max-width:100%;box-sizing:border-box;padding:8px}.md-editor p{font-size:12px;overflow-wrap:anywhere}.editor-label{font-size:12px;margin:8px 0}
+</style>
+</head>
+<body>
+<div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div class="vignette"></div><div class="mist"></div>
+<header class="top">
+<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div></div></div>
+<div class="top-actions"><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
+</header>
+<aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
+<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
+<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
+<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
+<header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
+<div class="compendium-pages">
+<section class="compendium-leaf" aria-label="左頁技能卷首">
+<div class="compendium-mark">THE LIVING LIBRARY · CODEX</div><div class="compendium-crest" id="codexCrest">◆</div>
+<div class="compendium-quote" id="codexQuote">每一張卡，都有自己的去處。</div>
+<p class="compendium-foil">卡牌符印與數字表示圖鑑中的位置。資料識別碼獨立於外觀；圖鑑已收錄不等於技能已熟練。</p>
+</section>
+<section class="compendium-leaf" aria-label="右頁卡片圖鑑">
+<div class="compendium-index"><strong>收錄圖鑑 · <span id="codexBookLabel">創業之書</span></strong><span>✦ 觸碰卡片查看</span></div>
+<div id="drawerFunctions" class="card-slots"></div>
+<section id="cardReveal" class="card-reveal" hidden aria-live="polite">
+<div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard">返回圖鑑</button></div>
+<p id="cardDescription" class="card-reveal-desc"></p><div id="cardLinks"></div>
+</section><p class="catalog-note">公開功能入口無需 GEN2 授權；私有 Skill／Workflow 授權後加入。外部研究卡為候選，並非 GEN2 技能。超過六張會自動延展。</p>
+</section></div></section><section id="readerShell" class="reader-shell" hidden aria-label="書內功能頁面">
+<div class="reader-toolbar">
+<button id="readerBack" class="reader-back" type="button">‹ 返回卡冊</button>
+<div class="reader-toolbar-title"><strong id="readerTitle">功能卡片</strong><small id="readerSeal">卡片內容 · 可上下捲動</small></div>
+<button id="readerClose" class="reader-back" type="button">關閉書本</button>
+</div>
+<div class="reader-viewport">
+<section id="editorPane" class="md-editor" hidden><div class="editor-controls"><button id="cancelEdit" type="button">返回閱讀</button><button id="validateEdit" type="button">檢查完整候選</button><button id="copyEdit" type="button">複製候選 MD</button></div><label class="editor-label" for="editText">完整候選 MD（只在本頁暫存）</label><textarea id="editText" spellcheck="false"></textarea><div class="submit-controls"><label>本次 PR 寫入權杖 <input id="writeToken" type="password" autocomplete="off" spellcheck="false"></label><button id="submitEdit" type="button">提交 Draft PR</button></div><p id="editorResult" role="status">正式 main 不會被修改；提交需要另一個具 Contents／Pull requests 寫入權限的 session token，不能沿用唯讀權杖。</p></section><article id="sourcePage" class="source-page" hidden></article><iframe sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads" id="readerFrame" class="reader-frame" title="書內功能" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>
+</div>
+<footer class="reader-foot"><span>✧ 你仍在圖書館 · 書頁內容可上下滑動</span><a id="readerExternal" class="reader-external" target="_blank" rel="noopener noreferrer" href="#">若無法顯示，另開原頁 ↗</a></footer>
+</section><div class="drawer-actions"><button id="readBookMD" type="button">查閱本書 MD</button><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">✦ 同站功能現在於書本內頁開啟，3D 圖書館保留在背景；Google 日曆等外部網站仍需另開。書本環繞設定保留於本機，未更動原生 Pocket GBA。</p></section></div>
+<dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button">返回圖書館</button></dialog>
+<dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button">讀取正式書庫</button> <button id="reuseGen2" type="button">沿用此站 PackageCanvas 授權</button> <button id="disconnectGen2" type="button">斷線清除</button> <button>關閉</button></p><p id="authStatus" role="status"></p></form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
+<script src="book-placement.js?v=orbital-shelves-20261013"></script>
+<script src="public-catalog.js?v=public-regression-20261013"></script>
+<script src="gen2-editor.js?v=md-workbench-20261013"></script>
+<script>
+(function(){
+const BOOKS=[], CARDS=Object.create(null), BOOK_CARDS=Object.create(null);
+const SITE='https://ken12121122-dotcom.github.io';
+const Catalog=window.LivingLibraryCatalog;
+const Placement=window.LivingBookPlacement;
+const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
+let selectedId='research',motion=true,ready=false,toastTimer=0;
+const BOOK_PREFS_KEY='living-library-workbench-v1';
+function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+
+restoreBooks();storeBooks();
+const $=id=>document.getElementById(id);
+// Keep the WebGL loop in sync with book pages and permission dialogs.
+function syncScene(){window.LivingScene?.syncRender?.()}
+function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
+function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;storeBooks();updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
+function updateUI(){
+const b=book();$('openBtn').disabled=!b;$('prevBtn').disabled=!b;$('nextBtn').disabled=!b;$('fallbackOpen').disabled=!b;if(!b){$('focusTitle').textContent='尚未連接正式知識庫';$('focusSubtitle').textContent='請授權讀取 GEN2 main';$('bookList').replaceChildren();$('orbitCount').textContent='0 本環繞';return;}$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
+const orbitTotal=BOOKS.filter(x=>x.active).length;
+$('orbitCount').textContent=orbitTotal+' 本環繞 · '+(Placement?.ringCount?.(orbitTotal)||0)+' 圈 · '+(BOOKS.length-orbitTotal)+' 本在書架';
+$('bookList').replaceChildren();
+BOOKS.forEach(x=>{const btn=document.createElement('button');btn.className='book-entry'+(x.id===selectedId?' active':'');btn.type='button';btn.setAttribute('aria-label','選取'+x.name);
+const sw=document.createElement('span');sw.className='swatch';sw.style.background=x.color;
+const words=document.createElement('span');const strong=document.createElement('strong');strong.textContent=x.name;const small=document.createElement('small');small.textContent=x.active?'✦ 正在環繞':'▥ 已在書架';words.append(strong,small);btn.append(sw,words);
+btn.addEventListener('click',()=>{select(x.id);openBook()});$('bookList').append(btn)});
+}
+function toast(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
+function isLocalFunctionPage(url){
+ try{
+  const u=new URL(url,window.location.href);
+  const current=new URL(window.location.href);
+  // The GPT guide is a public read-only page in this exact book directory.
+  // Relative links keep it in the same candidate preview commit before main is merged.
+  if(u.origin===current.origin&&u.pathname===new URL('./gpt-library-bridge.html',current).pathname)return true;
+  return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
+    (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));
+ }catch(_){return false}
+}
+let readerCard=null;
+function openCardReader(card){
+ storeBooks();
+ readerCard=card;
+ $('readerTitle').textContent=card.title;
+ $('readerSeal').textContent=card.seal+' '+card.number+' · '+card.guild+' · 翻頁閱讀';
+ $('readerExternal').href=card.url;$('readerExternal').textContent='若無法顯示，另開原頁 ↗';
+ $('readerFrame').title='書中功能：'+card.title;
+ $('readerShell').hidden=false;
+ $('drawerWrap').classList.add('reader-mode');
+ $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
+ $('editorPane').hidden=true;
+ if(card.nativeRoute&&(card.url.startsWith('amin-library:')||navigator.userAgent.includes('LivingLibraryNative/'))){
+  $('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();
+  const p=document.createElement('p');p.textContent=card.desc+'\n由念動圖書館 APK 開啟原有功能；返回後仍在這本書中。';page.append(p);
+  $('readerExternal').removeAttribute('href');$('readerExternal').textContent='Android 原生功能';
+  if(navigator.userAgent.includes('LivingLibraryNative/')){const a=document.createElement('a');a.href='amin-library://'+card.nativeRoute;a.textContent='開啟 '+card.title+' →';page.append(a);}
+  else{const p=document.createElement('p');p.textContent='目前為網頁模式。此功能需使用新版念動圖書館 APK。';page.append(p);}
+ }
+ else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;}
+ else{$('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();const p=document.createElement('p');p.textContent=card.desc+'\n此功能使用原網站登入，於新分頁開啟。';const a=document.createElement('a');a.href=card.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='開啟 '+card.title+' ↗';page.append(p,a);}
+
+ $('readerBack').focus();
+}
+function closeReader(){
+ clearEditor();
+ if($('readerShell').hidden)return;
+ $('readerShell').hidden=true;
+ $('drawerWrap').classList.remove('reader-mode');
+ $('drawerWrap').querySelector('.drawer')?.classList.remove('reader-active');
+ $('readerFrame').removeAttribute('src');$('sourcePage').replaceChildren();$('sourcePage').hidden=true;
+ readerCard=null;
+ $('drawerFunctions').querySelector('.codex-slot.selected')?.focus();
+}
+function revealCard(card,button){
+ // Only canonical GEN2 cards show private source. A separately labeled
+ // website reference uses the in-book reader without GEN2 execution rights.
+ if(card.kind==='external_reference'||card.kind==='public_function'){openCardReader(card);return;}
+ storeBooks();readerCard=card;
+ $('readerTitle').textContent=card.title;
+ $('readerSeal').textContent=card.id+' · '+card.status+' · '+card.sourceCommit.slice(0,7);
+ $('readerExternal').href=card.sourceUrl;$('readerExternal').textContent='查看私有 repo 原始文件 ↗';
+ $('readerShell').hidden=false;$('drawerWrap').classList.add('reader-mode');
+ $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
+ $('readerFrame').removeAttribute('src');$('readerFrame').hidden=true;
+ const page=$('sourcePage');page.hidden=false;page.replaceChildren();
+ const meta=document.createElement('p');meta.textContent=card.id+' · '+card.kind+' · 來源狀態 '+card.status+' · 版本 '+(card.version||'未標示')+'\n'+card.sourcePath+'\n來源 commit '+card.sourceCommit+'\n'+(card.runtime==='defined_owner_gate'?'含 gen2-run 定義；啟動與 OWNER Gate 仍由既有工作台處理':'能力文件已收錄；本頁不自動執行或寫入外部服務');page.append(meta);
+ const doc=projectionState?.documents.find(d=>d.path===card.sourcePath);const edit=document.createElement('button');edit.textContent='編輯候選 MD';edit.disabled=!doc?.editable;edit.onclick=()=>openEditor(doc);page.append(edit);const ai=document.createElement('button');ai.textContent='複製給 AI 執行';ai.onclick=()=>copyAI(doc);page.append(ai);
+ const action=document.createElement('button');action.textContent='在書內開啟既有 GEN2 工作台';action.onclick=()=>openCardReader({...card,url:SITE+'/packagecanvas/?gen2ref=main'});page.append(action);
+ const content=document.createElement('div');content.textContent=card.body;page.append(content);
+ $('readerBack').focus();
+}
+$('readerBack').addEventListener('click',closeReader);
+$('readerClose').addEventListener('click',()=>closeBook());
+function renderFunctions(b){
+ const host=$('drawerFunctions');host.replaceChildren();
+ const ids=BOOK_CARDS[b.id]||[];
+ $('codexCrest').textContent=b.icon;
+ $('codexBookLabel').textContent=b.name;
+ $('codexHeader').textContent='卷印 '+b.icon+' · 已收錄 '+ids.length+' / '+Math.max(6,ids.length);
+ $('codexQuote').textContent='「'+b.name+'」 · 『觸印成術，翻頁為界。』';
+ $('cardReveal').hidden=true;$('cardLinks').replaceChildren();
+ for(let i=0;i<Math.max(6,ids.length);i++){
+   const id=ids[i],card=id?CARDS[id]:null;
+   const btn=document.createElement('button');btn.type='button';
+   btn.className='codex-slot'+(card?'':' unfilled');
+   const nr=document.createElement('span');nr.className='codex-index';nr.textContent=card?card.seal+' '+card.number:'◇ ??';
+   const symbol=document.createElement('span');symbol.className='codex-symbol';symbol.textContent=card?card.seal:'✧';
+   const name=document.createElement('span');name.className='codex-title';name.textContent=card?card.title:'空白卡槽';
+   const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+(card.kind==='external_reference'?' · 外部候選':card.kind==='public_function'?' · 功能入口':' · GEN2 已收錄'):'尚未放入卡片';
+   btn.append(nr,symbol,name,grade);
+   btn.disabled=!card;
+   if(card){btn.dataset.cardId=card.id;btn.setAttribute('aria-label',card.seal+card.number+' '+card.title+' 卡片');btn.addEventListener('click',()=>revealCard(card,btn))}
+   else{btn.setAttribute('aria-label','空白卡槽，尚未放入卡片')}
+   host.append(btn);
+ }
+}
+$('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
+function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
+function setBookActive(b,active){
+ if(!b||b.active===active)return;
+ b.active=active;storeBooks();
+ // Close the overlay BEFORE the motion, otherwise WebGL's power budget pauses frames.
+ closeBook();updateUI();
+ window.LivingScene?.rebuild?.();
+ window.LivingScene?.syncRender?.();
+ toast(active?'✧ '+b.name+' 正從書架飛來':'▥ '+b.name+' 正飛回書架');
+}
+function moveBook(){const b=book();if(b)setBookActive(b,!b.active)}
+function summonBook(id){const b=BOOKS.find(x=>x.id===id);if(!b)return;select(id);setBookActive(b,true)}
+function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
+$('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
+$('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
+$('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
+$('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
+$('resetBtn').onclick=()=>window.LivingScene?.reset?.();
+$('homeBtn').onclick=()=>{closeBook();if(BOOKS.length)select(BOOKS[0].id);window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
+$('aboutBtn').onclick=()=>{toast('GEN2 main 是唯一正本 · 本頁搜尋、閱讀及候選 PR · 任務由可用 AI／Agent 執行 · OWNER 保留核准')};
+$('fallbackOpen').onclick=openBook;
+$('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
+$('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawerWrap').classList.contains('open')){$('readerShell').hidden?closeBook():closeReader();}if(!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)&&!$('gen2Auth').open){if(e.key==='ArrowRight')cycle(1);if(e.key==='ArrowLeft')cycle(-1);}if(e.key==='Enter'&&!$('drawerWrap').classList.contains('open')&&e.target===document.body)openBook()});
+let token='',busy=false,epoch=0,lastCommit=null,mainSource=null,projectionState=null,currentDocument=null,submitController=null,submitting=false,submitted=false;
+const Drafts=window.LivingLibraryDrafts;
+const GEN2=window.PackageCanvasGen2;
+function catalogStatus(commit){return BOOKS.filter(b=>b.publicId).length+' 本公開功能書 · '+(projectionState?.books.length||0)+' 個正式 KB · '+Object.values(CARDS).filter(c=>c.sourceLayer==='gen2').length+' 張私有 Skill／Workflow'+(commit?' · main @'+commit.slice(0,7):' · 未授權 GEN2');}
+function applyProjection(projection){
+ const selected=book(),alias=selected?.publicId||selected?.id;
+ const prefs=new Map();for(const b of BOOKS){prefs.set(b.id,b.active);if(b.publicId)prefs.set(b.publicId,b.active);}
+ closeBook();projectionState=projection;const next=Catalog.buildCatalog(projection);
+ BOOKS.splice(0,BOOKS.length,...next.books.map(b=>({...b,active:prefs.has(b.id)?prefs.get(b.id):prefs.has(b.publicId)?prefs.get(b.publicId):b.active})));
+ for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];Object.assign(CARDS,next.cards);Object.assign(BOOK_CARDS,next.bookCards);
+ const selection=BOOKS.find(b=>b.id===selectedId||b.publicId===alias);selectedId=selection?.id||BOOKS[0]?.id||null;
+ updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.select?.(selectedId);
+ $('gen2Status').textContent=catalogStatus(projection?.source.commit);
+}
+async function refreshGen2(){
+ if(!token||busy||!$('editorPane').hidden||submitting)return;busy=true;const generation=epoch;const cfg={...GEN2.sources.github.defaults,token};
+ $('gen2Status').textContent='正在唯讀核對 GEN2 main…';
+ try{const source=await GEN2.sources.github.collect(cfg);if(generation!==epoch){GEN2.sources.github.clearCache();return;}
+ const projection=GEN2.buildLibraryProjection(source);mainSource=source;
+ if(lastCommit!==source.commit){applyProjection(projection);lastCommit=source.commit;}
+ else $('gen2Status').textContent=catalogStatus(source.commit)+' · 已核對最新版本';
+ $('authStatus').textContent='授權成功，已讀取 main';$('gen2Auth').close();
+ }catch(e){if(generation!==epoch){GEN2.sources.github.clearCache();return;}disconnect();$('gen2Status').textContent='GEN2 讀取失敗，已清除私有投影；公開功能仍可使用';$('authStatus').textContent=e.message;toast(e.message);}
+ finally{busy=false;}
+}
+function disconnect(){submitController?.abort();mainSource=null;projectionState=null;currentDocument=null;$('mdResults').replaceChildren();$('mdScope').replaceChildren();$('mdQuery').value='';$('mdSearch').close();epoch++;token='';lastCommit=null;GEN2.sources.github.clearCache();closeBook();$('sourcePage').replaceChildren();$('drawerFunctions').replaceChildren();$('cardLinks').replaceChildren();for(const id of ['drawerTitle','drawerDesc','drawerMeta','drawerCategory','drawerLocation','drawerTarget','drawerSource','codexBookLabel','codexQuote','codexHeader','readerTitle','readerSeal','cardTitle','cardDescription','cardSeal'])$(id).textContent='';$('readerExternal').removeAttribute('href');$('gen2Token').value='';applyProjection(null);storeBooks();$('gen2Status').textContent=catalogStatus()+' · 私有內容已清除';}
+function clearEditor(){
+ submitted=false;$('submitEdit').disabled=false;$('editText').readOnly=false;
+ $('editorPane').hidden=true;$('editText').value='';$('writeToken').value='';$('editorResult').replaceChildren();currentDocument=null;
+}
+function openDocument(doc){
+ if(!doc)return;closeReader();$('drawerWrap').classList.add('open');syncScene();$('drawerTitle').textContent=doc.title;
+ revealCard({id:doc.formalId||doc.path,title:doc.title,sourcePath:doc.path,sourceCommit:doc.sourceCommit,status:doc.status,kind:doc.kind,version:doc.version,body:doc.text,runtime:'document_only',sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+doc.sourceCommit+'/kb/'+doc.path});
+}
+function searchMD(kb=''){
+ if(!projectionState){toast('請先連接 GEN2');return;}
+ $('mdScope').replaceChildren();const all=document.createElement('option');all.value='';all.textContent='全部正式知識庫與規則';$('mdScope').append(all);
+ for(const b of projectionState.books){const o=document.createElement('option');o.value=b.id;o.textContent=b.name+' · '+b.id;$('mdScope').append(o)}
+ $('mdScope').value=kb;$('mdQuery').value='';renderSearch();$('mdSearch').showModal();syncScene();$('mdQuery').focus();
+}
+function renderSearch(){
+ const box=$('mdResults');box.replaceChildren();const results=GEN2.searchLibraryDocuments(projectionState,$('mdQuery').value,{kb_id:$('mdScope').value,limit:100});
+ if(!results.length){box.textContent='沒有符合文字；請改用文件中的關鍵字，或交給 Work 讀取目錄後判讀。';return;}
+ for(const r of results){const b=document.createElement('button');b.type='button';b.textContent=r.document.title+'\n'+r.document.path+' · '+r.document.status+'\n'+r.snippet;b.onclick=()=>{$('mdSearch').close();openDocument(r.document)};box.append(b)}
+}
+async function copyAI(doc){
+ if(!doc){toast('來源文件未找到');return;}
+ const instruction='請從私有 GitHub ken12121122-dotcom/gen2-knowledge 的 main/kb 搜尋及完整讀取 '+doc.path+'（本頁版本 '+doc.sourceCommit+'）。\n先核對 AGENTS.md、登記與目前 main；不要把頁面快照當最新正式來源。依 '+(doc.formalId||doc.kind)+' 的 Input、Output、Failure Conditions 與 OWNER Gate 執行我接下來提供的任務。缺少輸入先列缺口，不推造事實。使用目前 AI 環境已授權的工具；Actions／Agent 只是可選途徑，不自動啟動，也不改 main 或代為核准。回報結果、來源與未實測部分。';
+ try{await navigator.clipboard.writeText(instruction);toast('已複製來源與 AI 執行指令，請貼到 Work 並附上任務輸入')}catch(e){toast('無法複製，請手動選取來源路徑與 ID')}
+}
+function openEditor(doc){
+ if(!doc?.editable||!mainSource){toast('此文件唯讀');return;}
+ currentDocument=doc;$('sourcePage').hidden=true;$('readerFrame').hidden=true;$('editorPane').hidden=false;
+ $('editText').value=Drafts.candidateText(doc.text);$('writeToken').value='';$('editorResult').textContent='修改下方完整 MD，再檢查候選。寫入權杖只用於本次暫時分支與 Draft PR。';
+}
+$('searchGen2').onclick=()=>searchMD();$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
+$('mdQuery').oninput=renderSearch;$('mdScope').onchange=renderSearch;$('closeSearch').onclick=()=>$('mdSearch').close();
+// Native dialog Escape/close and successful authorization also resume rendering.
+$('mdSearch').addEventListener('close',syncScene);$('gen2Auth').addEventListener('close',syncScene);
+$('cancelEdit').onclick=()=>{const doc=currentDocument;clearEditor();openDocument(doc)};
+$('validateEdit').onclick=()=>{try{const draft=Drafts.prepareDraft(mainSource,currentDocument?.path,$('editText').value);$('editorResult').textContent='PASS：未新增架構錯誤；既有錯誤 '+draft.baselineErrors+'，警告 '+draft.warnings.length+'。仍需 GEN2 Check 與 OWNER Gate。'}catch(e){$('editorResult').textContent=e.message}};
+$('copyEdit').onclick=async()=>{try{await navigator.clipboard.writeText($('editText').value);toast('已複製完整候選 MD')}catch(e){toast('無法複製，請手動選取')}};
+$('submitEdit').onclick=async()=>{
+ if(submitting||submitted)return;const writeToken=$('writeToken').value.trim();$('writeToken').value='';
+ try{const draft=Drafts.prepareDraft(mainSource,currentDocument?.path,$('editText').value);submitting=true;$('editText').readOnly=true;submitController=new AbortController();$('submitEdit').disabled=true;$('editorResult').textContent='正在驗證 main 版本並提交暫時分支／Draft PR…';
+ const result=await Drafts.submitDraft(draft,writeToken,{signal:submitController.signal});
+ if(submitController.signal.aborted)return;submitted=true;const link=document.createElement('a');link.href=result.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='查看完整候選 PR';$('editorResult').replaceChildren(link);const status=document.createElement('span');status.textContent=' · generated · 等待 GEN2 Check 與 OWNER 核准';$('editorResult').append(status);
+ }catch(e){if(submitController?.signal.aborted)return;$('editorResult').textContent=e.message;if(e.recoveryUrl){const a=document.createElement('a');a.href=e.recoveryUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='候選分支已建立，可手動補開 PR';$('editorResult').append(a)}}
+ finally{submitting=false;submitController=null;$('submitEdit').disabled=submitted;$('editText').readOnly=submitted;}
+};
+$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()};
+$('readGen2').onclick=()=>{if(busy)return;token=$('gen2Token').value.trim();$('gen2Token').value='';if(!token){$('authStatus').textContent='請提供唯讀權杖';return;}epoch++;lastCommit=null;refreshGen2()};
+$('reuseGen2').onclick=()=>{if(busy)return;try{const cfg=JSON.parse(localStorage.getItem('packagecanvas-gen2-github-v1')||'null');if(!cfg?.token||cfg.owner!==GEN2.sources.github.defaults.owner||cfg.repo!==GEN2.sources.github.defaults.repo)throw new Error('此網域未有符合的 PackageCanvas 授權，請貼上唯讀權杖');token=cfg.token;epoch++;lastCommit=null;refreshGen2()}catch(e){$('authStatus').textContent=e.message}};
+$('disconnectGen2').onclick=()=>{disconnect();$('gen2Auth').close()};
+setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
+window.addEventListener('pagehide',disconnect);
+updateUI();$('gen2Status').textContent=catalogStatus();
+window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
+})();
+</script>
+<script type="module">
+let THREE;
+try {
+THREE = await import('https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js');
+const {books,select,notifyReady,isMotion}=window.LivingLibrary;
+const stage=document.getElementById('stage');
+if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
+const renderer=new THREE.WebGLRenderer({antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
+renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0x080e1c);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+stage.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
+const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
+let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.1,0);
+const targetAngle=new THREE.Vector2(0,.17);
+function cameraUpdate(){const a=Math.max(-1.15,Math.min(1.15,theta)),b=Math.max(-.04,Math.min(.77,phi));const horizontal=distance*Math.cos(b);camera.position.set(Math.sin(a)*horizontal,look.y+Math.sin(b)*distance,Math.cos(a)*horizontal);camera.lookAt(look);window.LivingScene?.invalidate?.()}
+cameraUpdate();
+const ambient=new THREE.HemisphereLight(0x829bb9,0x121018,2.05);scene.add(ambient);
+const warm=new THREE.PointLight(0xe4a96f,38,22,2);warm.position.set(0,7,3);scene.add(warm);
+const cold=new THREE.PointLight(0x4dced1,18,17,2);cold.position.set(-3.5,4.2,3);scene.add(cold);
+const moon=new THREE.DirectionalLight(0xc4c6e4,1.6);moon.position.set(3,12,9);scene.add(moon);
+const simple=(color,metalness=0,roughness=.9,emissive=0,emissiveIntensity=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness,emissive,emissiveIntensity});
+const stone=simple(0x1b2634,.1,.95),stone2=simple(0x253244,.1,.88),blackstone=simple(0x0b1422),gold=simple(0xa78559,.55,.48),glow=simple(0x80d8c4,.5,.4,0x53b29e,.7),wood=simple(0x332a2c),woodedge=simple(0x574339);
+const unit=new THREE.BoxGeometry(1,1,1);
+function box(w,h,d,x,y,z,mat,parent=scene){const m=new THREE.Mesh(unit,mat);m.scale.set(w,h,d);m.position.set(x,y,z);parent.add(m);return m}
+function cyl(radTop,radBottom,height,x,y,z,mat,parent=scene,segments=48){const m=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,height,segments),mat);m.position.set(x,y,z);parent.add(m);return m}
+function torus(R,r,x,y,z,mat,parent=scene,rx=0){const m=new THREE.Mesh(new THREE.TorusGeometry(R,r,7,96),mat);m.position.set(x,y,z);m.rotation.x=rx;parent.add(m);return m}
+const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);
+for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2}
+for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let z=-24;z<=24;z+=3.9){box(50,.018,.018,0,-.24,z,stone2)}
+cyl(3.02,3.35,.36,0,-.13,0,stone2);cyl(2.85,2.96,.22,0,.16,0,blackstone);cyl(2.4,2.5,.055,0,.30,0,gold);cyl(2.38,2.39,.055,0,.35,0,stone);
+for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,scene,Math.PI/2);
+const runes=[];
+for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold);rune.rotation.y=-a;runes.push(rune)}
+// Grand bookcases behind and around central podium, with individual book spines.
+const shelves=[],allShelved=[];
+const shelfColors=[0x634a4c,0x376060,0x5b607d,0x886848,0x465375,0x63724e,0x765a82,0x8b6766];
+function makeShelf(angle,radius=11.3){const group=new THREE.Group();group.position.set(Math.sin(angle)*radius,0,-Math.cos(angle)*radius);group.rotation.y=-angle;scene.add(group);
+box(7.1,8.4,.78,0,3.8,0,wood,group);box(7.35,.23,1,0,8.04,0,woodedge,group);box(7.4,.28,1,0,.10,0,woodedge,group);
+for(const xx of [-3.4,3.4])box(.27,8.0,1.0,xx,4.0,0,woodedge,group);
+for(let row=0;row<5;row++){const y=.72+row*1.43;box(6.75,.14,1.03,0,y,0,woodedge,group);
+for(let col=0;col<23;col++){const c=shelfColors[(col*3+row*7+Math.round(angle*10))%shelfColors.length],h=.85+((col*7+row*13)%7)*.066;const mat=simple(c,.08,.8),spine=box(.22+((col+row)%3)*.035,h,.50,-3.12+col*.277,y+.06+h/2,.15,mat,group);
+if(col%4===0){box(.014,h*.66,.52,spine.position.x,spine.position.y,spine.position.z+.025,gold,group)}
+}}
+shelves.push(group)}
+for(const a of [-1.40,-.90,-.42,.05,.52,.99,1.44])makeShelf(a);
+// Pillars and vaulted arches behind shelves.
+for(const a of [-1.67,-1.10,-.55,0,.55,1.10,1.67]){const r=13.3,x=Math.sin(a)*r,z=-Math.cos(a)*r;
+cyl(.48,.53,10.7,x,5.1,z,stone2);cyl(.62,.62,.40,x,10.65,z,gold);cyl(.60,.68,.45,x,.04,z,stone2);
+}
+for(const a of [-1.3,-.7,0,.7,1.3]){const r=11.85,x=Math.sin(a)*r,z=-Math.cos(a)*r;
+const lamp=new THREE.Group();scene.add(lamp);lamp.position.set(x,8.4,z);const orb=new THREE.Mesh(new THREE.SphereGeometry(.17,12,12),new THREE.MeshBasicMaterial({color:0xffd599}));lamp.add(orb);
+const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light)}
+// A luminous ceiling oculus
+torus(11.2,.12,0,12,0,gold,scene,Math.PI/2);torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2);
+for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a}
+const skylight=new THREE.PointLight(0xb6becf,12,26,2);skylight.position.set(0,12,0);scene.add(skylight);
+// Neutral keeper silhouette on the dais.
+const keeper=new THREE.Group();scene.add(keeper);keeper.position.set(0,.46,0);
+cyl(.38,.64,1.57,0,.82,0,simple(0x253d50,.14,.92),keeper,14);
+const cloak=new THREE.Mesh(new THREE.ConeGeometry(.76,2.32,9,1,true),new THREE.MeshStandardMaterial({color:0x1d3245,side:THREE.DoubleSide,roughness:1}));cloak.position.y=.90;keeper.add(cloak);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.37,16,12),simple(0x3b5461,.12,1));head.position.y=2.00;keeper.add(head);
+const hood=new THREE.Mesh(new THREE.ConeGeometry(.44,.62,12),simple(0x1b2e43));hood.position.y=2.37;keeper.add(hood);
+box(.48,.095,.26,0,1.39,.30,gold,keeper);
+for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
+const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
+const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
+// Dust motes
+const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
+for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
+const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
+const labelCache=new Map();
+function coverTex(b){const c=document.createElement('canvas');c.width=256;c.height=384;const cx=c.getContext('2d');const col=b.color;const grad=cx.createLinearGradient(0,0,256,384);grad.addColorStop(0,col);grad.addColorStop(1,'#172236');cx.fillStyle=grad;cx.fillRect(0,0,256,384);cx.strokeStyle='#e9d1a1';cx.lineWidth=6;cx.strokeRect(18,18,220,348);cx.lineWidth=2;cx.strokeRect(28,28,200,328);cx.textAlign='center';cx.fillStyle='#f8dfb0';cx.font='50px serif';cx.fillText(b.icon,128,122);cx.font='bold 27px sans-serif';cx.fillText(b.name,128,203);cx.fillStyle='#d8d7d0';cx.font='19px sans-serif';cx.fillText(b.tag,128,245);cx.fillStyle='#cfbd9d';cx.font='16px sans-serif';cx.fillText('LIVING LIBRARY',128,318);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=2;return tx}
+const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
+const Placement3D=window.LivingBookPlacement;
+if(!Placement3D)throw Error('3D placement script was not loaded');
+let currentOrbitTime=0;
+// One mesh per real book, in the orbital rings OR at a concrete shelf slot.
+// The same mesh moves between the two locations: no teleport or decorative proxy.
+function bookMesh(b){
+ const cover=new THREE.MeshStandardMaterial({map:coverTex(b),roughness:.67,metalness:.11,side:THREE.DoubleSide});coverMaterials.set(b.id,cover);
+ const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
+ const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
+ box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
+ const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
+ // The book's interactive identity is independent of its current position.
+ g.userData={bookId:b.id,halo};m.userData.bookId=b.id;
+ return g;
+}
+function releaseBook(o){
+ scene.remove(o.group);
+ o.group.traverse(m=>{
+  if(m.geometry&&m.geometry!==unit)m.geometry.dispose();
+  const mats=Array.isArray(m.material)?m.material:[m.material];
+  for(const mat of mats)if(mat&&mat!==gold&&mat!==glow){
+   if(mat===coverMaterials.get(o.id)){mat.map?.dispose();mat.dispose();}
+   else mat.dispose?.();
+  }
+ });
+ coverMaterials.delete(o.id);
+}
+function targetFor(o,t){
+ if(o.mode==='orbit'){
+  const p=Placement3D.orbitPosition(o.index,t);
+  return {position:new THREE.Vector3(p.x,p.y,p.z),
+   rotation:new THREE.Quaternion().setFromEuler(new THREE.Euler(.04*Math.sin(t+o.index),-p.angle*.5+.08,.09*Math.sin(t*.75+o.index))),
+   scale:p.scale*(o.b.id===selectedId?1.16:1)};
+ }
+ const slot=Placement3D.shelfSlot(o.index);
+ if(!slot)throw Error('No physical shelf space for book index '+o.index);
+ const shelf=shelves[slot.shelfIndex];
+ shelf.updateWorldMatrix(true,false);
+ const position=shelf.localToWorld(new THREE.Vector3(slot.x,slot.y,slot.z));
+ const rotation=shelf.getWorldQuaternion(new THREE.Quaternion())
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2));
+ return {position,rotation,scale:.76*(o.b.id===selectedId?1.10:1)};
+}
+function updateOrbit(t,now=performance.now()){
+ currentOrbitTime=t;
+ for(const o of bookEntities){
+  const target=targetFor(o,t),g=o.group,flight=o.flight;
+  if(flight){
+   const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
+   const v=linear*linear*(3-2*linear);
+   g.position.copy(flight.position).lerp(target.position,v);
+   // A floating arc makes shelving visibly different from hiding a DOM entry.
+   g.position.y+=Math.sin(Math.PI*v)*.72;
+   g.quaternion.copy(flight.rotation).slerp(target.rotation,v);
+   g.scale.setScalar(THREE.MathUtils.lerp(flight.scale,target.scale,v));
+   if(linear>=1)o.flight=null;
+  }else{
+   g.position.copy(target.position);
+   g.quaternion.copy(target.rotation);
+   g.scale.setScalar(target.scale);
+  }
+  g.userData.halo.visible=o.b.id===selectedId;
+ }
+}
+function hasFlight(){return bookEntities.some(o=>!!o.flight)}
+function rebuild(){
+ const valid=new Set(books.map(b=>b.id));
+ for(let i=bookEntities.length-1;i>=0;i--)if(!valid.has(bookEntities[i].id)){
+  releaseBook(bookEntities[i]);entityById.delete(bookEntities[i].id);bookEntities.splice(i,1);
+ }
+ const active=books.filter(b=>b.active);
+ const now=performance.now();
+ for(const [allIndex,b] of books.entries()){
+  let o=entityById.get(b.id);
+  const mode=b.active?'orbit':'shelf',index=b.active?active.indexOf(b):allIndex;
+  if(!o){
+   const group=bookMesh(b);scene.add(group);
+   o={id:b.id,b,group,mode,index,flight:null};entityById.set(b.id,o);bookEntities.push(o);
+   const target=targetFor(o,currentOrbitTime);
+   group.position.copy(target.position);group.quaternion.copy(target.rotation);group.scale.setScalar(target.scale);
+  }else{
+   const changed=o.mode!==mode||o.index!==index;
+   if(changed){
+    o.flight={position:o.group.position.clone(),rotation:o.group.quaternion.clone(),scale:o.group.scale.x,started:now,duration:o.mode!==mode?1250:650};
+   }
+   o.b=b;o.mode=mode;o.index=index;
+  }
+ }
+ updateOrbit(currentOrbitTime,now);
+}
+let selectedId=null;rebuild();
+const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
+function pick(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+ ray.setFromCamera(pointer,camera);
+ const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ const hit=ray.intersectObjects(targets,false)[0];
+ if(hit){
+  const id=hit.object.userData.bookId,o=entityById.get(id);
+  if(o&&!o.b.active)window.LivingLibrary.summonBook(id);
+  else{select(id);window.LivingLibrary.openBook();}
+  return true;
+ }
+ return false;
+}
+const touchPoints=new Map();
+renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,9.0,19.5);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,0,.62);cameraUpdate()}}});
+renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
+renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,9,19.5);cameraUpdate()},{passive:false});
+function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
+window.addEventListener('resize',resize);resize();
+// Mobile power budget: render the animated 3D world at up to 30 fps.
+// Open books/dialogs take priority over a constantly redrawing background.
+const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const mobile=window.innerWidth<650||window.matchMedia('(pointer: coarse)').matches;
+const frameInterval=1000/(mobile?30:60);
+let elapsed=0,last=performance.now(),lastPaint=0,running=false;
+function overlayActive(){
+ return document.hidden ||
+   document.getElementById('drawerWrap').classList.contains('open') ||
+   document.getElementById('mdSearch').open ||
+   document.getElementById('gen2Auth').open;
+}
+function stopRenderLoop(){
+ if(!running)return;
+ running=false;
+ renderer.setAnimationLoop(null);
+}
+function paint(now){
+ const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
+ if(isMotion()&&!reduced)elapsed+=dt;
+ updateOrbit(elapsed,now);
+ if(isMotion()&&!reduced){
+   dust.rotation.y=elapsed*.002;
+   keeper.rotation.y=Math.sin(elapsed*.23)*.06;
+   glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2);
+ }
+ renderer.render(scene,camera);
+ lastPaint=now;
+}
+function render(now){
+ if(overlayActive()){stopRenderLoop();return}
+ if(now-lastPaint<frameInterval)return;
+ paint(now);
+ // Book flight animations run even when idle orbit animation is turned off.
+ if((!isMotion()||reduced)&&!hasFlight())syncRender();
+}
+function syncRender(){
+ if(overlayActive()){stopRenderLoop();return}
+ if((isMotion()||hasFlight())&&!reduced){
+   if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
+ }else{
+   stopRenderLoop();
+   paint(performance.now()); // One static frame, no idle GPU loop.
+ }
+}
+function invalidate(){
+ if(overlayActive())return;
+ if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
+}
+document.addEventListener('visibilitychange',syncRender);
+window.addEventListener('pageshow',syncRender);
+window.addEventListener('pagehide',stopRenderLoop);
+notifyReady({
+ select(id){selectedId=id;invalidate()},
+ rebuild(){rebuild();syncRender();invalidate()},
+ setMotion(){syncRender()},
+ reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
+ syncRender,invalidate
+});
+syncRender();
+}catch(error){console.error('Living Library scene failed',error);window.LivingLibrary.showFallback('Three.js 或 WebGL 初始化失敗；可使用書庫清單預覽。');}
+</script>
+</body></html>
