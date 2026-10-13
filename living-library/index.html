@@ -216,7 +216,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <script>
 (function(){
 // Visible only when ?verify=1 is requested. Unmodified game UI otherwise.
-if(new URLSearchParams(window.location.search).get('verify')==='1'){
+if(typeof URLSearchParams==='function'&&window.location&&new URLSearchParams(window.location.search).get('verify')==='1'){
  const proof=document.createElement('div');
  proof.id='livingReleaseProof';proof.setAttribute('role','status');
  proof.style.cssText='position:fixed;z-index:99;top:78px;left:12px;max-width:min(88vw,350px);background:#0b162de8;color:#fff0c7;border:1px solid #edc67e;border-radius:8px;padding:7px 11px;font:600 11px/1.6 system-ui,sans-serif;pointer-events:none;white-space:pre-line';
