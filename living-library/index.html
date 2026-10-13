@@ -516,7 +516,53 @@ const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCou
 for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
 const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
 const labelCache=new Map();
-function coverTex(b){const c=document.createElement('canvas');c.width=256;c.height=384;const cx=c.getContext('2d');const col=b.color;const grad=cx.createLinearGradient(0,0,256,384);grad.addColorStop(0,col);grad.addColorStop(1,'#172236');cx.fillStyle=grad;cx.fillRect(0,0,256,384);cx.strokeStyle='#e9d1a1';cx.lineWidth=6;cx.strokeRect(18,18,220,348);cx.lineWidth=2;cx.strokeRect(28,28,200,328);cx.textAlign='center';cx.fillStyle='#f8dfb0';cx.font='50px serif';cx.fillText(b.icon,128,122);cx.font='bold 27px sans-serif';cx.fillText(bookTitle(b),128,203,206);cx.fillStyle='#d8d7d0';cx.font='19px sans-serif';cx.fillText(b.tag,128,245);cx.fillStyle='#cfbd9d';cx.font='16px sans-serif';cx.fillText('LIVING LIBRARY',128,318);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=2;return tx}
+// High-contrast, large-type printed COVER. No title floating above a book.
+function coverTex(b){
+ const c=document.createElement('canvas');c.width=512;c.height=768;
+ const ctx=c.getContext('2d'),name=bookTitle(b);
+ const grad=ctx.createLinearGradient(0,0,c.width,c.height);
+ // Keep each domain's accent colour on the binding, not behind the lettering.
+ grad.addColorStop(0,b.color||'#46677f');
+ grad.addColorStop(.28,'#1a283e');
+ grad.addColorStop(.78,'#0b1628');
+ grad.addColorStop(1,'#07101f');
+ ctx.fillStyle=grad;ctx.fillRect(0,0,512,768);
+ ctx.fillStyle='rgba(4,11,23,.30)';ctx.fillRect(0,0,512,768);
+ ctx.fillStyle=b.color||'#577282';ctx.fillRect(0,0,20,768);
+ ctx.strokeStyle='#f3d7a1';ctx.lineWidth=10;ctx.strokeRect(35,34,442,700);
+ ctx.strokeStyle='rgba(252,229,179,.68)';ctx.lineWidth=3;ctx.strokeRect(48,47,416,674);
+ ctx.fillStyle='#fff0ca';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.font='76px Georgia,"Noto Serif TC",serif';ctx.fillText(String(b.icon||'✦'),256,157,320);
+ ctx.strokeStyle='rgba(244,214,159,.90)';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(146,225);ctx.lineTo(366,225);ctx.stroke();
+ // Prefer two large rows for normal book names. Longer KB titles scale to 3–5.
+ const chars=Array.from(name.replace(/\s+/gu,''));
+ const count=Math.min(5,Math.max(1,Math.ceil(chars.length/3)));
+ const perLine=Math.ceil(chars.length/count);
+ const lines=[];for(let i=0;i<chars.length;i+=perLine)lines.push(chars.slice(i,i+perLine).join(''));
+ let font=Math.min(126,Math.floor(370/lines.length*.80));
+ const maxWidth=424;
+ ctx.textAlign='center';
+ function setTitleFont(size){ctx.font='900 '+size+'px "Noto Sans TC","Microsoft JhengHei",sans-serif'}
+ setTitleFont(font);
+ while(lines.some(line=>ctx.measureText(line).width>maxWidth)&&font>40){font-=3;setTitleFont(font)}
+ const lineStep=Math.min(131,335/Math.max(1,lines.length));
+ const firstY=420-(lines.length-1)*lineStep/2;
+ lines.forEach((line,i)=>{
+  const y=firstY+i*lineStep;
+  // Cream letters and nearly-black outline stay legible across accent palettes.
+  ctx.strokeStyle='#07101d';ctx.lineWidth=Math.max(10,font*.15);
+  ctx.lineJoin='round';ctx.strokeText(line,256,y,maxWidth);
+  ctx.fillStyle='#fff9e8';ctx.fillText(line,256,y,maxWidth);
+ });
+ ctx.strokeStyle='rgba(244,214,159,.84)';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(146,631);ctx.lineTo(366,631);ctx.stroke();
+ ctx.fillStyle='#f5d7a4';ctx.font='bold 27px "Noto Sans TC",sans-serif';
+ ctx.fillText(String(b.tag||'KNOWLEDGE').slice(0,18),256,681,394);
+ const tex=new THREE.CanvasTexture(c);
+ tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ return tex;
+}
 const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
 const Placement3D=window.LivingBookPlacement;
 if(!Placement3D)throw Error('3D placement script was not loaded');
@@ -526,19 +572,6 @@ let currentOrbitTime=0;
 // All text comes from the SAME catalog / authorized GEN2 book record.
 function bookTitle(b){return String(b.name||'未命名之書').trim()||'未命名之書'}
 function titleKey(b){return [bookTitle(b),b.color,b.icon,b.tag].join('\u0001')}
-function nameplateWidth(b){return Math.min(2.55,Math.max(2.12,1.66+Array.from(bookTitle(b)).length*.145))}
-function orbitTitleTex(b){
- const c=document.createElement('canvas');c.width=768;c.height=176;
- const ctx=c.getContext('2d'),name=bookTitle(b);
- ctx.fillStyle='rgba(7,18,33,.94)';ctx.fillRect(10,12,748,150);
- ctx.fillStyle=b.color||'#897655';ctx.fillRect(10,12,12,150);
- ctx.strokeStyle='#f4d7a1';ctx.lineWidth=5;ctx.strokeRect(10,12,748,150);
- ctx.fillStyle='#fff9e7';ctx.textAlign='center';ctx.textBaseline='middle';
- let font=81;ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif';
- while(ctx.measureText(name).width>670&&font>34){font-=3;ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif'}
- ctx.fillText(name,392,87,670);
- const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
-}
 function spineTitleTex(b){
  const c=document.createElement('canvas');c.width=256;c.height=768;
  const ctx=c.getContext('2d'),tokens=bookTitle(b).match(/[A-Za-z0-9]+|[^\s]/gu)||['書'];
@@ -567,13 +600,8 @@ function bookMesh(b){
  const spinePanel=new THREE.Mesh(new THREE.PlaneGeometry(.435,1.06),
   new THREE.MeshBasicMaterial({map:spineTitleTex(b),side:THREE.DoubleSide,toneMapped:false}));
  spinePanel.position.set(-.363,0,0);spinePanel.rotation.y=-Math.PI/2;g.add(spinePanel);
- const orbitLabel=new THREE.Sprite(new THREE.SpriteMaterial({
-  map:orbitTitleTex(b),transparent:true,depthTest:false,depthWrite:false,toneMapped:false
- }));
- orbitLabel.position.set(0,.93,.12);orbitLabel.scale.set(nameplateWidth(b),.57,1);
- orbitLabel.renderOrder=12;orbitLabel.userData.bookId=b.id;g.add(orbitLabel);
  const halo=torus(.64,.012,0,0,-.27,glow,g,0);halo.visible=false;
- g.userData={bookId:b.id,halo,coverMaterial:cover,spinePanel,orbitLabel,titleKey:titleKey(b)};
+ g.userData={bookId:b.id,halo,coverMaterial:cover,spinePanel,titleKey:titleKey(b)};
  m.userData.bookId=b.id;spinePanel.userData.bookId=b.id;
  return g;
 }
@@ -583,13 +611,12 @@ function syncBookTitles(o,b){
  const swap=(mat,map)=>{mat.map?.dispose();mat.map=map;mat.needsUpdate=true};
  swap(u.coverMaterial,coverTex(b));
  swap(u.spinePanel.material,spineTitleTex(b));
- swap(u.orbitLabel.material,orbitTitleTex(b));
- u.orbitLabel.scale.set(nameplateWidth(b),.57,1);u.titleKey=key;
+ u.titleKey=key;
 }
 function releaseBook(o){
  scene.remove(o.group);
  o.group.traverse(m=>{
-  if(m.geometry&&m.geometry!==unit&&!m.isSprite)m.geometry.dispose(); // Sprite geometry is shared by Three.js
+  if(m.geometry&&m.geometry!==unit)m.geometry.dispose();
   const mats=Array.isArray(m.material)?m.material:[m.material];
   for(const mat of mats)if(mat&&mat!==gold&&mat!==glow){
    mat.map?.dispose();mat.dispose?.();
@@ -634,7 +661,6 @@ function updateOrbit(t,now=performance.now()){
    o.flight=null;
   }
   g.userData.halo.visible=o.b.id===selectedId;
-  g.userData.orbitLabel.visible=o.mode==='orbit'||!!o.flight;
  }
 }
 function hasFlight(){return bookEntities.some(o=>!!o.flight)}
@@ -671,7 +697,7 @@ function pick(e){
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
- const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if((x.isMesh||x.isSprite)&&x.userData.bookId)targets.push(x)}));
+ const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
  const hit=ray.intersectObjects(targets,false)[0];
  if(hit){
   const id=hit.object.userData.bookId,o=entityById.get(id);
