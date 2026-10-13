@@ -589,7 +589,7 @@ function syncBookTitles(o,b){
 function releaseBook(o){
  scene.remove(o.group);
  o.group.traverse(m=>{
-  if(m.geometry&&m.geometry!==unit)m.geometry.dispose();
+  if(m.geometry&&m.geometry!==unit&&!m.isSprite)m.geometry.dispose(); // Sprite geometry is shared by Three.js
   const mats=Array.isArray(m.material)?m.material:[m.material];
   for(const mat of mats)if(mat&&mat!==gold&&mat!==glow){
    mat.map?.dispose();mat.dispose?.();
