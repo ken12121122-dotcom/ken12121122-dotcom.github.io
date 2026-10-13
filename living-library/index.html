@@ -133,8 +133,9 @@ window.LivingLibrary={books:BOOKS,select,openBook,notifyReady(scene){window.Livi
 })();
 </script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js';
+let THREE;
 try {
+THREE = await import('https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js');
 const {books,select,notifyReady,isMotion}=window.LivingLibrary;
 const stage=document.getElementById('stage');
 if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
