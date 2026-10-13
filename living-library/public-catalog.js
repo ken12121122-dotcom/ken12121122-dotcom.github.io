@@ -72,10 +72,12 @@ const ANDROID_ENTRIES=[
  ['finance','財務','原有收支、帳戶與資產畫面']
 ];
 const RESEARCH_ID='KW-STARTUP-PLATFORM-20261013';
+const GAME_DESIGN_ID='KW-GAME-MEMORY-PALACE-20261014';
 function buildCatalog(projection=null){
  const cards=Object.create(null),bookCards=Object.create(null);
  for(const [id,c] of Object.entries(PUBLIC_CARDS))cards[canonicalPublicId(id)]={...c,id:canonicalPublicId(id),legacyId:id,kind:'public_function',sourceLayer:'public',status:'public_entry'};
  cards[RESEARCH_ID]={id:RESEARCH_ID,kind:'external_reference',sourceLayer:'public',title:'創業技術｜平台成長策略',seal:'◆',number:'研01',guild:'外部研究 · 候選',status:'generated',desc:'Book Protocol、專利、開發架構、授權、募資的策略摘要',url:SITE+'/packagecanvas/startup-platform-growth-v01.html'};
+ cards[GAME_DESIGN_ID]={id:GAME_DESIGN_ID,kind:'external_reference',sourceLayer:'public',title:'知識城堡｜遊戲設計',seal:'♜',number:'設01',guild:'遊戲系統 · 候選',status:'generated',desc:'八大城堡房間、六種遊戲物件、主角技能與寵物助理的卡片召喚設計；僅供瀏覽，不是可執行技能。',url:SITE+'/packagecanvas/game-design-memory-palace-v01.html'};
  const books=PUBLIC_BOOKS.map(b=>({...b,sourceLayer:'public',kind:'公開功能書',kb_id:null,publicId:b.id}));
  for(const b of books)bookCards[b.id]=PUBLIC_BOOK_CARDS[b.id].map(canonicalPublicId);
  books.push({id:'android',publicId:'android',kb_id:null,name:'安卓之書',kind:'公開功能書',sourceLayer:'public',tag:'ANDROID',icon:'⚙',color:'#517f80',description:'原生功能集中在此；需要念動圖書館 Android APK。卡片只開啟原有設定與功能，權限和核准由原畫面確認。',target:'Android 裝置與原生功能',active:true});
@@ -87,6 +89,7 @@ function buildCatalog(projection=null){
  }
  cards['public.gba.runtime'].nativeRoute='gba';
  bookCards.startup.push(RESEARCH_ID);
+ bookCards.gaming.push(GAME_DESIGN_ID);
  for(const [id,c] of Object.entries(projection?.cards||{}))cards[id]={...c,sourceLayer:'gen2',seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(projection.cards).indexOf(id)+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
  for(const [i,b] of (projection?.books||[]).entries()){
   // This is a navigation alias, never an alternative kb_id or source registry.
