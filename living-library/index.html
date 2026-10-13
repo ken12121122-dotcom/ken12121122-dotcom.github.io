@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090e19">
+<title>Living Library｜念動圖書館 • 3D 概念場景</title>
+<meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。沒有連接正式知識庫。">
+<style>
+:root{--bg:#070e1b;--panel:rgba(12,22,35,.87);--line:rgba(188,166,123,.29);--gold:#e5c28d;--gold2:#bb9563;--muted:#b4becb;--ink:#e9e8e5;--teal:#9ce0d5}
+*{box-sizing:border-box}html,body{height:100%;width:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+#stage{position:fixed;inset:0;z-index:0;touch-action:none;background:radial-gradient(ellipse at 50% 46%,#28354b 0%,#11192a 40%,#080d18 80%)}
+#stage canvas{display:block;width:100%;height:100%;outline:0}
+.vignette{pointer-events:none;position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,6,12,.50) 0%,transparent 28%,transparent 66%,rgba(3,5,11,.80) 100%),radial-gradient(ellipse at center,transparent 25%,rgba(3,5,12,.40) 100%)}
+.mist{pointer-events:none;position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 80%,rgba(43,148,153,.08),transparent 40%)}
+.top{position:fixed;z-index:5;top:0;left:0;right:0;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:24px 27px;pointer-events:none}
+.top>*{pointer-events:auto}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+.emblem{display:grid;place-items:center;width:39px;height:39px;border:1px solid rgba(239,205,140,.67);transform:rotate(45deg);border-radius:5px;color:var(--gold);background:rgba(13,22,29,.8);box-shadow:0 0 23px rgba(222,185,122,.15)}
+.emblem span{transform:rotate(-45deg);font:21px Georgia,serif}
+.kicker{color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.29em}.headline{font:500 24px/1.15 Georgia,"Noto Serif TC",serif;letter-spacing:.07em;margin-top:2px}
+.meta{margin-top:6px;color:#bcc4cb;font-size:10px;letter-spacing:.13em}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:rgba(15,25,39,.76);border:1px solid rgba(209,195,167,.3);color:#ece7df;padding:9px 12px;border-radius:10px;backdrop-filter:blur(14px);font-size:12px}
+.chip:hover{border-color:var(--gold)}
+.side{position:fixed;z-index:4;left:23px;top:50%;width:224px;transform:translateY(-36%);pointer-events:none}
+.side>*{pointer-events:auto}
+.side .eyebrow{font-size:10px;font-weight:800;color:#b0d5d0;letter-spacing:.19em}
+.side h2{font:400 32px/1.23 Georgia,"Noto Serif TC",serif;letter-spacing:.08em;margin:10px 0;color:#f1ebdf;text-shadow:0 3px 22px #080d19}
+.side p{max-width:208px;color:#c2c5c8;font-size:12px;margin:12px 0;line-height:1.8}
+.gold-rule{width:65px;height:1px;background:var(--gold);opacity:.65;margin:17px 0}
+.legend{display:grid;gap:10px;margin-top:20px;color:#aeb6bd;font-size:11px}
+.legend span{display:flex;align-items:center;gap:9px}.legend i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px #6dd2d4}
+.catalog{position:fixed;right:22px;top:110px;bottom:112px;z-index:5;width:216px;display:flex;flex-direction:column;background:linear-gradient(160deg,rgba(20,31,44,.83),rgba(7,15,28,.84));border:1px solid var(--line);border-radius:15px;box-shadow:0 22px 65px #04070f88;overflow:hidden;backdrop-filter:blur(20px)}
+.catalog-head{padding:16px 16px 11px;border-bottom:1px solid rgba(215,185,135,.13)}.catalog-head small{font-size:9px;letter-spacing:.22em;color:var(--gold)}.catalog-head h2{font:normal 18px Georgia,"Noto Serif TC",serif;margin:4px 0}.catalog-head p{font-size:10px;color:var(--muted);margin:4px 0 0}
+.book-list{overflow:auto;flex:1;padding:8px;scrollbar-width:thin;scrollbar-color:#51515a transparent}
+.book-entry{width:100%;display:flex;align-items:center;gap:11px;border:1px solid transparent;background:transparent;border-radius:9px;padding:9px 8px;text-align:left}
+.book-entry:hover,.book-entry.active{border-color:rgba(218,182,117,.3);background:rgba(255,241,218,.06)}
+.book-entry .swatch{flex:none;width:25px;height:34px;border-radius:2px 5px 5px 2px;border-left:5px solid rgba(0,0,0,.36);box-shadow:2px 4px 13px #04060a99}
+.book-entry strong{font-size:12px;display:block;font-weight:700;color:#ede5da}.book-entry small{font-size:10px;color:#aab2c1;display:block;line-height:1.45}.book-entry svg{margin-left:auto;flex:none;opacity:.6}
+.catalog-bottom{padding:10px 13px;border-top:1px solid rgba(215,185,135,.12);color:#b4c0c7;font-size:10px;display:flex;justify-content:space-between}
+.bottom{position:fixed;z-index:5;left:0;right:0;bottom:0;display:flex;align-items:end;justify-content:center;pointer-events:none;padding:20px 18px 22px}
+.bottom>*{pointer-events:auto}
+.hud{min-width:min(480px,90vw);max-width:550px;display:flex;flex-direction:column;align-items:center;gap:9px}
+.current{display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;color:#dbd6c9;text-shadow:0 3px 9px #02040e}
+.current .spark{color:var(--gold);font-size:16px}.current b{font:500 16px Georgia,"Noto Serif TC",serif}.current small{display:block;font-size:10px;letter-spacing:.10em;color:#b9bfc3}
+.pillbar{display:flex;align-items:center;gap:3px;padding:6px;background:rgba(13,23,35,.84);border:1px solid rgba(193,169,128,.35);border-radius:15px;box-shadow:0 20px 48px #03060f88;backdrop-filter:blur(20px)}
+.action{background:transparent;border:0;border-radius:9px;padding:11px 15px;font-size:12px;white-space:nowrap}
+.action:hover{background:rgba(255,255,255,.08)}
+.action.main{background:#c4a276;color:#15232a;font-weight:850;border:1px solid #ecd1a1}.action.main:hover{background:#efd6af}
+.divider{width:1px;height:26px;background:#556070;opacity:.55}
+.note{font-size:10px;color:#b8b9bf;text-align:center;letter-spacing:.03em}
+.drawer-wrap{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(2,5,11,.62);backdrop-filter:blur(9px);padding:16px}
+.drawer-wrap.open{display:flex}
+.drawer{position:relative;max-height:min(86vh,700px);overflow:auto;width:min(610px,100%);background:linear-gradient(150deg,#1a2739,#0c1829);border:1px solid #8e7657;border-radius:18px;padding:33px 35px;box-shadow:0 27px 100px #03060add,inset 0 0 70px rgba(240,192,113,.045)}
+.drawer::before{content:"";position:absolute;left:28px;right:28px;top:14px;height:1px;background:linear-gradient(90deg,transparent,#d8af7d,transparent)}
+.drawer .close{position:absolute;right:17px;top:14px;width:35px;height:35px;border:1px solid #4a5264;border-radius:8px;background:#192a3e;font-size:18px}
+.drawer .book-icon{display:grid;place-items:center;width:72px;height:92px;margin-bottom:20px;font-size:30px;background:#46626d;border:2px solid #dfcba8;box-shadow:6px 6px 0 #0a1320;border-radius:2px 10px 10px 2px}
+.drawer .eyebrow{color:var(--teal);font-size:10px;letter-spacing:.19em;font-weight:bold}
+.drawer h2{font:400 32px/1.35 Georgia,"Noto Serif TC",serif;margin:7px 0 8px}.drawer p{color:#c4d1dc;line-height:1.85}
+.drawer .layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
+.detail-cell{border:1px solid #425069;padding:13px;border-radius:10px;background:rgba(9,18,30,.55)}.detail-cell small{display:block;color:var(--gold);font-size:10px;letter-spacing:.10em;margin-bottom:6px}.detail-cell strong{font-weight:550;font-size:12px}
+.drawer-actions{display:flex;gap:10px;flex-wrap:wrap}.drawer-actions button{border-radius:9px;padding:12px 15px;border:1px solid #806c51;background:#253548}
+.drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
+.blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
+.fallback{display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.toast{position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #90775c;border-radius:10px;background:#112235ee;padding:10px 15px;font-size:12px;opacity:0;transition:opacity .3s;white-space:nowrap}.toast.show{opacity:1}
+.quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
+@media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
+@media(max-width:650px){.top{padding:13px 13px}.emblem{width:31px;height:31px}.emblem span{font-size:16px}.headline{font-size:16px}.meta{font-size:8px;letter-spacing:.06em}.kicker{font-size:8px}.top-actions .chip:nth-child(2){display:none}.chip{padding:8px;font-size:10px}.side{left:13px;top:103px;width:145px}.side h2{font-size:22px}.side p{font-size:10px;max-width:140px}.side .gold-rule{margin:10px 0}.catalog{right:10px;left:10px;bottom:104px;width:auto;max-height:110px;border-radius:12px;display:block;overflow:hidden;transition:max-height .25s}.catalog.open{max-height:58vh;overflow:auto}.catalog-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer}.catalog-head h2{margin:0;font-size:14px}.catalog-head small,.catalog-head p{display:none}.catalog-head::after{content:"書庫 ▴";font-size:11px;color:#e2c79c}.catalog.open .catalog-head::after{content:"收合 ▾"}.book-list{display:none;padding:8px;max-height:40vh}.catalog.open .book-list{display:block}.catalog-bottom{display:none}.catalog.open .catalog-bottom{display:flex}.bottom{padding:0 6px calc(13px + env(safe-area-inset-bottom))}.hud{gap:5px}.current b{font-size:14px}.action{padding:11px 11px;font-size:11px}.pillbar{gap:0;padding:5px}.note{display:none}.drawer-wrap{align-items:flex-end;padding:0}.drawer{border-radius:20px 20px 0 0;width:100%;max-height:88dvh;padding:26px 19px calc(22px + env(safe-area-inset-bottom))}.drawer .layout{gap:8px}.detail-cell{padding:10px}.drawer h2{font-size:26px}.toast{top:81px;max-width:90vw;white-space:normal;text-align:center}}
+@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
+</style>
+</head>
+<body>
+<div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div class="vignette"></div><div class="mist"></div>
+<header class="top">
+<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">ISOLATED 3D SCENE · PROTOTYPE 0.1</div></div></div>
+<div class="top-actions"><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">關於試作</button></div>
+</header>
+<aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
+<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">DEMO</span></div></section>
+<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。仍可以從旁邊的書庫打開示範書頁。</p><button id="fallbackOpen" type="button">開啟一本示範書</button></div></div>
+<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>僅示範資料，未連動</strong></div></div><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">🔒 這是獨立的互動草圖。書籍目前不開啟 PackageCanvas、Google Drive、日曆或任何個人資料。後續由你決定各書對應的實際介面。</p></section></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+const BOOKS=[
+{id:'research',name:'研究之書',kind:'研究領域',tag:'RESEARCH',icon:'✧',color:'#517f80',description:'研究問題、文獻追蹤、可驗證假設與自主研究歷程。當前僅呈現知識容器與召喚的互動概念。',target:'研究導航／文獻工作台',active:true},
+{id:'startup',name:'創業之書',kind:'現實計畫',tag:'STARTUP',icon:'◆',color:'#a5764d',description:'公司設立、營業項目、開辦費用、研究成果商業化、授權與退出策略。',target:'創業專案與任務詳情',active:true},
+{id:'knowledge',name:'知識世界',kind:'知識管理',tag:'KNOWLEDGE',icon:'✦',color:'#6578a3',description:'將長期累積的知識、流程與技能，以可歸檔、召喚、組合的方式管理。',target:'知識圖譜與書架',active:true},
+{id:'missions',name:'任務之書',kind:'執行流程',tag:'MISSIONS',icon:'◎',color:'#9073a5',description:'承載今日工作、本週任務、阻塞因素與任務完成證據。',target:'任務面板／日曆',active:true},
+{id:'learning',name:'學習之書',kind:'學習科學',tag:'LEARNING',icon:'❖',color:'#779c80',description:'研究如何學習陌生領域、如何驗證方法有效性，與如何傳遞給其他學習者。',target:'學習研究／教學實驗',active:true},
+{id:'finance',name:'資產之書',kind:'財務目標',tag:'ASSETS',icon:'◇',color:'#8a8899',description:'財務自由、被動收入、研究資產授權與未來出售事業的候選規劃。',target:'資產規劃／商業退出',active:true},
+{id:'safety',name:'職安典籍',kind:'歷史技能',tag:'SAFETY',icon:'✥',color:'#a46a60',description:'示範如何將過去熟悉的技能先放在書架，必要時隨時召喚。',target:'歷史技能／工作方法',active:false},
+{id:'writing',name:'寫作之書',kind:'工具技能',tag:'WRITING',icon:'✎',color:'#706e99',description:'示範封存過往工作成果與可重複使用的書寫方法。',target:'歷史文件／技能模板',active:false},
+{id:'design',name:'設計之書',kind:'工具技能',tag:'DESIGN',icon:'✳',color:'#ad9365',description:'示範介面、排版與視覺設計技能的歸檔與快速召喚。',target:'設計技能／成果',active:false},
+{id:'teaching',name:'教學之書',kind:'領域技能',tag:'TEACHING',icon:'✺',color:'#578789',description:'示範教育教學計畫與課程設計知識的整理方式。',target:'教學方法／課程',active:false}
+];
+window.LIVING_LIBRARY_DEMO=BOOKS;
+let selectedId='research',motion=true,ready=false,toastTimer=0;
+const $=id=>document.getElementById(id);
+function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
+function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
+function updateUI(){
+const b=book();$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
+$('orbitCount').textContent=BOOKS.filter(x=>x.active).length+' 本環繞';
+$('bookList').replaceChildren();
+BOOKS.forEach(x=>{const btn=document.createElement('button');btn.className='book-entry'+(x.id===selectedId?' active':'');btn.type='button';btn.setAttribute('aria-label','選取'+x.name);
+const sw=document.createElement('span');sw.className='swatch';sw.style.background=x.color;
+const words=document.createElement('span');const strong=document.createElement('strong');strong.textContent=x.name;const small=document.createElement('small');small.textContent=x.active?'✦ 正在環繞':'▥ 已在書架';words.append(strong,small);btn.append(sw,words);
+btn.addEventListener('click',()=>{select(x.id);openBook()});$('bookList').append(btn)});
+}
+function toast(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
+function openBook(){const b=book();$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
+function closeBook(){$('drawerWrap').classList.remove('open');$('openBtn').focus()}
+function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
+b.active=!b.active;toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
+function cycle(d){const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
+$('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
+$('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
+$('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
+$('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
+$('resetBtn').onclick=()=>window.LivingScene?.reset?.();
+$('aboutBtn').onclick=()=>{toast('獨立 3D 概念場景 · 目前無正式資料連結 · 所有書籍皆為示範')};
+$('fallbackOpen').onclick=openBook;
+$('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
+$('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawerWrap').classList.contains('open'))closeBook();if(e.key==='ArrowRight')cycle(1);if(e.key==='ArrowLeft')cycle(-1);if(e.key==='Enter'&&!$('drawerWrap').classList.contains('open')&&e.target===document.body)openBook()});
+updateUI();
+window.LivingLibrary={books:BOOKS,select,openBook,notifyReady(scene){window.LivingScene=scene;ready=true;updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
+})();
+</script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js';
+try {
+const {books,select,notifyReady,isMotion}=window.LivingLibrary;
+const stage=document.getElementById('stage');
+if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
+const renderer=new THREE.WebGLRenderer({antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
+renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0x080e1c);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
+stage.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
+const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
+let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.1,0);
+const targetAngle=new THREE.Vector2(0,.17);
+function cameraUpdate(){const a=Math.max(-1.15,Math.min(1.15,theta)),b=Math.max(-.04,Math.min(.77,phi));const horizontal=distance*Math.cos(b);camera.position.set(Math.sin(a)*horizontal,look.y+Math.sin(b)*distance,Math.cos(a)*horizontal);camera.lookAt(look)}
+cameraUpdate();
+const ambient=new THREE.HemisphereLight(0x829bb9,0x121018,2.05);scene.add(ambient);
+const warm=new THREE.PointLight(0xe4a96f,38,22,2);warm.position.set(0,7,3);scene.add(warm);
+const cold=new THREE.PointLight(0x4dced1,18,17,2);cold.position.set(-3.5,4.2,3);scene.add(cold);
+const moon=new THREE.DirectionalLight(0xc4c6e4,1.6);moon.position.set(3,12,9);scene.add(moon);
+const simple=(color,metalness=0,roughness=.9,emissive=0,emissiveIntensity=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness,emissive,emissiveIntensity});
+const stone=simple(0x1b2634,.1,.95),stone2=simple(0x253244,.1,.88),blackstone=simple(0x0b1422),gold=simple(0xa78559,.55,.48),glow=simple(0x80d8c4,.5,.4,0x53b29e,.7),wood=simple(0x332a2c),woodedge=simple(0x574339);
+const unit=new THREE.BoxGeometry(1,1,1);
+function box(w,h,d,x,y,z,mat,parent=scene){const m=new THREE.Mesh(unit,mat);m.scale.set(w,h,d);m.position.set(x,y,z);parent.add(m);return m}
+function cyl(radTop,radBottom,height,x,y,z,mat,parent=scene,segments=48){const m=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,height,segments),mat);m.position.set(x,y,z);parent.add(m);return m}
+function torus(R,r,x,y,z,mat,parent=scene,rx=0){const m=new THREE.Mesh(new THREE.TorusGeometry(R,r,7,96),mat);m.position.set(x,y,z);m.rotation.x=rx;parent.add(m);return m}
+const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);
+for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2}
+for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let z=-24;z<=24;z+=3.9){box(50,.018,.018,0,-.24,z,stone2)}
+cyl(3.02,3.35,.36,0,-.13,0,stone2);cyl(2.85,2.96,.22,0,.16,0,blackstone);cyl(2.4,2.5,.055,0,.30,0,gold);cyl(2.38,2.39,.055,0,.35,0,stone);
+for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,scene,Math.PI/2);
+const runes=[];
+for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold);rune.rotation.y=-a;runes.push(rune)}
+// Grand bookcases behind and around central podium, with individual book spines.
+const shelves=[],allShelved=[];
+const shelfColors=[0x634a4c,0x376060,0x5b607d,0x886848,0x465375,0x63724e,0x765a82,0x8b6766];
+function makeShelf(angle,radius=11.3){const group=new THREE.Group();group.position.set(Math.sin(angle)*radius,0,Math.cos(angle)*radius);group.rotation.y=angle+Math.PI;scene.add(group);
+box(7.1,8.4,.78,0,3.8,0,wood,group);box(7.35,.23,1,0,8.04,0,woodedge,group);box(7.4,.28,1,0,.10,0,woodedge,group);
+for(const xx of [-3.4,3.4])box(.27,8.0,1.0,xx,4.0,0,woodedge,group);
+for(let row=0;row<5;row++){const y=.72+row*1.43;box(6.75,.14,1.03,0,y,0,woodedge,group);
+for(let col=0;col<23;col++){const c=shelfColors[(col*3+row*7+Math.round(angle*10))%shelfColors.length],h=.85+((col*7+row*13)%7)*.066;const mat=simple(c,.08,.8),spine=box(.22+((col+row)%3)*.035,h,.50,-3.12+col*.277,y+.06+h/2,.15,mat,group);
+if(col%4===0){box(.014,h*.66,.52,spine.position.x,spine.position.y,spine.position.z+.025,gold,group)}
+}}
+shelves.push(group)}
+for(const a of [-1.40,-.90,-.42,.05,.52,.99,1.44])makeShelf(a);
+// Pillars and vaulted arches behind shelves.
+for(const a of [-1.67,-1.10,-.55,0,.55,1.10,1.67]){const r=13.3,x=Math.sin(a)*r,z=Math.cos(a)*r;
+cyl(.48,.53,10.7,x,5.1,z,stone2);cyl(.62,.62,.40,x,10.65,z,gold);cyl(.60,.68,.45,x,.04,z,stone2);
+}
+for(const a of [-1.3,-.7,0,.7,1.3]){const r=11.85,x=Math.sin(a)*r,z=Math.cos(a)*r;
+const lamp=new THREE.Group();scene.add(lamp);lamp.position.set(x,8.4,z);const orb=new THREE.Mesh(new THREE.SphereGeometry(.17,12,12),new THREE.MeshBasicMaterial({color:0xffd599}));lamp.add(orb);
+const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light)}
+// A luminous ceiling oculus
+torus(11.2,.12,0,12,0,gold,scene,Math.PI/2);torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2);
+for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a}
+const skylight=new THREE.PointLight(0xb6becf,12,26,2);skylight.position.set(0,12,0);scene.add(skylight);
+// Neutral keeper silhouette on the dais.
+const keeper=new THREE.Group();scene.add(keeper);keeper.position.set(0,.46,0);
+cyl(.38,.64,1.57,0,.82,0,simple(0x253d50,.14,.92),keeper,14);
+const cloak=new THREE.Mesh(new THREE.ConeGeometry(.76,2.32,9,1,true),new THREE.MeshStandardMaterial({color:0x1d3245,side:THREE.DoubleSide,roughness:1}));cloak.position.y=.90;keeper.add(cloak);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.37,16,12),simple(0x3b5461,.12,1));head.position.y=2.00;keeper.add(head);
+const hood=new THREE.Mesh(new THREE.ConeGeometry(.44,.62,12),simple(0x1b2e43));hood.position.y=2.37;keeper.add(hood);
+box(.48,.095,.26,0,1.39,.30,gold,keeper);
+for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
+const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
+const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
+// Dust motes
+const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
+for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
+const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
+const labelCache=new Map();
+function coverTex(b){const c=document.createElement('canvas');c.width=256;c.height=384;const cx=c.getContext('2d');const col=b.color;const grad=cx.createLinearGradient(0,0,256,384);grad.addColorStop(0,col);grad.addColorStop(1,'#172236');cx.fillStyle=grad;cx.fillRect(0,0,256,384);cx.strokeStyle='#e9d1a1';cx.lineWidth=6;cx.strokeRect(18,18,220,348);cx.lineWidth=2;cx.strokeRect(28,28,200,328);cx.textAlign='center';cx.fillStyle='#f8dfb0';cx.font='50px serif';cx.fillText(b.icon,128,122);cx.font='bold 27px sans-serif';cx.fillText(b.name,128,203);cx.fillStyle='#d8d7d0';cx.font='19px sans-serif';cx.fillText(b.tag,128,245);cx.fillStyle='#cfbd9d';cx.font='16px sans-serif';cx.fillText('LIVING LIBRARY',128,318);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=2;return tx}
+const coverMaterials=new Map(),orbitEntities=[];
+function bookMesh(b){const cover=coverMaterials.get(b.id)||new THREE.MeshStandardMaterial({map:coverTex(b),roughness:.67,metalness:.11,side:THREE.DoubleSide});coverMaterials.set(b.id,cover);
+const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
+const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
+box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
+const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
+g.userData={bookId:b.id,halo};m.userData.bookId=b.id;return g}
+function rebuild(){orbitEntities.forEach(o=>scene.remove(o.group));orbitEntities.length=0;const active=books.filter(x=>x.active);
+active.forEach((b,index)=>{const g=bookMesh(b);scene.add(g);orbitEntities.push({b,group:g,index});g.visible=true});updateOrbit(0);}
+function updateOrbit(t){const n=orbitEntities.length||1;orbitEntities.forEach((o,i)=>{const a=(Math.PI*2*i/n)+t*.11-.32;const R=n>5?3.15:2.78;o.group.position.set(Math.sin(a)*R,2.55+Math.sin(t*1.25+i*1.8)*.15+Math.sin(i*2)*.15,Math.cos(a)*R*.80+.12);
+o.group.rotation.set(.04*Math.sin(t+i),-a*.5+.08,.09*Math.sin(t*.75+i));o.group.userData.halo.visible=o.b.id===selectedId;if(o.b.id===selectedId){o.group.scale.setScalar(1.12)}else{o.group.scale.setScalar(.95)}});
+}
+let selectedId='research';rebuild();
+const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
+function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);const targets=[];orbitEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));const hit=ray.intersectObjects(targets,false)[0];if(hit){select(hit.object.userData.bookId);window.LivingLibrary.openBook();return true}return false}
+const touchPoints=new Map();
+renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,9.0,19.5);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,0,.62);cameraUpdate()}}});
+renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
+renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,9,19.5);cameraUpdate()},{passive:false});
+function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
+window.addEventListener('resize',resize);resize();
+const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;let stopped=false,elapsed=0,last=performance.now();
+function render(now){if(stopped)return;const dt=Math.min(.06,(now-last)*.001);last=now;if(isMotion()&&!reduced)elapsed+=dt;updateOrbit(elapsed);if(isMotion()&&!reduced){dust.rotation.y=elapsed*.002;keeper.rotation.y=Math.sin(elapsed*.23)*.06;glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2)}renderer.render(scene,camera)}
+renderer.setAnimationLoop(render);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){renderer.setAnimationLoop(null)}else{last=performance.now();renderer.setAnimationLoop(render)}});
+notifyReady({select(id){selectedId=id},rebuild(){rebuild()},setMotion(){},reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}});
+}catch(error){console.error('Living Library scene failed',error);window.LivingLibrary.showFallback('Three.js 或 WebGL 初始化失敗；可使用書庫清單預覽。');}
+</script>
+</body></html>
