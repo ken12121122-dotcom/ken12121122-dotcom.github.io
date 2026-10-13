@@ -203,6 +203,8 @@ function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PRE
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
+// Keep the WebGL loop in sync with book pages and permission dialogs.
+function syncScene(){window.LivingScene?.syncRender?.()}
 function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
 function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;storeBooks();updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
 function updateUI(){
@@ -297,8 +299,8 @@ function renderFunctions(b){
  }
 }
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
-function closeBook(){closeReader();$('drawerWrap').classList.remove('open');$('openBtn').focus()}
+function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
 b.active=!b.active;storeBooks();toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
 function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
@@ -344,14 +346,14 @@ function clearEditor(){
  $('editorPane').hidden=true;$('editText').value='';$('writeToken').value='';$('editorResult').replaceChildren();currentDocument=null;
 }
 function openDocument(doc){
- if(!doc)return;closeReader();$('drawerWrap').classList.add('open');$('drawerTitle').textContent=doc.title;
+ if(!doc)return;closeReader();$('drawerWrap').classList.add('open');syncScene();$('drawerTitle').textContent=doc.title;
  revealCard({id:doc.formalId||doc.path,title:doc.title,sourcePath:doc.path,sourceCommit:doc.sourceCommit,status:doc.status,kind:doc.kind,version:doc.version,body:doc.text,runtime:'document_only',sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+doc.sourceCommit+'/kb/'+doc.path});
 }
 function searchMD(kb=''){
  if(!projectionState){toast('請先連接 GEN2');return;}
  $('mdScope').replaceChildren();const all=document.createElement('option');all.value='';all.textContent='全部正式知識庫與規則';$('mdScope').append(all);
  for(const b of projectionState.books){const o=document.createElement('option');o.value=b.id;o.textContent=b.name+' · '+b.id;$('mdScope').append(o)}
- $('mdScope').value=kb;$('mdQuery').value='';renderSearch();$('mdSearch').showModal();$('mdQuery').focus();
+ $('mdScope').value=kb;$('mdQuery').value='';renderSearch();$('mdSearch').showModal();syncScene();$('mdQuery').focus();
 }
 function renderSearch(){
  const box=$('mdResults');box.replaceChildren();const results=GEN2.searchLibraryDocuments(projectionState,$('mdQuery').value,{kb_id:$('mdScope').value,limit:100});
@@ -370,6 +372,8 @@ function openEditor(doc){
 }
 $('searchGen2').onclick=()=>searchMD();$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
 $('mdQuery').oninput=renderSearch;$('mdScope').onchange=renderSearch;$('closeSearch').onclick=()=>$('mdSearch').close();
+// Native dialog Escape/close and successful authorization also resume rendering.
+$('mdSearch').addEventListener('close',syncScene);$('gen2Auth').addEventListener('close',syncScene);
 $('cancelEdit').onclick=()=>{const doc=currentDocument;clearEditor();openDocument(doc)};
 $('validateEdit').onclick=()=>{try{const draft=Drafts.prepareDraft(mainSource,currentDocument?.path,$('editText').value);$('editorResult').textContent='PASS：未新增架構錯誤；既有錯誤 '+draft.baselineErrors+'，警告 '+draft.warnings.length+'。仍需 GEN2 Check 與 OWNER Gate。'}catch(e){$('editorResult').textContent=e.message}};
 $('copyEdit').onclick=async()=>{try{await navigator.clipboard.writeText($('editText').value);toast('已複製完整候選 MD')}catch(e){toast('無法複製，請手動選取')}};
@@ -381,7 +385,7 @@ $('submitEdit').onclick=async()=>{
  }catch(e){if(submitController?.signal.aborted)return;$('editorResult').textContent=e.message;if(e.recoveryUrl){const a=document.createElement('a');a.href=e.recoveryUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='候選分支已建立，可手動補開 PR';$('editorResult').append(a)}}
  finally{submitting=false;submitController=null;$('submitEdit').disabled=submitted;$('editText').readOnly=submitted;}
 };
-$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal()};
+$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()};
 $('readGen2').onclick=()=>{if(busy)return;token=$('gen2Token').value.trim();$('gen2Token').value='';if(!token){$('authStatus').textContent='請提供唯讀權杖';return;}epoch++;lastCommit=null;refreshGen2()};
 $('reuseGen2').onclick=()=>{if(busy)return;try{const cfg=JSON.parse(localStorage.getItem('packagecanvas-gen2-github-v1')||'null');if(!cfg?.token||cfg.owner!==GEN2.sources.github.defaults.owner||cfg.repo!==GEN2.sources.github.defaults.repo)throw new Error('此網域未有符合的 PackageCanvas 授權，請貼上唯讀權杖');token=cfg.token;epoch++;lastCommit=null;refreshGen2()}catch(e){$('authStatus').textContent=e.message}};
 $('disconnectGen2').onclick=()=>{disconnect();$('gen2Auth').close()};
@@ -409,7 +413,7 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.f
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
 let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.1,0);
 const targetAngle=new THREE.Vector2(0,.17);
-function cameraUpdate(){const a=Math.max(-1.15,Math.min(1.15,theta)),b=Math.max(-.04,Math.min(.77,phi));const horizontal=distance*Math.cos(b);camera.position.set(Math.sin(a)*horizontal,look.y+Math.sin(b)*distance,Math.cos(a)*horizontal);camera.lookAt(look)}
+function cameraUpdate(){const a=Math.max(-1.15,Math.min(1.15,theta)),b=Math.max(-.04,Math.min(.77,phi));const horizontal=distance*Math.cos(b);camera.position.set(Math.sin(a)*horizontal,look.y+Math.sin(b)*distance,Math.cos(a)*horizontal);camera.lookAt(look);window.LivingScene?.invalidate?.()}
 cameraUpdate();
 const ambient=new THREE.HemisphereLight(0x829bb9,0x121018,2.05);scene.add(ambient);
 const warm=new THREE.PointLight(0xe4a96f,38,22,2);warm.position.set(0,7,3);scene.add(warm);
@@ -490,11 +494,64 @@ renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.po
 renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,9,19.5);cameraUpdate()},{passive:false});
 function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
 window.addEventListener('resize',resize);resize();
-const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;let stopped=false,elapsed=0,last=performance.now();
-function render(now){if(stopped)return;const dt=Math.min(.06,(now-last)*.001);last=now;if(isMotion()&&!reduced)elapsed+=dt;updateOrbit(elapsed);if(isMotion()&&!reduced){dust.rotation.y=elapsed*.002;keeper.rotation.y=Math.sin(elapsed*.23)*.06;glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2)}renderer.render(scene,camera)}
-renderer.setAnimationLoop(render);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){renderer.setAnimationLoop(null)}else{last=performance.now();renderer.setAnimationLoop(render)}});
-notifyReady({select(id){selectedId=id},rebuild(){rebuild()},setMotion(){},reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}});
+// Mobile power budget: render the animated 3D world at up to 30 fps.
+// Open books/dialogs take priority over a constantly redrawing background.
+const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const mobile=window.innerWidth<650||window.matchMedia('(pointer: coarse)').matches;
+const frameInterval=1000/(mobile?30:60);
+let elapsed=0,last=performance.now(),lastPaint=0,running=false;
+function overlayActive(){
+ return document.hidden ||
+   document.getElementById('drawerWrap').classList.contains('open') ||
+   document.getElementById('mdSearch').open ||
+   document.getElementById('gen2Auth').open;
+}
+function stopRenderLoop(){
+ if(!running)return;
+ running=false;
+ renderer.setAnimationLoop(null);
+}
+function paint(now){
+ const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
+ if(isMotion()&&!reduced)elapsed+=dt;
+ updateOrbit(elapsed);
+ if(isMotion()&&!reduced){
+   dust.rotation.y=elapsed*.002;
+   keeper.rotation.y=Math.sin(elapsed*.23)*.06;
+   glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2);
+ }
+ renderer.render(scene,camera);
+ lastPaint=now;
+}
+function render(now){
+ if(overlayActive()){stopRenderLoop();return}
+ if(now-lastPaint<frameInterval)return;
+ paint(now);
+}
+function syncRender(){
+ if(overlayActive()){stopRenderLoop();return}
+ if(isMotion()&&!reduced){
+   if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
+ }else{
+   stopRenderLoop();
+   paint(performance.now()); // One static frame, no idle GPU loop.
+ }
+}
+function invalidate(){
+ if(overlayActive())return;
+ if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
+}
+document.addEventListener('visibilitychange',syncRender);
+window.addEventListener('pageshow',syncRender);
+window.addEventListener('pagehide',stopRenderLoop);
+notifyReady({
+ select(id){selectedId=id;invalidate()},
+ rebuild(){rebuild();invalidate()},
+ setMotion(){syncRender()},
+ reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
+ syncRender,invalidate
+});
+syncRender();
 }catch(error){console.error('Living Library scene failed',error);window.LivingLibrary.showFallback('Three.js 或 WebGL 初始化失敗；可使用書庫清單預覽。');}
 </script>
 </body></html>
