@@ -100,7 +100,9 @@ test('GEN2 authorization adds cards without deleting public books or startup tas
   await new Promise(resolve=>setImmediate(resolve));
   verifyPublicBooks(window.LivingLibrary.books);
   const startup=window.LivingLibrary.books.find(b=>b.id==='startup'||b.publicId==='startup');
-  assert.ok(window.LivingLibrary.books.some(b=>b.id==='KB-STARTUP'||b.id===startup.id&&b.kbId==='KB-STARTUP'),'GEN2 startup source must be mapped');
+  const startupContainers=window.LivingLibrary.books.filter(b=>b.id==='startup'||b.publicId==='startup'||b.id==='KB-STARTUP'||b.kbId==='KB-STARTUP');
+  assert.equal(startupContainers.length,1,'public startup and private KB-STARTUP must share one book, not form parallel copies');
+  assert.ok(startupContainers[0].id==='KB-STARTUP'||startupContainers[0].kbId==='KB-STARTUP','GEN2 startup source must map to the same book');
   window.LivingLibrary.select(startup.id);get('openBtn').click();
   const ids=cardsFor(get);
   assert.ok(ids.includes('public.startup.tasks'),'private projection must not displace startup tasks');
