@@ -60,7 +60,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .drawer h2{font:400 32px/1.35 Georgia,"Noto Serif TC",serif;margin:7px 0 8px}.drawer p{color:#c4d1dc;line-height:1.85}
 .drawer .layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0}
 .detail-cell{border:1px solid #425069;padding:13px;border-radius:10px;background:rgba(9,18,30,.55)}.detail-cell small{display:block;color:var(--gold);font-size:10px;letter-spacing:.10em;margin-bottom:6px}.detail-cell strong{font-weight:550;font-size:12px}
-.drawer-actions{display:flex;gap:10px;flex-wrap:wrap}.drawer-actions button{border-radius:9px;padding:12px 15px;border:1px solid #806c51;background:#253548}
+.skill-actions{margin:18px 0;padding:14px 0;border-top:1px solid #606078;border-bottom:1px solid #606078}.skill-actions h3{margin:0 0 12px;font:500 18px Georgia,"Noto Serif TC",serif;color:#f3dfb8}.function-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.function-link{display:flex;flex-direction:column;justify-content:center;min-height:69px;padding:11px 12px;text-decoration:none;background:rgba(47,72,88,.78);border:1px solid #506e79;color:#f5efe5;border-radius:9px}.function-link:hover,.function-link:focus-visible{border-color:#e5c28d;background:#304b5b}.function-link strong{font-size:12px;font-weight:750}.function-link small{font-size:10px;line-height:1.4;color:#b9c8ce;margin-top:5px}.skill-footnote{font-size:11px;color:#a5bdc3!important;margin:9px 0 0!important}.drawer-actions{display:flex;gap:10px;flex-wrap:wrap}.drawer-actions button{border-radius:9px;padding:12px 15px;border:1px solid #806c51;background:#253548}
 .drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
 .blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
 .fallback{display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
@@ -68,21 +68,21 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
 @media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
 @media(max-width:650px){.top{padding:13px 13px}.emblem{width:31px;height:31px}.emblem span{font-size:16px}.headline{font-size:16px}.meta{font-size:8px;letter-spacing:.06em}.kicker{font-size:8px}.top-actions .chip:nth-child(2){display:none}.chip{padding:8px;font-size:10px}.side{left:13px;top:103px;width:145px}.side h2{font-size:22px}.side p{font-size:10px;max-width:140px}.side .gold-rule{margin:10px 0}.catalog{right:10px;left:10px;bottom:104px;width:auto;max-height:110px;border-radius:12px;display:block;overflow:hidden;transition:max-height .25s}.catalog.open{max-height:58vh;overflow:auto}.catalog-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer}.catalog-head h2{margin:0;font-size:14px}.catalog-head small,.catalog-head p{display:none}.catalog-head::after{content:"書庫 ▴";font-size:11px;color:#e2c79c}.catalog.open .catalog-head::after{content:"收合 ▾"}.book-list{display:none;padding:8px;max-height:40vh}.catalog.open .book-list{display:block}.catalog-bottom{display:none}.catalog.open .catalog-bottom{display:flex}.bottom{padding:0 6px calc(13px + env(safe-area-inset-bottom))}.hud{gap:5px}.current b{font-size:14px}.action{padding:11px 11px;font-size:11px}.pillbar{gap:0;padding:5px}.note{display:none}.drawer-wrap{align-items:flex-end;padding:0}.drawer{border-radius:20px 20px 0 0;width:100%;max-height:88dvh;padding:26px 19px calc(22px + env(safe-area-inset-bottom))}.drawer .layout{gap:8px}.detail-cell{padding:10px}.drawer h2{font-size:26px}.toast{top:81px;max-width:90vw;white-space:normal;text-align:center}}
-@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
+@media(max-width:390px){.function-list{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
 </style>
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
-<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">ISOLATED 3D SCENE · PROTOTYPE 0.1</div></div></div>
-<div class="top-actions"><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">關於試作</button></div>
+<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div></div></div>
+<div class="top-actions"><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">關於試作</button></div>
 </header>
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">DEMO</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。仍可以從旁邊的書庫打開示範書頁。</p><button id="fallbackOpen" type="button">開啟一本示範書</button></div></div>
-<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>僅示範資料，未連動</strong></div></div><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">🔒 這是獨立的互動草圖。書籍目前不開啟 PackageCanvas、Google Drive、日曆或任何個人資料。後續由你決定各書對應的實際介面。</p></section></div>
+<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>僅示範資料，未連動</strong></div></div><div class="skill-actions"><h3>書中的功能</h3><div id="drawerFunctions" class="function-list"></div><p class="skill-footnote">直接開啟現有功能頁，不複製資料或建立新的後端。</p></div><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">🔒 功能按鈕會開啟現有工作頁面。請使用瀏覽器或 Android 返回鍵回到圖書館；書本環繞位置會儲存在本機。部分 Pocket GBA 原生功能仍需使用原本的 App 入口，現階段不更動 APK。</p></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -98,11 +98,34 @@ const BOOKS=[
 {id:'design',name:'設計之書',kind:'工具技能',tag:'DESIGN',icon:'✳',color:'#ad9365',description:'示範介面、排版與視覺設計技能的歸檔與快速召喚。',target:'設計技能／成果',active:false},
 {id:'teaching',name:'教學之書',kind:'領域技能',tag:'TEACHING',icon:'✺',color:'#578789',description:'示範教育教學計畫與課程設計知識的整理方式。',target:'教學方法／課程',active:false}
 ];
+BOOKS.push(
+{id:'gaming',name:'遊戲之書',kind:'原有遊戲功能',tag:'GBA',icon:'♠',color:'#486b80',description:'從圖書館前往現有 GBA 遊戲庫；遊戲存檔與手把操作仍由原有系統負責。',target:'GBA 遊戲庫／存檔',active:true},
+{id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false}
+);
+const SITE='https://ken12121122-dotcom.github.io';
+const SKILL_ACTIONS={
+research:[['📚 研究導航','研究方法、文獻與心智圖',SITE+'/packagecanvas/research-navigation-v04.html'],['▣ 知識工作台','原 PackageCanvas 畫布',SITE+'/packagecanvas/']],
+startup:[['☑ 公司設立任務','公司設立與完成證據',SITE+'/packagecanvas/startup.html'],['📅 Google 日曆','手動查看及建立事項','https://calendar.google.com/calendar/u/0/r/'],['▣ 知識工作台','研究與創業知識結構',SITE+'/packagecanvas/']],
+knowledge:[['🎮 知識世界','原 GBA 風格知識世界',SITE+'/packagecanvas/world.html'],['▣ PackageCanvas','查看知識架構與節點',SITE+'/packagecanvas/']],
+missions:[['☑ 創業任務','24 項任務清單與日曆連結',SITE+'/packagecanvas/startup.html'],['🎮 執行世界','GEN2 進度的 GBA 視圖',SITE+'/packagecanvas/world.html'],['📅 日曆','在 Google 日曆查看安排','https://calendar.google.com/calendar/u/0/r/']],
+learning:[['📚 研究導航','學習研究的問題與方法',SITE+'/packagecanvas/research-navigation-v04.html'],['▣ 知識工作台','編排已有學習資料',SITE+'/packagecanvas/']],
+finance:[['🚀 創業／資產規劃','查看財務目標與退場規劃',SITE+'/packagecanvas/startup.html']],
+safety:[['▣ 知識工作台','尚無專用職安頁；先開既有工作台',SITE+'/packagecanvas/']],
+writing:[['▣ 知識工作台','尚無專用寫作頁；先開既有工作台',SITE+'/packagecanvas/']],
+design:[['▣ 知識工作台','尚無專用設計頁；先開既有工作台',SITE+'/packagecanvas/']],
+teaching:[['📚 研究導航','尚無專用教學頁；先開研究導航',SITE+'/packagecanvas/research-navigation-v04.html']],
+gaming:[['🎮 開啟 GBA 遊戲庫','現有網頁遊戲入口',SITE+'/amin-vault/gba.html'],['◈ Pocket Vault','原有瀏覽器入口與工具',SITE+'/amin-vault/']],
+system:[['◈ Pocket Vault','原網頁介面；非原生控制中心',SITE+'/amin-vault/'],['▣ PackageCanvas','原知識架構工作台',SITE+'/packagecanvas/']]
+};
 window.LIVING_LIBRARY_DEMO=BOOKS;
 let selectedId='research',motion=true,ready=false,toastTimer=0;
+const BOOK_PREFS_KEY='living-library-workbench-v1';
+function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId,active:BOOKS.filter(b=>b.active).map(b=>b.id)}))}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const allowed=new Set(BOOKS.map(b=>b.id)),active=value.active.filter(id=>allowed.has(id));if(active.length&&active.length<=7){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}if(allowed.has(value.selectedId))selectedId=value.selectedId}catch(_){}}
+restoreBooks();
 const $=id=>document.getElementById(id);
 function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
-function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
+function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;storeBooks();updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
 function updateUI(){
 const b=book();$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
 $('orbitCount').textContent=BOOKS.filter(x=>x.active).length+' 本環繞';
@@ -113,17 +136,19 @@ const words=document.createElement('span');const strong=document.createElement('
 btn.addEventListener('click',()=>{select(x.id);openBook()});$('bookList').append(btn)});
 }
 function toast(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
-function openBook(){const b=book();$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
+function renderFunctions(b){const host=$('drawerFunctions');host.replaceChildren();const functions=SKILL_ACTIONS[b.id]||[];functions.forEach(([title,detail,url])=>{const a=document.createElement('a');a.className='function-link';a.href=url;a.setAttribute('aria-label',title+'，'+detail);const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=title;small.textContent=detail;a.append(strong,small);a.addEventListener('click',()=>{storeBooks()});host.append(a)})}
+function openBook(){const b=book();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
 function closeBook(){$('drawerWrap').classList.remove('open');$('openBtn').focus()}
 function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
-b.active=!b.active;toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
+b.active=!b.active;storeBooks();toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
 function cycle(d){const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
 $('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
 $('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
 $('resetBtn').onclick=()=>window.LivingScene?.reset?.();
-$('aboutBtn').onclick=()=>{toast('獨立 3D 概念場景 · 目前無正式資料連結 · 所有書籍皆為示範')};
+$('homeBtn').onclick=()=>{closeBook();select('research');window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
+$('aboutBtn').onclick=()=>{toast('獨立 3D 概念場景 · 目前無正式資料連結 · 技能書功能入口已連到現有公開工作頁面；原生操作仍需後續接入')};
 $('fallbackOpen').onclick=openBook;
 $('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
 $('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
