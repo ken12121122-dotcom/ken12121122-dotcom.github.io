@@ -10,7 +10,7 @@ review_status: generated。直接開發 B；未替換 Android 啟動首頁，未
 4. 書內 Skill／Workflow 取自實際受控文件；BOM／Workflow 跨書引用使用同一正式 ID。規則、Template、未登記、候選、generated review、退役和重複 ID 不建立正式卡。
 5. 點卡即於可捲動書內頁閱讀來源文字、原始狀態、版本及 commit；可打開既有 GEN2 工作台。此入口不等於自動執行 Skill，OWNER Gate 保留在原系統。
 6. 開頁授權後每 60 秒及重新切回頁面核對 main。OWNER 合併的新登記 KB／Skill 在下次讀取出現；未合併 PR 不出現。新增空 KB 允許空書。
-7. 斷線清除本頁私有資料、書本及讀取快取。新貼權杖僅放記憶體；頁面不保存私有文件。只保存正式 ID 的書圈偏好。PackageCanvas 的既有保存設定由 PackageCanvas 管理。
+7. 斷線清除本頁私有資料、GEN2 書本投影及讀取快取，公開功能書持續可用。新貼權杖僅放記憶體；頁面不保存私有文件。只保存書本 ID 的書圈偏好。PackageCanvas 的既有保存設定由 PackageCanvas 管理。
 
 ## 正式狀態
 
@@ -29,7 +29,7 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 
 - 正式 GEN2 知識、MD、Skill、Workflow 集中於私有 `gen2-knowledge` 的 `main/kb/`。每 KB 是一個資料夾；修改走暫時分支、PR、GEN2 Check、OWNER merge。舊分支不清理、不大量合併。
 - GitHub 保存定義、版本與審核；ChatGPT／Work 讀取真實 MD，使用當前已授權工具執行。既有 Actions／Agent／Workflow 保留為可選執行途徑，不把每份 Skill 改成 Actions。
-- Living Library 是統一搜尋、閱讀及候選編輯介面。書本、卡片及文件清單只在授權讀取時生成於記憶體，沒有另一份永久卡片資料庫、同步後端或新 AI 服務。
+- Living Library 是統一搜尋、閱讀及候選編輯介面。GEN2 書本、私有卡片及文件清單只在授權讀取時生成於記憶體，沒有另一份永久卡片資料庫、同步後端或新 AI 服務。
 - 「搜尋 MD」跨全部正式書與規則做文字比對；「查閱本書 MD」包含 Contract、BOM、Resource、Skill、Workflow、Output。來源、SHA 與原始狀態可核對。沒有宣稱向量或語意搜尋。
 - 已有受控 KB 文件可修改完整候選內容。先 stamp `draft / generated`、保留原 ID，再使用同一 PackageCanvas 架構檢查器比對新增 errors。規則／Registry／Resource 採用維持唯讀；此版本不建立新文件類型或新 KB。
 - 「提交 Draft PR」使用另一個當次 Contents／Pull requests write token，不讀取唯讀 token。提交前核對 main commit 與原文；只建立 `candidate/living-library-*` 分支及 Draft PR，不 PATCH main、不合併、不刪分支。GEN2 Check 仍以私有 repo CI 為準。
@@ -45,3 +45,15 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 - Library 同樣的描述式查詢會回傳候選，包括 2026-09-30 的 GEN2 投影 HTML，也有不相關結果。已讀回該快照。因語料与版本不同，此結果不支持「兩者相同」或一般搜尋效能排名；正式內容以目前 GitHub main 為準。
 - 65 項 Node 測試通過，包含 UI 搜尋／候選編輯／提交模擬與隔離 GitHub API 流程。真實私有文件的候選檢查通過：baseline errors 0、warnings 7；沒有對私有 repo 建立測試 PR。
 - 尚未驗證：瀏覽器／手機／WebView，實際讀寫 token 的 CORS／權限、私有 repo 端到端 PR 提交及該 PR 的 GEN2 Check、Library 與 GitHub 相同語料的語意召回率。無可用 control-browser 技能，因此不把 DOM 模擬列為真機通過。
+
+
+## 2026-10-13 公開入口功能回歸修復
+
+- 比對基準：原始功能版 commit `18969f275eb2fb6ecfa4c7fa2ab5b1400a7f34d3` 的 12 本書、7 張共享功能入口、每書引用及預設 7 本環繞。
+- 新增 `public-catalog.js` 管理公開導航，不宣稱它們是 GEN2 正式 KB／Skill；初始無授權仍顯示全部 12 本公開書與可用入口。
+- 恢復原始 research、canvas、startup、calendar、world、gba、vault 的 URL 及跨書引用；研究導航、PackageCanvas、公司設立任務、知識世界、GBA、Vault 留在書內 iframe。Calendar 提供書內說明與可點擊外開連結。
+- 創業之書未授權有 startup、calendar、canvas 及創業技術研究卡。授權且正式 KB-STARTUP 通過投影後，在同一本書增加真實 Skill／Workflow，Book ID 使用正式 KB-STARTUP；公開分類別名只用來保留導航與偏好，不修改正式 kb_id。
+- GEN2 私有卡只在授權後出現；斷線／授權失敗移除私有卡與文件，恢復公開书本。反覆讀取不重複加入公開卡。新增正式 KB 仍由共用投影器產生。
+- 測試改為保護「原始入口不遺失」及「公開導航／正式能力清楚標示」，不再以移除原始書籍作為通過條件。
+- 72 項 Node 回歸通過；含全部原始書與入口、離線創業研究卡、授權前後公司設立＋正式 Workflow 共存、斷線清理、UI 外開 Calendar、書內閱讀／返回／關閉。七個公開網站頁面在 main 來源均存在。公開卡使用 public-capabilities.json 的 canonical IDs，舊卡 ID 僅作 alias；斷線也清除私有 ID 的本機偏好，僅保存公開書 ID。
+- 手機／瀏覽器／WebView 實際載入、捲動及權杖 CORS 仍未驗證；DOM 與 API 模擬不代表真機通過。

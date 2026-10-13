@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile, access} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
+import {createRequire} from 'node:module';
+const Catalog=createRequire(import.meta.url)('../living-library/public-catalog.js');
 
 const root=new URL('../',import.meta.url);
 const getText=path=>readFile(new URL(path,root),'utf8');
@@ -61,7 +63,8 @@ function makeSimulatedUI(script,projection){
     location:{href:'https://example.test/living-library/index.html'},
     addEventListener(){},
     PackageCanvasGen2:{sources:{github},buildLibraryProjection:()=>projection},
-    LivingLibraryDrafts:{}
+    LivingLibraryDrafts:{},
+    LivingLibraryCatalog:Catalog
   };
   const localStorage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v)};
   runInNewContext(script,{window,document,localStorage,setInterval(){},setTimeout(){},clearTimeout(){},URL,console,AbortController});
