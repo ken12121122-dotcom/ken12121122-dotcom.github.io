@@ -99,6 +99,20 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
 .note{font-size:12px;color:#8c86b5;text-align:center;line-height:1.5;margin:0}
 @media (prefers-reduced-motion:reduce){.dlg li.sel::before,.dlg .more{animation:none}}
 @media (max-width:360px){.dpad{transform:scale(.88);transform-origin:left center}.ab{transform:scale(.88);transform-origin:right center}}
+
+/* Game Book: a real, accessible card index on the published Knowledge World page. */
+.game-book-index{margin:0;border:2px solid #8076b6;border-radius:14px;background:linear-gradient(145deg,#242039,#15162b);padding:14px;box-shadow:0 8px 24px #0006}
+.game-book-index-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.game-book-index h2{margin:0;font:700 17px var(--pixel);color:#f7dd9e}
+.game-book-index .game-index-sub{font:11px var(--pixel);color:#c4bedf}
+.game-design-card{display:flex;gap:12px;align-items:center;border:2px solid #e3bf83;background:linear-gradient(135deg,#453657,#1b3445);color:#fff3d6;border-radius:10px;padding:14px;text-decoration:none;min-height:88px;touch-action:manipulation}
+.game-design-card:focus-visible{outline:3px solid #ffd447;outline-offset:3px}
+.game-design-card .game-design-emblem{display:grid;place-items:center;flex:0 0 53px;width:53px;height:58px;background:#172339;border:1px solid #d8bb7c;border-radius:6px;color:#f6d997;font:36px Georgia,serif}
+.game-design-card .game-design-content{display:flex;flex-direction:column;gap:3px;min-width:0}
+.game-design-card strong{font:700 16px/1.5 var(--pixel)}
+.game-design-card small{font:12px/1.5 var(--pixel);color:#d3e6e7}
+.game-design-card .game-design-tag{font:11px/1.4 var(--pixel);color:#f1cd9d}
+.game-design-card:hover{filter:brightness(1.1)}
 </style>
 
 </head>
@@ -144,6 +158,20 @@ button.pressed{filter:brightness(1.35);transform:translateY(2px)}
       </div>
     </div>
   </div>
+  <section class="game-book-index" aria-labelledby="gameBookIndexTitle" id="game-book-index">
+    <div class="game-book-index-header">
+      <h2 id="gameBookIndexTitle">♠ 遊戲之書｜卡片索引</h2>
+      <span class="game-index-sub">設計圖鑑 · 01</span>
+    </div>
+    <a class="game-design-card" href="./game-design-memory-palace-v01.html" aria-label="打開知識城堡、記憶宮殿遊戲設計卡">
+      <span class="game-design-emblem" aria-hidden="true">♜</span>
+      <span class="game-design-content">
+        <strong>知識城堡｜記憶宮殿</strong>
+        <small>八座房間 · 六種遊戲物件 · 書本召喚技能卡</small>
+        <span class="game-design-tag">遊戲系統設計 · 點擊閱讀 →</span>
+      </span>
+    </a>
+  </section>
   <p class="note">知識世界 · 讀取 GEN2 流程（gen2-run Issue）的真實進度；決定在 App 裡確認後才送出。只有「Agent 鑰匙櫃」會寫入 GitHub（加密後存成 Actions secret）。<br>十字鍵走路；狐狸自己去工作，有事會跑來找你。<br>A 調查／跟面前的狐狸說話，面前沒東西就叫狐狸過來 · B 鏡頭回到你 · L／R 切換任務 · START 選單（任務清單可打開任務）<br>鍵盤：方向鍵 · Z=A · X=B · Enter=START · Shift=SELECT<br><a href="./research-navigation-v04.html" style="color:#ffe19c;text-decoration:underline;font-weight:700;display:inline-block;margin-top:8px;padding:8px">📚 工作進度／研究導航與心智圖</a><br><a href="./game-design-memory-palace-v01.html" style="color:#ffe19c;text-decoration:underline;font-weight:700;display:inline-block;margin-top:4px;padding:8px" aria-label="遊戲之書：知識城堡與記憶宮殿設計卡">♜ 遊戲之書｜知識城堡設計圖鑑</a></p>
 </div>
 
