@@ -39,3 +39,16 @@ test('GEN2 projection overlays public online books without deleting Game Book ca
   assert.equal(v.cards['public.gba.runtime'].nativeRoute,'gba');
  }
 });
+
+test('online Game Book has a visible one-tap entry and browser deep-link to the real in-book card',async()=>{
+ const html=await fetchFile('living-library/live/index.html');
+ assert.match(html, /id="gameBookShortcut"[^>]*>♜ 遊戲之書・新卡<\/button>/);
+ assert.match(html, /\$\('gameBookShortcut'\)\.addEventListener\('click',\(\)=>\{select\('gaming'\);openBook\(\)\}\)/);
+ assert.match(html, /new URLSearchParams\(window\.location\.search\)\.get\('book'\)==='gaming'/);
+ assert.match(html, /select\('gaming'\);openBook\(\)/);
+ const model=c.buildCatalog();
+ const ids=model.bookCards.gaming;
+ assert.equal(ids.length,3);
+ assert.equal(ids[2],'KW-GAME-MEMORY-PALACE-20261014');
+ assert.equal(model.cards[ids[2]].title,'知識城堡｜遊戲設計');
+});
