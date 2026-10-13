@@ -14,7 +14,7 @@ final class LivingLibraryPolicy {
     static final String HOME = "https://" + HOST + "/living-library/index.html";
     static final Set<String> ASSETS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "/living-library/index.html", "/living-library/public-catalog.js",
-            "/living-library/gen2-editor.js", "/living-library/book-placement.js",
+            "/living-library/gen2-editor.js", "/living-library/book-placement.js", "/living-library/render-capability.js",
             "/living-library/gpt-library-bridge.html", "/packagecanvas/gen2-source.js")));
     static final Map<String, String> ROUTES;
     static {

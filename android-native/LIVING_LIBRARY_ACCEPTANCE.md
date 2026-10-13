@@ -13,10 +13,14 @@ OWNER 已於 2026-10-13 核准整合、改名、圖示與透過現有手機更�
 
 ## 執行證據
 
-公開 UI Node 回歸 83 項 PASS（包含所有安卓卡的點選模擬、網頁不誤啟原生、返回與私有清除）。Manifest permission 與 105 相同、資源 XML parse、diff whitespace PASS。
+公開 UI Node 回歸 84 項 PASS（包含所有安卓卡的點選模擬、網頁不誤啟原生、返回與私有清除）。Manifest permission 與 105 相同、資源 XML parse、diff whitespace PASS。
 
 Android unit/lint/build/emulator：由本 PR CI 驗證，未成功前不得稱 PASS。新增 route policy 單元測試與 LivingLibraryActivity instrumentation；原 PackageCanvas/GEN2/GBA 功能測試保留。
 
 OWNER 手機 WebGL、捲動、多圈歸架、圖示形狀、原生卡片、返回、GEN2 授權、GBA 存檔/手把及原地更新：NOT TESTED。
 
 候選發布授權已存在；真正手機驗收仍需實測結果，不能用預先批准冒充已通過。
+
+## WebView 實測修正
+
+最終新增的實際 WebView 開書／返回測試在 SwiftShader 模擬器出現 keyDispatchingTimedOut；不計為通過。加入軟體 GPU 的 2D 書庫 fallback（硬體 GPU 保留 3D）與 WebView onPause/onResume/關閉清理，並重新執行同一最新版 CI。此段記錄修正意圖，不代表新測試已成功。

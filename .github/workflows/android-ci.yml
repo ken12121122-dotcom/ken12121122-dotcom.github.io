@@ -392,6 +392,25 @@ jobs:
             | tee "$RUNNER_TEMP/gen2chat-instrumentation.txt"
           grep -Eq 'OK \(4 tests\)' "$RUNNER_TEMP/gen2chat-instrumentation.txt"
 
+      - name: Collect WebView failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          adb logcat -d -t 800 > "$RUNNER_TEMP/living-library-logcat.txt" 2>&1 || true
+          adb shell dumpsys activity lastanr > "$RUNNER_TEMP/living-library-anr.txt" 2>&1 || true
+
+      - name: Publish WebView failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amin-pr-${{ github.event.pull_request.number }}-webview-failure
+          path: |
+            ${{ runner.temp }}/living-library-logcat.txt
+            ${{ runner.temp }}/living-library-anr.txt
+            ${{ runner.temp }}/living-library-instrumentation.txt
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Publish integrated emulator acceptance evidence
         uses: actions/upload-artifact@v4
         with:
