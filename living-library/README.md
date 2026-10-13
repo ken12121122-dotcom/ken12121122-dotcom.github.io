@@ -126,3 +126,11 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 - 原有行動裝置繪製幀率上限約 30 FPS；使用者已暫停書本漂浮動畫時，只要人物正在走路就暫時啟用畫面更新，停止後恢復按需繪製。無需任何額外 Android 權限或個人資料儲存。
 - 新增 `tests/living-library-avatar-walking.test.mjs`（6 項）檢查搖桿、相機相對方向、越界裁切、模式切換、讀書暫停與書本回歸。程式及 isolated V8 幾何測試已執行；尚須完整 Node、實際手機 WebGL 搖桿、多點觸控、幀率與靠近書架取書驗收。
 - 本次只是 PR #195 Draft 候選改動；沒有發布 GitHub Pages main 或 APK，也沒有在瀏覽器自動執行任何私有 Skill。
+
+## 人物探索鏡頭跟隨修復｜OWNER 手機驗收回饋
+
+- 手機實測回報：人物能移動，但鏡頭沒有跟著人走。根因是舊版 `camera.position.set(Math.sin(theta)*horizontal, ..., Math.cos(theta)*horizontal)` 一直以世界原點計算，只有 `lookAt` 改成人物座標，因此屬於看向人物而非真正平移相機。
+- 最新修改：相機 X/Z 世界座標改為 `look.x + Math.sin(theta)*horizontal`、`look.z + Math.cos(theta)*horizontal`，與人物的水平移動同步平移；保留原先的 yaw / pitch、360°、縮放。
+- 探索初始鏡距從 9.2 降至 6.8；探索縮放可調至 4.5～13，自由觀看維持 7.5～27；手機尺寸變化時保留探索鏡距，不跳回全景。退出探索時恢復先前距離與圖書館中心 Y=2.9。
+- 新增相機位置的可執行回歸測試：四個 yaw 方向，人物從 (0,0) 走向 (4,-3)，相機必須跟著位移 (4,-3)，不能只移動注視點。
+- 尚須 OWNER 在手機驗收人物能持續保持畫面中央，且靠近前方書架時鏡頭不嚴重穿模。仍為 Draft PR，不合併正式站或 APK。
