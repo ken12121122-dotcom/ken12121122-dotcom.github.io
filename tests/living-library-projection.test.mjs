@@ -43,3 +43,22 @@ test('UI authorization → book → card → scrollable source → workbench →
  get('readerClose').click();assert.ok(!get('drawerWrap').classList.contains('open'));
  get('disconnectGen2').click();assert.equal(window.LivingLibrary.books.length,0);assert.equal(get('sourcePage').children.length,0);assert.equal(get('drawerFunctions').children.length,0);assert.equal(get('drawerTitle').textContent,'');assert.ok(![...store.values()].join('').includes('synthetic-token'));
 });
+
+
+test('startup strategy website card is a separate candidate and not a GEN2 Skill',async()=>{
+ const html=await readFile(new URL('../living-library/index.html',import.meta.url),'utf8');
+ assert.ok(html.includes("b.id==='KB-STARTUP'?'創業之書':b.name"));
+ assert.ok(html.includes("if(BOOKS.some(b=>b.id==='KB-STARTUP'))"));
+ assert.ok(html.includes("BOOK_CARDS['KB-STARTUP'].push(STARTUP_RESEARCH_CARD_ID)"));
+ assert.ok(html.includes("kind:'external_reference'"));
+ assert.ok(html.includes("if(card.kind==='external_reference'){openCardReader(card);return;}"));
+ assert.ok(html.includes('/packagecanvas/startup-platform-growth-v01.html'));
+ const s=fixture();
+ s.files[0].text+='\\n| KB-STARTUP | 創業孵化 | 創業驗證 | active | KB-STARTUP_創業孵化 |';
+ s.files.push(doc('02_KNOWLEDGE_BASES/KB-STARTUP_創業孵化/KB_CONTRACT.md','kb_contract','kb_id: KB-STARTUP\\nkb_name: 創業孵化\\nstatus: draft'));
+ const p=G.buildLibraryProjection(s);
+ const book=p.books.find(b=>b.id==='KB-STARTUP');
+ assert.ok(book);
+ assert.deepEqual(book.cardIds,[]);
+ assert.equal(p.cards['KW-STARTUP-PLATFORM-20261013'],undefined);
+});
