@@ -3,7 +3,7 @@
 OWNER 已於 2026-10-13 核准整合、改名、圖示與透過現有手機更新管道發布候選版。正式驗收不由此文件推定。
 
 - Android baseline: `d6a9fdbad8a50b2bf6d850d4108e465a180dcabb`，Bridge 105/code 201；由成功發布 run `37568250785` 的 immutable source revision 證實。`release/android` 仍為 Bridge 103；本 PR 同時保留已安裝 Bridge 105 的功能，不能以舊分支覆蓋它。
-- 公開 UI 基底：PR #195 `63d72d6a3993025a47ba59a1a13cded373b858cb`，保留 GPT 之書、多圈環繞、實體書架、GEN2 投影與公開入口。
+- 公開 UI 基底：PR #195 `359910cbd7ab80d2ab70f60b52829b0b92d27cf1`，保留 GPT 之書、多圈環繞、實體書架、GEN2 投影與公開入口。
 - 新首頁為 APK 內封裝的公開 Living Library；不需先發布網頁 main。3D CDN、公開 iframe 和 GEN2 GitHub 讀取仍需要網路。網頁改動可在下一次候選 APK 或正式網頁工作中更新；沒有永久私有資料庫。
 - 舊 `ControlCenterActivity` 成為返回圖書館的相容路由，原版 UI 原始碼保留作回退，不作日常首頁。
 - 安卓之書：全域控制、API、鍵盤、關聯圖、外觀、語音球、狐狸、語音指令、Brain、權限、更新、FOX 知識庫、PackageCanvas、GEN2 待核准、狐狸聊天、財務。
@@ -13,7 +13,7 @@ OWNER 已於 2026-10-13 核准整合、改名、圖示與透過現有手機更�
 
 ## 執行證據
 
-公開 UI Node 回歸 79 項 PASS（包含所有安卓卡的點選模擬、網頁不誤啟原生、返回與私有清除）。Manifest permission 與 105 相同、資源 XML parse、diff whitespace PASS。
+公開 UI Node 回歸 83 項 PASS（包含所有安卓卡的點選模擬、網頁不誤啟原生、返回與私有清除）。Manifest permission 與 105 相同、資源 XML parse、diff whitespace PASS。
 
 Android unit/lint/build/emulator：由本 PR CI 驗證，未成功前不得稱 PASS。新增 route policy 單元測試與 LivingLibraryActivity instrumentation；原 PackageCanvas/GEN2/GBA 功能測試保留。
 

@@ -493,6 +493,7 @@ function coverTex(b){const c=document.createElement('canvas');c.width=256;c.heig
 const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
 const Placement3D=window.LivingBookPlacement;
 if(!Placement3D)throw Error('3D placement script was not loaded');
+const preferReduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 let currentOrbitTime=0;
 // One mesh per real book, in the orbital rings OR at a concrete shelf slot.
 // The same mesh moves between the two locations: no teleport or decorative proxy.
@@ -538,7 +539,7 @@ function updateOrbit(t,now=performance.now()){
  currentOrbitTime=t;
  for(const o of bookEntities){
   const target=targetFor(o,t),g=o.group,flight=o.flight;
-  if(flight){
+  if(flight&&!preferReduced){
    const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
    const v=linear*linear*(3-2*linear);
    g.position.copy(flight.position).lerp(target.position,v);
@@ -551,6 +552,7 @@ function updateOrbit(t,now=performance.now()){
    g.position.copy(target.position);
    g.quaternion.copy(target.rotation);
    g.scale.setScalar(target.scale);
+   o.flight=null;
   }
   g.userData.halo.visible=o.b.id===selectedId;
  }
@@ -608,7 +610,7 @@ function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
 // Open books/dialogs take priority over a constantly redrawing background.
-const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const reduced=preferReduced;
 const mobile=window.innerWidth<650||window.matchMedia('(pointer: coarse)').matches;
 const frameInterval=1000/(mobile?30:60);
 let elapsed=0,last=performance.now(),lastPaint=0,running=false;

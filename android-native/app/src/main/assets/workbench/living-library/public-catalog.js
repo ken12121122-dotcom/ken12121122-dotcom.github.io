@@ -17,7 +17,7 @@ const PUBLIC_BOOKS=[
 PUBLIC_BOOKS.push(
 {id:'gaming',name:'遊戲之書',kind:'原有遊戲功能',tag:'GBA',icon:'♠',color:'#486b80',description:'從圖書館前往現有 GBA 遊戲庫；遊戲存檔與手把操作仍由原有系統負責。',target:'GBA 遊戲庫／存檔',active:true},
 {id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false},
-{id:'gpt',name:'GPT 之書',kind:'AI 知識導航',tag:'GPT ARCHIVE',icon:'✧',color:'#9a7956',description:'通往 ChatGPT Library 的知識檔案、GEN2 正式來源與 AI／Work 協作方式；不公開私有資料。',target:'ChatGPT Library／GEN2 知識路由',active:false}
+{id:'gpt',name:'GPT 之書',kind:'AI 知識導航',tag:'GPT ARCHIVE',icon:'✧',color:'#9a7956',description:'通往 ChatGPT Library 的知識檔案、GEN2 正式來源與 AI／Work 協作方式；不公開私有資料。',target:'ChatGPT Library／GEN2 知識路由',active:true}
 );
 const SITE='https://ken12121122-dotcom.github.io';
 // One canonical card = one existing destination. Multiple books may reference it,
