@@ -54,8 +54,8 @@ test('startup strategy website card is a separate candidate and not a GEN2 Skill
  assert.ok(html.includes("if(card.kind==='external_reference'){openCardReader(card);return;}"));
  assert.ok(html.includes('/packagecanvas/startup-platform-growth-v01.html'));
  const s=fixture();
- s.files[0].text+='\\n| KB-STARTUP | 創業孵化 | 創業驗證 | active | KB-STARTUP_創業孵化 |';
- s.files.push(doc('02_KNOWLEDGE_BASES/KB-STARTUP_創業孵化/KB_CONTRACT.md','kb_contract','kb_id: KB-STARTUP\\nkb_name: 創業孵化\\nstatus: draft'));
+ s.files[0].text+='\n| KB-STARTUP | 創業孵化 | 創業驗證 | active | KB-STARTUP_創業孵化 |';
+ s.files.push(doc('02_KNOWLEDGE_BASES/KB-STARTUP_創業孵化/KB_CONTRACT.md','kb_contract','kb_id: KB-STARTUP\nkb_name: 創業孵化\nstatus: draft'));
  const p=G.buildLibraryProjection(s);
  const book=p.books.find(b=>b.id==='KB-STARTUP');
  assert.ok(book);
