@@ -483,21 +483,114 @@ for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+
 const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
 const labelCache=new Map();
 function coverTex(b){const c=document.createElement('canvas');c.width=256;c.height=384;const cx=c.getContext('2d');const col=b.color;const grad=cx.createLinearGradient(0,0,256,384);grad.addColorStop(0,col);grad.addColorStop(1,'#172236');cx.fillStyle=grad;cx.fillRect(0,0,256,384);cx.strokeStyle='#e9d1a1';cx.lineWidth=6;cx.strokeRect(18,18,220,348);cx.lineWidth=2;cx.strokeRect(28,28,200,328);cx.textAlign='center';cx.fillStyle='#f8dfb0';cx.font='50px serif';cx.fillText(b.icon,128,122);cx.font='bold 27px sans-serif';cx.fillText(b.name,128,203);cx.fillStyle='#d8d7d0';cx.font='19px sans-serif';cx.fillText(b.tag,128,245);cx.fillStyle='#cfbd9d';cx.font='16px sans-serif';cx.fillText('LIVING LIBRARY',128,318);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=2;return tx}
-const coverMaterials=new Map(),orbitEntities=[];
-function bookMesh(b){const cover=coverMaterials.get(b.id)||new THREE.MeshStandardMaterial({map:coverTex(b),roughness:.67,metalness:.11,side:THREE.DoubleSide});coverMaterials.set(b.id,cover);
-const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
-const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
-box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
-const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
-g.userData={bookId:b.id,halo};m.userData.bookId=b.id;return g}
-function rebuild(){orbitEntities.forEach(o=>{scene.remove(o.group);o.group.traverse(m=>{if(m.geometry&&m.geometry!==unit)m.geometry.dispose();const materials=Array.isArray(m.material)?m.material:[m.material];materials.forEach(mat=>{if(mat&&mat!==gold&&mat!==glow&&!Array.from(coverMaterials.values()).includes(mat))mat.dispose?.()})})});coverMaterials.forEach(mat=>{mat.map?.dispose();mat.dispose()});coverMaterials.clear();orbitEntities.length=0;const active=books.filter(x=>x.active);
-active.forEach((b,index)=>{const g=bookMesh(b);scene.add(g);orbitEntities.push({b,group:g,index});g.visible=true});updateOrbit(0);}
-function updateOrbit(t){const n=orbitEntities.length||1;orbitEntities.forEach((o,i)=>{const a=(Math.PI*2*i/n)+t*.11-.32;const R=n>5?3.15:2.78;o.group.position.set(Math.sin(a)*R,2.55+Math.sin(t*1.25+i*1.8)*.15+Math.sin(i*2)*.15,Math.cos(a)*R*.80+.12);
-o.group.rotation.set(.04*Math.sin(t+i),-a*.5+.08,.09*Math.sin(t*.75+i));o.group.userData.halo.visible=o.b.id===selectedId;if(o.b.id===selectedId){o.group.scale.setScalar(1.12)}else{o.group.scale.setScalar(.95)}});
+const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
+const Placement3D=window.LivingBookPlacement;
+if(!Placement3D)throw Error('3D placement script was not loaded');
+let currentOrbitTime=0;
+// One mesh per real book, in the orbital rings OR at a concrete shelf slot.
+// The same mesh moves between the two locations: no teleport or decorative proxy.
+function bookMesh(b){
+ const cover=new THREE.MeshStandardMaterial({map:coverTex(b),roughness:.67,metalness:.11,side:THREE.DoubleSide});coverMaterials.set(b.id,cover);
+ const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
+ const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
+ box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
+ const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
+ // The book's interactive identity is independent of its current position.
+ g.userData={bookId:b.id,halo};m.userData.bookId=b.id;
+ return g;
+}
+function releaseBook(o){
+ scene.remove(o.group);
+ o.group.traverse(m=>{
+  if(m.geometry&&m.geometry!==unit)m.geometry.dispose();
+  const mats=Array.isArray(m.material)?m.material:[m.material];
+  for(const mat of mats)if(mat&&mat!==gold&&mat!==glow){
+   if(mat===coverMaterials.get(o.id)){mat.map?.dispose();mat.dispose();}
+   else mat.dispose?.();
+  }
+ });
+ coverMaterials.delete(o.id);
+}
+function targetFor(o,t){
+ if(o.mode==='orbit'){
+  const p=Placement3D.orbitPosition(o.index,t);
+  return {position:new THREE.Vector3(p.x,p.y,p.z),
+   rotation:new THREE.Quaternion().setFromEuler(new THREE.Euler(.04*Math.sin(t+o.index),-p.angle*.5+.08,.09*Math.sin(t*.75+o.index))),
+   scale:p.scale*(o.b.id===selectedId?1.16:1)};
+ }
+ const slot=Placement3D.shelfSlot(o.index);
+ if(!slot)throw Error('No physical shelf space for book index '+o.index);
+ const shelf=shelves[slot.shelfIndex];
+ shelf.updateWorldMatrix(true,false);
+ const position=shelf.localToWorld(new THREE.Vector3(slot.x,slot.y,slot.z));
+ const rotation=shelf.getWorldQuaternion(new THREE.Quaternion())
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2));
+ return {position,rotation,scale:.76*(o.b.id===selectedId?1.10:1)};
+}
+function updateOrbit(t,now=performance.now()){
+ currentOrbitTime=t;
+ for(const o of bookEntities){
+  const target=targetFor(o,t),g=o.group,flight=o.flight;
+  if(flight){
+   const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
+   const v=linear*linear*(3-2*linear);
+   g.position.copy(flight.position).lerp(target.position,v);
+   // A floating arc makes shelving visibly different from hiding a DOM entry.
+   g.position.y+=Math.sin(Math.PI*v)*.72;
+   g.quaternion.copy(flight.rotation).slerp(target.rotation,v);
+   g.scale.setScalar(THREE.MathUtils.lerp(flight.scale,target.scale,v));
+   if(linear>=1)o.flight=null;
+  }else{
+   g.position.copy(target.position);
+   g.quaternion.copy(target.rotation);
+   g.scale.setScalar(target.scale);
+  }
+  g.userData.halo.visible=o.b.id===selectedId;
+ }
+}
+function hasFlight(){return bookEntities.some(o=>!!o.flight)}
+function rebuild(){
+ const valid=new Set(books.map(b=>b.id));
+ for(let i=bookEntities.length-1;i>=0;i--)if(!valid.has(bookEntities[i].id)){
+  releaseBook(bookEntities[i]);entityById.delete(bookEntities[i].id);bookEntities.splice(i,1);
+ }
+ const active=books.filter(b=>b.active);
+ const now=performance.now();
+ for(const [allIndex,b] of books.entries()){
+  let o=entityById.get(b.id);
+  const mode=b.active?'orbit':'shelf',index=b.active?active.indexOf(b):allIndex;
+  if(!o){
+   const group=bookMesh(b);scene.add(group);
+   o={id:b.id,b,group,mode,index,flight:null};entityById.set(b.id,o);bookEntities.push(o);
+   const target=targetFor(o,currentOrbitTime);
+   group.position.copy(target.position);group.quaternion.copy(target.rotation);group.scale.setScalar(target.scale);
+  }else{
+   const changed=o.mode!==mode||o.index!==index;
+   if(changed){
+    o.flight={position:o.group.position.clone(),rotation:o.group.quaternion.clone(),scale:o.group.scale.x,started:now,duration:o.mode!==mode?1250:650};
+   }
+   o.b=b;o.mode=mode;o.index=index;
+  }
+ }
+ updateOrbit(currentOrbitTime,now);
 }
 let selectedId=null;rebuild();
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
-function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);const targets=[];orbitEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));const hit=ray.intersectObjects(targets,false)[0];if(hit){select(hit.object.userData.bookId);window.LivingLibrary.openBook();return true}return false}
+function pick(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+ ray.setFromCamera(pointer,camera);
+ const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ const hit=ray.intersectObjects(targets,false)[0];
+ if(hit){
+  const id=hit.object.userData.bookId,o=entityById.get(id);
+  if(o&&!o.b.active)window.LivingLibrary.summonBook(id);
+  else{select(id);window.LivingLibrary.openBook();}
+  return true;
+ }
+ return false;
+}
 const touchPoints=new Map();
 renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
 renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,9.0,19.5);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,0,.62);cameraUpdate()}}});
@@ -526,7 +619,7 @@ function stopRenderLoop(){
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
- updateOrbit(elapsed);
+ updateOrbit(elapsed,now);
  if(isMotion()&&!reduced){
    dust.rotation.y=elapsed*.002;
    keeper.rotation.y=Math.sin(elapsed*.23)*.06;
@@ -539,10 +632,12 @@ function render(now){
  if(overlayActive()){stopRenderLoop();return}
  if(now-lastPaint<frameInterval)return;
  paint(now);
+ // Book flight animations run even when idle orbit animation is turned off.
+ if((!isMotion()||reduced)&&!hasFlight())syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(isMotion()&&!reduced){
+ if((isMotion()||hasFlight())&&!reduced){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -558,7 +653,7 @@ window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
 notifyReady({
  select(id){selectedId=id;invalidate()},
- rebuild(){rebuild();invalidate()},
+ rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
  syncRender,invalidate
