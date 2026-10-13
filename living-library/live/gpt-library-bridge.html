@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>GPT 之書｜知識庫連結導覽</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Noto Sans TC",sans-serif;background:#151923;color:#f2eee5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#293140,#151923 65%);min-height:100vh}
+main{max-width:880px;margin:0 auto;padding:clamp(20px,5vw,48px) clamp(18px,4vw,42px) 65px}
+a{color:#e4bd7d}a:hover{color:#ffe2b0}button{font:inherit;cursor:pointer}
+.hero{padding:clamp(23px,5vw,50px);border:1px solid #9b8052;border-radius:18px;background:linear-gradient(145deg,#2d2731,#1b2531);box-shadow:0 18px 40px #0004}
+.eyebrow{color:#dfbf85;font-size:12px;letter-spacing:.19em;text-transform:uppercase}
+h1,h2{font-family:Georgia,"Noto Serif TC",serif;font-weight:600}h1{font-size:clamp(32px,6vw,53px);line-height:1.2;margin:12px 0 16px}h2{font-size:clamp(20px,4vw,26px);margin:0 0 10px}
+.lead{font-size:clamp(15px,2.7vw,18px);line-height:1.8;color:#e3d9c9;max-width:62ch}
+.status{display:inline-flex;align-items:center;gap:8px;border:1px solid #76634a;background:#352f2b;padding:7px 12px;border-radius:40px;color:#f0d6ae;font-size:13px}
+.status::before{content:"";width:7px;height:7px;background:#dab575;border-radius:50%}
+.books{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}
+.panel{border:1px solid #566075;border-radius:14px;background:#202735;padding:20px;min-width:0}
+.panel small{color:#bba582}.panel p,.panel li{color:#cbd0d7;line-height:1.8;font-size:14px}.panel h3{font-size:17px;margin:7px 0 12px}
+.flow{display:flex;align-items:center;justify-content:center;gap:8px;color:#d2b587;font-size:14px;margin:17px 0 22px;flex-wrap:wrap}
+section{margin-top:20px;border:1px solid #475166;background:#1c2330;border-radius:14px;padding:clamp(18px,4vw,27px)}
+section>p{line-height:1.75;color:#cbd0d7}.path{background:#121a26;border:1px solid #3a485c;border-radius:8px;padding:12px 14px;word-break:break-word;color:#edcf94;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:9px;text-decoration:none;border:1px solid #a38c6a;background:#3e3540;color:#ffebc9;padding:10px 14px;font-size:14px}
+.action.alt{border-color:#667486;background:#283344;color:#dae5f2}
+button.action:focus-visible,a:focus-visible{outline:2px solid #e8cc93;outline-offset:3px}
+.note{font-size:13px;color:#bdc7d2;line-height:1.7}
+ol{padding-left:1.3em}li+li{margin-top:6px}
+.footer{margin-top:26px;border-top:1px solid #566075;padding-top:22px;color:#b3bfcb;font-size:13px;line-height:1.8}
+#copyStatus{min-height:22px;margin:12px 0 0;color:#d4eecf;font-size:14px}
+@media(max-width:700px){.books{grid-template-columns:1fr}.flow{align-items:stretch;flex-direction:column}.hero{border-radius:13px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+<div class="eyebrow">LIVING LIBRARY · GPT ARCHIVE</div>
+<h1>✧ GPT 之書</h1>
+<p class="lead">你在 ChatGPT 圖書館保存的研究、原始附件與協作指引，和 GitHub GEN2 正式知識庫之間的導航入口。這一頁是連結地圖，不是私人資料的公開副本。</p>
+<span class="status">目前狀態：人工／AI 授權查閱 · 尚未啟用自動雙向同步</span>
+</header>
+
+<div class="flow" aria-label="知識路由">ChatGPT Library <span aria-hidden="true">↔</span> AI / Work <span aria-hidden="true">↔</span> 私有 GEN2 GitHub <span aria-hidden="true">→</span> 念動圖書館</div>
+
+<div class="books">
+<div class="panel"><small>01 · 研究與附件</small><h3>ChatGPT Library</h3><p>保留草稿、研究材料、來源附件、交接與 AI 使用指引。不是 GEN2 最新正式技能的第二份主檔。</p></div>
+<div class="panel"><small>02 · 正式知識</small><h3>GEN2 GitHub</h3><p>正式 KB、Skill、Workflow、受控 MD 及版本審核。AI 需要時重新讀取 main，而不是憑記憶推斷最新版。</p></div>
+<div class="panel"><small>03 · 互動入口</small><h3>Living Library</h3><p>書本、圖鑑、卡片、電子書與工具入口。公開功能不因 GEN2 授權與否而消失。</p></div>
+</div>
+
+<section aria-labelledby="libraryTitle">
+<h2 id="libraryTitle">📖 從哪裡查看 ChatGPT Library 的知識？</h2>
+<p>在 ChatGPT 開啟「圖書館／Library」，找到 <strong>30_KNOWLEDGE</strong> 資料夾，閱讀以下連結規範：</p>
+<div class="path" id="libraryPath">/30_KNOWLEDGE/00_GEN2_CHATGPT_LIVING_LIBRARY_BRIDGE_v1.0.md</div>
+<p>舊規則辨識入口：</p>
+<div class="path">/30_KNOWLEDGE/Rules_Skills/00_READ_FIRST_GEN2_CURRENT_SOURCE.md</div>
+<div class="actions">
+<a class="action" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">開啟 ChatGPT ↗</a>
+<button class="action alt" type="button" id="copyPath">複製圖書館文件路徑</button>
+</div>
+<p class="note">此公開頁無權直接讀取你的 ChatGPT Library。開啟 ChatGPT 後須使用原帳號查看；文件路徑不是可公開存取的下載網址。</p>
+</section>
+
+<section aria-labelledby="gitTitle">
+<h2 id="gitTitle">🔐 正式 GEN2 知識來源</h2>
+<p>官方倉庫是私有的 <strong>ken12121122-dotcom/gen2-knowledge</strong>，正式路徑為 <strong>main/kb/</strong>。先確認 AGENTS，再確認 KB_REGISTRY 和需要的 Skill／Workflow。</p>
+<div class="actions">
+<a class="action" href="https://github.com/ken12121122-dotcom/gen2-knowledge/blob/main/AGENTS.md" target="_blank" rel="noopener noreferrer">GEN2 的 AGENTS 規則 ↗</a>
+<a class="action alt" href="https://github.com/ken12121122-dotcom/gen2-knowledge/blob/main/kb/00_ENTRY/KB_REGISTRY.md" target="_blank" rel="noopener noreferrer">正式 KB 登記表 ↗</a>
+</div>
+<p class="note">GitHub 依登入與倉庫權限決定能否查看；本頁不儲存 Token、不呼叫私有 API，也不提供私有 MD 內容。</p>
+</section>
+
+<section aria-labelledby="aiTitle">
+<h2 id="aiTitle">✦ 交給 GPT／Work 讀取與執行</h2>
+<p>以下指令會請 AI 先讀這邊的指引，再連線 GitHub 讀取正式技能。你仍然需要在對話中提出具體任務，並保留所有審核權限。</p>
+<ol>
+<li>在 ChatGPT 或 Work 開啟對話。</li>
+<li>按「複製 AI 交接指令」並貼入。</li>
+<li>補充你想查找、學習、建立或執行的知識任務。</li>
+<li>只有正式資料經 PR 審核合併後，才能視為已更新 GEN2 正本。</li>
+</ol>
+<div class="actions"><button class="action" type="button" id="copyPrompt">複製 AI 交接指令</button><a class="action alt" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">前往 ChatGPT ↗</a></div>
+<p id="copyStatus" role="status" aria-live="polite"></p>
+</section>
+
+<section aria-labelledby="syncTitle">
+<h2 id="syncTitle">⟳ 未來「GPT ↔ 念動」同步的設計邊界</h2>
+<p><strong>已具備：</strong>ChatGPT 在授權情況下讀取 Library 與 GitHub；念動圖書館把公開功能及授權 GEN2 知識顯示成書本／卡片。</p>
+<p><strong>尚未具備：</strong>ChatGPT Library 對網頁的即時同步 API、完整自動雙向更新、權限狀態同步或背景推送。本頁不聲稱這些已完成。</p>
+<p><strong>後續原則：</strong>優先同步「文件路由與狀態」而非複製私人全文；保留來源 ID、版本、權限和 OWNER Gate。先在有限來源做閉環測試，再考慮自動化。</p>
+</section>
+
+<footer class="footer">資料分層：公開導覽頁（本頁）／ChatGPT Library 私人文件／GEN2 私有 GitHub 正式內容。各層權限獨立。本頁不會自動讀取或儲存任何私人知識庫資料。<br>文件導航基準：2026-10-13；實際版本請以每次查閱的來源為準。</footer>
+</main>
+<script>
+(function(){
+'use strict';
+const path='/30_KNOWLEDGE/00_GEN2_CHATGPT_LIVING_LIBRARY_BRIDGE_v1.0.md';
+const prompt='請先從我的 ChatGPT Library 讀取 '+path+'，核對現行來源與分工，再經已授權的 GitHub 連線讀取 ken12121122-dotcom/gen2-knowledge 的 main/kb/，先看 AGENTS.md、KB_REGISTRY.md 與相關 KB／Skill／Workflow 的正式版本。不要依舊版 Library 快照或本公開導覽頁推定最新內容。請先詢問或接收我的具體任務，用目前可用且有權限的工具執行；如需更新正式 MD，必須使用候選分支、Draft PR、GEN2 Check 及 OWNER 合併，不得代核准。說明來源版本、實際驗證結果與尚未完成事項。';
+async function copy(t){if(!navigator.clipboard?.writeText)throw Error('此瀏覽器不支援直接複製');await navigator.clipboard.writeText(t)}
+function bind(id,value){document.getElementById(id).addEventListener('click',async()=>{const status=document.getElementById('copyStatus');try{await copy(value);status.textContent='已複製，現在可以貼到 ChatGPT／Work。'}catch(e){status.textContent='複製失敗，請手動選取上方路徑。'}})}
+bind('copyPath',path);bind('copyPrompt',prompt);
+})();
+</script>
+</body>
+</html>
