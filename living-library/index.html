@@ -38,7 +38,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .book-entry:hover,.book-entry.active{border-color:rgba(218,182,117,.3);background:rgba(255,241,218,.06)}
 .book-entry .swatch{flex:none;width:25px;height:34px;border-radius:2px 5px 5px 2px;border-left:5px solid rgba(0,0,0,.36);box-shadow:2px 4px 13px #04060a99}
 .book-entry strong{font-size:12px;display:block;font-weight:700;color:#ede5da}.book-entry small{font-size:10px;color:#aab2c1;display:block;line-height:1.45}.book-entry svg{margin-left:auto;flex:none;opacity:.6}
-.shelf-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:9px;border-top:1px solid rgba(215,185,135,.12)}.shelf-tools button{border:1px solid rgba(225,199,142,.43);background:#273446;color:#efdab7;padding:8px;border-radius:7px;font-size:11px;flex:1;min-width:65px}.shelf-tools small{display:block;flex-basis:100%;font-size:10px;color:#bbc8d1}.shelf-tools button[hidden]{display:none}
+.shelf-tools{display:flex;align-items:center;gap:5px;padding:9px;border-top:1px solid rgba(215,185,135,.12)}.shelf-tools small{display:block;font-size:10px;color:#bbc8d1}
 .catalog-bottom{padding:10px 13px;border-top:1px solid rgba(215,185,135,.12);color:#b4c0c7;font-size:10px;display:flex;justify-content:space-between}
 .bottom{position:fixed;z-index:5;left:0;right:0;bottom:0;display:flex;align-items:end;justify-content:center;pointer-events:none;padding:20px 18px 22px}
 .bottom>*{pointer-events:auto}
@@ -156,8 +156,8 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="top-actions"><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
 </header>
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
-<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架巡覽"><button id="shelfViewBtn" type="button">▥ 檢視實體書架</button><button id="shelfNextBtn" type="button" hidden>下一座 ›</button><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
-<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
+<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
 <header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
@@ -316,7 +316,6 @@ function closeBook(){closeReader();$('drawerWrap').classList.remove('open');sync
 function setBookActive(b,active){
  if(!b||b.active===active)return;
  b.active=active;storeBooks();
- if(active&&window.LivingScene?.isShelfView?.()){window.LivingScene.returnToOrbit();$('shelfViewBtn').textContent='▥ 檢視實體書架';$('shelfNextBtn').hidden=true;}
  // Close the overlay BEFORE the motion, otherwise WebGL's power budget pauses frames.
  closeBook();updateUI();
  window.LivingScene?.rebuild?.();
@@ -325,9 +324,6 @@ function setBookActive(b,active){
 }
 function moveBook(){const b=book();if(b)setBookActive(b,!b.active)}
 function summonBook(id){const b=BOOKS.find(x=>x.id===id);if(!b)return;select(id);setBookActive(b,true)}
-function exitShelfView(){window.LivingScene?.returnToOrbit?.();$('shelfViewBtn').textContent='▥ 檢視實體書架';$('shelfNextBtn').hidden=true;updateUI()}
-$('shelfViewBtn').onclick=()=>{if(window.LivingScene?.isShelfView?.()){exitShelfView();return;}const target=book()?.active?BOOKS.find(x=>!x.active)?.id:book()?.id;const info=window.LivingScene?.focusShelf?.(target);if(!info){toast('3D 尚未載入，可從上方書籍清單選擇書本');return;}$('shelfViewBtn').textContent='↩ 返回環繞視角';$('shelfNextBtn').hidden=false;$('shelfCount').textContent='第 '+(info.index+1)+' / 7 座 · '+info.count+' 本在此櫃 · 每櫃 25 格';};
-$('shelfNextBtn').onclick=()=>{const info=window.LivingScene?.nextShelf?.();if(info)$('shelfCount').textContent='第 '+(info.index+1)+' / 7 座 · '+info.count+' 本在此櫃 · 每櫃 25 格';};
 function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
@@ -436,19 +432,15 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.
 stage.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
-let shelfViewIndex=null;
-let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.1,0);
+let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.9,0);
 const targetAngle=new THREE.Vector2(0,.17);
 function cameraUpdate(){
- if(shelfViewIndex!==null){
-  // Every viewpoint looks directly into one 5×5 cabinet; stage retains 3D interactions.
-  const shelf=shelves[shelfViewIndex];shelf.updateWorldMatrix(true,false);
-  camera.position.copy(shelf.localToWorld(new THREE.Vector3(0,4.15,9.0)));
-  camera.lookAt(shelf.localToWorld(new THREE.Vector3(0,4.05,0)));
- }else{
-  const a=Math.max(-1.15,Math.min(1.15,theta)),b=Math.max(-.04,Math.min(.77,phi));const horizontal=distance*Math.cos(b);
-  camera.position.set(Math.sin(a)*horizontal,look.y+Math.sin(b)*distance,Math.cos(a)*horizontal);camera.lookAt(look);
- }
+ // Free 360-degree yaw around the world. No fixed bookshelf camera.
+ // Pitch is wide but bounded so visitors do not clip through the floor.
+ const tilt=THREE.MathUtils.clamp(phi,-.48,1.27);
+ const horizontal=distance*Math.cos(tilt);
+ camera.position.set(Math.sin(theta)*horizontal,look.y+Math.sin(tilt)*distance,Math.cos(theta)*horizontal);
+ camera.lookAt(look);
  window.LivingScene?.invalidate?.();
 }
 cameraUpdate();
@@ -469,10 +461,10 @@ cyl(3.02,3.35,.36,0,-.13,0,stone2);cyl(2.85,2.96,.22,0,.16,0,blackstone);cyl(2.4
 for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,scene,Math.PI/2);
 const runes=[];
 for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold);rune.rotation.y=-a;runes.push(rune)}
-// Grand bookcases behind and around central podium, with individual book spines.
+// Seven real, empty 5×5 bookcases occupy only the front arc of the world.
+// No decorative/fake book meshes: only registered public or authorized GEN2 books occupy a slot.
 const shelves=[];
 const shelfSlotPlate=simple(0x796948,.20,.7),shelfDivider=simple(0x5d4a37,.15,.8);
-const shelfColors=[0x634a4c,0x376060,0x5b607d,0x886848,0x465375,0x63724e,0x765a82,0x8b6766];
 function makeShelf(angle,radius=11.3){const group=new THREE.Group();group.position.set(Math.sin(angle)*radius,0,-Math.cos(angle)*radius);group.rotation.y=-angle;scene.add(group);
 box(7.1,8.4,.78,0,3.8,0,wood,group);box(7.35,.23,1,0,8.04,0,woodedge,group);box(7.4,.28,1,0,.10,0,woodedge,group);
 for(const xx of [-3.4,3.4])box(.27,8.0,1.0,xx,4.0,0,woodedge,group);
@@ -627,10 +619,10 @@ function pick(e){
 }
 const touchPoints=new Map();
 renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
-renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,9.0,19.5);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving&&shelfViewIndex===null){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,0,.62);cameraUpdate()}}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.48,1.27);cameraUpdate()}}});
 renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
 renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
-renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,9,19.5);cameraUpdate()},{passive:false});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,7.5,27);cameraUpdate()},{passive:false});
 function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
@@ -689,11 +681,7 @@ notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
- reset(){shelfViewIndex=null;theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
- isShelfView(){return shelfViewIndex!==null},
- focusShelf(id){const idx=books.findIndex(b=>b.id===id&&!b.active);const slot=Placement3D.shelfSlot(idx>=0?idx:(books.findIndex(b=>!b.active)>=0?books.findIndex(b=>!b.active):0));shelfViewIndex=slot?.shelfIndex??3;cameraUpdate();invalidate();return {index:shelfViewIndex,count:books.filter((b,i)=>!b.active&&Placement3D.shelfSlot(i)?.shelfIndex===shelfViewIndex).length}},
- nextShelf(){shelfViewIndex=shelfViewIndex===null?3:(shelfViewIndex+1)%shelves.length;cameraUpdate();invalidate();return {index:shelfViewIndex,count:books.filter((b,i)=>!b.active&&Placement3D.shelfSlot(i)?.shelfIndex===shelfViewIndex).length}},
- returnToOrbit(){shelfViewIndex=null;cameraUpdate();invalidate()},
+ reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
  syncRender,invalidate
 });
 syncRender();
