@@ -188,6 +188,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button">讀取正式書庫</button> <button id="reuseGen2" type="button">沿用此站 PackageCanvas 授權</button> <button id="disconnectGen2" type="button">斷線清除</button> <button>關閉</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
+<script src="book-placement.js?v=orbital-shelves-20261013"></script>
 <script src="public-catalog.js?v=public-regression-20261013"></script>
 <script src="gen2-editor.js?v=md-workbench-20261013"></script>
 <script>
@@ -195,11 +196,12 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 const BOOKS=[], CARDS=Object.create(null), BOOK_CARDS=Object.create(null);
 const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
+const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
 let selectedId='research',motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
-function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(active.length&&active.length<=7){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
@@ -209,7 +211,8 @@ function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
 function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;storeBooks();updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
 function updateUI(){
 const b=book();$('openBtn').disabled=!b;$('prevBtn').disabled=!b;$('nextBtn').disabled=!b;$('fallbackOpen').disabled=!b;if(!b){$('focusTitle').textContent='尚未連接正式知識庫';$('focusSubtitle').textContent='請授權讀取 GEN2 main';$('bookList').replaceChildren();$('orbitCount').textContent='0 本環繞';return;}$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
-$('orbitCount').textContent=BOOKS.filter(x=>x.active).length+' 本環繞';
+const orbitTotal=BOOKS.filter(x=>x.active).length;
+$('orbitCount').textContent=orbitTotal+' 本環繞 · '+(Placement?.ringCount?.(orbitTotal)||0)+' 圈 · '+(BOOKS.length-orbitTotal)+' 本在書架';
 $('bookList').replaceChildren();
 BOOKS.forEach(x=>{const btn=document.createElement('button');btn.className='book-entry'+(x.id===selectedId?' active':'');btn.type='button';btn.setAttribute('aria-label','選取'+x.name);
 const sw=document.createElement('span');sw.className='swatch';sw.style.background=x.color;
@@ -301,8 +304,17 @@ function renderFunctions(b){
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
 function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
-function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
-b.active=!b.active;storeBooks();toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
+function setBookActive(b,active){
+ if(!b||b.active===active)return;
+ b.active=active;storeBooks();
+ // Close the overlay BEFORE the motion, otherwise WebGL's power budget pauses frames.
+ closeBook();updateUI();
+ window.LivingScene?.rebuild?.();
+ window.LivingScene?.syncRender?.();
+ toast(active?'✧ '+b.name+' 正從書架飛來':'▥ '+b.name+' 正飛回書架');
+}
+function moveBook(){const b=book();if(b)setBookActive(b,!b.active)}
+function summonBook(id){const b=BOOKS.find(x=>x.id===id);if(!b)return;select(id);setBookActive(b,true)}
 function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
@@ -393,7 +405,7 @@ setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
-window.LivingLibrary={books:BOOKS,select,openBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
+window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
 })();
 </script>
 <script type="module">
