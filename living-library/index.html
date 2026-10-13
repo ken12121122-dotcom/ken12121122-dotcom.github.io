@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
+<meta name="living-library-release" content="2026-10-14.following-orbit.2">
 <title>Living Library｜念動圖書館 • 3D 概念場景</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。沒有連接正式知識庫。">
 <style>
@@ -214,6 +215,14 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <script src="gen2-editor.js?v=md-workbench-20261013"></script>
 <script>
 (function(){
+// Visible only when ?verify=1 is requested. Unmodified game UI otherwise.
+if(new URLSearchParams(window.location.search).get('verify')==='1'){
+ const proof=document.createElement('div');
+ proof.id='livingReleaseProof';proof.setAttribute('role','status');
+ proof.style.cssText='position:fixed;z-index:99;top:78px;left:12px;max-width:min(88vw,350px);background:#0b162de8;color:#fff0c7;border:1px solid #edc67e;border-radius:8px;padding:7px 11px;font:600 11px/1.6 system-ui,sans-serif;pointer-events:none;white-space:pre-line';
+ proof.textContent='正式網頁標記：2026-10-14.following-orbit.2\n等待 3D 初始化……';
+ document.body.appendChild(proof);
+}
 const BOOKS=[], CARDS=Object.create(null), BOOK_CARDS=Object.create(null);
 const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
@@ -860,11 +869,22 @@ function stopRenderLoop(){
  running=false;
  renderer.setAnimationLoop(null);
 }
+let proofPaintAt=0;
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
  stepAvatar(dt);
  updateOrbit(elapsed,now);
+ if(now-proofPaintAt>250){
+  const proof=document.getElementById('livingReleaseProof');
+  if(proof){
+   const x=n=>Number(n).toFixed(1);
+   proof.textContent='正式網頁：2026-10-14.following-orbit.2\n人物：'+x(keeper.position.x)+', '+x(keeper.position.z)
+    +'｜漂浮錨點：'+x(bookOrbitAnchor.x)+', '+x(bookOrbitAnchor.z)
+    +'\n地面法陣：0.0, 0.0（固定）';
+   proofPaintAt=now;
+  }
+ }
  if(isMotion()&&!reduced){
    dust.rotation.y=elapsed*.002;
    if(!exploring)keeper.rotation.y=Math.sin(elapsed*.23)*.06;
