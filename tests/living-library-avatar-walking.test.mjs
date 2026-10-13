@@ -42,7 +42,7 @@ test('exploration mode is opt-in and leaves the original camera available',async
  assert.ok(s.includes('id="walkPad"'),'left touch joystick');
  assert.ok(s.includes('src="avatar-movement.js'),'walking helper loaded separately');
  assert.ok(s.includes("showExploreMode(!exploring)"),'switch back to original free camera');
- assert.ok(s.includes('look.set(0,2.1,0)'),'old central camera target restored in viewing mode');
+ assert.ok(s.includes('look.set(0,2.9,0)'),'original full-library center target restored in viewing mode');
  assert.ok(s.includes('distance=distanceBeforeExplore'),'old viewing distance restored');
  assert.ok(s.includes('Math.sin(theta)*horizontal'),'camera retains free horizontal rotation');
  assert.ok(!s.includes('shelfViewIndex'),'no locked shelf tour');
@@ -67,4 +67,43 @@ test('walking keeps existing book interactions and pauses behind readers',async(
  assert.ok(s.includes('if(overlay&&hasWalkInput()){walkKeys.clear();resetJoystick()}'),'held inputs must stop when book opens');
  assert.ok(s.includes('window.LivingLibrary.summonBook(id)'),'physical books remain selectable');
  assert.ok(s.includes("$('openBtn').onclick=openBook"),'existing book opening control still wired');
+});
+
+
+test('camera WORLD position follows the moving avatar, not only the lookAt target',async()=>{
+ const source=await html();
+ const start=source.indexOf('function cameraUpdate(){'),end=source.indexOf('\ncameraUpdate();',start);
+ assert.ok(start>=0&&end>start,'3D camera function missing');
+ const code=source.slice(start,end);
+ assert.ok(code.includes('look.x+Math.sin(theta)*horizontal'),'camera position must track avatar X');
+ assert.ok(code.includes('look.z+Math.cos(theta)*horizontal'),'camera position must track avatar Z');
+ const simulate=new Function('yaw','targetA','targetB',[
+  "const THREE={MathUtils:{clamp:(x,a,b)=>Math.max(a,Math.min(b,x))}};",
+  "const window={LivingScene:null};",
+  "let theta=yaw,phi=.17,distance=6.8;",
+  "const look={x:targetA.x,y:2.1,z:targetA.z};",
+  "const camera={position:{set(x,y,z){this.x=x;this.y=y;this.z=z}},lookAt(target){this.target={x:target.x,y:target.y,z:target.z}}};",
+  code,
+  "cameraUpdate();",
+  "const first={position:{...camera.position},target:{...camera.target}};",
+  "look.x=targetB.x;look.z=targetB.z;cameraUpdate();",
+  "return {first,second:{position:{...camera.position},target:{...camera.target}}};"
+ ].join('\n'));
+ for(const yaw of [0,Math.PI/2,Math.PI,3*Math.PI/2]){
+  const t=simulate(yaw,{x:0,z:0},{x:4,z:-3});
+  assert.ok(Math.abs((t.second.position.x-t.first.position.x)-4)<1e-8,
+   'camera X must follow walking target X at yaw '+yaw);
+  assert.ok(Math.abs((t.second.position.z-t.first.position.z)+3)<1e-8,
+   'camera Z must follow walking target Z at yaw '+yaw);
+  assert.deepEqual(t.second.target,{x:4,y:2.1,z:-3},'view must remain pointed at avatar');
+ }
+});
+
+test('explore zoom and phone resize keep following, freeview restores former orbit',async()=>{
+ const s=await html();
+ assert.ok(s.includes('distanceBeforeExplore=distance;distance=6.8;'),'walk camera should be close enough to see figure');
+ assert.ok(s.includes('exploring?4.5:7.5,exploring?13:27'),'explore zoom must not use full library zoom range');
+ assert.ok(s.includes('if(exploring)distance=THREE.MathUtils.clamp(distance,4.5,13)'),'resize does not teleport back to distant view');
+ assert.ok(s.includes('distance=distanceBeforeExplore'),'original free viewing distance restored when exiting');
+ assert.ok(s.includes('look.set(0,2.9,0)'),'free view restores original central target');
 });
