@@ -243,7 +243,14 @@ function openCardReader(card){
  $('drawerWrap').classList.add('reader-mode');
  $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
  $('editorPane').hidden=true;
- if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;}
+ if(card.nativeRoute&&(card.url.startsWith('amin-library:')||navigator.userAgent.includes('LivingLibraryNative/'))){
+  $('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();
+  const p=document.createElement('p');p.textContent=card.desc+'\n由念動圖書館 APK 開啟原有功能；返回後仍在這本書中。';page.append(p);
+  $('readerExternal').removeAttribute('href');$('readerExternal').textContent='Android 原生功能';
+  if(navigator.userAgent.includes('LivingLibraryNative/')){const a=document.createElement('a');a.href='amin-library://'+card.nativeRoute;a.textContent='開啟 '+card.title+' →';page.append(a);}
+  else{const p=document.createElement('p');p.textContent='目前為網頁模式。此功能需使用新版念動圖書館 APK。';page.append(p);}
+ }
+ else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;}
  else{$('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();const p=document.createElement('p');p.textContent=card.desc+'\n此功能使用原網站登入，於新分頁開啟。';const a=document.createElement('a');a.href=card.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='開啟 '+card.title+' ↗';page.append(p,a);}
 
  $('readerBack').focus();

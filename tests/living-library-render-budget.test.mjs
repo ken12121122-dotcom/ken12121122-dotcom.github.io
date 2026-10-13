@@ -6,7 +6,7 @@ import {runInNewContext} from 'node:vm';
 const load=()=>readFile(new URL('../living-library/index.html',import.meta.url),'utf8');
 
 function harness(html,{mobile=true,motion=true,reduced=false}={}){
-  const start=html.indexOf("const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;");
+  const start=html.indexOf("const reduced=preferReduced;");
   const end=html.indexOf('\nsyncRender();',start);
   assert.ok(start>=0&&end>start,'render-budget controller must be present');
   const script=html.slice(start,end+'\nsyncRender();'.length);
@@ -34,9 +34,9 @@ function harness(html,{mobile=true,motion=true,reduced=false}={}){
     },
     addEventListener:listeners('document')
   };
-  const context={window,document,renderer,scene:{},camera:{},
+  const context={preferReduced:reduced,window,document,renderer,scene:{},camera:{},
     dust:{rotation:{y:0}},keeper:{rotation:{y:0}},glow:{emissiveIntensity:0},
-    performance:{now:()=>now},isMotion:()=>motion,updateOrbit(){},
+    performance:{now:()=>now},isMotion:()=>motion,hasFlight:()=>false,updateOrbit(){},
     notifyReady(api){sceneApi=api},rebuild(){},cameraUpdate(){},
     theta:0,phi:0,distance:0};
   runInNewContext(script,context);

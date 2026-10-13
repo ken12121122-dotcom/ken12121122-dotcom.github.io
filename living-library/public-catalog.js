@@ -51,6 +51,26 @@ gpt:['gptBridge']
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
 const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
+// Native navigation only. These cards open existing screens; they execute no
+// commands and are never GEN2 Skill definitions or permission grants.
+const ANDROID_ENTRIES=[
+ ['control','全域控制盤','手把式游標與捲動設定'],
+ ['api','Amin Control API','既有控制 API 設定'],
+ ['keyboard','提示詞鍵盤','鍵盤啟用與提示詞管理'],
+ ['graph','Amin Wiki 關聯圖','原有原生知識關聯圖'],
+ ['appearance','外觀設定','原有佈景與顯示設定'],
+ ['voice-ball','語音球聊天','開啟原有語音球；系統授權仍需自行確認'],
+ ['fox','狐狸控制面板','狐狸與語音球顯示設定'],
+ ['voice','語音指令','原有手機語音入口'],
+ ['brain','AMIN Brain 任務中心','原有私人任務與 Agent 狀態'],
+ ['permissions','權限與裝置','原有通知、安裝來源與電池設定'],
+ ['update','版本與更新','APK 簽章驗證與更新'],
+ ['fox-knowledge','FOX 知識庫','原有唯讀來源；不併入 GEN2'],
+ ['canvas','PackageCanvas','原有授權資料夾與 GEN2 工作台'],
+ ['gen2-runs','GEN2 待核准','由原生畫面確認 OWNER 決定'],
+ ['gen2-chat','GEN2 狐狸聊天','原有 Claude 訂閱聊天入口'],
+ ['finance','財務','原有收支、帳戶與資產畫面']
+];
 const RESEARCH_ID='KW-STARTUP-PLATFORM-20261013';
 function buildCatalog(projection=null){
  const cards=Object.create(null),bookCards=Object.create(null);
@@ -58,6 +78,14 @@ function buildCatalog(projection=null){
  cards[RESEARCH_ID]={id:RESEARCH_ID,kind:'external_reference',sourceLayer:'public',title:'創業技術｜平台成長策略',seal:'◆',number:'研01',guild:'外部研究 · 候選',status:'generated',desc:'Book Protocol、專利、開發架構、授權、募資的策略摘要',url:SITE+'/packagecanvas/startup-platform-growth-v01.html'};
  const books=PUBLIC_BOOKS.map(b=>({...b,sourceLayer:'public',kind:'公開功能書',kb_id:null,publicId:b.id}));
  for(const b of books)bookCards[b.id]=PUBLIC_BOOK_CARDS[b.id].map(canonicalPublicId);
+ books.push({id:'android',publicId:'android',kb_id:null,name:'安卓之書',kind:'公開功能書',sourceLayer:'public',tag:'ANDROID',icon:'⚙',color:'#517f80',description:'原生功能集中在此；需要念動圖書館 Android APK。卡片只開啟原有設定與功能，權限和核准由原畫面確認。',target:'Android 裝置與原生功能',active:true});
+ bookCards.android=[];
+ for(const [route,title,desc] of ANDROID_ENTRIES){const id=route==='canvas'?'public.canvas.workbench':'public.android.'+route;
+  if(route==='canvas')cards[id].nativeRoute='canvas';
+  else cards[id]={id,title,desc,url:'amin-library://'+route,nativeRoute:route,seal:'⚙',number:String(bookCards.android.length+1).padStart(2,'0'),guild:'Android 原有功能',kind:'public_function',sourceLayer:'public',status:'public_entry'};
+  bookCards.android.push(id);
+ }
+ cards['public.gba.runtime'].nativeRoute='gba';
  bookCards.startup.push(RESEARCH_ID);
  for(const [id,c] of Object.entries(projection?.cards||{}))cards[id]={...c,sourceLayer:'gen2',seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(projection.cards).indexOf(id)+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
  for(const [i,b] of (projection?.books||[]).entries()){

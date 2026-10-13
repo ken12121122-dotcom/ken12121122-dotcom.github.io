@@ -25,7 +25,7 @@ test('orbit layout generates multiple real rings instead of limiting to 7 books'
 
 test('public and synthetic GEN2 books share unlimited ring layout and unchanged identities',()=>{
  const catalog=C.buildCatalog();
- assert.equal(catalog.books.length,13);
+ assert.equal(catalog.books.length,14);
  assert.ok(catalog.books.some(b=>b.id==='gpt'));
  const enabled=catalog.books.map(b=>({...b,active:true}));
  assert.equal(L.ringCount(enabled.filter(b=>b.active).length),2);
