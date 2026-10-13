@@ -218,6 +218,10 @@ function toast(text){$('toast').textContent=text;$('toast').classList.add('show'
 function isLocalFunctionPage(url){
  try{
   const u=new URL(url,window.location.href);
+  const current=new URL(window.location.href);
+  // The GPT guide is a public read-only page in this exact book directory.
+  // Relative links keep it in the same candidate preview commit before main is merged.
+  if(u.origin===current.origin&&u.pathname===new URL('./gpt-library-bridge.html',current).pathname)return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
     (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));
  }catch(_){return false}
