@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1424">
+<title>創業計畫｜PackageCanvas</title>
+<style>
+:root{color-scheme:dark;--bg:#091321;--card:#121f32;--card2:#1b2b43;--line:#334a65;--text:#eef5ff;--muted:#adc0d8;--accent:#74d5bd;--amber:#f7cb7c;--bad:#ff9595}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,"Microsoft JhengHei",sans-serif}button,input,select,textarea{font:inherit}button,a{touch-action:manipulation}a{color:#a7d5ff}button{cursor:pointer}.wrap{max-width:1050px;margin:0 auto;padding:14px 16px 95px}.header{position:sticky;top:0;z-index:15;background:#0b1728ed;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.header-in{max-width:1050px;margin:auto;padding:10px 16px;display:flex;align-items:center;gap:12px}.logo{font-weight:800;letter-spacing:.02em;flex:1}.logo small{display:block;color:var(--muted);font-size:11px;font-weight:500}.back{border:1px solid var(--line);background:var(--card);padding:9px 12px;border-radius:10px;color:var(--text);text-decoration:none;white-space:nowrap}.hero{border:1px solid #356071;border-radius:18px;background:radial-gradient(circle at right top,#173f4a 0,transparent 55%),linear-gradient(150deg,#15263b,#101a2a);padding:22px;margin:12px 0 15px}.eyebrow{color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.08em}.hero h1{font-size:clamp(25px,5vw,36px);line-height:1.25;margin:8px 0}.hero p{margin:4px 0;color:#d0e0ee}.pill{display:inline-block;color:var(--accent);background:#17403e;border:1px solid #357a6f;border-radius:999px;padding:3px 9px;font-size:11px;margin-top:10px}.tabs{display:flex;gap:7px;overflow-x:auto;padding:3px 0 12px;scrollbar-width:none}.tabs button{flex:none;border:1px solid var(--line);background:var(--card);color:#c6d7ea;padding:10px 13px;border-radius:11px;white-space:nowrap}.tabs button[aria-selected="true"]{color:#081b21;background:var(--accent);border-color:var(--accent);font-weight:800}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;min-width:0}.card h2{font-size:17px;margin:0 0 8px}.card h3{font-size:15px;margin:0 0 7px}.card p{margin:6px 0;color:#ccdaeb}.card small,.sub{color:var(--muted)}.big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}.progress{background:#263c50;border-radius:999px;height:10px;overflow:hidden;margin:9px 0}.progress span{display:block;background:var(--accent);height:100%;width:0;transition:width .2s}.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 9px}.section-head h2{font-size:19px;margin:0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:1px solid var(--line);border-radius:10px;padding:9px 13px;background:#1d334c;color:var(--text)}.btn.primary{color:#082126;background:var(--accent);font-weight:800;border-color:var(--accent)}.btn:focus-visible,.tabs button:focus-visible,.back:focus-visible{outline:3px solid var(--amber);outline-offset:2px}.field{display:grid;gap:5px;margin:10px 0}.field label{font-size:13px;color:var(--muted);font-weight:700}.field input,.field select,.field textarea,.filterbar select,.filterbar input{width:100%;border:1px solid #4c6581;border-radius:10px;padding:10px 11px;background:#091829;color:var(--text)}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent)}.filterbar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.filterbar input{grid-column:1/-1}.task{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin:9px 0}.task.complete{border-color:#2d755f;background:#102f2c}.taskhead{display:flex;align-items:flex-start;gap:10px}.taskcheck{width:23px;height:23px;flex:none;accent-color:#60d9bb;margin-top:2px}.tasktitle{font-size:15px;font-weight:750;line-height:1.35}.taskmeta{font-size:12px;color:var(--muted);margin-top:5px}.taskbody{flex:1;min-width:0}.tag{font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid #536784;color:#d2e2ef;white-space:nowrap}.tag.flag{color:var(--amber);border-color:#786045}.task .expand{margin-left:auto;min-width:54px;border:1px solid var(--line);background:#1c3249;color:var(--text);border-radius:8px;padding:5px 8px}.detail{display:none;margin-top:11px;border-top:1px solid var(--line);padding-top:10px}.detail.open{display:block}.detail p{color:#d5e3ef;margin:6px 0}.mini{font-size:12px;color:var(--muted)}.notice{border-left:3px solid var(--amber);background:#382e2338;padding:11px 13px;border-radius:8px;color:#f6e1be;margin:12px 0}.notice.safe{border-color:var(--accent);background:#17332c55;color:#c6eede}.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.milestone{border-left:3px solid var(--accent);padding:5px 13px;margin:12px 0 12px 5px}.milestone h3{margin:0;font-size:15px}.milestone p{margin:2px 0;color:var(--muted);font-size:13px}.footer{margin:20px 0;color:var(--muted);font-size:12px}.kbd{font-variant-numeric:tabular-nums}.stat{font-size:12px;color:var(--muted)}.stat strong{color:var(--text)}.linklist{display:grid;gap:8px}.linklist a{display:block;background:#1b2b43;border:1px solid var(--line);padding:10px;border-radius:9px;text-decoration:none}.fileinput{display:none}code{white-space:normal;color:#e3e4ca}
+@media(min-width:760px){.filterbar{grid-template-columns:1.5fr 1fr 1fr}.filterbar input{grid-column:auto}.hero{padding:28px}.task{padding:15px}}
+@media(max-width:430px){.logo{font-size:13px}.logo small{font-size:9px}.back{padding:8px}.wrap{padding:12px 11px 90px}.hero{padding:17px}.taskmeta{font-size:11px}}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-in"><a class="back" href="./index.html" aria-label="返回 PackageCanvas">← 工作台</a><div class="logo">PackageCanvas · 創業計畫<small>獨立切換層 · 手機本機進度</small></div><a class="back" href="./research-navigation-v04.html">研究導航</a></div></header>
+<main class="wrap">
+<section class="hero"><div class="eyebrow">RESEARCH-DRIVEN ENTREPRENEURSHIP</div><h1>先建立公司，再逐步建立研究自由</h1><p>研究能力 → 可驗證成果 → 可授權資產 → 持續收入 → 財務自主</p><span class="pill">候選規劃 v0.1 · 非政府核准文件</span></section>
+<nav class="tabs" role="tablist" aria-label="創業計畫導覽">
+<button type="button" role="tab" data-tab="overview" aria-selected="true">總覽</button>
+<button type="button" role="tab" data-tab="tasks" aria-selected="false">設立任務</button>
+<button type="button" role="tab" data-tab="research" aria-selected="false">研究／產品</button>
+<button type="button" role="tab" data-tab="finance" aria-selected="false">資產／退場</button>
+<button type="button" role="tab" data-tab="settings" aria-selected="false">設定／備份</button>
+</nav>
+<section class="panel active" id="panel-overview" role="tabpanel">
+<div class="grid">
+<div class="card"><small>任務完成進度</small><div class="big" id="overviewCount">0 / 0</div><div class="progress"><span id="progressFill"></span></div><div class="stat" id="overviewPercent">0% · 本機紀錄</div></div>
+<div class="card"><small>下一個候選里程碑</small><h2 id="nextMilestone">確認公司基本資料</h2><p id="nextMilestoneNote">完成前置調查後才進入正式登記。</p></div>
+<div class="card"><small>工作情境</small><h2>彈性安排</h2><p>上班空檔只做不影響本職工作的簡短查核；深度規劃留到專注時間；銀行、會計師等排平日聯繫。</p></div>
+</div>
+<div class="section-head"><h2>你要建立的事業</h2></div>
+<div class="card">
+<p><strong>研究核心：</strong>學習科學、快速學習方法、研究工具與教育創新。個人快速學習的優勢仍是待驗證假設。</p>
+<p><strong>公司角色：</strong>以低成本承接合法的研究型服務、產品與授權，測試市場付費能力。</p>
+<p><strong>長期願景：</strong>累積可獨立移轉的智慧資產，逐步擴大為教育研究中心，保留研究自由。</p>
+<div class="notice safe">這裡是「候選計畫」而不是已成立公司。勾選表示個人準備進度，並不代表政府審核、法規符合或 OWNER 核准。</div>
+</div>
+<div class="section-head"><h2>建議時程</h2><button type="button" class="btn" data-go="tasks">查看任務 →</button></div>
+<div class="card">
+<div class="milestone"><h3>10/14–10/21｜第一階段 · 基礎確認</h3><p>住宅登記條件、公司型態、官方法規與風險</p></div>
+<div class="milestone"><h3>10/22–10/28｜第二階段 · 重大決策</h3><p>公司名稱、營業項目、股權、資本額</p></div>
+<div class="milestone"><h3>10/29–11/04｜第三階段 · 文件準備</h3><p>章程、金融機構與會計師詢價、清點設立文件</p></div>
+<div class="milestone"><h3>11/05–11/09｜預留緩衝</h3><p>不排入必做事項，避免行程衝突</p></div>
+<div class="milestone"><h3>11/10–11/20｜第四階段 · 辦理設立</h3><p>籌備戶、實繳資本、查核、公司登記（視前置確認結果順延）</p></div>
+<div class="milestone"><h3>11/23–11/27｜第五階段 · 正式營運準備</h3><p>稅籍、帳務制度、權利歸屬與後續申報排程</p></div>
+<div class="milestone"><h3>11/30 起｜第六階段 · 研究商業化</h3><p>挑一個研究主題，完成最小產品與真實客戶測試</p></div>
+</div>
+</section>
+<section class="panel" id="panel-tasks" role="tabpanel">
+<div class="section-head"><h2>公司設立任務</h2><span class="stat" id="taskCount"></span></div>
+<div class="notice">建議日期可在每項任務內修改。未確認所在地、公司型態及營業項目之前，不要送件。平日空檔僅在工作允許且不使用雇主機密資源的前提下安排。</div>
+<div class="filterbar"><input id="search" placeholder="搜尋任務或完成證據" aria-label="搜尋任務"><select id="placeFilter" aria-label="按工作情境篩選"><option value="all">全部工作情境</option><option value="flex">上班空檔</option><option value="focus">下班／專注</option><option value="contact">平日對外聯繫</option><option value="counter">臨櫃／工作日</option></select><select id="statusFilter" aria-label="按進度篩選"><option value="all">全部進度</option><option value="pending">未完成</option><option value="done">已勾選</option></select></div>
+<div id="taskList" aria-live="polite"></div>
+</section>
+<section class="panel" id="panel-research" role="tabpanel">
+<div class="section-head"><h2>研究與商業模型</h2></div>
+<div class="grid">
+<div class="card"><small>長期主軸</small><h2>快速學習與教育研究</h2><p>拆解學習策略 → 對照既有研究 → 定義客觀測量 → 必要時通過倫理審查 → 驗證教學效果。</p><span class="tag flag">研究假設，尚無普遍有效證據</span></div>
+<div class="card"><small>候選收入線 A</small><h2>企業 AI 與知識工作流程</h2><p>將可證明有效的改善方法做成有交付標準的服務；未經驗證不得承諾節省比例或絕對資安。</p><span class="tag flag">候選產品</span></div>
+<div class="card"><small>候選收入線 B</small><h2>教學方法／創業大腦訓練</h2><p>把學習策略與問題拆解方法轉成課程、模板及工具，先測試付費與學習成效。</p><span class="tag flag">候選產品</span></div>
+<div class="card"><small>候選收入線 C</small><h2>知識工具與方法授權</h2><p>以可追溯來源、獨立可使用的成果建立授權價值；原公司資料與個人權利須完全分離。</p><span class="tag flag">候選產品</span></div>
+</div>
+<div class="section-head"><h2>第一輪市場驗證</h2><button class="btn" type="button" data-go="tasks">進入任務</button></div>
+<div class="card"><p>① 定義一種客群與一項具體痛點。② 建立可供展示但不含公司機密的原型。③ 訪談需求並取得可比較的回饋。④ 以付費訂單、交付工時及淨收益作為現實證據。⑤ 未成功則調整假設，不以個人熱情代替市場驗證。</p></div>
+</section>
+<section class="panel" id="panel-finance" role="tabpanel">
+<div class="section-head"><h2>資產化與退場</h2></div>
+<div class="grid">
+<div class="card"><small>目標，不是現有收入</small><div class="big" id="incomeDisplay">尚未設定</div><p>個人的每月被動收入目標只保存在此裝置；須另計稅務、通膨、投資波動與長壽風險。</p><div class="field"><label for="field-targetIncome">每月被動收入目標（元，本機資料）</label><input id="field-targetIncome" data-field="targetIncome" type="number" min="0" step="1000" placeholder="請自行輸入"></div></div>
+<div class="card"><small>先累積的資產</small><h2>可移轉、可獨立運作</h2><p>合法持有的教材、軟體、研究方法、合約、品牌與可重複的客戶關係。</p></div>
+</div>
+<div class="card" style="margin-top:12px"><h2>財務自由不是公司估值</h2><p>先完成現金流、毛利與稅負紀錄；公司出售所得是一次性資本，不能直接等同永久被動收入。資產提領或權利金都有風險，需要獨立財務規劃。</p>
+<div class="milestone"><h3>Gate 1｜可交易價值</h3><p>由外部、非關係型客戶證明願意付費。</p></div>
+<div class="milestone"><h3>Gate 2｜可重複交付</h3><p>至少能由文件、工具或其他人重複交付，降低個人投入。</p></div>
+<div class="milestone"><h3>Gate 3｜可合法移轉</h3><p>IP 權屬、第三方授權、客戶契約、資料合規及股權皆清晰。</p></div>
+<div class="milestone"><h3>Gate 4｜可安全離開現職</h3><p>有經證實的替代收入與足夠生活緩衝，才考慮離職。門檻由本人決定。</p></div>
+</div>
+</section>
+<section class="panel" id="panel-settings" role="tabpanel">
+<div class="section-head"><h2>私有公司基本資料</h2></div>
+<div class="notice safe">以下資料只保存在此瀏覽器的本機儲存，不上傳 GitHub、Google Drive 或 GEN2。更換手機、清除瀏覽資料可能遺失，請定期匯出備份。避免輸入完整住址、身分證號或帳戶密碼。</div>
+<div class="card">
+<div class="grid">
+<div class="field"><label for="field-companyName">候選公司名稱</label><input id="field-companyName" data-field="companyName" placeholder="尚未確認"></div>
+<div class="field"><label for="field-city">預計登記縣市（不填完整地址）</label><input id="field-city" data-field="city" placeholder="待確認"></div>
+<div class="field"><label for="field-type">候選公司型態</label><select id="field-type" data-field="orgType"><option value="">尚未核准</option><option>一人有限公司</option><option>多人有限公司</option><option>股份有限公司</option><option>其他／待評估</option></select></div>
+<div class="field"><label for="field-capital">候選資本額（元，非實繳證明）</label><input id="field-capital" data-field="capital" type="number" min="0" step="1000" placeholder="待決策"></div>
+</div>
+<div class="field"><label for="field-scope">核心業務定位（候選）</label><textarea id="field-scope" data-field="scope" placeholder="例如：研究方法開發與技術授權"></textarea></div>
+<div class="field"><label for="field-privateNotes">決策備忘與未解問題</label><textarea id="field-privateNotes" data-field="privateNotes" placeholder="這些內容不會進入公開程式碼"></textarea></div>
+<p class="mini" id="saveState">資料僅儲存在本機</p>
+</div>
+<div class="section-head"><h2>備份／移轉</h2></div>
+<div class="card"><p>匯出為 JSON 可以在同一網站的其他裝置手動匯入。系統不會自動跨裝置同步，匯出檔包含你的個人決策與勾選紀錄，請妥善保存。</p><div class="row"><button type="button" class="btn primary" id="exportBtn">⬇ 匯出本機計畫</button><button type="button" class="btn" id="importBtn">⬆ 匯入備份</button><input class="fileinput" id="importFile" type="file" accept=".json,application/json"></div></div>
+<div class="section-head"><h2>官方查核入口</h2></div>
+<div class="card linklist"><a href="https://onestop.nat.gov.tw/" target="_blank" rel="noopener noreferrer">經濟部｜公司設立一站式申請 ↗</a><a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=J0080001" target="_blank" rel="noopener noreferrer">全國法規資料庫｜公司法 ↗</a><a href="https://gcis.nat.gov.tw/" target="_blank" rel="noopener noreferrer">商工行政服務入口 ↗</a><a href="https://www.etax.nat.gov.tw/" target="_blank" rel="noopener noreferrer">財政部稅務入口 ↗</a></div>
+<div class="notice">對外設立、章程、股權、資本額、稅務及智慧財產權等正式決策，須由本人確認並在必要時取得專業意見。本工具只追蹤候選草稿。</div>
+</section>
+<footer class="footer">PackageCanvas · Startup Layer v0.1 ／ 公開 repo 僅保存通用介面與候選任務；個人資料本機保存。<br>review_status: generated ／ 正式變更需要 OWNER 審查 ／ 不自動修改 main、Drive 或任何政府系統。</footer>
+</main>
+<script>
+(function(){
+'use strict';
+const KEY='packagecanvas-startup-layer-v1';
+const places={flex:'上班空檔',focus:'下班／專注',contact:'平日對外聯繫',counter:'臨櫃／工作日'};
+const tasks=[
+{id:'S01',phase:'基礎確認',date:'2026-10-14',place:'flex',title:'確認自有住宅可否登記公司',check:'確認所在地主管機關、使用分區、建物用途、管理規約、房屋稅及地價稅影響；勿將住宅地址放進公開網頁。',evidence:'官方查詢結果或承辦窗口答覆摘要',gate:true},
+{id:'S02',phase:'基礎確認',date:'2026-10-16',place:'flex',title:'整理公司設立法規與必要文件',check:'區分有限公司、商業登記與其他形式，核對現行官方規費、申請文件與稅籍程序；資訊來源需記日期。',evidence:'來源清單及文件盤點',gate:false},
+{id:'S03',phase:'基礎確認',date:'2026-10-21',place:'focus',title:'確認現職工作與個人研究的權利界線',check:'檢視工作契約、職務發明、著作財產權、競業及保密義務，不搬用雇主資料、帳號、設備或內部研究成果。',evidence:'個人可用資產與不可用資產界線表',gate:true},
+{id:'S04',phase:'重大決策',date:'2026-10-22',place:'flex',title:'公司名稱預查候選名單',check:'準備 3–5 個候選名稱，檢查公司名稱、商標及網域衝突；預查通過不代表商標權。',evidence:'候選名單及名稱預查紀錄',gate:false},
+{id:'S05',phase:'重大決策',date:'2026-10-23',place:'focus',title:'決定公司型態與股東結構',check:'如先前曾有合夥版本，應先釐清是否延續；確認創辦人、股東、董事及未來引進合夥人的方式，未經本人核准不得定案。',evidence:'OWNER 簽認之公司型態與股東決策',gate:true},
+{id:'S06',phase:'重大決策',date:'2026-10-27',place:'flex',title:'選定營業項目與業務界線',check:'釐清 AI/軟體、教育技術、研究顧問等項目；判斷是否涉及需許可之業務，不把顧問建議寫成法定簽證。',evidence:'營業項目候選表與官方查核來源',gate:true},
+{id:'S07',phase:'重大決策',date:'2026-10-28',place:'focus',title:'決定資本額與初期預算上限',check:'區分規費、會計師簽證、實繳資本及營運週轉；預留申報與稅務成本，不使用虛偽資本額。',evidence:'資金來源、預算及資本額核准紀錄',gate:true},
+{id:'S08',phase:'文件準備',date:'2026-10-29',place:'focus',title:'以既有章程 v0.1 製作正式申請候選稿',check:'不覆蓋既有章程；確認公司名稱、地址、股東、董事、資本額、盈虧分派與治理條文，正式版需人工核准。',evidence:'新版本章程與待決策事項清單',gate:true},
+{id:'S09',phase:'文件準備',date:'2026-10-30',place:'contact',title:'詢問銀行籌備戶開戶文件與預約方式',check:'確認銀行指定文件、實際出席人、印章、流程與時段；尚未預約前不得標示已預約。',evidence:'銀行回覆及預約資料',gate:false},
+{id:'S10',phase:'文件準備',date:'2026-11-02',place:'contact',title:'詢問會計師資本額查核報價與流程',check:'確認資格、費用、查核資料、收費及交付時程；自己記帳不代表可自行簽證。',evidence:'報價及受理文件清單',gate:false},
+{id:'S11',phase:'文件準備',date:'2026-11-04',place:'flex',title:'送件前文件缺口盤點',check:'整理申請書、章程、簽名印章、身分文件、地址證明及主管機關所需附件。缺資料即暫停送件。',evidence:'送件前完整檢查清單',gate:false},
+{id:'S12',phase:'正式設立',date:'2026-11-10',place:'counter',title:'開設公司籌備戶',check:'前置決策完成且銀行受理後，按指定工作日前往辦理；不得將私人帳戶直接當作公司籌備戶。',evidence:'合法開戶文件／銀行確認',gate:true},
+{id:'S13',phase:'正式設立',date:'2026-11-12',place:'counter',title:'完成實際出資與資本額查核',check:'依銀行與會計師流程辦理；資本額如有調整需回頭更新章程與文件，不可倒填或補造證明。',evidence:'資本額查核報告與相關文件',gate:true},
+{id:'S14',phase:'正式設立',date:'2026-11-17',place:'flex',title:'經本人核准後送公司設立登記',check:'送件前確認全部欄位與附件、現行規費、申報人資訊；只在主管機關回覆後記錄受理或核准。',evidence:'送件收據、受理編號或主管機關回覆',gate:true},
+{id:'S15',phase:'正式設立',date:'2026-11-20',place:'contact',title:'查核登記進度與需補件事項',check:'若主管機關要求補件，先保存通知與修正版；不可用任務勾選代替正式核准。',evidence:'主管機關狀態截圖或正式函件',gate:false},
+{id:'S16',phase:'營運準備',date:'2026-11-23',place:'contact',title:'確認稅籍、發票與各項申報義務',check:'詢問稅捐機關，確認營業稅、營所稅、扣繳與適用制度；沒有營收也可能有申報義務。',evidence:'稅務登記與申報行事曆',gate:true},
+{id:'S17',phase:'營運準備',date:'2026-11-24',place:'focus',title:'建立公司帳簿、憑證與收支管理',check:'公司帳戶與個人帳戶分離，保存收入支出憑證及會計政策；必要時諮詢會計專業。',evidence:'會計科目、憑證流程及月結範本',gate:false},
+{id:'S18',phase:'營運準備',date:'2026-11-26',place:'focus',title:'建立研究資料及智慧財產權治理',check:'個人原有成果、公司委託成果、開源套件、第三方授權及工作成果各自留存權屬證據；公開前人工核准。',evidence:'研究資產登錄、授權檢核與版本日誌',gate:true},
+{id:'S19',phase:'營運準備',date:'2026-11-27',place:'flex',title:'確認公司設立文件歸檔及營運風險',check:'核對登記核准、稅籍狀態、銀行帳戶、會計申報期限與資料備份；未取得正式文件就保持 pending。',evidence:'設立後稽核清單',gate:true},
+{id:'S20',phase:'研究商業化',date:'2026-11-30',place:'focus',title:'選定第一個可驗證的研究型產品',check:'在 AI 知識工具、快速學習方法、教學設計等候選中只選一項，定義客群、問題、成果和禁用資料。',evidence:'一頁產品假設與研究範圍',gate:true},
+{id:'S21',phase:'研究商業化',date:'2026-12-10',place:'flex',title:'蒐集潛在客戶需求與競品資料',check:'先以合法公開資料調查，記錄可確認來源；訪談需保護個資，不憑空宣稱市場需求。',evidence:'需求訪談／競品對照紀錄',gate:false},
+{id:'S22',phase:'研究商業化',date:'2026-12-18',place:'focus',title:'製作可展示的最小研究成果或產品',check:'先限制範圍，提出可客觀驗收的成效，不宣稱未經驗證的效率與資安保證。',evidence:'原型展示、測試紀錄、限制清單',gate:false},
+{id:'S23',phase:'研究商業化',date:'2026-12-30',place:'contact',title:'完成第一輪真實付費需求測試',check:'報價、客戶接受與實際收款分開記錄；未收款不得認列已成交。',evidence:'匿名化客戶反饋、合約或實收紀錄',gate:false},
+{id:'S24',phase:'研究商業化',date:'2027-01-08',place:'focus',title:'檢視產品化、授權與退場可行性',check:'比較每小時淨收益、重複銷售、維護成本、IP 可移轉性及自主研究時間；檢討是否值得持續投資。',evidence:'第一次商業化驗證報告與下一輪決策',gate:true}
+];
+const empty=()=>({version:1,checked:{},dates:{},notes:{},evidence:{},fields:{},updatedAt:null});
+let state=empty();
+try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw&&raw.version===1)state=Object.assign(empty(),raw)}catch(e){console.warn('startup state unreadable',e)}
+const byId=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s)?s:'';
+function save(){state.updatedAt=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(state));byId('saveState').textContent='已儲存於本機：'+new Date().toLocaleString('zh-TW')}catch(e){byId('saveState').textContent='本機儲存失敗；請匯出備份';alert('本機儲存失敗：'+e.message)}updateOverview()}
+function go(tab){document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===tab;b.setAttribute('aria-selected',String(active))});document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));window.scrollTo(0,0);if(tab==='tasks')renderTasks()}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+function updateOverview(){const money=Number(state.fields.targetIncome||0);byId('incomeDisplay').textContent=money>0&&Number.isFinite(money)?'NT$'+money.toLocaleString('zh-TW'):'尚未設定';const n=tasks.filter(t=>state.checked[t.id]).length;byId('overviewCount').textContent=n+' / '+tasks.length;byId('overviewPercent').textContent=Math.round(100*n/tasks.length)+'% · 本機紀錄';byId('progressFill').style.width=(100*n/tasks.length)+'%';const next=tasks.find(t=>!state.checked[t.id]);byId('nextMilestone').textContent=next?next.title:'已勾選全部候選任務';byId('nextMilestoneNote').textContent=next?'建議：'+(state.dates[next.id]||next.date)+'｜'+places[next.place]:'請另外核實正式審核與登記結果'}
+function renderTasks(){const q=byId('search').value.trim().toLowerCase(),place=byId('placeFilter').value,status=byId('statusFilter').value;
+const matched=tasks.filter(t=>(place==='all'||t.place===place)&&(status==='all'||(status==='done'&&state.checked[t.id])||(status==='pending'&&!state.checked[t.id]))&&(!q||(t.title+' '+t.check+' '+t.evidence+' '+t.phase).toLowerCase().includes(q)));
+byId('taskCount').textContent=matched.length+' / '+tasks.length+' 項';
+const chunks=[];let phase='';
+matched.forEach(t=>{if(t.phase!==phase){phase=t.phase;chunks.push('<div class="section-head"><h2>'+esc(phase)+'</h2></div>')}
+const checked=!!state.checked[t.id];
+chunks.push('<article class="task'+(checked?' complete':'')+'" data-task="'+t.id+'"><div class="taskhead"><input class="taskcheck" aria-label="標記'+esc(t.title)+'完成" type="checkbox" data-check="'+t.id+'" '+(checked?'checked':'')+'><div class="taskbody"><div class="tasktitle">'+esc(t.title)+'</div><div class="taskmeta">'+esc(t.id)+' · '+esc(state.dates[t.id]||t.date)+' · '+esc(places[t.place])+'</div><div class="row" style="margin-top:7px"><span class="tag">'+esc(t.phase)+'</span>'+(t.gate?'<span class="tag flag">需本人核准</span>':'')+'</div></div><button type="button" class="expand" data-expand="'+t.id+'" aria-expanded="false">詳情</button></div><div class="detail" id="detail-'+t.id+'"><p><b>完成注意事項</b><br>'+esc(t.check)+'</p><p><b>驗收證據</b><br>'+esc(t.evidence)+'</p><div class="field"><label for="date-'+t.id+'">調整目標日期</label><input id="date-'+t.id+'" type="date" data-date="'+t.id+'" value="'+esc(state.dates[t.id]||t.date)+'"></div><div class="field"><label for="evidence-'+t.id+'">實際完成證據／來源（限簡述，不上傳原始文件）</label><textarea id="evidence-'+t.id+'" data-evidence="'+t.id+'" placeholder="未取得資料請填待補來源">'+esc(state.evidence[t.id]||'')+'</textarea></div><div class="field"><label for="note-'+t.id+'">備註／待釐清問題</label><textarea id="note-'+t.id+'" data-note="'+t.id+'">'+esc(state.notes[t.id]||'')+'</textarea></div><p class="mini">勾選只追蹤個人進度。法規符合性、股權、權限及正式送件須另外人工核准。</p></div></article>')});
+byId('taskList').innerHTML=chunks.length?chunks.join(''):'<div class="empty">沒有符合條件的任務</div>';
+}
+byId('taskList').addEventListener('click',e=>{const btn=e.target.closest('[data-expand]');if(!btn)return;const detail=byId('detail-'+btn.dataset.expand);detail.classList.toggle('open');btn.setAttribute('aria-expanded',String(detail.classList.contains('open')));btn.textContent=detail.classList.contains('open')?'收合':'詳情'});
+byId('taskList').addEventListener('change',e=>{const el=e.target;
+if(el.dataset.check){state.checked[el.dataset.check]=el.checked;save();renderTasks();return}
+if(el.dataset.date){state.dates[el.dataset.date]=safeDate(el.value);save();renderTasks()}
+});
+byId('taskList').addEventListener('input',e=>{const el=e.target;if(el.dataset.note){state.notes[el.dataset.note]=el.value.slice(0,5000);save()}if(el.dataset.evidence){state.evidence[el.dataset.evidence]=el.value.slice(0,5000);save()}});
+['search','placeFilter','statusFilter'].forEach(id=>byId(id).addEventListener(id==='search'?'input':'change',renderTasks));
+document.querySelectorAll('[data-field]').forEach(el=>{el.value=state.fields[el.dataset.field]||'';el.addEventListener('input',()=>{state.fields[el.dataset.field]=el.value.slice(0,5000);save()})});
+byId('exportBtn').addEventListener('click',()=>{const data=JSON.stringify({schema:'packagecanvas-startup-private-v1',exportedAt:new Date().toISOString(),state},null,2);const blob=new Blob([data],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='packagecanvas-startup-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)});
+byId('importBtn').addEventListener('click',()=>byId('importFile').click());
+byId('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>500000)throw Error('備份超過 500KB');const data=JSON.parse(await f.text());if(data.schema!=='packagecanvas-startup-private-v1'||data.state?.version!==1)throw Error('備份版本不符');if(!confirm('匯入將取代此裝置的創業任務紀錄，是否繼續？'))return;const incoming=data.state;const validIds=new Set(tasks.map(x=>x.id));const sanitizeMap=(obj,max)=>{const r={};Object.entries(obj&&typeof obj==='object'?obj:{}).forEach(([k,v])=>{if(validIds.has(k)){if(max===0)r[k]=v===true;else if(typeof v==='string')r[k]=v.slice(0,max)}});return r};const allowed=['companyName','city','orgType','capital','scope','privateNotes','targetIncome'];const fields={};allowed.forEach(k=>{if(typeof incoming.fields?.[k]==='string')fields[k]=incoming.fields[k].slice(0,5000)});
+state={version:1,checked:sanitizeMap(incoming.checked,0),dates:sanitizeMap(incoming.dates,10),notes:sanitizeMap(incoming.notes,5000),evidence:sanitizeMap(incoming.evidence,5000),fields,updatedAt:null};document.querySelectorAll('[data-field]').forEach(el=>el.value=state.fields[el.dataset.field]||'');save();renderTasks();alert('備份匯入完成；請核對日期與資料')}catch(err){alert('無法匯入：'+err.message)}finally{e.target.value=''}});
+updateOverview();renderTasks();
+})();
+</script>
+</body></html>
