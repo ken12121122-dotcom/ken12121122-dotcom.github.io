@@ -12,6 +12,18 @@
 button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
 #stage{position:fixed;inset:0;z-index:0;touch-action:none;background:radial-gradient(ellipse at 50% 46%,#28354b 0%,#11192a 40%,#080d18 80%)}
 #stage canvas{display:block;width:100%;height:100%;outline:0}
+.walk-ui{position:fixed;left:clamp(12px,3vw,30px);bottom:calc(188px + env(safe-area-inset-bottom));z-index:7;display:flex;flex-direction:column;align-items:flex-start;gap:9px;pointer-events:none}
+.walk-ui[hidden],.walk-pad[hidden]{display:none!important}
+.walk-ui button,.walk-pad{pointer-events:auto}
+.walk-mode{border:1px solid rgba(241,211,162,.75);border-radius:12px;background:rgba(19,32,49,.95);padding:9px 13px;color:#ffedc9;font-size:12px;box-shadow:0 7px 22px rgba(3,7,17,.55);touch-action:manipulation}
+.walk-mode[aria-pressed="true"]{background:#5c4934;color:#fff8e9}
+.walk-pad{width:116px;height:116px;position:relative;touch-action:none;user-select:none;border:2px solid rgba(231,195,133,.7);border-radius:50%;background:radial-gradient(circle,rgba(107,146,157,.26) 0 26%,rgba(12,24,39,.94) 72%);box-shadow:inset 0 0 18px #0b1729,0 8px 26px #01050d77}
+.walk-pad::before,.walk-pad::after{content:"";position:absolute;pointer-events:none;background:rgba(226,208,176,.25)}
+.walk-pad::before{width:2px;top:14px;bottom:14px;left:calc(50% - 1px)}.walk-pad::after{height:2px;left:14px;right:14px;top:calc(50% - 1px)}
+.walk-knob{position:absolute;width:45px;height:45px;top:50%;left:50%;border-radius:50%;border:2px solid #f0d5a5;background:#637b88;box-shadow:0 0 14px #111e32;transform:translate(-50%,-50%);pointer-events:none}
+.walk-hint{pointer-events:none;max-width:154px;background:#111b2cba;border-radius:7px;padding:5px 7px;font-size:10px;color:#e5d8c7}
+@media(max-width:650px){.walk-ui{left:12px;bottom:calc(219px + env(safe-area-inset-bottom))}.walk-pad{width:104px;height:104px}.walk-knob{width:43px;height:43px}}
+@media(max-height:610px){.walk-ui{bottom:calc(158px + env(safe-area-inset-bottom))}.walk-hint{display:none}}
 .vignette{pointer-events:none;position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,6,12,.50) 0%,transparent 28%,transparent 66%,rgba(3,5,11,.80) 100%),radial-gradient(ellipse at center,transparent 25%,rgba(3,5,12,.40) 100%)}
 .mist{pointer-events:none;position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 80%,rgba(43,148,153,.08),transparent 40%)}
 .top{position:fixed;z-index:5;top:0;left:0;right:0;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:24px 27px;pointer-events:none}
@@ -158,6 +170,12 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<div id="exploreControls" class="walk-ui" hidden aria-label="3D 人物探索">
+<button id="exploreToggle" type="button" class="walk-mode" aria-pressed="false">🎮 人物探索</button>
+<div id="walkPad" class="walk-pad" role="group" aria-label="移動搖桿：向上前進，向下後退，左右平移" hidden>
+<div id="walkKnob" class="walk-knob"></div></div>
+<div id="walkHint" class="walk-hint" hidden>左側搖桿走路 · 右側拖曳視角</div>
+</div>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
 <header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
@@ -190,6 +208,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
 <script src="book-placement.js?v=orbital-shelves-20261013"></script>
+<script src="avatar-movement.js?v=walk-v1-20261013"></script>
 <script src="public-catalog.js?v=public-regression-20261013"></script>
 <script src="render-capability.js?v=software-gpu-20261013"></script>
 <script src="gen2-editor.js?v=md-workbench-20261013"></script>
@@ -423,6 +442,8 @@ let THREE;
 try {
 THREE = await import('https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js');
 const {books,select,notifyReady,isMotion}=window.LivingLibrary;
+const Movement3D=window.LivingAvatarMovement;
+if(!Movement3D)throw new Error("Missing avatar movement module");
 const stage=document.getElementById('stage');
 if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
 const canvas=document.createElement('canvas');
@@ -511,6 +532,99 @@ box(.48,.095,.26,0,1.39,.30,gold,keeper);
 for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
 const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
 const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
+// Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
+// Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
+const exploreUI=document.getElementById('exploreControls');
+const exploreToggle=document.getElementById('exploreToggle');
+const walkPad=document.getElementById('walkPad');
+const walkKnob=document.getElementById('walkKnob');
+const walkHint=document.getElementById('walkHint');
+let exploring=false,joy={x:0,y:0},walkPhase=0,walkDistance=0;
+let distanceBeforeExplore=distance,joystickPointer=null;
+const walkKeys=new Set();
+function resetJoystick(){
+ joy={x:0,y:0};joystickPointer=null;
+ walkKnob.style.transform='translate(-50%,-50%)';
+}
+function exploreInput(){
+ const x=(walkKeys.has('d')?1:0)-(walkKeys.has('a')?1:0);
+ const y=(walkKeys.has('w')?1:0)-(walkKeys.has('s')?1:0);
+ return Movement3D.normalize(joy.x+x,joy.y+y);
+}
+function hasWalkInput(){
+ const v=exploreInput();
+ return exploring&&Math.hypot(v.x,v.y)>.025;
+}
+function showExploreMode(enabled){
+ exploring=Boolean(enabled);
+ walkKeys.clear();resetJoystick();
+ exploreToggle.setAttribute('aria-pressed',String(exploring));
+ exploreToggle.textContent=exploring?'◉ 返回自由觀看':'🎮 人物探索';
+ walkPad.hidden=!exploring;walkHint.hidden=!exploring;
+ if(exploring){
+  distanceBeforeExplore=distance;distance=Math.min(distance,9.2);
+  look.set(keeper.position.x,2.1,keeper.position.z);
+ }else{
+  distance=distanceBeforeExplore;
+  look.set(0,2.1,0);
+  keeper.position.y=.46;
+ }
+ cameraUpdate();syncRender();
+}
+exploreToggle.addEventListener('click',()=>showExploreMode(!exploring));
+function joystickMove(e){
+ const r=walkPad.getBoundingClientRect(),radius=Math.min(r.width,r.height)*.38;
+ const dx=(e.clientX-(r.left+r.width/2))/radius;
+ const dy=((r.top+r.height/2)-e.clientY)/radius;
+ joy=Movement3D.normalize(dx,dy);
+ walkKnob.style.transform='translate(-50%,-50%) translate('+(joy.x*radius)+'px,'+(-joy.y*radius)+'px)';
+ syncRender();
+}
+walkPad.addEventListener('pointerdown',e=>{
+ if(!exploring||joystickPointer!==null)return;
+ e.preventDefault();joystickPointer=e.pointerId;
+ walkPad.setPointerCapture(e.pointerId);joystickMove(e);
+});
+walkPad.addEventListener('pointermove',e=>{
+ if(!exploring||e.pointerId!==joystickPointer)return;
+ e.preventDefault();joystickMove(e);
+});
+function joystickRelease(e){
+ if(e.pointerId!==joystickPointer)return;
+ resetJoystick();syncRender();
+}
+walkPad.addEventListener('pointerup',joystickRelease);
+walkPad.addEventListener('pointercancel',joystickRelease);
+walkPad.addEventListener('lostpointercapture',joystickRelease);
+function editableTarget(t){
+ return !!(t&&(t.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(t.tagName)));
+}
+document.addEventListener('keydown',e=>{
+ if(!exploring||editableTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey)return;
+ const key=e.key.toLowerCase();
+ if('wasd'.includes(key)&&key.length===1){
+  e.preventDefault();walkKeys.add(key);syncRender();
+ }
+});
+document.addEventListener('keyup',e=>{
+ const key=e.key.toLowerCase();
+ if(walkKeys.delete(key)){e.preventDefault();syncRender();}
+});
+window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender();});
+function stepAvatar(dt){
+ if(!hasWalkInput())return false;
+ const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
+ if(next.distance<=.00001)return false;
+ keeper.position.set(next.x,.46,next.z);
+ // Rotate the original librarian silhouette toward the walking direction.
+ const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
+ keeper.rotation.y+=delta*Math.min(1,dt*11);
+ walkDistance+=next.distance;walkPhase+=dt*8;
+ keeper.position.y=.46+(!preferReduced?Math.sin(walkPhase*2)*.045:0);
+ look.set(keeper.position.x,2.1,keeper.position.z);
+ cameraUpdate();return true;
+}
+
 // Dust motes
 const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
 for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
@@ -735,10 +849,11 @@ function stopRenderLoop(){
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
+ stepAvatar(dt);
  updateOrbit(elapsed,now);
  if(isMotion()&&!reduced){
    dust.rotation.y=elapsed*.002;
-   keeper.rotation.y=Math.sin(elapsed*.23)*.06;
+   if(!exploring)keeper.rotation.y=Math.sin(elapsed*.23)*.06;
    glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2);
  }
  renderer.render(scene,camera);
@@ -749,11 +864,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasWalkInput())syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if((isMotion()||hasFlight())&&!reduced){
+ if(((isMotion()||hasFlight())&&!reduced)||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -764,16 +879,18 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',syncRender);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick()}syncRender()});
 window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
 notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
- reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;cameraUpdate();invalidate()},
+ reset(){theta=0;phi=.17;distance=exploring?9.2:(window.innerWidth<650?15.8:14.1);look.set(exploring?keeper.position.x:0,2.1,exploring?keeper.position.z:0);cameraUpdate();invalidate()},
+ isExploreMode(){return exploring},
  syncRender,invalidate
 });
+exploreUI.hidden=false;
 syncRender();
 }catch(error){console.error('Living Library scene failed',error);window.LivingLibrary.showFallback('Three.js 或 WebGL 初始化失敗；可使用書庫清單預覽。');}
 </script>
