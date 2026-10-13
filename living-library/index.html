@@ -52,7 +52,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .note{font-size:10px;color:#b8b9bf;text-align:center;letter-spacing:.03em}
 .drawer-wrap{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(2,5,11,.62);backdrop-filter:blur(9px);padding:16px}
 .drawer-wrap.open{display:flex}
-.drawer{position:relative;max-height:min(86vh,700px);overflow:auto;width:min(610px,100%);background:linear-gradient(150deg,#1a2739,#0c1829);border:1px solid #8e7657;border-radius:18px;padding:33px 35px;box-shadow:0 27px 100px #03060add,inset 0 0 70px rgba(240,192,113,.045)}
+.drawer{position:relative;max-height:min(90vh,850px);overflow:auto;width:min(890px,100%);background:linear-gradient(150deg,#1a2739,#0c1829);border:1px solid #8e7657;border-radius:18px;padding:33px 35px;box-shadow:0 27px 100px #03060add,inset 0 0 70px rgba(240,192,113,.045)}
 .drawer::before{content:"";position:absolute;left:28px;right:28px;top:14px;height:1px;background:linear-gradient(90deg,transparent,#d8af7d,transparent)}
 .drawer .close{position:absolute;right:17px;top:14px;width:35px;height:35px;border:1px solid #4a5264;border-radius:8px;background:#192a3e;font-size:18px}
 .drawer .book-icon{display:grid;place-items:center;width:72px;height:92px;margin-bottom:20px;font-size:30px;background:#46626d;border:2px solid #dfcba8;box-shadow:6px 6px 0 #0a1320;border-radius:2px 10px 10px 2px}
@@ -68,7 +68,46 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
 @media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
 @media(max-width:650px){.top{padding:13px 13px}.emblem{width:31px;height:31px}.emblem span{font-size:16px}.headline{font-size:16px}.meta{font-size:8px;letter-spacing:.06em}.kicker{font-size:8px}.top-actions .chip:nth-child(2){display:none}.chip{padding:8px;font-size:10px}.side{left:13px;top:103px;width:145px}.side h2{font-size:22px}.side p{font-size:10px;max-width:140px}.side .gold-rule{margin:10px 0}.catalog{right:10px;left:10px;bottom:104px;width:auto;max-height:110px;border-radius:12px;display:block;overflow:hidden;transition:max-height .25s}.catalog.open{max-height:58vh;overflow:auto}.catalog-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer}.catalog-head h2{margin:0;font-size:14px}.catalog-head small,.catalog-head p{display:none}.catalog-head::after{content:"書庫 ▴";font-size:11px;color:#e2c79c}.catalog.open .catalog-head::after{content:"收合 ▾"}.book-list{display:none;padding:8px;max-height:40vh}.catalog.open .book-list{display:block}.catalog-bottom{display:none}.catalog.open .catalog-bottom{display:flex}.bottom{padding:0 6px calc(13px + env(safe-area-inset-bottom))}.hud{gap:5px}.current b{font-size:14px}.action{padding:11px 11px;font-size:11px}.pillbar{gap:0;padding:5px}.note{display:none}.drawer-wrap{align-items:flex-end;padding:0}.drawer{border-radius:20px 20px 0 0;width:100%;max-height:88dvh;padding:26px 19px calc(22px + env(safe-area-inset-bottom))}.drawer .layout{gap:8px}.detail-cell{padding:10px}.drawer h2{font-size:26px}.toast{top:81px;max-width:90vw;white-space:normal;text-align:center}}
-@media(max-width:390px){.function-list{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
+@media(max-width:390px){.function-list{grid-template-columns:1fr}}
+/* Game-style compendium; card numbers are book crests + in-world slots, not data IDs. */
+.compendium{margin:18px 0 21px;border:1px solid #b39870;border-radius:13px;overflow:hidden;background:#17212c;box-shadow:inset 0 0 26px #11171e}
+.compendium-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 16px;background:linear-gradient(90deg,#685136,#302c2b 70%);border-bottom:2px solid #b69b77;color:#ffebc6}
+.compendium-top strong{font:500 18px Georgia,"Noto Serif TC",serif;letter-spacing:.09em}
+.compendium-top small{font:600 10px system-ui,sans-serif;letter-spacing:.12em;color:#f0d3a7}
+.compendium-pages{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);background:linear-gradient(90deg,#e5d7b9,#bba77f 39.9%,#765f48 40.1%,#decdaa 41.2%,#efe0bf 100%);color:#302a22;min-height:350px}
+.compendium-leaf{position:relative;padding:21px 17px;min-width:0}
+.compendium-leaf:first-child{border-right:2px solid #85684b;box-shadow:9px 0 15px #4b342244}
+.compendium-mark{font-size:10px;font-weight:750;letter-spacing:.14em;color:#715638}
+.compendium-crest{font:normal 65px/1 Georgia,serif;text-align:center;margin:35px 0 20px;color:#815e38;text-shadow:0 3px 0 #f8e8c9}
+.compendium-quote{text-align:center;font:normal 15px/1.75 Georgia,"Noto Serif TC",serif;margin:10px 0;color:#6c5537}
+.compendium-foil{border-top:1px solid #a88b66;margin-top:25px;padding-top:14px;font-size:11px;color:#65543c}
+.compendium-index{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:11px}
+.compendium-index strong{font-size:13px;letter-spacing:.06em}.compendium-index span{font-size:10px;color:#745941}
+.card-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.codex-slot{position:relative;min-width:0;min-height:137px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 5px 9px;border:2px solid #a38c62;border-radius:9px;background:linear-gradient(145deg,#fff2d4,#decdab);box-shadow:0 3px 0 #aa9069,inset 0 0 0 3px #e9d8b7;color:#534027;text-align:center}
+.codex-slot:focus-visible{outline:3px solid #547a83;outline-offset:2px}
+.codex-slot.unfilled{opacity:.63;background:repeating-linear-gradient(135deg,#d6c4a2,#d6c4a2 6px,#e6d6b8 6px,#e6d6b8 12px);border-style:dashed}
+.codex-slot:not(.unfilled):hover,.codex-slot.selected{border-color:#5b8e89;transform:translateY(-2px);box-shadow:0 4px 0 #4f7e7b,0 5px 15px #83684955}
+.codex-slot.selected::after{content:"✦";position:absolute;right:3px;top:0;color:#448580;font-size:15px}
+.codex-index{display:block;align-self:flex-start;padding-left:5px;font:700 13px Georgia,serif;color:#6d5030}
+.codex-symbol{display:block;font:normal 30px/1 Georgia,serif;color:#70543a;text-shadow:0 1px #fff2de}
+.codex-title{font-weight:800;line-height:1.25;font-size:11px}
+.codex-rank{font-size:9px;letter-spacing:.09em;color:#7a5d40;border-top:1px solid #b9a47d;width:80%;padding-top:4px}
+.card-reveal{margin-top:15px;border-radius:10px;padding:14px;background:#f5e8c8;border:2px solid #b6956a;box-shadow:0 3px 0 #8c6b40;color:#46331d}
+.card-reveal[hidden]{display:none}
+.card-reveal-head{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.card-reveal-head h3{margin:0;font-size:16px;font-weight:800}
+.card-reveal-head small{display:block;font:700 10px Georgia,serif;color:#8a6739;letter-spacing:.1em;margin-bottom:3px}
+.card-reveal-desc{color:#61513c!important;font-size:12px;margin:8px 0 11px!important}
+.card-reveal .function-link{width:100%;display:block;min-height:0;margin-top:7px;color:#ffebc8;background:#314f53;border-color:#547f80;text-decoration:none}
+.card-reveal .function-link strong{display:block;font-size:12px}.card-reveal .function-link small{display:block;color:#c5e0dc}
+.card-reveal .function-link:focus-visible{outline:3px solid #bc7a42}
+.card-reveal button{border:1px solid #9e7e50;background:#efe0be;color:#614627;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700}
+.catalog-note{font-size:10px;color:#755d3d;margin:10px 0 0}
+@media(max-width:650px){.compendium-pages{grid-template-columns:1fr;background:#eadbb9}.compendium-leaf{padding:14px 11px}.compendium-leaf:first-child{display:none}.compendium-top{padding:8px 10px}.compendium-top strong{font-size:15px}.card-slots{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.codex-slot{min-height:126px;padding:9px 3px 7px}.codex-index{font-size:11px}.codex-title{font-size:10px}.codex-symbol{font-size:27px}.codex-rank{font-size:8px}}
+@media(max-width:360px){.card-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+@media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
 </style>
 </head>
 <body>
@@ -82,7 +121,22 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。仍可以從旁邊的書庫打開示範書頁。</p><button id="fallbackOpen" type="button">開啟一本示範書</button></div></div>
-<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>書籍描述為示範；功能連結已啟用</strong></div></div><div class="skill-actions"><h3>書中的功能</h3><div id="drawerFunctions" class="function-list"></div><p class="skill-footnote">直接開啟現有功能頁，不複製資料或建立新的後端。</p></div><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">🔒 功能按鈕會開啟現有工作頁面。請使用瀏覽器或 Android 返回鍵回到圖書館；書本環繞位置會儲存在本機。部分 Pocket GBA 原生功能仍需使用原本的 App 入口，現階段不更動 APK。</p></section></div>
+<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>書籍描述為示範；功能連結已啟用</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
+<header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
+<div class="compendium-pages">
+<section class="compendium-leaf" aria-label="左頁技能卷首">
+<div class="compendium-mark">THE LIVING LIBRARY · CODEX</div><div class="compendium-crest" id="codexCrest">◆</div>
+<div class="compendium-quote" id="codexQuote">每一張卡，都有自己的去處。</div>
+<p class="compendium-foil">卡牌符印與數字表示圖鑑中的位置。資料識別碼獨立於外觀；圖鑑已收錄不等於技能已熟練。</p>
+</section>
+<section class="compendium-leaf" aria-label="右頁卡片圖鑑">
+<div class="compendium-index"><strong>收錄圖鑑 · <span id="codexBookLabel">創業之書</span></strong><span>✦ 觸碰卡片查看</span></div>
+<div id="drawerFunctions" class="card-slots"></div>
+<section id="cardReveal" class="card-reveal" hidden aria-live="polite">
+<div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard">返回圖鑑</button></div>
+<p id="cardDescription" class="card-reveal-desc"></p><div id="cardLinks"></div>
+</section><p class="catalog-note">共 6 格卡槽。封印中的空格預留給未來能力；目前不代表有隱藏功能。</p>
+</section></div></section><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">🔒 功能按鈕會開啟現有工作頁面。請使用瀏覽器或 Android 返回鍵回到圖書館；書本環繞位置會儲存在本機。部分 Pocket GBA 原生功能仍需使用原本的 App 入口，現階段不更動 APK。</p></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -103,20 +157,31 @@ BOOKS.push(
 {id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false}
 );
 const SITE='https://ken12121122-dotcom.github.io';
-const SKILL_ACTIONS={
-research:[['📚 研究導航','研究方法、文獻與心智圖',SITE+'/packagecanvas/research-navigation-v04.html'],['▣ 知識工作台','原 PackageCanvas 畫布',SITE+'/packagecanvas/']],
-startup:[['☑ 公司設立任務','公司設立與完成證據',SITE+'/packagecanvas/startup.html'],['📅 Google 日曆','手動查看及建立事項','https://calendar.google.com/calendar/u/0/r/'],['▣ 知識工作台','研究與創業知識結構',SITE+'/packagecanvas/']],
-knowledge:[['🎮 知識世界','原 GBA 風格知識世界',SITE+'/packagecanvas/world.html'],['▣ PackageCanvas','查看知識架構與節點',SITE+'/packagecanvas/']],
-missions:[['☑ 創業任務','24 項任務清單與日曆連結',SITE+'/packagecanvas/startup.html'],['🎮 執行世界','GEN2 進度的 GBA 視圖',SITE+'/packagecanvas/world.html'],['📅 日曆','在 Google 日曆查看安排','https://calendar.google.com/calendar/u/0/r/']],
-learning:[['📚 研究導航','學習研究的問題與方法',SITE+'/packagecanvas/research-navigation-v04.html'],['▣ 知識工作台','編排已有學習資料',SITE+'/packagecanvas/']],
-finance:[['🚀 創業／資產規劃','查看財務目標與退場規劃',SITE+'/packagecanvas/startup.html']],
-safety:[['▣ 知識工作台','尚無專用職安頁；先開既有工作台',SITE+'/packagecanvas/']],
-writing:[['▣ 知識工作台','尚無專用寫作頁；先開既有工作台',SITE+'/packagecanvas/']],
-design:[['▣ 知識工作台','尚無專用設計頁；先開既有工作台',SITE+'/packagecanvas/']],
-teaching:[['📚 研究導航','尚無專用教學頁；先開研究導航',SITE+'/packagecanvas/research-navigation-v04.html']],
-gaming:[['🎮 開啟 GBA 遊戲庫','現有網頁遊戲入口',SITE+'/amin-vault/gba.html'],['◈ Pocket Vault','原有瀏覽器入口與工具',SITE+'/amin-vault/']],
-system:[['◈ Pocket Vault','原網頁介面；非原生控制中心',SITE+'/amin-vault/'],['▣ PackageCanvas','原知識架構工作台',SITE+'/packagecanvas/']]
-};
+// One canonical card = one existing destination. Multiple books may reference it,
+// but the collectible mark and displayed name stay unchanged.
+const CARDS=Object.freeze({
+research:{id:'research',seal:'✧',number:'01',title:'研究導航',guild:'探索',desc:'研究方法、文獻與心智圖。',url:SITE+'/packagecanvas/research-navigation-v04.html'},
+canvas:{id:'canvas',seal:'✦',number:'02',title:'知識工作台',guild:'編纂',desc:'開啟原有 PackageCanvas 知識架構工作台。',url:SITE+'/packagecanvas/'},
+startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線',desc:'公司設立任務、日程與研究事業規劃。',url:SITE+'/packagecanvas/startup.html'},
+calendar:{id:'calendar',seal:'◷',number:'04',title:'日曆',guild:'時序',desc:'開啟 Google 日曆；事項需要自行建立與儲存。',url:'https://calendar.google.com/calendar/u/0/r/'},
+world:{id:'world',seal:'◎',number:'05',title:'知識世界',guild:'世界',desc:'開啟原有 GBA 風格知識世界與 GEN2 進度畫面。',url:SITE+'/packagecanvas/world.html'},
+gba:{id:'gba',seal:'♠',number:'06',title:'GBA 遊戲庫',guild:'遊戲',desc:'開啟現有遊戲庫；存檔及原生操作仍由 Pocket GBA 管理。',url:SITE+'/amin-vault/gba.html'},
+vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',desc:'回到原有網頁入口；非 Android 原生維護控制中心。',url:SITE+'/amin-vault/'}
+});
+const BOOK_CARDS=Object.freeze({
+research:['research','canvas'],
+startup:['startup','calendar','canvas'],
+knowledge:['world','canvas'],
+missions:['startup','world','calendar'],
+learning:['research','canvas'],
+finance:['startup'],
+safety:['canvas'],
+writing:['canvas'],
+design:['canvas'],
+teaching:['research'],
+gaming:['gba','vault'],
+system:['vault','canvas']
+});
 window.LIVING_LIBRARY_DEMO=BOOKS;
 let selectedId='research',motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
@@ -136,7 +201,45 @@ const words=document.createElement('span');const strong=document.createElement('
 btn.addEventListener('click',()=>{select(x.id);openBook()});$('bookList').append(btn)});
 }
 function toast(text){$('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
-function renderFunctions(b){const host=$('drawerFunctions');host.replaceChildren();const functions=SKILL_ACTIONS[b.id]||[];functions.forEach(([title,detail,url])=>{const a=document.createElement('a');a.className='function-link';a.href=url;a.setAttribute('aria-label',title+'，'+detail);const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=title;small.textContent=detail;a.append(strong,small);a.addEventListener('click',()=>{storeBooks()});host.append(a)})}
+function revealCard(card,button){
+ const seal=card.seal+' '+card.number;
+ $('cardReveal').hidden=false;
+ $('cardSeal').textContent=seal+' · '+card.guild+'卡';
+ $('cardTitle').textContent=card.title;
+ $('cardDescription').textContent=card.desc;
+ $('cardLinks').replaceChildren();
+ const a=document.createElement('a');a.className='function-link';
+ a.href=card.url;a.setAttribute('aria-label','開啟'+card.title);
+ const title=document.createElement('strong');title.textContent='✦ 啟動卡片 · '+card.title;
+ const sub=document.createElement('small');sub.textContent='前往現有功能頁面 ↗';
+ a.append(title,sub);
+ a.addEventListener('click',storeBooks);$('cardLinks').append(a);
+ $('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>{el.classList.toggle('selected',el===button)});
+}
+function renderFunctions(b){
+ const host=$('drawerFunctions');host.replaceChildren();
+ const ids=BOOK_CARDS[b.id]||[];
+ $('codexCrest').textContent=b.icon;
+ $('codexBookLabel').textContent=b.name;
+ $('codexHeader').textContent='卷印 '+b.icon+' · 已收錄 '+ids.length+' / 6';
+ $('codexQuote').textContent='「'+b.name+'」 · 『觸印成術，翻頁為界。』';
+ $('cardReveal').hidden=true;$('cardLinks').replaceChildren();
+ for(let i=0;i<6;i++){
+   const id=ids[i],card=id?CARDS[id]:null;
+   const btn=document.createElement('button');btn.type='button';
+   btn.className='codex-slot'+(card?'':' unfilled');
+   const nr=document.createElement('span');nr.className='codex-index';nr.textContent=card?card.seal+' '+card.number:'◇ ??';
+   const symbol=document.createElement('span');symbol.className='codex-symbol';symbol.textContent=card?card.seal:'✧';
+   const name=document.createElement('span');name.className='codex-title';name.textContent=card?card.title:'空白卡槽';
+   const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+' · 已收錄':'尚未放入卡片';
+   btn.append(nr,symbol,name,grade);
+   btn.disabled=!card;
+   if(card){btn.dataset.cardId=card.id;btn.setAttribute('aria-label',card.seal+card.number+' '+card.title+' 卡片');btn.addEventListener('click',()=>revealCard(card,btn))}
+   else{btn.setAttribute('aria-label','空白卡槽，尚未放入卡片')}
+   host.append(btn);
+ }
+}
+$('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
 function openBook(){const b=book();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
 function closeBook(){$('drawerWrap').classList.remove('open');$('openBtn').focus()}
 function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
