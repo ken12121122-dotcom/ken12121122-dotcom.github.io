@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -26,6 +27,7 @@ import java.util.Collections;
  * GEN2 remains an explicit browser-session GitHub read. No JS bridge is added. */
 public final class LivingLibraryActivity extends Activity {
     private WebView web;
+    private boolean fallbackStarted;
     volatile String committedUrl = "";
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle state) {
@@ -37,6 +39,8 @@ public final class LivingLibraryActivity extends Activity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        // Online HTML/CSS/catalog are GitHub Pages-owned. Offline APK assets remain available.
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -53,7 +57,18 @@ public final class LivingLibraryActivity extends Activity {
                 } catch (IOException ignored) { }
                 return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", Collections.emptyMap(), new ByteArrayInputStream(new byte[0]));
             }
-            @Override public void onPageCommitVisible(WebView view, String url) { committedUrl = url; }
+            @Override public void onPageCommitVisible(WebView view, String url) {
+                committedUrl = LivingLibraryPolicy.isHome(url) ? url : "";
+                if (!fallbackStarted && !LivingLibraryPolicy.isHome(url)) loadBundledFallback();
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame() && LivingLibraryPolicy.isRemoteHome(request.getUrl().toString())) loadBundledFallback();
+            }
+            @Override public void onReceivedHttpError(WebView view, WebResourceRequest request,
+                                                        android.webkit.WebResourceResponse response) {
+                if (request.isForMainFrame() && response.getStatusCode() >= 400
+                        && LivingLibraryPolicy.isRemoteHome(request.getUrl().toString())) loadBundledFallback();
+            }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { committedUrl = ""; }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String route = LivingLibraryPolicy.route(request.getUrl().toString());
@@ -62,6 +77,7 @@ public final class LivingLibraryActivity extends Activity {
                     return true;
                 }
                 if (!request.isForMainFrame()) return false;
+                if (LivingLibraryPolicy.isHome(request.getUrl().toString())) return false;
                 if (LivingLibraryPolicy.asset(request.getUrl().toString()) != null) return false;
                 String scheme = request.getUrl().getScheme();
                 if (("https".equals(scheme) || "http".equals(scheme)) && request.hasGesture()) {
@@ -78,8 +94,24 @@ public final class LivingLibraryActivity extends Activity {
             view.setPadding(safe.left, safe.top, safe.right, safe.bottom); return insets;
         });
         setContentView(root); ViewCompat.requestApplyInsets(root);
-        if (state == null) web.loadUrl(LivingLibraryPolicy.HOME);
-        else if (web.restoreState(state) == null) web.loadUrl(LivingLibraryPolicy.HOME);
+        if (state == null) loadRemoteWorkbench();
+        else if (web.restoreState(state) == null) loadRemoteWorkbench();
+    }
+    private void loadRemoteWorkbench() {
+        fallbackStarted = false;
+        // Cache-bust the top-level document; content changes remain web-only.
+        web.loadUrl(LivingLibraryPolicy.REMOTE_HOME + "?v=" + System.currentTimeMillis());
+    }
+    private void loadBundledFallback() {
+        if (fallbackStarted || web == null) return;
+        fallbackStarted = true;
+        committedUrl = "";
+        // Keep the same package/signature and safely retain all existing native routes.
+        web.post(() -> {
+            if (web == null) return;
+            Toast.makeText(this, "線上書庫無法載入，使用內建離線圖書館", Toast.LENGTH_SHORT).show();
+            web.loadUrl(LivingLibraryPolicy.HOME);
+        });
     }
     static boolean canOpenNative(String page, boolean mainFrame, boolean gesture) {
         return mainFrame && gesture && LivingLibraryPolicy.isHome(page);
