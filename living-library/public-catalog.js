@@ -16,7 +16,8 @@ const PUBLIC_BOOKS=[
 ];
 PUBLIC_BOOKS.push(
 {id:'gaming',name:'遊戲之書',kind:'原有遊戲功能',tag:'GBA',icon:'♠',color:'#486b80',description:'從圖書館前往現有 GBA 遊戲庫；遊戲存檔與手把操作仍由原有系統負責。',target:'GBA 遊戲庫／存檔',active:true},
-{id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false}
+{id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false},
+{id:'gpt',name:'GPT 之書',kind:'AI 知識導航',tag:'GPT ARCHIVE',icon:'✧',color:'#9a7956',description:'通往 ChatGPT Library 的知識檔案、GEN2 正式來源與 AI／Work 協作方式；不公開私有資料。',target:'ChatGPT Library／GEN2 知識路由',active:false}
 );
 const SITE='https://ken12121122-dotcom.github.io';
 // One canonical card = one existing destination. Multiple books may reference it,
@@ -28,7 +29,8 @@ startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線'
 calendar:{id:'calendar',seal:'◷',number:'04',title:'日曆',guild:'時序',desc:'開啟 Google 日曆；事項需要自行建立與儲存。',url:'https://calendar.google.com/calendar/u/0/r/'},
 world:{id:'world',seal:'◎',number:'05',title:'知識世界',guild:'世界',desc:'開啟原有 GBA 風格知識世界與 GEN2 進度畫面。',url:SITE+'/packagecanvas/world.html'},
 gba:{id:'gba',seal:'♠',number:'06',title:'GBA 遊戲庫',guild:'遊戲',desc:'開啟現有遊戲庫；存檔及原生操作仍由 Pocket GBA 管理。',url:SITE+'/amin-vault/gba.html'},
-vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',desc:'回到原有網頁入口；非 Android 原生維護控制中心。',url:SITE+'/amin-vault/'}
+vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',desc:'回到原有網頁入口；非 Android 原生維護控制中心。',url:SITE+'/amin-vault/'},
+gptBridge:{id:'gptBridge',seal:'✧',number:'08',title:'知識庫連結導覽',guild:'GPT／GEN2 連結',desc:'查閱 ChatGPT Library 的路徑、GEN2 正式來源與可複製的 AI 交接方式；不是自動同步功能。',url:'./gpt-library-bridge.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
 research:['research','canvas'],
@@ -42,11 +44,12 @@ writing:['canvas'],
 design:['canvas'],
 teaching:['research'],
 gaming:['gba','vault'],
-system:['vault','canvas']
+system:['vault','canvas'],
+gpt:['gptBridge']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web'};
+const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 const RESEARCH_ID='KW-STARTUP-PLATFORM-20261013';
 function buildCatalog(projection=null){
