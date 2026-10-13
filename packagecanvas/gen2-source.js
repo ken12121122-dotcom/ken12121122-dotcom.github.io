@@ -210,7 +210,32 @@
     for (const d of docs.filter(d => d.data?.document_type === 'kb_contract' && !d.info.template)) {
       if (!books.some(b => b.folder === d.info.kbFolder)) diagnostics.push({ code: 'excluded_kb', id: d.data.kb_id });
     }
-    return { schemaVersion: 1, source: { key: input.key, ref: 'main', commit: input.commit }, books, cards, diagnostics };
+    const documents = docs.filter(d => !excluded(d) && (
+      books.some(b => d.info.kbFolder === b.folder) ||
+      (!d.info.kbFolder && /^(00_ENTRY|01_TASK_ORGANIZER|02_KNOWLEDGE_BASES)\//.test(d.path))
+    )).map(d => ({ path: d.path, title: firstHeading(d.body) || baseName(d.path),
+      kb_id: d.data?.kb_id || d.info.kbId || null, kind: d.data?.document_type || d.data?.type || 'document',
+      formalId: d.data?.skill_id || d.data?.workflow_id || d.data?.output_id || d.data?.document_id || null,
+      status: d.data?.status || 'unspecified', version: d.data?.version || null,
+      text: (input.files || []).find(f => normPath(f.path) === d.path)?.text || '', body: d.body,
+      sourceCommit: input.commit, editable: ['kb_contract', 'workflow_bom', 'workflow', 'skill', 'output'].includes(d.data?.document_type) && books.some(b => b.folder === d.info.kbFolder)
+    }));
+    return { schemaVersion: 1, source: { key: input.key, ref: 'main', commit: input.commit }, books, cards, documents, diagnostics };
+  }
+
+  // In-memory literal content retrieval. No semantic-search or embedding claim.
+  function searchLibraryDocuments(projection, query, options = {}) {
+    const terms = String(query || '').normalize('NFKC').toLowerCase().trim().split(/\s+/).filter(Boolean);
+    return (projection?.documents || []).filter(d => !options.kb_id || d.kb_id === options.kb_id).map(d => {
+      const text = d.text.normalize('NFKC').toLowerCase();
+      const title = (d.title + ' ' + d.path + ' ' + (d.formalId || '')).normalize('NFKC').toLowerCase();
+      const matches = terms.filter(t => text.includes(t) || title.includes(t));
+      const score = matches.reduce((n,t) => n + (title.includes(t) ? 3 : 1), 0);
+      const at = matches.length ? text.indexOf(matches[0]) : 0;
+      return { document: d, score, matchedTerms: matches, snippet: d.text.slice(Math.max(0,at - 50),Math.max(0,at - 50) + 180) };
+    }).filter(r => !terms.length || r.matchedTerms.length === terms.length)
+      .sort((a,b) => b.score - a.score || a.document.path.localeCompare(b.document.path))
+      .slice(0, options.limit || 100);
   }
 
   // ---------- executable workflow spec (gen2-run) ----------
@@ -1241,5 +1266,5 @@
     }
   };
 
-  return { VERSION, buildLibraryProjection, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, runAgentStatus, sources: { native, picker, input, github } };
+  return { VERSION, buildLibraryProjection, searchLibraryDocuments, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, runAgentStatus, sources: { native, picker, input, github } };
 });

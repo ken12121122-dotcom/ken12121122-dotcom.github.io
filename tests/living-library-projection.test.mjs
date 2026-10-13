@@ -27,20 +27,25 @@ test('UI authorization → book → card → scrollable source → workbench →
  click(){this.onclick?.({target:this});this.listeners.click?.({target:this})}
  }
  const elements=new Map();const get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id)};
- get('readerShell').hidden=true;const drawer=new Element();get('drawerWrap').append(drawer);
+ get('readerShell').hidden=true;get('editorPane').hidden=true;const drawer=new Element();get('drawerWrap').append(drawer);
  const doc={getElementById:get,createElement:()=>new Element(),addEventListener(){},hidden:false,body:new Element()};
  let current=fixture();addSkill(current);current.files.at(-1).text+='\nPrivate synthetic text <script>unsafe()</script>';
- const window={location:{href:'https://preview.example/living-library/index.html'},PackageCanvasGen2:{...G,sources:{github:{...G.sources.github,collect:async()=>current}}},addEventListener(){}};
- const store=new Map(),ctx={window,document:doc,localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},setInterval(){},setTimeout(){},clearTimeout(){},URL,console};
+ const window={location:{href:'https://preview.example/living-library/index.html'},LivingLibraryDrafts:{...require('../living-library/gen2-editor.js'),submitDraft:async(draft,token)=>{assert.equal(token,'write-fixture');assert.equal(draft.review_status,'generated');return {url:'https://github.com/ken12121122-dotcom/gen2-knowledge/pull/999'}}},PackageCanvasGen2:{...G,sources:{github:{...G.sources.github,collect:async()=>current}}},addEventListener(){}};
+ const store=new Map(),ctx={window,document:doc,localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},setInterval(){},setTimeout(){},clearTimeout(){},URL,console,AbortController};
  const script=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('const BOOKS='))[1];runInNewContext(script,ctx);
  assert.equal(window.LivingLibrary.books.length,0);get('connectGen2').click();assert.ok(get('gen2Auth').open);
  get('gen2Token').value='synthetic-token';get('readGen2').click();await new Promise(resolve=>setImmediate(resolve));
  assert.equal(window.LivingLibrary.books.length,1);assert.equal(get('gen2Token').value,'');
  get('bookList').children[0].click();assert.ok(get('drawerWrap').classList.contains('open'));
  get('drawerFunctions').children[0].click();assert.equal(get('readerShell').hidden,false);assert.equal(get('readerFrame').hidden,true);assert.ok(get('sourcePage').children.at(-1).textContent.includes('<script>'));
- get('sourcePage').children[1].click();assert.ok(get('readerFrame').src.endsWith('/packagecanvas/?gen2ref=main'));
+ get('sourcePage').children.find(x=>x.textContent==='編輯候選 MD').click();assert.equal(get('editorPane').hidden,false);assert.ok(get('editText').value.includes('review_status: generated'));
+ get('editText').value+='\n候選補充';get('validateEdit').click();assert.ok(get('editorResult').textContent.startsWith('PASS'));
+ get('writeToken').value='write-fixture';get('submitEdit').click();await new Promise(resolve=>setImmediate(resolve));assert.equal(get('writeToken').value,'');assert.ok(get('submitEdit').disabled);assert.ok(get('editorResult').children[0].href.includes('/pull/999'));
+ get('cancelEdit').click();assert.equal(get('editorPane').hidden,true);
+ get('sourcePage').children.find(x=>x.textContent==='在書內開啟既有 GEN2 工作台').click();assert.ok(get('readerFrame').src.endsWith('/packagecanvas/?gen2ref=main'));
  get('readerBack').click();assert.equal(get('readerShell').hidden,true);assert.ok(get('drawerWrap').classList.contains('open'));
  get('readerClose').click();assert.ok(!get('drawerWrap').classList.contains('open'));
+ get('searchGen2').click();assert.ok(get('mdSearch').open);get('mdQuery').value='Private synthetic';get('mdQuery').oninput();assert.equal(get('mdResults').children.length,1);get('mdResults').children[0].click();assert.ok(get('sourcePage').children.at(-1).textContent.includes('Private synthetic'));
  get('disconnectGen2').click();assert.equal(window.LivingLibrary.books.length,0);assert.equal(get('sourcePage').children.length,0);assert.equal(get('drawerFunctions').children.length,0);assert.equal(get('drawerTitle').textContent,'');assert.ok(![...store.values()].join('').includes('synthetic-token'));
 });
 
