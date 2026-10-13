@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Collections;
 
-/** Single workbench. Bundled public UI works before Pages publication; private
- * GEN2 remains an explicit browser-session GitHub read. No JS bridge is added. */
+/** Trusted GitHub Pages web UI with bundled offline fallback; private GEN2
+ * remains an explicit browser-session GitHub read. No JS bridge is added. */
 public final class LivingLibraryActivity extends Activity {
     private WebView web;
     private boolean fallbackStarted;
@@ -68,6 +68,14 @@ public final class LivingLibraryActivity extends Activity {
                                                         android.webkit.WebResourceResponse response) {
                 if (request.isForMainFrame() && response.getStatusCode() >= 400
                         && LivingLibraryPolicy.isRemoteHome(request.getUrl().toString())) loadBundledFallback();
+            }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!fallbackStarted && LivingLibraryPolicy.isRemoteHome(url)) {
+                    // A 200 HTML response is insufficient if a critical remote script failed.
+                    view.evaluateJavascript("(function(){return !!(window.LivingLibrary && window.LivingLibraryCatalog && window.LivingBookPlacement && window.PackageCanvasGen2)})()", ready -> {
+                        if (!"true".equals(ready)) loadBundledFallback();
+                    });
+                }
             }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { committedUrl = ""; }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
