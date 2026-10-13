@@ -41,3 +41,13 @@ OWNER 手機 WebGL、捲動、多圈歸架、圖示形狀、原生卡片、返�
 驗收門檻：同一個 SHA 的 Android unit/lint/build/emulator/instrumentation acceptance、網路可用時 Web 入口與遊戲卡實際點擊、斷網自動退回、GBA 存檔手把與安卓之書真機原生返回、GEN2 明確授權與斷線清除、永久 signer／原地更新；未驗收不得發布或標示手機已更新。若遠端網頁部署回滾，既有 App 仍能用內建備援，不額外下載 APK。
 
 已建立單元測試：遠端首頁只接受精確 HTTPS host/path/可選 v=數字，拒絕假主機、userInfo、port、encoded path、錯誤 query、iframe／無手勢。另有線上 web regression（PR #203），但不當成 Android 真機驗收。
+
+## 2026-10-14｜OWNER 同意發布合併版本（Bridge 107 / code203）
+
+OWNER 明確要求「發布新版，這次有其他的更動一起更新」，核准把此前 Bridge 106 已有的 3D 書庫／安卓之書／原生 GBA 功能保留，與此版本的 Web-first 頁面、離線備援、《遊戲之書》新卡一起納入**現有永久簽章管道**。未經驗證的舊草稿 PR #182/#137 不納入，避免擴大回歸範圍。
+
+來源候選 PR #202（包含原 PR #198 的已簽 Bridge106 代碼）CI run 38480379217：validate = success，emulator-acceptance = success。線上圖書館 PR #203/#204 已部署並通過 web regression。Android 使用者當前更新清單仍為 Bridge106，故只有在**本次 GitHub Android 正式工作流驗證永久 signer、更新 manifest、Pages 完成部署**後，才算新 APK 已發布。
+
+本版 metadata channel=release，versionCode=203 / 0.11.24-rc1-bridge107。發布不代表 OWNER 實際裝置全項驗收通過；遠端載入、斷線退回、GBA 遊戲存檔/手把、原生入口與同證書原地升級需要驗收，失敗時不得宣稱已成功。簽章證書指紋與既有通道一致。
+
+**後續正常網頁新增與調整仍透過 Pages**，只有新 Android 權限、原生能力或修正原生 WebView 啟動機制才需重新產生 APK。
