@@ -396,7 +396,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          adb logcat -d -t 800 > "$RUNNER_TEMP/living-library-logcat.txt" 2>&1 || true
+          adb logcat -d -v threadtime > "$RUNNER_TEMP/living-library-logcat.txt" 2>&1 || true
           adb shell dumpsys activity lastanr > "$RUNNER_TEMP/living-library-anr.txt" 2>&1 || true
 
       - name: Publish WebView failure diagnostics
