@@ -58,7 +58,7 @@ test('real 3D book object changes from orbit to shelf with curved flight and cli
  assert.ok(s.includes("g.quaternion.copy(flight.rotation).slerp(target.rotation,v)"));
  assert.ok(s.includes("window.LivingLibrary.summonBook(id)"));
  assert.ok(s.includes("const targets=[];bookEntities.forEach"));
- assert.ok(s.includes("if((isMotion()||hasFlight())&&!reduced)"));
+ assert.ok(s.includes("if(((isMotion()||hasFlight())&&!reduced)||hasWalkInput())"),'book-flight or walking keeps render loop alive');
  assert.ok(s.includes("if(flight&&!preferReduced)"));
  assert.ok(s.includes("closeBook();updateUI()"),'book closes before return animation starts');
 });
@@ -76,7 +76,7 @@ test('bookshelves show empty cubbies without fabricated book spines; camera rota
  assert.ok(cam.includes('Math.sin(theta)*horizontal'), '360-degree yaw must be driven by freely changing theta');
  assert.ok(!cam.includes('Math.max(-1.15'), 'do not clamp horizontal orbit to a narrow arc');
  assert.ok(s.includes('if(wasMoving){theta-=dx*.005'), 'drag freely rotates scene, including when inspecting shelves');
- assert.ok(s.includes('distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27)'), 'pinch zoom remains available');
+ assert.ok(s.includes('distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,exploring?4.5:7.5,exploring?13:27)'), 'pinch zoom remains available in viewing and exploration modes');
  assert.ok(s.includes("const position=shelf.localToWorld(new THREE.Vector3(slot.x,slot.y,slot.z))"), 'real book has physical 3D shelf slot');
  assert.ok(s.includes('7 櫃 × 5 層 × 5 格'), 'show truthful physical shelf capacity label');
 });
