@@ -64,5 +64,6 @@ test('large high-contrast book cover typography uses dynamic title fitting',asyn
  assert.ok(cover.includes("ctx.fillStyle='#fff9e8'"), 'warm white primary title');
  assert.ok(cover.includes("ctx.strokeStyle='#07101d'"), 'near-black outline');
  assert.ok(cover.includes('b.color||'), 'existing book category color is preserved as accent');
- assert.ok(!cover.includes("font='bold 27px"), 'old tiny 27px cover name must be removed');
+ assert.ok(cover.includes("ctx.font='900 '+size+'px"), 'main book title uses dynamic large heavy font');
+ assert.ok(!cover.includes('fillText(bookTitle(b),128,203'), 'old tiny centered book title must be removed');
 });
