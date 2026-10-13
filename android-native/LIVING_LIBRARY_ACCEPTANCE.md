@@ -26,3 +26,18 @@ OWNER 手機 WebGL、捲動、多圈歸架、圖示形狀、原生卡片、返�
 最終新增的實際 WebView 開書／返回測試在 SwiftShader 模擬器出現 keyDispatchingTimedOut；不計為通過。加入軟體 GPU 的 2D 書庫 fallback（硬體 GPU 保留 3D）與 WebView onPause/onResume/關閉清理，並重新執行同一最新版 CI。此段記錄修正意圖，不代表新測試已成功。
 
 已納入 PR195 的空格真空、實際書本數量、前方扇形書架與自由 360° 相機候選；不以舊版裝飾書籍取代現有成果。
+
+## 2026-10-14｜Web-first 目錄與遊戲世界（Bridge 107 候選，未發布）
+
+根因：已簽章的 code202/Bridge106 將 `public-catalog.js` 封裝在 APK；即使設計卡與 Pages 網頁已公開，App 內遊戲之書仍只顯示 GBA／Vault，無法純網頁新增卡片。
+
+本次候選變更：
+- 新的線上主入口固定為 `https://ken12121122-dotcom.github.io/living-library/live/index.html`；HTML/JS/書籍目錄以 GitHub Pages 為正本。遠端頁面由 web-only PR #203 上線，已有「遊戲之書 → 知識城堡」卡片。
+- Android WebView 優先讀取該 HTTPS 頁；首頁載入錯誤或 HTTP 4xx/5xx 才自動改讀 APK 原本 `https://appassets.androidplatform.net/living-library/index.html`，保留離線 14 本公開書與既有原生入口。
+- 不允許任意網站獲得原生導覽能力：僅精確 Pages 主頁或封裝首頁可在**主框架＋真實使用者手勢**下，使用既有 `amin-library://` 白名單跳轉；iframe 與其他頁面不能執行原生導覽。沒有增加 JavascriptInterface、Activity exported 或權限。
+- 一代與 GEN2 正本皆不變；公開網頁不可冒充正式 Skill。授權資訊仍須使用者明確輸入；WebView origin 由 `appassets` 切到 Pages，**私有授權不自動搬移**。
+- 準備提升至候選 `0.11.24-rc1-bridge107`／`versionCode=203`；**只有這一次切換載入來源需要 APK 更新，往後書籍、卡片與一般 3D 網頁場景變更應由 Pages 發布**。新增 Android 原生權限/控制/Bridge 仍需要審核及簽章更新。
+
+驗收門檻：同一個 SHA 的 Android unit/lint/build/emulator/instrumentation acceptance、網路可用時 Web 入口與遊戲卡實際點擊、斷網自動退回、GBA 存檔手把與安卓之書真機原生返回、GEN2 明確授權與斷線清除、永久 signer／原地更新；未驗收不得發布或標示手機已更新。若遠端網頁部署回滾，既有 App 仍能用內建備援，不額外下載 APK。
+
+已建立單元測試：遠端首頁只接受精確 HTTPS host/path/可選 v=數字，拒絕假主機、userInfo、port、encoded path、錯誤 query、iframe／無手勢。另有線上 web regression（PR #203），但不當成 Android 真機驗收。
