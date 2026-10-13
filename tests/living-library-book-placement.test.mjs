@@ -40,7 +40,7 @@ test('175 unique slots correspond to actual bookshelf geometry on the stage',()=
   const s=L.shelfSlot(i);
   assert.ok(s&&s.shelfIndex>=0&&s.shelfIndex<7);
   assert.ok([0,1,2,3,4].includes(s.row));
-  assert.ok(s.col>=3&&s.col<=19);
+  assert.ok(s.col>=0&&s.col<5,'five visible empty compartments in each shelf row');
   slots.push([s.shelfIndex,s.row,s.col].join(':'));
  }
  assert.equal(new Set(slots).size,slots.length);
@@ -61,4 +61,22 @@ test('real 3D book object changes from orbit to shelf with curved flight and cli
  assert.ok(s.includes("if((isMotion()||hasFlight())&&!reduced)"));
  assert.ok(s.includes("if(flight&&!preferReduced)"));
  assert.ok(s.includes("closeBook();updateUI()"),'book closes before return animation starts');
+});
+
+test('bookshelves show empty cubbies without fabricated book spines; camera rotates freely around 360 degrees',async()=>{
+ const s=await html();
+ const shelfPart=s.slice(s.indexOf('function makeShelf('),s.indexOf('// Pillars and vaulted',s.indexOf('function makeShelf(')));
+ assert.ok(shelfPart.includes('for(let row=0;row<5;row++)'));
+ assert.ok(shelfPart.includes('for(let col=0;col<5;col++)'));
+ assert.ok(!shelfPart.includes('for(let col=0;col<23;col++)'), 'legacy fake spine decoration forbidden');
+ assert.ok(!shelfPart.includes('spine=box('), 'unused slots must be empty');
+ assert.ok(!s.includes('shelfViewIndex'), 'no hard-coded locked shelf view');
+ assert.ok(!s.includes('focusShelf('), 'no forced shelf camera');
+ const cam=s.slice(s.indexOf('function cameraUpdate(){'),s.indexOf('cameraUpdate();',s.indexOf('function cameraUpdate(){')));
+ assert.ok(cam.includes('Math.sin(theta)*horizontal'), '360-degree yaw must be driven by freely changing theta');
+ assert.ok(!cam.includes('Math.max(-1.15'), 'do not clamp horizontal orbit to a narrow arc');
+ assert.ok(s.includes('if(wasMoving){theta-=dx*.005'), 'drag freely rotates scene, including when inspecting shelves');
+ assert.ok(s.includes('distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27)'), 'pinch zoom remains available');
+ assert.ok(s.includes("const position=shelf.localToWorld(new THREE.Vector3(slot.x,slot.y,slot.z))"), 'real book has physical 3D shelf slot');
+ assert.ok(s.includes('7 櫃 × 5 層 × 5 格'), 'show truthful physical shelf capacity label');
 });
