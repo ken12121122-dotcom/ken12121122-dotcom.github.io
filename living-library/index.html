@@ -191,6 +191,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <script src="../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
 <script src="book-placement.js?v=orbital-shelves-20261013"></script>
 <script src="public-catalog.js?v=public-regression-20261013"></script>
+<script src="render-capability.js?v=software-gpu-20261013"></script>
 <script src="gen2-editor.js?v=md-workbench-20261013"></script>
 <script>
 (function(){
@@ -424,7 +425,16 @@ THREE = await import('https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.mod
 const {books,select,notifyReady,isMotion}=window.LivingLibrary;
 const stage=document.getElementById('stage');
 if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
-const renderer=new THREE.WebGLRenderer({antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
+const canvas=document.createElement('canvas');
+const gl=canvas.getContext('webgl2',{antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
+if(!gl)throw new Error('無法建立 WebGL2 繪圖環境。');
+const debugRenderer=gl.getExtension('WEBGL_debug_renderer_info');
+const rendererName=debugRenderer?String(gl.getParameter(debugRenderer.UNMASKED_RENDERER_WEBGL)):'';
+if(window.LivingRenderCapability?.isSoftwareRenderer(rendererName)){
+ gl.getExtension('WEBGL_lose_context')?.loseContext();
+ throw new Error('軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。');
+}
+const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
 renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0x080e1c);
 renderer.outputColorSpace=THREE.SRGBColorSpace;

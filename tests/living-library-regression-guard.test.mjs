@@ -66,6 +66,7 @@ function makeSimulatedUI(script,projection){
     addEventListener(){},
     PackageCanvasGen2:{sources:{github},buildLibraryProjection:()=>projection},
     LivingLibraryDrafts:{},
+    LivingBookPlacement:createRequire(import.meta.url)('../living-library/book-placement.js'),
     LivingLibraryCatalog:Catalog
   };
   const localStorage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v)};
