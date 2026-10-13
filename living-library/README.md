@@ -57,3 +57,15 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 - 測試改為保護「原始入口不遺失」及「公開導航／正式能力清楚標示」，不再以移除原始書籍作為通過條件。
 - 72 項 Node 回歸通過；含全部原始書與入口、離線創業研究卡、授權前後公司設立＋正式 Workflow 共存、斷線清理、UI 外開 Calendar、書內閱讀／返回／關閉。七個公開網站頁面在 main 來源均存在。公開卡使用 public-capabilities.json 的 canonical IDs，舊卡 ID 僅作 alias；斷線也清除私有 ID 的本機偏好，僅保存公開書 ID。
 - 手機／瀏覽器／WebView 實際載入、捲動及權杖 CORS 仍未驗證；DOM 與 API 模擬不代表真機通過。
+
+
+## GPT 之書｜ChatGPT Library ↔ GEN2 的公開導航卡（2026-10-13）
+
+- 在原本 12 本公開功能書之外增加 **《GPT 之書》**，公開來源 ID 為 `gpt`，預設放在書架；保留所有既有書本、功能入口及 GEN2 的正式 ID。
+- 書中 `public.gpt.bridge`（✧ 08｜知識庫連結導覽）打開同分支的 `living-library/gpt-library-bridge.html`；在 3D 書內可捲動，也能以原頁連結查看。候選預覽使用相對路徑以保持檔案版本一致。
+- 此頁只保存**公開路由與使用說明**：ChatGPT Library `/30_KNOWLEDGE/00_GEN2_CHATGPT_LIVING_LIBRARY_BRIDGE_v1.0.md`、`/30_KNOWLEDGE/Rules_Skills/00_READ_FIRST_GEN2_CURRENT_SOURCE.md`，以及私有 GEN2 的入口連結。**不含私人 MD 正文、不持有 token、不提供私人檔案的公開下載網址**。
+- 提供「複製 AI 交接指令」供 ChatGPT／Work 經授權讀取最新 GEN2 `main/kb/`。書中的公開導航卡不是正式 KB／Skill，也不能執行 Skill 或代替 OWNER 核准。
+- **未實作** ChatGPT Library ↔ Living Library 的自動同步、私人文件網站讀取 API、跨系統持續狀態同步。未來以來源 ID／版本／權限為核心，先驗證最小唯讀同步，再決定是否新增後端。
+- 回歸基線從 **12 本舊書＋7 張原有功能入口** 加到 **13 本公開書＋8 個公開功能入口**（另有原創業研究候選卡），GEN2 授權只會追加；斷線保留 GPT 之書與原本公開功能。
+- 此變更仍在 Draft PR；尚需 Node 回歸測試、真實瀏覽器與手機 WebView 驗收，不以靜態檔案存在代表正式發布。
+
