@@ -171,7 +171,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <section id="cardReveal" class="card-reveal" hidden aria-live="polite">
 <div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard">返回圖鑑</button></div>
 <p id="cardDescription" class="card-reveal-desc"></p><div id="cardLinks"></div>
-</section><p class="catalog-note">只收錄來源中實際存在的 Skill／Workflow；空格不代表能力。超過六張會自動延展。</p>
+</section><p class="catalog-note">GEN2 Skill／Workflow 均讀取正式來源；外部策略研究卡另外標明候選，並非 GEN2 技能。超過六張會自動延展。</p>
 </section></div></section><section id="readerShell" class="reader-shell" hidden aria-label="書內功能頁面">
 <div class="reader-toolbar">
 <button id="readerBack" class="reader-back" type="button">‹ 返回卡冊</button>
@@ -190,6 +190,9 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 (function(){
 const BOOKS=[], CARDS=Object.create(null), BOOK_CARDS=Object.create(null);
 const SITE='https://ken12121122-dotcom.github.io';
+// Public strategy card only; never promoted into a GEN2 Skill/Workflow.
+const STARTUP_RESEARCH_CARD_ID='KW-STARTUP-PLATFORM-20261013';
+const STARTUP_RESEARCH_URL=SITE+'/packagecanvas/startup-platform-growth-v01.html';
 let selectedId=null,motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId,active:BOOKS.filter(b=>b.active).map(b=>b.id)}))}catch(_){}}
@@ -245,6 +248,9 @@ function closeReader(){
  $('drawerFunctions').querySelector('.codex-slot.selected')?.focus();
 }
 function revealCard(card,button){
+ // Only canonical GEN2 cards show private source. A separately labeled
+ // website reference uses the in-book reader without GEN2 execution rights.
+ if(card.kind==='external_reference'){openCardReader(card);return;}
  storeBooks();readerCard=card;
  $('readerTitle').textContent=card.title;
  $('readerSeal').textContent=card.id+' · '+card.status+' · '+card.sourceCommit.slice(0,7);
@@ -275,7 +281,7 @@ function renderFunctions(b){
    const nr=document.createElement('span');nr.className='codex-index';nr.textContent=card?card.seal+' '+card.number:'◇ ??';
    const symbol=document.createElement('span');symbol.className='codex-symbol';symbol.textContent=card?card.seal:'✧';
    const name=document.createElement('span');name.className='codex-title';name.textContent=card?card.title:'空白卡槽';
-   const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+' · 已收錄':'尚未放入卡片';
+   const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+(card.kind==='external_reference'?' · 網頁入口':' · 已收錄'):'尚未放入卡片';
    btn.append(nr,symbol,name,grade);
    btn.disabled=!card;
    if(card){btn.dataset.cardId=card.id;btn.setAttribute('aria-label',card.seal+card.number+' '+card.title+' 卡片');btn.addEventListener('click',()=>revealCard(card,btn))}
@@ -304,13 +310,25 @@ let token='',busy=false,epoch=0,lastCommit=null;
 const GEN2=window.PackageCanvasGen2;
 function applyProjection(projection){
  closeBook();const prefs=new Map(BOOKS.map(b=>[b.id,b.active]));
- BOOKS.splice(0,BOOKS.length,...projection.books.map((b,i)=>({...b,tag:b.id,kind:'GEN2 正式登記',icon:['✧','◆','✦','◎'][i%4],color:['#517f80','#a5764d','#6578a3','#9073a5'][i%4],target:'Skill／Workflow 來源與既有工作台',active:prefs.has(b.id)?prefs.get(b.id):i<7})));
+ BOOKS.splice(0,BOOKS.length,...projection.books.map((b,i)=>({...b,name:b.id==='KB-STARTUP'?'創業之書':b.name,tag:b.id,kind:'GEN2 正式登記',icon:['✧','◆','✦','◎'][i%4],color:['#517f80','#a5764d','#6578a3','#9073a5'][i%4],target:'Skill／Workflow 來源與既有工作台',active:prefs.has(b.id)?prefs.get(b.id):i<7})));
  for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];
  for(const [id,c] of Object.entries(projection.cards))CARDS[id]={...c,seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(CARDS).length+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
- for(const b of projection.books)BOOK_CARDS[b.id]=b.cardIds;
+ for(const b of projection.books)BOOK_CARDS[b.id]=[...b.cardIds];
+ // Attach a clearly marked outside reference only when the *real* startup
+ // KB is registered and its Contract passed the GEN2 source validation.
+ if(BOOKS.some(b=>b.id==='KB-STARTUP')){
+   CARDS[STARTUP_RESEARCH_CARD_ID]={
+     id:STARTUP_RESEARCH_CARD_ID,kind:'external_reference',kb_id:'KB-STARTUP',
+     title:'創業技術｜平台成長策略',seal:'◆',number:'研01',
+     guild:'外部研究 · 候選',status:'generated',
+     desc:'Book Protocol、專利、開發架構、授權、募資的策略摘要',
+     url:STARTUP_RESEARCH_URL
+   };
+   BOOK_CARDS['KB-STARTUP'].push(STARTUP_RESEARCH_CARD_ID);
+ }
  restoreBooks();if(!BOOKS.some(b=>b.id===selectedId))selectedId=BOOKS[0]?.id||null;
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.select?.(selectedId);
- $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.keys(CARDS).length+' 張實體卡 · main @'+projection.source.commit.slice(0,7)+' · 排除／缺口 '+projection.diagnostics.length;
+ $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.values(projection.cards).length+' 張 GEN2 技能／流程 · '+(CARDS[STARTUP_RESEARCH_CARD_ID]?'1 張外部研究卡 · ':'')+'main @'+projection.source.commit.slice(0,7)+' · 排除／缺口 '+projection.diagnostics.length;
 }
 async function refreshGen2(){
  if(!token||busy)return;busy=true;const generation=epoch;const cfg={...GEN2.sources.github.defaults,token};
@@ -318,7 +336,7 @@ async function refreshGen2(){
  try{const source=await GEN2.sources.github.collect(cfg);if(generation!==epoch){GEN2.sources.github.clearCache();return;}
  const projection=GEN2.buildLibraryProjection(source);
  if(lastCommit!==source.commit){applyProjection(projection);lastCommit=source.commit;}
- else $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.keys(CARDS).length+' 張實體卡 · main @'+source.commit.slice(0,7)+' · 已核對最新版本';
+ else $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.values(CARDS).filter(c=>c.kind==='skill'||c.kind==='workflow').length+' 張 GEN2 技能／流程 · '+(CARDS[STARTUP_RESEARCH_CARD_ID]?'1 張外部研究卡 · ':'')+'main @'+source.commit.slice(0,7)+' · 已核對最新版本';
  $('authStatus').textContent='授權成功，已讀取 main';$('gen2Auth').close();
  }catch(e){if(generation!==epoch){GEN2.sources.github.clearCache();return;}disconnect();$('gen2Status').textContent='讀取失敗，已清除投影；請重新授權';$('authStatus').textContent=e.message;toast(e.message);}
  finally{busy=false;}
