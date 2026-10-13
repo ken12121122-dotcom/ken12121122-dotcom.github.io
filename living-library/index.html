@@ -437,7 +437,7 @@ const targetAngle=new THREE.Vector2(0,.17);
 function cameraUpdate(){
  // Free 360-degree yaw around the world. No fixed bookshelf camera.
  // Pitch is wide but bounded so visitors do not clip through the floor.
- const tilt=THREE.MathUtils.clamp(phi,-.48,1.27);
+ const tilt=THREE.MathUtils.clamp(phi,-.07,1.27);
  const horizontal=distance*Math.cos(tilt);
  camera.position.set(Math.sin(theta)*horizontal,look.y+Math.sin(tilt)*distance,Math.cos(theta)*horizontal);
  camera.lookAt(look);
@@ -619,7 +619,7 @@ function pick(e){
 }
 const touchPoints=new Map();
 renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
-renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.48,1.27);cameraUpdate()}}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,7.5,27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}}});
 renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
 renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
 renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,7.5,27);cameraUpdate()},{passive:false});
