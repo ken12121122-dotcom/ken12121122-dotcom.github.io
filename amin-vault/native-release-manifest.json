@@ -1,23 +1,24 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "candidate",
+  "channel": "release",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.23-rc1-bridge106",
-  "latestVersionCode": 202,
+  "latestVersionName": "0.11.24-rc1-bridge107",
+  "latestVersionCode": 203,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.23-rc1-bridge106.apk",
-  "apkSha256": "5e602bb0d5ace1124f7ce39ed3c0cdd92cbf14315bc1a1c0266e272e1d8bb8de",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.24-rc1-bridge107.apk",
+  "apkSha256": "7c0a7528d200e74c429f966d4ad71ce4d9a6d97edf0d62e45f2323f860eb039e",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 9442654,
-  "publishedAt": "2026-10-13T15:30:32Z",
+  "sizeBytes": 9442830,
+  "publishedAt": "2026-10-13T23:30:19Z",
   "mandatory": false,
   "releaseNotes": [
-    "候選驗收版：App 名稱與桌面圖示改為念動圖書館；開啟後以 3D 圖書館作為唯一工作台。",
-    "安卓之書提供原控制台功能入口；遊戲之書透過原生 GBA 畫面保留存檔與手把操作。",
-    "保留公開工作入口及授權後的 GEN2 讀取時投影；不加入私有文件或憑證，不擴大原生 Bridge。",
-    "尚待 OWNER 手機驗收：圖書館顯示、卡片開啟、返回、GEN2 授權與 GBA 存檔及手把回歸。"
+    "念動圖書館現在優先載入 GitHub Pages 線上 3D 圖書館；一般書籍、卡片、網頁 UI 與城堡房間後續透過網頁更新，不需為每張卡片更新 APK。",
+    "《遊戲之書》新增「知識城堡｜遊戲設計」卡片及記憶宮殿介紹；原有 GBA、Pocket Vault 卡片與存檔／手把功能保留。",
+    "保留 Bridge 106 的 3D 書架、書名、安卓之書16項原生入口、GEN2 授權後投影；網路載入失敗時使用 APK 內建離線書庫。",
+    "安全：線上圖書館僅有既有白名單原生路由，須主框架真實點擊；未新增 Android 權限、JS Bridge 或私有知識封裝。",
+    "版本 0.11.24-rc1-bridge107 / code203；Android CI 與模擬器已驗證，OWNER 手機網路切換、GBA 存檔與原地更新仍需實機驗收。"
   ]
 }
