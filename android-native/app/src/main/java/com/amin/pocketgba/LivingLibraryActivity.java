@@ -84,6 +84,7 @@ public final class LivingLibraryActivity extends Activity {
     static boolean canOpenNative(String page, boolean mainFrame, boolean gesture) {
         return mainFrame && gesture && LivingLibraryPolicy.isHome(page);
     }
+    WebView workbenchView() { return web; }
     void openNative(String route) {
         String target = LivingLibraryPolicy.ROUTES.get(route);
         if (target == null) return;

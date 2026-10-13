@@ -176,7 +176,7 @@ public final class LaunchGateActivity extends Activity {
         notesParams.topMargin = dp(10);
         card.addView(receiptNotesView, notesParams);
         Button enter = new Button(this);
-        enter.setText("進入遊戲控制台");
+        enter.setText("進入念動圖書館");
         enter.setAllCaps(false);
         enter.setTextSize(16);
         enter.setTypeface(Typeface.DEFAULT_BOLD);
@@ -208,7 +208,7 @@ public final class LaunchGateActivity extends Activity {
                         handler.postDelayed(this::openUpdater, 250);
                     } else {
                         statusView.setText("版本檢查完成");
-                        detailView.setText("正在進入遊戲控制台");
+                        detailView.setText("正在進入念動圖書館");
                         progressBar.setProgress(100);
                         handler.postDelayed(this::openControlCenter, 300);
                     }
