@@ -208,6 +208,7 @@ const CARDS=Object.freeze({
 research:{id:'research',seal:'✧',number:'01',title:'研究導航',guild:'探索',desc:'研究方法、文獻與心智圖。',url:SITE+'/packagecanvas/research-navigation-v04.html'},
 canvas:{id:'canvas',seal:'✦',number:'02',title:'知識工作台',guild:'編纂',desc:'開啟原有 PackageCanvas 知識架構工作台。',url:SITE+'/packagecanvas/'},
 startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線',desc:'公司設立任務、日程與研究事業規劃。',url:SITE+'/packagecanvas/startup.html'},
+startupTech:{id:'startupTech',seal:'◆',number:'08',title:'創業技術｜平台成長策略',guild:'研究卡 · 候選',desc:'Knowledge World 的平台成長、Book Protocol、專利布局、開發架構、授權與募資策略；完整內部文件可由網頁中的受限連結閱讀。',url:SITE+'/packagecanvas/startup-platform-growth-v01.html'},
 calendar:{id:'calendar',seal:'◷',number:'04',title:'日曆',guild:'時序',desc:'開啟 Google 日曆；事項需要自行建立與儲存。',url:'https://calendar.google.com/calendar/u/0/r/'},
 world:{id:'world',seal:'◎',number:'05',title:'知識世界',guild:'世界',desc:'開啟原有 GBA 風格知識世界與 GEN2 進度畫面。',url:SITE+'/packagecanvas/world.html'},
 gba:{id:'gba',seal:'♠',number:'06',title:'GBA 遊戲庫',guild:'遊戲',desc:'開啟現有遊戲庫；存檔及原生操作仍由 Pocket GBA 管理。',url:SITE+'/amin-vault/gba.html'},
@@ -215,7 +216,7 @@ vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',des
 });
 const BOOK_CARDS=Object.freeze({
 research:['research','canvas'],
-startup:['startup','calendar','canvas'],
+startup:['startup','startupTech','calendar','canvas'],
 knowledge:['world','canvas'],
 missions:['startup','world','calendar'],
 learning:['research','canvas'],
