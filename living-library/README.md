@@ -1,4 +1,4 @@
-# Living Library · GEN2 唯讀書庫（候選）
+# Living Library · GEN2 main MD 工作台（候選）
 
 review_status: generated。直接開發 B；未替換 Android 啟動首頁，未發布 APK。
 
@@ -21,7 +21,7 @@ GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: 
 - 純投影重用 `packagecanvas/gen2-source.js` 的 frontmatter、分類、表格、Wiki links 及 gen2-run 解析。
 - `node --test tests/*.test.mjs`：隔離 fixture 測試新增、空 KB、候選排除、Registry 不一致、ID 衝突、跨書引用；不提交正式私有資料。
 - 原始文字以 textContent 顯示，避免 Markdown 的 HTML／script 注入。
-- 不修改 main、GEN2 正式文件、Android Bridge、manifest、GBA 存檔；無寫入或 `/gen2 decide` 能力。
+- 不修改 main、GEN2 正式文件、Android Bridge、manifest、GBA 存檔；只允許獨立授權的候選分支／Draft PR 寫入，沒有 `/gen2 decide` 或 merge 能力。
 - 尚需手機／WebView WebGL、授權 CORS、實際捲動及 iframe 相容性驗收。靜態預覽可能有不同 origin，請使用 session token。
 - 回退：保留 PR 原提交；關閉候選頁即可回原控制中心。
 
