@@ -56,11 +56,11 @@ test('mobile 30 fps budget and book overlay release GPU animation loop',async()=
   const a=harness(await load());
   assert.ok(a.renderer.loop,'scene must render when visible');
   a.advance(17);
-  assert.equal(a.renders.length,0,'first 17 ms should be skipped on phone');
+  assert.equal(a.renders.length,1,'initial visible frame should paint');
   a.advance(20);
-  assert.equal(a.renders.length,1);
+  assert.equal(a.renders.length,1,'next frame is throttled on phone');
   a.advance(18);
-  assert.equal(a.renders.length,1);
+  assert.equal(a.renders.length,2);
   a.advance(20);
   assert.equal(a.renders.length,2);
   a.overlay(true);
