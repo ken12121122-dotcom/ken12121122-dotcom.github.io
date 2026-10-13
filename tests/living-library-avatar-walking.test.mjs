@@ -64,6 +64,7 @@ test('walking keeps existing book interactions and pauses behind readers',async(
  assert.ok(s.includes('keeper.rotation.y+=delta'),'avatar turns toward path');
  assert.ok(s.includes('document.getElementById(\'drawerWrap\').classList.contains(\'open\')'),'overlay blocks WebGL loop');
  assert.ok(s.includes('hasWalkInput()'),'moving requests render even when floating animation is off');
+ assert.ok(s.includes('if(overlay&&hasWalkInput()){walkKeys.clear();resetJoystick()}'),'held inputs must stop when book opens');
  assert.ok(s.includes('window.LivingLibrary.summonBook(id)'),'physical books remain selectable');
- assert.ok(s.includes("get('")===false||s.includes('const BOOKS='),'do not replace book controls');
+ assert.ok(s.includes("$('openBtn').onclick=openBook"),'existing book opening control still wired');
 });
