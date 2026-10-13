@@ -36,7 +36,7 @@ function harness(html,{mobile=true,motion=true,reduced=false}={}){
   };
   const context={preferReduced:reduced,window,document,renderer,scene:{},camera:{},
     dust:{rotation:{y:0}},keeper:{rotation:{y:0}},glow:{emissiveIntensity:0},
-    performance:{now:()=>now},isMotion:()=>motion,hasFlight:()=>false,hasWalkInput:()=>false,stepAvatar(){},
+    performance:{now:()=>now},isMotion:()=>motion,hasFlight:()=>false,hasWalkInput:()=>false,stepAvatar(){},exploring:false,
     walkKeys:new Set(),resetJoystick(){},exploreUI:{hidden:true},updateOrbit(){},
     notifyReady(api){sceneApi=api},rebuild(){},cameraUpdate(){},
     theta:0,phi:0,distance:0};
