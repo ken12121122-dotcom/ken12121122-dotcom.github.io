@@ -526,6 +526,9 @@ for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a
 const skylight=new THREE.PointLight(0xb6becf,12,26,2);skylight.position.set(0,12,0);scene.add(skylight);
 // Neutral keeper silhouette on the dais.
 const keeper=new THREE.Group();scene.add(keeper);keeper.position.set(0,.46,0);
+// World-space orbital anchor follows the librarian while the floor summoning sigil
+// remains attached to the scene at its original world origin.
+const bookOrbitAnchor=new THREE.Vector3(0,0,0);
 cyl(.38,.64,1.57,0,.82,0,simple(0x253d50,.14,.92),keeper,14);
 const cloak=new THREE.Mesh(new THREE.ConeGeometry(.76,2.32,9,1,true),new THREE.MeshStandardMaterial({color:0x1d3245,side:THREE.DoubleSide,roughness:1}));cloak.position.y=.90;keeper.add(cloak);
 const head=new THREE.Mesh(new THREE.SphereGeometry(.37,16,12),simple(0x3b5461,.12,1));head.position.y=2.00;keeper.add(head);
@@ -566,6 +569,7 @@ function showExploreMode(enabled){
  if(exploring){
   distanceBeforeExplore=distance;distance=6.8;
   look.set(keeper.position.x,2.1,keeper.position.z);
+  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
  }else{
   distance=distanceBeforeExplore;
   look.set(0,2.9,0);
@@ -622,6 +626,7 @@ function stepAvatar(dt){
  const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
+ bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
  // Rotate the original librarian silhouette toward the walking direction.
  const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
  keeper.rotation.y+=delta*Math.min(1,dt*11);
@@ -747,7 +752,7 @@ function releaseBook(o){
 function targetFor(o,t){
  if(o.mode==='orbit'){
   const p=Placement3D.orbitPosition(o.index,t);
-  return {position:new THREE.Vector3(p.x,p.y,p.z),
+  return {position:new THREE.Vector3(p.x+bookOrbitAnchor.x,p.y,p.z+bookOrbitAnchor.z),
    rotation:new THREE.Quaternion().setFromEuler(new THREE.Euler(.04*Math.sin(t+o.index),-p.angle*.5+.08,.09*Math.sin(t*.75+o.index))),
    scale:p.scale*(o.b.id===selectedId?1.16:1)};
  }
