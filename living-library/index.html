@@ -116,6 +116,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 
 
 /* In-world book reader: the 3D library remains mounted behind this parchment frame. */
+.drawer-wrap.reader-mode{background:rgba(3,7,14,.35);backdrop-filter:blur(2px)}
 .reader-shell[hidden]{display:none!important}
 .drawer.reader-active{width:min(1120px,calc(100vw - 24px));height:min(94dvh,960px);max-height:94dvh;overflow:hidden;display:flex;flex-direction:column;padding:15px 18px 14px;background:linear-gradient(140deg,#2d2a30,#100f19);border:2px solid #b69b67;box-shadow:0 28px 110px #000b,0 0 40px #d6b27b25,inset 0 0 22px #8d634d33}
 .drawer.reader-active .book-icon,.drawer.reader-active #drawerDesc,.drawer.reader-active .layout,.drawer.reader-active .compendium,.drawer.reader-active .drawer-actions,.drawer.reader-active .blank{display:none}
@@ -134,7 +135,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .reader-foot{display:flex;flex:none;align-items:center;justify-content:space-between;gap:9px;padding:7px 12px;background:linear-gradient(180deg,#ebd9b5,#c7af82);color:#654d2e;font-size:10px}
 .reader-external{color:#59452b;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;font-weight:700}
 @media(max-width:650px){
-.drawer.reader-active{width:calc(100vw - 10px);height:calc(100dvh - 28px - env(safe-area-inset-bottom));max-height:none;padding:10px 8px;border-radius:15px}
+.drawer.reader-active{width:calc(100vw - 26px);height:calc(100dvh - 56px - env(safe-area-inset-bottom));max-height:none;padding:10px 8px;border-radius:15px}
 .drawer.reader-active h2{font-size:15px;margin-bottom:6px}
 .reader-toolbar{padding:8px;gap:6px}.reader-toolbar-title strong{font-size:11px}.reader-toolbar-title small{font-size:9px}
 .reader-back{padding:8px 8px;font-size:11px}.reader-viewport{border:4px solid #d1bc92;border-left-width:8px}
@@ -267,6 +268,7 @@ function openCardReader(card){
  $('readerExternal').href=card.url;
  $('readerFrame').title='書中功能：'+card.title;
  $('readerShell').hidden=false;
+ $('drawerWrap').classList.add('reader-mode');
  $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
  $('readerFrame').src=card.url;
  $('readerBack').focus();
@@ -274,6 +276,7 @@ function openCardReader(card){
 function closeReader(){
  if($('readerShell').hidden)return;
  $('readerShell').hidden=true;
+ $('drawerWrap').classList.remove('reader-mode');
  $('drawerWrap').querySelector('.drawer')?.classList.remove('reader-active');
  $('readerFrame').removeAttribute('src');
  readerCard=null;
