@@ -1,73 +1,26 @@
-# Living Library · Pocket GBA 主要工作台 B（試作）
+# Living Library · GEN2 唯讀書庫（候選）
 
-> review_status: generated; **候選版，未進入正式 Pocket GBA APK**。
+review_status: generated。直接開發 B；未替換 Android 啟動首頁，未發布 APK。
 
-## 決策
-- 不設計 C→B 逐步搬遷或雙套長期維護。
-- **直接以 Living Library (B) 開發新的主要互動介面**；缺少的功能以後從現有可用實作接入。
-- 不刪除現有原生控制中心、GBA、GEN2 或 PackageCanvas；舊系統只作為必要服務與安全復原路徑。
-- 三方資料正本與權限保持原狀；書本是技能及功能入口，而非另一份資料庫。
+## 使用
 
-## 目前完成的 B 試作
-- `living-library/index.html`：3D 圖書館、中央人物、7 本環繞書（可調整）、5 本書架備用書、書頁與書架互動。
-- 書頁功能按鈕：每一本到書可有多個現有系統入口，包含研究導航、創業任務與日曆、PackageCanvas、Knowledge World、GBA 遊戲庫和 Vault。
-- 環繞與選取狀態保存在瀏覽器本機 `living-library-workbench-v1`；不寫進 GEN2 或 GitHub。
-- 行動裝置可拖曳、雙指縮放、點書、收納／召喚；Three.js 無法載入時仍提供書籍列表與功能入口。
-- 所有功能 URL 是公開的既有頁面；沒有內嵌 token 或個人資料。
+1. 開啟圖書館，按「連接 GEN2」。
+2. 使用只授權 GEN2 repo 的 Contents: Read-only fine-grained token，或明確選擇沿用同網域 PackageCanvas 已保存的授權。預覽網域與 GitHub Pages 的本機授權不共用。
+3. 頁面呼叫 PackageCanvas 的 GitHub collect，固定讀取 main/kb，並以 commit 固定同批文件。書本只來自 active Registry 登記及一致的非候選 Contract。
+4. 書內 Skill／Workflow 取自實際受控文件；BOM／Workflow 跨書引用使用同一正式 ID。規則、Template、未登記、候選、generated review、退役和重複 ID 不建立正式卡。
+5. 點卡即於可捲動書內頁閱讀來源文字、原始狀態、版本及 commit；可打開既有 GEN2 工作台。此入口不等於自動執行 Skill，OWNER Gate 保留在原系統。
+6. 開頁授權後每 60 秒及重新切回頁面核對 main。OWNER 合併的新登記 KB／Skill 在下次讀取出現；未合併 PR 不出現。新增空 KB 允許空書。
+7. 斷線清除本頁私有資料、書本及讀取快取。新貼權杖僅放記憶體；頁面不保存私有文件。只保存正式 ID 的書圈偏好。PackageCanvas 的既有保存設定由 PackageCanvas 管理。
 
-## 操作流程
-1. 打開 3D 圖書館，點書或從書庫清單選一本到技能書。
-2. 展開書頁 → 從「書中的功能」按鈕前往原有頁面。
-3. 使用瀏覽器或 Android 返回鍵回圖書館。
-4. 若要改變環繞的書本，選「歸還書架／召喚到身邊」。
+## 正式狀態
 
-## 功能入口（不是所有權限都已打通）
-- 《研究之書》 → `/packagecanvas/research-navigation-v04.html`、`/packagecanvas/`
-- 《創業之書》 → `/packagecanvas/startup.html`、Google Calendar 網頁（手動）
-- 《知識世界》 → `/packagecanvas/world.html`、`/packagecanvas/`
-- 《任務之書》 → 創業任務、GBA 知識世界、日曆
-- 《遊戲之書》 → `/amin-vault/gba.html`（網頁遊戲入口；不宣稱原生手把橋接在此頁可用）
-- 《系統之書》 → `/amin-vault/` 與 `/packagecanvas/`（不是 Android 原生系統維護頁）
-- 歷史技能如職安、寫作、設計與教學目前僅有通用工作台入口；缺什麼再補，不假裝專用功能已存在。
+GEN2 的 OWNER merge 是 release gate；既有 main 文件可能仍有 `status: draft`。本頁保留原值，區分「main 已收錄」與「執行已驗證」，不自行標記 approved。候選 Contract 即使在 main，也不因資料夾存在而成為正式 KB。
 
-## 尚未實作
-- **Pocket GBA Android APK 啟動首頁尚未修改。** 這需要另外校對現行原生原始碼，執行完整回歸與實機測試後才能替換 Android 啟動點。
-- 目前沒有正式技能權限 API、語音／手勢控制、GEN2 執行寫入、知識庫自動同步。
-- 書架的實體書飛行／精確書架定位動畫、跨裝置書圈同步尚未做。
-- 舊頁面不會自動提供「回到圖書館」固定按鈕，現階段使用瀏覽器／Android 返回。
-- 真正的 3D 行動裝置與 WebView 性能仍需實機驗收。
+## 驗證與邊界
 
-## 安全與發布
-- 禁止將本公用 repo 放入私有 GEN2 知識、個資、帳戶、權杖。
-- 不改動 native-release-manifest、runtime-manifest、Android Launcher、GEN2 審核或原 GBA 存檔。
-- 先以功能分支及 PR 實測；正式發布與 APK 改動需要 OWNER 驗收與授權。
-
-## 驗收
-- [x] JavaScript 語法解析成功
-- [x] 12 本書、7 本預設環繞、書頁開啟
-- [x] 研究、創業與 GBA 入口網址核對
-- [x] 歸架／召喚／選取的本機資料儲存
-- [ ] 手機 3D 畫面、頁面跳轉及返回驗收
-- [ ] Pocket GBA App 內實測
-- [ ] 新 Android Launcher 完整測試（此版未實作）
-
-## 回退
-B 此版尚未替換原始 App；直接關閉試作即可回到現有 Pocket GBA。合併前任何問題可撤回此 PR；既有資料不受影響。
-
-## Card Compendium v0.3 — 首次可用卡冊改版
-- 打開書本後顯示雙頁魔導圖鑑（桌面）／單頁卡槽（手機）。
-- 各書統一使用 6 個卡槽；有真實已存在的功能連結才展示「已收錄」，其他顯示灰色空槽，不代表具備技能、完成學習或有未公開功能。
-- 卡牌的**遊戲外觀號碼**為符印＋固定序位，例如 `◆ 03`（創業計畫）、`◷ 04`（日曆）、`✦ 02`（知識工作台）。符印及序位屬於圖鑑收藏表現；不是公司檔案、學術知識或 GEN2 的正式資料識別碼。
-- 使用單一 `CARDS` 資料表管理每張卡的正式名稱、說明與功能連結；各本書的 `BOOK_CARDS` 只引用該卡 ID，不再為相同功能另造名稱。
-- 點選卡片後顯示卡面說明，再由「啟動卡片」進入已存在的功能。未增加任何 GEN2 權限或改動現有工作頁。
-- 測試通過：12 本書、每書 6 卡槽、7 張唯一正式功能卡、創業／研究／GBA 連結、同卡跨書引用、原本本機環繞偏好儲存。實機視覺／WebGL 仍待 OWNER 驗收。
-
-
-## Embedded Book Reader v0.4 — 世界內的可捲動書頁
-- 由「書 → 卡冊 → 卡片」開啟功能後，**同站的既有網頁會嵌入原來的魔法書邊框內**，而非導離 3D 世界。
-- 內頁以 iframe 裝載，保持原功能的 UI、資料與捲動操作；背後 Three.js 場景不會卸載。
-- 從內頁可「返回卡冊」或「關閉書本」；前者保留已選書本，後者回到 3D 場景。
-- 僅將已知 GitHub Pages 路徑 `/packagecanvas/`、`/amin-vault/` 視為候選可嵌入功能；不載入任意 URL。這不代表內頁新取得任何原生權限。
-- Google Calendar 等外部服務不假設允許 iframe 嵌入：保留「開啟原頁」外部連結。書頁底部也有手動外開備援，避免網站禁止 iframe 時被困住。
-- 書圈設定仍保存在原瀏覽器，不複製／移轉私有知識庫、GEN2 或 Startup 資料。
-- 測試：JS 語法、點創業卡進書內 iframe、返回卡冊、關閉書本、Google Calendar 不嵌入均通過模擬；實機的手機 WebView、X-Frame-Options/CSP、效能及原頁 UI 捲動需人工驗收。
+- 純投影重用 `packagecanvas/gen2-source.js` 的 frontmatter、分類、表格、Wiki links 及 gen2-run 解析。
+- `node --test tests/*.test.mjs`：隔離 fixture 測試新增、空 KB、候選排除、Registry 不一致、ID 衝突、跨書引用；不提交正式私有資料。
+- 原始文字以 textContent 顯示，避免 Markdown 的 HTML／script 注入。
+- 不修改 main、GEN2 正式文件、Android Bridge、manifest、GBA 存檔；無寫入或 `/gen2 decide` 能力。
+- 尚需手機／WebView WebGL、授權 CORS、實際捲動及 iframe 相容性驗收。靜態預覽可能有不同 origin，請使用 session token。
+- 回退：保留 PR 原提交；關閉候選頁即可回原控制中心。

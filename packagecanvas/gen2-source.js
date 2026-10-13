@@ -148,6 +148,71 @@
     return normPath(path).split('/').some(seg => /^09_/.test(seg) || seg === '.obsidian' || seg === '.trash');
   }
 
+  // Read-only Living Library projection. Reuses this parser's classification,
+  // frontmatter, tables and Wiki links; no second knowledge-base parser.
+  function buildLibraryProjection(input) {
+    const expected = 'github:' + GITHUB_DEFAULTS.owner + '/' + GITHUB_DEFAULTS.repo + '@main';
+    if (input.key !== expected || input.ref !== 'main' || !/^[0-9a-f]{40}$/.test(input.commit || '') || input.truncated)
+      throw new Error('正式投影只接受完整的 GEN2 main 授權來源');
+    const diagnostics = [], books = [], cards = Object.create(null);
+    const docs = (input.files || []).filter(f => /\.md$/i.test(f.path) && !isTrash(f.path)).map(f => {
+      const path = normPath(f.path), parsed = parseFrontmatter(String(f.text || ''));
+      return { path, ...parsed, info: classify(path, parsed.data) };
+    });
+    const excluded = d => d.info.template || d.info.candidate || /candidate|rejected|deprecated|retired|archived/i.test(d.data?.status || '') || /generated|rejected|deprecated/i.test(d.data?.review_status || '');
+    const registry = docs.find(d => d.path === '00_ENTRY/KB_REGISTRY.md' && d.data?.type === 'registry' && d.data?.status === 'active' && !excluded(d));
+    if (!registry) throw new Error('缺少有效 KB_REGISTRY');
+    const rows = parseTables(registry.body).filter(t => t.headers.includes('kb_id')).flatMap(t => t.rows);
+    const duplicates = ids => new Set(ids.filter((id, i) => ids.indexOf(id) !== i));
+    const duplicateKBs = duplicates(rows.map(r => cellId(r.kb_id)));
+    for (const row of rows) {
+      const id = cellId(row.kb_id), folder = row['資料夾'], path = '02_KNOWLEDGE_BASES/' + folder;
+      const contracts = docs.filter(d => d.path === path + '/KB_CONTRACT.md');
+      const contract = contracts[0];
+      if (!/^KB-[A-Za-z0-9]+$/.test(id) || duplicateKBs.has(id) || row['狀態'] !== 'active' || !folder?.startsWith(id + '_') || contracts.length !== 1 || !contract || excluded(contract) || contract.data?.document_type !== 'kb_contract' || contract.data?.kb_id !== id) {
+        diagnostics.push({ code: 'registry_contract_mismatch', id }); continue;
+      }
+      books.push({ id, kb_id: id, name: row['名稱'] || contract.data.kb_name || id,
+        description: row['一句用途'] || '', status: contract.data.status || 'unspecified',
+        version: contract.data.version || null, sourcePath: contract.path, folder: path, cardIds: [] });
+    }
+    const eligible = docs.filter(d => !excluded(d) && books.some(b => b.folder === d.info.kbFolder && b.id === d.data?.kb_id) &&
+      ((d.data?.document_type === 'skill' && d.path.includes('/05_SKILLS/')) || (d.data?.document_type === 'workflow' && d.path.includes('/04_WORKFLOWS/'))));
+    const allIds = docs.filter(d => !d.info.template && !isTrash(d.path)).map(d => d.data?.skill_id || d.data?.workflow_id).filter(Boolean);
+    const duplicateIds = duplicates(allIds.map(lc));
+    for (const d of eligible) {
+      const kind = d.data.document_type, id = d.data[kind + '_id'];
+      if (!new RegExp('^' + (kind === 'skill' ? 'SK' : 'WF') + '-[A-Za-z0-9_-]+$').test(id || '') || duplicateIds.has(lc(id))) {
+        diagnostics.push({ code: 'invalid_or_duplicate_capability_id', id: id || d.path }); continue;
+      }
+      const run = kind === 'workflow' ? parseRunSpec(d.body) : { found: false };
+      cards[id] = { id, [kind + '_id']: id, kb_id: d.data.kb_id, kind,
+        title: firstHeading(d.body) || id, body: d.body, status: d.data.status || 'unspecified',
+        review_status: d.data.review_status || null, version: d.data.version || null,
+        sourcePath: d.path, sourceCommit: input.commit, runSpec: run.spec || null,
+        runtime: run.found && !run.errors.length ? 'defined_owner_gate' : 'document_only' };
+      books.find(b => b.id === d.data.kb_id).cardIds.push(id);
+    }
+    // Explicit BOM / workflow references share the same canonical object.
+    for (const b of books) {
+      const refs = docs.filter(d => d.info.kbFolder === b.folder && !excluded(d) &&
+        (d.data?.document_type === 'workflow_bom' || d.data?.document_type === 'workflow'));
+      for (const d of refs) {
+        const ids = [...wikiLinks(d.body), ...parseTables(d.body).flatMap(t => t.rows.flatMap(r =>
+          Object.entries(r).filter(([k]) => ['skill_id', 'workflow_id'].includes(k)).map(([,v]) => cellId(v))))];
+        for (const id of ids) {
+          if (cards[id] && !b.cardIds.includes(id)) b.cardIds.push(id);
+          else if (/^(SK|WF)-/.test(id) && !cards[id]) diagnostics.push({ code: 'unavailable_reference', kb_id: b.id, id });
+        }
+      }
+      b.cardIds.sort();
+    }
+    for (const d of docs.filter(d => d.data?.document_type === 'kb_contract' && !d.info.template)) {
+      if (!books.some(b => b.folder === d.info.kbFolder)) diagnostics.push({ code: 'excluded_kb', id: d.data.kb_id });
+    }
+    return { schemaVersion: 1, source: { key: input.key, ref: 'main', commit: input.commit }, books, cards, diagnostics };
+  }
+
   // ---------- executable workflow spec (gen2-run) ----------
   // A Workflow MD may carry one ```gen2-run fenced JSON block that turns its
   // steps into a state machine: input (OWNER provides material), skill (an
@@ -1071,6 +1136,7 @@
 
   const github = {
     id: 'github',
+    clearCache: () => blobCache.clear(),
     label: 'GitHub 正本',
     defaults: GITHUB_DEFAULTS,
     available: () => typeof fetch === 'function',
@@ -1175,5 +1241,5 @@
     }
   };
 
-  return { VERSION, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, runAgentStatus, sources: { native, picker, input, github } };
+  return { VERSION, buildLibraryProjection, buildProject, mergeLayout, parseFrontmatter, parseTables, wikiLinks, parseRunSpec, validateRunSpec, readRunView, runsFromIssues, runSignature, applyRunOverlay, keepRunOverlay, runAgentStatus, sources: { native, picker, input, github } };
 });

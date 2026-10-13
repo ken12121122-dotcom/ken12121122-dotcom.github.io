@@ -143,6 +143,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 }
 
 @media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
+#gen2Auth{max-width:min(500px,90vw);background:#e9d9b7;color:#473421;border:2px solid #b08d5e;border-radius:15px;padding:22px}#gen2Auth::backdrop{background:#0009}#gen2Auth input{box-sizing:border-box;width:100%;padding:10px}#gen2Auth button{margin:4px;padding:10px;min-height:44px}#gen2Status{font-size:11px;overflow-wrap:anywhere;margin:8px 12px}.source-page{box-sizing:border-box;flex:1;min-width:0;overflow:auto;background:#ecdfc4;color:#473421;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 sans-serif}.source-page a{color:#624522}.source-page button{padding:12px;margin:12px 0} .reader-frame[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -150,13 +151,13 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div></div></div>
-<div class="top-actions"><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
+<div class="top-actions"><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
 </header>
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
-<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
+<section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">尚未授權 · 不載入示範書</p><div id="bookList" class="book-list"></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">拖曳轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
-<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。仍可以從旁邊的書庫打開示範書頁。</p><button id="fallbackOpen" type="button">開啟一本示範書</button></div></div>
-<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>書籍描述為示範；功能連結已啟用</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
+<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
+<div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong>GEN2 main · active 登記與 Contract 核對</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
 <header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
 <div class="compendium-pages">
 <section class="compendium-leaf" aria-label="左頁技能卷首">
@@ -170,7 +171,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <section id="cardReveal" class="card-reveal" hidden aria-live="polite">
 <div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard">返回圖鑑</button></div>
 <p id="cardDescription" class="card-reveal-desc"></p><div id="cardLinks"></div>
-</section><p class="catalog-note">共 6 格卡槽。封印中的空格預留給未來能力；目前不代表有隱藏功能。</p>
+</section><p class="catalog-note">只收錄來源中實際存在的 Skill／Workflow；空格不代表能力。超過六張會自動延展。</p>
 </section></div></section><section id="readerShell" class="reader-shell" hidden aria-label="書內功能頁面">
 <div class="reader-toolbar">
 <button id="readerBack" class="reader-back" type="button">‹ 返回卡冊</button>
@@ -178,57 +179,18 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <button id="readerClose" class="reader-back" type="button">關閉書本</button>
 </div>
 <div class="reader-viewport">
-<iframe id="readerFrame" class="reader-frame" title="書內功能" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>
+<article id="sourcePage" class="source-page" hidden></article><iframe id="readerFrame" class="reader-frame" title="書內功能" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>
 </div>
 <footer class="reader-foot"><span>✧ 你仍在圖書館 · 書頁內容可上下滑動</span><a id="readerExternal" class="reader-external" target="_blank" rel="noopener noreferrer" href="#">若無法顯示，另開原頁 ↗</a></footer>
 </section><div class="drawer-actions"><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">✦ 同站功能現在於書本內頁開啟，3D 圖書館保留在背景；Google 日曆等外部網站仍需另開。書本環繞設定保留於本機，未更動原生 Pocket GBA。</p></section></div>
+<dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button">讀取正式書庫</button> <button id="reuseGen2" type="button">沿用此站 PackageCanvas 授權</button> <button id="disconnectGen2" type="button">斷線清除</button> <button>關閉</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="../packagecanvas/gen2-source.js?v=gen2-library-20261013"></script>
 <script>
 (function(){
-const BOOKS=[
-{id:'research',name:'研究之書',kind:'研究領域',tag:'RESEARCH',icon:'✧',color:'#517f80',description:'研究問題、文獻追蹤、可驗證假設與自主研究歷程。當前僅呈現知識容器與召喚的互動概念。',target:'研究導航／文獻工作台',active:true},
-{id:'startup',name:'創業之書',kind:'現實計畫',tag:'STARTUP',icon:'◆',color:'#a5764d',description:'公司設立、營業項目、開辦費用、研究成果商業化、授權與退出策略。',target:'創業專案與任務詳情',active:true},
-{id:'knowledge',name:'知識世界',kind:'知識管理',tag:'KNOWLEDGE',icon:'✦',color:'#6578a3',description:'將長期累積的知識、流程與技能，以可歸檔、召喚、組合的方式管理。',target:'知識圖譜與書架',active:true},
-{id:'missions',name:'任務之書',kind:'執行流程',tag:'MISSIONS',icon:'◎',color:'#9073a5',description:'承載今日工作、本週任務、阻塞因素與任務完成證據。',target:'任務面板／日曆',active:true},
-{id:'learning',name:'學習之書',kind:'學習科學',tag:'LEARNING',icon:'❖',color:'#779c80',description:'研究如何學習陌生領域、如何驗證方法有效性，與如何傳遞給其他學習者。',target:'學習研究／教學實驗',active:true},
-{id:'finance',name:'資產之書',kind:'財務目標',tag:'ASSETS',icon:'◇',color:'#8a8899',description:'財務自由、被動收入、研究資產授權與未來出售事業的候選規劃。',target:'資產規劃／商業退出',active:true},
-{id:'safety',name:'職安典籍',kind:'歷史技能',tag:'SAFETY',icon:'✥',color:'#a46a60',description:'示範如何將過去熟悉的技能先放在書架，必要時隨時召喚。',target:'歷史技能／工作方法',active:false},
-{id:'writing',name:'寫作之書',kind:'工具技能',tag:'WRITING',icon:'✎',color:'#706e99',description:'示範封存過往工作成果與可重複使用的書寫方法。',target:'歷史文件／技能模板',active:false},
-{id:'design',name:'設計之書',kind:'工具技能',tag:'DESIGN',icon:'✳',color:'#ad9365',description:'示範介面、排版與視覺設計技能的歸檔與快速召喚。',target:'設計技能／成果',active:false},
-{id:'teaching',name:'教學之書',kind:'領域技能',tag:'TEACHING',icon:'✺',color:'#578789',description:'示範教育教學計畫與課程設計知識的整理方式。',target:'教學方法／課程',active:false}
-];
-BOOKS.push(
-{id:'gaming',name:'遊戲之書',kind:'原有遊戲功能',tag:'GBA',icon:'♠',color:'#486b80',description:'從圖書館前往現有 GBA 遊戲庫；遊戲存檔與手把操作仍由原有系統負責。',target:'GBA 遊戲庫／存檔',active:true},
-{id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false}
-);
+const BOOKS=[], CARDS=Object.create(null), BOOK_CARDS=Object.create(null);
 const SITE='https://ken12121122-dotcom.github.io';
-// One canonical card = one existing destination. Multiple books may reference it,
-// but the collectible mark and displayed name stay unchanged.
-const CARDS=Object.freeze({
-research:{id:'research',seal:'✧',number:'01',title:'研究導航',guild:'探索',desc:'研究方法、文獻與心智圖。',url:SITE+'/packagecanvas/research-navigation-v04.html'},
-canvas:{id:'canvas',seal:'✦',number:'02',title:'知識工作台',guild:'編纂',desc:'開啟原有 PackageCanvas 知識架構工作台。',url:SITE+'/packagecanvas/'},
-startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線',desc:'公司設立任務、日程與研究事業規劃。',url:SITE+'/packagecanvas/startup.html'},
-calendar:{id:'calendar',seal:'◷',number:'04',title:'日曆',guild:'時序',desc:'開啟 Google 日曆；事項需要自行建立與儲存。',url:'https://calendar.google.com/calendar/u/0/r/'},
-world:{id:'world',seal:'◎',number:'05',title:'知識世界',guild:'世界',desc:'開啟原有 GBA 風格知識世界與 GEN2 進度畫面。',url:SITE+'/packagecanvas/world.html'},
-gba:{id:'gba',seal:'♠',number:'06',title:'GBA 遊戲庫',guild:'遊戲',desc:'開啟現有遊戲庫；存檔及原生操作仍由 Pocket GBA 管理。',url:SITE+'/amin-vault/gba.html'},
-vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',desc:'回到原有網頁入口；非 Android 原生維護控制中心。',url:SITE+'/amin-vault/'}
-});
-const BOOK_CARDS=Object.freeze({
-research:['research','canvas'],
-startup:['startup','calendar','canvas'],
-knowledge:['world','canvas'],
-missions:['startup','world','calendar'],
-learning:['research','canvas'],
-finance:['startup'],
-safety:['canvas'],
-writing:['canvas'],
-design:['canvas'],
-teaching:['research'],
-gaming:['gba','vault'],
-system:['vault','canvas']
-});
-window.LIVING_LIBRARY_DEMO=BOOKS;
-let selectedId='research',motion=true,ready=false,toastTimer=0;
+let selectedId=null,motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId,active:BOOKS.filter(b=>b.active).map(b=>b.id)}))}catch(_){}}
 function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const allowed=new Set(BOOKS.map(b=>b.id)),active=value.active.filter(id=>allowed.has(id));if(active.length&&active.length<=7){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}if(allowed.has(value.selectedId))selectedId=value.selectedId}catch(_){}}
@@ -237,7 +199,7 @@ const $=id=>document.getElementById(id);
 function book(){return BOOKS.find(b=>b.id===selectedId)||BOOKS[0]}
 function select(id){if(!BOOKS.some(b=>b.id===id))return;selectedId=id;storeBooks();updateUI();if(window.LivingScene&&window.LivingScene.select)window.LivingScene.select(id)}
 function updateUI(){
-const b=book();$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
+const b=book();$('openBtn').disabled=!b;$('prevBtn').disabled=!b;$('nextBtn').disabled=!b;$('fallbackOpen').disabled=!b;if(!b){$('focusTitle').textContent='尚未連接正式知識庫';$('focusSubtitle').textContent='請授權讀取 GEN2 main';$('bookList').replaceChildren();$('orbitCount').textContent='0 本環繞';return;}$('focusTitle').textContent=b.name;$('focusSubtitle').textContent=(b.active?'ACTIVE · ORBIT':'ARCHIVED · SHELF')+' · '+b.tag;
 $('orbitCount').textContent=BOOKS.filter(x=>x.active).length+' 本環繞';
 $('bookList').replaceChildren();
 BOOKS.forEach(x=>{const btn=document.createElement('button');btn.className='book-entry'+(x.id===selectedId?' active':'');btn.type='button';btn.setAttribute('aria-label','選取'+x.name);
@@ -265,12 +227,12 @@ function openCardReader(card){
  readerCard=card;
  $('readerTitle').textContent=card.title;
  $('readerSeal').textContent=card.seal+' '+card.number+' · '+card.guild+' · 翻頁閱讀';
- $('readerExternal').href=card.url;
+ $('readerExternal').href=card.url;$('readerExternal').textContent='若無法顯示，另開原頁 ↗';
  $('readerFrame').title='書中功能：'+card.title;
  $('readerShell').hidden=false;
  $('drawerWrap').classList.add('reader-mode');
  $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
- $('readerFrame').src=card.url;
+ $('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;
  $('readerBack').focus();
 }
 function closeReader(){
@@ -278,26 +240,23 @@ function closeReader(){
  $('readerShell').hidden=true;
  $('drawerWrap').classList.remove('reader-mode');
  $('drawerWrap').querySelector('.drawer')?.classList.remove('reader-active');
- $('readerFrame').removeAttribute('src');
+ $('readerFrame').removeAttribute('src');$('sourcePage').replaceChildren();$('sourcePage').hidden=true;
  readerCard=null;
  $('drawerFunctions').querySelector('.codex-slot.selected')?.focus();
 }
 function revealCard(card,button){
- const seal=card.seal+' '+card.number;
- $('cardReveal').hidden=false;
- $('cardSeal').textContent=seal+' · '+card.guild+'卡';
- $('cardTitle').textContent=card.title;
- $('cardDescription').textContent=card.desc;
- $('cardLinks').replaceChildren();
- const embed=isLocalFunctionPage(card.url);
- const btn=document.createElement(embed?'button':'a');btn.className='function-link';
- if(embed){btn.type='button';btn.addEventListener('click',()=>openCardReader(card));}
- else{btn.href=card.url;btn.target='_blank';btn.rel='noopener noreferrer';btn.addEventListener('click',storeBooks);}
- btn.setAttribute('aria-label',(embed?'在書內打開':'開啟外部網站')+card.title);
- const title=document.createElement('strong');title.textContent=(embed?'✦ 在書內展開 · ':'↗ 開啟原頁 · ')+card.title;
- const sub=document.createElement('small');sub.textContent=embed?'留在 3D 圖書館，於書頁內操作':'此網站無法保證嵌入，使用外部連結';
- btn.append(title,sub);$('cardLinks').append(btn);
- $('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>{el.classList.toggle('selected',el===button)});
+ storeBooks();readerCard=card;
+ $('readerTitle').textContent=card.title;
+ $('readerSeal').textContent=card.id+' · '+card.status+' · '+card.sourceCommit.slice(0,7);
+ $('readerExternal').href=card.sourceUrl;$('readerExternal').textContent='查看私有 repo 原始文件 ↗';
+ $('readerShell').hidden=false;$('drawerWrap').classList.add('reader-mode');
+ $('drawerWrap').querySelector('.drawer')?.classList.add('reader-active');
+ $('readerFrame').removeAttribute('src');$('readerFrame').hidden=true;
+ const page=$('sourcePage');page.hidden=false;page.replaceChildren();
+ const meta=document.createElement('p');meta.textContent=card.id+' · '+card.kind+' · 來源狀態 '+card.status+' · 版本 '+(card.version||'未標示')+'\n'+card.sourcePath+'\n來源 commit '+card.sourceCommit+'\n'+(card.runtime==='defined_owner_gate'?'含 gen2-run 定義；啟動與 OWNER Gate 仍由既有工作台處理':'能力文件已收錄；本頁不自動執行或寫入外部服務');page.append(meta);
+ const action=document.createElement('button');action.textContent='在書內開啟既有 GEN2 工作台';action.onclick=()=>openCardReader({...card,url:SITE+'/packagecanvas/?gen2ref=main'});page.append(action);
+ const content=document.createElement('div');content.textContent=card.body;page.append(content);
+ $('readerBack').focus();
 }
 $('readerBack').addEventListener('click',closeReader);
 $('readerClose').addEventListener('click',()=>closeBook());
@@ -306,10 +265,10 @@ function renderFunctions(b){
  const ids=BOOK_CARDS[b.id]||[];
  $('codexCrest').textContent=b.icon;
  $('codexBookLabel').textContent=b.name;
- $('codexHeader').textContent='卷印 '+b.icon+' · 已收錄 '+ids.length+' / 6';
+ $('codexHeader').textContent='卷印 '+b.icon+' · 已收錄 '+ids.length+' / '+Math.max(6,ids.length);
  $('codexQuote').textContent='「'+b.name+'」 · 『觸印成術，翻頁為界。』';
  $('cardReveal').hidden=true;$('cardLinks').replaceChildren();
- for(let i=0;i<6;i++){
+ for(let i=0;i<Math.max(6,ids.length);i++){
    const id=ids[i],card=id?CARDS[id]:null;
    const btn=document.createElement('button');btn.type='button';
    btn.className='codex-slot'+(card?'':' unfilled');
@@ -325,22 +284,53 @@ function renderFunctions(b){
  }
 }
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){closeReader();const b=book();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
+function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');$('openBtn').focus()}
 function moveBook(){const b=book();if(!b.active&&BOOKS.filter(x=>x.active).length>=7){toast('身邊最多先環繞 7 本書，請先歸架一本到書架');return}
 b.active=!b.active;storeBooks();toast(b.active?'✧ '+b.name+' 已召喚':'▥ '+b.name+' 已放回書架');updateUI();$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';window.LivingScene?.rebuild?.()}
-function cycle(d){const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
+function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);const list=a.length?a:BOOKS;const idx=list.findIndex(x=>x.id===selectedId);select(list[(idx+d+list.length)%list.length].id)}
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
 $('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
 $('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
 $('resetBtn').onclick=()=>window.LivingScene?.reset?.();
-$('homeBtn').onclick=()=>{closeBook();select('research');window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
-$('aboutBtn').onclick=()=>{toast('獨立 3D 概念場景 · 目前無正式資料連結 · 技能書功能入口已連到現有公開工作頁面；原生操作仍需後續接入')};
+$('homeBtn').onclick=()=>{closeBook();if(BOOKS.length)select(BOOKS[0].id);window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
+$('aboutBtn').onclick=()=>{toast('GEN2 main 唯讀投影 · 正式 ID 保留 · 只收錄實體能力文件；執行與核准仍由既有 GEN2 負責')};
 $('fallbackOpen').onclick=openBook;
 $('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
 $('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawerWrap').classList.contains('open')){$('readerShell').hidden?closeBook():closeReader();}if(e.key==='ArrowRight')cycle(1);if(e.key==='ArrowLeft')cycle(-1);if(e.key==='Enter'&&!$('drawerWrap').classList.contains('open')&&e.target===document.body)openBook()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawerWrap').classList.contains('open')){$('readerShell').hidden?closeBook():closeReader();}if(!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)&&!$('gen2Auth').open){if(e.key==='ArrowRight')cycle(1);if(e.key==='ArrowLeft')cycle(-1);}if(e.key==='Enter'&&!$('drawerWrap').classList.contains('open')&&e.target===document.body)openBook()});
+let token='',busy=false,epoch=0,lastCommit=null;
+const GEN2=window.PackageCanvasGen2;
+function applyProjection(projection){
+ closeBook();const prefs=new Map(BOOKS.map(b=>[b.id,b.active]));
+ BOOKS.splice(0,BOOKS.length,...projection.books.map((b,i)=>({...b,tag:b.id,kind:'GEN2 正式登記',icon:['✧','◆','✦','◎'][i%4],color:['#517f80','#a5764d','#6578a3','#9073a5'][i%4],target:'Skill／Workflow 來源與既有工作台',active:prefs.has(b.id)?prefs.get(b.id):i<7})));
+ for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];
+ for(const [id,c] of Object.entries(projection.cards))CARDS[id]={...c,seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(CARDS).length+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
+ for(const b of projection.books)BOOK_CARDS[b.id]=b.cardIds;
+ restoreBooks();if(!BOOKS.some(b=>b.id===selectedId))selectedId=BOOKS[0]?.id||null;
+ updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.select?.(selectedId);
+ $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.keys(CARDS).length+' 張實體卡 · main @'+projection.source.commit.slice(0,7)+' · 排除／缺口 '+projection.diagnostics.length;
+}
+async function refreshGen2(){
+ if(!token||busy)return;busy=true;const generation=epoch;const cfg={...GEN2.sources.github.defaults,token};
+ $('gen2Status').textContent='正在唯讀核對 GEN2 main…';
+ try{const source=await GEN2.sources.github.collect(cfg);if(generation!==epoch){GEN2.sources.github.clearCache();return;}
+ const projection=GEN2.buildLibraryProjection(source);
+ if(lastCommit!==source.commit){applyProjection(projection);lastCommit=source.commit;}
+ else $('gen2Status').textContent=BOOKS.length+' 本正式書 · '+Object.keys(CARDS).length+' 張實體卡 · main @'+source.commit.slice(0,7)+' · 已核對最新版本';
+ $('authStatus').textContent='授權成功，已讀取 main';$('gen2Auth').close();
+ }catch(e){if(generation!==epoch){GEN2.sources.github.clearCache();return;}disconnect();$('gen2Status').textContent='讀取失敗，已清除投影；請重新授權';$('authStatus').textContent=e.message;toast(e.message);}
+ finally{busy=false;}
+}
+function disconnect(){epoch++;token='';lastCommit=null;GEN2.sources.github.clearCache();closeBook();BOOKS.splice(0);for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];$('sourcePage').replaceChildren();$('drawerFunctions').replaceChildren();$('cardLinks').replaceChildren();for(const id of ['drawerTitle','drawerDesc','drawerMeta','drawerCategory','drawerLocation','drawerTarget','codexBookLabel','codexQuote','codexHeader','readerTitle','readerSeal','cardTitle','cardDescription','cardSeal'])$(id).textContent='';$('readerExternal').removeAttribute('href');selectedId=null;$('gen2Token').value='';updateUI();window.LivingScene?.rebuild?.();$('gen2Status').textContent='已斷線 · 私有內容已從本頁清除';}
+$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal()};
+$('readGen2').onclick=()=>{if(busy)return;token=$('gen2Token').value.trim();$('gen2Token').value='';if(!token){$('authStatus').textContent='請提供唯讀權杖';return;}epoch++;lastCommit=null;refreshGen2()};
+$('reuseGen2').onclick=()=>{if(busy)return;try{const cfg=JSON.parse(localStorage.getItem('packagecanvas-gen2-github-v1')||'null');if(!cfg?.token||cfg.owner!==GEN2.sources.github.defaults.owner||cfg.repo!==GEN2.sources.github.defaults.repo)throw new Error('此網域未有符合的 PackageCanvas 授權，請貼上唯讀權杖');token=cfg.token;epoch++;lastCommit=null;refreshGen2()}catch(e){$('authStatus').textContent=e.message}};
+$('disconnectGen2').onclick=()=>{disconnect();$('gen2Auth').close()};
+setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
+window.addEventListener('pagehide',disconnect);
 updateUI();
 window.LivingLibrary={books:BOOKS,select,openBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
 })();
@@ -427,12 +417,12 @@ const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new TH
 box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
 const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
 g.userData={bookId:b.id,halo};m.userData.bookId=b.id;return g}
-function rebuild(){orbitEntities.forEach(o=>scene.remove(o.group));orbitEntities.length=0;const active=books.filter(x=>x.active);
+function rebuild(){orbitEntities.forEach(o=>{scene.remove(o.group);o.group.traverse(m=>{if(m.geometry&&m.geometry!==unit)m.geometry.dispose();const materials=Array.isArray(m.material)?m.material:[m.material];materials.forEach(mat=>{if(mat&&mat!==gold&&mat!==glow&&!Array.from(coverMaterials.values()).includes(mat))mat.dispose?.()})})});coverMaterials.forEach(mat=>{mat.map?.dispose();mat.dispose()});coverMaterials.clear();orbitEntities.length=0;const active=books.filter(x=>x.active);
 active.forEach((b,index)=>{const g=bookMesh(b);scene.add(g);orbitEntities.push({b,group:g,index});g.visible=true});updateOrbit(0);}
 function updateOrbit(t){const n=orbitEntities.length||1;orbitEntities.forEach((o,i)=>{const a=(Math.PI*2*i/n)+t*.11-.32;const R=n>5?3.15:2.78;o.group.position.set(Math.sin(a)*R,2.55+Math.sin(t*1.25+i*1.8)*.15+Math.sin(i*2)*.15,Math.cos(a)*R*.80+.12);
 o.group.rotation.set(.04*Math.sin(t+i),-a*.5+.08,.09*Math.sin(t*.75+i));o.group.userData.halo.visible=o.b.id===selectedId;if(o.b.id===selectedId){o.group.scale.setScalar(1.12)}else{o.group.scale.setScalar(.95)}});
 }
-let selectedId='research';rebuild();
+let selectedId=null;rebuild();
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);const targets=[];orbitEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));const hit=ray.intersectObjects(targets,false)[0];if(hit){select(hit.object.userData.bookId);window.LivingLibrary.openBook();return true}return false}
 const touchPoints=new Map();
