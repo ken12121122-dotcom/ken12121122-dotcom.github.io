@@ -1,43 +1,55 @@
-# Living Library · 獨立 3D 念動圖書館試作
+# Living Library · Pocket GBA 主要工作台 B（試作）
 
-狀態：**Prototype / generated / 未合併主網站**
+> review_status: generated; **候選版，未進入正式 Pocket GBA APK**。
 
-## 目的
-以 Three.js 建立一個可在手機操作的獨立 3D 概念場景，供 OWNER 討論：以人為中心的魔法圖書館、環繞書本、書庫、召喚、歸架、閱讀書頁。不要整合到 PackageCanvas 或既有 GEN2 系統。
+## 決策
+- 不設計 C→B 逐步搬遷或雙套長期維護。
+- **直接以 Living Library (B) 開發新的主要互動介面**；缺少的功能以後從現有可用實作接入。
+- 不刪除現有原生控制中心、GBA、GEN2 或 PackageCanvas；舊系統只作為必要服務與安全復原路徑。
+- 三方資料正本與權限保持原狀；書本是技能及功能入口，而非另一份資料庫。
 
-## 實作範圍
-- 僅新增 `living-library/index.html` 與本說明；不更動現有網站、APK、GEN2 或授權。
-- THREE.js 0.185.0（與 repo 現有 3D 場景版本一致；使用 jsDelivr CDN）。
-- 3D 大廳：書櫃、柱廊、石台、法陣、光源、漂浮粒子、匿名主角與環繞書本。
-- 10 本合成展示書籍：6 本主動環繞、4 本已歸檔。
-- 互動：拖曳轉動視角、滑鼠滾輪/手機雙指縮放、點擊書本、前後選取、展開書頁、召喚與歸架、暫停動畫、重設視角。
-- 手機窄螢幕書庫抽屜與書頁彈窗；WebGL/Three.js 載入失敗時顯示 fallback。
-- 3D scene and UI data are synthetic; no Google/GitHub login, calendar, cloud access or private knowledge.
+## 目前完成的 B 試作
+- `living-library/index.html`：3D 圖書館、中央人物、7 本環繞書（可調整）、5 本書架備用書、書頁與書架互動。
+- 書頁功能按鈕：每一本到書可有多個現有系統入口，包含研究導航、創業任務與日曆、PackageCanvas、Knowledge World、GBA 遊戲庫和 Vault。
+- 環繞與選取狀態保存在瀏覽器本機 `living-library-workbench-v1`；不寫進 GEN2 或 GitHub。
+- 行動裝置可拖曳、雙指縮放、點書、收納／召喚；Three.js 無法載入時仍提供書籍列表與功能入口。
+- 所有功能 URL 是公開的既有頁面；沒有內嵌 token 或個人資料。
 
-## 保留但不實作的正式系統連結
+## 操作流程
+1. 打開 3D 圖書館，點書或從書庫清單選一本到技能書。
+2. 展開書頁 → 從「書中的功能」按鈕前往原有頁面。
+3. 使用瀏覽器或 Android 返回鍵回圖書館。
+4. 若要改變環繞的書本，選「歸還書架／召喚到身邊」。
 
-| Demo 書籍 | 可能連結到的正式功能（候選，尚未啟用） |
-|---|---|
-| 研究之書 | 研究導航、文獻流程與研究問題 |
-| 創業之書 | PackageCanvas 創業任務與公司設立 |
-| 知識世界 | Knowledge Map、GBA 知識世界與 Knowledge Graph |
-| 任務之書 | 每日任務、日曆與工作流 |
-| 學習之書 | 學習科學研究方法與教學驗證 |
-| 資產之書 | 財務自由、授權與公司退場 |
-| 職安／寫作／設計／教學 | 歷史技能與成果書架 |
+## 功能入口（不是所有權限都已打通）
+- 《研究之書》 → `/packagecanvas/research-navigation-v04.html`、`/packagecanvas/`
+- 《創業之書》 → `/packagecanvas/startup.html`、Google Calendar 網頁（手動）
+- 《知識世界》 → `/packagecanvas/world.html`、`/packagecanvas/`
+- 《任務之書》 → 創業任務、GBA 知識世界、日曆
+- 《遊戲之書》 → `/amin-vault/gba.html`（網頁遊戲入口；不宣稱原生手把橋接在此頁可用）
+- 《系統之書》 → `/amin-vault/` 與 `/packagecanvas/`（不是 Android 原生系統維護頁）
+- 歷史技能如職安、寫作、設計與教學目前僅有通用工作台入口；缺什麼再補，不假裝專用功能已存在。
 
-## 未實作、待討論
-- 尚未建立與既有頁面的跳轉、帳戶認證、持久進度或知識庫串接。
-- 書架上的歸檔書是示意，未實作實體書本飛回指定書架的完整動作與分類對位。
-- 目前使用第三人稱的匿名主控者剪影；第一人稱視角與真正的語音／手勢／意念控制尚未做。
-- 書籍數量／色系／分類與互動規則均待 OWNER 審視。
+## 尚未實作
+- **Pocket GBA Android APK 啟動首頁尚未修改。** 這需要另外校對現行原生原始碼，執行完整回歸與實機測試後才能替換 Android 啟動點。
+- 目前沒有正式技能權限 API、語音／手勢控制、GEN2 執行寫入、知識庫自動同步。
+- 書架的實體書飛行／精確書架定位動畫、跨裝置書圈同步尚未做。
+- 舊頁面不會自動提供「回到圖書館」固定按鈕，現階段使用瀏覽器／Android 返回。
+- 真正的 3D 行動裝置與 WebView 性能仍需實機驗收。
+
+## 安全與發布
+- 禁止將本公用 repo 放入私有 GEN2 知識、個資、帳戶、權杖。
+- 不改動 native-release-manifest、runtime-manifest、Android Launcher、GEN2 審核或原 GBA 存檔。
+- 先以功能分支及 PR 實測；正式發布與 APK 改動需要 OWNER 驗收與授權。
 
 ## 驗收
-- [x] 兩段 JS 在語法層可解析（classic script、ES module 主體）。
-- [x] 入口只建立在 `living-library/`；沒有動到現存頁面。
-- [ ] 實機 WebGL 畫面、旋轉、縮放、點書互動與效能檢查。
-- [ ] OWNER 審查視覺與交互感受。
-- [ ] OWNER 明確核准後，才能合併正式 `main` 或與既有頁面建立連結。
+- [x] JavaScript 語法解析成功
+- [x] 12 本書、7 本預設環繞、書頁開啟
+- [x] 研究、創業與 GBA 入口網址核對
+- [x] 歸架／召喚／選取的本機資料儲存
+- [ ] 手機 3D 畫面、頁面跳轉及返回驗收
+- [ ] Pocket GBA App 內實測
+- [ ] 新 Android Launcher 完整測試（此版未實作）
 
 ## 回退
-刪除獨立 `living-library/` 資料夾即可撤除所有試作，不會變動現有 Canvas 資料或 Android App。
+B 此版尚未替換原始 App；直接關閉試作即可回到現有 Pocket GBA。合併前任何問題可撤回此 PR；既有資料不受影響。
