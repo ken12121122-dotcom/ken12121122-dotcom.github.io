@@ -522,17 +522,69 @@ const Placement3D=window.LivingBookPlacement;
 if(!Placement3D)throw Error('3D placement script was not loaded');
 const preferReduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 let currentOrbitTime=0;
-// One mesh per real book, in the orbital rings OR at a concrete shelf slot.
-// The same mesh moves between the two locations: no teleport or decorative proxy.
+
+// All text comes from the SAME catalog / authorized GEN2 book record.
+function bookTitle(b){return String(b.name||'未命名之書').trim()||'未命名之書'}
+function titleKey(b){return [bookTitle(b),b.color,b.icon,b.tag].join('\u0001')}
+function nameplateWidth(b){return Math.min(2.55,Math.max(2.12,1.66+Array.from(bookTitle(b)).length*.145))}
+function orbitTitleTex(b){
+ const c=document.createElement('canvas');c.width=768;c.height=176;
+ const ctx=c.getContext('2d'),name=bookTitle(b);
+ ctx.fillStyle='rgba(7,18,33,.94)';ctx.fillRect(10,12,748,150);
+ ctx.fillStyle=b.color||'#897655';ctx.fillRect(10,12,12,150);
+ ctx.strokeStyle='#f4d7a1';ctx.lineWidth=5;ctx.strokeRect(10,12,748,150);
+ ctx.fillStyle='#fff9e7';ctx.textAlign='center';ctx.textBaseline='middle';
+ let font=81;ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif';
+ while(ctx.measureText(name).width>670&&font>34){font-=3;ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif'}
+ ctx.fillText(name,392,87,670);
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function spineTitleTex(b){
+ const c=document.createElement('canvas');c.width=256;c.height=768;
+ const ctx=c.getContext('2d'),tokens=bookTitle(b).match(/[A-Za-z0-9]+|[^\s]/gu)||['書'];
+ const pieces=tokens.length>8?[...tokens.slice(0,7),'…']:tokens;
+ ctx.fillStyle=b.color||'#44546b';ctx.fillRect(0,0,256,768);
+ ctx.fillStyle='rgba(4,11,24,.59)';ctx.fillRect(17,15,222,737);
+ ctx.strokeStyle='#f4d19a';ctx.lineWidth=8;ctx.strokeRect(24,22,208,724);
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff3d6';
+ const step=Math.min(120,594/pieces.length),start=384-(pieces.length-1)*step/2;
+ for(let i=0;i<pieces.length;i++){
+  let font=Math.min(125,step*.86);
+  ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif';
+  while(ctx.measureText(pieces[i]).width>194&&font>30){font-=3;ctx.font='bold '+font+'px "Noto Sans TC","Microsoft JhengHei",sans-serif'}
+  ctx.fillText(pieces[i],128,start+i*step,194);
+ }
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+// A real book travels between orbit and shelf; its title graphics follow that same mesh.
 function bookMesh(b){
  const cover=new THREE.MeshStandardMaterial({map:coverTex(b),roughness:.67,metalness:.11,side:THREE.DoubleSide});coverMaterials.set(b.id,cover);
- const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
- const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.04,.18);const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
- box(.80,.035,.20,0,.52,0,gold,g);box(.80,.035,.20,0,-.52,0,gold,g);box(.05,.95,.205,-.375,0,0,spine,g);
- const halo=torus(.64,.012,0,0,-.14,glow,g,0);halo.visible=false;
- // The book's interactive identity is independent of its current position.
- g.userData={bookId:b.id,halo};m.userData.bookId=b.id;
+ const coverBack=simple(new THREE.Color(b.color).multiplyScalar(.60),.06,.75),
+       edges=simple(0xdac9a5,.04,.9),spine=simple(new THREE.Color(b.color).multiplyScalar(.85),.11,.7);
+ const g=new THREE.Group(),geo=new THREE.BoxGeometry(.72,1.12,.44);
+ const m=new THREE.Mesh(geo,[edges,spine,edges,edges,cover,coverBack]);g.add(m);
+ box(.78,.028,.45,0,.56,0,gold,g);box(.78,.028,.45,0,-.56,0,gold,g);
+ const spinePanel=new THREE.Mesh(new THREE.PlaneGeometry(.435,1.06),
+  new THREE.MeshBasicMaterial({map:spineTitleTex(b),side:THREE.DoubleSide,toneMapped:false}));
+ spinePanel.position.set(-.363,0,0);spinePanel.rotation.y=-Math.PI/2;g.add(spinePanel);
+ const orbitLabel=new THREE.Sprite(new THREE.SpriteMaterial({
+  map:orbitTitleTex(b),transparent:true,depthTest:false,depthWrite:false,toneMapped:false
+ }));
+ orbitLabel.position.set(0,.93,.12);orbitLabel.scale.set(nameplateWidth(b),.57,1);
+ orbitLabel.renderOrder=12;orbitLabel.userData.bookId=b.id;g.add(orbitLabel);
+ const halo=torus(.64,.012,0,0,-.27,glow,g,0);halo.visible=false;
+ g.userData={bookId:b.id,halo,coverMaterial:cover,spinePanel,orbitLabel,titleKey:titleKey(b)};
+ m.userData.bookId=b.id;spinePanel.userData.bookId=b.id;
  return g;
+}
+function syncBookTitles(o,b){
+ const u=o.group.userData,key=titleKey(b);
+ if(u.titleKey===key)return;
+ const swap=(mat,map)=>{mat.map?.dispose();mat.map=map;mat.needsUpdate=true};
+ swap(u.coverMaterial,coverTex(b));
+ swap(u.spinePanel.material,spineTitleTex(b));
+ swap(u.orbitLabel.material,orbitTitleTex(b));
+ u.orbitLabel.scale.set(nameplateWidth(b),.57,1);u.titleKey=key;
 }
 function releaseBook(o){
  scene.remove(o.group);
@@ -540,8 +592,7 @@ function releaseBook(o){
   if(m.geometry&&m.geometry!==unit)m.geometry.dispose();
   const mats=Array.isArray(m.material)?m.material:[m.material];
   for(const mat of mats)if(mat&&mat!==gold&&mat!==glow){
-   if(mat===coverMaterials.get(o.id)){mat.map?.dispose();mat.dispose();}
-   else mat.dispose?.();
+   mat.map?.dispose();mat.dispose?.();
   }
  });
  coverMaterials.delete(o.id);
@@ -558,9 +609,10 @@ function targetFor(o,t){
  const shelf=shelves[slot.shelfIndex];
  shelf.updateWorldMatrix(true,false);
  const position=shelf.localToWorld(new THREE.Vector3(slot.x,slot.y,slot.z));
- const rotation=shelf.getWorldQuaternion(new THREE.Quaternion());
- // Display the cover forward like a featured real book, not a 0.15-wide invisible spine.
- return {position,rotation,scale:.90*(o.b.id===selectedId?1.08:1)};
+ const rotation=shelf.getWorldQuaternion(new THREE.Quaternion())
+  .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2));
+ // Turn the printed left spine toward the aisle; its title is drawn from b.name.
+ return {position,rotation,scale:.92*(o.b.id===selectedId?1.08:1)};
 }
 function updateOrbit(t,now=performance.now()){
  currentOrbitTime=t;
@@ -582,6 +634,7 @@ function updateOrbit(t,now=performance.now()){
    o.flight=null;
   }
   g.userData.halo.visible=o.b.id===selectedId;
+  g.userData.orbitLabel.visible=o.mode==='orbit'||!!o.flight;
  }
 }
 function hasFlight(){return bookEntities.some(o=>!!o.flight)}
@@ -605,6 +658,7 @@ function rebuild(){
    if(changed){
     o.flight={position:o.group.position.clone(),rotation:o.group.quaternion.clone(),scale:o.group.scale.x,started:now,duration:o.mode!==mode?1250:650};
    }
+   syncBookTitles(o,b);
    o.b=b;o.mode=mode;o.index=index;
   }
  }
@@ -617,7 +671,7 @@ function pick(e){
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
- const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if((x.isMesh||x.isSprite)&&x.userData.bookId)targets.push(x)}));
  const hit=ray.intersectObjects(targets,false)[0];
  if(hit){
   const id=hit.object.userData.bookId,o=entityById.get(id);
