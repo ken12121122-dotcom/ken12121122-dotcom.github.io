@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T18:26:49.521Z",
+  "updated_at": "2026-10-14T19:30:44.519Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -110,7 +110,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P1-PAYLOAD-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -250,10 +250,10 @@
     "next_action": "Harden ActionRegistry payload snapshot fidelity: reject sparse/non-JSON payloads before JSON copy so validated and executed inputs cannot diverge; synthetic P1 tests only, no scene loading."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T18:26:49.521Z",
-    "state": "READY_NEXT_SLICE",
+    "lease_owner": "NW-P1-20261015-04",
+    "lease_expires_at": "2026-10-14T19:50:44.519Z",
+    "heartbeat_at": "2026-10-14T19:30:44.519Z",
+    "state": "REPRODUCING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
