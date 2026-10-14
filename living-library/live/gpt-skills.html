@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081525">
+<title>GPT 技能總覽卡｜念動系統</title>
+<meta name="description" content="念動系統 GPT 之書的可搜尋技能索引、單一指令意圖路由與嵌入式卡片規則。">
+<style>
+:root{color-scheme:dark;--bg:#091321;--panel:#142438;--line:#385067;--ink:#f5f0df;--muted:#b9c8d4;--gold:#e7c794;--accent:#91dcd0}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;padding:clamp(14px,4vw,28px);font:15px/1.58 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;background:radial-gradient(ellipse at top left,#23354d 0%,var(--bg) 60%);color:var(--ink);min-height:100vh}
+header{border:1px solid var(--line);border-radius:20px;padding:clamp(18px,4vw,26px);background:linear-gradient(126deg,#23374d,#0c1b2c);box-shadow:0 8px 32px #0005}
+.eyebrow{letter-spacing:.15em;color:var(--gold);font-size:11px}h1{font-size:clamp(25px,5.2vw,38px);margin:.24em 0;font-weight:750}h2{font-size:20px;margin:8px 0 14px;color:#fff5d8}h3{font-size:17px;margin:0 0 8px}p{margin:8px 0;color:var(--muted)}
+.mark{display:inline-block;font-size:12px;font-weight:700;background:#263e4f;color:var(--accent);padding:4px 11px;border:1px solid #507477;border-radius:999px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:18px}.stat{padding:12px;border:1px solid #527082;border-radius:12px;background:#07152588;text-align:center}.stat b{display:block;font-size:24px;color:var(--gold)}.stat small{display:block;color:var(--muted);font-size:11px}
+.note{margin-top:15px;border-left:3px solid var(--gold);background:#1a2b3c;border-radius:0 10px 10px 0;padding:11px 13px;color:#eadbbf;font-size:13px}
+main{margin-top:16px}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 13px}.tabs button,.filters button,.copy,select,input{font:inherit}.tabs button,.filters button,.copy{background:#14263a;color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:9px 13px;cursor:pointer}.tabs button[aria-selected=true],.filters button[aria-pressed=true]{background:#6e583c;color:white;border-color:var(--gold)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section[hidden]{display:none!important}.panel{background:rgba(14,27,43,.96);border:1px solid var(--line);padding:clamp(13px,3vw,20px);border-radius:16px}.searchbar{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.searchbar input,.searchbar select{background:#0b1c2b;color:var(--ink);border:1px solid #587088;border-radius:9px;padding:10px 12px;min-height:43px}.searchbar input{flex:1 1 200px}.searchbar select{flex:1 1 160px}.count{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,315px),1fr));gap:12px}.item{background:#15283b;border:1px solid #36546b;border-radius:13px;padding:15px;min-width:0;overflow-wrap:anywhere}.item .id{font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#a9dcce;overflow-wrap:anywhere}.item strong{color:var(--gold)}.item p{color:#d2dae1;font-size:13px}.kind{display:inline-block;font-size:11px;color:#d4f0e9;border:1px solid #4c6a6b;border-radius:6px;padding:2px 7px;margin:0 0 9px}.copy{padding:7px 10px;font-size:12px;margin-top:9px;color:#f6edda;background:#2c4655}.warning{border-color:#866f51;color:#f8deb2}.route{border-left:3px solid var(--gold);padding-left:9px;color:#f3ecd9;font-size:13px}.prompt{font-size:13px;color:#b4e2dc;margin-top:9px}details{margin-top:9px}details summary{cursor:pointer;color:#9addd1}details p{margin:6px 0 0}.mono{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.empty{text-align:center;padding:25px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted);line-height:1.7;margin-top:16px}
+</style>
+<script src="./gpt-skills-catalog.js"></script>
+</head>
+<body>
+<header>
+<div class="eyebrow">THE LIVING ARCHIVE · GPT BOOK · PUBLIC CAPABILITY INDEX</div>
+<h1>✧ GPT 技能總覽卡</h1>
+<p>每一個名詞都對應一種意圖與工作流程。你只要說「幫我做什麼」，我先辨認目標與權限，再選擇必要的系統。</p>
+<span class="mark">唯讀能力索引 · 不是自動授權或執行器</span>
+<div class="stats">
+<div class="stat"><b id="skillCount">—</b><small>本次可列舉的技能規程</small></div>
+<div class="stat"><b id="groupCount">—</b><small>技能分類</small></div>
+<div class="stat"><b id="toolCount">—</b><small>可用工具命名空間</small></div>
+</div>
+<div class="note">此頁是 2026-10-14 當次可用清單的<strong>公開快照</strong>。有技能規程 ≠ 外部 App 已連線 ≠ 授權可以修改 ≠ 執行已成功。ChatGPT 通用推理能力無固定且可保證完整的「技能總數」。</div>
+</header>
+<main>
+<nav class="tabs" role="tablist" aria-label="技能卡分類">
+<button type="button" data-tab="routes" aria-selected="true">🧭 意圖與工作流</button>
+<button type="button" data-tab="skills" aria-selected="false">✦ 技能規程</button>
+<button type="button" data-tab="tools" aria-selected="false">🔗 可用工具</button>
+<button type="button" data-tab="rules" aria-selected="false">▣ 卡片操作規則</button>
+</nav>
+<section class="panel" id="routes" aria-label="意圖工作流">
+<h2>念動系統：一個指令，路由四層</h2>
+<p>「更新念動系統」不是盲目複製四份；我會依需求選擇真正需要寫入的位置。</p>
+<div class="grid" id="routesGrid"></div>
+</section>
+<section class="panel" id="skills" aria-label="技能規程" hidden>
+<h2>可搜尋的 GPT 技能規程</h2>
+<p>這裡列出本次環境可列舉的全部技能文件及作用。點選項目可查看觸發情境；要執行請把需求交給 ChatGPT，不會在此公開網頁存取你的私人資料。</p>
+<div class="searchbar"><input id="skillSearch" aria-label="搜尋技能名稱、描述或識別碼" type="search" placeholder="搜尋：例如 report、PDF、Figma、sales、SQL…"><select id="groupFilter" aria-label="依技能分類篩選"><option value="">全部分類</option></select></div>
+<div class="count" id="resultCount"></div><div class="grid" id="skillsGrid"></div>
+</section>
+<section class="panel" id="tools" aria-label="工具連接器" hidden>
+<h2>本回合工具入口</h2>
+<p>此表只代表 ChatGPT 目前可發現的連接器／工具命名空間。能否讀寫個人資料，須在操作當下依使用者授權與連線狀態確認。</p>
+<div class="grid" id="toolsGrid"></div>
+</section>
+<section class="panel" id="rules" aria-label="嵌入卡片規則" hidden>
+<h2>「某某卡」＝圖書館內嵌網頁（預設）</h2>
+<div class="grid" id="rulesGrid"></div>
+</section>
+</main>
+<footer>來源：本次 ChatGPT 技能清單與工具描述的公開範圍快照。私有 GEN2 正本仍以正式授權 GitHub 為準。此網站只供查閱、搜尋、複製指令；不會直接呼叫 ChatGPT 私人對話、取得 OAuth 授權、執行 Skill 或保存密鑰。</footer>
+<script>
+(function(){
+'use strict';
+const data=window.GPTSkillsSnapshot;
+const $=id=>document.getElementById(id);
+const zhGroups={
+'data-analytics':'數據分析','investment-banking':'投資銀行','public-equity-investing':'上市股票研究','sales':'銷售工作流','sentry':'系統錯誤診斷','creative-production':'視覺創作','notion':'Notion 知識管理','supabase':'Supabase 資料庫','openai-templates':'OpenAI 範本','template-creator':'模板建立','presentations-router':'簡報','pdf-router':'PDF','documents-router':'文件','google-drive':'Google Drive／文件試算表','plugin-management':'外部工具管理','spreadsheets-router':'試算表','figma':'Figma 設計','vercel':'Vercel 開發與部署','remotion':'影片生成','hyperframes':'互動畫面'
+};
+function node(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=String(text);return x}
+function appendText(host,tag,cls,value){const el=node(tag,cls,value);host.append(el);return el}
+function workflow(name,trigger,levels,action,gate){
+ const el=node('article','item');
+ appendText(el,'span','kind',levels);
+ appendText(el,'h3','',name);
+ appendText(el,'p','route',action);
+ appendText(el,'p','prompt','你可以說：「'+trigger+'」');
+ appendText(el,'p','',gate);
+ const btn=appendText(el,'button','copy','複製這句話');
+ btn.type='button';btn.addEventListener('click',()=>copyText(trigger,btn));
+ return el;
+}
+async function copyText(t,button){
+ try{await navigator.clipboard.writeText(t);const before=button.textContent;button.textContent='✓ 已複製';setTimeout(()=>button.textContent=before,1700)}
+ catch(_){button.textContent='無法複製，請手動選取';}
+}
+const routes=[
+['保存討論成果','幫我把這次討論保存到念動系統','L1｜ChatGPT 檔案庫','寫成可追溯文件、標出決策／待辦，必要時建立專案交接。','不假設同步 GEN2 或發布到手機。'],
+['整理雲端文件','幫我整理這些 Google Drive 文件','L2｜Google Drive','定位來源、讀取內容、組織資料與處理 Google Docs／Sheets。','編輯原始檔前檢查權限與指定目的地。'],
+['建立正式技能','幫我把這個方法建立成正式 Skill','L3｜GEN2 核心','搜尋現有 KB／Skill、設計技能契約、準備正式候選。','必須遵守 GEN2 私有來源、檢查與 OWNER Gate，不自動核准。'],
+['新增魔法書','在念動圖書館新增一本書','L4｜念動圖書館','建立書籍目錄、分類、卡片映射與 3D 書架入口。','未發布不可稱已在 App 顯示。'],
+['新增網頁卡片','在 GPT 之書新增一張報表卡','L4｜內嵌網頁','建立獨立 HTML 頁面＋卡片 ID＋書中 iframe 閱讀入口。','先核對卡片用途、書冊、資料授權。'],
+['更改 3D UI','把漂浮書名字體加大','L4｜網頁熱更新','更新 live 來源、檢查依賴、回歸測試、部署網站。','只有 Android 原生更動才考慮 APK。'],
+['發布與驗收','幫我發布剛剛的網頁修改','L4｜GitHub Pages','核對來源頁、CI、Pages 部署與實際網址，再回報結果。','程式合併／網站部署／手機實機驗收不可混為一談。'],
+['建立專案工作流','把這份計畫做成可以追蹤的任務','L1＋L2；必要時 L3／L4','拆步驟、找任務狀態與實證，決定記錄位置。','不未經同意建立正式 GEN2 Skill。'],
+['程式開發','修改 GitHub 上念動圖書館的卡片介面','L4｜GitHub 程式','檢查版本、建立 PR、測試、不退化驗證與部署。','寫入取決於倉庫權限，原生與網頁版本分開。'],
+['資料分析','分析這份表格找出異常','L1／L2；分析工具','核對來源、欄位與計算，輸出圖表或報告。','來源不充分時標示不確定性。'],
+['視覺設計','把想法做成設計圖和排版','L1／L2；設計工具','視需求產生圖片、圖表、Figma、簡報或文件。','圖片不是可編輯原始碼；先確定輸出格式。'],
+['研究與搜尋','查證這個技術是否有人做過','公開網路／已授權來源','檢索現有實作、比較證據、列出限制與方案。','外部資料不等於使用者知識庫原件。'],
+['排程提醒','明天提醒我確認圖書館卡片','ChatGPT 提醒工具','建立符合指定時間的一次性或定期提醒。','提醒不代表會自主修改網站。'],
+['四層整合','更新念動系統，整理這次專案成果','L1＋L2＋L3＋L4（按需）','先辨識動作、對象、權威來源，再分層執行與記錄證據。','不是每次都寫四份；任何正式權限流程都要遵守。']
+];
+for(const r of routes)$('routesGrid').append(workflow(...r));
+const rules=[
+['預設定位','在念動圖書館／念動系統語境下，「新增某某卡」預設是建立一張有獨立網頁內容的書中卡片，點卡後在書內 iframe 閱讀。'],
+['卡片不是純文字框','卡片應有唯一 ID、名稱、所屬書本、摘要與網址；正文做成可獨立瀏覽的 HTML（含手機響應式版型），不只是卡片描述。'],
+['安全與權限','嵌入頁面僅可使用已允許且可信任的來源；不可把私人 GEN2、ChatGPT Library 或 Google Drive 文件全文直接公開。無原生權限的網頁不能假裝執行 Android 操作。'],
+['更新與驗收','更新 web 正式 live 目錄＋登錄 card catalog＋確認點卡真的嵌入呈現＋跑 CI＋驗證 Pages。普通卡片無需升版 APK。'],
+['名稱衝突','如果「卡」明確指課堂抽認卡、信用卡、名片或其他東西，就依原任務處理；不機械地建立網站卡片。'],
+['執行與展示分離','GPT 技能卡展示能力與觸發句，不是授權機制。對外部 App 的真實讀取、修改、發送，仍由 ChatGPT 執行端依當次可用工具與權限完成。']
+];
+for(const [name,desc] of rules){const e=node('article','item');appendText(e,'h3','',name);appendText(e,'p','',desc);$('rulesGrid').append(e)}
+$('skillCount').textContent=data?.skills?.length??0;
+$('groupCount').textContent=Object.keys(data?.groups||{}).length;
+$('toolCount').textContent=data?.toolNamespaces?.length??0;
+const opts=Object.keys(data.groups).sort((a,b)=>(zhGroups[a]||a).localeCompare(zhGroups[b]||b));
+for(const g of opts){const o=node('option','', (zhGroups[g]||g)+' ('+data.groups[g]+')');o.value=g;$('groupFilter').append(o)}
+function renderSkills(){
+ const needle=$('skillSearch').value.trim().toLocaleLowerCase(),grp=$('groupFilter').value;
+ const matched=data.skills.filter(x=>(!grp||x.group===grp)&&(!needle||[x.id,x.name,x.description,zhGroups[x.group]||x.group].join(' ').toLocaleLowerCase().includes(needle)));
+ $('resultCount').textContent='顯示 '+matched.length+'／'+data.skills.length+' 項 · 快照日期 '+data.asOf;
+ const host=$('skillsGrid');host.replaceChildren();
+ if(!matched.length){appendText(host,'div','empty','沒有相符技能。');return}
+ const fragment=document.createDocumentFragment();
+ for(const x of matched){
+  const el=node('article','item');
+  appendText(el,'span','kind',zhGroups[x.group]||x.group);
+  appendText(el,'h3','',x.name.replaceAll('-',' '));
+  appendText(el,'div','id',x.id);
+  const detail=appendText(el,'details','',undefined);appendText(detail,'summary','','用途與觸發情境');
+  appendText(detail,'p','',x.description||'本規程未提供摘要；執行前需讀取技能原文。');
+  const phrase='請依目前可用技能規程「'+x.id+'」幫我處理：';
+  const button=appendText(el,'button','copy','複製呼叫指令');button.type='button';
+  button.addEventListener('click',()=>copyText(phrase,button));
+  fragment.append(el);
+ }
+ host.append(fragment);
+}
+$('skillSearch').addEventListener('input',renderSkills);
+$('groupFilter').addEventListener('change',renderSkills);
+renderSkills();
+for(const tool of data.toolNamespaces){const el=node('article','item');appendText(el,'h3','',tool.replaceAll('_',' '));appendText(el,'p','', '可發現此工具入口；操作當下另行核驗是否已授權與支援特定動作。');$('toolsGrid').append(el)}
+for(const tab of document.querySelectorAll('[data-tab]'))tab.addEventListener('click',()=>{
+ for(const btn of document.querySelectorAll('[data-tab]')){const selected=btn===tab;btn.setAttribute('aria-selected',selected);$(btn.dataset.tab).hidden=!selected}
+});
+const chosen=new URLSearchParams(location.search).get('tab');
+if(['routes','skills','tools','rules'].includes(chosen))document.querySelector('[data-tab="'+chosen+'"]')?.click();
+})();
+</script>
+</body>
+</html>
