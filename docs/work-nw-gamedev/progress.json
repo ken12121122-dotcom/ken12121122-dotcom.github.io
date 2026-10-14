@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T16:31:33.775Z",
+  "updated_at": "2026-10-14T17:28:03.653Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -108,7 +108,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P1-DISPATCH-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -211,10 +211,10 @@
     "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T16:31:33.775Z",
-    "state": "READY_NEXT_SLICE",
+    "lease_owner": "NW-P1-20261015-02",
+    "lease_expires_at": "2026-10-14T17:48:03.653Z",
+    "heartbeat_at": "2026-10-14T17:28:03.653Z",
+    "state": "IMPLEMENTING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
