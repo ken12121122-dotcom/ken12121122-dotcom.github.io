@@ -31,6 +31,16 @@
 - 若保留功能的測試失敗、被刪除或尚未實測，維持 **Draft PR / 未完成**，不得合併 `main`、不得宣稱新版已全面取代舊版。
 - 新進 Agent 不得因測試名稱、過時草案、重命名「示範書」就抹掉正式可用入口。**優先處理可用功能回歸，後做 UI 美化及新投影。**
 
+
+## 圖書館管理員｜UI 名詞與書籍定位規則（OWNER 2026-10-14 核准流程）
+
+- **入口索引**：修改前必須讀取 `living-library/UI-MANAGER-REGISTRY.md`，以及當下 `main` 的 `living-library/live/public-catalog.js`、`living-library/live/index.html`。規則檔是定位程序，**不是即時資料庫快照**。不得只相信聊天記憶或前次盤點。
+- **首頁語義**：沒有其他限定詞時，「圖書館首頁」＝ `/living-library/live/index.html` 的 3D 主畫面；「APP 原生首頁」＝ Android 原生控制中心。首頁／書頁／卡冊／卡片／閱讀器各有獨立 UI selector。
+- **穩定識別**：書和卡片的唯一定位以 `book_id + card_id` 為主；卡槽順序 `slot_index`、展示編號 `number`、顯示名稱 `title` 是輔助資訊，不能取代 ID。
+- **一次一個變更範圍**：預設 L1（定位、依賴與共享影響）；純查詢 L0；會影響行為與閱讀返回 L2；Android 原生、安全或正式 GEN2 投影 L3。修改前說明範圍，無關部分不得擅自重整。
+- **書籍職責與共享**：14 本公開書的主責分類參考 `/living-library/ui-map.html`，同一張公開卡片可被多本書引用，但仍只保留一個 canonical Card ID。修改共享卡片先計算所有引用位置，不得因「重疊」就刪卡或改動既有入口。正式 GEN2 Skill/Workflow 仍由私有 `gen2-knowledge/main/kb/` 授權治理。
+- **實際發布與驗收**：只有 PR/code、CI PASS、Pages HTTP、WebView 畫面、OWNER 手機點擊驗證證據各自成立才能宣稱相應狀態。缺少實機驗收不等於已在 Bridge 107 上確認可用；不得跳過上文發布閘門。
+
 ## 來源權責
 
 本檔與 `public-capabilities.json` 是 Living Library 候選版的功能保護契約，並非私有 GEN2 受控 Markdown 類型；正式 GEN2 的安全、審核、Skill 建立仍以 `gen2-knowledge/AGENTS.md` 和 `main/kb/` 為準。
