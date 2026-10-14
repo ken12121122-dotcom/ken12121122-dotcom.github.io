@@ -257,7 +257,8 @@ function isLocalFunctionPage(url){
   const current=new URL(window.location.href);
   // The GPT guide is a public read-only page in this exact book directory.
   // Relative links keep it in the same candidate preview commit before main is merged.
-  if(u.origin===current.origin&&u.pathname===new URL('./gpt-library-bridge.html',current).pathname)return true;
+  const localGuidePaths=[new URL('./gpt-library-bridge.html',current).pathname,'/living-library/ui-map.html'];
+  if(u.origin===current.origin&&localGuidePaths.includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
     (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));
  }catch(_){return false}
