@@ -180,6 +180,18 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 @media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
 #gen2Auth,#mdSearch{max-width:min(500px,90vw);background:#e9d9b7;color:#473421;border:2px solid #b08d5e;border-radius:15px;padding:22px}#gen2Auth::backdrop,#mdSearch::backdrop{background:#0009}#gen2Auth input{box-sizing:border-box;width:100%;padding:10px}#gen2Auth button{margin:4px;padding:10px;min-height:44px}#gen2Status{font-size:11px;overflow-wrap:anywhere;margin:8px 12px}.source-page{box-sizing:border-box;flex:1;min-width:0;overflow:auto;background:#ecdfc4;color:#473421;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 sans-serif}.source-page a{color:#624522}.source-page button{padding:12px;margin:12px 0} .reader-frame[hidden]{display:none}
 #mdSearch{width:min(750px,92vw);max-height:85dvh;overflow:auto}#mdSearch input,#mdSearch select{box-sizing:border-box;max-width:100%;padding:10px}#mdResults button{display:block;width:100%;text-align:left;margin:7px 0;padding:10px;overflow-wrap:anywhere}#mdSearch button{min-height:44px} .md-editor[hidden],.source-page[hidden]{display:none!important}.md-editor{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:auto;padding:12px;background:#e9d9b7;color:#473421}.md-editor textarea{box-sizing:border-box;flex:1;min-height:200px;width:100%;resize:none;font:14px/1.6 monospace;background:#fff9eb;color:#302416;padding:12px}.editor-controls,.submit-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.editor-controls button,.submit-controls button{min-height:44px;padding:10px}.submit-controls input{max-width:100%;box-sizing:border-box;padding:8px}.md-editor p{font-size:12px;overflow-wrap:anywhere}.editor-label{font-size:12px;margin:8px 0}
+
+
+/* Card encyclopedia: 3D books are the main interface; status and promos live off-stage. */
+#webRuntimeStamp{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.side{display:none!important}
+.catalog #gen2Status,.catalog .shelf-tools,.catalog .catalog-bottom{display:none!important}
+.bottom .current,.bottom .note{display:none!important}
+.catalog-head{min-height:56px}
+.walk-ui{position:fixed!important;inset:0!important;width:0!important;height:0!important;left:0!important;top:0!important;bottom:auto!important;z-index:7!important;pointer-events:none!important}
+.walk-pad{position:fixed!important;left:0;top:0;transform:translate(-50%,-50%);width:112px;height:112px;pointer-events:none!important}
+.walk-ui[hidden],.walk-pad[hidden]{display:none!important}
+@media(max-width:650px){.walk-ui{inset:0!important;left:0!important;top:0!important;bottom:auto!important}.walk-pad{width:112px;height:112px}}
 </style>
 </head>
 <body>
@@ -189,14 +201,11 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
 <div class="top-actions"><button class="chip" id="llUpdateReconnect" type="button" title="檢查最新書籍、卡片與 UI，重新連結並重設本機書庫顯示記錄">↻ 重新連結</button><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
 </header>
-<aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
-<div id="exploreControls" class="walk-ui" hidden aria-label="3D 人物探索">
-<button id="exploreToggle" type="button" class="walk-mode" aria-pressed="false">🎮 人物探索</button>
-<div id="walkPad" class="walk-pad" role="group" aria-label="移動搖桿：向上前進，向下後退，左右平移" hidden>
+<div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
+<div id="walkPad" class="walk-pad" role="group" aria-label="觸點搖桿：按住拖曳移動，放開停止" hidden>
 <div id="walkKnob" class="walk-knob"></div></div>
-<div id="walkHint" class="walk-hint" hidden>左側搖桿走路 · 右側拖曳視角</div>
 </div>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
