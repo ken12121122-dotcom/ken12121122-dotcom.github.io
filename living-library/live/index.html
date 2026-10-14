@@ -979,10 +979,18 @@ function pick(e){
  }
  return false;
 }
-// One-finger on mobile => joystick at that contact point; second finger => camera gesture.
-// Camera zoom happens ONLY for true two-finger pinch (or desktop wheel), never for walking.
+// Tap avatar to summon joystick; tap open space to dismiss it.
+// Only intentional two-finger pinch changes camera distance. One-finger drag outside joystick orbits the view.
 const touchPoints=new Map();
 let pinchCenter=null;
+function hitAvatar(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+ pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+ ray.setFromCamera(pointer,camera);
+ const meshes=[];keeper.traverse(mesh=>{if(mesh.isMesh)meshes.push(mesh)});
+ return ray.intersectObjects(meshes,false).length>0;
+}
 function contactPair(){
  const points=[...touchPoints.values()].slice(0,2);
  return {sep:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y),
@@ -991,19 +999,19 @@ function contactPair(){
 renderer.domElement.addEventListener('pointerdown',e=>{
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(e.pointerType==='touch'||e.pointerType==='pen'){
-  e.preventDefault();
-  if(touchPoints.size===1){
-   wasMoving=false;drag=null;beginJoystick(e);
-  }else if(touchPoints.size===2){
-   // Suspend walking before manipulating the camera so both inputs never compete.
-   resetJoystick();
-   const pair=contactPair();pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};
-   wasMoving=true;syncRender();
+ if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+ if(touchPoints.size===1){
+  wasMoving=false;pinch=null;pinchCenter=null;
+  if((e.pointerType==='touch'||e.pointerType==='pen')&&beginJoystick(e)){
+   drag=null;
+  }else{
+   drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
   }
- }else if(touchPoints.size===1){
-  drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
-  wasMoving=false;
+ }else if(touchPoints.size===2){
+  // Pause locomotion without hiding the summoned joystick; use only the pair for camera gestures.
+  resetJoystick(false);drag=null;
+  const pair=contactPair();pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};
+  wasMoving=true;syncRender();
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
@@ -1012,48 +1020,46 @@ renderer.domElement.addEventListener('pointermove',e=>{
  if(touchPoints.size===2){
   const pair=contactPair();
   if(pinch!==null&&pinchCenter){
-   // Horizontal two-finger motion rotates; vertical motion adjusts pitch.
    theta-=(pair.x-pinchCenter.x)*.005;
    phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   // Pinch exclusively controls zoom, never joystick activation or character travel.
    distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
    cameraUpdate();
   }
   pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};wasMoving=true;return;
  }
- if(e.pointerType==='touch'||e.pointerType==='pen'){
-  if(e.pointerId===joystickPointer){
-   if(Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)>8)wasMoving=true;
-   joystickMove(e);
-  }
-  return;
+ if(e.pointerId===joystickPointer){
+  if(Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)>8)wasMoving=true;
+  joystickMove(e);return;
  }
  if(drag){
   const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
   drag.lastX=e.clientX;drag.lastY=e.clientY;
   if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;
-  if(wasMoving){
-   theta-=dx*.005;
-   phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);
-   cameraUpdate();
-  }
+  if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
- const isTap=!wasMoving&&touchPoints.size===1;
- if(e.pointerId===joystickPointer)resetJoystick();
- if(isTap)pick(e);
+ const wasJoystick=e.pointerId===joystickPointer;
+ const isTap=!wasMoving&&touchPoints.size===1&&!wasJoystick;
+ if(wasJoystick)resetJoystick(false); // Keep pad visible; finger release stops travel.
+ if(isTap){
+  if(pick(e)){resetJoystick(true)}
+  else if(hitAvatar(e))showJoystick(e);
+  else resetJoystick(true);
+ }
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
  if(touchPoints.size===0){drag=null;wasMoving=false}
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
- if(e.pointerId===joystickPointer)resetJoystick();
+ if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
  pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
- if(e.pointerId===joystickPointer)resetJoystick();
+ if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
  if(touchPoints.size===0)drag=null;
@@ -1086,7 +1092,7 @@ function overlayActive(){
    document.getElementById('mdSearch').open ||
    document.getElementById('gen2Auth').open;
  // Stop any held movement immediately when the reader / dialogs take focus.
- if(overlay&&hasWalkInput()){walkKeys.clear();resetJoystick()}
+ if(overlay){walkKeys.clear();resetJoystick(true)}
  return overlay;
 }
 function stopRenderLoop(){
@@ -1138,7 +1144,7 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick()}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick(true)}syncRender()});
 window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
 notifyReady({
