@@ -1,0 +1,77 @@
+{
+  "schema": "nw-p1-action-schema-evidence-v1",
+  "review_status": "generated",
+  "observed_at": "2026-10-14T18:24:07.059Z",
+  "source_ref": "NW-RUNE-BUILD-001/P1",
+  "base_commit": "9dae995ab13a572b0153581d07c903321f63e3b4",
+  "candidate_commit": "RESOLVE_CONTAINING_SOURCE_COMMIT",
+  "scope": "P1_PREPARATORY_ONLY; ActionRegistry local schema subset, not scene integration",
+  "defect": {
+    "id": "SCHEMA_DEFINITION_FAIL_OPEN",
+    "hypothesis": "Malformed or inapplicable constraints can survive schema registration and be ignored or changed during metadata JSON copy.",
+    "before": {
+      "command": "node --test tests/living-library-action-schema.test.mjs",
+      "tests": 9,
+      "pass": 1,
+      "fail": 8,
+      "fingerprint": "SCHEMA_DEFINITION_FAIL_OPEN"
+    },
+    "patch": "Validate own plain schema records, per-type allowed keys, unique string required fields, finite ordered numeric bounds, dense JSON enums with canonical identity and membership under remaining constraints.",
+    "expected_observable_change": "Malformed nested schemas reject before action registration; valid nested payloads retain restrictions and object enum identity is independent of key insertion order.",
+    "attempts": 1,
+    "failure_fingerprints": [],
+    "original_fingerprint_resolved": true
+  },
+  "tests": {
+    "targeted": {
+      "result": "PASS",
+      "tests": 9,
+      "command": "node --test tests/living-library-action-schema.test.mjs"
+    },
+    "local_node": {
+      "result": "PASS",
+      "total": 206,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs",
+      "environment": "Linux Node v24.19.0"
+    },
+    "json_schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "command": "NODE_PATH=<existing locked tests/browser/node_modules> node tests/browser/schema-contract.cjs",
+      "environment": "Ajv 8.17.1"
+    },
+    "ci": {
+      "result": "PENDING"
+    },
+    "browser": {
+      "result": "NOT_TESTED"
+    },
+    "local_browser": {
+      "result": "NOT_TESTED",
+      "observation": "Pinned Playwright 1.56.1 is available; both Chromium 1194 and Headless Shell 1194 binaries are absent by filesystem checks. No launch retry; CI installs the locked runner."
+    }
+  },
+  "scope_limits": [
+    "Strict ActionRegistry subset, not full JSON Schema implementation; pre-existing trimmed minLength behavior retained",
+    "RuneCard/SpellCard Draft2020-12 contracts unchanged",
+    "Trusted registered application handlers only; no arbitrary card-provided JavaScript",
+    "No P0/P1 full acceptance; no real 3D, microphone, Android or staging verification"
+  ],
+  "preservation": {
+    "unchanged": [
+      "live index.html/public catalog/UI",
+      "3D shelf/avatar/book/joystick/camera/card order",
+      "GBA, GEN2, native permissions, public/private boundaries and player saves"
+    ],
+    "added": [
+      "ActionRegistry schema-definition guards and 9 synthetic Node test groups"
+    ],
+    "removed": []
+  },
+  "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
+  "release": "NOT_RELEASED",
+  "rollback_sha": "9dae995ab13a572b0153581d07c903321f63e3b4"
+}
