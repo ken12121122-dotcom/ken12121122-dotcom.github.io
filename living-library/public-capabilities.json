@@ -51,6 +51,13 @@
       "url": "/living-library/gpt-library-bridge.html",
       "book": "gpt",
       "description": "公開導航頁；不包含或公開 ChatGPT Library / 私有 GEN2 資料"
+    },
+    {
+      "id": "public.system.ui.map",
+      "name": "UI 名詞與書籍分工",
+      "url": "/living-library/ui-map.html",
+      "book": "system",
+      "description": "公開唯讀 UI 定位及 14 本書責任對照；不是正式 GEN2 Skill"
     }
   ],
   "requiredWithoutGen2": [
