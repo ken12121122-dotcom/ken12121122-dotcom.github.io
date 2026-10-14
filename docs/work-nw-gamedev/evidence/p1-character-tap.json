@@ -1,0 +1,75 @@
+{
+  "schema": "nw-p1-character-tap-evidence-v1",
+  "review_status": "generated",
+  "observed_at": "2026-10-14T20:29:05.052Z",
+  "source_ref": "NW-RUNE-BUILD-001/P1",
+  "base_commit": "4af2bd902ad4ef329d053488060bce20f8eea2af",
+  "candidate_commit": "RESOLVE_CONTAINING_SOURCE_COMMIT",
+  "scope": "P1_PREPARATORY_ONLY; unloaded character.tap to registered ui.toast adapter, synthetic events only",
+  "hypothesis": "A bounded adapter can connect a trusted target event to already-registered local feedback without scene rewrites or authority expansion.",
+  "baseline": {
+    "result": "MISSING_IMPLEMENTATION",
+    "fingerprint": "CHARACTER_TAP_ADAPTER_ABSENT",
+    "command": "node --test tests/living-library-character-tap.test.mjs",
+    "detail": "Module absent before implementation; tests could not load. This is a feature baseline, not an existing live scene regression."
+  },
+  "patch": "Add fixed character.tap/event to ui.toast/effect sequencing, two-contract preflight, target-bound immutable context, after-guard cancellation/disposal checkpoint, busy/reentry protection and redacted honest receipts.",
+  "expected_observable_change": "Synthetic tap produces feedback only after registered event returns true; false/invalid/cancelled/disposed events cannot produce feedback. No automatic scene listeners.",
+  "attempts": 1,
+  "failure_fingerprints": [],
+  "tests": {
+    "targeted": {
+      "result": "PASS",
+      "tests": 9,
+      "command": "node --test tests/living-library-character-tap.test.mjs"
+    },
+    "local_node": {
+      "result": "PASS",
+      "total": 223,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs",
+      "environment": "Linux Node v24.19.0"
+    },
+    "json_schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "command": "NODE_PATH=<existing locked tests/browser/node_modules> node tests/browser/schema-contract.cjs",
+      "environment": "Ajv 8.17.1"
+    },
+    "local_browser": {
+      "result": "NOT_TESTED",
+      "observation": "Pinned Playwright 1.56.1 available; Chromium 1194 and Headless Shell 1194 absent by filesystem checks; CI will install the locked browser, no unchanged launch retry."
+    },
+    "ci": {
+      "result": "PENDING"
+    },
+    "browser": {
+      "result": "NOT_TESTED",
+      "fixture": "tests/browser/character-tap.cjs"
+    }
+  },
+  "contract_limits": [
+    "Trusted application event source only; dispatch(target_id) is not proof of a real raycast or user gesture",
+    "Only existing registered local character.tap and ui.toast are callable; both receive {target_id}, ui.toast wraps local fixed feedback, not arbitrary card JS",
+    "Caller owns scene lifecycle and must abort/dispose on invalidation; async handlers must recheck before their own later mutations",
+    "No automatic event listeners, scene/joystick/camera changes, microphone, storage or network",
+    "Repeated distinct taps may dispatch again after completion; concurrent/reentrant calls are busy, there is no queue",
+    "Receipts keep runtime_verified:false; callback confirmation and synthetic DOM feedback are not P0/P1 real-event/device acceptance"
+  ],
+  "preservation": {
+    "unchanged": [
+      "live HTML, public catalog, book/card IDs",
+      "3D avatar/books/shelf/joystick/camera/card order",
+      "GBA, GEN2, native permissions, public/private data boundaries and player saves"
+    ],
+    "added": [
+      "Unloaded adapter, nine Node tests and four synthetic DOM cases"
+    ],
+    "removed": []
+  },
+  "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
+  "release": "NOT_RELEASED",
+  "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af"
+}

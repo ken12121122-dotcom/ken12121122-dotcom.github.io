@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T20:27:04.887Z",
+  "updated_at": "2026-10-14T20:29:05.052Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -61,11 +61,12 @@
         "docs/work-nw-gamedev/evidence/p1-session.json",
         "docs/work-nw-gamedev/evidence/p1-dispatch.json",
         "docs/work-nw-gamedev/evidence/p1-action-schema.json",
-        "docs/work-nw-gamedev/evidence/p1-payload.json"
+        "docs/work-nw-gamedev/evidence/p1-payload.json",
+        "docs/work-nw-gamedev/evidence/p1-character-tap.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
-        "Real character event adapter and scene/voice integration remain unimplemented; offline executor is not device acceptance"
+        "Real character scene event wiring and scene/voice integration remain unimplemented; synthetic adapters are not P1/device acceptance"
       ]
     },
     {
@@ -262,6 +263,19 @@
       "next_action": "Prepare an unloaded character.tap to registered local-feedback event adapter with synthetic event tests; no live scene wiring until P0 runtime Gate. Preserve real P1 event acceptance as NOT_TESTED.",
       "candidate_sha": "b41eafa319520a62671138d5e52715ba9b5ab0de",
       "ci_run_id": 38624605830
+    },
+    {
+      "work_item_id": "P1-CHARACTER-TAP-001",
+      "state": "CI_PENDING_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded character.tap to registered ui.toast adapter, synthetic events only",
+      "failure_fingerprints": [],
+      "result": "Unloaded adapter implemented; 9 targeted and complete local Node 223/223 PASS. CI pending; real P1 event Gate NOT_TESTED.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-character-tap.json"
+      ],
+      "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af",
+      "next_action": "Inspect source CI and four synthetic DOM cases, then persist checkpoint without enabling scene wiring."
     }
   ],
   "last_run": {
@@ -276,8 +290,8 @@
   "execution": {
     "lease_owner": "NW-P1-20261015-05",
     "lease_expires_at": "2026-10-14T20:47:04.887Z",
-    "heartbeat_at": "2026-10-14T20:27:04.887Z",
-    "state": "REPRODUCING",
+    "heartbeat_at": "2026-10-14T20:29:05.052Z",
+    "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -368,7 +382,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 214,
+      "tests": 223,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
