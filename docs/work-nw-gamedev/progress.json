@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T15:34:04.555182+00:00",
+  "updated_at": "2026-10-14T15:38:23.196330+00:00",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -37,7 +37,8 @@
       "state": "BLOCKED",
       "acceptance": "NOT_TESTED",
       "evidence_refs": [
-        "docs/work-nw-gamedev/evidence/p0-baseline.json"
+        "docs/work-nw-gamedev/evidence/p0-baseline.json",
+        "docs/work-nw-gamedev/evidence/p0-browser.json"
       ],
       "blockers": [
         "P0-GPU",
@@ -47,10 +48,15 @@
     },
     {
       "id": "P1",
-      "state": "NOT_STARTED",
+      "state": "IN_PROGRESS",
       "acceptance": "NOT_TESTED",
-      "evidence_refs": [],
-      "blockers": []
+      "evidence_refs": [
+        "tests/living-library-action-registry.test.mjs"
+      ],
+      "blockers": [
+        "P0 3D runtime gate not verified; candidate core is not loaded by scene",
+        "Spell/Rune schemas, graph validation and real character event chain remain incomplete"
+      ]
     },
     {
       "id": "P2",
@@ -95,7 +101,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P0-BROWSER-001",
+  "active_work_item": "P1-REGISTRY-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -110,11 +116,37 @@
     },
     {
       "work_item_id": "P0-BROWSER-001",
-      "state": "IN_PROGRESS",
-      "attempts": 0,
+      "state": "PASS_LOCAL_NAVIGATION",
+      "attempts": 2,
       "scope": "Isolated Chromium: actual startup observation, engine-failure fallback, all public contract card clicks and iframe return, synthetic unrelated-storage preservation",
-      "local_runner": "BLOCKED_SOCKET_PERMISSION",
-      "next_action": "Execute candidate tests in GitHub CI runner; inspect artifacts and fix actual failures within budget"
+      "local_runner": "PASS_HEADLESS_SHELL",
+      "next_action": "Execute candidate tests in GitHub CI runner; inspect artifacts and fix actual failures within budget",
+      "result": "9 public contract navigation checks + forced-engine-failure fallback + unrelated-storage sentinel PASS; unchanged 3D policy NOT_TESTED due ENGINE_IMPORT network failure",
+      "failures": [
+        {
+          "fingerprint": "RUNNER_CLICK_BEHIND_ALREADY_OPEN_DRAWER",
+          "attempts": 1,
+          "resolved": true
+        },
+        {
+          "fingerprint": "RUNNER_RELATIVE_URL_BASE",
+          "attempts": 1,
+          "resolved": true
+        }
+      ],
+      "evidence_ref": "docs/work-nw-gamedev/evidence/p0-browser.json"
+    },
+    {
+      "work_item_id": "P1-REGISTRY-001",
+      "state": "PASS_UNIT_ONLY",
+      "attempts": 1,
+      "files": [
+        "living-library/live/action-registry.js",
+        "tests/living-library-action-registry.test.mjs"
+      ],
+      "result": "7 new registry tests PASS; full Node suite 164/164 PASS",
+      "limits": "Candidate core only. Not imported by the scene; no new user-facing spell or real character event evidence. P1 gate remains NOT_TESTED.",
+      "next_action": "Complete Rune/Spell schemas and typed graph validation in next isolated slice, then hook and verify a real character event after P0 runtime gate."
     }
   ],
   "last_run": {
@@ -130,7 +162,7 @@
         "resolved": true
       }
     ],
-    "next_action": "Run isolated candidate browser regression in GitHub CI; only unsupported 3D/device checks stay blocked."
+    "next_action": "Review browser CI after navigation fixes, then continue P1 schema/graph candidate work; keep 3D integration gated."
   },
   "execution": {
     "lease_owner": "NW-P0-20261014-02",
@@ -145,6 +177,7 @@
     "This is the only canonical progress file. ChatGPT Library contains requirements, not a second mutable progress copy.",
     "Hourly automation created; future runs are conditional on available tools. No Work mode or process restart capability claimed.",
     "No P0 completion, P1 implementation, staging deployment, production release or phone verification claimed.",
-    "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged."
+    "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged.",
+    "Standard Chrome launch failed due singleton socket permissions, but supported Headless Shell ran successfully. Do not treat the earlier local launch limitation as an overall project blocker."
   ]
 }

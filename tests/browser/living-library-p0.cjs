@@ -65,15 +65,20 @@ async function main(){
    // The mobile catalog is collapsed by default.
    if(await p.locator('#catalogHead').getAttribute('aria-expanded')==='false')await p.locator('#catalogHead').click();
    await p.getByRole('button',{name:'選取'+b.name,exact:true}).click();
-   await p.locator('#fallbackOpen').click();
+   // Selecting a book in the fallback list already opens its drawer.
+   if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))await p.locator('#fallbackOpen').click();
    await p.locator('[data-card-id="'+capability.id+'"]').click();
    await p.locator('#readerBack').waitFor({state:'visible'});
    if(capability.external){
     assert.equal(await p.locator('#sourcePage a').getAttribute('href'),capability.url);
    }else{
     const frame=p.locator('#readerFrame');
-    assert.equal(new URL(await frame.getAttribute('src'),origin).pathname,new URL(capability.url,origin).pathname);
+    // Live has its own relative copies (e.g. ./gpt-library-bridge.html).
+    // Resolve against the actual live document, not the domain root/dev entry.
+    const expected=new URL(catalog.cards[capability.id].url,p.url());
+    assert.equal(new URL(await frame.getAttribute('src'),p.url()).href,expected.href);
     const child=await frame.elementHandle().then(el=>el.contentFrame());
+    await child.waitForURL(url=>url.origin===expected.origin&&url.pathname===expected.pathname);
     await child.waitForLoadState('domcontentloaded');
     assert.ok((await child.locator('body').innerText()).trim().length>0,capability.id+' rendered no content');
    }
