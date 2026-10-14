@@ -6,10 +6,11 @@
   #registry;#active=new Set();
   constructor(registry){this.#registry=registry}
   async run(card,{incantation,context={},signal}={}){
-   Contract.validateSpell(card,this.#registry);
-   // A detached configuration prevents editing a draft during an awaited handler
-   // from changing the remaining effects in this run.
-   const spell=JSON.parse(JSON.stringify(card)),completed=[],attempted=[];let pendingEffect=null;
+   // Read data descriptors before the contract can access any caller getters.
+   // Validate and execute the same detached immutable JSON configuration.
+   let spell;try{spell=Registry.snapshotJSON(card)}catch{const error=new Error('INVALID_CARD_SCHEMA');error.code='INVALID_CARD_SCHEMA';throw error}
+   Contract.validateSpell(spell,this.#registry);
+   const completed=[],attempted=[];let pendingEffect=null;
    const receipt=(status,code=null)=>Object.freeze({spell_id:spell.spell_id,version:spell.version,status,error_code:code,completed_effects:Object.freeze([...completed]),attempted_effects:Object.freeze([...attempted]),uncertain_effect:pendingEffect,runtime_verified:false});
    if(!spell.enabled)return receipt('disabled');
    if(typeof incantation!=='string'||!spell.incantations.some(x=>x.trim()===incantation.trim()))return receipt('not_matched');

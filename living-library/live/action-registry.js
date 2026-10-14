@@ -62,8 +62,8 @@
  function freeze(value){Object.freeze(value);for(const v of Object.values(value))if(v&&typeof v==='object')freeze(v);return value}
  // Payloads are data, not objects with executable serialization/getter hooks.
  // Read descriptors once and validate the resulting immutable snapshot itself.
- function dataSnapshot(value,depth=0,active=new WeakSet()){
-  if(depth>12)fail('INVALID_JSON_VALUE');
+ function dataSnapshot(value,depth=0,active=new WeakSet(),maxDepth=12){
+  if(depth>maxDepth)fail('INVALID_JSON_VALUE');
   if(value===null||typeof value==='string'||typeof value==='boolean')return value;
   if(typeof value==='number'){if(!Number.isFinite(value))fail('INVALID_JSON_VALUE');return value}
   if(typeof value!=='object')fail('INVALID_JSON_VALUE');
@@ -81,7 +81,7 @@
     const descriptor=descriptors[key];
     if(typeof key!=='string'||!descriptor.enumerable||!Object.hasOwn(descriptor,'value'))fail('INVALID_JSON_VALUE');
     if(array&&(!/^(0|[1-9]\d*)$/.test(key)||Number(key)>=length))fail('INVALID_JSON_VALUE');
-    entries.push([key,dataSnapshot(descriptor.value,depth+1,active)]);
+    entries.push([key,dataSnapshot(descriptor.value,depth+1,active,maxDepth)]);
    }
    // fromEntries preserves a literal own __proto__ field without prototype writes.
    return Object.freeze(array?entries.map(([,item])=>item):Object.fromEntries(entries));
@@ -132,5 +132,8 @@
    }finally{this.#active.delete(id)}
   }
  }
- return Object.freeze({ActionRegistry,checkSchema,validate});
+ // A card adds an envelope around payloads. Keep payload's existing depth-12
+ // validation unchanged while allowing bounded JSON configuration snapshots.
+ const snapshotJSON=value=>dataSnapshot(value,0,new WeakSet(),20);
+ return Object.freeze({ActionRegistry,checkSchema,validate,snapshotJSON});
 });

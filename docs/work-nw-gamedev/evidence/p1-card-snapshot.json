@@ -1,0 +1,37 @@
+{
+  "schema": "nw-p1-card-snapshot-v1",
+  "scope": "P1_PREPARATORY_ONLY; unloaded executor configuration boundary",
+  "result": "CI_PENDING",
+  "observed_at": "2026-10-14T22:24:13.420Z",
+  "defect_id": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE",
+  "reproduction": {
+    "tests": 8,
+    "pass": 2,
+    "fail": 6,
+    "fingerprint": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE"
+  },
+  "patch_attempts": 1,
+  "change": "Snapshot data descriptors before contract validation; validate and execute identical immutable JSON data. Reuse bounded snapshot implementation, no serialization hooks.",
+  "local_tests": {
+    "targeted": 8,
+    "full": 239,
+    "scoped": 184,
+    "fail": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "schema_positive": 2,
+    "schema_negative": 8
+  },
+  "ci": {
+    "result": "PENDING"
+  },
+  "limits": [
+    "P1_PREPARATORY_ONLY; no live scene imports or UI/card/save changes",
+    "Only ordinary JSON-shaped data is supported; not a sandbox for hostile JS Proxies",
+    "Configuration snapshot depth bounded at 20; registry payload depth remains 12 including tested maximum nesting",
+    "Draft late binding preserved; malformed card throws redacted INVALID_CARD_SCHEMA before any guard/handler",
+    "Local pinned Playwright installed; Headless Shell binary absent in this run. CI provides Chromium",
+    "No staging URL, real 3D/device or voice acceptance"
+  ],
+  "rollback_sha": "8cdd1455099f89680da12eb5ac8c93fd3e2fadae"
+}

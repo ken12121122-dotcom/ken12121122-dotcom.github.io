@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T22:22:56.426Z",
+  "updated_at": "2026-10-14T22:24:13.420Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -63,7 +63,8 @@
         "docs/work-nw-gamedev/evidence/p1-action-schema.json",
         "docs/work-nw-gamedev/evidence/p1-payload.json",
         "docs/work-nw-gamedev/evidence/p1-character-tap.json",
-        "docs/work-nw-gamedev/evidence/p1-preflight.json"
+        "docs/work-nw-gamedev/evidence/p1-preflight.json",
+        "docs/work-nw-gamedev/evidence/p1-card-snapshot.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
@@ -301,6 +302,25 @@
       "candidate_sha": "05144fd07174e24474b908604c3f3f5b1527b579",
       "ci_run_id": 38640094944,
       "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
+    },
+    {
+      "work_item_id": "P1-CARD-SNAPSHOT-001",
+      "state": "CI_PENDING",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded executor configuration boundary",
+      "defect_id": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE",
+      "reproduction": {
+        "tests": 8,
+        "pass": 2,
+        "fail": 6,
+        "fingerprint": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE"
+      },
+      "failure_fingerprints": [],
+      "result": "First patch: 8/8 targeted, full local Node 239/239, scoped 184/184 and schema 2 positive/8 negative PASS; Chromium CI pending.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-card-snapshot.json"
+      ],
+      "rollback_sha": "8cdd1455099f89680da12eb5ac8c93fd3e2fadae"
     }
   ],
   "last_run": {
@@ -315,8 +335,8 @@
   "execution": {
     "lease_owner": "NW-P1-20261015-07",
     "lease_expires_at": "2026-10-14T22:42:56.426Z",
-    "heartbeat_at": "2026-10-14T22:22:56.426Z",
-    "state": "REPRODUCING",
+    "heartbeat_at": "2026-10-14T22:24:13.420Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -423,7 +443,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 231,
+      "tests": 239,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
