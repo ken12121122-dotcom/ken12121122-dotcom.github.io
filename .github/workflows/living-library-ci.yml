@@ -5,12 +5,14 @@ on:
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
+      - 'tests/gpt-skills-embedded-card.test.mjs'
       - '.github/workflows/living-library-ci.yml'
   push:
     branches: [main]
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
+      - 'tests/gpt-skills-embedded-card.test.mjs'
       - '.github/workflows/living-library-ci.yml'
   workflow_dispatch:
 
@@ -27,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - name: Execute Living Library Node regression
-        run: node --test tests/living-library-*.test.mjs
+        run: node --test tests/living-library-*.test.mjs tests/gpt-skills-embedded-card.test.mjs
       - name: Confirm all public standalone site entrypoints exist
         run: |
           test -f living-library/index.html

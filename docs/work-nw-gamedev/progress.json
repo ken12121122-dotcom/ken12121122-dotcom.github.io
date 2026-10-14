@@ -1,0 +1,141 @@
+{
+  "schema": "work-nw-gamedev-progress-v1",
+  "skill_id": "WORK-NW-GAMEDEV-001",
+  "workflow_id": "WF-WORK-NW-GAMEDEV-001",
+  "is_template": false,
+  "project": "living-library-rune-engine",
+  "created_at": "2026-10-14T15:27:11.568574+00:00",
+  "updated_at": "2026-10-14T15:27:11.568574+00:00",
+  "canonical_state_location": {
+    "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+    "branch": "work/nw-gamedev-p0-20261014",
+    "path": "docs/work-nw-gamedev/progress.json"
+  },
+  "status": "BLOCKED",
+  "source_of_truth": {
+    "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+    "main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
+  },
+  "permissions": {
+    "repo_read": "PASS",
+    "repo_write": "PASS_BRANCH_CREATED",
+    "staging_deploy": "NOT_TESTED",
+    "owner_release_approval": "NOT_GRANTED",
+    "android_device_access": "NOT_TESTED"
+  },
+  "deployment": {
+    "staging_url": null,
+    "staging_verified": "NOT_TESTED",
+    "pages_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "pages_verified": "PASS_BASELINE_HTML_ONLY",
+    "android_verified": "NOT_TESTED"
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "state": "BLOCKED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p0-baseline.json"
+      ],
+      "blockers": [
+        "P0-GPU",
+        "P0-STAGING",
+        "P0-DEVICE"
+      ]
+    },
+    {
+      "id": "P1",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P2",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P3",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P4",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P5",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P6",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P7",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    }
+  ],
+  "active_work_item": null,
+  "work_items": [
+    {
+      "work_item_id": "P0-TEST-001",
+      "state": "PASS",
+      "attempts": 1,
+      "hypothesis": "await in a non-async test callback prevents all five GPT-card regression tests from loading",
+      "patch": "Mark that test callback async",
+      "expected_observable_change": "File parses; five GPT-card tests run",
+      "result": "Full suite 157/157 PASS, no skips",
+      "candidate_sha_ref": "Containing candidate commit; resolve from Git history",
+      "evidence_ref": "docs/work-nw-gamedev/evidence/p0-baseline.json"
+    }
+  ],
+  "last_run": {
+    "run_id": "NW-P0-20261014-01",
+    "started_at": "2026-10-14T15:22:35Z",
+    "ended_at": "2026-10-14T15:27:11.568574+00:00",
+    "attempts": 1,
+    "failure_fingerprints": [
+      {
+        "fingerprint": "GPT_TEST_AWAIT_NON_ASYNC",
+        "occurrences_before_patch": 1,
+        "post_patch_failures": 0,
+        "resolved": true
+      }
+    ],
+    "next_action": "Obtain a WebGL2-capable test runner and verify existing 3D interactions before starting P1. Keep draft; no main merge or Pages deployment."
+  },
+  "execution": {
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T15:27:11.568574+00:00",
+    "state": "STOPPED_BLOCKED",
+    "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
+  },
+  "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+  "privacy_review": "PASS_NO_PRIVATE_PAYLOAD_OR_CREDENTIALS",
+  "notes": [
+    "This is the only canonical progress file. ChatGPT Library contains requirements, not a second mutable progress copy.",
+    "Hourly automation created; future runs are conditional on available tools. No Work mode or process restart capability claimed.",
+    "No P0 completion, P1 implementation, staging deployment, production release or phone verification claimed."
+  ]
+}
