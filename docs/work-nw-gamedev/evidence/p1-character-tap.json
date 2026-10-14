@@ -1,10 +1,10 @@
 {
   "schema": "nw-p1-character-tap-evidence-v1",
   "review_status": "generated",
-  "observed_at": "2026-10-14T20:29:05.052Z",
+  "observed_at": "2026-10-14T20:31:25.777Z",
   "source_ref": "NW-RUNE-BUILD-001/P1",
   "base_commit": "4af2bd902ad4ef329d053488060bce20f8eea2af",
-  "candidate_commit": "RESOLVE_CONTAINING_SOURCE_COMMIT",
+  "candidate_commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
   "scope": "P1_PREPARATORY_ONLY; unloaded character.tap to registered ui.toast adapter, synthetic events only",
   "hypothesis": "A bounded adapter can connect a trusted target event to already-registered local feedback without scene rewrites or authority expansion.",
   "baseline": {
@@ -43,11 +43,209 @@
       "observation": "Pinned Playwright 1.56.1 available; Chromium 1194 and Headless Shell 1194 absent by filesystem checks; CI will install the locked browser, no unchanged launch retry."
     },
     "ci": {
-      "result": "PENDING"
+      "result": "PASS",
+      "commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "checkout_commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
+      "run_id": 38632497911,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911",
+      "node_tests": 168,
+      "node_fail": 0,
+      "node_skipped": 0,
+      "scope": "CI Living Library/GPT subset + schema + Chromium fixtures; full repository 223 tests verified locally"
     },
     "browser": {
-      "result": "NOT_TESTED",
-      "fixture": "tests/browser/character-tap.cjs"
+      "schema": "nw-character-tap-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "case": "success",
+          "result": "PASS",
+          "scope": "Synthetic click and local feedback only"
+        },
+        {
+          "case": "not_matched",
+          "result": "PASS",
+          "scope": "Synthetic click and local feedback only"
+        },
+        {
+          "case": "cancel",
+          "result": "PASS",
+          "scope": "Synthetic click and local feedback only"
+        },
+        {
+          "case": "dispose",
+          "result": "PASS",
+          "scope": "Synthetic click and local feedback only"
+        }
+      ],
+      "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance",
+      "public_navigation": {
+        "schema": "nw-p0-browser-proof-v1",
+        "commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
+        "observed_at": "2026-10-14T20:30:13.033Z",
+        "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+        "checks": [
+          {
+            "id": "actual_3d_startup",
+            "result": "NOT_TESTED",
+            "ready": false,
+            "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+            "release": "2026-10-14.touch-preferences-3d-scopefix-v5",
+            "logs": [
+              "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:743:8"
+            ],
+            "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+          },
+          {
+            "id": "forced_engine_failure_fallback",
+            "result": "PASS",
+            "books": 14,
+            "joystick_hidden": true
+          },
+          {
+            "id": "public.research.navigation",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.canvas.workbench",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.startup.tasks",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.calendar",
+            "result": "PASS",
+            "scope": "External link target only; no sign-in"
+          },
+          {
+            "id": "public.knowledge.world",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gba.runtime",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.vault.web",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gpt.bridge",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.system.ui.map",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "unrelated_storage_preserved",
+            "result": "PASS",
+            "scope": "Synthetic sentinel; not a real GBA-save test"
+          }
+        ]
+      },
+      "session": {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      "dispatch": {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      "payload": {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      }
     }
   },
   "contract_limits": [
@@ -71,5 +269,11 @@
   },
   "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
   "release": "NOT_RELEASED",
-  "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af"
+  "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af",
+  "artifact": {
+    "id": 11926965758,
+    "name": "nw-p0-browser-proof",
+    "digest": "sha256:9b10c12cd8b25746c70a6c6a6275ea1f4d16fe628ba10be20b2800291aca7734",
+    "expires_at": "2026-10-21T20:30:20Z"
+  }
 }

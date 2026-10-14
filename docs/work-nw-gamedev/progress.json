@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T20:29:05.052Z",
+  "updated_at": "2026-10-14T20:31:25.777Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -112,7 +112,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-CHARACTER-TAP-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -266,32 +266,33 @@
     },
     {
       "work_item_id": "P1-CHARACTER-TAP-001",
-      "state": "CI_PENDING_PREPARATORY_ONLY",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P1_PREPARATORY_ONLY; unloaded character.tap to registered ui.toast adapter, synthetic events only",
       "failure_fingerprints": [],
-      "result": "Unloaded adapter implemented; 9 targeted and complete local Node 223/223 PASS. CI pending; real P1 event Gate NOT_TESTED.",
+      "result": "Unloaded character.tap to local feedback adapter: 9 targeted and complete local Node 223/223 PASS. CI scoped Node 168/168, Schema 2 positive/8 negative, 9 public destinations and 16 synthetic browser checks (including 4 new tap cases) PASS. Real P1 event Gate remains NOT_TESTED.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-character-tap.json"
       ],
       "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af",
-      "next_action": "Inspect source CI and four synthetic DOM cases, then persist checkpoint without enabling scene wiring."
+      "next_action": "Audit and test SpellExecutor parameter preflight for malformed later-effect parameters before avoidable earlier effects; preserve invocation guards, fixed P0/P1 Gate and unloaded scene status.",
+      "candidate_sha": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "ci_run_id": 38632497911
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-04",
-    "started_at": "2026-10-14T19:30:44.519Z",
-    "ended_at": "2026-10-14T19:34:50.931Z",
+    "run_id": "NW-P1-20261015-05",
+    "started_at": "2026-10-14T20:27:04.887Z",
+    "ended_at": "2026-10-14T20:31:25.777Z",
     "attempts": 1,
-    "resolved_defect": "PAYLOAD_SNAPSHOT_DIVERGENCE",
     "failure_fingerprints": [],
-    "next_action": "Prepare an unloaded character.tap to registered local-feedback event adapter with synthetic event tests; no live scene wiring until P0 runtime Gate. Preserve real P1 event acceptance as NOT_TESTED."
+    "next_action": "Audit and test SpellExecutor parameter preflight for malformed later-effect parameters before avoidable earlier effects; preserve invocation guards, fixed P0/P1 Gate and unloaded scene status."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-05",
-    "lease_expires_at": "2026-10-14T20:47:04.887Z",
-    "heartbeat_at": "2026-10-14T20:29:05.052Z",
-    "state": "VERIFYING_CI",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T20:31:25.777Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -377,6 +378,14 @@
       "run_id": 38624605830,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38624605830",
       "scope": "159 scoped Node tests + Schema + 9 public destinations + 4 session/4 dispatch/4 payload Chromium module checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "checkout_commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
+      "run_id": 38632497911,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911",
+      "scope": "168 scoped Node tests + Schema + 9 public destinations + 4 session/4 dispatch/4 payload/4 synthetic character tap browser cases; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -395,17 +404,17 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38624605830,
-      "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload synthetic browser checks; no 3D/device claim"
+      "ci_run_id": 38632497911,
+      "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload + 4 synthetic character tap browser checks; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "b41eafa319520a62671138d5e52715ba9b5ab0de",
-      "checkout_commit": "d7e3f30c22f52d6fc907818a758ee4510047d73e",
-      "run_id": 38624605830,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38624605830"
+      "commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "checkout_commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
+      "run_id": 38632497911,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911"
     }
   }
 }
