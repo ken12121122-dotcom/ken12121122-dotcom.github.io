@@ -60,6 +60,38 @@
  }
  const copy=value=>JSON.parse(JSON.stringify(value));
  function freeze(value){Object.freeze(value);for(const v of Object.values(value))if(v&&typeof v==='object')freeze(v);return value}
+ // Payloads are data, not objects with executable serialization/getter hooks.
+ // Read descriptors once and validate the resulting immutable snapshot itself.
+ function dataSnapshot(value,depth=0,active=new WeakSet()){
+  if(depth>12)fail('INVALID_JSON_VALUE');
+  if(value===null||typeof value==='string'||typeof value==='boolean')return value;
+  if(typeof value==='number'){if(!Number.isFinite(value))fail('INVALID_JSON_VALUE');return value}
+  if(typeof value!=='object')fail('INVALID_JSON_VALUE');
+  const array=Array.isArray(value);
+  if(array?Object.getPrototypeOf(value)!==Array.prototype:!record(value))fail('INVALID_JSON_VALUE');
+  if(active.has(value))fail('INVALID_JSON_VALUE');
+  active.add(value);
+  try{
+   const descriptors=Object.getOwnPropertyDescriptors(value),keys=Reflect.ownKeys(descriptors);
+   const length=array?descriptors.length.value:0;
+   if(array&&keys.length!==length+1)fail('INVALID_JSON_VALUE');
+   const entries=[];
+   for(const key of keys){
+    if(array&&key==='length')continue;
+    const descriptor=descriptors[key];
+    if(typeof key!=='string'||!descriptor.enumerable||!Object.hasOwn(descriptor,'value'))fail('INVALID_JSON_VALUE');
+    if(array&&(!/^(0|[1-9]\d*)$/.test(key)||Number(key)>=length))fail('INVALID_JSON_VALUE');
+    entries.push([key,dataSnapshot(descriptor.value,depth+1,active)]);
+   }
+   // fromEntries preserves a literal own __proto__ field without prototype writes.
+   return Object.freeze(array?entries.map(([,item])=>item):Object.fromEntries(entries));
+  }finally{active.delete(value)}
+ }
+ function checkedSnapshot(value,schema,code){
+  let snapshot;try{snapshot=dataSnapshot(value)}catch{fail(code)}
+  if(!validate(snapshot,schema))fail(code);
+  return snapshot;
+ }
  class ActionRegistry{
   #actions=new Map();#active=new Set();#platform;
   constructor({platform='web'}={}){if(!['web','android'].includes(platform))fail('INVALID_PLATFORM');this.#platform=platform}
@@ -88,17 +120,15 @@
    // A saved card cannot grant private synchronization or native authority.
    if(d.policy.scope!=='local')fail('OWNER_GATE_REQUIRED');
    if(this.#active.has(id))fail('ACTION_REENTRY');
-   if(!validate(input,d.inputs))fail('INVALID_INPUT');
    // Handlers receive a detached, immutable payload. Never retain mutable caller data.
-   const payload=freeze(copy(input));
+   const payload=checkedSnapshot(input,d.inputs,'INVALID_INPUT');
    this.#active.add(id);
    try{
     if(await action.guard(payload,context)!==true)fail('GUARD_REJECTED');
     // No await between this synchronous check and entering the handler.
     if(beforeExecute!==undefined&&beforeExecute()!==true)fail('STALE_INTERACTION');
     const output=await action.execute(payload,context);
-    if(!validate(output,d.outputs))fail('INVALID_OUTPUT');
-    return freeze(copy(output));
+    return checkedSnapshot(output,d.outputs,'INVALID_OUTPUT');
    }finally{this.#active.delete(id)}
   }
  }

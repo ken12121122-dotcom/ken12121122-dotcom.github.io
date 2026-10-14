@@ -1,0 +1,79 @@
+{
+  "schema": "nw-p1-payload-evidence-v1",
+  "review_status": "generated",
+  "observed_at": "2026-10-14T19:32:38.625Z",
+  "source_ref": "NW-RUNE-BUILD-001/P1",
+  "base_commit": "bc16422b82b611b7de4efcd8f9a1f08c577864c5",
+  "candidate_commit": "RESOLVE_CONTAINING_SOURCE_COMMIT",
+  "scope": "P1_PREPARATORY_ONLY; isolated ActionRegistry input/output snapshot fidelity",
+  "defect": {
+    "id": "PAYLOAD_SNAPSHOT_DIVERGENCE",
+    "hypothesis": "Validation of caller objects followed by JSON copy can skip sparse array slots or execute serialization/accessor hooks, so executed data differs from validated data.",
+    "before": {
+      "command": "node --test tests/living-library-action-payload.test.mjs",
+      "tests": 8,
+      "pass": 4,
+      "fail": 4,
+      "fingerprint": "PAYLOAD_SNAPSHOT_DIVERGENCE"
+    },
+    "patch": "Create one detached immutable data snapshot from own enumerable data descriptors, rejecting holes, extra/hidden/symbol fields, accessors, hooks, non-JSON values, cycles and excessive depth; validate and use the same snapshot for input and output.",
+    "expected_observable_change": "Malformed input is rejected before guard/execute without getter/toJSON invocation; malformed output is INVALID_OUTPUT and releases the lock; valid nested payload remains stable across await.",
+    "attempts": 1,
+    "original_fingerprint_resolved": true,
+    "failure_fingerprints": []
+  },
+  "tests": {
+    "targeted": {
+      "result": "PASS",
+      "tests": 8,
+      "command": "node --test tests/living-library-action-payload.test.mjs"
+    },
+    "local_node": {
+      "result": "PASS",
+      "total": 214,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs",
+      "environment": "Linux Node v24.19.0"
+    },
+    "json_schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "command": "NODE_PATH=<existing locked tests/browser/node_modules> node tests/browser/schema-contract.cjs",
+      "environment": "Ajv 8.17.1"
+    },
+    "local_browser": {
+      "result": "NOT_TESTED",
+      "observation": "Pinned Playwright 1.56.1 available, Chromium 1194 and Headless Shell 1194 binaries absent by filesystem check; no unchanged launch/GPU retry."
+    },
+    "ci": {
+      "result": "PENDING"
+    },
+    "browser": {
+      "result": "NOT_TESTED",
+      "fixture": "tests/browser/action-payload.cjs"
+    }
+  },
+  "scope_limits": [
+    "No live scene, microphone, storage, network, native permissions or Android integration",
+    "Opaque trusted interaction context is not serialized or copied; session identity remains unchanged",
+    "Trusted registered handlers and JS runtime only; this is not a sandbox for malicious Proxy traps or handler code",
+    "Schema definitions retain their existing registration path; this slice covers handler payloads/results",
+    "P0/P1 complete acceptance and staging/device checks remain NOT_TESTED"
+  ],
+  "preservation": {
+    "unchanged": [
+      "live HTML/public catalog/UI",
+      "3D books/avatar/joystick/camera/card ordering",
+      "GBA, GEN2, public/private boundaries and player saves"
+    ],
+    "added": [
+      "Descriptor-based local payload snapshot, eight Node tests and four Chromium module contract cases"
+    ],
+    "removed": []
+  },
+  "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
+  "release": "NOT_RELEASED",
+  "rollback_sha": "bc16422b82b611b7de4efcd8f9a1f08c577864c5"
+}

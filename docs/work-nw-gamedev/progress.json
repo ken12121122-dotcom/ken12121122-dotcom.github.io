@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T19:30:44.519Z",
+  "updated_at": "2026-10-14T19:32:38.625Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -60,7 +60,8 @@
         "tests/living-library-interaction-session.test.mjs",
         "docs/work-nw-gamedev/evidence/p1-session.json",
         "docs/work-nw-gamedev/evidence/p1-dispatch.json",
-        "docs/work-nw-gamedev/evidence/p1-action-schema.json"
+        "docs/work-nw-gamedev/evidence/p1-action-schema.json",
+        "docs/work-nw-gamedev/evidence/p1-payload.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
@@ -238,6 +239,27 @@
       "next_action": "Harden ActionRegistry payload snapshot fidelity: reject sparse/non-JSON payloads before JSON copy so validated and executed inputs cannot diverge; synthetic P1 tests only, no scene loading.",
       "candidate_sha": "1f37905f1105bc520206709baa3e83eb1924b11b",
       "ci_run_id": 38614917999
+    },
+    {
+      "work_item_id": "P1-PAYLOAD-001",
+      "state": "CI_PENDING_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; isolated ActionRegistry input/output snapshot fidelity",
+      "defect_id": "PAYLOAD_SNAPSHOT_DIVERGENCE",
+      "reproduction": {
+        "command": "node --test tests/living-library-action-payload.test.mjs",
+        "tests": 8,
+        "pass": 4,
+        "fail": 4,
+        "fingerprint": "PAYLOAD_SNAPSHOT_DIVERGENCE"
+      },
+      "failure_fingerprints": [],
+      "result": "Snapshot divergence reproduced (4/8 tests passing before), fixed on first effective patch. Targeted 8/8 and complete local Node 214/214 PASS; CI pending.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-payload.json"
+      ],
+      "rollback_sha": "bc16422b82b611b7de4efcd8f9a1f08c577864c5",
+      "next_action": "Inspect source CI and synthetic payload browser evidence, then persist verified checkpoint."
     }
   ],
   "last_run": {
@@ -252,8 +274,8 @@
   "execution": {
     "lease_owner": "NW-P1-20261015-04",
     "lease_expires_at": "2026-10-14T19:50:44.519Z",
-    "heartbeat_at": "2026-10-14T19:30:44.519Z",
-    "state": "REPRODUCING",
+    "heartbeat_at": "2026-10-14T19:32:38.625Z",
+    "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -336,7 +358,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 206,
+      "tests": 214,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"

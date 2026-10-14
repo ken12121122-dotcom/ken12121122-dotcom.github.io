@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node living-library-p0.cjs && node interaction-session.cjs && node interaction-dispatch.cjs"
+    "test": "node living-library-p0.cjs && node interaction-session.cjs && node interaction-dispatch.cjs && node action-payload.cjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",
