@@ -804,7 +804,7 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
-let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false;
+let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
 function resetJoystick(hide=false){
@@ -812,14 +812,28 @@ function resetJoystick(hide=false){
  walkKnob.style.transform='translate(-50%,-50%)';
  if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
 }
+function positionJoystick(x,y){
+ const mx=Math.min(65,window.innerWidth/2),my=Math.min(65,window.innerHeight/2);
+ joystickOrigin={x:Math.min(Math.max(mx,x),window.innerWidth-mx),y:Math.min(Math.max(my,y),window.innerHeight-my)};
+ joystickVisible=true;walkPad.style.left=joystickOrigin.x+'px';walkPad.style.top=joystickOrigin.y+'px';walkPad.hidden=false;
+}
 function showJoystick(e){
+ if(!controlPrefs.joystickEnabled)return;
  resetJoystick(false);
- joystickOrigin={x:e.clientX,y:e.clientY};
- joystickVisible=true;
- walkPad.style.left=joystickOrigin.x+'px';
- walkPad.style.top=joystickOrigin.y+'px';
- walkPad.hidden=false;
- // Invariant: merely showing or hiding the joystick never changes camera distance, FOV or look target.
+ if(controlPrefs.joystickMode==='fixed')positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ else positionJoystick(e.clientX,e.clientY);
+ // The camera never zooms when the joystick appears.
+}
+function beginJoystickPlacement(){
+ placingJoystick=true;resetJoystick(false);
+ positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ toast('在場景按住並拖曳，放開即可設定搖桿喚醒位置');
+}
+function applyControlPrefs(){
+ if(!controlPrefs.joystickEnabled){placingJoystick=false;resetJoystick(true)}
+ else if(joystickVisible&&controlPrefs.joystickMode==='fixed'&&!placingJoystick)
+  positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ syncRender();
 }
 function insideJoystick(e){
  return joystickVisible&&joystickOrigin&&Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)<=64;
@@ -1094,6 +1108,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
  if(touchPoints.size===1){
   wasMoving=false;drag=null;
+  if(placingJoystick){wasMoving=true;positionJoystick(e.clientX,e.clientY);return}
   if(beginJoystick(e)){
    // A finger held on the visible pad may move the character. Don't re-pick it on release.
    wasMoving=true;
@@ -1110,6 +1125,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
 renderer.domElement.addEventListener('pointermove',e=>{
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
+ if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
  if(touchPoints.size===2){
   const pair=contactPair();
   if(pinch!==null&&pinchCenter){
@@ -1140,6 +1156,15 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(placingJoystick){
+  if(joystickOrigin){
+   const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
+   placingJoystick=false;resetJoystick(true);
+   saveControls({joystickEnabled:true,joystickMode:'fixed',joystickPosition:p});
+   toast('搖桿喚醒位置已儲存');
+  }
+  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=false;syncRender();return;
+ }
  const joystickEnd=e.pointerId===joystickPointer;
  const isTap=!wasMoving&&!joystickEnd&&touchPoints.size===1;
  if(joystickEnd)resetJoystick(false); // Keep the pad visible; releasing stops movement.
@@ -1150,6 +1175,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
@@ -1172,6 +1198,8 @@ function resize(){
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
  // Keep user zoom across viewport/keyboard/orientation changes.
  distance=THREE.MathUtils.clamp(distance,CAMERA_MIN,CAMERA_MAX);
+ if(controlPrefs.joystickMode==='fixed'&&joystickVisible&&!placingJoystick)
+  positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
  cameraUpdate();
 }
 window.addEventListener('resize',resize);resize();
@@ -1248,6 +1276,7 @@ notifyReady({
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
+ beginJoystickPlacement,applyControls:applyControlPrefs,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
