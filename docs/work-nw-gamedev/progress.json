@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T23:53:57.102Z",
+  "updated_at": "2026-10-14T23:55:50.366Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -389,7 +389,8 @@
     "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged.",
     "Standard Chrome launch failed due singleton socket permissions, but supported Headless Shell ran successfully. Do not treat the earlier local launch limitation as an overall project blocker.",
     "P1_PREPARATORY_ONLY records source/unit-test preparation, not completion of the P0 or P1 acceptance gates.",
-    "OWNER 2026-10-15 confirmed existing phone operations remain usable. Prioritize clearing actual runtime/staging verification gaps and concrete scene integration preparation over further generic hardening. Fixed P0-P7 acceptance and release authority unchanged."
+    "OWNER 2026-10-15 confirmed existing phone operations remain usable. Prioritize clearing actual runtime/staging verification gaps and concrete scene integration preparation over further generic hardening. Fixed P0-P7 acceptance and release authority unchanged.",
+    "OWNER approval received 2026-10-15 07:54 +08:00 to proceed. Real scene hook and preservation checklist located; no configured preview deployment found in repository workflows. Do not mark P0/P1 PASS or claim release from this approval."
   ],
   "owner_observations": [
     {
@@ -551,5 +552,36 @@
       "run_id": 38654474897,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897"
     }
+  },
+  "owner_approvals": [
+    {
+      "id": "owner_proceed_20261015_075446",
+      "received_at": "2026-10-15T07:54:46+08:00",
+      "owner_quote": "核准",
+      "context": "Reply to proposed isolation verification and real character.tap -> controlled feedback preparation; assistant also mentioned later release approval.",
+      "effective_action": "Proceed with the proposed next-stage verification and integration preparation. Preserve all fixed test gates. No specific release candidate/version has yet passed the gates or been presented for final release.",
+      "status": "RECORDED"
+    }
+  ],
+  "next_stage_preparation": {
+    "observed_at": "2026-10-14T23:55:50.366Z",
+    "source_commit": "c054499734dba47498f372eb85286b1ceef923fd",
+    "scene_entry": "living-library/live/index.html: avatarHit branch currently calls showJoystick(e) and returns avatar",
+    "candidate_adapter": "living-library/live/character-tap-adapter.js: CharacterTapAdapter.dispatch(target_id,{signal})",
+    "preserve": [
+      "Book hit priority and readable books with joystick visible",
+      "showJoystick on actual avatar hit and existing empty-space dismissal",
+      "Movement/camera/touch/card-order/storage/public/private boundaries"
+    ],
+    "verification_required": [
+      "P0 real 3D regression evidence and identifiable runtime",
+      "Isolated candidate browser/runtime before activation",
+      "Actual character tap -> registered local feedback; synthetic module tests alone are insufficient"
+    ],
+    "deployment_inspection": {
+      "result": "NO_CONFIGURED_PREVIEW_FOUND_IN_REPO_WORKFLOWS",
+      "scope": "Read repository workflow inventory; living-library-ci.yml is isolated intercepted candidate testing and living-library-live-proof.yml checks already-deployed public Pages. No verified staging deploy method/URL identified. External provider deployment state remains NOT_TESTED."
+    },
+    "state": "PREPARED_NOT_ACTIVATED"
   }
 }
