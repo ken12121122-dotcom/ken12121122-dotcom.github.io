@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.auto-reconnect-v1">
+<meta name="living-library-release" content="2026-10-14.card-atlas-touch-joystick-v1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -199,7 +199,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
-<div class="top-actions"><button class="chip" id="llUpdateReconnect" type="button" title="檢查最新書籍、卡片與 UI，重新連結並重設本機書庫顯示記錄">↻ 重新連結</button><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
+
 </header>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
@@ -309,6 +309,8 @@ function isLocalFunctionPage(url){
   if(u.origin===current.origin&&[
     new URL('./gpt-library-bridge.html',current).pathname,
     new URL('./gpt-skills.html',current).pathname,
+    new URL('./knowledge-search.html',current).pathname,
+    new URL('./system-controls.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -316,6 +318,20 @@ function isLocalFunctionPage(url){
  }catch(_){return false}
 }
 let readerCard=null;
+// Only a trusted, currently opened same-origin card iframe can request an existing control action.
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin||event.source!==document.getElementById('readerFrame').contentWindow)return;
+ if(event.data?.kind!=='living-library-public-card-action')return;
+ const id=readerCard?.id,action=event.data.action;
+ if(id==='public.knowledge.search'&&(action==='open-md-search'||action==='connect-gen2')){
+  if(action==='open-md-search'){
+   if(projectionState)searchMD();
+   else {toast('請先連接 GEN2');$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()}
+  }else{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()}
+ }else if(id==='public.system.controls'&&action==='connect-gen2'){
+  $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
+ }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+});
 function openCardReader(card){
  storeBooks();
  readerCard=card;
@@ -410,10 +426,7 @@ function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);cons
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
 $('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
-$('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
-$('resetBtn').onclick=()=>window.LivingScene?.reset?.();
-$('homeBtn').onclick=()=>{closeBook();if(BOOKS.length)select(BOOKS[0].id);window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
-$('aboutBtn').onclick=()=>{toast('GEN2 main 是唯一正本 · 本頁搜尋、閱讀及候選 PR · 任務由可用 AI／Agent 執行 · OWNER 保留核准')};
+
 $('fallbackOpen').onclick=openBook;
 $('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
 $('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
@@ -473,7 +486,7 @@ function openEditor(doc){
  currentDocument=doc;$('sourcePage').hidden=true;$('readerFrame').hidden=true;$('editorPane').hidden=false;
  $('editText').value=Drafts.candidateText(doc.text);$('writeToken').value='';$('editorResult').textContent='修改下方完整 MD，再檢查候選。寫入權杖只用於本次暫時分支與 Draft PR。';
 }
-$('searchGen2').onclick=()=>searchMD();$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
+$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
 $('mdQuery').oninput=renderSearch;$('mdScope').onchange=renderSearch;$('closeSearch').onclick=()=>$('mdSearch').close();
 // Native dialog Escape/close and successful authorization also resume rendering.
 $('mdSearch').addEventListener('close',syncScene);$('gen2Auth').addEventListener('close',syncScene);
@@ -488,7 +501,7 @@ $('submitEdit').onclick=async()=>{
  }catch(e){if(submitController?.signal.aborted)return;$('editorResult').textContent=e.message;if(e.recoveryUrl){const a=document.createElement('a');a.href=e.recoveryUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='候選分支已建立，可手動補開 PR';$('editorResult').append(a)}}
  finally{submitting=false;submitController=null;$('submitEdit').disabled=submitted;$('editText').readOnly=submitted;}
 };
-$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()};
+
 $('readGen2').onclick=()=>{if(busy)return;token=$('gen2Token').value.trim();$('gen2Token').value='';if(!token){$('authStatus').textContent='請提供唯讀權杖';return;}epoch++;lastCommit=null;refreshGen2()};
 $('reuseGen2').onclick=()=>{if(busy)return;try{const cfg=JSON.parse(localStorage.getItem('packagecanvas-gen2-github-v1')||'null');if(!cfg?.token||cfg.owner!==GEN2.sources.github.defaults.owner||cfg.repo!==GEN2.sources.github.defaults.repo)throw new Error('此網域未有符合的 PackageCanvas 授權，請貼上唯讀權杖');token=cfg.token;epoch++;lastCommit=null;refreshGen2()}catch(e){$('authStatus').textContent=e.message}};
 $('disconnectGen2').onclick=()=>{disconnect();$('gen2Auth').close()};
@@ -501,7 +514,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  // Release watchdog: public cards, UI buttons, and source fingerprints only.
  // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
  let refreshBusy=false, queuedReconnect=false;
- const updateButton=$('llUpdateReconnect'), updateDialog=$('llUpdateDialog');
+ const updateDialog=$('llUpdateDialog');
  const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
   typeof c.url==='string'&&c.url.startsWith('./')&&/^[a-z0-9][a-z0-9._-]*\.html$/i.test(c.url.slice(2)))
   .map(c=>c.url.slice(2));
@@ -540,7 +553,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
   Updates.resetView(localStorage);
   window.location.replace(Updates.reconnectUrl(location.href,Date.now()));
  }
- updateButton.addEventListener('click',reconnectNow);
  function canRefreshSilently(){
   return !document.hidden&&!updateDialog.open&&!$('drawerWrap').classList.contains('open')
    &&!$('mdSearch').open&&!$('gen2Auth').open&&!refreshBusy;
@@ -568,8 +580,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
     const baseline=Updates.read(localStorage,Updates.BASELINE_KEY);
     if(baseline&&(Updates.changed(baseline.fingerprints,fingerprints)||
        JSON.stringify(baseline.cards)!==JSON.stringify(now.cards))){
-      updateButton.dataset.newVersion='true';
-      updateButton.textContent='↻ 發現更新';
       queuedReconnect=true;
     }
    }
@@ -584,13 +594,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){if(queuedReconnect&&canRefreshSilently())reconnectNow();else refreshWebVersion();}
  });
-  // Preserve the already published Game Book shortcut and deep link.
- $('gameBookShortcut').addEventListener('click',()=>{select('gaming');openBook()});
- $('gptSkillsShortcut').addEventListener('click',()=>{
-   const card=CARDS['public.gpt.skills'];select('gpt');openBook();
-   if(card)openCardReader(card);
-   else toast('卡片目錄仍是舊版：請重新開啟線上圖書館');
- });
+  // Existing direct links remain usable without homepage shortcuts.
  const route=new URLSearchParams(window.location.search);
  if(route.get('card')==='public.gpt.skills'){
    const card=CARDS['public.gpt.skills'];select('gpt');openBook();if(card)openCardReader(card);
