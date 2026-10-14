@@ -9,7 +9,9 @@ const Movement=require('../living-library/live/avatar-movement.js');
 const Catalog=require('../living-library/live/public-catalog.js');
 
 test('production live WebView URL includes moving avatar, camera target tracking and two input modes',()=>{
- assert.match(source,/id="exploreToggle"/);
+ assert.doesNotMatch(source,/id="exploreToggle"/);
+ assert.match(source,/const avatarHit=ray\.intersectObject\(keeper,true\)/);
+ assert.match(source,/if\(avatarHit\)\{showJoystick\(e\);return 'avatar'\}/);
  assert.match(source,/id="walkPad"/);
  assert.match(source,/id="walkKnob"/);
  assert.match(source,/['\"]avatar-movement\.js['\"]/);
@@ -17,7 +19,9 @@ test('production live WebView URL includes moving avatar, camera target tracking
  assert.match(source,/camera\.position\.set\(look\.x\+Math\.sin\(theta\)\*horizontal/);
  assert.match(source,/bookOrbitAnchor\.set\(keeper\.position\.x,0,keeper\.position\.z\)/);
  assert.match(source,/p\.x\+bookOrbitAnchor\.x/);
- assert.match(source,/look\.set\(keeper\.position\.x,2\.1,keeper\.position\.z\)/);
+ assert.match(source,/look\.x=keeper\.position\.x/);
+ assert.match(source,/look\.z=keeper\.position\.z/);
+ assert.doesNotMatch(source,/distance=6\.8/);
  assert.match(source,/setPointerCapture/);
 });
 test('walking input is bounded, camera relative, and does not move real-world map origin',()=>{
@@ -42,7 +46,7 @@ test('book titles are printed on the mesh cover/spine, without separate orbit na
  assert.match(source,/g\.position\.copy\(target\.position\)/);
 });
 test('live Game Book, all original public books and native route stay intact',()=>{
- assert.match(source,/id="gameBookShortcut"/);
+ assert.doesNotMatch(source,/id="gameBookShortcut"/);
  assert.match(source,/get\('book'\)==='gaming'/);
  assert.match(source,/src="\.\.\/\.\.\/packagecanvas\/gen2-source\.js/);
  assert.match(source,/['\"]public-catalog\.js['\"]/);

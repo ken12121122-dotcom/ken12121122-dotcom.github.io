@@ -10,8 +10,8 @@ const path=new URL('../living-library/ui-map.html',import.meta.url);
 
 test('Card identity stays stable across books, branches, and display numbers',()=>{
  const catalog=live.buildCatalog(),o=tool.catalogOverview(catalog),items=tool.listCards(catalog);
- assert.equal(o.bookCount,14);assert.equal(o.cardCount,27);
- assert.equal(o.placementCount,43);assert.equal(new Set(items.map(c=>c.id)).size,items.length);
+ assert.equal(o.bookCount,14);assert.equal(o.cardCount,29);
+ assert.equal(o.placementCount,45);assert.equal(new Set(items.map(c=>c.id)).size,items.length);
  assert.ok(items.find(x=>x.id==='public.canvas.workbench').books.length>=8);
  const manager=items.find(x=>x.id==='public.system.ui.map');
  assert.deepEqual(manager.books,['system']);assert.equal(manager.number,'10');
@@ -21,7 +21,7 @@ test('Card identity stays stable across books, branches, and display numbers',()
 test('Catalog comparison highlights live-only GPT and memory palace without deleting shared ids',()=>{
  const diff=tool.compareCatalogs(live.buildCatalog(),dev.buildCatalog());
  assert.equal(diff.live.books,14);assert.equal(diff.dev.books,14);
- assert.equal(diff.live.cards,27);assert.equal(diff.dev.cards,25);
+ assert.equal(diff.live.cards,29);assert.equal(diff.dev.cards,25);
  assert.ok(diff.liveOnlyCardIds.includes('public.gpt.skills'));
  assert.ok(diff.liveOnlyCardIds.includes('KW-GAME-MEMORY-PALACE-20261014'));
  assert.ok(diff.placements.find(x=>x.book==='system').liveOnly.includes('public.gpt.skills'));
@@ -55,9 +55,10 @@ test('GitHub failures never produce fabricated counts or credentials',async()=>{
 });
 test('Manager UI shows live/dev comparison and explicit manual refresh with no background write',async()=>{
  const html=await readFile(path,'utf8');
- for(const x of ['ui-manager-register.js','./public-catalog.js','./live/public-catalog.js','refreshRepo','catalogDiff','cardIndex','prRows','branchRows','githubMainSha','cardFilter','gptSkillsShortcut','webRuntimeStamp']){
+ for(const x of ['ui-manager-register.js','./public-catalog.js','./live/public-catalog.js','refreshRepo','catalogDiff','cardIndex','prRows','branchRows','githubMainSha','cardFilter','webRuntimeStamp']){
   assert.ok(html.includes(x),x);
  }
+ assert.doesNotMatch(html,/id="gptSkillsShortcut"/);
  assert.match(html,/\.addEventListener\('click',refreshGithub\)/);
  assert.match(html,/textContent/);
  assert.doesNotMatch(html,/PRIVATE[_-]?TOKEN|github_pat_|ghp_[A-Za-z0-9]/);

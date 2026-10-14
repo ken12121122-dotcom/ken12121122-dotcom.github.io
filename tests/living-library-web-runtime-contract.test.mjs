@@ -40,10 +40,10 @@ test('GEN2 projection overlays public online books without deleting Game Book ca
  }
 });
 
-test('online Game Book has a visible one-tap entry and browser deep-link to the real in-book card',async()=>{
+test('online Game Book is reached through book catalog or direct link, without a redundant top-right shortcut',async()=>{
  const html=await fetchFile('living-library/live/index.html');
- assert.match(html, /id="gameBookShortcut"[^>]*>♜ 遊戲之書・新卡<\/button>/);
- assert.match(html, /\$\('gameBookShortcut'\)\.addEventListener\('click',\(\)=>\{select\('gaming'\);openBook\(\)\}\)/);
+ assert.doesNotMatch(html, /id="gameBookShortcut"/);
+ assert.match(html, /function renderFunctions\(b\)/);
  assert.match(html, /route\.get\('book'\)==='gaming'/);
  assert.match(html, /select\('gaming'\);openBook\(\)/);
  const model=c.buildCatalog();

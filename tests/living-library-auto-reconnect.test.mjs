@@ -20,7 +20,7 @@ test('every existing public card is included without private GEN2 or duplicate c
  const before=snapshot();
  assert.equal(before.cards.filter(c=>c.id==='public.gpt.skills').length,1);
  assert.equal(before.books.find(b=>b.id==='gpt').cardIds.length,2);
- assert.equal(before.books.find(b=>b.id==='system').cardIds.length,4);
+ assert.equal(before.books.find(b=>b.id==='system').cardIds.length,5);
  assert.equal(before.cards.filter(c=>c.id==='public.gba.runtime').length,1);
  assert.equal(before.cards.length,Object.keys(Catalog.buildCatalog().cards).length);
  const changed=Catalog.buildCatalog();
@@ -83,7 +83,9 @@ test('remote signatures bypass caches for all public UI assets and local card pa
  assert.equal(Updates.changed(signatures,structuredClone(signatures)),false);
 });
 test('magic-book update dialog, public-only reset and automatic app reconnect are actually wired',async()=>{
- assert.match(shell,/id="llUpdateReconnect"/);
+ assert.doesNotMatch(shell,/id="llUpdateReconnect"/);
+ assert.match(shell,/id="llUpdateDialog"/);
+ assert.match(shell,/reconnectNow\(\)/);
  assert.match(shell,/id="llUpdateDialog"/);
  assert.match(shell,/class="ll-update-dialog"/);
  assert.match(shell,/id="llUpdateList"/);

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.auto-reconnect-v1">
+<meta name="living-library-release" content="2026-10-14.card-atlas-touch-joystick-v1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -180,6 +180,18 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 @media(prefers-reduced-motion:reduce){.toast,.catalog{transition:none}}
 #gen2Auth,#mdSearch{max-width:min(500px,90vw);background:#e9d9b7;color:#473421;border:2px solid #b08d5e;border-radius:15px;padding:22px}#gen2Auth::backdrop,#mdSearch::backdrop{background:#0009}#gen2Auth input{box-sizing:border-box;width:100%;padding:10px}#gen2Auth button{margin:4px;padding:10px;min-height:44px}#gen2Status{font-size:11px;overflow-wrap:anywhere;margin:8px 12px}.source-page{box-sizing:border-box;flex:1;min-width:0;overflow:auto;background:#ecdfc4;color:#473421;padding:22px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 sans-serif}.source-page a{color:#624522}.source-page button{padding:12px;margin:12px 0} .reader-frame[hidden]{display:none}
 #mdSearch{width:min(750px,92vw);max-height:85dvh;overflow:auto}#mdSearch input,#mdSearch select{box-sizing:border-box;max-width:100%;padding:10px}#mdResults button{display:block;width:100%;text-align:left;margin:7px 0;padding:10px;overflow-wrap:anywhere}#mdSearch button{min-height:44px} .md-editor[hidden],.source-page[hidden]{display:none!important}.md-editor{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:auto;padding:12px;background:#e9d9b7;color:#473421}.md-editor textarea{box-sizing:border-box;flex:1;min-height:200px;width:100%;resize:none;font:14px/1.6 monospace;background:#fff9eb;color:#302416;padding:12px}.editor-controls,.submit-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.editor-controls button,.submit-controls button{min-height:44px;padding:10px}.submit-controls input{max-width:100%;box-sizing:border-box;padding:8px}.md-editor p{font-size:12px;overflow-wrap:anywhere}.editor-label{font-size:12px;margin:8px 0}
+
+
+/* Card encyclopedia: 3D books are the main interface; status and promos live off-stage. */
+#webRuntimeStamp{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.side{display:none!important}
+.catalog #gen2Status,.catalog .shelf-tools,.catalog .catalog-bottom{display:none!important}
+.bottom .current,.bottom .note{display:none!important}
+.catalog-head{min-height:56px}
+.walk-ui{position:fixed!important;inset:0!important;width:0!important;height:0!important;left:0!important;top:0!important;bottom:auto!important;z-index:7!important;pointer-events:none!important}
+.walk-pad{position:fixed!important;left:0;top:0;transform:translate(-50%,-50%);width:112px;height:112px;pointer-events:none!important}
+.walk-ui[hidden],.walk-pad[hidden]{display:none!important}
+@media(max-width:650px){.walk-ui{inset:0!important;left:0!important;top:0!important;bottom:auto!important}.walk-pad{width:112px;height:112px}}
 </style>
 </head>
 <body>
@@ -187,16 +199,13 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
-<div class="top-actions"><button class="chip" id="llUpdateReconnect" type="button" title="檢查最新書籍、卡片與 UI，重新連結並重設本機書庫顯示記錄">↻ 重新連結</button><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
+
 </header>
-<aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
-<div id="exploreControls" class="walk-ui" hidden aria-label="3D 人物探索">
-<button id="exploreToggle" type="button" class="walk-mode" aria-pressed="false">🎮 人物探索</button>
-<div id="walkPad" class="walk-pad" role="group" aria-label="移動搖桿：向上前進，向下後退，左右平移" hidden>
+<div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
+<div id="walkPad" class="walk-pad" role="group" aria-label="觸點搖桿：按住拖曳移動，放開停止" hidden>
 <div id="walkKnob" class="walk-knob"></div></div>
-<div id="walkHint" class="walk-hint" hidden>左側搖桿走路 · 右側拖曳視角</div>
 </div>
 <div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
@@ -300,6 +309,8 @@ function isLocalFunctionPage(url){
   if(u.origin===current.origin&&[
     new URL('./gpt-library-bridge.html',current).pathname,
     new URL('./gpt-skills.html',current).pathname,
+    new URL('./knowledge-search.html',current).pathname,
+    new URL('./system-controls.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -307,6 +318,20 @@ function isLocalFunctionPage(url){
  }catch(_){return false}
 }
 let readerCard=null;
+// Only a trusted, currently opened same-origin card iframe can request an existing control action.
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin||event.source!==document.getElementById('readerFrame').contentWindow)return;
+ if(event.data?.kind!=='living-library-public-card-action')return;
+ const id=readerCard?.id,action=event.data.action;
+ if(id==='public.knowledge.search'&&(action==='open-md-search'||action==='connect-gen2')){
+  if(action==='open-md-search'){
+   if(projectionState)searchMD();
+   else {toast('請先連接 GEN2');$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()}
+  }else{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()}
+ }else if(id==='public.system.controls'&&action==='connect-gen2'){
+  $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
+ }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+});
 function openCardReader(card){
  storeBooks();
  readerCard=card;
@@ -401,10 +426,7 @@ function cycle(d){if(!BOOKS.length)return;const a=BOOKS.filter(x=>x.active);cons
 $('openBtn').onclick=openBook;$('closeDrawer').onclick=closeBook;$('backBtn').onclick=closeBook;$('moveBtn').onclick=moveBook;
 $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
 $('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
-$('motionBtn').onclick=()=>{motion=!motion;$('motionBtn').textContent=motion?'⏸ 暫停漂浮':'▶ 恢復漂浮';window.LivingScene?.setMotion?.(motion)};
-$('resetBtn').onclick=()=>window.LivingScene?.reset?.();
-$('homeBtn').onclick=()=>{closeBook();if(BOOKS.length)select(BOOKS[0].id);window.LivingScene?.reset?.();toast('已回到圖書館首頁')};
-$('aboutBtn').onclick=()=>{toast('GEN2 main 是唯一正本 · 本頁搜尋、閱讀及候選 PR · 任務由可用 AI／Agent 執行 · OWNER 保留核准')};
+
 $('fallbackOpen').onclick=openBook;
 $('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
 $('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
@@ -464,7 +486,7 @@ function openEditor(doc){
  currentDocument=doc;$('sourcePage').hidden=true;$('readerFrame').hidden=true;$('editorPane').hidden=false;
  $('editText').value=Drafts.candidateText(doc.text);$('writeToken').value='';$('editorResult').textContent='修改下方完整 MD，再檢查候選。寫入權杖只用於本次暫時分支與 Draft PR。';
 }
-$('searchGen2').onclick=()=>searchMD();$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
+$('readBookMD').onclick=()=>{if(book()?.kb_id)searchMD(book().kb_id);else toast('此書是公開功能分類，尚未對應已授權正式 KB')};
 $('mdQuery').oninput=renderSearch;$('mdScope').onchange=renderSearch;$('closeSearch').onclick=()=>$('mdSearch').close();
 // Native dialog Escape/close and successful authorization also resume rendering.
 $('mdSearch').addEventListener('close',syncScene);$('gen2Auth').addEventListener('close',syncScene);
@@ -479,7 +501,7 @@ $('submitEdit').onclick=async()=>{
  }catch(e){if(submitController?.signal.aborted)return;$('editorResult').textContent=e.message;if(e.recoveryUrl){const a=document.createElement('a');a.href=e.recoveryUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='候選分支已建立，可手動補開 PR';$('editorResult').append(a)}}
  finally{submitting=false;submitController=null;$('submitEdit').disabled=submitted;$('editText').readOnly=submitted;}
 };
-$('connectGen2').onclick=()=>{$('authStatus').textContent='';$('gen2Auth').showModal();syncScene()};
+
 $('readGen2').onclick=()=>{if(busy)return;token=$('gen2Token').value.trim();$('gen2Token').value='';if(!token){$('authStatus').textContent='請提供唯讀權杖';return;}epoch++;lastCommit=null;refreshGen2()};
 $('reuseGen2').onclick=()=>{if(busy)return;try{const cfg=JSON.parse(localStorage.getItem('packagecanvas-gen2-github-v1')||'null');if(!cfg?.token||cfg.owner!==GEN2.sources.github.defaults.owner||cfg.repo!==GEN2.sources.github.defaults.repo)throw new Error('此網域未有符合的 PackageCanvas 授權，請貼上唯讀權杖');token=cfg.token;epoch++;lastCommit=null;refreshGen2()}catch(e){$('authStatus').textContent=e.message}};
 $('disconnectGen2').onclick=()=>{disconnect();$('gen2Auth').close()};
@@ -492,7 +514,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  // Release watchdog: public cards, UI buttons, and source fingerprints only.
  // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
  let refreshBusy=false, queuedReconnect=false;
- const updateButton=$('llUpdateReconnect'), updateDialog=$('llUpdateDialog');
+ const updateDialog=$('llUpdateDialog');
  const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
   typeof c.url==='string'&&c.url.startsWith('./')&&/^[a-z0-9][a-z0-9._-]*\.html$/i.test(c.url.slice(2)))
   .map(c=>c.url.slice(2));
@@ -531,7 +553,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
   Updates.resetView(localStorage);
   window.location.replace(Updates.reconnectUrl(location.href,Date.now()));
  }
- updateButton.addEventListener('click',reconnectNow);
  function canRefreshSilently(){
   return !document.hidden&&!updateDialog.open&&!$('drawerWrap').classList.contains('open')
    &&!$('mdSearch').open&&!$('gen2Auth').open&&!refreshBusy;
@@ -559,8 +580,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
     const baseline=Updates.read(localStorage,Updates.BASELINE_KEY);
     if(baseline&&(Updates.changed(baseline.fingerprints,fingerprints)||
        JSON.stringify(baseline.cards)!==JSON.stringify(now.cards))){
-      updateButton.dataset.newVersion='true';
-      updateButton.textContent='↻ 發現更新';
       queuedReconnect=true;
     }
    }
@@ -575,13 +594,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){if(queuedReconnect&&canRefreshSilently())reconnectNow();else refreshWebVersion();}
  });
-  // Preserve the already published Game Book shortcut and deep link.
- $('gameBookShortcut').addEventListener('click',()=>{select('gaming');openBook()});
- $('gptSkillsShortcut').addEventListener('click',()=>{
-   const card=CARDS['public.gpt.skills'];select('gpt');openBook();
-   if(card)openCardReader(card);
-   else toast('卡片目錄仍是舊版：請重新開啟線上圖書館');
- });
+  // Existing direct links remain usable without homepage shortcuts.
  const route=new URLSearchParams(window.location.search);
  if(route.get('card')==='public.gpt.skills'){
    const card=CARDS['public.gpt.skills'];select('gpt');openBook();if(card)openCardReader(card);
@@ -616,7 +629,7 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.
 stage.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
-let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.9,0);
+const CAMERA_MIN=7.5,CAMERA_MAX=27;let theta=0,phi=.17,distance=window.innerWidth<650?15.8:14.1;const look=new THREE.Vector3(0,2.9,0);
 const targetAngle=new THREE.Vector2(0,.17);
 function cameraUpdate(){
  // Free 360-degree yaw around the world. No fixed bookshelf camera.
@@ -692,17 +705,45 @@ const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));ha
 const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
 // Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
 // Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
+// Direct-touch input: the finger-down point becomes the temporary joystick.
+// The same camera distance is used before walking, while walking and after resize.
 const exploreUI=document.getElementById('exploreControls');
-const exploreToggle=document.getElementById('exploreToggle');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
-const walkHint=document.getElementById('walkHint');
-let exploring=false,joy={x:0,y:0},walkPhase=0,walkDistance=0;
-let distanceBeforeExplore=distance,joystickPointer=null;
+const exploring=true;
+let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false;
 const walkKeys=new Set();
-function resetJoystick(){
+// Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
+function resetJoystick(hide=false){
  joy={x:0,y:0};joystickPointer=null;
  walkKnob.style.transform='translate(-50%,-50%)';
+ if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
+}
+function showJoystick(e){
+ resetJoystick(false);
+ joystickOrigin={x:e.clientX,y:e.clientY};
+ joystickVisible=true;
+ walkPad.style.left=joystickOrigin.x+'px';
+ walkPad.style.top=joystickOrigin.y+'px';
+ walkPad.hidden=false;
+ // Invariant: merely showing or hiding the joystick never changes camera distance, FOV or look target.
+}
+function insideJoystick(e){
+ return joystickVisible&&joystickOrigin&&Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)<=64;
+}
+function beginJoystick(e){
+ if(!insideJoystick(e)||joystickPointer!==null)return false;
+ joystickPointer=e.pointerId;
+ joy={x:0,y:0};
+ return true;
+}
+function joystickMove(e){
+ if(joystickPointer!==e.pointerId||!joystickOrigin)return;
+ const radius=42,dx=(e.clientX-joystickOrigin.x)/radius,dy=(joystickOrigin.y-e.clientY)/radius;
+ const strength=Math.hypot(dx,dy);
+ joy=strength<.13?{x:0,y:0}:Movement3D.normalize(dx,dy);
+ walkKnob.style.transform='translate(-50%,-50%) translate('+(joy.x*radius)+'px,'+(-joy.y*radius)+'px)';
+ syncRender();
 }
 function exploreInput(){
  const x=(walkKeys.has('d')?1:0)-(walkKeys.has('a')?1:0);
@@ -711,81 +752,34 @@ function exploreInput(){
 }
 function hasWalkInput(){
  const v=exploreInput();
- return exploring&&Math.hypot(v.x,v.y)>.025;
+ return Math.hypot(v.x,v.y)>.025;
 }
-function showExploreMode(enabled){
- exploring=Boolean(enabled);
- walkKeys.clear();resetJoystick();
- exploreToggle.setAttribute('aria-pressed',String(exploring));
- exploreToggle.textContent=exploring?'◉ 返回自由觀看':'🎮 人物探索';
- walkPad.hidden=!exploring;walkHint.hidden=!exploring;
- if(exploring){
-  distanceBeforeExplore=distance;distance=6.8;
-  look.set(keeper.position.x,2.1,keeper.position.z);
-  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
- }else{
-  distance=distanceBeforeExplore;
-  look.set(0,2.9,0);
-  keeper.position.y=.46;
- }
- cameraUpdate();syncRender();
-}
-exploreToggle.addEventListener('click',()=>showExploreMode(!exploring));
-function joystickMove(e){
- const r=walkPad.getBoundingClientRect(),radius=Math.min(r.width,r.height)*.38;
- const dx=(e.clientX-(r.left+r.width/2))/radius;
- const dy=((r.top+r.height/2)-e.clientY)/radius;
- joy=Movement3D.normalize(dx,dy);
- walkKnob.style.transform='translate(-50%,-50%) translate('+(joy.x*radius)+'px,'+(-joy.y*radius)+'px)';
- syncRender();
-}
-walkPad.addEventListener('pointerdown',e=>{
- if(!exploring||joystickPointer!==null)return;
- e.preventDefault();joystickPointer=e.pointerId;
- walkPad.setPointerCapture(e.pointerId);joystickMove(e);
-});
-walkPad.addEventListener('pointermove',e=>{
- if(!exploring||e.pointerId!==joystickPointer)return;
- e.preventDefault();joystickMove(e);
-});
-function joystickRelease(e){
- if(e.pointerId!==joystickPointer)return;
- resetJoystick();syncRender();
-}
-walkPad.addEventListener('pointerup',joystickRelease);
-walkPad.addEventListener('pointercancel',joystickRelease);
-walkPad.addEventListener('lostpointercapture',joystickRelease);
 function editableTarget(t){
  return !!(t&&(t.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(t.tagName)));
 }
 document.addEventListener('keydown',e=>{
- if(!exploring||editableTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey)return;
+ if(editableTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey)return;
  const key=e.key.toLowerCase();
- if('wasd'.includes(key)&&key.length===1){
-  e.preventDefault();walkKeys.add(key);syncRender();
- }
+ if('wasd'.includes(key)&&key.length===1){e.preventDefault();walkKeys.add(key);syncRender()}
 });
 document.addEventListener('keyup',e=>{
  const key=e.key.toLowerCase();
- if(walkKeys.delete(key)){e.preventDefault();syncRender();}
+ if(walkKeys.delete(key)){e.preventDefault();syncRender()}
 });
-window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender();});
+window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
- if(!hasWalkInput()){
-  // The avatar rests on the ground when the joystick or keys are released.
-  if(exploring)keeper.position.y=.46;
-  return false;
- }
+ if(!hasWalkInput()){keeper.position.y=.46;return false}
  const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
- // Rotate the original librarian silhouette toward the walking direction.
  const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
  keeper.rotation.y+=delta*Math.min(1,dt*11);
  walkDistance+=next.distance;walkPhase+=dt*8;
  keeper.position.y=.46+(!preferReduced?Math.sin(walkPhase*2)*.045:0);
- look.set(keeper.position.x,2.1,keeper.position.z);
+ // Camera follows the character's world X/Z only; no automatic zoom, pitch or focal-height change.
+ look.x=keeper.position.x;
+ look.z=keeper.position.z;
  cameraUpdate();return true;
 }
 
@@ -975,23 +969,116 @@ function pick(e){
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
- const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
- const hit=ray.intersectObjects(targets,false)[0];
- if(hit){
-  const id=hit.object.userData.bookId,o=entityById.get(id);
+ // A book always wins over the character and must remain readable with the joystick visible.
+ const targets=[];
+ bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ const bookHit=ray.intersectObjects(targets,false)[0];
+ if(bookHit){
+  resetJoystick(true);
+  const id=bookHit.object.userData.bookId,o=entityById.get(id);
   if(o&&!o.b.active)window.LivingLibrary.summonBook(id);
-  else{select(id);window.LivingLibrary.openBook();}
-  return true;
+  else{select(id);window.LivingLibrary.openBook()}
+  return 'book';
  }
- return false;
+ // The robe and head can be narrow on a phone; a modest 3D hit volume helps select the librarian.
+ const avatarHit=ray.intersectObject(keeper,true).some(h=>h.object.isMesh)||
+  ray.ray.distanceToPoint(new THREE.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05;
+ if(avatarHit){showJoystick(e);return 'avatar'}
+ if(joystickVisible)resetJoystick(true);
+ return 'empty';
 }
+// A joystick can only appear after a direct character tap. Empty space dismisses it.
 const touchPoints=new Map();
-renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
-renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,exploring?4.5:7.5,exploring?13:27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}}});
-renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
-renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
-renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,exploring?4.5:7.5,exploring?13:27);cameraUpdate()},{passive:false});
-function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));if(exploring)distance=THREE.MathUtils.clamp(distance,4.5,13);else distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
+let pinchCenter=null;
+function contactPair(){
+ const points=[...touchPoints.values()].slice(0,2);
+ return {sep:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y),
+  x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
+}
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+ touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
+ if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+ if(touchPoints.size===1){
+  wasMoving=false;drag=null;
+  if(beginJoystick(e)){
+   // A finger held on the visible pad may move the character. Don't re-pick it on release.
+   wasMoving=true;
+  }else if(e.pointerType==='mouse'){
+   drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
+  }
+ }else if(touchPoints.size===2){
+  // Two fingers temporarily suspend walking but never close the joystick or change zoom on entry.
+  resetJoystick(false);
+  const pair=contactPair();pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};
+  drag=null;wasMoving=true;syncRender();
+ }
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+ if(!touchPoints.has(e.pointerId))return;
+ touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
+ if(touchPoints.size===2){
+  const pair=contactPair();
+  if(pinch!==null&&pinchCenter){
+   theta-=(pair.x-pinchCenter.x)*.005;
+   phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   // Only a real two-finger distance change can adjust the zoom.
+   distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
+   cameraUpdate();
+  }
+  pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};wasMoving=true;return;
+ }
+ if(e.pointerId===joystickPointer){
+  wasMoving=true;joystickMove(e);return;
+ }
+ if(e.pointerType==='touch'||e.pointerType==='pen'){
+  // Single-finger drags outside the joystick do not move the character or zoom.
+  const first=touchPoints.get(e.pointerId);
+  if(first&&first.down&&Math.hypot(e.clientX-first.down.x,e.clientY-first.down.y)>7)wasMoving=true;
+  return;
+ }
+ if(drag){
+  const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
+  drag.lastX=e.clientX;drag.lastY=e.clientY;
+  if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;
+  if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
+ }
+});
+renderer.domElement.addEventListener('pointerup',e=>{
+ const joystickEnd=e.pointerId===joystickPointer;
+ const isTap=!wasMoving&&!joystickEnd&&touchPoints.size===1;
+ if(joystickEnd)resetJoystick(false); // Keep the pad visible; releasing stops movement.
+ else if(isTap)pick(e);
+ touchPoints.delete(e.pointerId);
+ if(touchPoints.size<2){pinch=null;pinchCenter=null}
+ if(touchPoints.size===0){drag=null;wasMoving=false}
+ syncRender();
+});
+renderer.domElement.addEventListener('pointercancel',e=>{
+ if(e.pointerId===joystickPointer)resetJoystick(false);
+ touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
+});
+renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(e.pointerId===joystickPointer)resetJoystick(false);
+ touchPoints.delete(e.pointerId);
+ if(touchPoints.size<2){pinch=null;pinchCenter=null}
+ if(touchPoints.size===0)drag=null;
+});
+renderer.domElement.addEventListener('wheel',e=>{
+ e.preventDefault();
+ distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
+ cameraUpdate();
+},{passive:false});
+function resize(){
+ camera.aspect=window.innerWidth/window.innerHeight;
+ camera.fov=window.innerWidth<650?60:48;
+ camera.updateProjectionMatrix();
+ renderer.setSize(window.innerWidth,window.innerHeight);
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
+ // Keep user zoom across viewport/keyboard/orientation changes.
+ distance=THREE.MathUtils.clamp(distance,CAMERA_MIN,CAMERA_MAX);
+ cameraUpdate();
+}
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
 // Open books/dialogs take priority over a constantly redrawing background.
@@ -1005,7 +1092,7 @@ function overlayActive(){
    document.getElementById('mdSearch').open ||
    document.getElementById('gen2Auth').open;
  // Stop any held movement immediately when the reader / dialogs take focus.
- if(overlay&&hasWalkInput()){walkKeys.clear();resetJoystick()}
+ if(overlay){walkKeys.clear();resetJoystick(true)}
  return overlay;
 }
 function stopRenderLoop(){
@@ -1031,7 +1118,7 @@ function paint(now){
  }
  if(isMotion()&&!reduced){
    dust.rotation.y=elapsed*.002;
-   if(!exploring)keeper.rotation.y=Math.sin(elapsed*.23)*.06;
+   if(!hasWalkInput())keeper.rotation.y=Math.sin(elapsed*.23)*.06;
    glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2);
  }
  renderer.render(scene,camera);
@@ -1057,15 +1144,15 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick()}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick(true)}syncRender()});
 window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
 notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
- reset(){theta=0;phi=.17;distance=exploring?6.8:(window.innerWidth<650?15.8:14.1);look.set(exploring?keeper.position.x:0,exploring?2.1:2.9,exploring?keeper.position.z:0);cameraUpdate();invalidate()},
- isExploreMode(){return exploring},
+ reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
+ isExploreMode(){return true},
  syncRender,invalidate
 });
 exploreUI.hidden=false;
