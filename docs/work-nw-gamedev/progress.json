@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T22:31:12.765Z",
+  "updated_at": "2026-10-14T22:32:51.510Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -115,7 +115,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-CONTRACT-PARITY-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -328,31 +328,34 @@
     },
     {
       "work_item_id": "P1-CONTRACT-PARITY-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P1_PREPARATORY_ONLY; shared deterministic contract/JSON Schema audit",
       "failure_fingerprints": [],
-      "result": "56/56 new shared fixtures PASS without a runtime patch: 6 accepted, 41 structural rejects, 9 schema-valid semantic rejects. Local full Node 295/295, scoped 240/240, original schema 2 positive/8 negative PASS; candidate CI pending.",
+      "result": "Shared 56-case audit PASS without runtime/schema changes: 6 accepted, 41 structural rejects, 9 intentionally stricter semantic rejects. Full local Node 295/295, CI scoped Node 240/240, original schema 2 positive/8 negative + 56 parity cases, 9 public destinations and 24 synthetic browser checks PASS. Not exhaustive equivalence or P0/P1 acceptance.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-contract-parity.json"
       ],
-      "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317"
+      "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317",
+      "candidate_sha": "3ee1da96f673718addf7165d1a011ad427bef837",
+      "ci_run_id": 38648221166,
+      "next_action": "Audit ActionRegistry definition metadata snapshots so schema/platform/policy validated at registration are identical to immutable stored metadata; use synthetic malformed/getter/serialization-hook fixtures, without scene imports, authority expansion or design changes."
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-07",
-    "started_at": "2026-10-14T22:22:56.426Z",
-    "ended_at": "2026-10-14T22:26:05.814Z",
+    "run_id": "NW-P1-20261015-08",
+    "started_at": "2026-10-14T22:29:52.536Z",
+    "ended_at": "2026-10-14T22:32:51.510Z",
     "attempts": 1,
-    "resolved_defect": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE",
+    "defect_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "Audit Rune/Spell structural validator against the published JSON Schemas using deterministic parity fixtures; preserve draft parameter late binding, graph semantics, existing IDs and fixed acceptance Gates. Unloaded P1 contract preparation only."
+    "next_action": "Audit ActionRegistry definition metadata snapshots so schema/platform/policy validated at registration are identical to immutable stored metadata; use synthetic malformed/getter/serialization-hook fixtures, without scene imports, authority expansion or design changes."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-08",
-    "lease_expires_at": "2026-10-14T22:49:52.536Z",
-    "heartbeat_at": "2026-10-14T22:31:12.765Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T22:32:51.510Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -462,6 +465,14 @@
       "run_id": 38647418806,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38647418806",
       "scope": "184 scoped Node tests + Schema 2 positive/8 negative + 9 public destinations + 24 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "3ee1da96f673718addf7165d1a011ad427bef837",
+      "checkout_commit": "3a55d19f55f12d1eb40765d2f8c29ae5afa63558",
+      "run_id": 38648221166,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166",
+      "scope": "240 scoped Node tests + 2 positive/8 negative Schema + 56 contract parity fixtures + 9 public destinations + 24 synthetic browser checks; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -476,21 +487,28 @@
       "result": "PASS",
       "positive": 2,
       "negative": 8,
-      "command": "node tests/browser/schema-contract.cjs"
+      "command": "node tests/browser/schema-contract.cjs",
+      "contract_parity": {
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9
+      }
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38647418806,
+      "ci_run_id": 38648221166,
       "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload + 4 character tap + 8 spell preflight/snapshot synthetic browser checks; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "ebb803e68a7474190b238a791b1e9a1c256797fe",
-      "checkout_commit": "3a5b2b90496fb45858dbc8c8f8a503509ef48744",
-      "run_id": 38647418806,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38647418806"
+      "commit": "3ee1da96f673718addf7165d1a011ad427bef837",
+      "checkout_commit": "3a55d19f55f12d1eb40765d2f8c29ae5afa63558",
+      "run_id": 38648221166,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166"
     }
   }
 }

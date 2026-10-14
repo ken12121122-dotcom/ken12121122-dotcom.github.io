@@ -1,8 +1,8 @@
 {
   "schema": "nw-p1-contract-parity-v1",
   "scope": "P1_PREPARATORY_ONLY; shared deterministic contract/JSON Schema audit",
-  "result": "CI_PENDING",
-  "observed_at": "2026-10-14T22:31:12.765Z",
+  "result": "PASS_PREPARATORY_ONLY",
+  "observed_at": "2026-10-14T22:32:51.510Z",
   "hypothesis": "Published structural Schema and semantic validator may disagree for JSON card envelopes; verify fixed contracts without redesign",
   "outcome": "No disagreement found in 56 deterministic cases; nine intentionally stricter semantic rejections separately identified",
   "implementation": "Add shared synthetic fixture matrix consumed by Node tests and strict Ajv schema step; runtime/schema files unchanged",
@@ -28,7 +28,197 @@
     }
   },
   "ci": {
-    "result": "PENDING"
+    "result": "PASS",
+    "commit": "3ee1da96f673718addf7165d1a011ad427bef837",
+    "checkout_commit": "3a55d19f55f12d1eb40765d2f8c29ae5afa63558",
+    "run_id": 38648221166,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166",
+    "node_tests": 240,
+    "fail": 0,
+    "skipped": 0,
+    "schema_proofs": [
+      {
+        "schema": "nw-card-json-schema-proof-v1",
+        "result": "PASS",
+        "positive_cases": 2,
+        "negative_cases": 8,
+        "meta_schema": "Draft 2020-12",
+        "limits": "Structural validation only; registry/graph semantic validation is a separate gate"
+      },
+      {
+        "schema": "nw-card-contract-parity-v1",
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9,
+        "scope": "Deterministic synthetic JSON; semantic checks intentionally stricter than structural Schema; not runtime acceptance"
+      }
+    ],
+    "browser_proofs": [
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "card_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "card_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "non_json",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse_phrase",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      }
+    ],
+    "artifact": {
+      "id": 11933322125,
+      "digest": "sha256:5ca224ac078fe2c0f6337e46a66d4a233a3d0b89d4dd8fa15224223e9427b458"
+    }
   },
   "limits": [
     "Finite deterministic fixtures, not proof of exhaustive equivalence",
@@ -38,5 +228,6 @@
     "Local pinned Playwright 1.56.1 dependency present but browser binary absent; CI supplies Chromium",
     "No staging deployment or complete 3D/device acceptance"
   ],
-  "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317"
+  "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317",
+  "next_action": "Audit ActionRegistry definition metadata snapshots so schema/platform/policy validated at registration are identical to immutable stored metadata; use synthetic malformed/getter/serialization-hook fixtures, without scene imports, authority expansion or design changes."
 }
