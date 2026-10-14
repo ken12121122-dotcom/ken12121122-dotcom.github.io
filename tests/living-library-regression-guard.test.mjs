@@ -12,7 +12,10 @@ const featureManifest=async()=>JSON.parse(await getText('living-library/public-c
 
 test('public capabilities retain canonical unique IDs and valid existing endpoints',async()=>{
   const x=await featureManifest();
-  assert.equal(x.capabilities.length,8,'7 legacy entries plus new GPT navigation card are protected');
+  assert.equal(x.capabilities.length,9,'7 original functional entries plus GPT navigation and System Book UI glossary must remain');
+  const prior=['public.research.navigation','public.canvas.workbench','public.startup.tasks','public.calendar','public.knowledge.world','public.gba.runtime','public.vault.web','public.gpt.bridge'];
+  for(const id of prior)assert.ok(x.capabilities.some(c=>c.id===id),'protected previous capability missing: '+id);
+  assert.ok(x.capabilities.some(c=>c.id==='public.system.ui.map'&&c.book==='system'),'new glossary card must retain system parent');
   assert.equal(x.originalProtectedCount,7,'the 7 original functional entries remain a distinct non-regression baseline');
   const ids=x.capabilities.map(c=>c.id);
   assert.equal(new Set(ids).size,ids.length,'each public function has exactly one canonical ID');
