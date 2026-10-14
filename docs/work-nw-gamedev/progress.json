@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T17:28:03.653Z",
+  "updated_at": "2026-10-14T17:30:41.834Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -58,7 +58,8 @@
         "tests/browser/schema-contract.cjs",
         "tests/living-library-spell-executor.test.mjs",
         "tests/living-library-interaction-session.test.mjs",
-        "docs/work-nw-gamedev/evidence/p1-session.json"
+        "docs/work-nw-gamedev/evidence/p1-session.json",
+        "docs/work-nw-gamedev/evidence/p1-dispatch.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
@@ -200,6 +201,19 @@
       "ci_run_id": 38598464614,
       "rollback_sha": "e42a76f1ea4cda659130d167dbe74b2477f21c1e",
       "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
+    },
+    {
+      "work_item_id": "P1-DISPATCH-001",
+      "state": "CI_PENDING_PREPARATORY_ONLY",
+      "attempts": 1,
+      "failure_fingerprints": [],
+      "scope": "P1_PREPARATORY_ONLY; unloaded controlled local dispatch adapter",
+      "result": "11 targeted and 197 complete Node tests PASS; 2 positive/8 negative schema cases PASS. Local pinned browser binary absent, CI pending.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-dispatch.json"
+      ],
+      "rollback_sha": "64f40d335928906e08dc4b5fb406077b9473bfc3",
+      "next_action": "Inspect source-commit CI and synthetic DOM dispatch evidence, persist checkpoint."
     }
   ],
   "last_run": {
@@ -213,8 +227,8 @@
   "execution": {
     "lease_owner": "NW-P1-20261015-02",
     "lease_expires_at": "2026-10-14T17:48:03.653Z",
-    "heartbeat_at": "2026-10-14T17:28:03.653Z",
-    "state": "IMPLEMENTING",
+    "heartbeat_at": "2026-10-14T17:30:41.834Z",
+    "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -281,7 +295,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 186,
+      "tests": 197,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"

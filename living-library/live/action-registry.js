@@ -57,7 +57,9 @@
   }
   describe(id){return this.#actions.get(id)?.metadata||null}
   list(){return [...this.#actions.values()].map(a=>a.metadata)}
-  async invoke(id,input,context={}){
+  async invoke(id,input,context={},beforeExecute){
+   // Optional trusted adapter checkpoint can only deny, never bypass guards.
+   if(beforeExecute!==undefined&&typeof beforeExecute!=='function')fail('INVALID_CHECKPOINT');
    const action=this.#actions.get(id);if(!action)fail('MISSING_ACTION');
    const d=action.metadata;
    if(!d.platform.includes(this.#platform))fail('UNSUPPORTED_PLATFORM');
@@ -70,6 +72,8 @@
    this.#active.add(id);
    try{
     if(await action.guard(payload,context)!==true)fail('GUARD_REJECTED');
+    // No await between this synchronous check and entering the handler.
+    if(beforeExecute!==undefined&&beforeExecute()!==true)fail('STALE_INTERACTION');
     const output=await action.execute(payload,context);
     if(!validate(output,d.outputs))fail('INVALID_OUTPUT');
     return freeze(copy(output));

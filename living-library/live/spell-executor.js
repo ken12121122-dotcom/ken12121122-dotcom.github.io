@@ -1,7 +1,7 @@
 /* Isolated candidate executor. Scene/voice adapters are deliberately not loaded. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./spell-contract.js'));else root.LivingSpellExecutor=factory(root.LivingSpellContract);})(typeof self!=='undefined'?self:this,function(Contract){
  'use strict';
- const safeCodes=new Set(['SPELL_CANCELLED','MISSING_ACTION','UNSUPPORTED_PLATFORM','OWNER_GATE_REQUIRED','ACTION_REENTRY','INVALID_INPUT','INVALID_OUTPUT','GUARD_REJECTED']);
+ const safeCodes=new Set(['SPELL_CANCELLED','MISSING_ACTION','UNSUPPORTED_PLATFORM','OWNER_GATE_REQUIRED','ACTION_REENTRY','INVALID_INPUT','INVALID_OUTPUT','GUARD_REJECTED','STALE_INTERACTION']);
  class SpellExecutor{
   #registry;#active=new Set();
   constructor(registry){this.#registry=registry}
