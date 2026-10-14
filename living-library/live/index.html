@@ -493,7 +493,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  let refreshBusy=false, queuedReconnect=false;
  const updateButton=$('llUpdateReconnect'), updateDialog=$('llUpdateDialog');
  const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
-  typeof c.url==='string'&&c.url.startsWith('./')&&/^[a-z0-9][a-z0-9._-]*\\.html$/i.test(c.url.slice(2)))
+  typeof c.url==='string'&&c.url.startsWith('./')&&/^[a-z0-9][a-z0-9._-]*\.html$/i.test(c.url.slice(2)))
   .map(c=>c.url.slice(2));
  const updateBase=new URL('./',window.location.href).toString();
  const updateVersion=document.querySelector('meta[name="living-library-release"]')?.content||'web';
