@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T15:47:33.911882+00:00",
+  "updated_at": "2026-10-14T15:49:27.025Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -190,7 +190,7 @@
         "resolved": true
       }
     ],
-    "next_action": "Reconcile newest CI and P0 runtime evidence. P1 registry/schema/graph/executor preparation is unit-tested; real character event adapter and scene integration remain gated. Continue independently testable slices in the existing plan; do not declare overall BLOCKED solely due GPU."
+    "next_action": "Read this state and PR comments. P1_PREPARATORY_ONLY registry/schema/graph/executor are tested. Next: prepare real event adapter and target/session binding; enable scene integration only after appropriate P0 runtime evidence. Keep incomplete 3D, Android and staging checks explicit; continue other independent authorized slices."
   },
   "execution": {
     "lease_owner": null,
@@ -246,6 +246,12 @@
       "run_id": 38592180420,
       "result": "PASS",
       "scope": "Node + Schema + Chromium; later error-code redaction checked locally and tracked in subsequent CI"
+    },
+    {
+      "commit": "f04aa9c3c2ced4b57be067a17f94364e98aec555",
+      "run_id": 38592460682,
+      "result": "PASS",
+      "scope": "Node, Draft2020-12 Schema cases and isolated Chromium public navigation. No 3D/device acceptance claimed."
     }
   ],
   "candidate_validation": {
@@ -268,6 +274,11 @@
       "scope": "9 public destinations + fallback + synthetic storage preservation; no 3D/device claim"
     },
     "live_scene_change": "NONE",
-    "release": "NOT_RELEASED"
+    "release": "NOT_RELEASED",
+    "latest_ci": {
+      "result": "PASS",
+      "commit": "f04aa9c3c2ced4b57be067a17f94364e98aec555",
+      "run_id": 38592460682
+    }
   }
 }
