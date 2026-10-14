@@ -14,7 +14,7 @@ test('public knowledge world links to published game design without changing exi
 
 test('game design page is standalone, with valid return to live knowledge world',async()=>{
  const s=await page();
- assert.match(s,/<title>知識城堡｜記憶宮殿遊戲設計卡 v0\.1<\/title>/);
+ assert.match(s,/<title>知識城堡｜記憶宮殿遊戲設計卡 v0\.3<\/title>/);
  assert.equal((s.match(/data-room="/g)||[]).length,8);
  assert.equal((s.match(/class="object"/g)||[]).length,6);
  assert.equal((s.match(/data-step="/g)||[]).length,4);
@@ -42,4 +42,20 @@ test('interactive room and spell controls switch content without any network act
  el.spellSteps.handler({target:stepButtons[3]});
  assert.match(el.spellText.textContent,/證據/);
  assert.equal(stepButtons[3].aria,'true');
+});
+
+
+test('world atlas is bound to the existing game book card and preserves public-data boundaries',async()=>{
+ const s=await page();
+ assert.match(s,/id="worldAtlasV03"/);
+ assert.match(s,/data-card-id="KW-GAME-MEMORY-PALACE-20261014"/);
+ assert.match(s,/data-kb-id="NW-GAME-KB-001"/);
+ for(const section of ['nw-origin','nw-law','nw-card','nw-castle','nw-book','nw-job','nw-life','nw-modes','nw-economy','nw-platform','nw-roadmap']){
+   assert.match(s,new RegExp('id="'+section+'"'));
+ }
+ assert.match(s,/新手村.*?不可封印/s);
+ assert.match(s,/卡片建立器/);
+ assert.match(s,/卡片式應用/);
+ assert.ok(!s.includes('/念動世界_GAME_DESIGN_KB/'));
+ assert.ok(!s.includes('libfile_'));
 });
