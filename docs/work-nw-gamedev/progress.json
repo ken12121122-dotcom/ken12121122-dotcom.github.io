@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T23:30:07.157Z",
+  "updated_at": "2026-10-14T23:31:48.731Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -116,7 +116,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-DEFINITION-SNAPSHOT-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -344,7 +344,7 @@
     },
     {
       "work_item_id": "P1-DEFINITION-SNAPSHOT-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P1_PREPARATORY_ONLY; unloaded ActionRegistry definition registration boundary",
       "defect_id": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
@@ -355,27 +355,30 @@
         "fingerprint": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE"
       },
       "failure_fingerprints": [],
-      "result": "First patch: 10/10 targeted, local full Node 305/305, scoped 250/250, Schema 2 positive/8 negative and 56 parity cases PASS. Browser CI pending.",
+      "result": "Definition metadata divergence reproduced (2/10 passing before), resolved on first patch. Targeted 10/10, full local Node 305/305, CI scoped Node 250/250, Schema 2 positive/8 negative + 56 parity fixtures, 9 public destinations and 28 synthetic browser checks PASS. No scene/device acceptance.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-definition-snapshot.json"
       ],
-      "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2"
+      "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2",
+      "candidate_sha": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+      "ci_run_id": 38654474897,
+      "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-08",
-    "started_at": "2026-10-14T22:29:52.536Z",
-    "ended_at": "2026-10-14T22:32:51.510Z",
+    "run_id": "NW-P1-20261015-09",
+    "started_at": "2026-10-14T23:28:23.331Z",
+    "ended_at": "2026-10-14T23:31:48.731Z",
     "attempts": 1,
-    "defect_fixes": 0,
+    "resolved_defect": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
     "failure_fingerprints": [],
-    "next_action": "Audit ActionRegistry definition metadata snapshots so schema/platform/policy validated at registration are identical to immutable stored metadata; use synthetic malformed/getter/serialization-hook fixtures, without scene imports, authority expansion or design changes."
+    "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-09",
-    "lease_expires_at": "2026-10-14T23:48:23.331Z",
-    "heartbeat_at": "2026-10-14T23:30:07.157Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T23:31:48.731Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -493,6 +496,14 @@
       "run_id": 38648221166,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166",
       "scope": "240 scoped Node tests + 2 positive/8 negative Schema + 56 contract parity fixtures + 9 public destinations + 24 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+      "checkout_commit": "6715c86ed4988f8a00f84584e0aead632d4cfe6b",
+      "run_id": 38654474897,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897",
+      "scope": "250 scoped Node tests + Schema/56 parity fixtures + 9 public destinations + 28 synthetic browser checks; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -518,17 +529,17 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38648221166,
-      "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload + 4 character tap + 8 spell preflight/snapshot synthetic browser checks; no 3D/device claim"
+      "ci_run_id": 38654474897,
+      "scope": "9 public destinations, fallback/storage; 4 session + 4 dispatch + 4 payload + 4 character tap + 8 spell preflight/snapshot + 4 definition snapshot synthetic browser checks; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "3ee1da96f673718addf7165d1a011ad427bef837",
-      "checkout_commit": "3a55d19f55f12d1eb40765d2f8c29ae5afa63558",
-      "run_id": 38648221166,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166"
+      "commit": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+      "checkout_commit": "6715c86ed4988f8a00f84584e0aead632d4cfe6b",
+      "run_id": 38654474897,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897"
     }
   }
 }

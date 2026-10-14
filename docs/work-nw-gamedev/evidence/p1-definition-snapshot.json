@@ -1,8 +1,8 @@
 {
   "schema": "nw-p1-definition-snapshot-v1",
-  "result": "CI_PENDING",
+  "result": "PASS_PREPARATORY_ONLY",
   "scope": "P1_PREPARATORY_ONLY; unloaded ActionRegistry definition registration boundary",
-  "observed_at": "2026-10-14T23:30:07.157Z",
+  "observed_at": "2026-10-14T23:31:48.731Z",
   "defect_id": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
   "reproduction": {
     "tests": 10,
@@ -31,7 +31,220 @@
     }
   },
   "ci": {
-    "result": "PENDING"
+    "result": "PASS",
+    "commit": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+    "checkout_commit": "6715c86ed4988f8a00f84584e0aead632d4cfe6b",
+    "run_id": 38654474897,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897",
+    "node_tests": 250,
+    "fail": 0,
+    "skipped": 0,
+    "schema_proofs": [
+      {
+        "schema": "nw-card-json-schema-proof-v1",
+        "result": "PASS",
+        "positive_cases": 2,
+        "negative_cases": 8,
+        "meta_schema": "Draft 2020-12",
+        "limits": "Structural validation only; registry/graph semantic validation is a separate gate"
+      },
+      {
+        "schema": "nw-card-contract-parity-v1",
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9,
+        "scope": "Deterministic synthetic JSON; semantic checks intentionally stricter than structural Schema; not runtime acceptance"
+      }
+    ],
+    "browser_proofs": [
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "card_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "card_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "non_json",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse_phrase",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      },
+      {
+        "schema": "nw-definition-snapshot-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "input_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "policy_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "platform_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "valid_and_owner_gate",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic definition registration and local invocation; no scene/device claim"
+      }
+    ],
+    "artifact": {
+      "id": 11935869174,
+      "digest": "sha256:e3498c9ad91a2e589ab617a86af856ef88e2ebb6e6b7faf2d002e98dbedee1ec"
+    }
   },
   "limits": [
     "Unloaded candidate core only; no scene imports, new authority, card format, saves or native changes",
@@ -41,5 +254,6 @@
     "Pinned local Playwright 1.56.1 present; browser binary absent. CI provides Chromium",
     "No configured staging URL or complete 3D/device/voice acceptance"
   ],
-  "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2"
+  "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2",
+  "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
 }
