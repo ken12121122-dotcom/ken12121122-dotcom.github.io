@@ -165,3 +165,17 @@ test('3D fallback retry and book-selection buttons are both tap targets even tho
  assert.match(html,/\$\('retry3d'\)\.onclick=/);
  assert.match(html,/window\.location\.replace\(url\)/);
 });
+
+test('independent 3D ES module imports persistent controls and helper functions explicitly',()=>{
+ const start=html.indexOf('<script type="module">');
+ assert.ok(start>0,'3D ES module is present');
+ const classic=html.slice(0,start);
+ const moduleCode=html.slice(start,html.indexOf('</script>',start));
+ assert.ok(classic.includes('controls:controlPrefs,saveControls,clampUnit,toast,'));
+ assert.ok(classic.includes('Object.assign(controlPrefs,normalizeControls({...controlPrefs,...patch}))'));
+ assert.ok(moduleCode.includes('controls:controlPrefs,saveControls,clampUnit,toast}=window.LivingLibrary'));
+ assert.ok(moduleCode.includes("if(!controlPrefs||typeof saveControls!=='function'||typeof clampUnit!=='function')"));
+ for(const name of ['controlPrefs','saveControls','clampUnit','toast'])
+  assert.ok(moduleCode.includes(name),'3D module references '+name);
+ assert.ok(!moduleCode.includes('window.LivingLibrary.controls='),'3D module must not replace the preferences object');
+});

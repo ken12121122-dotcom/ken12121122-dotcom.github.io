@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.touch-preferences-3d-retry-button-v4">
+<meta name="living-library-release" content="2026-10-14.touch-preferences-3d-scopefix-v5">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -299,7 +299,8 @@ let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getI
 let cardOrders=(()=>{try{const v=JSON.parse(localStorage.getItem(CARD_ORDER_KEY)||'null');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(_){return {}}})();
 let swapFrom=null;
 function saveControls(patch){
- controlPrefs=normalizeControls({...controlPrefs,...patch});
+ // Keep the same shared object identity: the independent 3D module reads it.
+ Object.assign(controlPrefs,normalizeControls({...controlPrefs,...patch}));
  try{localStorage.setItem(CONTROLS_PREFS_KEY,JSON.stringify(controlPrefs))}catch(_){}
  if(!controlPrefs.cardReorder)swapFrom=null;
  window.LivingScene?.applyControls?.();
@@ -606,7 +607,9 @@ setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
-window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
+window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ controls:controlPrefs,saveControls,clampUnit,toast,
+ notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
  // A renderer can fail at first paint even after the scene API is registered.
  if(ready&&!diagnostic)return;
  $('fallback').classList.add('show');
@@ -723,7 +726,8 @@ try {
  }
  if(!THREE){const e=new Error('兩個 Three.js 引擎來源均無法下載');e.code='ENGINE_IMPORT_FAILED';throw e}
  initPhase='DEPENDENCY_CHECK';
- const {books,select,notifyReady,isMotion}=window.LivingLibrary;
+ const {books,select,notifyReady,isMotion,controls:controlPrefs,saveControls,clampUnit,toast}=window.LivingLibrary;
+ if(!controlPrefs||typeof saveControls!=='function'||typeof clampUnit!=='function')throw Error('Library controls interface unavailable');
 const Movement3D=window.LivingAvatarMovement;
 if(!Movement3D)throw new Error("Missing avatar movement module");
 const stage=document.getElementById('stage');
