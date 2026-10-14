@@ -299,7 +299,8 @@ function isLocalFunctionPage(url){
   // Relative links keep it in the same candidate preview commit before main is merged.
   if(u.origin===current.origin&&[
     new URL('./gpt-library-bridge.html',current).pathname,
-    new URL('./gpt-skills.html',current).pathname
+    new URL('./gpt-skills.html',current).pathname,
+    '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
     (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));

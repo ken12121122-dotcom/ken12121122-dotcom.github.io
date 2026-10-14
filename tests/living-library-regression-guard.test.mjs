@@ -12,7 +12,8 @@ const featureManifest=async()=>JSON.parse(await getText('living-library/public-c
 
 test('public capabilities retain canonical unique IDs and valid existing endpoints',async()=>{
   const x=await featureManifest();
-  assert.equal(x.capabilities.length,8,'7 legacy entries plus new GPT navigation card are protected');
+  assert.equal(x.capabilities.length,9,'7 original protected capabilities and two public navigation cards');
+  for(const id of ['public.research.navigation','public.canvas.workbench','public.startup.tasks','public.calendar','public.knowledge.world','public.gba.runtime','public.vault.web','public.gpt.bridge','public.system.ui.map'])assert.ok(x.capabilities.some(c=>c.id===id),'public entry missing '+id);
   assert.equal(x.originalProtectedCount,7,'the 7 original functional entries remain a distinct non-regression baseline');
   const ids=x.capabilities.map(c=>c.id);
   assert.equal(new Set(ids).size,ids.length,'each public function has exactly one canonical ID');
@@ -132,4 +133,21 @@ test('GPT book is available without GEN2 and preserved across authorization chan
  assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'),'GEN2 may add private books but not remove GPT book');
  get('disconnectGen2').click();
  assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'),'disconnect only removes private projection');
+});
+
+test('System Book UI glossary is actually reachable by clicking third in-book card and returning',async()=>{
+ const {window,get}=await ui();
+ window.location.href='https://ken12121122-dotcom.github.io/living-library/index.html';
+ window.LivingLibrary.select('system');
+ get('openBtn').click();
+ const cards=get('drawerFunctions').children.filter(x=>x.dataset?.cardId);
+ assert.deepEqual(cards.map(x=>x.dataset.cardId),[
+  'public.vault.web','public.canvas.workbench','public.system.ui.map'
+ ]);
+ cards[2].click();
+ assert.equal(get('readerShell').hidden,false,'card reader opens');
+ assert.equal(get('readerFrame').src,'https://ken12121122-dotcom.github.io/living-library/ui-map.html','actual same-origin UI glossary iframe opens');
+ get('readerBack').click();
+ assert.equal(get('readerShell').hidden,true,'reader returns to System Book card page');
+ assert.ok(cards[0].dataset.cardId==='public.vault.web','old entry remains');
 });

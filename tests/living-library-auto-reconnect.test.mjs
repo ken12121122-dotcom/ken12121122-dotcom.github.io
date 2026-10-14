@@ -20,7 +20,7 @@ test('every existing public card is included without private GEN2 or duplicate c
  const before=snapshot();
  assert.equal(before.cards.filter(c=>c.id==='public.gpt.skills').length,1);
  assert.equal(before.books.find(b=>b.id==='gpt').cardIds.length,2);
- assert.equal(before.books.find(b=>b.id==='system').cardIds.length,3);
+ assert.equal(before.books.find(b=>b.id==='system').cardIds.length,4);
  assert.equal(before.cards.filter(c=>c.id==='public.gba.runtime').length,1);
  assert.equal(before.cards.length,Object.keys(Catalog.buildCatalog().cards).length);
  const changed=Catalog.buildCatalog();
