@@ -1,7 +1,7 @@
 {
   "schema": "nw-p0-browser-proof-v1",
-  "commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
-  "observed_at": "2026-10-14T18:25:28.205Z",
+  "commit": "d7e3f30c22f52d6fc907818a758ee4510047d73e",
+  "observed_at": "2026-10-14T19:33:54.846Z",
   "isolation": "Browser intercept serves candidate repository bytes; no deployment",
   "checks": [
     {
@@ -72,7 +72,7 @@
       "scope": "Synthetic sentinel; not a real GBA-save test"
     }
   ],
-  "ci_run_id": 38614917999,
-  "source_candidate_commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
+  "ci_run_id": 38624605830,
+  "source_candidate_commit": "b41eafa319520a62671138d5e52715ba9b5ab0de",
   "commit_scope": "CI temporary PR merge checkout; candidate head tracked separately"
 }
