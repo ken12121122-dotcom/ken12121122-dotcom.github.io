@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>念動圖書館｜UI 名詞與書籍分工</title><style>
+:root{color-scheme:dark;font:15px/1.7 system-ui,'Noto Sans TC',sans-serif;background:#101c2c;color:#eef1f6}*{box-sizing:border-box}body{margin:0;background:linear-gradient(115deg,#101c2c,#1b3047);padding:15px}main{max-width:1000px;margin:auto}h1{font-size:25px;color:#f7dfa6}h2{font-size:20px;color:#f7dfa6;margin-top:25px}p,li{margin:8px 0}table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}th,td{border-bottom:1px solid #334b60;text-align:left;vertical-align:top;padding:8px}th{color:#ffe1a4;background:#25394c}.table{overflow-x:auto;border:1px solid #334b60;border-radius:8px}code{color:#b4e4f7;word-break:break-all;font-size:12px}.notice{padding:12px;border-left:3px solid #e6c07c;background:#1b2a3b}input{width:100%;background:#0e1727;color:white;border:1px solid #7990aa;border-radius:5px;padding:10px}small{color:#bfd0df}ul{padding-left:23px}
+</style></head><body><main>
+<small>THE LIVING ARCHIVE / SYSTEM BOOK · candidate v0.1</small><h1>UI 名詞與書籍分工</h1>
+<p>管理員定位表：目前公開書籍／卡片 ID 從線上目錄自動讀取；每本書的主責是尚待人工審核的候選分類。</p>
+<div class="notice"><b>如何稱呼首頁？</b>「圖書館首頁」＝ Android WebView 的 <code>/living-library/live/index.html</code> 3D 主畫面；「APP 原生首頁」＝ Android 原生控制中心。<br>
+<b>定位卡片：</b>用 <code>Book ID + Card ID</code>，畫面編號（例如 02、07）不等於書內順序，也不是唯一識別碼。</div>
+<h2>① UI 分頁與按鈕對照</h2><label for="filter">篩選：</label><input id="filter" type="search" placeholder="首頁、按鈕、system、Pocket Vault">
+<div class="table"><table><thead><tr><th>標準名詞</th><th>自然語言</th><th>DOM 定位</th><th>GitHub 相對位置</th></tr></thead><tbody id="ui"></tbody></table></div>
+<h2>② 14 本書的用途及現有卡片</h2><small>私有 GEN2 投影須授權後才可顯示，這裡不公開私有資料。</small>
+<div class="table"><table><thead><tr><th>書名（Book ID）</th><th>主責（候選）</th><th>避免重疊的界線</th><th>公開卡片與 Card ID</th></tr></thead><tbody id="books"></tbody></table></div>
+<h2>③ 重疊功能如何管理</h2><ul>
+<li>一張卡片可以被多本書引用，但 Card ID 不變，例如 <code>public.canvas.workbench</code>「知識工作台」。跨書引用不是複製功能。</li>
+<li>更改共用卡片名稱／URL 之前，必須先列出所有引用書籍；不能只因卡片在某一本書裡就假設修改是局部的。</li>
+<li>「系統之書」管 Web UI 名詞與圖書館維護索引，「安卓之書」管原生功能與更新，「遊戲之書」管遊戲內容。</li>
+<li>本頁只讀取公開功能目錄，不包含 Token、私有 GEN2 正本或原生執行操作。</li></ul>
+<small>來源：<code>living-library/live/public-catalog.js</code>。本頁及書籍分工在 OWNER 審查前維持 generated 候選。</small>
+</main><script src="./live/public-catalog.js"></script><script>
+(function(){'use strict';
+const PURPOSE={"research":["研究之書","研究問題、文獻、證據與假設","授課教案歸教學之書"],"startup":["創業之書","公司設立、商業模式、商業化決策","任務進度歸任務之書"],"knowledge":["知識世界","知識圖譜、架構、空間化展示","不等於 GPT 知識來源導航"],"missions":["任務之書","待辦、交接、進度、完成證據","不複製各領域原件"],"learning":["學習之書","個人學習路徑與能力提升","教學活動歸教學之書"],"finance":["資產之書","資產、收益與資金規劃","創業公司設立歸創業之書"],"safety":["職安典籍","職安主題與風險管理入口","現有僅通用工作台，非專用職安 Skill"],"writing":["寫作之書","寫作方法、文章、文稿與模板","視覺設計歸設計之書"],"design":["設計之書","UI、排版、視覺設計與可用性","不處理手機原生權限"],"teaching":["教學之書","教案、教材、授課與評量","個人自學規劃歸學習之書"],"gaming":["遊戲之書","GBA 遊戲與遊戲設計參考","原生手把與 APK 維護歸安卓之書"],"system":["系統之書","圖書館 UI 導覽、維護索引與版本定位","原生功能歸安卓之書"],"gpt":["GPT 之書","ChatGPT Library、GEN2 來源與 AI 協作導航","不複製私有 MD／權杖"],"android":["安卓之書","Android 原生權限、設定、版本更新","一般 3D 網頁 UI 不需更新 APK"]};
+const UI=[["念動圖書館首頁","3D 主畫面","#stage","live/index.html"],["APP 原生首頁","Android 原生控制中心","Activity","android-native/**"],["頂部按鈕列","首頁上方按鈕",".top-actions","live/index.html"],["書庫首頁按鈕","書庫首頁","#homeBtn","live/index.html"],["遊戲快捷入口","遊戲之書・新卡","#gameBookShortcut","live/index.html"],["搜尋 MD","搜尋 MD 按鈕","#searchGen2","live/index.html"],["GEN2 授權","連接 GEN2","#connectGen2","live/index.html"],["暫停漂浮","漂浮開關","#motionBtn","live/index.html"],["視角重設","重設鏡頭","#resetBtn","live/index.html"],["工作台說明","工作台說明按鈕","#aboutBtn","live/index.html"],["書籍列表","選擇一本書","#bookList","live/index.html"],["書架統計","格數／已歸架","#shelfCount","live/index.html"],["人物探索","探索模式按鈕","#exploreToggle","live/index.html"],["人物搖桿","人物移動搖桿","#walkPad","live/index.html"],["書頁","某一本書展開的畫面","#drawerWrap","live/index.html"],["書本標題","書內名稱","#drawerTitle","live/index.html"],["魔導卡冊","書中卡片列表","#drawerFunctions","live/index.html"],["特定卡片","書內第 N 張卡",".codex-slot[data-card-id]","live/index.html"],["卡片閱讀器","卡片內容分頁","#readerShell","live/index.html"],["返回卡冊","閱讀頁返回","#readerBack","live/index.html"],["卡片內嵌網頁","卡片的實際功能頁","#readerFrame","live/index.html"],["歸還／召喚書本","歸還書架按鈕","#moveBtn","live/index.html"]];
+const field=document.getElementById('filter'), t1=document.getElementById('ui'), t2=document.getElementById('books');
+const data=window.LivingLibraryCatalog?.buildCatalog?.();
+function add(body,values){const tr=document.createElement('tr');for(const s of values){const td=document.createElement('td');td.textContent=s;tr.append(td)}body.append(tr)}
+function render(){const q=field.value.trim().toLowerCase();t1.replaceChildren();t2.replaceChildren();
+for(const row of UI){if(!q||row.join(' ').toLowerCase().includes(q))add(t1,row)}
+if(!data){add(t2,['線上目錄讀取失敗：待核對來源']);return}
+for(const [id,[label,aim,limit]] of Object.entries(PURPOSE)){
+const book=data.books.find(b=>b.id===id||b.publicId===id);if(!book)continue;
+const cards=(data.bookCards[book.id]||[]).map(k=>{const c=data.cards[k];return(c?.title||'待核對')+' ['+k+']'}).join('；');
+const values=[book.name+' ['+book.id+']',aim,limit,cards];if(!q||values.join(' ').toLowerCase().includes(q))add(t2,values)}
+}
+field.addEventListener('input',render);render();
+})();
+</script></body></html>
