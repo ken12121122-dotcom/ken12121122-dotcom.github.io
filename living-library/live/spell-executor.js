@@ -1,5 +1,5 @@
 /* Isolated candidate executor. Scene/voice adapters are deliberately not loaded. */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./spell-contract.js'));else root.LivingSpellExecutor=factory(root.LivingSpellContract);})(typeof self!=='undefined'?self:this,function(Contract){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./spell-contract.js'),require('./action-registry.js'));else root.LivingSpellExecutor=factory(root.LivingSpellContract,root.LivingActionRegistry);})(typeof self!=='undefined'?self:this,function(Contract,Registry){
  'use strict';
  const safeCodes=new Set(['SPELL_CANCELLED','MISSING_ACTION','UNSUPPORTED_PLATFORM','OWNER_GATE_REQUIRED','ACTION_REENTRY','INVALID_INPUT','INVALID_OUTPUT','GUARD_REJECTED','STALE_INTERACTION']);
  class SpellExecutor{
@@ -19,6 +19,13 @@
    const checkAbort=()=>{if(signal?.aborted){const e=new Error('SPELL_CANCELLED');e.code='SPELL_CANCELLED';throw e}};
    const invoke=async ref=>{checkAbort();const r=runes.get(ref);return this.#registry.invoke(r.action_id,r.parameters,context)};
    try{
+    checkAbort();
+    // Validate the detached configuration before any guard or handler runs.
+    // Drafts may still bind parameters later; invocation retains its own
+    // validation and dynamic guards at the actual point of execution.
+    for(const r of spell.runes)if(!Registry.validate(r.parameters,this.#registry.describe(r.action_id).inputs)){
+     const error=new Error('INVALID_INPUT');error.code='INVALID_INPUT';throw error;
+    }
     for(const ref of spell.conditions.refs)if(await invoke(ref)!==true)return receipt('conditions_not_met');
     for(const ref of spell.effects.refs){checkAbort();pendingEffect=ref;attempted.push(ref);await invoke(ref);completed.push(ref);pendingEffect=null}
     checkAbort();return receipt('success');

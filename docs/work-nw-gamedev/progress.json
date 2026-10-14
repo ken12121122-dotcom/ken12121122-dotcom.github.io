@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T21:22:05.142Z",
+  "updated_at": "2026-10-14T21:24:48.110Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -62,7 +62,8 @@
         "docs/work-nw-gamedev/evidence/p1-dispatch.json",
         "docs/work-nw-gamedev/evidence/p1-action-schema.json",
         "docs/work-nw-gamedev/evidence/p1-payload.json",
-        "docs/work-nw-gamedev/evidence/p1-character-tap.json"
+        "docs/work-nw-gamedev/evidence/p1-character-tap.json",
+        "docs/work-nw-gamedev/evidence/p1-preflight.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
@@ -278,6 +279,25 @@
       "next_action": "Audit and test SpellExecutor parameter preflight for malformed later-effect parameters before avoidable earlier effects; preserve invocation guards, fixed P0/P1 Gate and unloaded scene status.",
       "candidate_sha": "987e44411078dcc5b8a168fe3d5a512060831d31",
       "ci_run_id": 38632497911
+    },
+    {
+      "work_item_id": "P1-PREFLIGHT-001",
+      "state": "CI_PENDING",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded executor static parameter preflight",
+      "defect_id": "LATE_PARAMETER_PARTIAL_EFFECT",
+      "reproduction": {
+        "tests": 8,
+        "pass": 4,
+        "fail": 4,
+        "fingerprint": "LATE_PARAMETER_PARTIAL_EFFECT"
+      },
+      "failure_fingerprints": [],
+      "result": "First patch: targeted 8/8, full local Node 231/231, scoped Node 176/176 and schema 2 positive/8 negative PASS. Browser CI pending; local browser binary absent.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-preflight.json"
+      ],
+      "rollback_sha": "53fca6abe121ccdffafb8364760e12e125b4ee93"
     }
   ],
   "last_run": {
@@ -291,8 +311,8 @@
   "execution": {
     "lease_owner": "NW-P1-20261015-06",
     "lease_expires_at": "2026-10-14T21:42:05.142Z",
-    "heartbeat_at": "2026-10-14T21:22:05.142Z",
-    "state": "REPRODUCING",
+    "heartbeat_at": "2026-10-14T21:24:48.110Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -391,7 +411,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 223,
+      "tests": 231,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
