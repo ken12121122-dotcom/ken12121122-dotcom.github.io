@@ -1,0 +1,42 @@
+{
+  "schema": "nw-p1-contract-parity-v1",
+  "scope": "P1_PREPARATORY_ONLY; shared deterministic contract/JSON Schema audit",
+  "result": "CI_PENDING",
+  "observed_at": "2026-10-14T22:31:12.765Z",
+  "hypothesis": "Published structural Schema and semantic validator may disagree for JSON card envelopes; verify fixed contracts without redesign",
+  "outcome": "No disagreement found in 56 deterministic cases; nine intentionally stricter semantic rejections separately identified",
+  "implementation": "Add shared synthetic fixture matrix consumed by Node tests and strict Ajv schema step; runtime/schema files unchanged",
+  "patch_attempts": 1,
+  "defect_fixes": 0,
+  "failure_fingerprints": [],
+  "local_tests": {
+    "targeted": 56,
+    "full": 295,
+    "scoped": 240,
+    "fail": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "parity": {
+      "cases": 56,
+      "accepted": 6,
+      "structural_rejected": 41,
+      "semantic_only_rejected": 9
+    },
+    "original_schema": {
+      "positive": 2,
+      "negative": 8
+    }
+  },
+  "ci": {
+    "result": "PENDING"
+  },
+  "limits": [
+    "Finite deterministic fixtures, not proof of exhaustive equivalence",
+    "Semantic validator intentionally rejects schema-valid missing handlers, stale versions, wrong targets, duplicate rune identities, wrong kinds, bad/cyclic graph and trim-equivalent incantations",
+    "Validation never executes a guard/handler; late-bound draft parameters remain allowed",
+    "No runtime, scene, UI, card catalog, storage, native or permissions changes",
+    "Local pinned Playwright 1.56.1 dependency present but browser binary absent; CI supplies Chromium",
+    "No staging deployment or complete 3D/device acceptance"
+  ],
+  "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317"
+}

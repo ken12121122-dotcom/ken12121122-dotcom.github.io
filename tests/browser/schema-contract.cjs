@@ -14,3 +14,14 @@ for(const change of [c=>delete c.spell_id,c=>c.incantations=[' '],c=>c.enabled='
  const c=structuredClone(s);change(c);assert.equal(validateSpell(c),false);rejected++;
 }
 console.log(JSON.stringify({schema:'nw-card-json-schema-proof-v1',result:'PASS',positive_cases:2,negative_cases:rejected,meta_schema:'Draft 2020-12',limits:'Structural validation only; registry/graph semantic validation is a separate gate'}));
+const {cases,fixture}=require('./contract-cases.cjs'),Contract=require('../../living-library/live/spell-contract.js');
+let accepted=0,structuralRejected=0,semanticOnlyRejected=0;
+for(const entry of cases){
+ const f=fixture(),card=entry.kind==='rune'?f.rune:f.card;entry.change(card);
+ const validator=entry.kind==='rune'?validateRune:validateSpell;
+ assert.equal(validator(card),entry.schema,entry.name+': JSON Schema');
+ if(entry.semantic){assert.ok(Contract[entry.kind==='rune'?'validateRune':'validateSpell'](card,f.registry));accepted++}
+ else {assert.throws(()=>Contract[entry.kind==='rune'?'validateRune':'validateSpell'](card,f.registry),e=>typeof e.code==='string',entry.name+': semantic validation');if(entry.schema)semanticOnlyRejected++;else structuralRejected++}
+ assert.deepEqual(f.calls,[],entry.name+': must not execute');
+}
+console.log(JSON.stringify({schema:'nw-card-contract-parity-v1',result:'PASS',cases:cases.length,accepted,structural_rejected:structuralRejected,semantic_only_rejected:semanticOnlyRejected,scope:'Deterministic synthetic JSON; semantic checks intentionally stricter than structural Schema; not runtime acceptance'}));
