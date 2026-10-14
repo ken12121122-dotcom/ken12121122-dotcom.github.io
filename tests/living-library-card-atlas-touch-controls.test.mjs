@@ -64,7 +64,8 @@ test('character movement never changes camera distance or zoom target; pinch and
  assert.match(html,/const CAMERA_MIN=7\.5,CAMERA_MAX=27/);
  assert.match(html,/look\.x=keeper\.position\.x/);
  assert.match(html,/look\.z=keeper\.position\.z/);
- assert.match(html,/function showJoystick\(e\)\{[\s\S]{0,450}walkPad\.hidden=false/);
+ assert.match(html,/function positionJoystick\(x,y\)\{[\s\S]{0,600}walkPad\.hidden=false/);
+ assert.match(html,/function showJoystick\(e\)\{/);
  assert.match(html,/distance=THREE\.MathUtils\.clamp\(distance\+\(pinch-pair\.sep\)\*\.032,CAMERA_MIN,CAMERA_MAX\)/);
  assert.match(html,/distance=THREE\.MathUtils\.clamp\(distance\+e\.deltaY\*\.015,CAMERA_MIN,CAMERA_MAX\)/);
  assert.match(html,/function resize\(\)\{[\s\S]{0,450}distance=THREE\.MathUtils\.clamp\(distance,CAMERA_MIN,CAMERA_MAX\)/);
@@ -110,4 +111,35 @@ test('live page and in-book pages compile without syntax errors',()=>{
   assert.ok(scripts.length>0);
   for(const [i,m] of scripts.entries())assert.doesNotThrow(()=>new Function(m[1].includes('module')?'return async function(){'+m[2]+'}':m[2]),'page '+pageIndex+' script '+i);
  }
+});
+
+test('settings are kept in the existing System Book card; rotation can be disabled or set to single/dual finger',()=>{
+ assert.match(systemPage,/id="rotationEnabled"/);
+ assert.match(systemPage,/id="rotationMode"/);
+ assert.match(systemPage,/<option value="single">/);
+ assert.match(systemPage,/<option value="dual">/);
+ assert.match(html,/CONTROLS_PREFS_KEY='living-library-controls-v1'/);
+ assert.match(html,/rotationMode:d\.rotationMode==='single'\|\|d\.rotationMode==='dual'/);
+ assert.match(html,/controlPrefs\.rotationEnabled&&controlPrefs\.rotationMode==='dual'/);
+ assert.match(html,/controlPrefs\.rotationEnabled&&controlPrefs\.rotationMode==='single'/);
+ assert.match(html,/action==='update-preferences'/);
+ assert.match(systemPage,/data\.settings=settings/);
+ assert.doesNotMatch(html,/id="rotationMode"/); // controls are in the existing in-book card
+});
+
+test('fixed or touch-based joystick spawn and card swapping persist locally without mutating catalog',()=>{
+ assert.match(systemPage,/id="joystickMode"/);
+ assert.match(systemPage,/id="relocateJoystick"/);
+ assert.match(systemPage,/id="cardReorder"/);
+ assert.match(html,/function beginJoystickPlacement\(\)/);
+ assert.match(html,/function positionJoystick\(x,y\)/);
+ assert.match(html,/joystickMode==='fixed'/);
+ assert.match(html,/CARD_ORDER_KEY='living-library-book-card-order-v1'/);
+ assert.match(html,/function orderedCardIds\(bookId\)/);
+ assert.match(html,/function swapCardSlots\(bookId,first,second\)/);
+ assert.match(html,/setTimeout\(\(\)=>\{[\s\S]*?520\)/);
+ assert.match(html,/localStorage\.setItem\(CARD_ORDER_KEY/);
+ assert.match(html,/Math\.hypot\(e\.clientX-press\.x,e\.clientY-press\.y\)>10/);
+ assert.match(html,/update-preferences/);
+ assert.doesNotMatch(systemPage,/github_pat_|sk-proj-/);
 });
