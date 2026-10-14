@@ -1,10 +1,10 @@
 {
   "schema": "nw-p1-action-schema-evidence-v1",
   "review_status": "generated",
-  "observed_at": "2026-10-14T18:24:07.059Z",
+  "observed_at": "2026-10-14T18:26:49.521Z",
   "source_ref": "NW-RUNE-BUILD-001/P1",
   "base_commit": "9dae995ab13a572b0153581d07c903321f63e3b4",
-  "candidate_commit": "RESOLVE_CONTAINING_SOURCE_COMMIT",
+  "candidate_commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
   "scope": "P1_PREPARATORY_ONLY; ActionRegistry local schema subset, not scene integration",
   "defect": {
     "id": "SCHEMA_DEFINITION_FAIL_OPEN",
@@ -44,10 +44,162 @@
       "environment": "Ajv 8.17.1"
     },
     "ci": {
-      "result": "PENDING"
+      "result": "PASS",
+      "commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "checkout_commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
+      "run_id": 38614917999,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38614917999",
+      "node_tests": 151,
+      "node_fail": 0,
+      "node_skipped": 0,
+      "scope": "CI Living Library/GPT subset plus schema and Chromium fixtures; full repository 206 tests verified locally"
     },
     "browser": {
-      "result": "NOT_TESTED"
+      "result": "PASS",
+      "public_navigation": {
+        "schema": "nw-p0-browser-proof-v1",
+        "commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
+        "observed_at": "2026-10-14T18:25:28.205Z",
+        "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+        "checks": [
+          {
+            "id": "actual_3d_startup",
+            "result": "NOT_TESTED",
+            "ready": false,
+            "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+            "release": "2026-10-14.touch-preferences-3d-scopefix-v5",
+            "logs": [
+              "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:743:8"
+            ],
+            "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+          },
+          {
+            "id": "forced_engine_failure_fallback",
+            "result": "PASS",
+            "books": 14,
+            "joystick_hidden": true
+          },
+          {
+            "id": "public.research.navigation",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.canvas.workbench",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.startup.tasks",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.calendar",
+            "result": "PASS",
+            "scope": "External link target only; no sign-in"
+          },
+          {
+            "id": "public.knowledge.world",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gba.runtime",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.vault.web",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gpt.bridge",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.system.ui.map",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "unrelated_storage_preserved",
+            "result": "PASS",
+            "scope": "Synthetic sentinel; not a real GBA-save test"
+          }
+        ]
+      },
+      "session": {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      "dispatch": {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      }
     },
     "local_browser": {
       "result": "NOT_TESTED",
@@ -73,5 +225,11 @@
   },
   "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
   "release": "NOT_RELEASED",
-  "rollback_sha": "9dae995ab13a572b0153581d07c903321f63e3b4"
+  "rollback_sha": "9dae995ab13a572b0153581d07c903321f63e3b4",
+  "artifact": {
+    "id": 11920330046,
+    "name": "nw-p0-browser-proof",
+    "digest": "sha256:9ea2c7a7d874b6ec6ef0743fd7a425f83f75c20d50f78766b9815c05d7fe11bc",
+    "expires_at": "2026-10-21T18:25:34Z"
+  }
 }

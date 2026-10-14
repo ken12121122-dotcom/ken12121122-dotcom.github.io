@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T18:24:07.059Z",
+  "updated_at": "2026-10-14T18:26:49.521Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -110,7 +110,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-ACTION-SCHEMA-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -220,7 +220,7 @@
     },
     {
       "work_item_id": "P1-ACTION-SCHEMA-001",
-      "state": "CI_PENDING_PREPARATORY_ONLY",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P1_PREPARATORY_ONLY; ActionRegistry local schema subset, not scene integration",
       "defect_id": "SCHEMA_DEFINITION_FAIL_OPEN",
@@ -230,30 +230,30 @@
         "pass": 1,
         "fail": 8
       },
-      "result": "Malformed schema reproduction fixed on first effective patch; 9 targeted tests and 206 complete local Node tests PASS. CI pending.",
+      "result": "Schema fail-open reproduction (1/9 passing before) fixed on first patch. 9/9 targeted and full local Node 206/206 PASS; CI scoped Node 151/151, Schema 2 positive/8 negative and existing 9 public destinations + 8 synthetic DOM cases PASS.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-action-schema.json"
       ],
       "rollback_sha": "9dae995ab13a572b0153581d07c903321f63e3b4",
-      "next_action": "Inspect source CI and existing Chromium fixture regressions, then persist the verified checkpoint."
+      "next_action": "Harden ActionRegistry payload snapshot fidelity: reject sparse/non-JSON payloads before JSON copy so validated and executed inputs cannot diverge; synthetic P1 tests only, no scene loading.",
+      "candidate_sha": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "ci_run_id": 38614917999
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-02",
-    "started_at": "2026-10-14T17:28:03.653Z",
-    "ended_at": "2026-10-14T17:33:17.341Z",
+    "run_id": "NW-P1-20261015-03",
+    "started_at": "2026-10-14T18:21:52.406Z",
+    "ended_at": "2026-10-14T18:26:49.521Z",
     "attempts": 1,
+    "resolved_defect": "SCHEMA_DEFINITION_FAIL_OPEN",
     "failure_fingerprints": [],
-    "environment_observations": [
-      "PLAYWRIGHT_1194_EXECUTABLE_ABSENT: local browser NOT_TESTED; CI Chromium PASS"
-    ],
-    "next_action": "Harden ActionRegistry schema-definition boundary checks with deterministic malformed/nested-schema tests in an unloaded P1 slice; keep real character/scene wiring behind P0 runtime evidence."
+    "next_action": "Harden ActionRegistry payload snapshot fidelity: reject sparse/non-JSON payloads before JSON copy so validated and executed inputs cannot diverge; synthetic P1 tests only, no scene loading."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-03",
-    "lease_expires_at": "2026-10-14T18:41:52.406Z",
-    "heartbeat_at": "2026-10-14T18:24:07.059Z",
-    "state": "VERIFYING_CI",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T18:26:49.521Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -323,6 +323,14 @@
       "run_id": 38607322312,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38607322312",
       "scope": "142 scoped Node tests + Schema + 9 public navigation + 4 session + 4 dispatch synthetic DOM cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "checkout_commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
+      "run_id": 38614917999,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38614917999",
+      "scope": "151 scoped Node tests + 2 positive/8 negative schema cases + 9 public destinations + 4 session/4 dispatch synthetic DOM checks; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -341,17 +349,17 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38607322312,
+      "ci_run_id": 38614917999,
       "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch synthetic DOM cases; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "81219b0057ef7148c0f1291a1df04386f12b4548",
-      "checkout_commit": "d2feb050588bfb4a69897192bc4f218f79214a14",
-      "run_id": 38607322312,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38607322312"
+      "commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "checkout_commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
+      "run_id": 38614917999,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38614917999"
     }
   }
 }
