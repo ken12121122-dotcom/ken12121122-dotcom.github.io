@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.gpt-skills-card.1">
+<meta name="living-library-release" content="2026-10-14.gpt-skills-visible.2">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -36,6 +36,8 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .chip{background:rgba(15,25,39,.76);border:1px solid rgba(209,195,167,.3);color:#ece7df;padding:9px 12px;border-radius:10px;backdrop-filter:blur(14px);font-size:12px}
 .chip:hover{border-color:var(--gold)}
+#gptSkillsShortcut{border:2px solid #dfbd79;background:#43351f;color:#fff4d8;font-weight:800;box-shadow:0 0 14px #d7b57633}
+#webRuntimeStamp[data-catalog="missing"]{color:#ffb6a7;font-weight:800}
 .side{position:fixed;z-index:4;left:23px;top:50%;width:224px;transform:translateY(-36%);pointer-events:none}
 .side>*{pointer-events:auto}
 .side .eyebrow{font-size:10px;font-weight:800;color:#b0d5d0;letter-spacing:.19em}
@@ -165,7 +167,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
-<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div></div></div>
+<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
 <div class="top-actions"><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
 </header>
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
@@ -210,7 +212,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <script src="../../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
 <script src="book-placement.js?v=orbital-shelves-20261013"></script>
 <script src="avatar-movement.js?v=walk-v1-20261013"></script>
-<script src="public-catalog.js?v=public-regression-20261013"></script>
+<script src="public-catalog.js?v=gpt-skills-visible-20261014-r2"></script>
 <script src="render-capability.js?v=software-gpu-20261013"></script>
 <script src="gen2-editor.js?v=md-workbench-20261013"></script>
 <script>
@@ -228,6 +230,9 @@ const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
+const gptSkillsReady=!!CARDS['public.gpt.skills']&&(BOOK_CARDS.gpt||[]).includes('public.gpt.skills')&&(BOOK_CARDS.system||[]).includes('public.gpt.skills');
+const stamp=document.getElementById('webRuntimeStamp');
+if(stamp){stamp.dataset.catalog=gptSkillsReady?'ready':'missing';stamp.textContent=gptSkillsReady?'WEB LIVE r2 · GPT 技能卡已載入':'WEB LIVE r2 · 卡片目錄仍是舊版';}
 let selectedId='research',motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
@@ -450,12 +455,15 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
  // Preserve the already published Game Book shortcut and deep link.
  $('gameBookShortcut').addEventListener('click',()=>{select('gaming');openBook()});
  $('gptSkillsShortcut').addEventListener('click',()=>{
-   const card=CARDS['public.gpt.skills'];select('gpt');openBook();if(card)openCardReader(card);
+   const card=CARDS['public.gpt.skills'];select('gpt');openBook();
+   if(card)openCardReader(card);
+   else toast('卡片目錄仍是舊版：請重新開啟線上圖書館');
  });
  const route=new URLSearchParams(window.location.search);
  if(route.get('card')==='public.gpt.skills'){
    const card=CARDS['public.gpt.skills'];select('gpt');openBook();if(card)openCardReader(card);
  }else if(route.get('book')==='gpt'){select('gpt');openBook()}
+ else if(route.get('book')==='system'){select('system');openBook()}
  else if(route.get('book')==='gaming'){select('gaming');openBook()}
 })();
 </script>

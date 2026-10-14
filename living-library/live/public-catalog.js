@@ -45,7 +45,7 @@ writing:['canvas'],
 design:['canvas'],
 teaching:['research'],
 gaming:['gba','vault'],
-system:['vault','canvas'],
+system:['vault','canvas','gptSkills'],
 gpt:['gptBridge','gptSkills']
 });
 
