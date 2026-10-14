@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T15:49:27.025Z",
+  "updated_at": "2026-10-14T16:24:53.474Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -106,7 +106,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P1-SESSION-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -175,28 +175,28 @@
         "tests/living-library-spell-executor.test.mjs"
       ],
       "next_action": "Real event/gesture context binding is the next P1 gate; do not claim a playable spell."
+    },
+    {
+      "work_item_id": "P1-SESSION-001",
+      "state": "IN_PROGRESS",
+      "attempts": 0,
+      "scope": "Target-scoped transient gesture/voice-result correlation only; no microphone or scene changes",
+      "acceptance": "Delayed, cancelled, replaced, expired or replayed results cannot match the wrong target; synthetic tests only"
     }
   ],
   "last_run": {
-    "run_id": "NW-P0-20261014-02",
-    "started_at": "2026-10-14T15:34:04.555182+00:00",
-    "ended_at": "2026-10-14T15:47:33.911882+00:00",
-    "attempts": 1,
-    "failure_fingerprints": [
-      {
-        "fingerprint": "GPT_TEST_AWAIT_NON_ASYNC",
-        "occurrences_before_patch": 1,
-        "post_patch_failures": 0,
-        "resolved": true
-      }
-    ],
-    "next_action": "Read this state and PR comments. P1_PREPARATORY_ONLY registry/schema/graph/executor are tested. Next: prepare real event adapter and target/session binding; enable scene integration only after appropriate P0 runtime evidence. Keep incomplete 3D, Android and staging checks explicit; continue other independent authorized slices."
+    "run_id": "NW-P1-20261015-01",
+    "started_at": "2026-10-14T16:24:53.474Z",
+    "ended_at": null,
+    "attempts": 0,
+    "failure_fingerprints": [],
+    "next_action": "Prepare and test target/session binding without loading scene adapters."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T15:47:33.911882+00:00",
-    "state": "READY_NEXT_SLICE",
+    "lease_owner": "NW-P1-20261015-01",
+    "lease_expires_at": "2026-10-14T16:44:53.474Z",
+    "heartbeat_at": "2026-10-14T16:24:53.474Z",
+    "state": "RUNNING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
