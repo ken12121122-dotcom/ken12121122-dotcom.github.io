@@ -30,7 +30,8 @@ calendar:{id:'calendar',seal:'◷',number:'04',title:'日曆',guild:'時序',des
 world:{id:'world',seal:'◎',number:'05',title:'知識世界',guild:'世界',desc:'開啟原有 GBA 風格知識世界與 GEN2 進度畫面。',url:SITE+'/packagecanvas/world.html'},
 gba:{id:'gba',seal:'♠',number:'06',title:'GBA 遊戲庫',guild:'遊戲',desc:'開啟現有遊戲庫；存檔及原生操作仍由 Pocket GBA 管理。',url:SITE+'/amin-vault/gba.html'},
 vault:{id:'vault',seal:'⚙',number:'07',title:'Pocket Vault',guild:'維護',desc:'回到原有網頁入口；非 Android 原生維護控制中心。',url:SITE+'/amin-vault/'},
-gptBridge:{id:'gptBridge',seal:'✧',number:'08',title:'知識庫連結導覽',guild:'GPT／GEN2 連結',desc:'查閱 ChatGPT Library 的路徑、GEN2 正式來源與可複製的 AI 交接方式；不是自動同步功能。',url:'./gpt-library-bridge.html'}
+gptBridge:{id:'gptBridge',seal:'✧',number:'08',title:'知識庫連結導覽',guild:'GPT／GEN2 連結',desc:'查閱 ChatGPT Library 的路徑、GEN2 正式來源與可複製的 AI 交接方式；不是自動同步功能。',url:'./gpt-library-bridge.html'},
+uiMap:{id:'uiMap',seal:'⚙',number:'09',title:'UI 名詞與書籍分工',guild:'圖書館管理員',desc:'圖書館首頁、按鈕、卡片 ID 對照及每本書的建議用途。',url:SITE+'/living-library/ui-map.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
 research:['research','canvas'],
@@ -44,12 +45,12 @@ writing:['canvas'],
 design:['canvas'],
 teaching:['research'],
 gaming:['gba','vault'],
-system:['vault','canvas'],
+system:['vault','canvas','uiMap'],
 gpt:['gptBridge']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge'};
+const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',uiMap:'public.system.ui.map'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 // Native navigation only. These cards open existing screens; they execute no
 // commands and are never GEN2 Skill definitions or permission grants.
