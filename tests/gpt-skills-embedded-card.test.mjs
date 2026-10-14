@@ -59,7 +59,7 @@ test('skill card enumerates this session capability SKILL procedures without mis
 });
 
 test('card page scripts parse, skill rendering uses textContent instead of HTML injection',()=>{
- assert.match(page,/el\.textContent=String\(text\)/);
+ assert.match(page,/x\.textContent=String\(text\)/);
  assert.doesNotMatch(page,/\.innerHTML\s*=/);
  const scripts=[...page.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length>=2);
