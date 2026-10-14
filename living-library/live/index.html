@@ -969,28 +969,27 @@ function pick(e){
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
- const targets=[];bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
- const hit=ray.intersectObjects(targets,false)[0];
- if(hit){
-  const id=hit.object.userData.bookId,o=entityById.get(id);
+ // A book always wins over the character and must remain readable with the joystick visible.
+ const targets=[];
+ bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ const bookHit=ray.intersectObjects(targets,false)[0];
+ if(bookHit){
+  resetJoystick(true);
+  const id=bookHit.object.userData.bookId,o=entityById.get(id);
   if(o&&!o.b.active)window.LivingLibrary.summonBook(id);
-  else{select(id);window.LivingLibrary.openBook();}
-  return true;
+  else{select(id);window.LivingLibrary.openBook()}
+  return 'book';
  }
- return false;
+ // The robe and head can be narrow on a phone; a modest 3D hit volume helps select the librarian.
+ const avatarHit=ray.intersectObject(keeper,true).some(h=>h.object.isMesh)||
+  ray.ray.distanceToPoint(new THREE.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05;
+ if(avatarHit){showJoystick(e);return 'avatar'}
+ if(joystickVisible)resetJoystick(true);
+ return 'empty';
 }
-// Tap avatar to summon joystick; tap open space to dismiss it.
-// Only intentional two-finger pinch changes camera distance. One-finger drag outside joystick orbits the view.
+// A joystick can only appear after a direct character tap. Empty space dismisses it.
 const touchPoints=new Map();
 let pinchCenter=null;
-function hitAvatar(e){
- const rect=renderer.domElement.getBoundingClientRect();
- pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
- pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
- ray.setFromCamera(pointer,camera);
- const meshes=[];keeper.traverse(mesh=>{if(mesh.isMesh)meshes.push(mesh)});
- return ray.intersectObjects(meshes,false).length>0;
-}
 function contactPair(){
  const points=[...touchPoints.values()].slice(0,2);
  return {sep:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y),
@@ -998,39 +997,45 @@ function contactPair(){
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
- touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
  if(touchPoints.size===1){
-  wasMoving=false;pinch=null;pinchCenter=null;
-  if((e.pointerType==='touch'||e.pointerType==='pen')&&beginJoystick(e)){
-   drag=null;
-  }else{
+  wasMoving=false;drag=null;
+  if(beginJoystick(e)){
+   // A finger held on the visible pad may move the character. Don't re-pick it on release.
+   wasMoving=true;
+  }else if(e.pointerType==='mouse'){
    drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
   }
  }else if(touchPoints.size===2){
-  // Pause locomotion without hiding the summoned joystick; use only the pair for camera gestures.
-  resetJoystick(false);drag=null;
+  // Two fingers temporarily suspend walking but never close the joystick or change zoom on entry.
+  resetJoystick(false);
   const pair=contactPair();pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};
-  wasMoving=true;syncRender();
+  drag=null;wasMoving=true;syncRender();
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
  if(!touchPoints.has(e.pointerId))return;
- touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
  if(touchPoints.size===2){
   const pair=contactPair();
   if(pinch!==null&&pinchCenter){
    theta-=(pair.x-pinchCenter.x)*.005;
    phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
-   // Pinch exclusively controls zoom, never joystick activation or character travel.
+   // Only a real two-finger distance change can adjust the zoom.
    distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
    cameraUpdate();
   }
   pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};wasMoving=true;return;
  }
  if(e.pointerId===joystickPointer){
-  if(Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)>8)wasMoving=true;
-  joystickMove(e);return;
+  wasMoving=true;joystickMove(e);return;
+ }
+ if(e.pointerType==='touch'||e.pointerType==='pen'){
+  // Single-finger drags outside the joystick do not move the character or zoom.
+  const first=touchPoints.get(e.pointerId);
+  if(first&&first.down&&Math.hypot(e.clientX-first.down.x,e.clientY-first.down.y)>7)wasMoving=true;
+  return;
  }
  if(drag){
   const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
@@ -1040,14 +1045,10 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
- const wasJoystick=e.pointerId===joystickPointer;
- const isTap=!wasMoving&&touchPoints.size===1&&!wasJoystick;
- if(wasJoystick)resetJoystick(false); // Keep pad visible; finger release stops travel.
- if(isTap){
-  if(pick(e)){resetJoystick(true)}
-  else if(hitAvatar(e))showJoystick(e);
-  else resetJoystick(true);
- }
+ const joystickEnd=e.pointerId===joystickPointer;
+ const isTap=!wasMoving&&!joystickEnd&&touchPoints.size===1;
+ if(joystickEnd)resetJoystick(false); // Keep the pad visible; releasing stops movement.
+ else if(isTap)pick(e);
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
  if(touchPoints.size===0){drag=null;wasMoving=false}
@@ -1055,8 +1056,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
  if(e.pointerId===joystickPointer)resetJoystick(false);
- touchPoints.delete(e.pointerId);
- pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
+ touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
  if(e.pointerId===joystickPointer)resetJoystick(false);
