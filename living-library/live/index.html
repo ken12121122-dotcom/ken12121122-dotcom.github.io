@@ -967,13 +967,100 @@ function pick(e){
  }
  return false;
 }
+// One-finger on mobile => joystick at that contact point; second finger => camera gesture.
+// Camera zoom happens ONLY for true two-finger pinch (or desktop wheel), never for walking.
 const touchPoints=new Map();
-renderer.domElement.addEventListener('pointerdown',e=>{renderer.domElement.setPointerCapture(e.pointerId);touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===1){drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};wasMoving=false}});
-renderer.domElement.addEventListener('pointermove',e=>{if(!touchPoints.has(e.pointerId))return;touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touchPoints.size===2){const a=[...touchPoints.values()],sep=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch!==null){distance=THREE.MathUtils.clamp(distance+(pinch-sep)*.032,exploring?4.5:7.5,exploring?13:27);cameraUpdate()}pinch=sep;wasMoving=true;return}if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;drag.lastX=e.clientX;drag.lastY=e.clientY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}}});
-renderer.domElement.addEventListener('pointerup',e=>{if(!wasMoving&&touchPoints.size===1)pick(e);touchPoints.delete(e.pointerId);if(touchPoints.size===0){drag=null;pinch=null}});
-renderer.domElement.addEventListener('pointercancel',e=>{touchPoints.delete(e.pointerId);drag=null;pinch=null});
-renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,exploring?4.5:7.5,exploring?13:27);cameraUpdate()},{passive:false});
-function resize(){camera.aspect=window.innerWidth/window.innerHeight;camera.fov=window.innerWidth<650?60:48;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));if(exploring)distance=THREE.MathUtils.clamp(distance,4.5,13);else distance=window.innerWidth<650?15.8:14.1;cameraUpdate()}
+let pinchCenter=null;
+function contactPair(){
+ const points=[...touchPoints.values()].slice(0,2);
+ return {sep:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y),
+  x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
+}
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+ touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(e.pointerType==='touch'||e.pointerType==='pen'){
+  e.preventDefault();
+  if(touchPoints.size===1){
+   wasMoving=false;drag=null;beginJoystick(e);
+  }else if(touchPoints.size===2){
+   // Suspend walking before manipulating the camera so both inputs never compete.
+   resetJoystick();
+   const pair=contactPair();pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};
+   wasMoving=true;syncRender();
+  }
+ }else if(touchPoints.size===1){
+  drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
+  wasMoving=false;
+ }
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+ if(!touchPoints.has(e.pointerId))return;
+ touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(touchPoints.size===2){
+  const pair=contactPair();
+  if(pinch!==null&&pinchCenter){
+   // Horizontal two-finger motion rotates; vertical motion adjusts pitch.
+   theta-=(pair.x-pinchCenter.x)*.005;
+   phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
+   cameraUpdate();
+  }
+  pinch=pair.sep;pinchCenter={x:pair.x,y:pair.y};wasMoving=true;return;
+ }
+ if(e.pointerType==='touch'||e.pointerType==='pen'){
+  if(e.pointerId===joystickPointer){
+   if(Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)>8)wasMoving=true;
+   joystickMove(e);
+  }
+  return;
+ }
+ if(drag){
+  const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
+  drag.lastX=e.clientX;drag.lastY=e.clientY;
+  if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;
+  if(wasMoving){
+   theta-=dx*.005;
+   phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);
+   cameraUpdate();
+  }
+ }
+});
+renderer.domElement.addEventListener('pointerup',e=>{
+ const isTap=!wasMoving&&touchPoints.size===1;
+ if(e.pointerId===joystickPointer)resetJoystick();
+ if(isTap)pick(e);
+ touchPoints.delete(e.pointerId);
+ if(touchPoints.size<2){pinch=null;pinchCenter=null}
+ if(touchPoints.size===0){drag=null;wasMoving=false}
+ syncRender();
+});
+renderer.domElement.addEventListener('pointercancel',e=>{
+ if(e.pointerId===joystickPointer)resetJoystick();
+ touchPoints.delete(e.pointerId);
+ pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
+});
+renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(e.pointerId===joystickPointer)resetJoystick();
+ touchPoints.delete(e.pointerId);
+ if(touchPoints.size<2){pinch=null;pinchCenter=null}
+ if(touchPoints.size===0)drag=null;
+});
+renderer.domElement.addEventListener('wheel',e=>{
+ e.preventDefault();
+ distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
+ cameraUpdate();
+},{passive:false});
+function resize(){
+ camera.aspect=window.innerWidth/window.innerHeight;
+ camera.fov=window.innerWidth<650?60:48;
+ camera.updateProjectionMatrix();
+ renderer.setSize(window.innerWidth,window.innerHeight);
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
+ // Keep user zoom across viewport/keyboard/orientation changes.
+ distance=THREE.MathUtils.clamp(distance,CAMERA_MIN,CAMERA_MAX);
+ cameraUpdate();
+}
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
 // Open books/dialogs take priority over a constantly redrawing background.
