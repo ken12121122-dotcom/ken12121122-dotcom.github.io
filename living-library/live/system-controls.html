@@ -1,12 +1,49 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#e7d8b7"><title>連線與版本｜念動圖書館</title>
-<style>:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:clamp(15px,4vw,26px);background:radial-gradient(circle at 25% 15%,#fff8e5,#e9d7b2 70%);color:#513c28;font:15px/1.65 "Noto Sans TC",system-ui,sans-serif}main{max-width:620px;margin:auto;border:2px solid #ae8c58;background:#f6eacb;border-radius:17px;padding:clamp(16px,4vw,25px);box-shadow:inset 0 0 0 5px #eadab7}header{border-bottom:2px solid #b89a66;padding-bottom:12px}.eyebrow{font-size:11px;letter-spacing:.12em;color:#7b603b}h1{font:700 clamp(22px,6vw,31px)/1.35 "Noto Serif TC",serif;margin:7px 0}p{color:#715b3e;margin:10px 0 20px}.card-action{display:block;text-align:left;width:100%;margin:10px 0;padding:14px;border:1px solid #aa8959;border-radius:12px;background:linear-gradient(145deg,#fff7df,#e5d09c);color:#513a22;cursor:pointer}.card-action b{display:block;font-size:16px}.card-action small{display:block;font-size:12px;color:#6e573d;margin-top:3px}.card-action:focus-visible{outline:3px solid #326e72;outline-offset:2px}.foot{font-size:12px;border-left:3px solid #987a4c;padding:9px 12px;background:#e8d3a4;margin-top:16px}</style></head>
+<style>:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:clamp(15px,4vw,26px);background:radial-gradient(circle at 25% 15%,#fff8e5,#e9d7b2 70%);color:#513c28;font:15px/1.65 "Noto Sans TC",system-ui,sans-serif}main{max-width:620px;margin:auto;border:2px solid #ae8c58;background:#f6eacb;border-radius:17px;padding:clamp(16px,4vw,25px);box-shadow:inset 0 0 0 5px #eadab7}header{border-bottom:2px solid #b89a66;padding-bottom:12px}.eyebrow{font-size:11px;letter-spacing:.12em;color:#7b603b}h1{font:700 clamp(22px,6vw,31px)/1.35 "Noto Serif TC",serif;margin:7px 0}p{color:#715b3e;margin:10px 0 20px}.card-action{display:block;text-align:left;width:100%;margin:10px 0;padding:14px;border:1px solid #aa8959;border-radius:12px;background:linear-gradient(145deg,#fff7df,#e5d09c);color:#513a22;cursor:pointer}.card-action b{display:block;font-size:16px}.card-action small{display:block;font-size:12px;color:#6e573d;margin-top:3px}.card-action:focus-visible{outline:3px solid #326e72;outline-offset:2px}.foot{font-size:12px;border-left:3px solid #987a4c;padding:9px 12px;background:#e8d3a4;margin-top:16px}
+.prefs{margin-top:18px;padding-top:15px;border-top:2px solid #b89a66}.prefs h2{font-size:18px;margin:0 0 10px}.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid #cbb78f}.setting label{font-weight:700;font-size:14px;flex:1}.setting small{display:block;font-weight:400;color:#776247;font-size:12px}.setting select{font:inherit;max-width:50%;color:#513a22;background:#fff8e5;border:1px solid #9c7d52;border-radius:8px;min-height:44px;padding:6px}.setting input[type=checkbox]{accent-color:#54786f;width:23px;height:23px;flex:none}.setting button{border:1px solid #936e43;border-radius:9px;background:#fdf4db;color:#624526;padding:10px 12px;font:inherit;min-height:44px}.setting select:disabled,.setting button:disabled{opacity:.50}.feedback{font-size:12px;color:#356b55;min-height:20px;margin:9px 0 0}.prefs-note{font-size:12px;color:#6e573d;margin:11px 0}
+</style></head>
 <body><main><header><div class="eyebrow">⚙　系統之書 · 管理卡</div><h1>連線與版本</h1></header><p>念動圖書館會自動檢查網頁更新，新增卡片與介面改動不需要重新安裝 APK。以下提供必要的手動維護操作。</p><nav aria-label="卡片操作"><button class="card-action" type="button" data-action="connect-gen2"><b>✦ GEN2 正式來源連線</b><small>授權讀取私有知識，正式來源與 OWNER Gate 不變</small></button>
-<button class="card-action" type="button" data-action="reconnect-web"><b>↻ 重新連結最新版本</b><small>重新載入線上圖書館，並顯示版本差異公告；只重設書庫顯示紀錄</small></button></nav><div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
+<button class="card-action" type="button" data-action="reconnect-web"><b>↻ 重新連結最新版本</b><small>重新載入線上圖書館，並顯示版本差異公告；只重設書庫顯示紀錄</small></button></nav><section class="prefs" aria-labelledby="prefs-title"><h2 id="prefs-title">🎮 操作偏好</h2>
+<div class="setting"><label for="rotationEnabled">啟用觸控旋轉視角<small>關閉後仍可雙指捏合縮放</small></label><input type="checkbox" id="rotationEnabled" checked></div>
+<div class="setting"><label for="rotationMode">旋轉手勢<small>單指滑動或雙指一起滑動</small></label><select id="rotationMode"><option value="dual">雙指旋轉（原操作）</option><option value="single">單指旋轉</option></select></div>
+<div class="setting"><label for="joystickEnabled">人物搖桿<small>點人物喚醒並控制人物移動</small></label><input type="checkbox" id="joystickEnabled" checked></div>
+<div class="setting"><label for="joystickMode">搖桿喚醒位置<small>跟隨人物觸點，或固定於指定位置</small></label><select id="joystickMode"><option value="follow">點擊位置</option><option value="fixed">固定位置</option></select></div>
+<div class="setting"><label for="relocateJoystick">調整固定搖桿位置<small>返回場景後點按並拖曳，放開儲存</small></label><button type="button" id="relocateJoystick">調整位置 →</button></div>
+<div class="setting"><label for="cardReorder">長按卡片交換位置<small>僅儲存本機的書內順序，不修改資料來源</small></label><input type="checkbox" id="cardReorder" checked></div>
+<p class="feedback" id="prefStatus" role="status" aria-live="polite"></p>
+<p class="prefs-note">操作設定會在這台裝置保留；與知識庫、GBA 存檔及 GEN2 授權分開儲存。</p>
+</section><div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
 <script>
-document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>{
- const action=button.dataset.action;
- if(!['open-md-search','connect-gen2','reconnect-web'].includes(action))return;
- window.parent.postMessage({kind:'living-library-public-card-action',action},window.location.origin);
-}));
+const allowed=new Set(['connect-gen2','reconnect-web','update-preferences','relocate-joystick']);
+function send(action,settings){
+ if(!allowed.has(action))return;
+ const data={kind:'living-library-public-card-action',action};
+ if(action==='update-preferences')data.settings=settings;
+ window.parent.postMessage(data,window.location.origin);
+}
+document.querySelectorAll('button[data-action]').forEach(button=>button.addEventListener('click',()=>send(button.dataset.action)));
+const ids=['rotationEnabled','rotationMode','joystickEnabled','joystickMode','cardReorder'];
+const defaults={rotationEnabled:true,rotationMode:'dual',joystickEnabled:true,joystickMode:'follow',cardReorder:true};
+let saved={};
+try{saved=JSON.parse(localStorage.getItem('living-library-controls-v1')||'null')||{}}catch(_){}
+for(const key of ids){
+ const input=document.getElementById(key);
+ if(input.type==='checkbox')input.checked=typeof saved[key]==='boolean'?saved[key]:defaults[key];
+ else input.value=key==='rotationMode'&&saved.singleFingerRotate===true&&!saved.rotationMode?'single':(saved[key]||defaults[key]);
+ input.addEventListener('change',()=>{
+  const value=input.type==='checkbox'?input.checked:input.value;
+  send('update-preferences',{[key]:value});
+  document.getElementById('prefStatus').textContent='✓ 已套用「'+input.closest('.setting').querySelector('label').firstChild.textContent.trim()+'」';
+  syncDependent();
+ });
+}
+function syncDependent(){
+ document.getElementById('rotationMode').disabled=!document.getElementById('rotationEnabled').checked;
+ const enabled=document.getElementById('joystickEnabled').checked;
+ document.getElementById('joystickMode').disabled=!enabled;
+ document.getElementById('relocateJoystick').disabled=!enabled;
+}
+document.getElementById('relocateJoystick').addEventListener('click',()=>send('relocate-joystick'));
+syncDependent();
 </script></body></html>
