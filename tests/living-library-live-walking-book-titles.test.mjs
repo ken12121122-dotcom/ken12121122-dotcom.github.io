@@ -10,8 +10,8 @@ const Catalog=require('../living-library/live/public-catalog.js');
 
 test('production live WebView URL includes moving avatar, camera target tracking and two input modes',()=>{
  assert.doesNotMatch(source,/id="exploreToggle"/);
- assert.match(source,/function hitAvatar\(e\)/);
- assert.match(source,/else if\(hitAvatar\(e\)\)showJoystick\(e\)/);
+ assert.match(source,/const avatarHit=ray\.intersectObject\(keeper,true\)/);
+ assert.match(source,/if\(avatarHit\)\{showJoystick\(e\);return 'avatar'\}/);
  assert.match(source,/id="walkPad"/);
  assert.match(source,/id="walkKnob"/);
  assert.match(source,/['\"]avatar-movement\.js['\"]/);
