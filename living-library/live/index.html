@@ -711,23 +711,31 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
-let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null;
+let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false;
 const walkKeys=new Set();
-function resetJoystick(){
- joy={x:0,y:0};joystickPointer=null;joystickOrigin=null;
- walkPad.hidden=true;
+// Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
+function resetJoystick(hide=false){
+ joy={x:0,y:0};joystickPointer=null;
  walkKnob.style.transform='translate(-50%,-50%)';
+ if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
 }
-function beginJoystick(e){
- if(e.pointerType!=='touch'&&e.pointerType!=='pen')return;
- if(joystickPointer!==null)return;
- joystickPointer=e.pointerId;
+function showJoystick(e){
+ resetJoystick(false);
  joystickOrigin={x:e.clientX,y:e.clientY};
+ joystickVisible=true;
  walkPad.style.left=joystickOrigin.x+'px';
  walkPad.style.top=joystickOrigin.y+'px';
  walkPad.hidden=false;
+ // Invariant: merely showing or hiding the joystick never changes camera distance, FOV or look target.
+}
+function insideJoystick(e){
+ return joystickVisible&&joystickOrigin&&Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)<=64;
+}
+function beginJoystick(e){
+ if(!insideJoystick(e)||joystickPointer!==null)return false;
+ joystickPointer=e.pointerId;
  joy={x:0,y:0};
- walkKnob.style.transform='translate(-50%,-50%)';
+ return true;
 }
 function joystickMove(e){
  if(joystickPointer!==e.pointerId||!joystickOrigin)return;
@@ -758,7 +766,7 @@ document.addEventListener('keyup',e=>{
  const key=e.key.toLowerCase();
  if(walkKeys.delete(key)){e.preventDefault();syncRender()}
 });
-window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender()});
+window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
  if(!hasWalkInput()){keeper.position.y=.46;return false}
  const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
