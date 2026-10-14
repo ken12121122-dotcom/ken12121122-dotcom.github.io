@@ -81,7 +81,7 @@ function buildCatalog(projection=null){
  const cards=Object.create(null),bookCards=Object.create(null);
  for(const [id,c] of Object.entries(PUBLIC_CARDS))cards[canonicalPublicId(id)]={...c,id:canonicalPublicId(id),legacyId:id,kind:'public_function',sourceLayer:'public',status:'public_entry'};
  cards[RESEARCH_ID]={id:RESEARCH_ID,kind:'external_reference',sourceLayer:'public',title:'創業技術｜平台成長策略',seal:'◆',number:'研01',guild:'外部研究 · 候選',status:'generated',desc:'Book Protocol、專利、開發架構、授權、募資的策略摘要',url:SITE+'/packagecanvas/startup-platform-growth-v01.html'};
- cards[GAME_DESIGN_ID]={id:GAME_DESIGN_ID,kind:'external_reference',sourceLayer:'public',title:'知識城堡｜遊戲設計',seal:'♜',number:'設01',guild:'遊戲系統 · 候選',status:'generated',desc:'八大城堡房間、六種遊戲物件、主角技能與寵物助理的卡片召喚設計；僅供瀏覽，不是可執行技能。',url:SITE+'/packagecanvas/game-design-memory-palace-v01.html'};
+ cards[GAME_DESIGN_ID]={id:GAME_DESIGN_ID,kind:'external_reference',sourceLayer:'public',title:'知識城堡｜遊戲設計',seal:'♜',number:'設01',guild:'遊戲系統 · 候選',status:'generated',desc:'從八大城堡房間與六種遊戲物件，延伸至萬物卡片化、封印職業、移動城堡、魔導書工作台、單機／連線模式與卡片式應用平台；設計候選，非可執行技能。',sourceKbId:'NW-GAME-KB-001',projectionSkillId:'SKILL-NW-CARD-PROJECTION-001',projectionWorkflowId:'WF-NW-CARD-PROJECTION-001',projectionVersion:'0.3.0',projectionStatus:'generated',url:SITE+'/packagecanvas/game-design-memory-palace-v01.html'};
  const books=PUBLIC_BOOKS.map(b=>({...b,sourceLayer:'public',kind:'公開功能書',kb_id:null,publicId:b.id}));
  for(const b of books)bookCards[b.id]=PUBLIC_BOOK_CARDS[b.id].map(canonicalPublicId);
  books.push({id:'android',publicId:'android',kb_id:null,name:'安卓之書',kind:'公開功能書',sourceLayer:'public',tag:'ANDROID',icon:'⚙',color:'#517f80',description:'原生功能集中在此；需要念動圖書館 Android APK。卡片只開啟原有設定與功能，權限和核准由原畫面確認。',target:'Android 裝置與原生功能',active:true});
