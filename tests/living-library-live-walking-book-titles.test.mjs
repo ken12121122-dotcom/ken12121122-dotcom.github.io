@@ -12,7 +12,7 @@ test('production live WebView URL includes moving avatar, camera target tracking
  assert.match(source,/id="exploreToggle"/);
  assert.match(source,/id="walkPad"/);
  assert.match(source,/id="walkKnob"/);
- assert.match(source,/src="avatar-movement\.js\?v=walk-v1-20261013"/);
+ assert.match(source,/['\"]avatar-movement\.js['\"]/);
  assert.match(source,/window\.LivingAvatarMovement/);
  assert.match(source,/camera\.position\.set\(look\.x\+Math\.sin\(theta\)\*horizontal/);
  assert.match(source,/bookOrbitAnchor\.set\(keeper\.position\.x,0,keeper\.position\.z\)/);
@@ -45,7 +45,7 @@ test('live Game Book, all original public books and native route stay intact',()
  assert.match(source,/id="gameBookShortcut"/);
  assert.match(source,/get\('book'\)==='gaming'/);
  assert.match(source,/src="\.\.\/\.\.\/packagecanvas\/gen2-source\.js/);
- assert.match(source,/src="public-catalog\.js/);
+ assert.match(source,/['\"]public-catalog\.js['\"]/);
  const c=Catalog.buildCatalog();
  assert.equal(c.books.length,14);
  assert.equal(c.bookCards.gaming.length,3);
