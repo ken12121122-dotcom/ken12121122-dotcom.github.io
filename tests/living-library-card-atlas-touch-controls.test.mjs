@@ -143,3 +143,17 @@ test('fixed or touch-based joystick spawn and card swapping persist locally with
  assert.match(html,/update-preferences/);
  assert.doesNotMatch(systemPage,/github_pat_|sk-proj-/);
 });
+
+test('3D startup retries a secondary pinned Three.js source and provides actionable error diagnostics without erasing state',()=>{
+ assert.match(html,/const engineSources=\[/);
+ assert.match(html,/cdn\.jsdelivr\.net\/npm\/three@0\.185\.0\/build\/three\.module\.js/);
+ assert.match(html,/unpkg\.com\/three@0\.185\.0\/build\/three\.module\.js/);
+ assert.match(html,/if\(!THREE\)\{/);
+ assert.match(html,/initPhase='WEBGL_CONTEXT'/);
+ assert.match(html,/initPhase='FIRST_RENDER'/);
+ assert.match(html,/id="fallbackDiag"/);
+ assert.match(html,/id="retry3d"/);
+ assert.match(html,/window\.LivingLibrary\?\.showFallback\(reason/);
+ assert.match(html,/console\.error\('Living Library 3D init failed'/);
+ assert.doesNotMatch(html,/localStorage\.clear\(\)/);
+});
