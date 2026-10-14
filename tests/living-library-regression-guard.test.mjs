@@ -136,3 +136,21 @@ test('GPT book is available without GEN2 and preserved across authorization chan
  get('disconnectGen2').click();
  assert.ok(window.LivingLibrary.books.some(b=>b.publicId==='gpt'),'disconnect only removes private projection');
 });
+
+
+test('System Book UI glossary is actually reachable by clicking third in-book card and returning',async()=>{
+ const {window,get}=await ui();
+ window.location.href='https://ken12121122-dotcom.github.io/living-library/index.html';
+ window.LivingLibrary.select('system');
+ get('openBtn').click();
+ const cards=get('drawerFunctions').children.filter(x=>x.dataset?.cardId);
+ assert.deepEqual(cards.map(x=>x.dataset.cardId),[
+  'public.vault.web','public.canvas.workbench','public.system.ui.map'
+ ]);
+ cards[2].click();
+ assert.equal(get('readerShell').hidden,false,'card reader opens');
+ assert.equal(get('readerFrame').src,'https://ken12121122-dotcom.github.io/living-library/ui-map.html','actual same-origin UI glossary iframe opens');
+ get('readerBack').click();
+ assert.equal(get('readerShell').hidden,true,'reader returns to System Book card page');
+ assert.ok(cards[0].dataset.cardId==='public.vault.web','old entry remains');
+});
