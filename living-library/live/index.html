@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.touch-preferences-card-order-v2">
+<meta name="living-library-release" content="2026-10-14.touch-preferences-3d-recovery-v3">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -210,7 +210,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div id="walkPad" class="walk-pad" role="group" aria-label="觸點搖桿：按住拖曳移動，放開停止" hidden>
 <div id="walkKnob" class="walk-knob"></div></div>
 </div>
-<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">可能是 WebGL 不支援，或 Three.js 引擎網路載入失敗。授權後仍可從書庫清單閱讀正式內容。</p><button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
+<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">正在確認圖書館 3D 啟動狀態。</p><p id="fallbackDiag" role="status" style="color:#e1c6a0;font-size:12px;overflow-wrap:anywhere" hidden></p><button id="retry3d" type="button" hidden>↻ 重新嘗試 3D</button> <button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
 <header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
 <div class="compendium-pages">
@@ -521,6 +521,10 @@ $('prevBtn').onclick=()=>cycle(-1);$('nextBtn').onclick=()=>cycle(1);
 $('drawerWrap').addEventListener('click',e=>{if(e.target===$('drawerWrap'))closeBook()});
 
 $('fallbackOpen').onclick=openBook;
+$('retry3d').onclick=()=>{
+ const url=Updates?.reconnectUrl(location.href,Date.now())||location.pathname+'?v='+Date.now();
+ window.location.replace(url);
+};
 $('catalogHead').onclick=()=>{const c=$('catalog');c.classList.toggle('open');$('catalogHead').setAttribute('aria-expanded',String(c.classList.contains('open')))};
 $('catalogHead').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('catalogHead').click()}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawerWrap').classList.contains('open')){$('readerShell').hidden?closeBook():closeReader();}if(!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)&&!$('gen2Auth').open){if(e.key==='ArrowRight')cycle(1);if(e.key==='ArrowLeft')cycle(-1);}if(e.key==='Enter'&&!$('drawerWrap').classList.contains('open')&&e.target===document.body)openBook()});
@@ -602,7 +606,14 @@ setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
-window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
+window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
+ if(ready)return;
+ $('fallback').classList.add('show');
+ if(reason)$('fallbackNote').textContent=reason;
+ const details=$('fallbackDiag');details.hidden=!diagnostic;
+ if(diagnostic)details.textContent=diagnostic;
+ $('retry3d').hidden=false;
+},isMotion:()=>motion};
 
  // Release watchdog: public cards, UI buttons, and source fingerprints only.
  // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
@@ -697,13 +708,25 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){
 })();
 </script>
 <script type="module">
-let THREE;
+let THREE,initPhase='ENGINE_IMPORT';
 try {
-THREE = await import('https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js');
-const {books,select,notifyReady,isMotion}=window.LivingLibrary;
+ // An external CDN interruption must not permanently remove the 3D library.
+ // Pin both sources to the same tested Three.js release; never load arbitrary versions.
+ const engineSources=[
+  'https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js',
+  'https://unpkg.com/three@0.185.0/build/three.module.js'
+ ];
+ for(const source of engineSources){
+  try{THREE=await import(source);break}
+  catch(loadError){console.warn('Three.js source unavailable',source,loadError?.message||loadError)}
+ }
+ if(!THREE){const e=new Error('兩個 Three.js 引擎來源均無法下載');e.code='ENGINE_IMPORT_FAILED';throw e}
+ initPhase='DEPENDENCY_CHECK';
+ const {books,select,notifyReady,isMotion}=window.LivingLibrary;
 const Movement3D=window.LivingAvatarMovement;
 if(!Movement3D)throw new Error("Missing avatar movement module");
 const stage=document.getElementById('stage');
+initPhase='WEBGL_CONTEXT';
 if(!window.WebGL2RenderingContext)throw new Error('裝置不支援 WebGL2。');
 const canvas=document.createElement('canvas');
 const gl=canvas.getContext('webgl2',{antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
@@ -714,12 +737,14 @@ if(window.LivingRenderCapability?.isSoftwareRenderer(rendererName)){
  gl.getExtension('WEBGL_lose_context')?.loseContext();
  throw new Error('軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。');
 }
+initPhase='RENDERER_INIT';
 const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
 renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0x080e1c);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
 stage.append(renderer.domElement);
+initPhase='SCENE_BUILD';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
 const CAMERA_MIN=7.5,CAMERA_MAX=27;let theta=0,phi=.17,distance=window.innerWidth<650?15.8:14.1;const look=new THREE.Vector3(0,2.9,0);
@@ -1202,6 +1227,7 @@ function resize(){
   positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
  cameraUpdate();
 }
+initPhase='SCENE_RESIZE';
 window.addEventListener('resize',resize);resize();
 // Mobile power budget: render the animated 3D world at up to 30 fps.
 // Open books/dialogs take priority over a constantly redrawing background.
@@ -1280,7 +1306,23 @@ notifyReady({
  syncRender,invalidate
 });
 exploreUI.hidden=false;
+initPhase='FIRST_RENDER';
 syncRender();
-}catch(error){console.error('Living Library scene failed',error);window.LivingLibrary.showFallback('Three.js 或 WebGL 初始化失敗；可使用書庫清單預覽。');}
+}catch(error){
+ console.error('Living Library 3D init failed',initPhase,error);
+ const rawMessage=String(error?.message||'未知錯誤').replace(/[\r\n\t]+/g,' ').slice(0,150);
+ const reason={
+  ENGINE_IMPORT:'3D 引擎暫時無法下載，請檢查網路後重試。',
+  DEPENDENCY_CHECK:'圖書館 3D 相依程式沒有準備完成。',
+  WEBGL_CONTEXT:'裝置的 WebGL2 圖形環境無法啟動。',
+  RENDERER_INIT:'3D 繪圖器無法啟動。',
+  SCENE_BUILD:'3D 場景建立失敗。',
+  SCENE_RESIZE:'3D 場景調整失敗。',
+  FIRST_RENDER:'3D 場景首次繪製失敗。'
+ }[initPhase]||'3D 啟動失敗。';
+ window.LivingLibrary?.showFallback(reason+' 可先使用書庫清單。','診斷 '+initPhase+' · '+(error?.name||'Error')+' · '+rawMessage);
+ const proof=document.getElementById('livingReleaseProof');
+ if(proof)proof.textContent='3D 初始化失敗\n'+initPhase+'\n'+rawMessage;
+}
 </script>
 </body></html>
