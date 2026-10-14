@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T15:45:38.568951+00:00",
+  "updated_at": "2026-10-14T15:47:33.911882+00:00",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -169,7 +169,7 @@
       "work_item_id": "P1-EXECUTOR-001",
       "state": "PASS_UNIT_ONLY",
       "attempts": 1,
-      "result": "5 offline executor tests PASS: matching phrase + AND + ordered effects, no-target/disabled/wrong phrase, cancellation, reentry, partial failure without false rollback or raw error leakage. Full Node suite 176/176 PASS.",
+      "result": "6 offline executor tests PASS, including error-code redaction and explicit uncertain effect receipts. Full Node suite 177/177 PASS.",
       "scope": "Synthetic local handlers only; module is not loaded by production scene",
       "evidence_refs": [
         "tests/living-library-spell-executor.test.mjs"
@@ -180,7 +180,7 @@
   "last_run": {
     "run_id": "NW-P0-20261014-02",
     "started_at": "2026-10-14T15:34:04.555182+00:00",
-    "ended_at": "2026-10-14T15:45:38.568951+00:00",
+    "ended_at": "2026-10-14T15:47:33.911882+00:00",
     "attempts": 1,
     "failure_fingerprints": [
       {
@@ -195,7 +195,7 @@
   "execution": {
     "lease_owner": null,
     "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T15:45:38.568951+00:00",
+    "heartbeat_at": "2026-10-14T15:47:33.911882+00:00",
     "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
@@ -240,12 +240,18 @@
       "run_id": 38591812999,
       "result": "PASS",
       "scope": "Node + Ajv schema cases + isolated public navigation. Later executor candidate CI tracked separately."
+    },
+    {
+      "commit": "61e989c481b8dad4e9396c5adfb061a0ef34f757",
+      "run_id": 38592180420,
+      "result": "PASS",
+      "scope": "Node + Schema + Chromium; later error-code redaction checked locally and tracked in subsequent CI"
     }
   ],
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 176,
+      "tests": 177,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
