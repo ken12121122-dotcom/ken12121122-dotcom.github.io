@@ -1,0 +1,46 @@
+{
+  "schema": "nw-p1-session-evidence-v1",
+  "observed_at": "2026-10-14T16:28:56.852Z",
+  "base_commit": "e42a76f1ea4cda659130d167dbe74b2477f21c1e",
+  "scope": "P1_PREPARATORY_ONLY; transient target/gesture/voice-result binding, not scene or microphone integration",
+  "tests": {
+    "node": {
+      "result": "PASS",
+      "total": 186,
+      "fail": 0,
+      "skipped": 0
+    },
+    "targeted": {
+      "result": "PASS",
+      "tests": 9,
+      "cases": [
+        "canonical target identity",
+        "release/cancel rejects delayed results",
+        "replacement/regrab invalidates prior context",
+        "other pointer does not clear active target",
+        "expiry/invalid clock",
+        "replay/forged token",
+        "phrase/alternate handling",
+        "immutable transient metadata",
+        "revalidate matched context before effect"
+      ]
+    },
+    "browser": {
+      "result": "NOT_TESTED_LOCAL",
+      "reason": "Expected Playwright 1.56.1 Headless Shell absent in current local cache; use locked CI install"
+    }
+  },
+  "preserved": {
+    "scene": "UNCHANGED",
+    "public_catalog": "UNCHANGED",
+    "player_storage": "UNCHANGED",
+    "native_permissions": "UNCHANGED",
+    "private_sync": "UNCHANGED"
+  },
+  "limitations": [
+    "Not loaded by live page",
+    "Synthetic context only; real character/book/voice event chain NOT_TESTED",
+    "No microphone capture, audio storage, network or persistence",
+    "No P0/P1 full acceptance, staging deployment or release claim"
+  ]
+}

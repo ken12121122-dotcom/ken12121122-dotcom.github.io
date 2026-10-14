@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T16:24:53.474Z",
+  "updated_at": "2026-10-14T16:28:56.852Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -179,23 +179,34 @@
     {
       "work_item_id": "P1-SESSION-001",
       "state": "IN_PROGRESS",
-      "attempts": 0,
+      "attempts": 1,
       "scope": "Target-scoped transient gesture/voice-result correlation only; no microphone or scene changes",
-      "acceptance": "Delayed, cancelled, replaced, expired or replayed results cannot match the wrong target; synthetic tests only"
+      "acceptance": "Delayed, cancelled, replaced, expired or replayed results cannot match the wrong target; synthetic tests only",
+      "local_tests": {
+        "result": "PASS",
+        "targeted_tests": 9,
+        "full_suite": 186,
+        "fail": 0,
+        "skipped": 0,
+        "command": "node --test tests/*.test.mjs"
+      },
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-session.json"
+      ]
     }
   ],
   "last_run": {
     "run_id": "NW-P1-20261015-01",
     "started_at": "2026-10-14T16:24:53.474Z",
     "ended_at": null,
-    "attempts": 0,
+    "attempts": 1,
     "failure_fingerprints": [],
     "next_action": "Prepare and test target/session binding without loading scene adapters."
   },
   "execution": {
     "lease_owner": "NW-P1-20261015-01",
     "lease_expires_at": "2026-10-14T16:44:53.474Z",
-    "heartbeat_at": "2026-10-14T16:24:53.474Z",
+    "heartbeat_at": "2026-10-14T16:28:56.852Z",
     "state": "RUNNING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
