@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1423">
 <meta name="description" content="念動圖書館・遊戲之書設計卡：知識城堡、記憶宮殿、主角技能、AI 寵物、工具武器與卡片召喚的候選架構。">
-<title>知識城堡｜記憶宮殿遊戲設計卡 v0.1</title>
+<title>知識城堡｜記憶宮殿遊戲設計卡 v0.3</title>
 <style>
 :root{color-scheme:dark;--bg:#09111e;--panel:#111e30;--panel2:#17293b;--gold:#e7c88e;--line:#3d4b5d;--muted:#b4c4d0;--text:#f0f3ed;--teal:#97d8d4;--violet:#b9acff}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 82% 0%,#243955 0%,#0c192b 38%,var(--bg) 75%);font:15px/1.75 -apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text)}button,a{font:inherit}a{color:var(--gold)}button{cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.55}
@@ -23,6 +23,20 @@ footer{margin-top:50px;padding:25px 0 40px;border-top:1px solid #40536b;color:#9
 @media(max-width:750px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.object-grid,.road{grid-template-columns:repeat(2,minmax(0,1fr))}.details{grid-template-columns:1fr}.spell{grid-template-columns:repeat(2,minmax(0,1fr))}.sectionhead{align-items:start;flex-direction:column}.hero{padding:44px 0 35px}}
 @media(max-width:490px){.wrap{width:min(100% - 26px,1080px)}.grid,.object-grid,.road{grid-template-columns:1fr 1fr;gap:8px}.room{min-height:112px;padding:11px}.object{padding:13px}.object header{font-size:12px}.object p{font-size:12px}.mast .wrap{gap:8px}.brand{letter-spacing:.05em}.back{padding:6px 10px}.details{padding:17px}.statement{padding:16px}.section{padding-top:26px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.room{transition:none}.room:hover{transform:none}}
+
+/* NW-GAME-KB-001: public-safe v0.3 candidate projection, without private source content */
+.atlas-overview{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}.atlas-overview a{display:inline-block;padding:6px 11px;border:1px solid #62768b;border-radius:999px;font-size:12px;text-decoration:none;background:#122338}
+.atlas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.atlas-card{background:#122137;border:1px solid #43566e;border-radius:15px;padding:18px}
+.atlas-card h3{margin:0 0 8px;font-size:18px;color:#f6dcad}.atlas-card p,.atlas-card li{font-size:13px;color:#c2d1da}
+.atlas-card ul{margin:8px 0 0;padding-left:20px}.atlas-card li{margin:4px 0}
+.atlas-meta{font-size:12px;color:#d1b887;margin:0 0 15px}
+.atlas-table{width:100%;border-collapse:collapse;font-size:13px}
+.atlas-table th,.atlas-table td{border:1px solid #40536d;padding:10px;text-align:left;vertical-align:top}
+.atlas-table th{color:#e7c88e;background:#192c42}.atlas-table td{color:#d1dee2}
+.atlas-warning{border-left:4px solid #d5a66d;background:#30273a75;border-radius:4px;padding:14px 17px;color:#ead6bf;font-size:13px}
+@media(max-width:730px){.atlas-grid{grid-template-columns:1fr}.atlas-table{font-size:12px}.atlas-table th,.atlas-table td{padding:7px}}
+
 </style>
 </head>
 <body>
@@ -87,6 +101,112 @@ footer{margin-top:50px;padding:25px 0 40px;border-top:1px solid #40536b;color:#9
 <article><b>第三階段 · 候選</b><p>加入人物走動、房間探索、卡片召喚動畫、任務與 AI 工作流連動；通過實際授權與驗收後才顯示成功。</p></article>
 </div>
 </section>
+
+<!-- BEGIN NW-GAME-KB-001 WORLD ATLAS v0.3; retain original room/object/spell prototype above -->
+<section class="section" id="worldAtlasV03" data-card-id="KW-GAME-MEMORY-PALACE-20261014" data-kb-id="NW-GAME-KB-001" data-projection-version="0.3.0">
+  <div class="sectionhead"><div><span>06 / GAME WORLD · KNOWLEDGE ATLAS</span><h2>念動世界｜完整世界觀設計圖鑑</h2></div><p>同一張遊戲設計卡，持續收納世界法則、玩法、創作與跨平台構想。</p></div>
+  <p class="atlas-meta">卡片：KW-GAME-MEMORY-PALACE-20261014　·　設計版：v0.3　·　來源：念動世界獨立設計庫的安全摘要投影　·　狀態：generated／候選</p>
+  <p>本頁前五章保留既有「八房間、六物件、書本召喚與記憶宮殿」互動設計；以下整理 2026-10-14 新增的完整遊戲世界觀方向。原始候選規則、歷史討論與版本仍保存在設計知識庫；這裡只呈現適合公開閱讀的產品概念，不代表已開發完成。</p>
+  <nav class="atlas-overview" aria-label="世界觀章節索引">
+    <a href="#nw-origin">冒險起點</a><a href="#nw-law">世界法則</a><a href="#nw-card">萬物卡片化</a><a href="#nw-castle">空間戒指</a><a href="#nw-book">魔導書</a><a href="#nw-job">職業等級</a><a href="#nw-life">NPC與戰鬥</a><a href="#nw-modes">跨世界</a><a href="#nw-economy">經濟</a><a href="#nw-platform">應用整合平台</a><a href="#nw-roadmap">驗證路線</a>
+  </nav>
+</section>
+<section class="section" id="nw-origin">
+  <div class="sectionhead"><div><span>07 / THE BEGINNING</span><h2>從森林與新手村出發</h2></div><p>這首先必須是一款不用 AI，也可以獨立享受的遊戲。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🌲 新手玩家的第一天</h3><p>玩家在森林出生、找到新手村，透過導師 NPC 學習移動、互動、採集與卡片背包；取得「卡片創造術」，第一次將合法採集的小物件卡片化，再於工作台製作卡片與魔導書。</p></article>
+    <article class="atlas-card"><h3>🧭 自由選擇生活</h3><p>探索、打怪、養寵、建造、製書、買賣和 AI 創作是平行玩法，不因不懂 AI 或不寫程式而被排除。一般遊戲獎勵與現實專業資格獨立。</p></article>
+  </div>
+</section>
+<section class="section" id="nw-law">
+  <div class="sectionhead"><div><span>08 / WORLD LAW</span><h2>世界公共資產不可封印</h2></div><p>魔法能力不會凌駕所有權與世界保護規則。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🏘️ 永久保護的新手村</h3><p>新手村、城鎮、公用道路、公共 NPC、公共任務設施不可卡片化，也不因角色等級或支付金幣而解除限制。</p></article>
+    <article class="atlas-card"><h3>🏠 自建房屋才可封印</h3><p>玩家自己建造且擁有的工作台、小屋、書房、圖書館和城堡，在達到技能、完整快照與合法狀態後才可封印。建築收納不代表一併取得底下的公共土地。</p></article>
+  </div>
+  <p class="atlas-warning">候選判定：物件可封印 × 所有權／授權 × 技能熟練度 × 無佔用與衝突 × 世界規則。非自有資產與 NPC 不能當成任意可收走的道具。</p>
+</section>
+<section class="section" id="nw-card">
+  <div class="sectionhead"><div><span>09 / CARDIFICATION</span><h2>萬物皆可有卡片之形</h2></div><p>卡片是承載與操作方式，不等於無限制複製。</p></div>
+  <table class="atlas-table"><thead><tr><th>卡片形態</th><th>用途</th><th>重要限制</th></tr></thead><tbody>
+    <tr><td>實體封印卡</td><td>收納同一把武器、同一張工作台或同一座城堡，再恢復部署</td><td>一張卡指向唯一實體；防重複部署</td></tr>
+    <tr><td>建築藍圖卡</td><td>分享與重建房屋、城堡的配置</td><td>部署仍需合法土地、材料、權利</td></tr>
+    <tr><td>收藏／圖鑑卡</td><td>怪獸圖鑑、任務紀錄、收藏與知識展示</td><td>展示權不等於實體所有權</td></tr>
+    <tr><td>技能／魔法卡</td><td>封印術、創造術、遊戲技能、外部工具入口</td><td>學會技能不等於取得真實裝置權限</td></tr>
+    <tr><td>空間入口卡</td><td>指向有權進入的私人房間或世界</td><td>不能搬走公共伺服器地圖</td></tr>
+    <tr><td>應用／遊戲卡</td><td>管理玩家創造的遊戲、互動教材和數位工具</td><td>不是原生安裝包；須建置與驗證</td></tr>
+  </tbody></table>
+</section>
+<section class="section" id="nw-castle">
+  <div class="sectionhead"><div><span>10 / POCKET SPACE</span><h2>空間戒指與移動城堡</h2></div><p>從一顆石頭，練習到可隨身攜帶整座私人圖書館。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>💍 層層收納的空間</h3><p>城堡可以有子空間；城堡內可有圖書館、書架、魔導書、製作工作台和家具。封印成功後保留內容與排列，再於合法地點將同一城堡重新實體化。</p></article>
+    <article class="atlas-card"><h3>🔮 學習封印的成長線</h3><p>小物採集 → 武器家具 → 複合工作台 → 自建小屋 → 私人書房／圖書館 → 自建城堡 → 私人領域藍圖。高階可研究從戒指直接進入個人空間，仍屬候選玩法。</p></article>
+  </div>
+  <p class="atlas-warning">城堡封印需要唯一 ID、物件所有權、內裝快照、無他人佔用與無循環包含；原城堡不可同時出現在兩個地點。失敗必須能回退。</p>
+</section>
+<section class="section" id="nw-book">
+  <div class="sectionhead"><div><span>11 / CRAFTING</span><h2>卡片建立器與魔導書工作台</h2></div><p>「創造卡片的卡片」本身，就是起始魔法之一。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🃏 卡片創造術</h3><p>玩家持有基礎創造卡後，可以透過共用卡片建立器創作知識、技能、任務、裝備、魔法、空間或應用入口。每張卡保持永久身分、來源與版本。</p></article>
+    <article class="atlas-card"><h3>📚 魔導書裝訂</h3><p>將多張卡片帶到工作台，編排章節、封面、順序與用途；卡片可被不同書本引用，不需複製來源。魔導書可為 MD 知識書、相冊、戰鬥書、AI 工作流書、手機 Android／iOS 教學書、遊戲世界設計書。</p></article>
+  </div>
+</section>
+<section class="section" id="nw-job">
+  <div class="sectionhead"><div><span>12 / CAREER · GROWTH</span><h2>不必打怪，也能成為頂尖職人</h2></div><p>角色、職業、單項技能三種等級互不混淆。</p></div>
+  <table class="atlas-table"><thead><tr><th>職業（候選）</th><th>核心成長與專業</th></tr></thead><tbody>
+    <tr><td>⚔️ 戰士／探險家</td><td>探索、戰鬥、掉落物、地圖任務</td></tr>
+    <tr><td>🔨 工匠／鍛造師</td><td>家具、裝備、建築與配方製造</td></tr>
+    <tr><td>🃏 卡片鍛造師</td><td>卡片創作、鑑定、製作技術</td></tr>
+    <tr><td>📚 魔導書製作師</td><td>書本組合、章節設計、特殊能力配置</td></tr>
+    <tr><td>🤖 AI 設計師</td><td>AI Skill、Agent、Workflow 的設計與驗證</td></tr>
+    <tr><td>💍 空間魔導師</td><td>封印、解封、移動書房與城堡</td></tr>
+    <tr><td>🐾 馴獸師／💰 商人</td><td>寵物培育、物件交易、委託服務與商店</td></tr>
+  </tbody></table>
+  <p>玩家可以轉職或多職業並行。首次掌握新種類、合法完成挑戰、作品驗證給予技能經驗；反覆封印同一石頭、複製卡片刷等級會衰減或禁止。成就可包含「首次卡片化」「移動書房」「移動城堡」「萬物圖鑑」，圖鑑採有限版本清單。</p>
+</section>
+<section class="section" id="nw-life">
+  <div class="sectionhead"><div><span>13 / ADVENTURE · SOCIETY</span><h2>NPC、寵物、怪獸、任務與社交</h2></div><p>標準遊戲要素與 AI 能力並行，不強制綁定。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🐉 戰鬥與寵物</h3><p>一般玩家可打怪、收集材料、馴養寵物。怪獸的召喚卡、寵物卡、圖鑑卡必須區分，公共 NPC 不得被強制封印。</p></article>
+    <article class="atlas-card"><h3>🗣️ 學習型 NPC</h3><p>導師、圖書館員、任務委託人、商人、工匠與冒險者可教學及對話。AI 對話為附加功能；離線 NPC 仍應有可遊玩的任務與基礎對話。</p></article>
+  </div>
+</section>
+<section class="section" id="nw-modes">
+  <div class="sectionhead"><div><span>14 / OFFLINE · ONLINE</span><h2>單機與連線世界的雙向傳送門</h2></div><p>模式切換不等於私有存檔可以直接成為伺服器資產。</p></div>
+  <table class="atlas-table"><thead><tr><th>模式</th><th>玩家能做的事</th></tr></thead><tbody>
+    <tr><td>離線遊戲</td><td>獨自探索、建造、戰鬥、卡片化與收集</td></tr>
+    <tr><td>單機創作</td><td>編輯卡片、魔導書與作品；是否有 AI 依本地模型或實際連線能力</td></tr>
+    <tr><td>線上冒險</td><td>多人組隊、交易、共同探索；伺服器決定真正資產</td></tr>
+    <tr><td>線上創作</td><td>分享、Fork、共同製作、授權與經審核交易</td></tr>
+  </tbody></table>
+  <p>跨世界可允許安全的卡片設計稿和城堡藍圖交換，但金幣、稀有裝備、戰鬥數值、建築唯一實體不可僅靠離線存檔直接注入線上經濟；遊戲收費、材料、冷卻可作傳送代價，但不取代防作弊審核。</p>
+</section>
+<section class="section" id="nw-economy">
+  <div class="sectionhead"><div><span>15 / PLAYER ECONOMY</span><h2>職業市場、交易與創作者生態</h2></div><p>玩家的價值不必來自戰鬥；也可以來自設計與服務。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>💰 遊戲金幣循環</h3><p>探索、製造、任務、販售材料、武器、寵物、卡片、建築藍圖或協助他人封印城堡，換取金幣。再用金幣製作、修理和強化。交易必須尊重擁有者與授權。</p></article>
+    <article class="atlas-card"><h3>🏪 現實創作者市場</h3><p>未來可研究 AI 魔導書、遊戲作品、技能服務的買斷、訂閱或限期授權，但支付、退款、內容權利、平台規則、稅務與風險另行治理；目前沒有啟用現金交易。</p></article>
+  </div>
+</section>
+<section class="section" id="nw-platform">
+  <div class="sectionhead"><div><span>16 / CARD APPLICATION PLATFORM</span><h2>遊戲卡可以承載另一款完整遊戲</h2></div><p>從遊戲世界延伸為通用數位作品的整合、創作、分享平台。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🎮 AI 創作與遊戲封裝</h3><p>創作者可以用自然語言協助寫小遊戲，將作品身分、作者、版本、依賴、授權與入口封成遊戲卡，再納入魔導書。作品可在受控沙盒內啟動，或經測試和建置後以 Web／PWA／支援平台套件發行。</p></article>
+    <article class="atlas-card"><h3>📱 App／工具的統一入口</h3><p>除了 RPG，卡片還能指向 AI Agent、照片相冊、教學課程、工作流程、手機操作工具。Android 與 iOS 有不同可執行能力和權限限制；收到卡片不代表能直接安裝或遙控裝置。</p></article>
+  </div>
+  <p class="atlas-warning">Card 是作品的識別與入口；Book 是組合；程式原始碼、建置產物、安裝簽章、執行沙盒及多人伺服器都是不同物件。連線遊戲需要實際的伺服器、帳號、資料同步與安全機制，不能只填入 URL 就當作實現。</p>
+</section>
+<section class="section" id="nw-roadmap">
+  <div class="sectionhead"><div><span>17 / VERSION · VALIDATION</span><h2>持續進化，而不是反覆創造新卡</h2></div><p>同一本《遊戲之書》、同一張世界觀卡片，逐版擴充。</p></div>
+  <div class="atlas-grid">
+    <article class="atlas-card"><h3>🧪 最小可玩閉環</h3><p>先完成角色探索、可拾取物、合法封印與復原、卡片建立、魔導書裝訂、成就與存檔；再逐步加入職業交易、建築、寵物、多人與創作者平台。每一項以真實可執行測試驗收。</p></article>
+    <article class="atlas-card"><h3>🗂️ 單一卡片長期維護</h3><p>本卡以固定 ID 持續顯示公開安全的設計內容；獨立知識庫記錄所有詳細規格、來源、反例、版本與未決問題。未經審核不將私人 MD、憑證或未公開核心技術直接同步到網頁。</p></article>
+  </div>
+  <p class="atlas-meta">閱讀狀態：此頁為候選設計圖鑑，非實作功能清單。2026-10-14 的概念包括萬物卡片化、職業自由、單機與連線、封印成長、移動城堡、卡片式應用平台；後續版本可持續增列章節，保留原有卡片身分。</p>
+</section>
+<!-- END NW-GAME-KB-001 WORLD ATLAS v0.3 -->
+
 </main>
 <footer><div class="wrap"><div class="status">設計卡狀態：generated / experimental candidate / 未核准正式實作</div><p style="margin-top:9px">本頁僅整理 OWNER 於 2026-10-14 討論的公開遊戲設計概念，不建立新 GEN2 Skill、不呼叫 AI／工具、不讀取私有資料、不修改主程式及 Android 權限。既有 GBA 存檔與更新鏈應維持不變。</p><a href="./world.html">↶ 回到知識世界</a></div></footer>
 <script>
