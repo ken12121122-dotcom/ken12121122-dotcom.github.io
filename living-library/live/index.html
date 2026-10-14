@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.card-atlas-touch-joystick-v1">
+<meta name="living-library-release" content="2026-10-14.touch-preferences-card-order-v2">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -128,6 +128,9 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .card-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 .codex-slot{position:relative;min-width:0;min-height:137px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 5px 9px;border:2px solid #a38c62;border-radius:9px;background:linear-gradient(145deg,#fff2d4,#decdab);box-shadow:0 3px 0 #aa9069,inset 0 0 0 3px #e9d8b7;color:#534027;text-align:center}
 .codex-slot:focus-visible{outline:3px solid #547a83;outline-offset:2px}
+.codex-slot[data-card-id]{touch-action:none;user-select:none;-webkit-user-select:none}
+.codex-slot.reorder-source{border-color:#3e867d;background:#c2e2d6;box-shadow:0 0 0 3px #36796f55}
+.codex-slot.reorder-target{border-color:#b17535;background:#ffdf9c;box-shadow:0 0 0 3px #b1753566}
 .codex-slot.unfilled{opacity:.63;background:repeating-linear-gradient(135deg,#d6c4a2,#d6c4a2 6px,#e6d6b8 6px,#e6d6b8 12px);border-style:dashed}
 .codex-slot:not(.unfilled):hover,.codex-slot.selected{border-color:#5b8e89;transform:translateY(-2px);box-shadow:0 4px 0 #4f7e7b,0 5px 15px #83684955}
 .codex-slot.selected::after{content:"✦";position:absolute;right:3px;top:0;color:#448580;font-size:15px}
@@ -279,6 +282,40 @@ const stamp=document.getElementById('webRuntimeStamp');
 if(stamp){stamp.dataset.catalog=gptSkillsReady?'ready':'missing';stamp.textContent=gptSkillsReady?'WEB LIVE r2 · GPT 技能卡已載入':'WEB LIVE r2 · 卡片目錄仍是舊版';}
 let selectedId='research',motion=true,ready=false,toastTimer=0;
 const BOOK_PREFS_KEY='living-library-workbench-v1';
+const CONTROLS_PREFS_KEY='living-library-controls-v1';
+const CARD_ORDER_KEY='living-library-book-card-order-v1';
+const clampUnit=(n,min,max)=>Math.min(max,Math.max(min,n));
+function normalizeControls(raw){
+ const d=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
+ const p=d.joystickPosition&&typeof d.joystickPosition==='object'?d.joystickPosition:{};
+ return {rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
+ rotationMode:d.rotationMode==='single'||d.rotationMode==='dual'?d.rotationMode:(d.singleFingerRotate===true?'single':'dual'),
+ joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
+ joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
+ cardReorder:typeof d.cardReorder==='boolean'?d.cardReorder:true,
+ joystickPosition:{x:Number.isFinite(p.x)?clampUnit(p.x,.08,.92):.23,y:Number.isFinite(p.y)?clampUnit(p.y,.12,.88):.7}};
+}
+let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getItem(CONTROLS_PREFS_KEY)||'null'))}catch(_){return normalizeControls(null)}})();
+let cardOrders=(()=>{try{const v=JSON.parse(localStorage.getItem(CARD_ORDER_KEY)||'null');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(_){return {}}})();
+let swapFrom=null;
+function saveControls(patch){
+ controlPrefs=normalizeControls({...controlPrefs,...patch});
+ try{localStorage.setItem(CONTROLS_PREFS_KEY,JSON.stringify(controlPrefs))}catch(_){}
+ if(!controlPrefs.cardReorder)swapFrom=null;
+ window.LivingScene?.applyControls?.();
+}
+function orderedCardIds(bookId){
+ const original=BOOK_CARDS[bookId]||[],previous=Array.isArray(cardOrders[bookId])?cardOrders[bookId]:[];
+ const seen=new Set();
+ return [...previous,...original].filter(id=>original.includes(id)&&!seen.has(id)&&seen.add(id));
+}
+function swapCardSlots(bookId,first,second){
+ const ids=orderedCardIds(bookId),a=ids.indexOf(first),b=ids.indexOf(second);
+ if(a<0||b<0||a===b)return false;
+ [ids[a],ids[b]]=[ids[b],ids[a]];cardOrders[bookId]=ids;
+ try{localStorage.setItem(CARD_ORDER_KEY,JSON.stringify(cardOrders))}catch(_){}
+ swapFrom=null;renderFunctions(book());toast('已交換卡片位置（不修改原始資料）');return true;
+}
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
 function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
@@ -331,6 +368,19 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+ else if(id==='public.system.controls'&&action==='update-preferences'){
+  const input=event.data.settings;
+  if(!input||typeof input!=='object'||Array.isArray(input))return;
+  const next={};
+  for(const field of ['rotationEnabled','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
+  if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
+  if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
+  if(Object.keys(next).length){saveControls(next);toast('操作偏好已儲存')}
+ }
+ else if(id==='public.system.controls'&&action==='relocate-joystick'){
+  saveControls({joystickMode:'fixed',joystickEnabled:true});closeBook();
+  window.LivingScene?.beginJoystickPlacement?.();
+ }
 });
 function openCardReader(card){
  storeBooks();
@@ -387,27 +437,70 @@ $('readerBack').addEventListener('click',closeReader);
 $('readerClose').addEventListener('click',()=>closeBook());
 function renderFunctions(b){
  const host=$('drawerFunctions');host.replaceChildren();
- const ids=BOOK_CARDS[b.id]||[];
- $('codexCrest').textContent=b.icon;
- $('codexBookLabel').textContent=b.name;
+ const ids=orderedCardIds(b.id);
+ $('codexCrest').textContent=b.icon;$('codexBookLabel').textContent=b.name;
  $('codexHeader').textContent='卷印 '+b.icon+' · 已收錄 '+ids.length+' / '+Math.max(6,ids.length);
  $('codexQuote').textContent='「'+b.name+'」 · 『觸印成術，翻頁為界。』';
  $('cardReveal').hidden=true;$('cardLinks').replaceChildren();
  for(let i=0;i<Math.max(6,ids.length);i++){
-   const id=ids[i],card=id?CARDS[id]:null;
-   const btn=document.createElement('button');btn.type='button';
-   btn.className='codex-slot'+(card?'':' unfilled');
-   const nr=document.createElement('span');nr.className='codex-index';nr.textContent=card?card.seal+' '+card.number:'◇ ??';
-   const symbol=document.createElement('span');symbol.className='codex-symbol';symbol.textContent=card?card.seal:'✧';
-   const name=document.createElement('span');name.className='codex-title';name.textContent=card?card.title:'空白卡槽';
-   const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+(card.kind==='external_reference'?' · 外部候選':card.kind==='public_function'?' · 功能入口':' · GEN2 已收錄'):'尚未放入卡片';
-   btn.append(nr,symbol,name,grade);
-   btn.disabled=!card;
-   if(card){btn.dataset.cardId=card.id;btn.setAttribute('aria-label',card.seal+card.number+' '+card.title+' 卡片');btn.addEventListener('click',()=>revealCard(card,btn))}
-   else{btn.setAttribute('aria-label','空白卡槽，尚未放入卡片')}
-   host.append(btn);
+  const id=ids[i],card=id?CARDS[id]:null,btn=document.createElement('button');btn.type='button';
+  btn.className='codex-slot'+(card?'':' unfilled');
+  const nr=document.createElement('span');nr.className='codex-index';nr.textContent=card?card.seal+' '+card.number:'◇ ??';
+  const symbol=document.createElement('span');symbol.className='codex-symbol';symbol.textContent=card?card.seal:'✧';
+  const name=document.createElement('span');name.className='codex-title';name.textContent=card?card.title:'空白卡槽';
+  const grade=document.createElement('span');grade.className='codex-rank';grade.textContent=card?'✦ '+card.guild+(card.kind==='external_reference'?' · 外部候選':card.kind==='public_function'?' · 功能入口':' · GEN2 已收錄'):'尚未放入卡片';
+  btn.append(nr,symbol,name,grade);btn.disabled=!card;
+  if(card){
+   btn.dataset.cardId=card.id;btn.setAttribute('aria-label',card.seal+card.number+' '+card.title+' 卡片');
+   let press=null,timer=null,longPressed=false,suppressClick=false;
+   function clearPress(){
+    if(timer!==null){clearTimeout(timer);timer=null}
+    press=null;longPressed=false;btn.classList.remove('reorder-source');
+    host.querySelectorAll('.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+   }
+   btn.addEventListener('pointerdown',e=>{
+    if(!controlPrefs.cardReorder||e.button!==0||!e.isPrimary)return;
+    press={id:e.pointerId,x:e.clientX,y:e.clientY};
+    timer=setTimeout(()=>{
+     if(!press)return;
+     longPressed=true;swapFrom={bookId:b.id,cardId:card.id};
+     btn.classList.add('reorder-source');toast('拖到另一張卡，或放開後點另一張卡交換');
+     try{btn.setPointerCapture(press.id)}catch(_){}
+    },520);
+   });
+   btn.addEventListener('pointermove',e=>{
+    if(!press||e.pointerId!==press.id)return;
+    if(!longPressed){if(Math.hypot(e.clientX-press.x,e.clientY-press.y)>10)clearPress();return}
+    host.querySelectorAll('.reorder-target').forEach(el=>el.classList.remove('reorder-target'));
+    const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.codex-slot[data-card-id]');
+    if(target&&target!==btn&&host.contains(target))target.classList.add('reorder-target');
+   });
+   btn.addEventListener('pointerup',e=>{
+    if(!press||press.id!==e.pointerId)return;
+    if(longPressed){
+     suppressClick=true;
+     const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.codex-slot[data-card-id]');
+     if(target&&target!==btn&&host.contains(target))swapCardSlots(b.id,card.id,target.dataset.cardId);
+     else toast('請點另一張卡片交換位置');
+    }
+    clearPress();
+   });
+   btn.addEventListener('pointercancel',clearPress);
+   btn.addEventListener('contextmenu',e=>{if(controlPrefs.cardReorder)e.preventDefault()});
+   btn.addEventListener('click',e=>{
+    if(suppressClick){suppressClick=false;e.preventDefault();return}
+    if(controlPrefs.cardReorder&&swapFrom&&swapFrom.bookId===b.id){
+     if(swapFrom.cardId!==card.id)swapCardSlots(b.id,swapFrom.cardId,card.id);
+     else{swapFrom=null;renderFunctions(b);toast('已取消交換')}
+     return;
+    }
+    revealCard(card,btn);
+   });
+  }else btn.setAttribute('aria-label','空白卡槽，尚未放入卡片');
+  host.append(btn);
  }
 }
+
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
 function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
@@ -711,7 +804,7 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
-let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false;
+let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
 function resetJoystick(hide=false){
@@ -719,14 +812,28 @@ function resetJoystick(hide=false){
  walkKnob.style.transform='translate(-50%,-50%)';
  if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
 }
+function positionJoystick(x,y){
+ const mx=Math.min(65,window.innerWidth/2),my=Math.min(65,window.innerHeight/2);
+ joystickOrigin={x:Math.min(Math.max(mx,x),window.innerWidth-mx),y:Math.min(Math.max(my,y),window.innerHeight-my)};
+ joystickVisible=true;walkPad.style.left=joystickOrigin.x+'px';walkPad.style.top=joystickOrigin.y+'px';walkPad.hidden=false;
+}
 function showJoystick(e){
+ if(!controlPrefs.joystickEnabled)return;
  resetJoystick(false);
- joystickOrigin={x:e.clientX,y:e.clientY};
- joystickVisible=true;
- walkPad.style.left=joystickOrigin.x+'px';
- walkPad.style.top=joystickOrigin.y+'px';
- walkPad.hidden=false;
- // Invariant: merely showing or hiding the joystick never changes camera distance, FOV or look target.
+ if(controlPrefs.joystickMode==='fixed')positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ else positionJoystick(e.clientX,e.clientY);
+ // The camera never zooms when the joystick appears.
+}
+function beginJoystickPlacement(){
+ placingJoystick=true;resetJoystick(false);
+ positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ toast('在場景按住並拖曳，放開即可設定搖桿喚醒位置');
+}
+function applyControlPrefs(){
+ if(!controlPrefs.joystickEnabled){placingJoystick=false;resetJoystick(true)}
+ else if(joystickVisible&&controlPrefs.joystickMode==='fixed'&&!placingJoystick)
+  positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
+ syncRender();
 }
 function insideJoystick(e){
  return joystickVisible&&joystickOrigin&&Math.hypot(e.clientX-joystickOrigin.x,e.clientY-joystickOrigin.y)<=64;
@@ -1001,10 +1108,11 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
  if(touchPoints.size===1){
   wasMoving=false;drag=null;
+  if(placingJoystick){wasMoving=true;positionJoystick(e.clientX,e.clientY);return}
   if(beginJoystick(e)){
    // A finger held on the visible pad may move the character. Don't re-pick it on release.
    wasMoving=true;
-  }else if(e.pointerType==='mouse'){
+  }else if(e.pointerType==='mouse'||(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single')){
    drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
   }
  }else if(touchPoints.size===2){
@@ -1017,11 +1125,14 @@ renderer.domElement.addEventListener('pointerdown',e=>{
 renderer.domElement.addEventListener('pointermove',e=>{
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
+ if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
  if(touchPoints.size===2){
   const pair=contactPair();
   if(pinch!==null&&pinchCenter){
-   theta-=(pair.x-pinchCenter.x)*.005;
-   phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   if(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='dual'){
+    theta-=(pair.x-pinchCenter.x)*.005;
+    phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   }
    // Only a real two-finger distance change can adjust the zoom.
    distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
    cameraUpdate();
@@ -1031,8 +1142,8 @@ renderer.domElement.addEventListener('pointermove',e=>{
  if(e.pointerId===joystickPointer){
   wasMoving=true;joystickMove(e);return;
  }
- if(e.pointerType==='touch'||e.pointerType==='pen'){
-  // Single-finger drags outside the joystick do not move the character or zoom.
+ if((e.pointerType==='touch'||e.pointerType==='pen')&&!(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single')){
+  // Touch rotation disabled or dual mode: a single finger cannot rotate.
   const first=touchPoints.get(e.pointerId);
   if(first&&first.down&&Math.hypot(e.clientX-first.down.x,e.clientY-first.down.y)>7)wasMoving=true;
   return;
@@ -1041,10 +1152,19 @@ renderer.domElement.addEventListener('pointermove',e=>{
   const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
   drag.lastX=e.clientX;drag.lastY=e.clientY;
   if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;
-  if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
+  if(wasMoving&&(e.pointerType==='mouse'||(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single'))){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(placingJoystick){
+  if(joystickOrigin){
+   const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
+   placingJoystick=false;resetJoystick(true);
+   saveControls({joystickEnabled:true,joystickMode:'fixed',joystickPosition:p});
+   toast('搖桿喚醒位置已儲存');
+  }
+  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=false;syncRender();return;
+ }
  const joystickEnd=e.pointerId===joystickPointer;
  const isTap=!wasMoving&&!joystickEnd&&touchPoints.size===1;
  if(joystickEnd)resetJoystick(false); // Keep the pad visible; releasing stops movement.
@@ -1055,6 +1175,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
@@ -1077,6 +1198,8 @@ function resize(){
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
  // Keep user zoom across viewport/keyboard/orientation changes.
  distance=THREE.MathUtils.clamp(distance,CAMERA_MIN,CAMERA_MAX);
+ if(controlPrefs.joystickMode==='fixed'&&joystickVisible&&!placingJoystick)
+  positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
  cameraUpdate();
 }
 window.addEventListener('resize',resize);resize();
@@ -1153,6 +1276,7 @@ notifyReady({
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
+ beginJoystickPlacement,applyControls:applyControlPrefs,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
