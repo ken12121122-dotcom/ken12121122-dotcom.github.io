@@ -607,7 +607,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
- if(ready)return;
+ // A renderer can fail at first paint even after the scene API is registered.
+ if(ready&&!diagnostic)return;
  $('fallback').classList.add('show');
  if(reason)$('fallbackNote').textContent=reason;
  const details=$('fallbackDiag');details.hidden=!diagnostic;
@@ -1296,6 +1297,8 @@ function invalidate(){
 document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick(true)}syncRender()});
 window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
+initPhase='FIRST_RENDER';
+renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
@@ -1306,7 +1309,6 @@ notifyReady({
  syncRender,invalidate
 });
 exploreUI.hidden=false;
-initPhase='FIRST_RENDER';
 syncRender();
 }catch(error){
  console.error('Living Library 3D init failed',initPhase,error);
