@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T23:31:48.731Z",
+  "updated_at": "2026-10-14T23:53:57.102Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -372,7 +372,7 @@
     "attempts": 1,
     "resolved_defect": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
     "failure_fingerprints": [],
-    "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
+    "next_action": "PRIORITY OWNER UPDATE 2026-10-15: existing phone operations reported usable ('都還可以用'). First inspect available authorized isolated deployment/WebGL2 verification routes and prepare the smallest real character.tap -> controlled feedback integration with a concrete regression checklist, keeping activation behind the unchanged P0 Gate. Do not repeatedly ask OWNER whether existing controls work or repeat unchanged cloud GPU retries. Keep device report PASS_REPORTED_BY_OWNER; staging and candidate scene integration remain unverified. If no runnable environment is available, persist the exact missing capability and continue only independently testable P1 work. Deferred bounded task: AbortSignal cancellation during awaited dynamic guards."
   },
   "execution": {
     "lease_owner": null,
@@ -388,7 +388,8 @@
     "Hourly automation created; future runs are conditional on available tools. No Work mode or process restart capability claimed.",
     "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged.",
     "Standard Chrome launch failed due singleton socket permissions, but supported Headless Shell ran successfully. Do not treat the earlier local launch limitation as an overall project blocker.",
-    "P1_PREPARATORY_ONLY records source/unit-test preparation, not completion of the P0 or P1 acceptance gates."
+    "P1_PREPARATORY_ONLY records source/unit-test preparation, not completion of the P0 or P1 acceptance gates.",
+    "OWNER 2026-10-15 confirmed existing phone operations remain usable. Prioritize clearing actual runtime/staging verification gaps and concrete scene integration preparation over further generic hardening. Fixed P0-P7 acceptance and release authority unchanged."
   ],
   "owner_observations": [
     {
@@ -396,6 +397,15 @@
       "result": "PASS_REPORTED_BY_OWNER",
       "source_ref": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/pull/219#issuecomment-6172110244",
       "scope": "Samsung Android 3D bookshelf/avatar/floating-book visuals and daily use reported in PR discussion; not automated or comprehensive device acceptance"
+    },
+    {
+      "id": "android_existing_operations_owner_report_20261015",
+      "result": "PASS_REPORTED_BY_OWNER",
+      "reported_at": "2026-10-15T07:53:23+08:00",
+      "source": "OWNER statement in current project conversation",
+      "owner_quote": "都還可以用",
+      "scope": "Broad owner confirmation that current phone version's existing operations remain usable, in reply to discussion of 3D/person/joystick/camera/books/cards regression. Not a separately observed per-step checklist.",
+      "limits": "Installed runtime/commit was not independently identified. This confirms existing phone behavior by owner report, not candidate Rune Engine integration, staging deployment or automated WebGL2/device/voice acceptance."
     }
   ],
   "ci_evidence": [
