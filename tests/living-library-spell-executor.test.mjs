@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),{ActionRegistry}=require('../living-library/live/action-registry.js'),{SpellExecutor}=require('../living-library/live/spell-executor.js');
+function fixture(){
+ const registry=new ActionRegistry(),calls=[],state={grabbing:true,fail:false,hold:null};
+ const defs=[['book.drag_active','condition',()=>state.hold?state.hold:state.grabbing],['voice.incantation_matched','event',()=>true],['book.release_grab','effect',()=>{state.grabbing=false;return true}],['book.return_to_assigned_shelf','effect',()=>{if(state.fail)throw Error('synthetic private error');return true}]];
+ for(const [action_id,kind,execute] of defs)registry.register({action_id,name:action_id,kind,version:'0.1.0',target_type:'library.book_instance',inputs:{type:'object',properties:{},required:[],additionalProperties:false},outputs:{type:'boolean'},platform:['web'],policy:{scope:'local'},guard:()=>true,execute:()=>{calls.push(action_id);return execute()}});
+ const card={schema:'nw.spell.v1',spell_id:'spell.synthetic.return',version:'0.1.0',name:'Synthetic',description:'Fixture only',incantations:['synthetic spell'],enabled:true,target_type:'library.book_instance',runes:defs.map(([action_id],i)=>({schema:'nw.rune.v1',rune_id:'r'+i,action_id,action_version:'0.1.0',label:action_id,parameters:{}})),conditions:{operator:'AND',refs:['r0','r1']},effects:{operator:'SEQUENCE',refs:['r2','r3']},connections:[{from:'r0',to:'r2',operator:'AND'},{from:'r1',to:'r2',operator:'AND'},{from:'r2',to:'r3',operator:'SEQUENCE'}]};
+ return {registry,calls,state,card,executor:new SpellExecutor(registry)};
+}
+test('matching phrase and both conditions execute each effect once in order',async()=>{const f=fixture(),r=await f.executor.run(f.card,{incantation:'synthetic spell'});assert.equal(r.status,'success');assert.deepEqual(r.completed_effects,['r2','r3']);assert.deepEqual(f.calls,['book.drag_active','voice.incantation_matched','book.release_grab','book.return_to_assigned_shelf']);assert.equal(r.runtime_verified,false)});
+test('wrong phrase, disabled card and absent drag cannot cause effects',async()=>{
+ const f=fixture();assert.equal((await f.executor.run(f.card,{incantation:'wrong'})).status,'not_matched');f.card.enabled=false;assert.equal((await f.executor.run(f.card,{incantation:'synthetic spell'})).status,'disabled');assert.deepEqual(f.calls,[]);f.card.enabled=true;f.state.grabbing=false;assert.equal((await f.executor.run(f.card,{incantation:'synthetic spell'})).status,'conditions_not_met');assert.deepEqual(f.calls,['book.drag_active']);
+});
+test('partial effects are reported without false success, rollback claims or raw error leaks',async()=>{const f=fixture();f.state.fail=true;const r=await f.executor.run(f.card,{incantation:'synthetic spell'});assert.equal(r.status,'partial_failure');assert.deepEqual(r.completed_effects,['r2']);assert.equal(r.error_code,'HANDLER_FAILED');assert.ok(!JSON.stringify(r).includes('private error'))});
+test('cancellation prevents effects and releases the per-spell lock',async()=>{const f=fixture(),c=new AbortController();c.abort();const r=await f.executor.run(f.card,{incantation:'synthetic spell',signal:c.signal});assert.equal(r.status,'failed');assert.equal(r.error_code,'SPELL_CANCELLED');assert.deepEqual(f.calls,[]);assert.equal((await f.executor.run(f.card,{incantation:'synthetic spell'})).status,'success')});
+test('concurrent reentry is blocked and edits during a pending condition do not change the run',async()=>{
+ const f=fixture();let resolve;f.state.hold=new Promise(done=>resolve=done);const first=f.executor.run(f.card,{incantation:'synthetic spell'});await Promise.resolve();await assert.rejects(f.executor.run(f.card,{incantation:'synthetic spell'}),e=>e.code==='SPELL_REENTRY');f.card.effects.refs.reverse();resolve(true);const r=await first;assert.equal(r.status,'success');assert.deepEqual(r.completed_effects,['r2','r3']);
+});
