@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-14.gpt-skills-visible.2">
+<meta name="living-library-release" content="2026-10-14.auto-reconnect-v1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -36,6 +36,25 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .chip{background:rgba(15,25,39,.76);border:1px solid rgba(209,195,167,.3);color:#ece7df;padding:9px 12px;border-radius:10px;backdrop-filter:blur(14px);font-size:12px}
 .chip:hover{border-color:var(--gold)}
+#llUpdateReconnect{border:2px solid #d8bc86;color:#f8edda;background:#304251}
+#llUpdateReconnect[data-new-version="true"]{background:#69492c;box-shadow:0 0 0 2px #d3b17b80;color:#fff2cb}
+.ll-update-dialog{border:3px solid #b29668;border-radius:19px;width:min(92vw,560px);max-height:87dvh;background:linear-gradient(155deg,#fcf0d4,#e8d5ae);color:#503b28;box-shadow:0 20px 80px #050a17cc,inset 0 0 0 6px #e9d9b8;padding:clamp(15px,4vw,26px)}
+.ll-update-dialog::backdrop{background:#030814c9;backdrop-filter:blur(5px)}
+.ll-update-head{display:flex;align-items:center;gap:14px;border-bottom:2px solid #b89e6d;padding-bottom:13px}
+.ll-update-sigil{font-size:33px;line-height:1;background:#ddc796;border:1px solid #a08451;border-radius:11px;padding:15px;color:#4e4635}
+.ll-update-kicker{display:block;color:#846641;letter-spacing:.16em;font-size:10px;font-weight:900}
+.ll-update-title{font:700 clamp(21px,5vw,28px)/1.3 Georgia,"Noto Sans TC",serif;color:#4e3826;margin:3px 0}
+.ll-update-summary{margin:14px 0 10px;font-size:13px;line-height:1.6;color:#654f37}
+.ll-update-list{max-height:min(43dvh,300px);overflow:auto;padding:0;margin:7px 0;list-style:none;display:grid;gap:9px}
+.ll-update-list li{border:1px solid #c0a876;background:linear-gradient(125deg,#fff9e9,#efddba);padding:9px 12px;border-radius:10px;color:#58422d}
+.ll-update-list .kind{display:inline-block;margin:0 7px 0 0;color:#765d38;font-size:11px;font-weight:900}
+.ll-update-list strong{font-size:13px;overflow-wrap:anywhere}
+.ll-update-warning{font-size:12px;color:#775c35;background:#f9e9bf;border-left:3px solid #a78141;padding:10px 12px;border-radius:4px;line-height:1.6;margin-top:14px}
+.ll-update-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:13px}
+.ll-update-actions button{border:1px solid #8a6b42;border-radius:9px;background:#664f32;color:#fff5e1;font-weight:800;padding:10px 17px}
+.ll-update-actions button:focus-visible{outline:3px solid #4a9995}
+@media(max-width:650px){#llUpdateReconnect{order:-1}.ll-update-dialog{max-height:88dvh}.ll-update-list{max-height:41dvh}}
+
 #gptSkillsShortcut{border:2px solid #dfbd79;background:#43351f;color:#fff4d8;font-weight:800;box-shadow:0 0 14px #d7b57633}
 #webRuntimeStamp[data-catalog="missing"]{color:#ffb6a7;font-weight:800}
 .side{position:fixed;z-index:4;left:23px;top:50%;width:224px;transform:translateY(-36%);pointer-events:none}
@@ -168,7 +187,7 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
-<div class="top-actions"><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
+<div class="top-actions"><button class="chip" id="llUpdateReconnect" type="button" title="檢查最新書籍、卡片與 UI，重新連結並重設本機書庫顯示記錄">↻ 重新連結</button><button class="chip" id="gptSkillsShortcut" type="button" title="在 GPT 之書打開技能總覽卡">✦ GPT 技能卡</button><button class="chip" id="gameBookShortcut" type="button" title="直接開啟遊戲之書與知識城堡設計卡" aria-label="直接打開遊戲之書的卡片索引">♜ 遊戲之書・新卡</button><button class="chip" id="searchGen2" type="button">⌕ 搜尋 MD</button><button class="chip" id="connectGen2" type="button">✦ 連接 GEN2</button><button class="chip" id="homeBtn" type="button">⌂ 書庫首頁</button><button class="chip" id="motionBtn" type="button">⏸ 暫停漂浮</button><button class="chip" id="resetBtn" type="button">⟳ 視角重設</button><button class="chip" id="aboutBtn" type="button">工作台說明</button></div>
 </header>
 <aside class="side"><div class="eyebrow">THE LIBRARIAN</div><h2>以念為引，<br>以書為術。</h2><div class="gold-rule"></div><p>讓正在使用的能力環繞身邊，將已完成的知識歸回書架。觸碰書本，即可展開內容。</p><div class="legend"><span><i></i>漂浮之書 = 啟用能力</span><span><i style="background:#c8a06f"></i>書架之書 = 已歸檔</span><span><i style="background:#bca6e9"></i>法陣 = 當前工作區</span></div></aside>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
@@ -209,12 +228,24 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 <dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button">返回圖書館</button></dialog>
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button">讀取正式書庫</button> <button id="reuseGen2" type="button">沿用此站 PackageCanvas 授權</button> <button id="disconnectGen2" type="button">斷線清除</button> <button>關閉</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
+ <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
+ <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
+ <h2 class="ll-update-title" id="llUpdateHeading">知識書庫更新完成</h2></div></div>
+ <p class="ll-update-summary" id="llUpdateSummary"></p>
+ <ul id="llUpdateList" class="ll-update-list" aria-label="本次更新項目"></ul>
+ <p class="ll-update-warning">重新連結後，僅重設這座圖書館的書本選取、環繞及書架顯示紀錄。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
+ <div class="ll-update-actions"><button type="button" id="llUpdateDone">✓ 知道了，繼續閱讀</button></div>
+</dialog>
 <script src="../../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
-<script src="book-placement.js?v=orbital-shelves-20261013"></script>
-<script src="avatar-movement.js?v=walk-v1-20261013"></script>
-<script src="public-catalog.js?v=gpt-skills-visible-20261014-r2"></script>
-<script src="render-capability.js?v=software-gpu-20261013"></script>
-<script src="gen2-editor.js?v=md-workbench-20261013"></script>
+<script>
+/* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
+(function(){
+ const tick=Date.now();
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','render-capability.js','gen2-editor.js','update-manager.js'];
+ for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
+})();
+</script>
 <script>
 (function(){
 // Visible only when ?verify=1 is requested. Unmodified game UI otherwise.
@@ -230,6 +261,10 @@ const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
+const Updates=window.LivingLibraryUpdates;
+const previousUpdate=Updates?.read(localStorage,Updates.BASELINE_KEY)||null;
+const pendingUpdate=Updates?.read(sessionStorage,Updates.PENDING_KEY)||null;
+if(Updates&&(!previousUpdate||pendingUpdate))Updates.resetView(localStorage);
 const gptSkillsReady=!!CARDS['public.gpt.skills']&&(BOOK_CARDS.gpt||[]).includes('public.gpt.skills')&&(BOOK_CARDS.system||[]).includes('public.gpt.skills');
 const stamp=document.getElementById('webRuntimeStamp');
 if(stamp){stamp.dataset.catalog=gptSkillsReady?'ready':'missing';stamp.textContent=gptSkillsReady?'WEB LIVE r2 · GPT 技能卡已載入':'WEB LIVE r2 · 卡片目錄仍是舊版';}
@@ -452,7 +487,94 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason){if(ready)return;$('fallback').classList.add('show');if(reason)$('fallbackNote').textContent=reason},isMotion:()=>motion};
- // Preserve the already published Game Book shortcut and deep link.
+
+ // Release watchdog: public cards, UI buttons, and source fingerprints only.
+ // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
+ let refreshBusy=false, queuedReconnect=false;
+ const updateButton=$('llUpdateReconnect'), updateDialog=$('llUpdateDialog');
+ const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
+  typeof c.url==='string'&&c.url.startsWith('./')&&/^[a-z0-9][a-z0-9._-]*\\.html$/i.test(c.url.slice(2)))
+  .map(c=>c.url.slice(2));
+ const updateBase=new URL('./',window.location.href).toString();
+ const updateVersion=document.querySelector('meta[name="living-library-release"]')?.content||'web';
+ const updateButtons=()=>document.querySelectorAll('button[id]');
+ function updateSnapshot(fingerprints){
+  return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
+ }
+ function resetLibraryView(){
+  Updates.resetView(localStorage);
+  const defaults=new Map(Catalog.buildCatalog().books.map(b=>[b.publicId||b.id,b.active]));
+  for(const b of BOOKS)if(b.sourceLayer==='public')b.active=!!defaults.get(b.publicId||b.id);
+  selectedId='research';storeBooks();updateUI();window.LivingScene?.rebuild?.();
+  window.LivingScene?.select?.(selectedId);window.LivingScene?.syncRender?.();
+ }
+ function showUpdateNotice(items,firstVisit){
+  $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
+  $('llUpdateSummary').textContent=firstVisit?
+   '已建立最新卡片與介面版本紀錄。因先前沒有基準快照，以下列出目前已收錄的重點，不能將全部視為本次新增。':
+   '已重新取得線上版本。以下是與上次已記錄版本的差異：';
+  const host=$('llUpdateList');host.replaceChildren();
+  for(const it of items){
+   const li=document.createElement('li'),badge=document.createElement('span'),title=document.createElement('strong');
+   badge.className='kind';badge.textContent=it.label;title.textContent=it.detail;li.append(badge,title);host.append(li);
+  }
+  if(!updateDialog.open)updateDialog.showModal();
+  syncScene();
+ }
+ $('llUpdateDone').addEventListener('click',()=>{updateDialog.close();syncScene()});
+ updateDialog.addEventListener('cancel',e=>{e.preventDefault();updateDialog.close();syncScene()});
+ function reconnectNow(){
+  if(!Updates||refreshBusy)return;
+  queuedReconnect=false;
+  Updates.write(sessionStorage,Updates.PENDING_KEY,{previous:Updates.read(localStorage,Updates.BASELINE_KEY)||null,at:Date.now()});
+  Updates.resetView(localStorage);
+  window.location.replace(Updates.reconnectUrl(location.href,Date.now()));
+ }
+ updateButton.addEventListener('click',reconnectNow);
+ function canRefreshSilently(){
+  return !document.hidden&&!updateDialog.open&&!$('drawerWrap').classList.contains('open')
+   &&!$('mdSearch').open&&!$('gen2Auth').open&&!refreshBusy;
+ }
+ async function refreshWebVersion(initial=false){
+  if(!Updates||refreshBusy||document.hidden)return;
+  refreshBusy=true;
+  try{
+   const fingerprints=await Updates.fetchFingerprints(window.fetch.bind(window),updateBase,watchedCards);
+   const now=updateSnapshot(fingerprints);
+   const was=pendingUpdate?.previous||previousUpdate;
+   if(initial){
+    // The current page was loaded afresh. Show the real, safe diff (or first-visit inventory).
+    if(pendingUpdate||!previousUpdate||Updates.changed(previousUpdate?.fingerprints,fingerprints)||
+       previousUpdate?.version!==now.version||
+       JSON.stringify(previousUpdate?.cards)!==JSON.stringify(now.cards)||
+       JSON.stringify(previousUpdate?.buttons)!==JSON.stringify(now.buttons)){
+      resetLibraryView();
+      const items=Updates.differences(was,now);
+      Updates.write(localStorage,Updates.BASELINE_KEY,now);
+      try{sessionStorage.removeItem(Updates.PENDING_KEY)}catch(_){}
+      showUpdateNotice(items,!was);
+    }else{Updates.write(localStorage,Updates.BASELINE_KEY,now);}
+   }else{
+    const baseline=Updates.read(localStorage,Updates.BASELINE_KEY);
+    if(baseline&&(Updates.changed(baseline.fingerprints,fingerprints)||
+       JSON.stringify(baseline.cards)!==JSON.stringify(now.cards))){
+      updateButton.dataset.newVersion='true';
+      updateButton.textContent='↻ 發現更新';
+      queuedReconnect=true;
+    }
+   }
+  }catch(error){
+   if(!initial)toast('連線暫時無法檢查新版，保留現有書庫');
+   console.warn('Living Library version check failed',error?.message||error);
+  }finally{refreshBusy=false;}
+  if(queuedReconnect&&canRefreshSilently())reconnectNow();
+ }
+ setTimeout(()=>{refreshWebVersion(true)},160);
+ setInterval(()=>{if(!document.hidden)refreshWebVersion()},180000);
+ document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){if(queuedReconnect&&canRefreshSilently())reconnectNow();else refreshWebVersion();}
+ });
+  // Preserve the already published Game Book shortcut and deep link.
  $('gameBookShortcut').addEventListener('click',()=>{select('gaming');openBook()});
  $('gptSkillsShortcut').addEventListener('click',()=>{
    const card=CARDS['public.gpt.skills'];select('gpt');openBook();
