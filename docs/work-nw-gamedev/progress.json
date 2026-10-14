@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T21:24:48.110Z",
+  "updated_at": "2026-10-14T21:26:48.999Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -113,7 +113,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-PREFLIGHT-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -282,7 +282,7 @@
     },
     {
       "work_item_id": "P1-PREFLIGHT-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P1_PREPARATORY_ONLY; unloaded executor static parameter preflight",
       "defect_id": "LATE_PARAMETER_PARTIAL_EFFECT",
@@ -293,26 +293,30 @@
         "fingerprint": "LATE_PARAMETER_PARTIAL_EFFECT"
       },
       "failure_fingerprints": [],
-      "result": "First patch: targeted 8/8, full local Node 231/231, scoped Node 176/176 and schema 2 positive/8 negative PASS. Browser CI pending; local browser binary absent.",
+      "result": "First patch resolved reproduced avoidable partial effects (before: 4/8 passing). Targeted 8/8, full local Node 231/231, CI scoped Node 176/176, schema 2 positive/8 negative, 9 public destinations and 20 synthetic browser checks PASS. No scene/device acceptance.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-preflight.json"
       ],
-      "rollback_sha": "53fca6abe121ccdffafb8364760e12e125b4ee93"
+      "rollback_sha": "53fca6abe121ccdffafb8364760e12e125b4ee93",
+      "candidate_sha": "05144fd07174e24474b908604c3f3f5b1527b579",
+      "ci_run_id": 38640094944,
+      "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-05",
-    "started_at": "2026-10-14T20:27:04.887Z",
-    "ended_at": "2026-10-14T20:31:25.777Z",
+    "run_id": "NW-P1-20261015-06",
+    "started_at": "2026-10-14T21:22:05.142Z",
+    "ended_at": "2026-10-14T21:26:48.999Z",
     "attempts": 1,
+    "resolved_defect": "LATE_PARAMETER_PARTIAL_EFFECT",
     "failure_fingerprints": [],
-    "next_action": "Audit and test SpellExecutor parameter preflight for malformed later-effect parameters before avoidable earlier effects; preserve invocation guards, fixed P0/P1 Gate and unloaded scene status."
+    "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-06",
-    "lease_expires_at": "2026-10-14T21:42:05.142Z",
-    "heartbeat_at": "2026-10-14T21:24:48.110Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T21:26:48.999Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -406,6 +410,14 @@
       "run_id": 38632497911,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911",
       "scope": "168 scoped Node tests + Schema + 9 public destinations + 4 session/4 dispatch/4 payload/4 synthetic character tap browser cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "05144fd07174e24474b908604c3f3f5b1527b579",
+      "checkout_commit": "46fad2373c43448f197efe65165276a8ebeb177f",
+      "run_id": 38640094944,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38640094944",
+      "scope": "176 scoped Node tests + Schema 2 positive/8 negative + 9 public destinations + 20 synthetic browser checks; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -424,17 +436,17 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38632497911,
-      "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload + 4 synthetic character tap browser checks; no 3D/device claim"
+      "ci_run_id": 38640094944,
+      "scope": "9 public destinations, fallback/storage, 4 session + 4 dispatch + 4 payload + 4 character tap + 4 spell preflight synthetic browser checks; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
-      "checkout_commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
-      "run_id": 38632497911,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911"
+      "commit": "05144fd07174e24474b908604c3f3f5b1527b579",
+      "checkout_commit": "46fad2373c43448f197efe65165276a8ebeb177f",
+      "run_id": 38640094944,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38640094944"
     }
   }
 }
