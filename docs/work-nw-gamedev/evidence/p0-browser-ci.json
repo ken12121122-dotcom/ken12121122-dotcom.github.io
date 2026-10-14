@@ -1,0 +1,76 @@
+{
+  "schema": "nw-p0-browser-proof-v1",
+  "commit": "da2aeee7c732f0b72f5ee0e4572756c3b9028e23",
+  "observed_at": "2026-10-14T15:40:36.147Z",
+  "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+  "checks": [
+    {
+      "id": "actual_3d_startup",
+      "result": "NOT_TESTED",
+      "ready": false,
+      "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+      "release": "2026-10-14.touch-preferences-3d-scopefix-v5",
+      "logs": [
+        "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:743:8"
+      ],
+      "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+    },
+    {
+      "id": "forced_engine_failure_fallback",
+      "result": "PASS",
+      "books": 14,
+      "joystick_hidden": true
+    },
+    {
+      "id": "public.research.navigation",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.canvas.workbench",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.startup.tasks",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.calendar",
+      "result": "PASS",
+      "scope": "External link target only; no sign-in"
+    },
+    {
+      "id": "public.knowledge.world",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.gba.runtime",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.vault.web",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.gpt.bridge",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.system.ui.map",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "unrelated_storage_preserved",
+      "result": "PASS",
+      "scope": "Synthetic sentinel; not a real GBA-save test"
+    }
+  ],
+  "ci_run_id": 38591256122
+}

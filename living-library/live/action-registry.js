@@ -50,7 +50,8 @@
    if(!['local','private_sync','native'].includes(d.policy?.scope))fail('INVALID_POLICY');
    checkSchema(d.inputs);checkSchema(d.outputs);
    if(d.kind==='condition'&&d.outputs.type!=='boolean')fail('INVALID_CONDITION_OUTPUT');
-   const metadata=freeze(copy({action_id:d.action_id,name:d.name,kind:d.kind,version:d.version,inputs:d.inputs,outputs:d.outputs,platform:d.platform,policy:{scope:d.policy.scope}}));
+   if(d.target_type!==undefined&&!idPattern.test(d.target_type))fail('INVALID_TARGET_TYPE');
+   const metadata=freeze(copy({action_id:d.action_id,name:d.name,kind:d.kind,version:d.version,inputs:d.inputs,outputs:d.outputs,platform:d.platform,policy:{scope:d.policy.scope},...(d.target_type?{target_type:d.target_type}:{})}));
    this.#actions.set(d.action_id,{metadata,guard:d.guard,execute:d.execute});
    return metadata;
   }
