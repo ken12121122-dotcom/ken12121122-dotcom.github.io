@@ -43,16 +43,16 @@ test('remove eight redundant control buttons entirely from 3D homepage, not hide
 });
 
 test('tap real character to reveal fixed anchored joystick; release stops walking but pad persists, empty tap hides',()=>{
- assert.match(html,/function hitAvatar\(e\)/);
- assert.match(html,/keeper\.traverse\(mesh=>\{if\(mesh\.isMesh\)meshes\.push\(mesh\)\}/);
- assert.match(html,/else if\(hitAvatar\(e\)\)showJoystick\(e\)/);
- assert.match(html,/else resetJoystick\(true\)/);
+ assert.match(html,/const avatarHit=ray\.intersectObject\(keeper,true\)/);
+ assert.match(html,/ray\.ray\.distanceToPoint\(new THREE\.Vector3\(keeper\.position\.x/);
+ assert.match(html,/if\(avatarHit\)\{showJoystick\(e\);return 'avatar'\}/);
+ assert.match(html,/if\(joystickVisible\)resetJoystick\(true\)/);
  assert.match(html,/function showJoystick\(e\)/);
  assert.match(html,/walkPad\.style\.left=joystickOrigin\.x/);
  assert.match(html,/walkPad\.style\.top=joystickOrigin\.y/);
- assert.match(html,/if\(\(e\.pointerType==='touch'\|\|e\.pointerType==='pen'\)&&beginJoystick\(e\)\)/);
- assert.match(html,/if\(wasJoystick\)resetJoystick\(false\)/);
- assert.match(html,/if\(isTap\)\{\s*if\(pick\(e\)\)/);
+ assert.match(html,/if\(beginJoystick\(e\)\)/);
+ assert.match(html,/if\(joystickEnd\)resetJoystick\(false\)/);
+ assert.match(html,/else if\(isTap\)pick\(e\)/);
  assert.match(html,/\.walk-pad\{position:fixed!important/);
  assert.match(html,/pointer-events:none!important/);
  assert.doesNotMatch(html,/walkPad\.addEventListener\('pointerdown'/);
