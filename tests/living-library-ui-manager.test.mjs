@@ -55,9 +55,10 @@ test('GitHub failures never produce fabricated counts or credentials',async()=>{
 });
 test('Manager UI shows live/dev comparison and explicit manual refresh with no background write',async()=>{
  const html=await readFile(path,'utf8');
- for(const x of ['ui-manager-register.js','./public-catalog.js','./live/public-catalog.js','refreshRepo','catalogDiff','cardIndex','prRows','branchRows','githubMainSha','cardFilter','gptSkillsShortcut','webRuntimeStamp']){
+ for(const x of ['ui-manager-register.js','./public-catalog.js','./live/public-catalog.js','refreshRepo','catalogDiff','cardIndex','prRows','branchRows','githubMainSha','cardFilter','webRuntimeStamp']){
   assert.ok(html.includes(x),x);
  }
+ assert.doesNotMatch(html,/id="gptSkillsShortcut"/);
  assert.match(html,/\.addEventListener\('click',refreshGithub\)/);
  assert.match(html,/textContent/);
  assert.doesNotMatch(html,/PRIVATE[_-]?TOKEN|github_pat_|ghp_[A-Za-z0-9]/);
