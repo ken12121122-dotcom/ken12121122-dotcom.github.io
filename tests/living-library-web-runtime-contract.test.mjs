@@ -44,7 +44,7 @@ test('online Game Book has a visible one-tap entry and browser deep-link to the 
  const html=await fetchFile('living-library/live/index.html');
  assert.match(html, /id="gameBookShortcut"[^>]*>♜ 遊戲之書・新卡<\/button>/);
  assert.match(html, /\$\('gameBookShortcut'\)\.addEventListener\('click',\(\)=>\{select\('gaming'\);openBook\(\)\}\)/);
- assert.match(html, /new URLSearchParams\(window\.location\.search\)\.get\('book'\)==='gaming'/);
+ assert.match(html, /route\.get\('book'\)==='gaming'/);
  assert.match(html, /select\('gaming'\);openBook\(\)/);
  const model=c.buildCatalog();
  const ids=model.bookCards.gaming;
