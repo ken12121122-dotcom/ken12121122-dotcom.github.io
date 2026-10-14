@@ -157,3 +157,11 @@ test('3D startup retries a secondary pinned Three.js source and provides actiona
  assert.match(html,/console\.error\('Living Library 3D init failed'/);
  assert.doesNotMatch(html,/localStorage\.clear\(\)/);
 });
+
+test('3D fallback retry and book-selection buttons are both tap targets even though the overlay itself is pointer transparent',()=>{
+ assert.match(html,/\.fallback\{pointer-events:none;/);
+ assert.match(html,/#fallbackOpen,#retry3d\{pointer-events:auto;touch-action:manipulation\}/);
+ assert.match(html,/id="retry3d" type="button"/);
+ assert.match(html,/\$\('retry3d'\)\.onclick=/);
+ assert.match(html,/window\.location\.replace\(url\)/);
+});
