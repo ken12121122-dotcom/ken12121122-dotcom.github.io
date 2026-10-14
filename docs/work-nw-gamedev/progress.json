@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T21:26:48.999Z",
+  "updated_at": "2026-10-14T22:22:56.426Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -113,7 +113,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P1-CARD-SNAPSHOT-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -313,10 +313,10 @@
     "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T21:26:48.999Z",
-    "state": "READY_NEXT_SLICE",
+    "lease_owner": "NW-P1-20261015-07",
+    "lease_expires_at": "2026-10-14T22:42:56.426Z",
+    "heartbeat_at": "2026-10-14T22:22:56.426Z",
+    "state": "REPRODUCING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
