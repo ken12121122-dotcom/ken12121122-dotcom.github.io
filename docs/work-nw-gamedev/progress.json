@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T16:28:56.852Z",
+  "updated_at": "2026-10-14T16:31:33.775Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -56,7 +56,9 @@
         "tests/living-library-action-registry.test.mjs",
         "tests/living-library-spell-contract.test.mjs",
         "tests/browser/schema-contract.cjs",
-        "tests/living-library-spell-executor.test.mjs"
+        "tests/living-library-spell-executor.test.mjs",
+        "tests/living-library-interaction-session.test.mjs",
+        "docs/work-nw-gamedev/evidence/p1-session.json"
       ],
       "blockers": [
         "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
@@ -106,7 +108,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P1-SESSION-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -178,7 +180,7 @@
     },
     {
       "work_item_id": "P1-SESSION-001",
-      "state": "IN_PROGRESS",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "Target-scoped transient gesture/voice-result correlation only; no microphone or scene changes",
       "acceptance": "Delayed, cancelled, replaced, expired or replayed results cannot match the wrong target; synthetic tests only",
@@ -192,22 +194,27 @@
       },
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p1-session.json"
-      ]
+      ],
+      "result": "9 context-binding unit tests and 4 synthetic DOM click cases PASS. Full local Node 186/186 PASS; CI Node+Schema+public-navigation+session fixture PASS.",
+      "candidate_sha": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "ci_run_id": 38598464614,
+      "rollback_sha": "e42a76f1ea4cda659130d167dbe74b2477f21c1e",
+      "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
     }
   ],
   "last_run": {
     "run_id": "NW-P1-20261015-01",
     "started_at": "2026-10-14T16:24:53.474Z",
-    "ended_at": null,
+    "ended_at": "2026-10-14T16:31:33.775Z",
     "attempts": 1,
     "failure_fingerprints": [],
-    "next_action": "Prepare and test target/session binding without loading scene adapters."
+    "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
   },
   "execution": {
-    "lease_owner": "NW-P1-20261015-01",
-    "lease_expires_at": "2026-10-14T16:44:53.474Z",
-    "heartbeat_at": "2026-10-14T16:28:56.852Z",
-    "state": "RUNNING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-14T16:31:33.775Z",
+    "state": "READY_NEXT_SLICE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -263,12 +270,18 @@
       "run_id": 38592460682,
       "result": "PASS",
       "scope": "Node, Draft2020-12 Schema cases and isolated Chromium public navigation. No 3D/device acceptance claimed."
+    },
+    {
+      "commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "run_id": 38598464614,
+      "result": "PASS",
+      "scope": "Node+JSON Schema+public navigation+4 synthetic interaction-session browser cases; no scene/voice/device integration"
     }
   ],
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 177,
+      "tests": 186,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
@@ -281,15 +294,15 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38591812999,
-      "scope": "9 public destinations + fallback + synthetic storage preservation; no 3D/device claim"
+      "ci_run_id": 38598464614,
+      "scope": "9 public destinations + fallback + synthetic storage + 4 synthetic target/session DOM cases; no 3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "f04aa9c3c2ced4b57be067a17f94364e98aec555",
-      "run_id": 38592460682
+      "commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "run_id": 38598464614
     }
   }
 }
