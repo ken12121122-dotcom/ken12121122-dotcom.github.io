@@ -5,13 +5,13 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T15:27:11.568574+00:00",
+  "updated_at": "2026-10-14T15:34:04.555182+00:00",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
     "path": "docs/work-nw-gamedev/progress.json"
   },
-  "status": "BLOCKED",
+  "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -95,7 +95,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P0-BROWSER-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -107,12 +107,20 @@
       "result": "Full suite 157/157 PASS, no skips",
       "candidate_sha_ref": "Containing candidate commit; resolve from Git history",
       "evidence_ref": "docs/work-nw-gamedev/evidence/p0-baseline.json"
+    },
+    {
+      "work_item_id": "P0-BROWSER-001",
+      "state": "IN_PROGRESS",
+      "attempts": 0,
+      "scope": "Isolated Chromium: actual startup observation, engine-failure fallback, all public contract card clicks and iframe return, synthetic unrelated-storage preservation",
+      "local_runner": "BLOCKED_SOCKET_PERMISSION",
+      "next_action": "Execute candidate tests in GitHub CI runner; inspect artifacts and fix actual failures within budget"
     }
   ],
   "last_run": {
-    "run_id": "NW-P0-20261014-01",
-    "started_at": "2026-10-14T15:22:35Z",
-    "ended_at": "2026-10-14T15:27:11.568574+00:00",
+    "run_id": "NW-P0-20261014-02",
+    "started_at": "2026-10-14T15:34:04.555182+00:00",
+    "ended_at": null,
     "attempts": 1,
     "failure_fingerprints": [
       {
@@ -122,13 +130,13 @@
         "resolved": true
       }
     ],
-    "next_action": "Obtain a WebGL2-capable test runner and verify existing 3D interactions before starting P1. Keep draft; no main merge or Pages deployment."
+    "next_action": "Run isolated candidate browser regression in GitHub CI; only unsupported 3D/device checks stay blocked."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T15:27:11.568574+00:00",
-    "state": "STOPPED_BLOCKED",
+    "lease_owner": "NW-P0-20261014-02",
+    "lease_expires_at": "2026-10-14T15:49:04.555182+00:00",
+    "heartbeat_at": "2026-10-14T15:34:04.555182+00:00",
+    "state": "RUNNING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -136,6 +144,7 @@
   "notes": [
     "This is the only canonical progress file. ChatGPT Library contains requirements, not a second mutable progress copy.",
     "Hourly automation created; future runs are conditional on available tools. No Work mode or process restart capability claimed.",
-    "No P0 completion, P1 implementation, staging deployment, production release or phone verification claimed."
+    "No P0 completion, P1 implementation, staging deployment, production release or phone verification claimed.",
+    "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged."
   ]
 }
