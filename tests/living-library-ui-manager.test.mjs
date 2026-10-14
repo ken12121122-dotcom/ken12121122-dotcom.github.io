@@ -37,7 +37,7 @@ test('Public GitHub inspection counts ALL paged branches and returns only open P
  async function fetcher(url,opts){
   calls.push({url,opts});
   const data=url.includes('/commits/main')?{sha:'a'.repeat(40)}
-  :url.includes('/branches?')?(url.includes('page=1')?a:b)
+  :url.includes('/branches?')?(new URL(url).searchParams.get('page')==='1'?a:b)
   :url.includes('/pulls?')?opened:null;
   return {ok:true,status:200,json:async()=>data};
  }
