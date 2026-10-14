@@ -288,7 +288,8 @@ const clampUnit=(n,min,max)=>Math.min(max,Math.max(min,n));
 function normalizeControls(raw){
  const d=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
  const p=d.joystickPosition&&typeof d.joystickPosition==='object'?d.joystickPosition:{};
- return {singleFingerRotate:typeof d.singleFingerRotate==='boolean'?d.singleFingerRotate:true,
+ return {rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
+ rotationMode:d.rotationMode==='single'||d.rotationMode==='dual'?d.rotationMode:(d.singleFingerRotate===true?'single':'dual'),
  joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
  cardReorder:typeof d.cardReorder==='boolean'?d.cardReorder:true,
@@ -371,7 +372,8 @@ window.addEventListener('message',event=>{
   const input=event.data.settings;
   if(!input||typeof input!=='object'||Array.isArray(input))return;
   const next={};
-  for(const field of ['singleFingerRotate','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
+  for(const field of ['rotationEnabled','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
+  if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
   if(Object.keys(next).length){saveControls(next);toast('操作偏好已儲存')}
  }
@@ -1095,7 +1097,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
   if(beginJoystick(e)){
    // A finger held on the visible pad may move the character. Don't re-pick it on release.
    wasMoving=true;
-  }else if(e.pointerType==='mouse'){
+  }else if(e.pointerType==='mouse'||(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single')){
    drag={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
   }
  }else if(touchPoints.size===2){
@@ -1111,8 +1113,10 @@ renderer.domElement.addEventListener('pointermove',e=>{
  if(touchPoints.size===2){
   const pair=contactPair();
   if(pinch!==null&&pinchCenter){
-   theta-=(pair.x-pinchCenter.x)*.005;
-   phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   if(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='dual'){
+    theta-=(pair.x-pinchCenter.x)*.005;
+    phi=THREE.MathUtils.clamp(phi+(pair.y-pinchCenter.y)*.003,-.07,1.27);
+   }
    // Only a real two-finger distance change can adjust the zoom.
    distance=THREE.MathUtils.clamp(distance+(pinch-pair.sep)*.032,CAMERA_MIN,CAMERA_MAX);
    cameraUpdate();
@@ -1122,8 +1126,8 @@ renderer.domElement.addEventListener('pointermove',e=>{
  if(e.pointerId===joystickPointer){
   wasMoving=true;joystickMove(e);return;
  }
- if(e.pointerType==='touch'||e.pointerType==='pen'){
-  // Single-finger drags outside the joystick do not move the character or zoom.
+ if((e.pointerType==='touch'||e.pointerType==='pen')&&!(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single')){
+  // Touch rotation disabled or dual mode: a single finger cannot rotate.
   const first=touchPoints.get(e.pointerId);
   if(first&&first.down&&Math.hypot(e.clientX-first.down.x,e.clientY-first.down.y)>7)wasMoving=true;
   return;
@@ -1132,7 +1136,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
   const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;
   drag.lastX=e.clientX;drag.lastY=e.clientY;
   if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)wasMoving=true;
-  if(wasMoving){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
+  if(wasMoving&&(e.pointerType==='mouse'||(controlPrefs.rotationEnabled&&controlPrefs.rotationMode==='single'))){theta-=dx*.005;phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate()}
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
