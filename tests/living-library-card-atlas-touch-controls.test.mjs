@@ -165,3 +165,19 @@ test('3D fallback retry and book-selection buttons are both tap targets even tho
  assert.match(html,/\$\('retry3d'\)\.onclick=/);
  assert.match(html,/window\.location\.replace\(url\)/);
 });
+
+test('independent 3D ES module receives every control dependency through an explicit stable bridge',()=>{
+ const parts=[...html.matchAll(/<script([^>]*)>([\\s\\S]*?)<\\/script>/g)];
+ const classic=parts.filter(x=>!x[1].includes('type="module"')).map(x=>x[2]).join('\\n');
+ const moduleScript=parts.find(x=>x[1].includes('type="module"'))?.[2];
+ assert.ok(moduleScript,'3D scene script is present');
+ assert.match(classic,/window\\.LivingLibrary=\\{books:BOOKS,select,openBook,summonBook,/);
+ assert.match(classic,/controls:controlPrefs,saveControls,clampUnit,toast,/);
+ assert.match(classic,/Object\\.assign\\(controlPrefs,normalizeControls\\(\\{\\.\\.\\.controlPrefs,\\.\\.\\.patch\\}\\)\\)/);
+ assert.match(moduleScript,/controls:controlPrefs,saveControls,clampUnit,toast\\}=window\\.LivingLibrary/);
+ assert.match(moduleScript,/if\\(!controlPrefs\\|\\|typeof saveControls!==['"]function['"]/);
+ for(const name of ['controlPrefs','saveControls','clampUnit','toast']){
+  assert.match(moduleScript,new RegExp('\\\\b'+name+'\\\\b'));
+ }
+ assert.doesNotMatch(moduleScript,/window\\.LivingLibrary\\.controls\\s*=/);
+});
