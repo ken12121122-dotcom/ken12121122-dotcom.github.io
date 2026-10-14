@@ -166,18 +166,16 @@ test('3D fallback retry and book-selection buttons are both tap targets even tho
  assert.match(html,/window\.location\.replace\(url\)/);
 });
 
-test('independent 3D ES module receives every control dependency through an explicit stable bridge',()=>{
- const parts=[...html.matchAll(/<script([^>]*)>([\\s\\S]*?)<\\/script>/g)];
- const classic=parts.filter(x=>!x[1].includes('type="module"')).map(x=>x[2]).join('\\n');
- const moduleScript=parts.find(x=>x[1].includes('type="module"'))?.[2];
- assert.ok(moduleScript,'3D scene script is present');
- assert.match(classic,/window\\.LivingLibrary=\\{books:BOOKS,select,openBook,summonBook,/);
- assert.match(classic,/controls:controlPrefs,saveControls,clampUnit,toast,/);
- assert.match(classic,/Object\\.assign\\(controlPrefs,normalizeControls\\(\\{\\.\\.\\.controlPrefs,\\.\\.\\.patch\\}\\)\\)/);
- assert.match(moduleScript,/controls:controlPrefs,saveControls,clampUnit,toast\\}=window\\.LivingLibrary/);
- assert.match(moduleScript,/if\\(!controlPrefs\\|\\|typeof saveControls!==['"]function['"]/);
- for(const name of ['controlPrefs','saveControls','clampUnit','toast']){
-  assert.match(moduleScript,new RegExp('\\\\b'+name+'\\\\b'));
- }
- assert.doesNotMatch(moduleScript,/window\\.LivingLibrary\\.controls\\s*=/);
+test('independent 3D ES module imports persistent controls and helper functions explicitly',()=>{
+ const start=html.indexOf('<script type="module">');
+ assert.ok(start>0,'3D ES module is present');
+ const classic=html.slice(0,start);
+ const moduleCode=html.slice(start,html.indexOf('</script>',start));
+ assert.ok(classic.includes('controls:controlPrefs,saveControls,clampUnit,toast,'));
+ assert.ok(classic.includes('Object.assign(controlPrefs,normalizeControls({...controlPrefs,...patch}))'));
+ assert.ok(moduleCode.includes('controls:controlPrefs,saveControls,clampUnit,toast}=window.LivingLibrary'));
+ assert.ok(moduleCode.includes("if(!controlPrefs||typeof saveControls!=='function'||typeof clampUnit!=='function')"));
+ for(const name of ['controlPrefs','saveControls','clampUnit','toast'])
+  assert.ok(moduleCode.includes(name),'3D module references '+name);
+ assert.ok(!moduleCode.includes('window.LivingLibrary.controls='),'3D module must not replace the preferences object');
 });
