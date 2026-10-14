@@ -1,0 +1,45 @@
+{
+  "schema": "nw-p1-definition-snapshot-v1",
+  "result": "CI_PENDING",
+  "scope": "P1_PREPARATORY_ONLY; unloaded ActionRegistry definition registration boundary",
+  "observed_at": "2026-10-14T23:30:07.157Z",
+  "defect_id": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
+  "reproduction": {
+    "tests": 10,
+    "pass": 2,
+    "fail": 8,
+    "fingerprint": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE"
+  },
+  "patch_attempts": 1,
+  "change": "Capture own data descriptors and trusted handlers once; detach/freeze metadata before validation and store exactly that metadata. Remove serialization after validation.",
+  "local_tests": {
+    "targeted": 10,
+    "full": 305,
+    "scoped": 250,
+    "fail": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "original_schema": {
+      "positive": 2,
+      "negative": 8
+    },
+    "contract_parity": {
+      "cases": 56,
+      "accepted": 6,
+      "structural_rejected": 41,
+      "semantic_only_rejected": 9
+    }
+  },
+  "ci": {
+    "result": "PENDING"
+  },
+  "limits": [
+    "Unloaded candidate core only; no scene imports, new authority, card format, saves or native changes",
+    "Metadata physical snapshot depth 48 accommodates existing logical schema nesting and nested enum values; checkSchema remains depth 12",
+    "Unknown top-level fields remain ignored; only known contract fields are captured. Handler functions remain trusted code; not a hostile-JS Proxy sandbox",
+    "local/private_sync/native invocation Gates and platform/guard/input/output checks unchanged",
+    "Pinned local Playwright 1.56.1 present; browser binary absent. CI provides Chromium",
+    "No configured staging URL or complete 3D/device/voice acceptance"
+  ],
+  "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2"
+}

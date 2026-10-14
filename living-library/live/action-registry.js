@@ -58,8 +58,6 @@
   if(schema.type==='array'&&!value.every(v=>validate(v,schema.items,depth+1)))return false;
   return true;
  }
- const copy=value=>JSON.parse(JSON.stringify(value));
- function freeze(value){Object.freeze(value);for(const v of Object.values(value))if(v&&typeof v==='object')freeze(v);return value}
  // Payloads are data, not objects with executable serialization/getter hooks.
  // Read descriptors once and validate the resulting immutable snapshot itself.
  function dataSnapshot(value,depth=0,active=new WeakSet(),maxDepth=12){
@@ -92,11 +90,28 @@
   if(!validate(snapshot,schema))fail(code);
   return snapshot;
  }
+ function definitionSnapshot(definition){
+  if(!record(definition))fail('INVALID_DEFINITION');
+  const descriptors=Object.getOwnPropertyDescriptors(definition),d={};
+  // Trusted handlers are captured once, separately from JSON metadata. Never
+  // read a caller getter or invoke serialization while checking a definition.
+  for(const key of ['action_id','name','kind','version','inputs','outputs','platform','policy','target_type','guard','execute']){
+   const descriptor=descriptors[key];if(!descriptor)continue;
+   if(!Object.hasOwn(descriptor,'value'))fail('INVALID_DEFINITION');
+   if(key==='guard'||key==='execute'){d[key]=descriptor.value;continue}
+   if(key==='target_type'&&descriptor.value===undefined)continue;
+   const code=key==='inputs'||key==='outputs'?'INVALID_SCHEMA':key==='platform'?'INVALID_PLATFORM':key==='policy'?'INVALID_POLICY':'INVALID_DEFINITION';
+   // Schema nesting includes properties envelopes plus nested enum values;
+   // checkSchema still applies the existing logical depth-12 constraints.
+   try{d[key]=dataSnapshot(descriptor.value,0,new WeakSet(),48)}catch{fail(code)}
+  }
+  return d;
+ }
  class ActionRegistry{
   #actions=new Map();#active=new Set();#platform;
   constructor({platform='web'}={}){if(!['web','android'].includes(platform))fail('INVALID_PLATFORM');this.#platform=platform}
   register(definition){
-   const d=definition;
+   const d=definitionSnapshot(definition);
    if(!d||!idPattern.test(d.action_id)||!kinds.has(d.kind)||typeof d.name!=='string'||!d.name.trim()||!/^\d+\.\d+\.\d+$/.test(d.version||''))fail('INVALID_DEFINITION');
    if(this.#actions.has(d.action_id))fail('DUPLICATE_ACTION');
    if(typeof d.guard!=='function'||typeof d.execute!=='function')fail('MISSING_HANDLER');
@@ -105,7 +120,7 @@
    checkSchema(d.inputs);checkSchema(d.outputs);
    if(d.kind==='condition'&&d.outputs.type!=='boolean')fail('INVALID_CONDITION_OUTPUT');
    if(d.target_type!==undefined&&!idPattern.test(d.target_type))fail('INVALID_TARGET_TYPE');
-   const metadata=freeze(copy({action_id:d.action_id,name:d.name,kind:d.kind,version:d.version,inputs:d.inputs,outputs:d.outputs,platform:d.platform,policy:{scope:d.policy.scope},...(d.target_type?{target_type:d.target_type}:{})}));
+   const metadata=Object.freeze({action_id:d.action_id,name:d.name,kind:d.kind,version:d.version,inputs:d.inputs,outputs:d.outputs,platform:d.platform,policy:Object.freeze({scope:d.policy.scope}),...(d.target_type?{target_type:d.target_type}:{})});
    this.#actions.set(d.action_id,{metadata,guard:d.guard,execute:d.execute});
    return metadata;
   }
