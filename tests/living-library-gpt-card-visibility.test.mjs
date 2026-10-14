@@ -27,14 +27,15 @@ test('new live release bumps the actual catalog script URL to prevent older URL 
  assert.match(live, /WEB LIVE r2 · GPT 技能卡已載入/);
  assert.match(live, /WEB LIVE r2 · 卡片目錄仍是舊版/);
  assert.match(live, /BOOK_CARDS\.system\|\|\[\]/);
- assert.match(live, /id="gptSkillsShortcut"/);
+ assert.doesNotMatch(live, /id="gptSkillsShortcut"/);
+ assert.ok(catalog.buildCatalog().bookCards.gpt.includes('public.gpt.skills'));
  assert.match(live, /route\.get\('book'\)==='system'/);
 });
 test('web hot update still retains deep link, one-click inner iframe and native GBA',()=>{
  assert.match(live, /if\(route\.get\('card'\)==='public\.gpt\.skills'\)/);
  assert.match(live, /if\(card\)openCardReader\(card\)/);
  assert.match(live, /new URL\('\.\/gpt-skills\.html',current\)\.pathname/);
- assert.match(live, /look\.set\(keeper\.position\.x,2\.1,keeper\.position\.z\)/);
+ assert.match(live, /look\.x=keeper\.position\.x/);
  assert.match(live, /iframe id="readerFrame"/);
  assert.equal(catalog.buildCatalog().cards['public.gba.runtime'].nativeRoute,'gba');
 });
