@@ -625,7 +625,7 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.
 stage.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
-let theta=0,phi=.17,distance=14.1;const look=new THREE.Vector3(0,2.9,0);
+const CAMERA_MIN=7.5,CAMERA_MAX=27;let theta=0,phi=.17,distance=window.innerWidth<650?15.8:14.1;const look=new THREE.Vector3(0,2.9,0);
 const targetAngle=new THREE.Vector2(0,.17);
 function cameraUpdate(){
  // Free 360-degree yaw around the world. No fixed bookshelf camera.
@@ -701,17 +701,37 @@ const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));ha
 const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
 // Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
 // Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
+// Direct-touch input: the finger-down point becomes the temporary joystick.
+// The same camera distance is used before walking, while walking and after resize.
 const exploreUI=document.getElementById('exploreControls');
-const exploreToggle=document.getElementById('exploreToggle');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
-const walkHint=document.getElementById('walkHint');
-let exploring=false,joy={x:0,y:0},walkPhase=0,walkDistance=0;
-let distanceBeforeExplore=distance,joystickPointer=null;
+const exploring=true;
+let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null;
 const walkKeys=new Set();
 function resetJoystick(){
- joy={x:0,y:0};joystickPointer=null;
+ joy={x:0,y:0};joystickPointer=null;joystickOrigin=null;
+ walkPad.hidden=true;
  walkKnob.style.transform='translate(-50%,-50%)';
+}
+function beginJoystick(e){
+ if(e.pointerType!=='touch'&&e.pointerType!=='pen')return;
+ if(joystickPointer!==null)return;
+ joystickPointer=e.pointerId;
+ joystickOrigin={x:e.clientX,y:e.clientY};
+ walkPad.style.left=joystickOrigin.x+'px';
+ walkPad.style.top=joystickOrigin.y+'px';
+ walkPad.hidden=false;
+ joy={x:0,y:0};
+ walkKnob.style.transform='translate(-50%,-50%)';
+}
+function joystickMove(e){
+ if(joystickPointer!==e.pointerId||!joystickOrigin)return;
+ const radius=42,dx=(e.clientX-joystickOrigin.x)/radius,dy=(joystickOrigin.y-e.clientY)/radius;
+ const strength=Math.hypot(dx,dy);
+ joy=strength<.13?{x:0,y:0}:Movement3D.normalize(dx,dy);
+ walkKnob.style.transform='translate(-50%,-50%) translate('+(joy.x*radius)+'px,'+(-joy.y*radius)+'px)';
+ syncRender();
 }
 function exploreInput(){
  const x=(walkKeys.has('d')?1:0)-(walkKeys.has('a')?1:0);
@@ -720,81 +740,34 @@ function exploreInput(){
 }
 function hasWalkInput(){
  const v=exploreInput();
- return exploring&&Math.hypot(v.x,v.y)>.025;
+ return Math.hypot(v.x,v.y)>.025;
 }
-function showExploreMode(enabled){
- exploring=Boolean(enabled);
- walkKeys.clear();resetJoystick();
- exploreToggle.setAttribute('aria-pressed',String(exploring));
- exploreToggle.textContent=exploring?'◉ 返回自由觀看':'🎮 人物探索';
- walkPad.hidden=!exploring;walkHint.hidden=!exploring;
- if(exploring){
-  distanceBeforeExplore=distance;distance=6.8;
-  look.set(keeper.position.x,2.1,keeper.position.z);
-  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
- }else{
-  distance=distanceBeforeExplore;
-  look.set(0,2.9,0);
-  keeper.position.y=.46;
- }
- cameraUpdate();syncRender();
-}
-exploreToggle.addEventListener('click',()=>showExploreMode(!exploring));
-function joystickMove(e){
- const r=walkPad.getBoundingClientRect(),radius=Math.min(r.width,r.height)*.38;
- const dx=(e.clientX-(r.left+r.width/2))/radius;
- const dy=((r.top+r.height/2)-e.clientY)/radius;
- joy=Movement3D.normalize(dx,dy);
- walkKnob.style.transform='translate(-50%,-50%) translate('+(joy.x*radius)+'px,'+(-joy.y*radius)+'px)';
- syncRender();
-}
-walkPad.addEventListener('pointerdown',e=>{
- if(!exploring||joystickPointer!==null)return;
- e.preventDefault();joystickPointer=e.pointerId;
- walkPad.setPointerCapture(e.pointerId);joystickMove(e);
-});
-walkPad.addEventListener('pointermove',e=>{
- if(!exploring||e.pointerId!==joystickPointer)return;
- e.preventDefault();joystickMove(e);
-});
-function joystickRelease(e){
- if(e.pointerId!==joystickPointer)return;
- resetJoystick();syncRender();
-}
-walkPad.addEventListener('pointerup',joystickRelease);
-walkPad.addEventListener('pointercancel',joystickRelease);
-walkPad.addEventListener('lostpointercapture',joystickRelease);
 function editableTarget(t){
  return !!(t&&(t.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(t.tagName)));
 }
 document.addEventListener('keydown',e=>{
- if(!exploring||editableTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey)return;
+ if(editableTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey)return;
  const key=e.key.toLowerCase();
- if('wasd'.includes(key)&&key.length===1){
-  e.preventDefault();walkKeys.add(key);syncRender();
- }
+ if('wasd'.includes(key)&&key.length===1){e.preventDefault();walkKeys.add(key);syncRender()}
 });
 document.addEventListener('keyup',e=>{
  const key=e.key.toLowerCase();
- if(walkKeys.delete(key)){e.preventDefault();syncRender();}
+ if(walkKeys.delete(key)){e.preventDefault();syncRender()}
 });
-window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender();});
+window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick();syncRender()});
 function stepAvatar(dt){
- if(!hasWalkInput()){
-  // The avatar rests on the ground when the joystick or keys are released.
-  if(exploring)keeper.position.y=.46;
-  return false;
- }
+ if(!hasWalkInput()){keeper.position.y=.46;return false}
  const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
- // Rotate the original librarian silhouette toward the walking direction.
  const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
  keeper.rotation.y+=delta*Math.min(1,dt*11);
  walkDistance+=next.distance;walkPhase+=dt*8;
  keeper.position.y=.46+(!preferReduced?Math.sin(walkPhase*2)*.045:0);
- look.set(keeper.position.x,2.1,keeper.position.z);
+ // Camera follows the character's world X/Z only; no automatic zoom, pitch or focal-height change.
+ look.x=keeper.position.x;
+ look.z=keeper.position.z;
  cameraUpdate();return true;
 }
 
@@ -1040,7 +1013,7 @@ function paint(now){
  }
  if(isMotion()&&!reduced){
    dust.rotation.y=elapsed*.002;
-   if(!exploring)keeper.rotation.y=Math.sin(elapsed*.23)*.06;
+   if(!hasWalkInput())keeper.rotation.y=Math.sin(elapsed*.23)*.06;
    glow.emissiveIntensity=.50+.20*Math.sin(elapsed*2);
  }
  renderer.render(scene,camera);
@@ -1073,8 +1046,8 @@ notifyReady({
  select(id){selectedId=id;invalidate()},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
- reset(){theta=0;phi=.17;distance=exploring?6.8:(window.innerWidth<650?15.8:14.1);look.set(exploring?keeper.position.x:0,exploring?2.1:2.9,exploring?keeper.position.z:0);cameraUpdate();invalidate()},
- isExploreMode(){return exploring},
+ reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
+ isExploreMode(){return true},
  syncRender,invalidate
 });
 exploreUI.hidden=false;
