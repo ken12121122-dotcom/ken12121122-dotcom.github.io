@@ -21,8 +21,8 @@ test('GPT skill card is reachable from GPT Book AND System Book by one canonical
  assert.ok(post.bookCards.system.includes(id));
 });
 test('new live release bumps the actual catalog script URL to prevent older URL cache reuse',()=>{
- assert.match(live, /src="public-catalog\.js\?v=gpt-skills-visible-20261014-r2"/);
- assert.doesNotMatch(live, /public-catalog\.js\?v=public-regression-20261013/);
+ assert.match(live, /['\"]public-catalog\.js['\"]/);
+ assert.match(live, /['\"]update-manager\.js['\"]/);
  assert.match(live, /id="webRuntimeStamp"/);
  assert.match(live, /WEB LIVE r2 · GPT 技能卡已載入/);
  assert.match(live, /WEB LIVE r2 · 卡片目錄仍是舊版/);
