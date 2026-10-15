@@ -18,18 +18,22 @@ function group(id){return scene.children.find(x=>x.userData.atlasId===id)}
 function meshSlot(id,index){let mesh;group(id).traverse(x=>{if(x.userData.atlasSlot===index)mesh=x});return mesh}
 function point(obj){scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);const p=obj.getWorldPosition(new THREE.Vector3()).project(camera);return {clientX:(p.x+1)*450,clientY:(1-p.y)*325,pointerId:1}}
 function moveTo(id,index,card){const from=point(card.group),to=point(meshSlot(id,index));assert.equal(runtime.pointerDown(from),true);runtime.pointerMove({...to,clientX:to.clientX+1});runtime.pointerUp(to);tick(1)}
-assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(700);assert.equal(runtime.inspect().atlasOpen,0);tick(1200);assert.equal(runtime.inspect().atlasOpen,1);assert.equal(smokes,removed);
+assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(250);assert.equal(runtime.inspect().atlasOpen,0);tick(1200);assert.equal(runtime.inspect().atlasOpen,1);assert.ok(runtime.inspect().atlasFacingKeeper>.8,'open pages face the character rather than the overview camera');assert.equal(smokes,removed);
+// A new Book command reverses the current transition rather than waiting for it.
+runtime.toggle();tick(180);runtime.toggle();tick(1200);assert.equal(runtime.inspect().atlasVisible,true);assert.equal(runtime.inspect().atlasOpen,1);
 // Repeated Book commands queue the final desired state without losing card placement.
 runtime.toggle();tick(300);assert.ok(runtime.inspect().atlasOpen<1);assert.equal(runtime.inspect().atlasVisible,true);tick(1400);assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(1900);
+runtime.focus(State.ATLAS);tick(900);runtime.exitFocus();tick(900);
 const card=craft.createBlankCard(storage,{randomUUID:()=> 'scene-card'});refresh();
 for(let i=0;i<10;i++){
  if(i)craft.placeCard(storage,card.id,null);refresh();const entry=cards.get(card.id);entry.group.visible=true;entry.group.position.set(0,2,4);entry.group.quaternion.copy(camera.quaternion);
  moveTo(State.ATLAS,i,entry);assert.equal(craft.listCards(storage)[0].slotIndex,i,'raycast/drop into slot '+i);assert.equal(craft.listCards(storage)[0].containerId,State.ATLAS);
 }
 // Reader can only open the card physically occupying the right reader slot.
-let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
+runtime.focus(State.ATLAS);tick(900);let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
 runtime.placeCollection();tick(1900);assert.equal(runtime.inspect().collectionOpen,1);assert.equal(outer.visible,false);
 for(let i=0;i<18;i++){moveTo(State.COLLECTION,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].slotIndex,i)}assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
+runtime.exitFocus();tick(900);
 // Focus is an actual interpolated camera; exit returns to the pre-focus pose.
 const before=camera.position.clone();runtime.focus(State.ATLAS);tick(400);const halfway=camera.position.clone();assert.ok(halfway.distanceTo(before)>.01);tick(500);const focused=camera.position.clone();const heading=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);assert.ok(Math.abs(runtime.movementYaw-Math.atan2(heading.x,heading.z))<1e-9);assert.ok(halfway.distanceTo(focused)>.01);
 host.innerWidth=412;host.innerHeight=915;camera.aspect=412/915;camera.updateProjectionMatrix();tick(200);assert.ok(Number.isFinite(camera.position.z));runtime.exitFocus();tick(900);assert.ok(camera.position.distanceTo(before)<1e-6);

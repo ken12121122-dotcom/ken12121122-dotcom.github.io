@@ -15,13 +15,13 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function stageData(){canvas.parentElement.dataset.atlas=atlas.desired?'summoned':'hidden';canvas.parentElement.dataset.atlasFocus=focus?.id||'';canvas.parentElement.dataset.collection=saved.collection}
  function audioStart(){try{const AC=root.AudioContext||root.webkitAudioContext;if(AC&&!audio)audio=new AC();if(audio?.state==='suspended')audio.resume().catch(()=>{})}catch{}}
  function sound(show){audioStart();if(!audio)return;try{const n=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=show?'sine':'triangle';o.frequency.setValueAtTime(show?245:360,n);o.frequency.exponentialRampToValueAtTime(show?760:85,n+.23);g.gain.setValueAtTime(.001,n);g.gain.exponentialRampToValueAtTime(.12,n+.025);g.gain.exponentialRampToValueAtTime(.001,n+.3);o.connect(g).connect(audio.destination);o.start(n);o.stop(n+.32)}catch{}}
- function setInnerPose(m){const peer=m===atlas?collection:atlas;const direction=peer.group.visible?new THREE.Vector3(0,0,1).applyQuaternion(peer.rotation):camera.position.clone().sub(keeper.position);direction.y=0;if(direction.lengthSq()<.1)direction.set(0,0,1);direction.normalize();const sideways=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction);
-  const yaw=Math.atan2(direction.x,direction.z);m.offset=direction.multiplyScalar(1.95).addScaledVector(sideways,m===atlas?-.95:.95);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
+ function setInnerPose(m){const peer=m===atlas?collection:atlas;const direction=peer.group.visible?new THREE.Vector3(0,0,-1).applyQuaternion(peer.rotation):camera.position.clone().sub(keeper.position);direction.y=0;if(direction.lengthSq()<.1)direction.set(0,0,1);direction.normalize();const sideways=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction);
+  const yaw=Math.atan2(direction.x,direction.z);m.offset=direction.multiplyScalar(1.95).addScaledVector(sideways,m===atlas?-.95:.95);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
   // Both books share the same page-facing orientation for cross-book drag.
   if(peer.group.visible)m.rotation.copy(peer.rotation);
  }
- function begin(m,show){if(m.animation)return;m.group.visible=true;if(!m.offset)setInnerPose(m);m.animation={show,start:performance.now()};sound(show);if(show)m.puffs=smoke.create(m.center.clone(),false);invalidate()}
- function toggle(){cancelPointer();audioStart();atlas.desired=!atlas.desired;if(!atlas.animation)begin(atlas,atlas.desired);syncUI()}
+ function begin(m,show,interrupt=false){if(m.animation&&!interrupt)return;const fromOpen=m.group.visible?m.open:0,fromScale=m.group.visible?m.group.scale.x/BASE:0;if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.group.visible=true;if(!m.offset)setInnerPose(m);m.animation={show,start:performance.now(),fromOpen,fromScale};sound(show);if(show)m.puffs=smoke.create(m.center.clone(),false);invalidate()}
+ function toggle(){cancelPointer();audioStart();atlas.desired=!atlas.desired;begin(atlas,atlas.desired,true);syncUI()}
  function summon(){if(!atlas.desired)toggle();else focusBook(State.ATLAS)}
  function placeCollection(){cancelPointer();saved.collection='inner';saved.collectionOpen=true;persist();collection.desired=true;setInnerPose(collection);setCollectionActive(true);if(!collection.animation)begin(collection,true);syncUI();invalidate()}
  function foldCollection(toShelf=false){cancelPointer();saved.collectionOpen=false;persist();collection.desired=false;collection.afterClose=toShelf?'shelf':'closed';if(!collection.animation)begin(collection,false);syncUI();invalidate()}
@@ -104,9 +104,9 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    if(!m.group.visible)continue;
    if(!m.dragging){m.center.set(keeper.position.x+(m.offset?.x||0),2.35,keeper.position.z+(m.offset?.z||0));m.group.position.copy(m.center);m.group.quaternion.copy(m.rotation)}
    if(m.animation){const a=m.animation,age=now-a.start;let complete=false;
-    if(a.show){const t=reduced?1:Math.min(1,age/1800);m.group.scale.setScalar(BASE*(t<.35?Math.max(.001,t/.35):1));m.open=Math.max(0,Math.min(1,(t-.42)/.58));if(m.puffs)smoke.update(m.puffs,m.center,age,1800);complete=t>=1}
-    else if(m===collection&&m.afterClose==='closed'){const t=reduced?1:Math.min(1,age/650);m.open=1-t;m.group.scale.setScalar(BASE);complete=t>=1}
-    else{const t=reduced?1:Math.min(1,age/1600);m.open=1-Math.min(1,t/.45);if(t>=.45&&!m.puffs)m.puffs=smoke.create(m.center.clone(),false);if(m.puffs)smoke.update(m.puffs,m.center,Math.max(0,age-720),880);m.group.scale.setScalar(BASE*Math.max(.001,t<.5?1:1-(t-.5)*2));complete=t>=1}
+    if(a.show){const t=reduced?1:Math.min(1,age/1100);m.group.scale.setScalar(BASE*Math.max(.001,a.fromScale+(1-a.fromScale)*Math.min(1,t/.35)));m.open=a.fromOpen+(1-a.fromOpen)*Math.max(0,Math.min(1,(t-.35)/.65));if(m.puffs)smoke.update(m.puffs,m.center,age,1100);complete=t>=1}
+    else if(m===collection&&m.afterClose==='closed'){const t=reduced?1:Math.min(1,age/650);m.open=a.fromOpen*(1-t);m.group.scale.setScalar(BASE);complete=t>=1}
+    else{const t=reduced?1:Math.min(1,age/1000);m.open=a.fromOpen*(1-Math.min(1,t/.45));if(t>=.45&&!m.puffs)m.puffs=smoke.create(m.center.clone(),false);if(m.puffs)smoke.update(m.puffs,m.center,Math.max(0,age-450),550);m.group.scale.setScalar(BASE*a.fromScale*Math.max(.001,t<.5?1:1-(t-.5)*2));complete=t>=1}
     m.setOpen(m.open);
     if(complete){if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.animation=null;m.group.scale.setScalar(BASE);
      if(!a.show){if(m===collection&&m.afterClose==='closed'){m.group.visible=true;m.open=0;m.setOpen(0)}else{m.group.visible=false;if(m===collection){saved.collection='shelf';persist();setCollectionActive(false)}}if(focus?.id===m.id)exitFocus()}
@@ -136,6 +136,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:()=>!!collection.dragging,
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
-  inspect(){return {atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);

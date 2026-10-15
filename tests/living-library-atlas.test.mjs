@@ -51,3 +51,12 @@ test('new scene modules compile and preserve shared public/native entries',async
  for(const name of ['atlas-runtime.js','atlas-model.js','atlas-voice.js'])assert.doesNotThrow(()=>new Function(require('node:fs').readFileSync(new URL('../living-library/live/'+name,import.meta.url),'utf8')));
  const page=await readFile(new URL('../living-library/live/atlas-controls.html',import.meta.url),'utf8');for(const s of page.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))assert.doesNotThrow(()=>new Function(s[1]));
 });
+test('browser interim Book fires immediately once per recognized word, final result does not repeat it',()=>{
+ const x=webVoice();x.voice.start();assert.equal(x.recognizer.interimResults,true);
+ const event=(text,isFinal=false)=>({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal})]});
+ x.recognizer.onresult(event('Book'));assert.equal(x.called,1);
+ x.recognizer.onresult(event('Book',true));assert.equal(x.called,1);
+ x.recognizer.onresult(event('Book Book'));assert.equal(x.called,2);
+ x.recognizer.onresult(event('Book Book',true));assert.equal(x.called,2);
+ x.recognizer.onresult(event('notebook'));assert.equal(x.called,2);
+});

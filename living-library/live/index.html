@@ -1702,6 +1702,7 @@ function paint(now){
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(entry.id!=='cardCollection')entry.group.visible=!atlasRuntime?.inFocus;
+ keeper.visible=!atlasRuntime?.inFocus;
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
