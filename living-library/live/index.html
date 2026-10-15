@@ -352,7 +352,7 @@ function swapCardSlots(bookId,first,second){
  swapFrom=null;renderFunctions(book());toast('已交換卡片位置（不修改原始資料）');return true;
 }
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
-function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
