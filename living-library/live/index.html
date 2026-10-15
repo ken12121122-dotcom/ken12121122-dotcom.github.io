@@ -396,7 +396,8 @@ let readerCard=null;
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
  if(event.data?.kind!=='living-library-local-objects-updated')return;
- if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id))return;
+ if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
+    !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
  if(!syncPlayerObjects())return;
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
 });
