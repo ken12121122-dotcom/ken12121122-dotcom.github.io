@@ -57,6 +57,10 @@ async function main(){
   await p.goto(origin+'/living-library/live/index.html',{waitUntil:'domcontentloaded'});
   await p.locator('#fallback.show').waitFor({timeout:15000});
   await dismissUpdate(p);
+  for(const button of await p.locator('button[id]').all()){
+   assert.ok((await button.getAttribute('aria-label'))?.trim(),'Missing accessible action name');
+   assert.doesNotMatch(await button.textContent(),/[\p{L}\p{N}]/u,'Action button contains visible words');
+  }
   for(const [id,icon,label] of [['prevBtn','‹','前一本'],['openBtn','▤','展開書頁'],['nextBtn','›','下一本']]){
    const button=p.locator('#'+id);
    assert.equal(await button.innerText(),icon);

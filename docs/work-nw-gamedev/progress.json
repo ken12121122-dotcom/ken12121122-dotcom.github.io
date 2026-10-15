@@ -775,8 +775,8 @@
   },
   "ui_design_standard": {
     "id": "NW-UI-ICON-FIRST-001",
-    "source": "OWNER project conversation 2026-10-15: 所有按鈕可以不要有文字，如果一定要有盡量極簡化；指定為 UI 設計標準",
-    "rule": "Icon-first controls; shortest unambiguous labels where needed; retain complete accessible names, content identity and touch targets",
+    "source": "OWNER project conversation 2026-10-15, latest correction: 我認為直接不要按鈕文字",
+    "rule": "ICON_ONLY_ACTION_BUTTONS: no visible button words. Full accessible names/tooltips and separate permission explanations remain; content titles are not action labels.",
     "registry_path": "living-library/UI-MANAGER-REGISTRY.md",
     "implementation_scope": "living-library/live/index.html action controls, including reader/dialog and dynamic move action; not all embedded applications or native screens",
     "candidate_base_sha": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
