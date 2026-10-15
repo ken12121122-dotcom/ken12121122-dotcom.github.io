@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111929">
-<title>卡片創造術｜念動世界・試作</title>
+<title>卡片創造術｜念動世界・3D 召喚</title>
 <style>
 :root{color-scheme:dark;--bg:#101a2a;--panel:#1a2a3e;--ink:#f6f0df;--line:#8c7963;--gold:#e9c996;--soft:#bec6d2}
 *{box-sizing:border-box}
@@ -47,7 +47,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <main>
 <header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
-<p>觸碰符印，創造一張真正有獨立身分的空白卡。卡片會保存在這部裝置，並保持懸浮在人物身邊，尚未放入任何書。之後再測試製書與放卡；目前不具備執行能力。</p>
+<p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入獨立的遠距環繞軌道，尚未放入任何書。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
   <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
@@ -80,7 +80,11 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  let currentId=null;
  const cards=()=>Craft.listCards(localStorage);
  function status(text,error=false){$('status').textContent=text;$('status').style.color=error?'#ffbca8':'#a9e0c4'}
- function notify(){if(window.parent!==window)window.parent.postMessage({kind:'living-library-local-objects-updated'},location.origin)}
+ function notify(action,cardId){
+  if(window.parent!==window)window.parent.postMessage({
+   kind:'living-library-local-objects-updated',action,cardId
+  },location.origin);
+ }
  function show(card,animate=false){
   currentId=card?.id||null;
   $('cardTitle').textContent=card?.title||'空白卡片';
@@ -107,14 +111,14 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   }
  }
  $('createCard').onclick=()=>{
-  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify();status('✦ 空白卡已生成，保持懸浮中。返回 3D 世界即可看到，尚未放入任何書。')}
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
  $('editForm').addEventListener('submit',event=>{
   event.preventDefault();if(!currentId)return;
   try{
    const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
-   show(card);refresh();notify();status('✓ 已儲存；卡片會繼續懸浮，等待未來放進你創造的書。');
+   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存；卡片仍保持懸浮，等待放進你創造的書。');
   }catch(e){status(e.message||'儲存失敗',true)}
  });
  try{
