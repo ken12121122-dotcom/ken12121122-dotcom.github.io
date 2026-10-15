@@ -23,7 +23,7 @@ test('all 64 new card slots remain on the inner lane between avatar and book orb
  assert.equal(Books.orbitPosition(0,0).ring,0);
 });
 test('cards have separate angular spacing across all tiers, with stable IDs across rotations',()=>{
- for(let r=0,offset=0;r<C.CAPACITIES.length;offset+=C.CAPACITIES[r++]]){
+ for(let r=0,offset=0;r<C.CAPACITIES.length;offset+=C.CAPACITIES[r++]){
   const n=C.CAPACITIES[r],points=Array.from({length:n},(_,i)=>C.orbitPosition(offset+i,0));
   for(let i=0;i<n;i++){
    const a=points[i],b=points[(i+1)%n];
