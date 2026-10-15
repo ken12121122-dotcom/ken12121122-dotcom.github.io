@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T04:33:34.396Z",
+  "updated_at": "2026-10-15T04:37:24.769Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -81,7 +81,8 @@
       "state": "P2_PREPARATORY_ONLY",
       "acceptance": "NOT_TESTED",
       "evidence_refs": [
-        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+        "docs/work-nw-gamedev/evidence/p2-local-save.json",
+        "docs/work-nw-gamedev/evidence/p2-object-backup.json"
       ],
       "blockers": []
     },
@@ -125,7 +126,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P2-OBJECT-BACKUP-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -420,7 +421,7 @@
     },
     {
       "work_item_id": "P2-OBJECT-BACKUP-001",
-      "state": "VERIFYING_CI",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "effective_fixes": 0,
       "failure_fingerprints": [],
@@ -428,7 +429,11 @@
       "rollback_sha": "670de4ec2bdc3176d83548786bdb738259475860",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p2-object-backup.json"
-      ]
+      ],
+      "candidate_sha": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+      "ci_run_id": 38682223106,
+      "result": "Existing card-creation page now offers icon-only full local object backup download and read-only checksum/count inspection; real Chromium synthetic download/offline inspection/tamper rejection PASS. No import, restore, cloud upload or production release.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified."
     }
   ],
   "last_run": {
@@ -436,13 +441,15 @@
     "started_at": "2026-10-15T04:30:53.044Z",
     "attempts": 1,
     "failure_fingerprints": [],
-    "next_action": "Read-only ObjectCraft backup and recovery inspection"
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
+    "ended_at": "2026-10-15T04:37:24.769Z",
+    "effective_fixes": 0
   },
   "execution": {
-    "lease_owner": "NW-CYCLE-20261015-13",
-    "lease_expires_at": "2026-10-15T04:55:53.044Z",
-    "heartbeat_at": "2026-10-15T04:34:52.973Z",
-    "state": "VERIFYING_CI",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T04:37:24.769Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -619,12 +626,20 @@
       "run_id": 38677077443,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38677077443",
       "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
+    },
+    {
+      "result": "PASS",
+      "commit": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+      "checkout_commit": "058cef0f0b0fe56c68c4bb68e84311ccc382be2a",
+      "run_id": 38682223106,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38682223106",
+      "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
     }
   ],
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 321,
+      "tests": 336,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
@@ -644,18 +659,18 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38677077443,
-      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
+      "ci_run_id": 38682223106,
+      "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
     },
-    "live_scene_change": "NO_NEW_SCENE_CHANGE_BY_THIS_SLICE; preserved main49d creation/orbit code through merge",
+    "live_scene_change": "NO_NEW_SCENE_CORE_CHANGE_BY_THIS_SLICE; upstream main da45241 smoke-recycle scene blobs preserved exactly",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "55bcb892f2ee1f51c65538009f535df04411ce29",
-      "checkout_commit": "33d31775dfb0b5de1a8da27683d399932869f5d9",
-      "run_id": 38677077443,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38677077443",
-      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
+      "commit": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+      "checkout_commit": "058cef0f0b0fe56c68c4bb68e84311ccc382be2a",
+      "run_id": 38682223106,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38682223106",
+      "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -663,7 +678,19 @@
       "cases": 6
     },
     "playable_features_added_to_production": 0,
-    "rune_release": "NOT_RELEASED"
+    "rune_release": "NOT_RELEASED",
+    "local_object_backup": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "features": [
+        "download full local cards/books/recycle backup",
+        "inspect selected backup checksum/counts offline without restoring"
+      ],
+      "ui_path": "living-library/live/card-creation.html",
+      "canonical_card_id": "public.gaming.card.creation",
+      "browser_cases": 3,
+      "actual_restore": "NOT_IMPLEMENTED",
+      "android_download_file_picker": "NOT_TESTED"
+    }
   },
   "owner_approvals": [
     {
@@ -728,12 +755,12 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T03:38:26.319Z",
+    "observed_at": "2026-10-15T04:37:24.769Z",
     "phases": [
       {
         "id": "P0",
         "result": "BLOCKED",
-        "gap": "Latest main creation/orbit changes preserved and public/fallback regressions rerun. Full WebGL2/staging/device checklist remains unverified; existing phone report only PASS_REPORTED_BY_OWNER."
+        "gap": "Latest upstream main da45241 smoke-recycle preserved exactly; public/fallback regression PASS. Cloud GPU condition unchanged, no new GPU troubleshooting; full staging/device/gesture gates unverified. Owner visual observation remains PASS_REPORTED_BY_OWNER only."
       },
       {
         "id": "P1",
@@ -743,7 +770,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "Main now has blank-card/book creation; rune/spell book editor, unified player-data contract, device save/recovery and export remain unverified. Preserve separate ObjectCraft localStorage and SpellStore IndexedDB."
+        "gap": "ObjectCraft exact-text export and read-only checksum/count inspection now candidate UI tested including recycled objects. Actual import/recovery, Rune book editor, unified data contracts, migration and Android device validation remain incomplete; no automatic nw.spell.v1 conversion."
       },
       {
         "id": "P3",
@@ -768,14 +795,14 @@
       {
         "id": "P7",
         "result": "NOT_TESTED",
-        "gap": "Only reviewed UI released via PR221/Pages/HTTP; full Rune Engine/staging/device gates incomplete"
+        "gap": "Separate main releases observed with successful CI/Pages/proof runs; this backup slice remains draft PR only. No staging, Android download/file-picker or complete Rune release."
       }
     ]
   },
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "SpellStore IDB cases pass. Main ObjectCraft blank-card/book localStorage is a distinct contract; source/Node verified but owner's actual device records/count are not remotely observable or adapted to this outbox."
+      "scope": "Prior real IDB SpellStore evidence retained. ObjectCraft now has exact-text full local backup/download and checksum/count inspection candidate PASS, including books and recycled cards, no source writes. Real restore and Android download/file-picker NOT_TESTED. ObjectCraft still separate from SpellStore/outbox."
     },
     "outbox": {
       "result": "PASS_ISOLATED_MOCK_DELIVERY",
@@ -794,11 +821,11 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T03:38:26.319Z",
+    "observed_at": "2026-10-15T04:37:24.769Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
-    "preserved_passes": "Reliable prior passes and defect budgets retained; current main merged without rewriting new creation logic.",
-    "highest_value_gap": "Actual ObjectCraft local data export/recovery and explicit future outbox adapter; real sync remains blocked on scoped authorization",
-    "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates.",
+    "preserved_passes": "Existing reliable PASS and per-defect retry budgets retained. Main c771ab9 then da45241 merged as true parents, preserving newly released cinematic/recycle effects.",
+    "highest_value_gap": "Versioned ObjectCraft outbox adapter and cross-context coordination; private transport still WAIT_OWNER",
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
     "production_playable_feature_delta": 0
   },
   "ui_clean_view": {
@@ -921,17 +948,50 @@
     "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json"
   },
   "upstream_main_reconciliation": {
-    "from_main": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
-    "to_main": "49d373c114bc1a312e72d0a9627333824a8505a6",
+    "from_main": "49d373c114bc1a312e72d0a9627333824a8505a6",
+    "to_main": "da45241e0134a92de22e963d1121607e17f01936",
     "merge_result": "CLEAN_PRESERVE_ALL_UPSTREAM_CHANGES",
     "observed_features": [
-      "Blank card/book creation and dedicated inner card orbit/smoke on main",
-      "ObjectCraft player objects in independent localStorage key living-library-player-objects-v1"
+      "Card/blank-book creation, inner orbit and configurable parameters",
+      "Full card creation cinematic and reversible recycle",
+      "Newly published smoke disappearance for recycled cards"
     ],
-    "limits": "ObjectCraft blank objects are not nw.spell.v1 SpellStore records and are not automatically included in this outbox; no conversion or private sync claimed",
-    "main_ci": 38675561879,
-    "pages": 38675561211,
-    "http_proof": 38675561949,
-    "owner_card_count": "NOT_OBSERVABLE_FROM_REPO"
+    "limits": "Main workflow status observed; no new device acceptance. ObjectCraft remains separate from nw.spell.v1 and outbox. Player data not read or uploaded.",
+    "main_ci": 38681574416,
+    "pages": 38681574324,
+    "http_proof": 38681574363,
+    "owner_card_count": "NOT_OBSERVABLE_FROM_REPO",
+    "observed_workflow_runs": [
+      {
+        "id": 38682244670,
+        "name": "Task",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 38681574416,
+        "name": "Living Library web regression",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 38681574397,
+        "name": "Task",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 38681574324,
+        "name": "pages build and deployment",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 38681574363,
+        "name": "Living Library deployed website proof",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
   }
 }

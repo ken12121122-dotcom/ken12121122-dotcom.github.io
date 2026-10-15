@@ -1,10 +1,10 @@
 {
   "schema": "nw-object-backup-evidence-v1",
   "work_item_id": "P2-OBJECT-BACKUP-001",
-  "observed_at": "2026-10-15T04:33:34.396Z",
+  "observed_at": "2026-10-15T04:37:24.769Z",
   "base_sha": "670de4ec2bdc3176d83548786bdb738259475860",
   "upstream_main": "da45241e0134a92de22e963d1121607e17f01936",
-  "state": "VERIFYING_CI",
+  "state": "PASS_PREPARATORY_ONLY",
   "changes": [
     "Read-only versioned full ObjectCraft export with exact source text, IDs/revisions, unknown fields and recycled records preserved",
     "Existing card creation page icon-only download and file integrity/count inspection; no restore/import/storage writes or migration",
@@ -22,9 +22,24 @@
       "tests": 6
     },
     "browser": {
-      "result": "NOT_TESTED",
-      "pending": "CI"
-    }
+      "schema": "nw-object-backup-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+          "result": "PASS"
+        },
+        {
+          "case": "offline file inspection validates counts without restoring or sending",
+          "result": "PASS"
+        },
+        {
+          "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+          "result": "PASS"
+        }
+      ]
+    },
+    "regression": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
   },
   "limits": {
     "staging": "NOT_TESTED",
@@ -42,5 +57,25 @@
     "Public/private/GBA/GEN2 and original interactions unchanged by this slice"
   ],
   "rollback": "Candidate-only source rollback to 670de4e; no player data migrations",
-  "upstream_reconciliation": "Clean merge of newly published recycle disappearance smoke; scene files copied by upstream blob SHA unchanged"
+  "upstream_reconciliation": "Clean merge of newly published recycle disappearance smoke; scene files copied by upstream blob SHA unchanged",
+  "candidate_sha": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+  "ci": {
+    "result": "PASS",
+    "commit": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+    "checkout_commit": "058cef0f0b0fe56c68c4bb68e84311ccc382be2a",
+    "run_id": 38682223106,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38682223106",
+    "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
+  },
+  "effective_fixes": 0,
+  "failure_fingerprints": [],
+  "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
+  "source_files": [
+    "living-library/live/object-backup.js",
+    "living-library/live/card-creation.html",
+    "tests/living-library-object-backup.test.mjs",
+    "tests/browser/object-backup.cjs",
+    "tests/browser/package.json"
+  ],
+  "requirements_current_run": "Library metadata accessible, direct read returned no readable content; local zip absent. Explicit user cycle contract applied; not claiming current zip contents read."
 }
