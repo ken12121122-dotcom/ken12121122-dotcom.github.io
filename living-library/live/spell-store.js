@@ -35,6 +35,7 @@
    });
   }
   get(spell_id){if(!validID(spell_id))fail('INVALID_SPELL_ID');return this.#read('spells',spell_id)}
+  list(){return this.#read('spells')}
   pending(){return this.#read('outbox')}
   async due({now=Date.now()}={}){
    if(!validTime(now))fail('INVALID_SYNC_TIME');
