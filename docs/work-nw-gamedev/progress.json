@@ -14,7 +14,7 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "c771ab9524e4030bdb545657b580c1ee7a93052e",
+    "main_sha": "da45241e0134a92de22e963d1121607e17f01936",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
@@ -441,7 +441,7 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-13",
     "lease_expires_at": "2026-10-15T04:55:53.044Z",
-    "heartbeat_at": "2026-10-15T04:33:34.396Z",
+    "heartbeat_at": "2026-10-15T04:34:52.973Z",
     "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },

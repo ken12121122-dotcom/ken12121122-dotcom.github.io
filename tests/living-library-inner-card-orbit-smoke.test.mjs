@@ -51,7 +51,7 @@ test('new creation event exits its iframe book before visible smoke in the origi
  assert.match(html,/hasCardSummon\(\)/);
  assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(html,/BoxGeometry\(\.45,\.66,\.025\)/);
- assert.match(html,/refreshFloatingCards,queueCardSummon,startCardSummon,exitCardFocus/);
+ assert.match(html,/refreshFloatingCards,queueCardSummon,startCardSummon,startCardRecycle,exitCardFocus/);
  const p=await read('living-library/live/card-placement.js');
  assert.match(p,/Independent|INNER|Inner/);
  assert.doesNotMatch(p,/6\.35|7\.42|8\.48/);
@@ -77,7 +77,7 @@ test('System Book contains bounded working game-parameter controls, not a new du
  assert.match(page,/id="resetCardParams" aria-label="恢復卡片參數預設值"/);
  assert.match(page,/restoreCardValues\(cardParameterDefaults\)/);
  assert.match(live,/for\(const \[field,limits\] of Object\.entries/);
- assert.match(live,/const entry=items\[i\],p=CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
+ assert.match(live,/const p=CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(live,/age\/duration/);
  assert.match(live,/\*controlPrefs\.cardSize/);
  assert.doesNotMatch(page,/github_pat_|sk-proj-/);

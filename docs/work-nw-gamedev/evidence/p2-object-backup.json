@@ -3,7 +3,7 @@
   "work_item_id": "P2-OBJECT-BACKUP-001",
   "observed_at": "2026-10-15T04:33:34.396Z",
   "base_sha": "670de4ec2bdc3176d83548786bdb738259475860",
-  "upstream_main": "c771ab9524e4030bdb545657b580c1ee7a93052e",
+  "upstream_main": "da45241e0134a92de22e963d1121607e17f01936",
   "state": "VERIFYING_CI",
   "changes": [
     "Read-only versioned full ObjectCraft export with exact source text, IDs/revisions, unknown fields and recycled records preserved",
@@ -13,7 +13,7 @@
   "tests": {
     "local_node": {
       "result": "PASS",
-      "tests": 333,
+      "tests": 336,
       "fail": 0,
       "skipped": 0
     },
@@ -41,5 +41,6 @@
     "Existing player key and separate SpellStore IndexedDB unchanged",
     "Public/private/GBA/GEN2 and original interactions unchanged by this slice"
   ],
-  "rollback": "Candidate-only source rollback to 670de4e; no player data migrations"
+  "rollback": "Candidate-only source rollback to 670de4e; no player data migrations",
+  "upstream_reconciliation": "Clean merge of newly published recycle disappearance smoke; scene files copied by upstream blob SHA unchanged"
 }
