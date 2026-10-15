@@ -199,6 +199,10 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 body.clean-view>.top,body.clean-view>.catalog,body.clean-view>.bottom{display:none!important}
 body.clean-view #cleanViewToggle{opacity:.45}
 body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-visible{opacity:1}
+#cardFocusActions[hidden]{display:none!important}
+#cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
+#cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
+#cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
@@ -206,6 +210,9 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div id="cardFocusActions" hidden aria-label="卡片專注模式">
+<button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
+<button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
@@ -263,7 +270,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','render-capability.js','gen2-editor.js','update-manager.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -282,6 +289,24 @@ const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
+const ObjectCraft=window.LivingObjectCraft;
+// Player-made objects use LOCAL, non-GEN2 identities. They never alter the public catalog's source registry.
+function syncPlayerObjects(){
+ if(!ObjectCraft)return false;
+ let records;
+ try{records=ObjectCraft.listBooks(localStorage)}catch(e){console.warn('Local object data protected from overwrite',e);return false}
+ for(let i=BOOKS.length-1;i>=0;i--)if(BOOKS[i].id.startsWith('local.book.'))BOOKS.splice(i,1);
+ for(const key of Object.keys(BOOK_CARDS))if(key.startsWith('local.book.'))delete BOOK_CARDS[key];
+ for(const book of records){
+  if(BOOKS.some(b=>b.id===book.id))continue;
+  BOOKS.push({id:book.id,name:book.title,kind:'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
+   description:book.description,target:'空白卡槽／未建立技能',icon:'◇',color:'#3c7880',
+   active:book.active!==false,sourceLayer:'local',kb_id:null,publicId:null,openingMode:book.openingMode});
+  BOOK_CARDS[book.id]=[...(book.contentIds||[])];
+ }
+ return true;
+}
+syncPlayerObjects();
 const Updates=window.LivingLibraryUpdates;
 const previousUpdate=Updates?.read(localStorage,Updates.BASELINE_KEY)||null;
 const pendingUpdate=Updates?.read(sessionStorage,Updates.PENDING_KEY)||null;
@@ -327,7 +352,7 @@ function swapCardSlots(bookId,first,second){
  swapFrom=null;renderFunctions(book());toast('已交換卡片位置（不修改原始資料）');return true;
 }
 function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
-function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>b.active=ids.has(b.id))}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
@@ -358,6 +383,8 @@ function isLocalFunctionPage(url){
     new URL('./gpt-skills.html',current).pathname,
     new URL('./knowledge-search.html',current).pathname,
     new URL('./system-controls.html',current).pathname,
+    new URL('./card-creation.html',current).pathname,
+    new URL('./book-creation.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -365,6 +392,15 @@ function isLocalFunctionPage(url){
  }catch(_){return false}
 }
 let readerCard=null;
+// Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
+ if(event.data?.kind!=='living-library-local-objects-updated')return;
+ if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
+    !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
+ if(!syncPlayerObjects())return;
+ updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
+});
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
 window.addEventListener('message',event=>{
  if(event.origin!==window.location.origin||event.source!==document.getElementById('readerFrame').contentWindow)return;
@@ -516,6 +552,10 @@ function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b)
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;
+ if(b.sourceLayer==='local'&&ObjectCraft){
+  try{ObjectCraft.setBookActive(localStorage,b.id,active)}
+  catch(e){toast(e.message);return}
+ }
  b.active=active;storeBooks();
  // Close the overlay BEFORE the motion, otherwise WebGL's power budget pauses frames.
  closeBook();updateUI();
@@ -548,6 +588,7 @@ function applyProjection(projection){
  closeBook();projectionState=projection;const next=Catalog.buildCatalog(projection);
  BOOKS.splice(0,BOOKS.length,...next.books.map(b=>({...b,active:prefs.has(b.id)?prefs.get(b.id):prefs.has(b.publicId)?prefs.get(b.publicId):b.active})));
  for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];Object.assign(CARDS,next.cards);Object.assign(BOOK_CARDS,next.bookCards);
+ syncPlayerObjects();
  const selection=BOOKS.find(b=>b.id===selectedId||b.publicId===alias);selectedId=selection?.id||BOOKS[0]?.id||null;
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.select?.(selectedId);
  $('gen2Status').textContent=catalogStatus(projection?.source.commit);
@@ -617,6 +658,13 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ openLocalCardEditor(id){
+  let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
+  if(!card)return;
+  select('gaming');openBook();
+  openCardReader({id,title:card.title,desc:card.description||'',seal:'◇',number:'00',
+   guild:'本機空白卡 · 草稿',kind:'local_draft',url:'./card-creation.html?card='+encodeURIComponent(id)});
+ },
  controls:controlPrefs,saveControls,clampUnit,toast,
  notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
  // A renderer can fail at first paint even after the scene API is registered.
@@ -982,6 +1030,100 @@ function coverTex(b){
  return tex;
 }
 const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
+/* LOCAL CARD 3D: single persisted card identity, separate from public GEN2 cards. */
+const floatingCardMeshes=new Map();let focusedCard=null;
+function newFloatingCard(record){
+ const canvas=document.createElement('canvas');canvas.width=384;canvas.height=540;
+ const c=canvas.getContext('2d');
+ c.fillStyle='#eadbb9';c.fillRect(0,0,384,540);
+ c.strokeStyle='#97754b';c.lineWidth=12;c.strokeRect(17,17,350,506);
+ c.lineWidth=3;c.strokeRect(36,36,312,467);
+ c.textAlign='center';c.textBaseline='middle';c.fillStyle='#786040';
+ c.font='96px serif';c.fillText('◇',192,157);
+ c.font='bold 36px "Noto Sans TC",sans-serif';
+ const chars=[...String(record.title||'空白卡片')];
+ for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)c.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
+ c.font='22px monospace';c.fillText('BLANK CARD',192,470);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
+ const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
+ const group=new THREE.Group(),back=new THREE.Mesh(new THREE.BoxGeometry(.88,1.24,.03),frameMat);
+ const face=new THREE.Mesh(new THREE.PlaneGeometry(.85,1.21),faceMat);face.position.z=.02;
+ back.userData.localCardId=record.id;face.userData.localCardId=record.id;group.add(back,face);
+ scene.add(group);
+ return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now()};
+}
+function disposeFloatingCard(entry){
+ scene.remove(entry.group);
+ for(const mesh of entry.group.children)mesh.geometry.dispose();
+ entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+}
+function refreshFloatingCards(){
+ let records;try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
+ catch(e){console.warn('Player card storage read failed without overwrite',e);return}
+ const current=new Map(records.map(x=>[x.id,x]));
+ for(const [id,card] of [...floatingCardMeshes]){
+  if(current.has(id)&&current.get(id).revision===card.record.revision)continue;
+  if(focusedCard?.id===id)exitCardFocus();
+  disposeFloatingCard(card);floatingCardMeshes.delete(id);
+ }
+ for(const record of records)if(!floatingCardMeshes.has(record.id))
+  floatingCardMeshes.set(record.id,newFloatingCard(record));
+ window.LivingScene?.syncRender?.();
+}
+function updateFloatingCards(now){
+ const items=[...floatingCardMeshes.values()],total=items.length;
+ for(let i=0;i<total;i++){
+  const entry=items[i],ang=(i-(total-1)/2)*.4;
+  entry.group.position.set(keeper.position.x+Math.sin(ang)*2.14,
+   2.8+(preferReduced?0:Math.sin(now*.0014+i)*.085),
+   keeper.position.z+2.35+Math.cos(ang)*.08);
+  entry.group.quaternion.copy(camera.quaternion);
+  const fraction=preferReduced?1:Math.min(1,(now-entry.born)/880);
+  entry.group.scale.setScalar(.12+.88*(1-(1-fraction)*(1-fraction)));
+ }
+ if(focusedCard){
+  const item=floatingCardMeshes.get(focusedCard.id);
+  if(!item){exitCardFocus();return}
+  const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
+  const focusDistance=Math.max(1.26/(2*halfTan*.8),.9/(2*halfTan*camera.aspect*.86));
+  const target=item.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
+  const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
+  const smooth=t*t*(3-2*t);
+  camera.position.copy(focusedCard.from).lerp(target,smooth);
+  camera.lookAt(item.group.position);
+  item.group.quaternion.copy(camera.quaternion);item.group.scale.setScalar(1);
+ }
+}
+function focusCard(id){
+ const item=floatingCardMeshes.get(id);if(!item||focusedCard)return;
+ walkKeys.clear();resetJoystick(true);
+ const direction=camera.position.clone().sub(item.group.position).normalize();
+ if(direction.lengthSq()<.01)direction.set(0,0,1);
+ focusedCard={id,direction,from:camera.position.clone(),began:performance.now()};
+ document.getElementById('cardFocusActions').hidden=false;
+ syncRender();
+}
+function exitCardFocus(){
+ if(!focusedCard)return;
+ focusedCard=null;document.getElementById('cardFocusActions').hidden=true;
+ cameraUpdate();syncRender();
+}
+document.getElementById('cardFocusClose').addEventListener('click',exitCardFocus);
+document.getElementById('cardFocusEdit').addEventListener('click',()=>{
+ const id=focusedCard?.id;if(!id)return;exitCardFocus();
+ window.LivingLibrary.openLocalCardEditor?.(id);
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
+});
+function pickFloatingCard(ray){
+ const targets=[...floatingCardMeshes.values()].flatMap(x=>x.group.children);
+ const hit=ray.intersectObjects(targets,false)[0];
+ if(!hit?.object.userData.localCardId)return false;
+ focusCard(hit.object.userData.localCardId);return true;
+}
+
 const Placement3D=window.LivingBookPlacement;
 if(!Placement3D)throw Error('3D placement script was not loaded');
 const preferReduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -1108,13 +1250,14 @@ function rebuild(){
  }
  updateOrbit(currentOrbitTime,now);
 }
-let selectedId=null;rebuild();
+let selectedId=null;rebuild();refreshFloatingCards();
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
+ if(pickFloatingCard(ray))return 'card';
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
  bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
@@ -1142,6 +1285,7 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ if(focusedCard)return;
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1162,6 +1306,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(focusedCard)return;
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
  if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
@@ -1195,6 +1340,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(focusedCard)return;
  if(placingJoystick){
   if(joystickOrigin){
    const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
@@ -1226,6 +1372,7 @@ renderer.domElement.addEventListener('lostpointercapture',e=>{
 });
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();
+ if(focusedCard)return;
  distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
  cameraUpdate();
 },{passive:false});
@@ -1269,6 +1416,7 @@ function paint(now){
  if(isMotion()&&!reduced)elapsed+=dt;
  stepAvatar(dt);
  updateOrbit(elapsed,now);
+ updateFloatingCards(now);
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
@@ -1319,6 +1467,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
+ refreshFloatingCards,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
