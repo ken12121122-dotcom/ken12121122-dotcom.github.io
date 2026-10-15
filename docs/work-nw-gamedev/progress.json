@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T00:28:26.016Z",
+  "updated_at": "2026-10-15T00:31:02.218Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -120,7 +120,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P2-LOCAL-SAVE-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -370,31 +370,33 @@
     },
     {
       "work_item_id": "P2-LOCAL-SAVE-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P2_P5_PREPARATORY_ONLY; unloaded transactional spell store and pending outbox",
       "failure_fingerprints": [],
-      "result": "Implemented candidate: atomic card/outbox, optimistic revisions, exact retry dedupe, pending coalescing. Real Chromium IndexedDB 6 cases pending CI. Existing local Node 305/305 and Schema/56 parity fixtures PASS.",
+      "result": "Implemented atomic IndexedDB spell+outbox and exact retry/coalescing/version-conflict handling. Real Chromium 6/6 local persistence cases PASS, including click/reload/offline/stale concurrent writer/transaction rollback. Existing full Node 305/305, CI scoped 250/250, Schema+56 parity fixtures and 9 public destinations+34 synthetic browser cases PASS. Not an in-game editor, deployed site, phone acceptance or cloud sync.",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p2-local-save.json"
       ],
-      "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2"
+      "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2",
+      "candidate_sha": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+      "ci_run_id": 38660234949,
+      "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
     }
   ],
   "last_run": {
-    "run_id": "NW-P1-20261015-09",
-    "started_at": "2026-10-14T23:28:23.331Z",
-    "ended_at": "2026-10-14T23:31:48.731Z",
+    "run_id": "NW-CYCLE-20261015-10",
+    "started_at": "2026-10-15T00:26:58.113Z",
+    "ended_at": "2026-10-15T00:31:02.218Z",
     "attempts": 1,
-    "resolved_defect": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
     "failure_fingerprints": [],
-    "next_action": "PRIORITY OWNER UPDATE 2026-10-15: existing phone operations reported usable ('都還可以用'). First inspect available authorized isolated deployment/WebGL2 verification routes and prepare the smallest real character.tap -> controlled feedback integration with a concrete regression checklist, keeping activation behind the unchanged P0 Gate. Do not repeatedly ask OWNER whether existing controls work or repeat unchanged cloud GPU retries. Keep device report PASS_REPORTED_BY_OWNER; staging and candidate scene integration remain unverified. If no runnable environment is available, persist the exact missing capability and continue only independently testable P1 work. Deferred bounded task: AbortSignal cancellation during awaited dynamic guards."
+    "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
   },
   "execution": {
-    "lease_owner": "NW-CYCLE-20261015-10",
-    "lease_expires_at": "2026-10-15T00:51:58.113Z",
-    "heartbeat_at": "2026-10-15T00:28:26.016Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T00:31:02.218Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -531,6 +533,14 @@
       "run_id": 38654474897,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897",
       "scope": "250 scoped Node tests + Schema/56 parity fixtures + 9 public destinations + 28 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+      "checkout_commit": "9d4b54db3cd82ec91c82abcc6f0049ea8a3a0fc5",
+      "run_id": 38660234949,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949",
+      "scope": "250 scoped Node tests + Schema/56 parity + 9 public destinations + 34 synthetic browser checks including 6 real IndexedDB persistence cases; no scene/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -556,18 +566,24 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38654474897,
-      "scope": "9 public destinations, fallback/storage; 4 session + 4 dispatch + 4 payload + 4 character tap + 8 spell preflight/snapshot + 4 definition snapshot synthetic browser checks; no 3D/device claim"
+      "ci_run_id": 38660234949,
+      "scope": "9 public destinations, fallback/storage, 28 prior synthetic module cases + 6 real IndexedDB synthetic persistence cases; no deployed UI/3D/device claim"
     },
     "live_scene_change": "NONE",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
-      "checkout_commit": "6715c86ed4988f8a00f84584e0aead632d4cfe6b",
-      "run_id": 38654474897,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897"
-    }
+      "commit": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+      "checkout_commit": "9d4b54db3cd82ec91c82abcc6f0049ea8a3a0fc5",
+      "run_id": 38660234949,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949"
+    },
+    "local_persistence": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "ci_run_id": 38660234949,
+      "cases": 6
+    },
+    "playable_features_added_to_production": 0
   },
   "owner_approvals": [
     {
@@ -613,7 +629,7 @@
       "PERSIST"
     ],
     "requirements_read": {
-      "v12_zip": "libfile_fe7b2ac264108191893d13e639239edb",
+      "v12_zip": "念動世界_Work_P0-P7循環技能_v1.2.zip",
       "zip_contents_read": [
         "00_START_HERE_v1.2.md",
         "WORK_CYCLE_P0_P7_v1.2.md",
@@ -670,16 +686,16 @@
   },
   "sync_checks": {
     "local_save": {
-      "result": "CI_PENDING",
-      "scope": "Unloaded IndexedDB spell candidate; not live/mobile"
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
     },
     "outbox": {
-      "result": "CI_PENDING",
-      "scope": "Atomic pending intent, latest-version coalescing, exact retry dedupe; transport retry not yet built"
+      "result": "PASS_PENDING_INTENT_ONLY",
+      "scope": "Atomic pending intent, exact retry dedupe, latest edit coalescing; delivery/ack/retry/backoff NOT_TESTED"
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
-      "scope": "No private repo/OAuth/GitHub App transport authorized/configured"
+      "scope": "No scoped private repo/OAuth/GitHub App transport configured"
     },
     "remote_roundtrip": {
       "result": "NOT_TESTED"
@@ -687,5 +703,13 @@
     "ai_readback": {
       "result": "NOT_TESTED"
     }
+  },
+  "cycle_rescan": {
+    "observed_at": "2026-10-15T00:31:02.218Z",
+    "state": "ACTIONABLE_GAPS_REMAIN",
+    "preserved_passes": "No prior PASS invalidated; no defect retry counters reset",
+    "highest_value_gap": "Outbox acknowledgements/retry/mock remote before real private synchronization",
+    "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default.",
+    "production_playable_feature_delta": 0
   }
 }
