@@ -393,10 +393,10 @@
     "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
   },
   "execution": {
-    "lease_owner": "NW-UI-ICON-20261015",
-    "lease_expires_at": "2026-10-15T01:24:52.061Z",
-    "heartbeat_at": "2026-10-15T01:06:29.871Z",
-    "state": "BUILDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T01:09:02.915Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -549,6 +549,14 @@
       "run_id": 38662737806,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
       "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
+      "run_id": 38663912422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
+      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
     }
   ],
   "candidate_validation": {
@@ -581,11 +589,11 @@
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
-      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
-      "run_id": 38662737806,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
-      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
+      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
+      "run_id": 38663912422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
+      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -774,7 +782,7 @@
     ]
   },
   "ui_design_standard": {
-    "id": "NW-UI-ICON-FIRST-001",
+    "id": "NW-UI-ICON-ONLY-001",
     "source": "OWNER project conversation 2026-10-15, latest correction: 我認為直接不要按鈕文字",
     "rule": "ICON_ONLY_ACTION_BUTTONS: no visible button words. Full accessible names/tooltips and separate permission explanations remain; content titles are not action labels.",
     "registry_path": "living-library/UI-MANAGER-REGISTRY.md",
@@ -785,9 +793,28 @@
         "result": "PASS",
         "tests": 305
       },
-      "browser": "CI_PENDING",
-      "device": "NOT_TESTED"
+      "ci_node": {
+        "result": "PASS",
+        "tests": 250
+      },
+      "browser": "PASS",
+      "device": "NOT_TESTED",
+      "staging": "NOT_TESTED"
     },
-    "release": "NOT_RELEASED"
+    "release": "NOT_RELEASED",
+    "state": "PASS_CANDIDATE_NOT_RELEASED",
+    "candidate_sha": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+    "ci": {
+      "result": "PASS",
+      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
+      "run_id": 38663912422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
+      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
+    },
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-icon-only.json",
+    "rollback_ref": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
+    "effective_fixes": 0,
+    "failure_fingerprints": []
   }
 }
