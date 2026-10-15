@@ -1062,7 +1062,8 @@ document.addEventListener('keyup',e=>{
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
  if(!hasWalkInput()){keeper.position.y=.46;return false}
- const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
+ const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
+ const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);

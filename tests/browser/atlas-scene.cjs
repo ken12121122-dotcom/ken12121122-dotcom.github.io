@@ -29,12 +29,12 @@ for(let i=0;i<10;i++){
 // Reader can only open the card physically occupying the right reader slot.
 let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
 runtime.placeCollection();tick(1900);assert.equal(runtime.inspect().collectionOpen,1);assert.equal(outer.visible,false);
-moveTo(State.COLLECTION,17,cards.get(card.id));assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
+for(let i=0;i<18;i++){moveTo(State.COLLECTION,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].slotIndex,i)}assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
 // Focus is an actual interpolated camera; exit returns to the pre-focus pose.
-const before=camera.position.clone();runtime.focus(State.ATLAS);tick(400);const halfway=camera.position.clone();assert.ok(halfway.distanceTo(before)>.01);tick(500);const focused=camera.position.clone();assert.ok(halfway.distanceTo(focused)>.01);
+const before=camera.position.clone();runtime.focus(State.ATLAS);tick(400);const halfway=camera.position.clone();assert.ok(halfway.distanceTo(before)>.01);tick(500);const focused=camera.position.clone();const heading=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);assert.ok(Math.abs(runtime.movementYaw-Math.atan2(heading.x,heading.z))<1e-9);assert.ok(halfway.distanceTo(focused)>.01);
 host.innerWidth=412;host.innerHeight=915;camera.aspect=412/915;camera.updateProjectionMatrix();tick(200);assert.ok(Number.isFinite(camera.position.z));runtime.exitFocus();tick(900);assert.ok(camera.position.distanceTo(before)<1e-6);
 // Collection close leaves the physical book in the inner orbit and preserves cards.
 runtime.focus(State.COLLECTION);tick(900);doc.getElementById('atlasCollectionClose').click();tick(700);assert.equal(runtime.inspect().collectionMode,'inner');assert.equal(runtime.inspect().collectionOpen,0);assert.equal(group(State.COLLECTION).visible,true);assert.equal(craft.listCards(storage)[0].slotIndex,17);
 // Atlas hide/show never creates a copy of an existing card.
 runtime.toggle();tick(1700);assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(1900);assert.equal(craft.listCards(storage).length,1);assert.equal(cards.size,1);
-runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 10 atlas slots, 18-slot collection transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');
+runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 10 atlas slots, all 18 collection slots and cross-book transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');

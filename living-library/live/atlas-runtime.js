@@ -135,7 +135,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  root.addEventListener('pagehide',e=>{if(!e.persisted)dispose();else cancelPointer()});
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:()=>!!collection.dragging,
-  get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
+  get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
   inspect(){return {atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);
