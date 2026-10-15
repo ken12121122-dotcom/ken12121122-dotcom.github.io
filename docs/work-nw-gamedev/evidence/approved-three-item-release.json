@@ -1,0 +1,203 @@
+{
+  "schema": "nw-approved-three-item-release-v1",
+  "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+  "approved_at": "2026-10-15T13:26:33+08:00",
+  "owner_quote": "核准上述三項",
+  "scope": [
+    "3D parameter linkage/ACK repair",
+    "Existing restored-card summon animation from merged PR233, no duplicate merge",
+    "Standalone local ObjectCraft backup download and read-only integrity inspection"
+  ],
+  "excluded": [
+    "Full Rune Engine/SpellStore/outbox release",
+    "Private upload/OAuth/App",
+    "Magic-circle design change",
+    "APK/native permissions"
+  ],
+  "pr": 234,
+  "source_commit": "90d16df2619964173e1ca22108fc56138a32a213",
+  "main_commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+  "base_main": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+  "release_marker": "2026-10-15.approved-controls-restore-backup-v1",
+  "released_at": "2026-10-15T05:34:32.500Z",
+  "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+  "ci": {
+    "premerge": 38687051815,
+    "premerge_checkout": "41857ed8ecf30524ae7992c7a206a7b29aa88320",
+    "postmerge": 38687221049,
+    "result": "PASS",
+    "node_tests": 183,
+    "browser_scope": "15 navigation/control checks (3D startup NOT_TESTED); 3 real download/offline inspection/tamper rejection cases PASS"
+  },
+  "pages": {
+    "run_id": 38687220278,
+    "result": "PASS"
+  },
+  "http": {
+    "run_id": 38687221116,
+    "job_id": 116264724846,
+    "result": "PASS_EXACT_SIX_ASSET_HASHES",
+    "files": [
+      "index.html",
+      "clean-view.js",
+      "card-creation.html",
+      "object-backup.js",
+      "system-controls.html",
+      "card-placement.js"
+    ]
+  },
+  "restore_animation": {
+    "pr": 233,
+    "main_commit": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+    "pages_run_id": 38686769390,
+    "proof_run_id": 38686769981
+  },
+  "superseded_prs": [
+    229,
+    231,
+    232
+  ],
+  "branches_deleted": false,
+  "device": "NOT_TESTED; OWNER post-release 3D slider, restore animation and Android download/file picker acceptance pending",
+  "rollback": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+  "evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json",
+  "source_hashes": [
+    {
+      "path": "living-library/live/index.html",
+      "sha256": "ba7f01d25f8ed38348921241d71e06dccd21faeaa0c9adaf208fed220c604779"
+    },
+    {
+      "path": "living-library/live/clean-view.js",
+      "sha256": "a35c569d012600e31eeda97fc9e033d33dbb815c985f6a6061f4a689e1b49238"
+    },
+    {
+      "path": "living-library/live/card-creation.html",
+      "sha256": "b6d244a7dbd0e0cc77a44e94b09c52a895eeaef1cd0ce4f013b56212beb0c511"
+    },
+    {
+      "path": "living-library/live/object-backup.js",
+      "sha256": "4d227d21cc056fd94b05fa969ff72baf3f180530e0acaf9fc11e3dc5519a8e41"
+    },
+    {
+      "path": "living-library/live/system-controls.html",
+      "sha256": "9bc28ac994a5032ddb7dbc580fd83b83e6bd7ff57d7111f6be2bae842a479d49"
+    },
+    {
+      "path": "living-library/live/card-placement.js",
+      "sha256": "4fbc7be74ff70524c6ef8e20c3943e5ac3d6531f4836cf219cdd705b599c2328"
+    }
+  ],
+  "browser_proofs": [
+    {
+      "schema": "nw-p0-browser-proof-v1",
+      "commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+      "observed_at": "2026-10-15T05:31:59.999Z",
+      "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+      "checks": [
+        {
+          "id": "actual_3d_startup",
+          "result": "NOT_TESTED",
+          "ready": false,
+          "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+          "release": "2026-10-15.approved-controls-restore-backup-v1",
+          "logs": [
+            "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:877:8"
+          ],
+          "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+        },
+        {
+          "id": "icon_first_controls",
+          "result": "PASS",
+          "scope": "Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved."
+        },
+        {
+          "id": "clean_view_restore_reload",
+          "result": "PASS",
+          "scope": "Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance."
+        },
+        {
+          "id": "forced_engine_failure_fallback",
+          "result": "PASS",
+          "books": 14,
+          "joystick_hidden": true
+        },
+        {
+          "id": "public.research.navigation",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.canvas.workbench",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.startup.tasks",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.calendar",
+          "result": "PASS",
+          "scope": "External link target only; no sign-in"
+        },
+        {
+          "id": "public.knowledge.world",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.gba.runtime",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.vault.web",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.gpt.bridge",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "public.system.ui.map",
+          "result": "PASS",
+          "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+        },
+        {
+          "id": "system_book_3d_preferences_ack_fallback",
+          "result": "PASS",
+          "scope": "Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU."
+        },
+        {
+          "id": "unrelated_storage_preserved",
+          "result": "PASS",
+          "scope": "Synthetic sentinel; not a real GBA-save test"
+        }
+      ]
+    },
+    {
+      "schema": "nw-object-backup-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+          "result": "PASS"
+        },
+        {
+          "case": "offline file inspection validates counts without restoring or sending",
+          "result": "PASS"
+        },
+        {
+          "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+          "result": "PASS"
+        }
+      ]
+    }
+  ],
+  "privacy": "PASS_SYNTHETIC_TEST_DATA_ONLY; no private player payload, credentials, recordings, OAuth or native permissions committed",
+  "canonical_progress": "docs/work-nw-gamedev/progress.json",
+  "next_action": "READ latest main/PR/lease and reconcile main 5fa285355d12ca6fdbb5c9e260770b9c1cc8492e (or newer) into canonical candidate before any new work; candidate code still based on da45241. Do not re-release approved UI/backup or re-open duplicate restore PRs. Continue explicit ObjectCraft outbox adapter with stable IDs/revisions/recycle state and stale snapshot/conflict/dedupe tests. Keep separate SpellStore, no automatic conversion or private upload; private OAuth/App and full P0-P7/device gates remain."
+}

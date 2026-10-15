@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T05:27:59.316Z",
+  "updated_at": "2026-10-15T05:34:32.500Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -14,25 +14,25 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "da45241e0134a92de22e963d1121607e17f01936",
+    "main_sha": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
     "repo_read": "PASS",
     "repo_write": "PASS_BRANCH_CREATED",
     "staging_deploy": "NOT_TESTED",
-    "owner_release_approval": "NOT_GRANTED",
+    "owner_release_approval": "SCOPED_THREE_ITEMS_EXECUTED_PR234; FULL_RUNE_AND_PRIVATE_SYNC_NOT_GRANTED",
     "android_device_access": "NOT_TESTED"
   },
   "deployment": {
     "staging_url": null,
     "staging_verified": "NOT_TESTED",
     "pages_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
-    "pages_verified": "PASS_UI_RELEASE_EXACT_HTML_AND_SCRIPT_HASH",
+    "pages_verified": "PASS_APPROVED_THREE_ITEM_RELEASE_EXACT_SIX_ASSET_HASHES",
     "android_verified": "NOT_TESTED",
-    "pages_release_marker": "2026-10-15.icon-only-clean-view-v1",
-    "pages_proof_run_id": 38675561949,
-    "pages_last_verified_main": "49d373c114bc1a312e72d0a9627333824a8505a6"
+    "pages_release_marker": "2026-10-15.approved-controls-restore-backup-v1",
+    "pages_proof_run_id": 38687221116,
+    "pages_last_verified_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e"
   },
   "phases": [
     {
@@ -433,23 +433,25 @@
       "candidate_sha": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
       "ci_run_id": 38682223106,
       "result": "Existing card-creation page now offers icon-only full local object backup download and read-only checksum/count inspection; real Chromium synthetic download/offline inspection/tamper rejection PASS. No import, restore, cloud upload or production release.",
-      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified."
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
+      "release": "RELEASED_STANDALONE_PR234_DEVICE_NOT_TESTED",
+      "release_evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-13",
-    "started_at": "2026-10-15T04:30:53.044Z",
+    "run_id": "NW-APPROVED-RELEASE-20261015",
+    "started_at": "2026-10-15T05:34:32.500Z",
+    "ended_at": "2026-10-15T05:34:32.500Z",
     "attempts": 1,
+    "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
-    "ended_at": "2026-10-15T04:37:24.769Z",
-    "effective_fixes": 0
+    "next_action": "READ latest main/PR/lease and reconcile main 5fa285355d12ca6fdbb5c9e260770b9c1cc8492e (or newer) into canonical candidate before any new work; candidate code still based on da45241. Do not re-release approved UI/backup or re-open duplicate restore PRs. Continue explicit ObjectCraft outbox adapter with stable IDs/revisions/recycle state and stale snapshot/conflict/dedupe tests. Keep separate SpellStore, no automatic conversion or private upload; private OAuth/App and full P0-P7/device gates remain."
   },
   "execution": {
-    "lease_owner": "NW-APPROVED-RELEASE-20261015",
-    "lease_expires_at": "2026-10-15T05:52:59.316Z",
-    "heartbeat_at": "2026-10-15T05:27:59.316Z",
-    "state": "PREPARING_APPROVED_NARROW_RELEASE",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T05:34:32.500Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -634,6 +636,13 @@
       "run_id": 38682223106,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38682223106",
       "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
+    },
+    {
+      "result": "PASS",
+      "commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+      "run_id": 38687221049,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38687221049",
+      "scope": "Narrow authorized web release only; 183 full Node tests and candidate source navigation/settings/download tests; no GPU/Android acceptance"
     }
   ],
   "candidate_validation": {
@@ -723,7 +732,8 @@
         "Magic-circle design change",
         "Android APK/permissions"
       ],
-      "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED"
+      "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED",
+      "status": "EXECUTED_PR234"
     }
   ],
   "next_stage_preparation": {
@@ -772,7 +782,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T04:37:24.769Z",
+    "observed_at": "2026-10-15T05:34:32.500Z",
     "phases": [
       {
         "id": "P0",
@@ -787,7 +797,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "ObjectCraft exact-text export and read-only checksum/count inspection now candidate UI tested including recycled objects. Actual import/recovery, Rune book editor, unified data contracts, migration and Android device validation remain incomplete; no automatic nw.spell.v1 conversion."
+        "gap": "Standalone ObjectCraft backup download/read-only integrity inspection released PR234. Actual import/recovery, Rune book editor, unified data contracts, migration and Android download/file-picker remain incomplete."
       },
       {
         "id": "P3",
@@ -812,14 +822,14 @@
       {
         "id": "P7",
         "result": "NOT_TESTED",
-        "gap": "Separate main releases observed with successful CI/Pages/proof runs; this backup slice remains draft PR only. No staging, Android download/file-picker or complete Rune release."
+        "gap": "OWNER approved three-item narrow web release completed via PR233/234, CI/Pages/exact HTTP evidence PASS. Full Rune Engine/staging/device gates NOT_TESTED."
       }
     ]
   },
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "Prior real IDB SpellStore evidence retained. ObjectCraft now has exact-text full local backup/download and checksum/count inspection candidate PASS, including books and recycled cards, no source writes. Real restore and Android download/file-picker NOT_TESTED. ObjectCraft still separate from SpellStore/outbox."
+      "scope": "SpellStore prior isolated evidence retained. Separate ObjectCraft full local cards/books/recycle backup download and read-only checksum inspection released via PR234, real Chromium verified; actual restore, Android download/file-picker remain NOT_TESTED. No automatic ObjectCraft->SpellStore/outbox conversion."
     },
     "outbox": {
       "result": "PASS_ISOLATED_MOCK_DELIVERY",
@@ -838,12 +848,12 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T04:37:24.769Z",
+    "observed_at": "2026-10-15T05:34:32.500Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
     "preserved_passes": "Existing reliable PASS and per-defect retry budgets retained. Main c771ab9 then da45241 merged as true parents, preserving newly released cinematic/recycle effects.",
-    "highest_value_gap": "Versioned ObjectCraft outbox adapter and cross-context coordination; private transport still WAIT_OWNER",
-    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
-    "production_playable_feature_delta": 0
+    "highest_value_gap": "Reconcile newer released main, then ObjectCraft/outbox adapter; private authorization still missing",
+    "next_action": "READ latest main/PR/lease and reconcile main 5fa285355d12ca6fdbb5c9e260770b9c1cc8492e (or newer) into canonical candidate before any new work; candidate code still based on da45241. Do not re-release approved UI/backup or re-open duplicate restore PRs. Continue explicit ObjectCraft outbox adapter with stable IDs/revisions/recycle state and stale snapshot/conflict/dedupe tests. Keep separate SpellStore, no automatic conversion or private upload; private OAuth/App and full P0-P7/device gates remain.",
+    "production_playable_feature_delta": 3
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
@@ -973,7 +983,7 @@
       "Full card creation cinematic and reversible recycle",
       "Newly published smoke disappearance for recycled cards"
     ],
-    "limits": "Main workflow status observed; no new device acceptance. ObjectCraft remains separate from nw.spell.v1 and outbox. Player data not read or uploaded.",
+    "limits": "Only canonical progress/evidence updated in this release task; do not copy stale candidate scene over newly released main",
     "main_ci": 38681574416,
     "pages": 38681574324,
     "http_proof": 38681574363,
@@ -1009,6 +1019,72 @@
         "status": "completed",
         "conclusion": "success"
       }
-    ]
+    ],
+    "observed_latest_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "candidate_merged_main": "da45241e0134a92de22e963d1121607e17f01936",
+    "state": "NEEDS_RECONCILE_BEFORE_NEXT_CODE_WRITE"
+  },
+  "approved_three_item_release": {
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "approved_at": "2026-10-15T13:26:33+08:00",
+    "owner_quote": "核准上述三項",
+    "scope": [
+      "3D parameter linkage/ACK repair",
+      "Existing restored-card summon animation from merged PR233, no duplicate merge",
+      "Standalone local ObjectCraft backup download and read-only integrity inspection"
+    ],
+    "excluded": [
+      "Full Rune Engine/SpellStore/outbox release",
+      "Private upload/OAuth/App",
+      "Magic-circle design change",
+      "APK/native permissions"
+    ],
+    "pr": 234,
+    "source_commit": "90d16df2619964173e1ca22108fc56138a32a213",
+    "main_commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "base_main": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+    "release_marker": "2026-10-15.approved-controls-restore-backup-v1",
+    "released_at": "2026-10-15T05:34:32.500Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "ci": {
+      "premerge": 38687051815,
+      "premerge_checkout": "41857ed8ecf30524ae7992c7a206a7b29aa88320",
+      "postmerge": 38687221049,
+      "result": "PASS",
+      "node_tests": 183,
+      "browser_scope": "15 navigation/control checks (3D startup NOT_TESTED); 3 real download/offline inspection/tamper rejection cases PASS"
+    },
+    "pages": {
+      "run_id": 38687220278,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38687221116,
+      "job_id": 116264724846,
+      "result": "PASS_EXACT_SIX_ASSET_HASHES",
+      "files": [
+        "index.html",
+        "clean-view.js",
+        "card-creation.html",
+        "object-backup.js",
+        "system-controls.html",
+        "card-placement.js"
+      ]
+    },
+    "restore_animation": {
+      "pr": 233,
+      "main_commit": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+      "pages_run_id": 38686769390,
+      "proof_run_id": 38686769981
+    },
+    "superseded_prs": [
+      229,
+      231,
+      232
+    ],
+    "branches_deleted": false,
+    "device": "NOT_TESTED; OWNER post-release 3D slider, restore animation and Android download/file picker acceptance pending",
+    "rollback": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
   }
 }
