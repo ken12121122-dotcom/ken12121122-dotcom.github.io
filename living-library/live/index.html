@@ -1085,7 +1085,9 @@ function updateFloatingCards(now){
  if(focusedCard){
   const item=floatingCardMeshes.get(focusedCard.id);
   if(!item){exitCardFocus();return}
-  const target=item.group.position.clone().addScaledVector(focusedCard.direction,2.02);
+  const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
+  const focusDistance=Math.max(1.26/(2*halfTan*.8),.9/(2*halfTan*camera.aspect*.86));
+  const target=item.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
   const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
   const smooth=t*t*(3-2*t);
   camera.position.copy(focusedCard.from).lerp(target,smooth);
