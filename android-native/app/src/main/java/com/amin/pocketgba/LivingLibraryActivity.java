@@ -179,7 +179,7 @@ public final class LivingLibraryActivity extends Activity {
     }
     @Override protected void onSaveInstanceState(Bundle state) { super.onSaveInstanceState(state); web.saveState(state); }
     @Override public void onBackPressed() {
-        web.evaluateJavascript("(function(){var d=document.getElementById('drawerWrap');if(d&&d.classList.contains('open')){document.getElementById(document.getElementById('readerShell').hidden?'closeDrawer':'readerBack').click();return true;}return false;})()", result -> {
+        web.evaluateJavascript("(function(){var a=window.LivingScene&&window.LivingScene.atlas;if(a&&a.inFocus){a.exitFocus();return true;}var d=document.getElementById('drawerWrap');if(d&&d.classList.contains('open')){document.getElementById(document.getElementById('readerShell').hidden?'closeDrawer':'readerBack').click();return true;}return false;})()", result -> {
             if (!"true".equals(result)) { if (web.canGoBack()) web.goBack(); else LivingLibraryActivity.super.onBackPressed(); }
         });
     }
