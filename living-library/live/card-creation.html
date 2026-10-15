@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111929">
+<title>卡片創造術｜念動世界・3D 召喚</title>
+<style>
+:root{color-scheme:dark;--bg:#101a2a;--panel:#1a2a3e;--ink:#f6f0df;--line:#8c7963;--gold:#e9c996;--soft:#bec6d2}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 40% 0%,#283b55,#101a2a 72%);font:14px/1.6 system-ui,"Noto Sans TC",sans-serif}
+main{max-width:920px;margin:auto;padding:18px 20px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #8c796355;padding-bottom:12px}
+header strong{font:normal 25px Georgia,"Noto Serif TC",serif;color:var(--gold)}
+small{font-size:11px;color:var(--soft)}
+h1{font:normal 21px Georgia,"Noto Serif TC",serif;margin:20px 0 4px}
+p{margin:6px 0 14px;color:var(--soft)}
+.layout{display:grid;grid-template-columns:minmax(260px,.92fr) minmax(280px,1.08fr);gap:22px;margin-top:16px}
+.circle{min-height:310px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;border:1px solid #bca17077;border-radius:20px;background:radial-gradient(ellipse at center,#49637655,transparent 72%),linear-gradient(145deg,#1d3144,#101e30);overflow:hidden}
+.circle:before{content:"";width:245px;height:90px;border:1px solid #cba97e77;border-radius:50%;position:absolute;bottom:46px;box-shadow:0 0 22px #c7aa6e33;transform:rotateX(60deg)}
+.paper{display:flex;flex-direction:column;justify-content:space-between;align-items:center;width:142px;height:203px;padding:15px;border:3px double #a67e4e;border-radius:10px;background:linear-gradient(140deg,#fcf3d7,#d4c7a8);color:#4f3b24;box-shadow:12px 18px 26px #060a16aa,inset 0 0 0 4px #f5e8c2;text-align:center;z-index:1;transform:rotate(-5deg)}
+.paper .rune{font-size:39px;line-height:1.2;color:#8b6a40}.paper b{font:700 17px/1.4 Georgia,"Noto Serif TC",serif;overflow-wrap:anywhere;max-height:110px;overflow:hidden}.paper small{color:#695439;font-size:10px;max-width:100%;overflow-wrap:anywhere}
+.paper.summon{animation:summon 850ms cubic-bezier(.12,.84,.3,1.15) both}.paper.hover{animation:hover 3s ease-in-out infinite alternate;transform:translateY(-8px) rotate(-5deg)}@keyframes hover{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-14px) rotate(-3deg)}}
+@keyframes summon{from{opacity:0;transform:translateY(80px) scale(.35) rotate(-24deg);filter:blur(8px)}70%{filter:blur(0)}to{opacity:1;transform:translateY(-10px) scale(1) rotate(-5deg)}}
+.circle button{position:relative;z-index:2;margin-top:21px;width:54px;height:54px;border-radius:50%;border:1px solid #ebd3a2;background:#bb9a68;color:#152234;font-size:28px;box-shadow:0 0 18px #d3b98255}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #89ded3;outline-offset:3px}
+.circle button:hover{background:#efd4a3}
+.circle button:disabled{opacity:.5;cursor:not-allowed}
+.controls{background:#152336c9;border:1px solid #7f785e77;border-radius:16px;padding:20px}
+label{display:block;font-size:12px;color:#d7c59e;margin:12px 0}
+input,textarea{display:block;width:100%;border:1px solid #7b8291;border-radius:8px;background:#0c1624;color:#f8f0df;margin-top:5px;padding:10px;font:14px/1.6 inherit}
+textarea{min-height:74px;resize:vertical}
+.controls button{display:inline-flex;align-items:center;gap:5px;background:#af9061;color:#15202e;border:0;border-radius:9px;padding:9px 14px;font-weight:750}
+#status{min-height:30px;color:#a9e0c4;font-size:12px;margin-top:13px;white-space:pre-wrap}
+details{border-top:1px solid #5e6c7a;padding-top:9px}
+summary{color:#c5b795;cursor:pointer}
+#cardList{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px;margin-top:14px}
+.mini{width:100%;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #7d6e59;border-radius:9px;background:#e7d5b5;color:#4c3824;overflow-wrap:anywhere}
+.mini.active{outline:3px solid #8bd4c7}.mini strong{font-size:13px}
+footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
+@media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
+</style>
+</head>
+<body>
+<main>
+<header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
+<h1>從空白卡開始，逐步賦予能力</h1>
+<p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入獨立的遠距環繞軌道，尚未放入任何書。</p>
+<div class="layout">
+ <section class="circle" aria-label="創卡法陣">
+  <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
+  <button id="createCard" type="button" aria-label="施放卡片創造術" title="施放卡片創造術">✦</button>
+  <small style="margin-top:8px">✦ 創造空白卡</small>
+ </section>
+ <section class="controls" aria-label="空白卡片資訊">
+  <strong>卡片屬性</strong>
+  <p>卡片建立後可以命名、留下用途描述。未來由 AI 協助設計功能，再經測試與授權啟用。</p>
+  <form id="editForm">
+   <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
+   <label>預期用途（純文字草稿）<textarea id="editDescription" maxlength="500" placeholder="例如：我希望這張卡能讓書本合上"></textarea></label>
+   <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
+  </form>
+  <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
+  <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
+ </section>
+</div>
+<h1>已創造的卡片 <small id="cardCount"></small></h1>
+<div id="cardList" aria-label="本機創作卡片列表"></div>
+<footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
+</main>
+<script src="./object-craft.js"></script>
+<script>
+(function(){
+ 'use strict';
+ const Craft=window.LivingObjectCraft;
+ const $=id=>document.getElementById(id);
+ const query=new URL(location.href).searchParams.get('card');
+ let currentId=null;
+ const cards=()=>Craft.listCards(localStorage);
+ function status(text,error=false){$('status').textContent=text;$('status').style.color=error?'#ffbca8':'#a9e0c4'}
+ function notify(action,cardId){
+  if(window.parent!==window)window.parent.postMessage({
+   kind:'living-library-local-objects-updated',action,cardId
+  },location.origin);
+ }
+ function show(card,animate=false){
+  currentId=card?.id||null;
+  $('cardTitle').textContent=card?.title||'空白卡片';
+  $('cardMark').textContent=card?'# '+card.id.slice(-8):'尚未召喚';
+  $('editName').value=card?.title||'空白卡片';
+  $('editDescription').value=card?.description||'';
+  $('saveCard').disabled=!card;
+  const preview=$('cardPreview');preview.classList.remove('summon','hover');
+  if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
+  else if(card)preview.classList.add('hover');
+ }
+ function refresh(){
+  const items=cards();$('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
+  $('createCard').disabled=items.length>=Craft.MAX_CARDS;
+  const host=$('cardList');host.replaceChildren();
+  for(const card of [...items].reverse()){
+   const btn=document.createElement('button');btn.type='button';btn.className='mini'+(card.id===currentId?' active':'');
+   btn.setAttribute('aria-label','編輯'+card.title);
+   const icon=document.createElement('span');icon.textContent='◇';
+   const title=document.createElement('strong');title.textContent=card.title;
+   const info=document.createElement('small');info.textContent='# '+card.id.slice(-8);
+   btn.append(icon,title,info);btn.onclick=()=>{show(card);refresh();status('已開啟本機草稿卡')};
+   host.append(btn);
+  }
+ }
+ $('createCard').onclick=()=>{
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
+  catch(e){status(e.message||'建立失敗',true)}
+ };
+ $('editForm').addEventListener('submit',event=>{
+  event.preventDefault();if(!currentId)return;
+  try{
+   const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
+   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存；卡片仍保持懸浮，等待放進你創造的書。');
+  }catch(e){status(e.message||'儲存失敗',true)}
+ });
+ try{
+  const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
+  refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
+ }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;status(e.message||'本機讀取失敗',true)}
+})();
+</script>
+</body></html>

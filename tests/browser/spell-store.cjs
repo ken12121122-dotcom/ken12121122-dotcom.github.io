@@ -62,6 +62,35 @@ async function main(){
    return {code,invalid,rows:await store.pending(),card:await store.get(t.spell_id)};
   });
   assert.equal(rollback.code,'OUTBOX_UPDATE_FAILED');assert.equal(rollback.invalid,'INVALID_SYNC_RECEIPT');assert.equal(rollback.rows.length,1);assert.equal(rollback.card.sync_state,'pending_sync');assert.equal(outbound,0);proof.checks.push({case:'acknowledgement write failure rolls back card and outbox with no external transport',result:'PASS'});
+  await page.addScriptTag({path:path.resolve(__dirname,'../../living-library/live/outbox-pump.js')});
+  const pumpRetry=await page.evaluate(async()=>{
+   let now=10000,calls=0;const pump=new LivingOutboxPump.OutboxPump(store,async request=>{calls++;if(calls===1)throw Error('synthetic-secret');return receiptOf(request)},{clock:()=>now});
+   const failed=await pump.run();const before=await pump.run();now=11000;const recovered=await pump.run();
+   return {failed,before,recovered,calls,rows:await store.pending(),card:await store.get('spell.synthetic.saved')};
+  });
+  assert.equal(pumpRetry.failed.items[0].result,'RETRY_SCHEDULED');assert.equal(pumpRetry.before.status,'NO_WORK');assert.equal(pumpRetry.recovered.items[0].result,'ACKNOWLEDGED');assert.equal(pumpRetry.calls,2);assert.equal(pumpRetry.rows.length,0);assert.equal(pumpRetry.card.sync_state,'remote_acknowledged');assert.doesNotMatch(JSON.stringify(pumpRetry.failed),/synthetic-secret/);proof.checks.push({case:'pump delivers through injected mock, persists failed delivery and retries only when due',result:'PASS'});
+  const pumpCancel=await page.evaluate(async()=>{
+   const prior=await store.get('spell.synthetic.saved');await store.save({...prior.card,name:'Cancel fixture'},{expected_revision:3});
+   let resolve,entered;const started=new Promise(r=>entered=r),c=new AbortController();const pump=new LivingOutboxPump.OutboxPump(store,request=>{entered();return new Promise(r=>resolve=()=>r(receiptOf(request)))},{clock:()=>20000});
+   const run=pump.run({signal:c.signal});await started;c.abort();const cancelled=await run;const blocked=await new LivingOutboxPump.OutboxPump(store,async r=>receiptOf(r)).run();resolve();await new Promise(r=>setTimeout(r,0));
+   return {cancelled,blocked,rows:await store.pending(),card:await store.get(prior.spell_id)};
+  });
+  assert.equal(pumpCancel.cancelled.status,'CANCELLED');assert.equal(pumpCancel.blocked.status,'BUSY');assert.equal(pumpCancel.rows[0].attempts,0);assert.equal(pumpCancel.card.sync_state,'pending_sync');proof.checks.push({case:'cancelled in-flight pump ignores late receipt and retains one-flight guard until settled',result:'PASS'});
+  const pumpStale=await page.evaluate(async()=>{
+   let resolve,entered;const started=new Promise(r=>entered=r);const pump=new LivingOutboxPump.OutboxPump(store,request=>{entered();return new Promise(r=>resolve=()=>r(receiptOf(request)))},{clock:()=>30000});
+   const run=pump.run();await started;const prior=await store.get('spell.synthetic.saved');await store.save({...prior.card,name:'New edit while sending'},{expected_revision:4});resolve();const result=await run;
+   return {result,rows:await store.pending(),card:await store.get(prior.spell_id)};
+  });
+  assert.equal(pumpStale.result.items[0].result,'STALE_OUTBOX');assert.equal(pumpStale.rows[0].local_revision,5);assert.equal(pumpStale.card.card.name,'New edit while sending');proof.checks.push({case:'offline edit during transport cannot be acknowledged by the old send',result:'PASS'});
+  const pumpTimeout=await page.evaluate(async()=>{
+   let resolve,now=40000,writes=0;const ledger=new Map();
+   const mock=request=>{if(!ledger.has(request.idempotency_key)){writes++;ledger.set(request.idempotency_key,receiptOf(request))}return ledger.get(request.idempotency_key)};
+   const pump=new LivingOutboxPump.OutboxPump(store,request=>{const receipt=mock(request);return new Promise(r=>resolve=()=>r(receipt))},{clock:()=>now,timeout_ms:15});
+   const timed=await pump.run();const busy=await pump.run();resolve();await new Promise(r=>setTimeout(r,0));const waiting=await store.pending();
+   now=41000;const recovered=await new LivingOutboxPump.OutboxPump(store,async r=>mock(r),{clock:()=>now}).run();
+   return {timed,busy,waiting,recovered,writes,rows:await store.pending(),sentinel:localStorage.getItem('synthetic-gba-sentinel')};
+  });
+  assert.equal(pumpTimeout.timed.status,'TIMEOUT');assert.equal(pumpTimeout.busy.status,'BUSY');assert.equal(pumpTimeout.waiting[0].attempts,1);assert.equal(pumpTimeout.recovered.items[0].result,'ACKNOWLEDGED');assert.equal(pumpTimeout.writes,1);assert.equal(pumpTimeout.rows.length,0);assert.equal(pumpTimeout.sentinel,'keep');assert.equal(outbound,0);proof.checks.push({case:'timeout plus late response recovers with same idempotency key and one synthetic remote write',result:'PASS'});
   await page.evaluate(()=>store.close());await context.close();proof.result='PASS';
  }finally{await browser.close()}
 }

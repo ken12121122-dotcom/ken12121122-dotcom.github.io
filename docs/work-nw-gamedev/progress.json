@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T01:35:01.176Z",
+  "updated_at": "2026-10-15T03:35:11.372Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -14,7 +14,7 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+    "main_sha": "49d373c114bc1a312e72d0a9627333824a8505a6",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
@@ -122,7 +122,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P5-OUTBOX-PUMP-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -399,6 +399,17 @@
       "candidate_sha": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
       "ci_run_id": 38666248987,
       "result": "Real Chromium confirms version/hash matched ACK, duplicate/stale rejection, durable retry schedule across reload, synthetic recovery and atomic ACK rollback. No actual transport, worker, private sync or AI readback."
+    },
+    {
+      "work_item_id": "P5-OUTBOX-PUMP-001",
+      "state": "CI_PENDING",
+      "attempts": 1,
+      "failure_fingerprints": [],
+      "scope": "P5_PREPARATORY_ONLY; injected synthetic transport, no live scene or private network",
+      "rollback_sha": "aa59393f72f8c126d84ab3cf91c04dd7416f6044",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-outbox-pump.json"
+      ]
     }
   ],
   "last_run": {
@@ -412,8 +423,8 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-12",
     "lease_expires_at": "2026-10-15T03:54:58.992Z",
-    "heartbeat_at": "2026-10-15T03:29:58.992Z",
-    "state": "RECONCILE_MAIN",
+    "heartbeat_at": "2026-10-15T03:35:11.372Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -690,7 +701,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T01:35:01.176Z",
+    "observed_at": "2026-10-15T03:35:11.372Z",
     "phases": [
       {
         "id": "P0",
@@ -705,7 +716,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "Book-contained spell editor and reload/save/device acceptance missing; isolated store slice selected"
+        "gap": "Main now has blank-card/book creation; rune/spell book editor, unified player-data contract, device save/recovery and export remain unverified. Preserve separate ObjectCraft localStorage and SpellStore IndexedDB."
       },
       {
         "id": "P3",
@@ -720,7 +731,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Isolated local receipt/retry state PASS; no delivery worker, private transport, remote conflict resolution or authorized AI readback"
+        "gap": "Isolated receipt/retry state PASS; bounded injected transport pump CI pending. No authenticated private transport, player-object adapter or AI remote readback."
       },
       {
         "id": "P6",
@@ -740,8 +751,8 @@
       "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
     },
     "outbox": {
-      "result": "PASS_ISOLATED_RECEIPT_RETRY_STATE",
-      "scope": "Atomic intent; exact duplicate coalescing; version/hash/idempotency/attempt matched ACK and failure; durable backoff; synthetic recovery. Real delivery, worker and remote conflict resolution still missing."
+      "result": "CI_PENDING",
+      "scope": "Bounded caller-driven single-flight delivery pump over existing durable receipt/retry store; injected synthetic transport only"
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
@@ -882,5 +893,19 @@
     "rollback": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
     "scene_module_sha256": "b07e756c89705a41559701ca9d41c50d705cf56d2494c4c8b16ae82b481a251f",
     "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json"
+  },
+  "upstream_main_reconciliation": {
+    "from_main": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+    "to_main": "49d373c114bc1a312e72d0a9627333824a8505a6",
+    "merge_result": "CLEAN_PRESERVE_ALL_UPSTREAM_CHANGES",
+    "observed_features": [
+      "Blank card/book creation and dedicated inner card orbit/smoke on main",
+      "ObjectCraft player objects in independent localStorage key living-library-player-objects-v1"
+    ],
+    "limits": "ObjectCraft blank objects are not nw.spell.v1 SpellStore records and are not automatically included in this outbox; no conversion or private sync claimed",
+    "main_ci": 38675561879,
+    "pages": 38675561211,
+    "http_proof": 38675561949,
+    "owner_card_count": "NOT_OBSERVABLE_FROM_REPO"
   }
 }

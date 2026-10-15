@@ -1,0 +1,37 @@
+{
+  "schema": "nw-outbox-pump-v1",
+  "state": "CI_PENDING",
+  "work_item_id": "P5-OUTBOX-PUMP-001",
+  "scope": "P5_PREPARATORY_ONLY",
+  "changes": [
+    "Bounded caller-driven batch with per-store-object single-flight shared across pump instances",
+    "Cancellation, timeout and redacted errors; timeout schedules existing durable retry state",
+    "Uncooperative transport retains lock until settlement; late receipt ignored",
+    "Same idempotency key reused on later attempt; remote dedupe is required from authorized transport",
+    "Stale edits cannot be cleared by earlier sends"
+  ],
+  "tests": {
+    "unit": {
+      "result": "PASS",
+      "tests": 8
+    },
+    "node": {
+      "result": "PASS",
+      "tests": 321
+    },
+    "browser": "CI_PENDING"
+  },
+  "staging": "NOT_TESTED",
+  "device": "NOT_TESTED",
+  "authorized_transport": "WAIT_OWNER",
+  "remote_roundtrip": "NOT_TESTED",
+  "ai_readback": "NOT_TESTED",
+  "limitations": [
+    "No actual endpoint/authentication or private writes",
+    "No automatic background scheduler or live scene wiring",
+    "Single-flight is per store object, not across tabs or independently opened DB connections",
+    "A transport that never settles keeps that store object locked; caller must provide cooperative abort and remote idempotency",
+    "ObjectCraft local blank cards/books are a separate contract and not synchronized by this pump"
+  ],
+  "new_production_playable_features": 0
+}
