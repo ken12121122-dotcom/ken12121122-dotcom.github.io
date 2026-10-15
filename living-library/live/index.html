@@ -1247,13 +1247,14 @@ function rebuild(){
  }
  updateOrbit(currentOrbitTime,now);
 }
-let selectedId=null;rebuild();
+let selectedId=null;rebuild();refreshFloatingCards();
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
+ if(pickFloatingCard(ray))return 'card';
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
  bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
@@ -1281,6 +1282,7 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ if(focusedCard)return;
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1301,6 +1303,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(focusedCard)return;
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
  if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
@@ -1334,6 +1337,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(focusedCard)return;
  if(placingJoystick){
   if(joystickOrigin){
    const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
@@ -1365,6 +1369,7 @@ renderer.domElement.addEventListener('lostpointercapture',e=>{
 });
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();
+ if(focusedCard)return;
  distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
  cameraUpdate();
 },{passive:false});
@@ -1408,6 +1413,7 @@ function paint(now){
  if(isMotion()&&!reduced)elapsed+=dt;
  stepAvatar(dt);
  updateOrbit(elapsed,now);
+ updateFloatingCards(now);
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
@@ -1458,6 +1464,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
+ refreshFloatingCards,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
