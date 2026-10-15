@@ -1041,75 +1041,142 @@ function coverTex(b){
  return tex;
 }
 const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
-/* LOCAL CARD 3D: single persisted card identity, separate from public GEN2 cards. */
-const floatingCardMeshes=new Map();let focusedCard=null;
+/* Player-created card: independent INNER orbit (avatar -> cards -> orbiting books).
+ * No collision physics yet: size and orbital lanes provide a physical separation baseline. */
+const floatingCardMeshes=new Map(),CardPlacement=window.LivingCardPlacement;
+if(!CardPlacement)throw Error('3D card placement module not loaded');
+let focusedCard=null,smokeTexture=null;
+const CARD_SUMMON_MS=1700;
+function smokeMap(){
+ if(smokeTexture)return smokeTexture;
+ const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
+ const ctx=canvas.getContext('2d'),g=ctx.createRadialGradient(32,32,3,32,32,32);
+ g.addColorStop(0,'rgba(223,242,230,.92)');
+ g.addColorStop(.36,'rgba(159,207,201,.66)');
+ g.addColorStop(1,'rgba(87,121,133,0)');
+ ctx.fillStyle=g;ctx.fillRect(0,0,64,64);
+ smokeTexture=new THREE.CanvasTexture(canvas);return smokeTexture;
+}
+function createCardSmoke(origin){
+ const puffs=[];
+ for(let i=0;i<14;i++){
+  const material=new THREE.SpriteMaterial({map:smokeMap(),transparent:true,opacity:.7,
+   depthTest:true,depthWrite:false});
+  const sprite=new THREE.Sprite(material);sprite.position.copy(origin);
+  sprite.scale.set(.23,.23,1);scene.add(sprite);
+  puffs.push({sprite,angle:i*2.39996,delay:(i%5)*.085});
+ }
+ return puffs;
+}
+function updateCardSmoke(puffs,origin,elapsed){
+ const seconds=elapsed*.001,fade=Math.max(0,1-elapsed/1350);
+ for(const p of puffs){
+  const t=Math.max(0,seconds-p.delay);
+  const radius=.08+t*.43;
+  p.sprite.position.set(origin.x+Math.cos(p.angle)*radius,
+   origin.y+.18+t*.55,origin.z+Math.sin(p.angle)*radius);
+  const size=.23+t*.48;p.sprite.scale.set(size,size,1);
+  p.sprite.material.opacity=.55*fade;
+ }
+}
+function removeCardSmoke(puffs){
+ for(const p of puffs){scene.remove(p.sprite);p.sprite.material.dispose()}
+}
 function newFloatingCard(record){
  const canvas=document.createElement('canvas');canvas.width=384;canvas.height=540;
- const c=canvas.getContext('2d');
- c.fillStyle='#eadbb9';c.fillRect(0,0,384,540);
- c.strokeStyle='#97754b';c.lineWidth=12;c.strokeRect(17,17,350,506);
- c.lineWidth=3;c.strokeRect(36,36,312,467);
- c.textAlign='center';c.textBaseline='middle';c.fillStyle='#786040';
- c.font='96px serif';c.fillText('◇',192,157);
- c.font='bold 36px "Noto Sans TC",sans-serif';
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#eadbb9';ctx.fillRect(0,0,384,540);
+ ctx.strokeStyle='#97754b';ctx.lineWidth=12;ctx.strokeRect(17,17,350,506);
+ ctx.lineWidth=3;ctx.strokeRect(36,36,312,467);
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#786040';
+ ctx.font='96px serif';ctx.fillText('◇',192,157);
+ ctx.font='bold 36px "Noto Sans TC",sans-serif';
  const chars=[...String(record.title||'空白卡片')];
- for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)c.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
- c.font='22px monospace';c.fillText('BLANK CARD',192,470);
+ for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)
+  ctx.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
+ ctx.font='22px monospace';ctx.fillText('BLANK CARD',192,470);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
  const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
- const group=new THREE.Group(),back=new THREE.Mesh(new THREE.BoxGeometry(.88,1.24,.03),frameMat);
- const face=new THREE.Mesh(new THREE.PlaneGeometry(.85,1.21),faceMat);face.position.z=.02;
- back.userData.localCardId=record.id;face.userData.localCardId=record.id;group.add(back,face);
- scene.add(group);
- return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now()};
+ const group=new THREE.Group();
+ const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
+ const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
+ back.userData.localCardId=record.id;face.userData.localCardId=record.id;
+ group.add(back,face);scene.add(group);
+ return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now(),
+  summon:null};
 }
 function disposeFloatingCard(entry){
+ if(entry.summon)removeCardSmoke(entry.summon.puffs);
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
 }
 function refreshFloatingCards(){
- let records;try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
- catch(e){console.warn('Player card storage read failed without overwrite',e);return}
- const current=new Map(records.map(x=>[x.id,x]));
- for(const [id,card] of [...floatingCardMeshes]){
-  if(current.has(id)&&current.get(id).revision===card.record.revision)continue;
+ let records;
+ try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
+ catch(err){console.warn('Card storage unreadable; no overwrite',err);return}
+ const next=new Map(records.map(x=>[x.id,x]));
+ for(const [id,entry] of [...floatingCardMeshes]){
+  if(next.has(id)&&next.get(id).revision===entry.record.revision)continue;
   if(focusedCard?.id===id)exitCardFocus();
-  disposeFloatingCard(card);floatingCardMeshes.delete(id);
+  disposeFloatingCard(entry);floatingCardMeshes.delete(id);
  }
  for(const record of records)if(!floatingCardMeshes.has(record.id))
   floatingCardMeshes.set(record.id,newFloatingCard(record));
  window.LivingScene?.syncRender?.();
 }
+function startCardSummon(id){
+ const card=floatingCardMeshes.get(id);
+ if(!card)return;
+ if(card.summon)removeCardSmoke(card.summon.puffs);
+ // Origin is the avatar's local magic point; the SAME card flies to its orbit.
+ const origin=new THREE.Vector3(keeper.position.x,2.15,keeper.position.z+.37);
+ card.summon=preferReduced?null:{started:performance.now(),origin,
+  puffs:createCardSmoke(origin)};
+ syncRender();
+}
+function hasCardSummon(){return [...floatingCardMeshes.values()].some(x=>!!x.summon)}
 function updateFloatingCards(now){
- const items=[...floatingCardMeshes.values()],total=items.length;
- for(let i=0;i<total;i++){
-  const entry=items[i],ang=(i-(total-1)/2)*.4;
-  entry.group.position.set(keeper.position.x+Math.sin(ang)*2.14,
-   2.8+(preferReduced?0:Math.sin(now*.0014+i)*.085),
-   keeper.position.z+2.35+Math.cos(ang)*.08);
+ const items=[...floatingCardMeshes.values()];
+ for(let i=0;i<items.length;i++){
+  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime);
+  const target=new THREE.Vector3(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
+  const summon=entry.summon;
+  if(summon){
+   const age=Math.max(0,now-summon.started);
+   const t=Math.min(1,age/CARD_SUMMON_MS),smooth=t*t*(3-2*t);
+   const origin=summon.origin.clone();
+   origin.x+=keeper.position.x-summon.origin.x;
+   origin.z+=keeper.position.z-(summon.origin.z-.37);
+   entry.group.position.copy(origin).lerp(target,smooth);
+   entry.group.position.y+=Math.sin(Math.PI*t)*.58;
+   updateCardSmoke(summon.puffs,origin,age);
+   if(t>=1){removeCardSmoke(summon.puffs);entry.summon=null}
+  }else entry.group.position.copy(target);
+  // Face the viewer, without changing the card's own independent world-space path.
   entry.group.quaternion.copy(camera.quaternion);
-  const fraction=preferReduced?1:Math.min(1,(now-entry.born)/880);
-  entry.group.scale.setScalar(.12+.88*(1-(1-fraction)*(1-fraction)));
+  const appear=summon?Math.min(1,(now-summon.started)/490):1;
+  entry.group.scale.setScalar(Math.max(.03,appear));
  }
  if(focusedCard){
-  const item=floatingCardMeshes.get(focusedCard.id);
-  if(!item){exitCardFocus();return}
+  const entry=floatingCardMeshes.get(focusedCard.id);
+  if(!entry){exitCardFocus();return}
   const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
-  const focusDistance=Math.max(1.26/(2*halfTan*.8),.9/(2*halfTan*camera.aspect*.86));
-  const target=item.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
+  const focusDistance=Math.max(.72/(2*halfTan*.79),.49/(2*halfTan*camera.aspect*.84));
+  const target=entry.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
   const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
   const smooth=t*t*(3-2*t);
   camera.position.copy(focusedCard.from).lerp(target,smooth);
-  camera.lookAt(item.group.position);
-  item.group.quaternion.copy(camera.quaternion);item.group.scale.setScalar(1);
+  camera.lookAt(entry.group.position);
+  entry.group.quaternion.copy(camera.quaternion);
+  entry.group.scale.setScalar(1);
  }
 }
 function focusCard(id){
- const item=floatingCardMeshes.get(id);if(!item||focusedCard)return;
+ const entry=floatingCardMeshes.get(id);if(!entry||focusedCard||entry.summon)return;
  walkKeys.clear();resetJoystick(true);
- const direction=camera.position.clone().sub(item.group.position).normalize();
+ const direction=camera.position.clone().sub(entry.group.position).normalize();
  if(direction.lengthSq()<.01)direction.set(0,0,1);
  focusedCard={id,direction,from:camera.position.clone(),began:performance.now()};
  document.getElementById('cardFocusActions').hidden=false;
@@ -1129,7 +1196,8 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
 });
 function pickFloatingCard(ray){
- const targets=[...floatingCardMeshes.values()].flatMap(x=>x.group.children);
+ const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon)
+  .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
  focusCard(hit.object.userData.localCardId);return true;
@@ -1451,11 +1519,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasWalkInput())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput())syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon())&&!reduced)||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -1478,7 +1546,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
- refreshFloatingCards,exitCardFocus,
+ refreshFloatingCards,startCardSummon,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
