@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#121b2b">
+<title>書本創造術｜念動世界・試作</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 45% 0%,#2b3c54,#0c1422 75%);color:#eee5d2;font:15px/1.7 system-ui,"Noto Sans TC",sans-serif}
+main{max-width:850px;margin:auto;padding:18px 24px}h1{font:normal 28px/1.3 Georgia,"Noto Serif TC",serif;color:#e7c590;margin:0}p{color:#c5cdcf;font-size:13px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:17px}
+.summon{min-height:290px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bda17177;border-radius:18px;background:radial-gradient(ellipse,#3b5c6850,transparent 70%)}
+.book{position:relative;transform:perspective(500px) rotateY(-15deg);width:145px;height:195px;background:linear-gradient(110deg,#1b4b55,#2b6670);border-radius:4px 13px 13px 4px;border:2px solid #9fbdaf;box-shadow:-11px 7px 0 #142e3e,5px 16px 29px #0009, inset 0 0 0 8px #e2c88a77;display:grid;place-items:center;text-align:center;padding:15px;font:normal 20px Georgia,"Noto Serif TC",serif;color:#f5ddb1;overflow-wrap:anywhere}
+.book:before{content:"✦";position:absolute;top:13px;left:14px;opacity:.8;font-size:20px}
+.book.float{animation:float 2.8s ease-in-out infinite alternate}
+.book.spawn{animation:spawn .85s ease-out both}
+@keyframes spawn{from{transform:perspective(500px) translateY(75px) scale(.3) rotateY(-65deg);opacity:0}to{transform:perspective(500px) rotateY(-15deg);opacity:1}}
+@keyframes float{from{transform:perspective(500px) translateY(0) rotateY(-15deg)}to{transform:perspective(500px) translateY(-12px) rotateY(-10deg)}}
+.panel{padding:20px;border:1px solid #8a756877;border-radius:16px;background:#172539}
+label{display:block;color:#e2c896;font-size:12px}input{display:block;width:100%;margin:9px 0;padding:12px;border-radius:8px;border:1px solid #9e987f;background:#0c1724;color:#fff0d2;font-size:16px}
+button{cursor:pointer;min-height:44px;border:0;border-radius:9px;background:#ddbd82;color:#202636;font-weight:700;padding:10px 16px}
+button:disabled{opacity:.4}
+button:focus-visible,input:focus-visible{outline:2px solid #a0e3cd;outline-offset:2px}
+#status{min-height:30px;font-size:12px;color:#b9e9cb;margin-top:15px}
+#list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.item{border:1px solid #a28e6c;border-radius:9px;background:#182c3e;padding:10px}
+.item strong{display:block;color:#f3deb8}
+small{color:#afbbc5;font-size:11px}
+footer{margin-top:21px;border-top:1px solid #45576b;padding-top:12px;font-size:11px;color:#b7c1ce}
+@media(max-width:630px){.cols{grid-template-columns:1fr;gap:12px}main{padding:12px}.summon{min-height:270px}.panel{padding:15px}}
+@media(prefers-reduced-motion:reduce){.book.float,.book.spawn{animation:none}}
+</style></head><body><main>
+<header><h1>✧ 書本創造術</h1><small>LOCAL BOOK FORGE · MVP</small></header>
+<p>為世界創造一本空白魔法書。它會保留獨立 ID，以現有 3D 書本模型加入人物環繞軌道；先不改動一般書。下一階段再測試將懸浮卡放進你創造的書。</p>
+<div class="cols"><section class="summon" aria-label="製書法陣"><div id="bookModel" class="book">空白魔法書</div></section>
+<section class="panel"><form id="form"><label for="name">書本名稱</label><input id="name" maxlength="30" value="我的魔法實驗書" required autocomplete="off"><button id="create" type="submit">✦ 施放書本創造術</button></form>
+<p>書頁：空白；可收納卡片的資料欄位已建立。書本目前沿用一般書的開啟模式，實體雙頁動畫會在後續測試。</p><div id="status" role="status" aria-live="polite"></div></section></div>
+<h2>已創造的書 <small id="count"></small></h2><div id="list"></div>
+<footer>只有本機創作草稿，不寫入公開 GitHub 或私有 GEN2。若清除網站資料，尚未同步的創作可能遺失；請勿將這裡當成永久雲端備份。</footer>
+</main><script src="./object-craft.js"></script><script>
+(()=>{'use strict';const C=window.LivingObjectCraft,$=id=>document.getElementById(id);
+function render(){
+ let items;
+ try{items=C.listBooks(localStorage)}catch(e){$('create').disabled=true;$('status').textContent=e.message;return}
+ $('count').textContent=items.length+'/'+C.MAX_BOOKS;$('create').disabled=items.length>=C.MAX_BOOKS;
+ const list=$('list');list.replaceChildren();
+ for(const b of [...items].reverse()){
+  const item=document.createElement('div');item.className='item';
+  const label=document.createElement('strong');label.textContent='📖 '+b.title;
+  const info=document.createElement('small');info.textContent='# '+b.id.slice(-8)+' · 空白書';item.append(label,info);list.append(item);
+ }
+}
+$('form').addEventListener('submit',e=>{e.preventDefault();
+ try{const book=C.createBlankBook(localStorage,window.crypto,$('name').value);
+ const model=$('bookModel');model.textContent=book.title;model.classList.remove('spawn','float');
+ void model.offsetWidth;model.classList.add('spawn');
+ model.addEventListener('animationend',()=>{model.classList.remove('spawn');model.classList.add('float')},{once:true});
+ render();$('status').textContent='✦ 已創造 3D 書本！返回場景可見它在人物周圍環繞。';
+ if(window.parent!==window)window.parent.postMessage({kind:'living-library-local-objects-updated'},location.origin);
+ }catch(err){$('status').textContent=err.message}
+});
+render();
+})();
+</script></body></html>
