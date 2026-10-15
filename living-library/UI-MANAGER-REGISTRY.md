@@ -89,4 +89,4 @@
 | 卡片環繞速度 | `cardOrbitSpeed` | 1.0× | 0～1.8× | 卡片公轉，不影響書本公轉 |
 | 卡片召喚時間 | `cardSummonDuration` | 1700 ms | 900～2600 ms | 3D 煙霧創卡後移入軌道的動畫長度 |
 
-**程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library-live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
+**程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library/live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
