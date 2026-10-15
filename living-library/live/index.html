@@ -428,8 +428,8 @@ window.addEventListener('message',event=>{
    const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
    cardSpellExitTimer=setTimeout(()=>{
     cardSpellExitTimer=null;
+    scene.startCardSummon(id); // Stage the invisible card before the first scene frame.
     closeBook();drawer.classList.remove('card-spell-leaving');
-    scene.startCardSummon(id);
    },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
   }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
  }
