@@ -6,7 +6,7 @@
  else root.LivingObjectCraft=api;
 })(typeof self!=='undefined'?self:this,function(){
  'use strict';
- const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64;
+ const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64,MAX_BOOKS=12;
  function read(storage){
   const raw=storage.getItem(KEY);
   if(raw===null)return {version:VERSION,objects:[]};
@@ -23,6 +23,7 @@
  }
  // Cards stay unassigned and floating until the future book-forge placement is implemented.
  function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId)}
+ function listBooks(storage){return read(storage).objects.filter(x=>x.objectType==='book'&&x.templateId==='blank-book-v1'&&x.id.startsWith('local.book.')).map(x=>({...x}))}
  function token(random){
   if(random&&typeof random.randomUUID==='function')return random.randomUUID();
   if(random&&typeof random.getRandomValues==='function'){
@@ -43,6 +44,20 @@
    permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
   write(storage,[...state.objects,card]);return {...card};
  }
+ function createBlankBook(storage,random,name='空白魔法書',clock=()=>new Date().toISOString()){
+  const state=read(storage);
+  if(state.objects.filter(x=>x.objectType==='book').length>=MAX_BOOKS)throw Error('本機試製上限 12 本書，未修改既有書籍');
+  if(typeof name!=='string'||!name.trim()||name.trim().length>30)throw Error('書名須介於 1～30 字');
+  const used=new Set(state.objects.map(x=>x.id));let id;
+  for(let i=0;i<5;i++){id='local.book.'+token(random);if(!used.has(id))break}
+  if(used.has(id))throw Error('書本識別碼重複');
+  const at=clock();
+  const book={id,objectType:'book',templateId:'blank-book-v1',title:name.trim(),
+   description:'可放入相容卡片的空白書，尚未賦予特殊能力',
+   contentIds:[],status:'draft',openingMode:'legacy',reusePolicy:'local-only',
+   createdAt:at,updatedAt:at,revision:1};
+  write(storage,[...state.objects,book]);return {...book};
+ }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&x.objectType==='card'&&x.templateId==='blank-card-v1');
   if(at<0)throw Error('找不到這張本機卡片');
@@ -62,5 +77,5 @@
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
  }
- return {KEY,VERSION,MAX_CARDS,read,listCards,floatingCards,createBlankCard,editCard};
+ return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,read,listCards,floatingCards,listBooks,createBlankCard,createBlankBook,editCard};
 });
