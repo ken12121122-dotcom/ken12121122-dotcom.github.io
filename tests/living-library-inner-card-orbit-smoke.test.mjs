@@ -49,7 +49,7 @@ test('new creation event exits its iframe book before visible smoke in the origi
  assert.match(html,/new THREE\.Sprite\(material\)/);
  assert.match(html,/function hasCardSummon\(\)/);
  assert.match(html,/hasCardSummon\(\)/);
- assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime\)/);
+ assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(html,/BoxGeometry\(\.45,\.66,\.025\)/);
  assert.match(html,/refreshFloatingCards,startCardSummon,exitCardFocus/);
  const p=await read('living-library/live/card-placement.js');
