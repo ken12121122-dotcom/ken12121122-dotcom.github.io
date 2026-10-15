@@ -78,7 +78,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <p id="objectStats" aria-live="polite"></p>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
-<p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
+<p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 還原時會返回 3D 世界，重播卡片從煙霧誕生並飛入內圈軌道的動畫。</p>
 <div id="recycleList"></div></details>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
@@ -126,7 +126,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    const restore=document.createElement('button');restore.type='button';
    restore.textContent='♻';restore.setAttribute('aria-label','還原 '+card.title);restore.title='還原卡片';
    restore.addEventListener('click',()=>{
-    try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('已還原卡片，將重新進入 3D 懸浮軌道。')}
+    try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('已還原原本的卡片；正在退出書頁，準備於 3D 世界播放煙霧召喚動畫。')}
     catch(e){status(e.message,true)}
    });
    row.append(label,restore);bin.append(row);
