@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T07:31:05.238Z",
+  "updated_at": "2026-10-15T08:26:52.425Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -130,7 +130,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P5-BOOK-RECONCILE-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -476,25 +476,33 @@
       "result": "Candidate actual creator automatically reconciles on reopen/visibility/storage changes and successful mutations; bounded single-flight, quota failure leaves source saved and reports repair pending, fresh iframe repairs interrupted capture. Six browser cases PASS. No formal release/private transport.",
       "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
       "approval_required": "Only for production release/private transport; independent local candidate work continues"
+    },
+    {
+      "work_item_id": "P5-BOOK-RECONCILE-001",
+      "state": "IN_PROGRESS",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_P5_PREPARATORY_ONLY; reuse local reconciler in existing book creator, no scene/transport changes",
+      "rollback_sha": "bf1c27f2115367ba00297e36d9f9dcce35c280e9",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
+      ]
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-15",
-    "started_at": "2026-10-15T07:23:02.639Z",
+    "run_id": "NW-CYCLE-20261015-16",
+    "started_at": "2026-10-15T08:26:52.425Z",
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
-    "ended_at": "2026-10-15T07:31:05.238Z",
-    "candidate_sha": "9e6442a172923cce572f8eda5a79098479c4e1eb",
-    "ci_run_id": 38698921195,
-    "local_environment": "Pinned Playwright1.56.1 Headless Shell1194 installed and executed successfully; missing binary at initial launch resolved; no GPU acceptance inferred"
+    "next_action": "Implement and verify book creator local outbox/reopen/source failure behavior"
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T07:31:05.238Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "codex-cycle16-book-reconciliation",
+    "lease_expires_at": "2026-10-15T08:56:52.426Z",
+    "heartbeat_at": "2026-10-15T08:26:52.425Z",
+    "state": "BUILD",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
