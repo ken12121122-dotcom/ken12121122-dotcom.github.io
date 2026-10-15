@@ -414,7 +414,20 @@ window.addEventListener('message',event=>{
  if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
     !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
  if(!syncPlayerObjects())return;
- updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
+ updateUI();window.LivingScene?.rebuild?.();
+ // Recycle is staged before the 3D mesh is removed. Both the in-book UI and
+ // focus-confirm path share the exact same smoke effect and original Card ID.
+ if(event.data.action==='card-recycled'){
+  const id=event.data.cardId;
+  let recycled=false;
+  try{recycled=typeof id==='string'&&ObjectCraft.listRecycledCards(localStorage).some(card=>card.id===id)}
+  catch(e){toast(e.message)}
+  const scene=window.LivingScene;
+  if(recycled&&scene?.startCardRecycle?.(id)){
+   closeBook();return;
+  }
+ }
+ window.LivingScene?.refreshFloatingCards?.();
  if(event.data.action==='card-created'&&readerCard?.id==='public.gaming.card.creation'){
   const id=event.data.cardId;
   // Only accept real locally persisted player cards, never arbitrary iframe payloads.
@@ -1075,6 +1088,7 @@ const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
 const floatingCardMeshes=new Map(),CardPlacement=window.LivingCardPlacement;
 if(!CardPlacement)throw Error('3D card placement module not loaded');
 let focusedCard=null,smokeTexture=null;
+const CARD_RECYCLE_MS=1250; // Reuse summoning smoke, reversed into a disappearance.
 const reservedCardSummons=new Set();
 // Book fade is 240ms; 3D phases last 2850ms at default (≈3.1s overall).
 const CARD_SUMMON_PHASES=Object.freeze({gather:.24,emerge:.48,flight:.87});
@@ -1137,11 +1151,12 @@ function newFloatingCard(record){
  back.userData.localCardId=record.id;face.userData.localCardId=record.id;
  group.add(back,face);scene.add(group);
  return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now(),
-  summon:null};
+  summon:null,recycle:null};
 }
 function disposeFloatingCard(entry){
  reservedCardSummons.delete(entry.id);
  if(entry.summon)removeCardSmoke(entry.summon.puffs);
+ if(entry.recycle)removeCardSmoke(entry.recycle.puffs);
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
@@ -1153,6 +1168,9 @@ function refreshFloatingCards(){
  const next=new Map(records.map(x=>[x.id,x]));
  for(const [id,entry] of [...floatingCardMeshes]){
   if(next.has(id)&&next.get(id).revision===entry.record.revision)continue;
+  // Keep an already-recycled card mesh ONLY until its in-world smoke finishes.
+  // Restoring the card in the meantime replaces the old mesh with the original ID.
+  if(entry.recycle&&!next.has(id))continue;
   if(focusedCard?.id===id)exitCardFocus();
   disposeFloatingCard(entry);floatingCardMeshes.delete(id);
  }
@@ -1183,11 +1201,37 @@ function startCardSummon(id){
   puffs:createCardSmoke(origin)};
  syncRender();return true;
 }
-function hasCardSummon(){return [...floatingCardMeshes.values()].some(x=>!!x.summon)}
+function startCardRecycle(id){
+ const entry=floatingCardMeshes.get(id);
+ if(!entry||entry.recycle)return false;
+ if(preferReduced){refreshFloatingCards();return true}
+ if(entry.summon){removeCardSmoke(entry.summon.puffs);entry.summon=null}
+ reservedCardSummons.delete(id);
+ // Anchor the smoke at the card's ACTUAL 3D world position, including focus view.
+ const origin=entry.group.position.clone();
+ entry.recycle={started:performance.now(),origin,puffs:createCardSmoke(origin)};
+ document.getElementById('cardFocusActions').hidden=true;
+ syncRender();return true;
+}
+function hasCardSummon(){return [...floatingCardMeshes.values()].some(x=>!!x.summon||!!x.recycle)}
 function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
-  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
+  const entry=items[i];
+  if(entry.recycle){
+   const fx=entry.recycle,age=Math.max(0,now-fx.started),u=Math.min(1,age/CARD_RECYCLE_MS);
+   // A short rise and spiral of smoke conceals the card shrinking to nothing.
+   updateCardSmoke(fx.puffs,fx.origin,age,CARD_RECYCLE_MS);
+   entry.group.position.copy(fx.origin);entry.group.position.y+=u*.24;
+   entry.group.quaternion.copy(camera.quaternion);
+   entry.group.scale.setScalar(controlPrefs.cardSize*Math.max(.001,1-u*u));
+   if(u>=1){
+    if(focusedCard?.id===entry.id)exitCardFocus();
+    disposeFloatingCard(entry);floatingCardMeshes.delete(entry.id);
+   }
+   continue;
+  }
+  const p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
   const target=new THREE.Vector3(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
   const summon=entry.summon;
   if(summon){
@@ -1270,15 +1314,15 @@ document.getElementById('cardRecycleAccept').addEventListener('click',()=>{
  const id=focusedCard?.id;cardRecycleDialog.close();if(!id)return;
  try{
   window.LivingObjectCraft.recycleCard(localStorage,id);
-  refreshFloatingCards(); // removes the card mesh and exits focus automatically
-  window.LivingLibrary?.toast?.('卡片已回收，可在卡片創造術中還原');
+  if(!startCardRecycle(id))refreshFloatingCards();
+  window.LivingLibrary?.toast?.('卡片回收中；可在卡片創造術中還原');
  }catch(e){window.LivingLibrary?.toast?.(e.message||'回收失敗')}
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
 });
 function pickFloatingCard(ray){
- const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon)
+ const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon&&!x.recycle)
   .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
@@ -1628,7 +1672,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
- refreshFloatingCards,queueCardSummon,startCardSummon,exitCardFocus,
+ refreshFloatingCards,queueCardSummon,startCardSummon,startCardRecycle,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
