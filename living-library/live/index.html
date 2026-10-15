@@ -341,7 +341,7 @@ function normalizeControls(raw){
  cardSize:clampUnit(Number.isFinite(d.cardSize)?d.cardSize:1,.65,1.2),
  cardOrbitDistance:clampUnit(Number.isFinite(d.cardOrbitDistance)?d.cardOrbitDistance:1,.88,1.06),
  cardOrbitSpeed:clampUnit(Number.isFinite(d.cardOrbitSpeed)?d.cardOrbitSpeed:1,0,1.8),
- cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:1700,900,2600),
+ cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:2850,1800,4500),
  joystickPosition:{x:Number.isFinite(p.x)?clampUnit(p.x,.08,.92):.23,y:Number.isFinite(p.y)?clampUnit(p.y,.12,.88):.7}};
 }
 let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getItem(CONTROLS_PREFS_KEY)||'null'))}catch(_){return normalizeControls(null)}})();
