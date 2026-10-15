@@ -21,6 +21,8 @@
   return read(storage).objects.filter(x=>x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.'))
    .map(x=>({...x}));
  }
+ // Cards stay unassigned and floating until the future book-forge placement is implemented.
+ function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId)}
  function token(random){
   if(random&&typeof random.randomUUID==='function')return random.randomUUID();
   if(random&&typeof random.getRandomValues==='function'){
@@ -37,7 +39,7 @@
   if(used.has(id))throw Error('卡片識別碼重複');
   const at=clock();
   const card={id,objectType:'card',templateId:'blank-card-v1',title:'空白卡片',
-   description:'',ownerBookId:'gaming',status:'draft',ability:null,
+   description:'',ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
    permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
   write(storage,[...state.objects,card]);return {...card};
  }
@@ -60,5 +62,5 @@
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
  }
- return {KEY,VERSION,MAX_CARDS,read,listCards,createBlankCard,editCard};
+ return {KEY,VERSION,MAX_CARDS,read,listCards,floatingCards,createBlankCard,editCard};
 });
