@@ -199,6 +199,10 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 body.clean-view>.top,body.clean-view>.catalog,body.clean-view>.bottom{display:none!important}
 body.clean-view #cleanViewToggle{opacity:.45}
 body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-visible{opacity:1}
+#cardFocusActions[hidden]{display:none!important}
+#cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
+#cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
+#cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
@@ -206,6 +210,9 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div id="cardFocusActions" hidden aria-label="卡片專注模式">
+<button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
+<button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
@@ -263,7 +270,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','render-capability.js','gen2-editor.js','update-manager.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -282,6 +289,24 @@ const SITE='https://ken12121122-dotcom.github.io';
 const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
+const ObjectCraft=window.LivingObjectCraft;
+// Player-made objects use LOCAL, non-GEN2 identities. They never alter the public catalog's source registry.
+function syncPlayerObjects(){
+ if(!ObjectCraft)return false;
+ let records;
+ try{records=ObjectCraft.listBooks(localStorage)}catch(e){console.warn('Local object data protected from overwrite',e);return false}
+ for(let i=BOOKS.length-1;i>=0;i--)if(BOOKS[i].id.startsWith('local.book.'))BOOKS.splice(i,1);
+ for(const key of Object.keys(BOOK_CARDS))if(key.startsWith('local.book.'))delete BOOK_CARDS[key];
+ for(const book of records){
+  if(BOOKS.some(b=>b.id===book.id))continue;
+  BOOKS.push({id:book.id,name:book.title,kind:'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
+   description:book.description,target:'空白卡槽／未建立技能',icon:'◇',color:'#3c7880',
+   active:book.active!==false,sourceLayer:'local',kb_id:null,publicId:null,openingMode:book.openingMode});
+  BOOK_CARDS[book.id]=[...(book.contentIds||[])];
+ }
+ return true;
+}
+syncPlayerObjects();
 const Updates=window.LivingLibraryUpdates;
 const previousUpdate=Updates?.read(localStorage,Updates.BASELINE_KEY)||null;
 const pendingUpdate=Updates?.read(sessionStorage,Updates.PENDING_KEY)||null;
@@ -358,6 +383,8 @@ function isLocalFunctionPage(url){
     new URL('./gpt-skills.html',current).pathname,
     new URL('./knowledge-search.html',current).pathname,
     new URL('./system-controls.html',current).pathname,
+    new URL('./card-creation.html',current).pathname,
+    new URL('./book-creation.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -365,6 +392,14 @@ function isLocalFunctionPage(url){
  }catch(_){return false}
 }
 let readerCard=null;
+// Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
+ if(event.data?.kind!=='living-library-local-objects-updated')return;
+ if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id))return;
+ if(!syncPlayerObjects())return;
+ updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
+});
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
 window.addEventListener('message',event=>{
  if(event.origin!==window.location.origin||event.source!==document.getElementById('readerFrame').contentWindow)return;
@@ -516,6 +551,10 @@ function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b)
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;
+ if(b.sourceLayer==='local'&&ObjectCraft){
+  try{ObjectCraft.setBookActive(localStorage,b.id,active)}
+  catch(e){toast(e.message);return}
+ }
  b.active=active;storeBooks();
  // Close the overlay BEFORE the motion, otherwise WebGL's power budget pauses frames.
  closeBook();updateUI();
@@ -548,6 +587,7 @@ function applyProjection(projection){
  closeBook();projectionState=projection;const next=Catalog.buildCatalog(projection);
  BOOKS.splice(0,BOOKS.length,...next.books.map(b=>({...b,active:prefs.has(b.id)?prefs.get(b.id):prefs.has(b.publicId)?prefs.get(b.publicId):b.active})));
  for(const k of Object.keys(CARDS))delete CARDS[k];for(const k of Object.keys(BOOK_CARDS))delete BOOK_CARDS[k];Object.assign(CARDS,next.cards);Object.assign(BOOK_CARDS,next.bookCards);
+ syncPlayerObjects();
  const selection=BOOKS.find(b=>b.id===selectedId||b.publicId===alias);selectedId=selection?.id||BOOKS[0]?.id||null;
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.select?.(selectedId);
  $('gen2Status').textContent=catalogStatus(projection?.source.commit);
@@ -617,6 +657,13 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ openLocalCardEditor(id){
+  let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
+  if(!card)return;
+  select('gaming');openBook();
+  openCardReader({id,title:card.title,desc:card.description||'',seal:'◇',number:'00',
+   guild:'本機空白卡 · 草稿',kind:'public_function',url:'./card-creation.html?card='+encodeURIComponent(id)});
+ },
  controls:controlPrefs,saveControls,clampUnit,toast,
  notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
  // A renderer can fail at first paint even after the scene API is registered.
