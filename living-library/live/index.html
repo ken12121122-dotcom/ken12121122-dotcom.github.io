@@ -1029,6 +1029,98 @@ function coverTex(b){
  return tex;
 }
 const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
+/* LOCAL CARD 3D: single persisted card identity, separate from public GEN2 cards. */
+const floatingCardMeshes=new Map();let focusedCard=null;
+function newFloatingCard(record){
+ const canvas=document.createElement('canvas');canvas.width=384;canvas.height=540;
+ const c=canvas.getContext('2d');
+ c.fillStyle='#eadbb9';c.fillRect(0,0,384,540);
+ c.strokeStyle='#97754b';c.lineWidth=12;c.strokeRect(17,17,350,506);
+ c.lineWidth=3;c.strokeRect(36,36,312,467);
+ c.textAlign='center';c.textBaseline='middle';c.fillStyle='#786040';
+ c.font='96px serif';c.fillText('◇',192,157);
+ c.font='bold 36px "Noto Sans TC",sans-serif';
+ const chars=[...String(record.title||'空白卡片')];
+ for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)c.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
+ c.font='22px monospace';c.fillText('BLANK CARD',192,470);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
+ const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
+ const group=new THREE.Group(),back=new THREE.Mesh(new THREE.BoxGeometry(.88,1.24,.03),frameMat);
+ const face=new THREE.Mesh(new THREE.PlaneGeometry(.85,1.21),faceMat);face.position.z=.02;
+ back.userData.localCardId=record.id;face.userData.localCardId=record.id;group.add(back,face);
+ scene.add(group);
+ return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now()};
+}
+function disposeFloatingCard(entry){
+ scene.remove(entry.group);
+ for(const mesh of entry.group.children)mesh.geometry.dispose();
+ entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+}
+function refreshFloatingCards(){
+ let records;try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
+ catch(e){console.warn('Player card storage read failed without overwrite',e);return}
+ const current=new Map(records.map(x=>[x.id,x]));
+ for(const [id,card] of [...floatingCardMeshes]){
+  if(current.has(id)&&current.get(id).revision===card.record.revision)continue;
+  if(focusedCard?.id===id)exitCardFocus();
+  disposeFloatingCard(card);floatingCardMeshes.delete(id);
+ }
+ for(const record of records)if(!floatingCardMeshes.has(record.id))
+  floatingCardMeshes.set(record.id,newFloatingCard(record));
+ window.LivingScene?.syncRender?.();
+}
+function updateFloatingCards(now){
+ const items=[...floatingCardMeshes.values()],total=items.length;
+ for(let i=0;i<total;i++){
+  const entry=items[i],ang=(i-(total-1)/2)*.4;
+  entry.group.position.set(keeper.position.x+Math.sin(ang)*2.14,
+   2.8+(preferReduced?0:Math.sin(now*.0014+i)*.085),
+   keeper.position.z+2.35+Math.cos(ang)*.08);
+  entry.group.quaternion.copy(camera.quaternion);
+  const fraction=preferReduced?1:Math.min(1,(now-entry.born)/880);
+  entry.group.scale.setScalar(.12+.88*(1-(1-fraction)*(1-fraction)));
+ }
+ if(focusedCard){
+  const item=floatingCardMeshes.get(focusedCard.id);
+  if(!item){exitCardFocus();return}
+  const target=item.group.position.clone().addScaledVector(focusedCard.direction,2.02);
+  const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
+  const smooth=t*t*(3-2*t);
+  camera.position.copy(focusedCard.from).lerp(target,smooth);
+  camera.lookAt(item.group.position);
+  item.group.quaternion.copy(camera.quaternion);item.group.scale.setScalar(1);
+ }
+}
+function focusCard(id){
+ const item=floatingCardMeshes.get(id);if(!item||focusedCard)return;
+ walkKeys.clear();resetJoystick(true);
+ const direction=camera.position.clone().sub(item.group.position).normalize();
+ if(direction.lengthSq()<.01)direction.set(0,0,1);
+ focusedCard={id,direction,from:camera.position.clone(),began:performance.now()};
+ document.getElementById('cardFocusActions').hidden=false;
+ syncRender();
+}
+function exitCardFocus(){
+ if(!focusedCard)return;
+ focusedCard=null;document.getElementById('cardFocusActions').hidden=true;
+ cameraUpdate();syncRender();
+}
+document.getElementById('cardFocusClose').addEventListener('click',exitCardFocus);
+document.getElementById('cardFocusEdit').addEventListener('click',()=>{
+ const id=focusedCard?.id;if(!id)return;exitCardFocus();
+ window.LivingLibrary.openLocalCardEditor?.(id);
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
+});
+function pickFloatingCard(ray){
+ const targets=[...floatingCardMeshes.values()].flatMap(x=>x.group.children);
+ const hit=ray.intersectObjects(targets,false)[0];
+ if(!hit?.object.userData.localCardId)return false;
+ focusCard(hit.object.userData.localCardId);return true;
+}
+
 const Placement3D=window.LivingBookPlacement;
 if(!Placement3D)throw Error('3D placement script was not loaded');
 const preferReduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
