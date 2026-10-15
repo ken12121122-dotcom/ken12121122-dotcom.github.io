@@ -12,3 +12,13 @@ deployment_evidence：待本分支 CI／部署；原正式版 f702962 已由 OWN
 owner_device_verification：新增參數 NOT_TESTED；先前整合效果 OWNER PASS；辨識準確度無量測，不等同所有真機能力已驗收。
 
 OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打開；沿用 `public.gaming.book.creation` 既有 reader iframe 的同源來源驗證，`summon-collection` 只接受這張卡。設定卡只放參數，不放新書入口。
+
+## OWNER 2026-10-16 00:09 對齊後的最終範圍
+
+先前「叫出固定卡片之書」不符合創造書本需求，撤回該入口設計；原先成果保留為空白魔法書選項。書本創造術現在選擇 `legacy` 空白書或 `atlas` 雙面九格卡冊，再施放生成獨立 `local.book.*`。共用既有 blank-book-v1 資料封套，`openingMode` 分辨模型；不重設舊存檔，不複製卡片。
+
+每一本創造出的 atlas 書有獨立十八格、viewMode/viewOpen、active 與穩定 ID。runtime 依真實本機書記錄建立模型，支援外圈拿取／近身放開展開、拿起合書、卡槽／跨書拖曳、合上留內圈、歸架與重新展開、平滑專注及返回；舊固定卡冊及其中卡片保留相容。無 WebGL 時使用同一 atlas-controls 卡冊選單和 book query 選對獨立卡冊。
+
+參數調整沿用上一階段六項與原四項；未更新 APK、其他書本或正式 GEN2。正式 main 仍未發布此 PR。
+
+驗證新增：兩種創造型別／共同上限；跨兩本實體卡冊的十八個卡槽、原卡 ID/內容保存、獨立合上／歸架／reload；真實 iframe 型別選擇→創造→開啟對應卡冊→十八格。手機新增效果仍需 OWNER 驗收。

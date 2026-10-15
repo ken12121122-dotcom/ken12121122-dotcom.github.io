@@ -108,3 +108,9 @@
 第二本《卡片之書》已是現成公共書，不透過書本創造術建立。不含新書的舊偏好首次引入外圈；記錄 `known` 後尊重使用者歸架與既有 atlas 保存。書本創造術另提供開啟現成卡片之書的圖示入口；不增加卡片／書本身份。
 
 OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打開；沿用 `public.gaming.book.creation` 既有 reader iframe 的同源來源驗證，`summon-collection` 只接受這張卡。設定卡只放參數，不放新書入口。
+
+## 書本創造術型別選擇（OWNER 2026-10-16 00:09 更正）
+
+以此段取代上文「第二本從固定現成書入口開啟」的解讀。`public.gaming.book.creation` 內選擇空白魔法書（legacy）／卡片之書（atlas），再創造具有獨立 `local.book.*` ID 的實體書。`ObjectCraft` 保留既有 blank-book-v1 封套，atlas 型別由 openingMode 區別，十八格容器就是自己的 Book ID；不能把卡片放進 legacy 書或不存在的 ID。
+
+創造清單可開啟每本原書；`open-created-book` 僅接受當前書本創造術 iframe，同源與 record ID 均驗證。atlas 型別在場景具備卡冊模型、拖曳、放卡／跨書、合上留內圈、歸架與獨立保存，legacy 型別保持原有閱讀方式。原固定卡片之書與既有資料保留相容，不代替創造型別。調整參數仍只放於 system/public.system.controls。

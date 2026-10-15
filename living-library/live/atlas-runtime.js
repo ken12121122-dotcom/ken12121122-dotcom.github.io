@@ -4,28 +4,37 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  const State=root.LivingAtlasState,KEY='living-library-atlas-view-v1';
  let tuning=State.normalizeSettings(controls),BASE=.36*tuning.atlasSize;
  let saved={collection:'outer',collectionOpen:true};try{const raw=storage.getItem(KEY);if(raw){const parsed=JSON.parse(raw);if(parsed?.version!==1||!['outer','inner','shelf'].includes(parsed.collection))throw Error('卡冊位置資料版本不相容');saved=parsed}}catch(e){toast(e.message);saved={collection:'outer',readonly:true}}
- function persist(){if(saved.readonly)return;try{storage.setItem(KEY,JSON.stringify({version:1,collection:saved.collection,collectionOpen:saved.collectionOpen!==false}))}catch(e){toast('位置保存失敗：'+e.message)}}
+ function persist(m=collection){if(m!==collection){try{craft.setBookView(storage,m.id,m.view.collection,m.view.collectionOpen!==false)}catch(e){toast('位置保存失敗：'+e.message)}return}if(saved.readonly)return;try{storage.setItem(KEY,JSON.stringify({version:1,collection:saved.collection,collectionOpen:saved.collectionOpen!==false}))}catch(e){toast('位置保存失敗：'+e.message)}}
  const atlas=root.LivingAtlasModel.create(THREE),collection=root.LivingAtlasModel.create(THREE,true);
  const models=new Map([[State.ATLAS,atlas],[State.COLLECTION,collection]]);
- for(const [id,m] of models){m.id=id;m.group.userData.atlasId=id;m.group.scale.setScalar(BASE);m.group.visible=false;m.open=0;m.desired=false;m.animation=null;m.puffs=null;m.center=new THREE.Vector3();m.rotation=new THREE.Quaternion();m.setOpen(0);scene.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.userData.atlasBook=id})}
+ function prepareModel(id,m){m.id=id;m.group.userData.atlasId=id;m.group.scale.setScalar(BASE);m.group.visible=false;m.open=0;m.desired=false;m.animation=null;m.puffs=null;m.center=new THREE.Vector3();m.rotation=new THREE.Quaternion();m.setOpen(0);scene.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.userData.atlasBook=id});return m}
+ for(const [id,m] of models)prepareModel(id,m);collection.view=saved;
  let focus=null,returning=null,pointer=null,slotHighlight=null,audio=null,disposed=false;
  const ray=new THREE.Raycaster(),uv=new THREE.Vector2();
  const toolbar=document.getElementById('atlasActions'),exit=document.getElementById('atlasFocusExit'),close=document.getElementById('atlasCollectionClose'),shelf=document.getElementById('atlasCollectionShelf'),switcher=document.getElementById('atlasFocusSwitch');
- function syncUI(){const target=focus?.id;toolbar.hidden=!target;close.hidden=target!==State.COLLECTION;shelf.hidden=target!==State.COLLECTION;switcher.hidden=!target||!atlas.desired||saved.collection!=='inner';
+ function innerCollections(){return [...models.values()].filter(m=>m!==atlas&&m.view.collection==='inner')}
+ function syncUI(){const target=focus?.id;toolbar.hidden=!target;close.hidden=!State.isCollection(target);shelf.hidden=close.hidden;switcher.hidden=!target||!atlas.desired||!innerCollections().some(m=>m.open>.98);
   stageData();}
  function stageData(){canvas.parentElement.dataset.atlas=atlas.desired?'summoned':'hidden';canvas.parentElement.dataset.atlasFocus=focus?.id||'';canvas.parentElement.dataset.collection=saved.collection}
  function audioStart(){try{const AC=root.AudioContext||root.webkitAudioContext;if(AC&&!audio)audio=new AC();if(audio?.state==='suspended')audio.resume().catch(()=>{})}catch{}}
  function sound(show){audioStart();if(!audio)return;try{const n=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=show?'sine':'triangle';o.frequency.setValueAtTime(show?245:360,n);o.frequency.exponentialRampToValueAtTime(show?760:85,n+.23);g.gain.setValueAtTime(.001,n);g.gain.exponentialRampToValueAtTime(.12,n+.025);g.gain.exponentialRampToValueAtTime(.001,n+.3);o.connect(g).connect(audio.destination);o.start(n);o.stop(n+.32)}catch{}}
- function setInnerPose(m){const peer=m===atlas?collection:atlas;const direction=peer.group.visible?new THREE.Vector3(0,0,-1).applyQuaternion(peer.rotation):camera.position.clone().sub(keeper.position);direction.y=0;if(direction.lengthSq()<.1)direction.set(0,0,1);direction.normalize();const sideways=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction);
-  const yaw=Math.atan2(direction.x,direction.z);m.direction=direction.clone();m.offset=direction.multiplyScalar(tuning.atlasDistance).addScaledVector(sideways,(m===atlas?-1:1)*tuning.atlasSeparation);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
+ function setInnerPose(m){const peer=[...models.values()].find(x=>x!==m&&x.group.visible);const direction=peer?.group.visible?new THREE.Vector3(0,0,-1).applyQuaternion(peer.rotation):camera.position.clone().sub(keeper.position);direction.y=0;if(direction.lengthSq()<.1)direction.set(0,0,1);direction.normalize();const sideways=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction);
+  const yaw=Math.atan2(direction.x,direction.z);m.direction=direction.clone();m.side=m===atlas?-1:1+2*innerCollections().filter(x=>x!==m&&x.group.visible).length;m.offset=direction.multiplyScalar(tuning.atlasDistance).addScaledVector(sideways,m.side*tuning.atlasSeparation);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw+Math.PI);
   // Both books share the same page-facing orientation for cross-book drag.
-  if(peer.group.visible)m.rotation.copy(peer.rotation);
+  if(peer?.group.visible)m.rotation.copy(peer.rotation);
  }
  function begin(m,show,interrupt=false){if(m.animation&&!interrupt)return;const fromOpen=m.group.visible?m.open:0,fromScale=m.group.visible?m.group.scale.x/BASE:0;if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.group.visible=true;if(!m.offset)setInnerPose(m);m.animation={show,start:performance.now(),fromOpen,fromScale};sound(show);if(show)m.puffs=smoke.create(m.center.clone(),false);invalidate()}
  function toggle(){cancelPointer();audioStart();atlas.desired=!atlas.desired;begin(atlas,atlas.desired,true);syncUI()}
  function summon(){if(!atlas.desired)toggle();else focusBook(State.ATLAS)}
- function placeCollection(){cancelPointer();saved.collection='inner';saved.collectionOpen=true;persist();collection.desired=true;setInnerPose(collection);setCollectionActive(true);if(!collection.animation)begin(collection,true);syncUI();invalidate()}
- function foldCollection(toShelf=false){cancelPointer();saved.collectionOpen=false;persist();collection.desired=false;collection.afterClose=toShelf?'shelf':'closed';if(!collection.animation)begin(collection,false);syncUI();invalidate()}
+ function syncCollections(){
+  let records;try{const stamp=storage.getItem(craft.KEY);if(stamp===syncCollections.stamp)return;records=craft.listBooks(storage).filter(b=>b.openingMode==='atlas');syncCollections.stamp=stamp}catch(e){if(!syncCollections.failed)toast(e.message);syncCollections.failed=true;return}
+  for(const b of records)if(!models.has(b.id)){
+   const m=prepareModel(b.id,root.LivingAtlasModel.create(THREE,true,b.title));m.view={collection:['outer','inner','shelf'].includes(b.viewMode)?b.viewMode:(b.active===false?'shelf':'outer'),collectionOpen:b.viewOpen!==false};models.set(b.id,m);
+   if(m.view.collection==='inner'){m.desired=m.view.collectionOpen;setInnerPose(m);m.group.visible=true;m.open=m.desired?1:0;m.setOpen(m.open)}
+  }
+ }
+ function placeCollection(id=State.COLLECTION){syncCollections();const m=models.get(id);if(!m||m===atlas)return;cancelPointer();m.view.collection='inner';m.view.collectionOpen=true;persist(m);m.desired=true;setInnerPose(m);setCollectionActive(true,id);if(!m.animation)begin(m,true);syncUI();invalidate()}
+ function foldCollection(toShelf=false,id=focus?.id||State.COLLECTION){const m=models.get(id);if(!m||m===atlas)return;cancelPointer();m.view.collectionOpen=false;persist(m);m.desired=false;m.afterClose=toShelf?'shelf':'closed';if(!m.animation)begin(m,false);syncUI();invalidate()}
  function enterFocus(id){const m=models.get(id);if(!m?.group.visible||m.animation)return;
   if(!focus){focus={id,from:camera.position.clone(),rotation:camera.quaternion.clone(),keeper:keeper.position.clone(),started:performance.now()}}else{focus={...focus,id,started:performance.now(),from:camera.position.clone(),rotation:camera.quaternion.clone()}}
   returning=null;syncUI();invalidate();
@@ -33,11 +42,11 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function exitFocus(){if(!focus)return;const f=focus;focus=null;returning={from:camera.position.clone(),rotation:camera.quaternion.clone(),target:f.originalPosition||f.from.clone(),quaternion:f.originalQuaternion||f.rotation.clone(),keeper:f.originalKeeper||f.keeper.clone(),start:performance.now()};syncUI();invalidate()}
  // Preserve the overview snapshot even when portrait focus switches books.
  function focusBook(id){const before=focus;if(!before){enterFocus(id);if(focus){focus.originalPosition=focus.from.clone();focus.originalQuaternion=focus.rotation.clone();focus.originalKeeper=focus.keeper.clone()}}else{const original={originalPosition:before.originalPosition,originalQuaternion:before.originalQuaternion,originalKeeper:before.originalKeeper};enterFocus(id);Object.assign(focus,original)}}
- exit.addEventListener('click',exitFocus);close.addEventListener('click',()=>foldCollection(false));shelf.addEventListener('click',()=>foldCollection(true));switcher.addEventListener('click',()=>focusBook(focus?.id===State.ATLAS?State.COLLECTION:State.ATLAS));
+ exit.addEventListener('click',exitFocus);close.addEventListener('click',()=>foldCollection(false));shelf.addEventListener('click',()=>foldCollection(true));switcher.addEventListener('click',()=>focusBook(focus?.id===State.ATLAS?(innerCollections().find(m=>m.open>.98)?.id||State.ATLAS):State.ATLAS));
  function rayAt(e){const r=canvas.getBoundingClientRect();uv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(uv,camera);scene.updateMatrixWorld(true)}
  function hits(e){rayAt(e);const active=[...models.values()].filter(m=>m.group.visible&&!m.animation);const hits=[];
   for(const m of active)for(const h of ray.intersectObject(m.group,true))hits.push({...h,book:m.id});
-  const outer=collectionEntity();if(saved.collection!=='inner'&&outer)for(const h of ray.intersectObject(outer,true))hits.push({...h,book:State.COLLECTION,outer:true});
+  for(const m of models.values())if(m!==atlas&&m.view.collection!=='inner'){const outer=collectionEntity(m.id);if(outer?.visible)for(const h of ray.intersectObject(outer,true))hits.push({...h,book:m.id,outer:true})}
   return hits.sort((a,b)=>a.distance-b.distance);
  }
  function cardHit(e){rayAt(e);const targets=[...cards.values()].filter(c=>c.group.visible&&!c.summon&&!c.recycle).flatMap(c=>c.group.children);return ray.intersectObjects(targets,false)[0]}
@@ -64,8 +73,8 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function pointerMove(e){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;
   if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)p.moved=true;
   if(p.kind==='card'&&p.moved){const v=dragWorld(e,p.position);if(v){p.entry.group.position.copy(v);p.entry.group.quaternion.copy(camera.quaternion);p.entry.group.scale.setScalar(BASE*1.3*tuning.atlasCardSize)}highlight(hoveredSlot(e))}
-  if(p.kind==='book'&&p.book===State.COLLECTION&&p.moved&&performance.now()-p.start>=330){
-   if(!p.dragging){p.dragging=true;const obj=p.outer?collectionEntity():collection.group;p.position=obj.position.clone();p.object=obj;collection.dragging=true}
+  if(p.kind==='book'&&State.isCollection(p.book)&&p.moved&&performance.now()-p.start>=330){
+   if(!p.dragging){p.dragging=true;const m=models.get(p.book),obj=p.outer?collectionEntity(p.book):m.group;p.position=obj.position.clone();p.object=obj;m.dragging=true;if(!p.outer){p.openBefore=m.open;m.dragFold={start:performance.now(),from:m.open}}}
    const v=dragWorld(e,p.position);if(v)p.object.position.copy(v);
   }
   invalidate();return true;
@@ -77,9 +86,9 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    p.entry.group.position.copy(p.position);p.entry.group.quaternion.copy(p.quaternion);p.entry.group.scale.setScalar(p.scale);
   }else if(p.kind==='control'&&!p.moved&&!cancel){const card=[...cards.values()].find(c=>State.readerActive(c.record));if(card)openCard(card.id);else toast('先將卡片放入右側讀卡區')}
   else if(p.kind==='book'){
-   collection.dragging=false;
-   if(p.dragging&&!cancel){const position=p.object.position,dist=Math.hypot(position.x-keeper.position.x,position.z-keeper.position.z);if(dist<3.6)placeCollection();else foldCollection(true)}
-   else if(!p.moved&&!cancel){if(p.outer)placeCollection();else if(collection.open<.1&&p.book===State.COLLECTION){collection.desired=true;saved.collectionOpen=true;persist();begin(collection,true)}else focusBook(p.book)}
+   const m=models.get(p.book);if(m){m.dragging=false;m.dragFold=null;if(cancel&&p.openBefore!==undefined){m.open=p.openBefore;m.setOpen(m.open)}}
+   if(p.dragging&&!cancel){const position=p.object.position,dist=Math.hypot(position.x-keeper.position.x,position.z-keeper.position.z);if(dist<3.6)placeCollection(p.book);else foldCollection(true,p.book)}
+   else if(!p.moved&&!cancel){if(p.outer)placeCollection(p.book);else if(m.open<.1&&State.isCollection(p.book)){m.desired=true;m.view.collectionOpen=true;persist(m);begin(m,true)}else focusBook(p.book)}
    if(p.dragging&&cancel&&p.object)p.object.position.copy(p.position);
   }
   invalidate();return true;
@@ -92,7 +101,8 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    const bounds=new THREE.Box3();for(const x of visible)bounds.union(new THREE.Box3().setFromObject(x.group));
    const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
    // Measure in the book frame, independent of world yaw.
-   const width=5.4*BASE+(visible.length>1?2*tuning.atlasSeparation:0),height=3.7*BASE,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
+   const side=new THREE.Vector3(1,0,0).applyQuaternion(m.group.quaternion),positions=visible.map(x=>x.group.position.dot(side));
+   const width=5.4*BASE+Math.max(...positions)-Math.min(...positions),height=3.7*BASE,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
    const dist=(Math.max(height/(2*tan*.76),width/(2*tan*camera.aspect*.82))+.25)*tuning.atlasFocusDistance;
    const normal=new THREE.Vector3(0,0,1).applyQuaternion(m.group.quaternion),target=center.clone().addScaledVector(normal,dist);
    const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(target,center,new THREE.Vector3(0,1,0)));
@@ -103,26 +113,28 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   const next=State.normalizeSettings(controls);if(Object.keys(next).every(k=>next[k]===tuning[k]))return;
   tuning=next;BASE=.36*tuning.atlasSize;
   for(const m of models.values()){
-   if(m.direction){const side=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),m.direction);m.offset=m.direction.clone().multiplyScalar(tuning.atlasDistance).addScaledVector(side,(m===atlas?-1:1)*tuning.atlasSeparation)}
+   if(m.direction){const side=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),m.direction);m.offset=m.direction.clone().multiplyScalar(tuning.atlasDistance).addScaledVector(side,m.side*tuning.atlasSeparation)}
    if(!m.animation)m.group.scale.setScalar(BASE);
   }
   restoreFocusCamera();invalidate();
  }
  function tick(now){
   applyTuning();
-  const entity=collectionEntity();if(entity&&!collection.dragging)entity.visible=saved.collection!=='inner';
+  syncCollections();
+  for(const m of models.values())if(m!==atlas){const entity=collectionEntity(m.id);if(entity&&!m.dragging)entity.visible=m.view.collection!=='inner'&&!focus&&!returning;}
   for(const m of models.values()){
    if(!m.group.visible)continue;
    if(!m.dragging){m.center.set(keeper.position.x+(m.offset?.x||0),tuning.atlasHeight,keeper.position.z+(m.offset?.z||0));m.group.position.copy(m.center);m.group.quaternion.copy(m.rotation)}
+   if(m.dragFold){m.open=m.dragFold.from*(1-Math.min(1,(now-m.dragFold.start)/350));m.setOpen(m.open)}
    if(m.animation){const a=m.animation,age=now-a.start;let complete=false;
     if(a.show){const t=reduced?1:Math.min(1,age/1100);m.group.scale.setScalar(BASE*Math.max(.001,a.fromScale+(1-a.fromScale)*Math.min(1,t/.35)));m.open=a.fromOpen+(1-a.fromOpen)*Math.max(0,Math.min(1,(t-.35)/.65));if(m.puffs)smoke.update(m.puffs,m.center,age,1100);complete=t>=1}
-    else if(m===collection&&m.afterClose==='closed'){const t=reduced?1:Math.min(1,age/650);m.open=a.fromOpen*(1-t);m.group.scale.setScalar(BASE);complete=t>=1}
+    else if(m!==atlas&&m.afterClose==='closed'){const t=reduced?1:Math.min(1,age/650);m.open=a.fromOpen*(1-t);m.group.scale.setScalar(BASE);complete=t>=1}
     else{const t=reduced?1:Math.min(1,age/1000);m.open=a.fromOpen*(1-Math.min(1,t/.45));if(t>=.45&&!m.puffs)m.puffs=smoke.create(m.center.clone(),false);if(m.puffs)smoke.update(m.puffs,m.center,Math.max(0,age-450),550);m.group.scale.setScalar(BASE*a.fromScale*Math.max(.001,t<.5?1:1-(t-.5)*2));complete=t>=1}
     m.setOpen(m.open);
     if(complete){if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.animation=null;m.group.scale.setScalar(BASE);
-     if(!a.show){if(m===collection&&m.afterClose==='closed'){m.group.visible=true;m.open=0;m.setOpen(0)}else{m.group.visible=false;if(m===collection){saved.collection='shelf';persist();setCollectionActive(false)}}if(focus?.id===m.id)exitFocus()}
+     if(!a.show){if(m!==atlas&&m.afterClose==='closed'){m.group.visible=true;m.open=0;m.setOpen(0)}else{m.group.visible=false;if(m!==atlas){m.view.collection='shelf';persist(m);setCollectionActive(false,m.id)}}if(focus?.id===m.id)exitFocus()}
      if(m===atlas&&m.desired!==a.show)begin(m,m.desired);
-     if(m===collection&&m.desired!==a.show&&m.desired)begin(m,true);
+     if(m!==atlas&&m.desired!==a.show&&m.desired)begin(m,true);
      syncUI();
     }
    }
@@ -141,12 +153,13 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function showReaderReturn(){restoreFocusCamera();invalidate()}
  function dispose(){disposed=true;cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
  if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
- if(saved.collection==='shelf')setCollectionActive(false);
+ if(saved.collection==='shelf')setCollectionActive(false,State.COLLECTION);
+ syncCollections();
  syncUI();
  root.addEventListener('pagehide',e=>{if(!e.persisted)dispose();else cancelPointer()});
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
-  isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:()=>!!collection.dragging,
+  isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
-  inspect(){return {tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);

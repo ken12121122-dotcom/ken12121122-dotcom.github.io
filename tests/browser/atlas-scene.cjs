@@ -17,9 +17,10 @@ for(const collection of [false,true]){
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(48,900/650,.1,110),keeper=new THREE.Group();keeper.position.set(0,.46,0);scene.add(keeper);camera.position.set(0,3,12);camera.lookAt(0,2,0);camera.updateMatrixWorld();
 const backing=new Map(),storage={getItem:k=>backing.get(k)??null,setItem:(k,v)=>backing.set(k,v)},cards=new Map(),canvas={parentElement:element(),getBoundingClientRect:()=>({left:0,top:0,width:900,height:650}),setPointerCapture(){}};
 const outer=new THREE.Group();outer.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));outer.position.set(4,3,0);scene.add(outer);
+const entities=new Map([[State.COLLECTION,outer]]);
 let smokes=0,removed=0,opened=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
 function refresh(){for(const r of craft.listCards(storage)){if(cards.has(r.id))cards.get(r.id).record=r;else{const g=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),new THREE.MeshBasicMaterial());mesh.userData.localCardId=r.id;g.add(mesh);g.position.set(0,2,4);scene.add(g);cards.set(r.id,{id:r.id,record:r,group:g})}}}
-const controls={};const runtime=host.LivingAtlasRuntime.create({controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:()=>outer,setCollectionActive(){},reduced:false});
+const controls={};const runtimeOptions={controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:id=>entities.get(id),setCollectionActive(){},reduced:false};const runtime=host.LivingAtlasRuntime.create(runtimeOptions);
 function tick(ms){clock+=ms;runtime.tick(clock);scene.updateMatrixWorld(true);camera.updateMatrixWorld(true)}
 function group(id){return scene.children.find(x=>x.userData.atlasId===id)}
 function meshSlot(id,index){let mesh;group(id).traverse(x=>{if(x.userData.atlasSlot===index)mesh=x});return mesh}
@@ -57,4 +58,20 @@ Object.assign(controls,{atlasDistance:.8,atlasHeight:3.1,atlasSize:1.2,atlasSepa
 const changed=runtime.inspect();assert.equal(changed.atlasScale,.36*1.2);assert.equal(changed.atlasPosition[1],3.1);assert.ok(Math.abs(Math.hypot(changed.atlasPosition[0]-keeper.position.x,changed.atlasPosition[2]-keeper.position.z)-Math.hypot(.8,1.4))<1e-8);assert.ok(camera.position.distanceTo(focusBefore)>.1);
 craft.placeCard(storage,card.id,State.ATLAS,0);refresh();tick(1);assert.ok(Math.abs(cards.get(card.id).group.scale.x-.36*1.2*1.3*.7)<1e-9);
 craft.placeCard(storage,card.id,null);refresh();assert.equal(JSON.stringify(craft.listCards(storage).map(({revision,updatedAt,...r})=>r)),JSON.stringify(JSON.parse(recordBefore).map(({revision,updatedAt,...r})=>r)),'tuning retains card contents and identity');
+// Books forged with the atlas template are separate physical 18-slot containers.
+const forgedA=craft.createCardBook(storage,{randomUUID:()=> 'forged-a'},'第一本卡冊'),forgedB=craft.createCardBook(storage,{randomUUID:()=> 'forged-b'},'第二本卡冊');
+for(const b of [forgedA,forgedB]){const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));g.position.set(5,3,2);scene.add(g);entities.set(b.id,g)}
+runtime.exitFocus();tick(900);runtime.placeCollection(forgedA.id);tick(1900);assert.equal(group(forgedA.id).visible,true);assert.equal(entities.get(forgedA.id).visible,false);
+runtime.focus(forgedA.id);tick(900);
+for(let i=0;i<18;i++){moveTo(forgedA.id,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].containerId,forgedA.id);assert.equal(craft.listCards(storage)[0].slotIndex,i)}
+runtime.exitFocus();tick(900);runtime.placeCollection(forgedB.id);tick(1900);runtime.focus(forgedB.id);tick(900);moveTo(forgedB.id,8,cards.get(card.id));assert.equal(craft.listCards(storage)[0].containerId,forgedB.id);
+// Fold only the focused forged book, leave it in the inner orbit, then reopen it.
+doc.getElementById('atlasCollectionClose').click();tick(900);assert.equal(craft.listBooks(storage).find(b=>b.id===forgedB.id).viewOpen,false);assert.equal(group(forgedA.id).visible,true);
+runtime.placeCollection(forgedB.id);tick(1900);runtime.focus(forgedB.id);tick(900);doc.getElementById('atlasCollectionShelf').click();tick(1900);assert.equal(craft.listBooks(storage).find(b=>b.id===forgedB.id).viewMode,'shelf');assert.equal(group(forgedB.id).visible,false);assert.equal(cards.get(card.id).group.visible,false);
+// Lifting an open forged book folds it; cancellation restores the original open pose.
+runtime.focus(forgedA.id);tick(900);const lift=point(meshSlot(forgedA.id,0));runtime.pointerDown(lift);tick(400);runtime.pointerMove({...lift,clientX:lift.clientX+24});tick(175);assert.equal(runtime.isCollectionDragging(forgedA.id),true);assert.ok(runtime.inspect().collections.find(b=>b.id===forgedA.id).open<1);runtime.cancelPointer(1);tick(1);assert.equal(runtime.inspect().collections.find(b=>b.id===forgedA.id).open,1);assert.equal(runtime.isCollectionDragging(forgedA.id),false);
 runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 10 atlas slots, all 18 collection slots and cross-book transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');
+
+// Rebuild the runtime from the same saved records, then reopen the same book/card.
+const restored=host.LivingAtlasRuntime.create(runtimeOptions);clock+=1900;restored.tick(clock);assert.equal(scene.children.find(x=>x.userData.atlasId===forgedA.id).visible,true);assert.equal(scene.children.find(x=>x.userData.atlasId===forgedB.id).visible,false);restored.placeCollection(forgedB.id);clock+=1900;restored.tick(clock);assert.equal(cards.get(card.id).group.visible,true);assert.equal(craft.listCards(storage)[0].containerId,forgedB.id);assert.equal(craft.listCards(storage)[0].slotIndex,8);restored.dispose();assert.equal(smokes,removed);
+console.log('PASS: two forged physical card books, all 18 slots, cross-book transfer, independent close/shelf, reload and original Card ID.');

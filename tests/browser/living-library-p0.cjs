@@ -186,11 +186,19 @@ async function main(){
   const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
   const booksBefore=await p.evaluate(()=>LivingLibrary.books.length);
-  await forge.getByRole('button',{name:'開啟卡片之書',exact:true}).click();
-  await p.waitForFunction(()=>document.querySelector('#drawerTitle').textContent==='卡片之書');
-  assert.equal(await p.evaluate(()=>LivingLibrary.books.length),booksBefore,'opening existing collection never creates a duplicate');
-  await p.locator('#closeDrawer').click();
-  report.checks.push({id:'book_forge_existing_collection_entry',result:'PASS',scope:'Real creator iframe action opens existing collection fallback without adding a book.'});
+  await forge.locator('#bookType').selectOption('atlas');await forge.locator('#name').fill('測試九加九卡冊');
+  await forge.getByRole('button',{name:'施放書本創造術',exact:true}).click();
+  await p.waitForFunction(n=>LivingLibrary.books.length===n+1,booksBefore);
+  const forgedId=await p.evaluate(()=>LivingObjectCraft.listBooks(localStorage).find(b=>b.title==='測試九加九卡冊')?.id);
+  assert.ok(forgedId);assert.equal(await p.evaluate(id=>LivingLibrary.books.find(b=>b.id===id).openingMode,forgedId),'atlas');
+  await forge.getByRole('button',{name:'開啟測試九加九卡冊',exact:true}).click();
+  await p.waitForFunction(()=>document.querySelector('#drawerTitle').textContent==='測試九加九卡冊');
+  await p.locator('[data-card-id="public.gaming.atlas"]').dispatchEvent('click');
+  const forgedFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forgedFrame.waitForURL(url=>url.searchParams.get('book')===forgedId);
+  assert.equal(await forgedFrame.locator('.slot').count(),18);assert.equal(await forgedFrame.locator('#bookPicker').inputValue(),forgedId);
+  await p.locator('#readerBack').click();await p.locator('#closeDrawer').click();
+  report.checks.push({id:'book_forge_template_collection',result:'PASS',scope:'Real template choice creates an independently identified 18-slot card book; its own reader selects that exact container.'});
   // Placement preferences must never wipe unrelated player data on reload.
   await p.evaluate(()=>localStorage.setItem('nw-p0-save-sentinel','synthetic-preserve-me'));
   await p.reload({waitUntil:'domcontentloaded'});

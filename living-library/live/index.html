@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.atlas-player-tuning.1">
+<meta name="living-library-release" content="2026-10-16.book-forge-templates.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -321,10 +321,10 @@ function syncPlayerObjects(){
  for(const key of Object.keys(BOOK_CARDS))if(key.startsWith('local.book.'))delete BOOK_CARDS[key];
  for(const book of records){
   if(BOOKS.some(b=>b.id===book.id))continue;
-  BOOKS.push({id:book.id,name:book.title,kind:'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
+  BOOKS.push({id:book.id,name:book.title,kind:book.openingMode==='atlas'?'玩家創作 · 卡片之書':'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
    description:book.description,target:'空白卡槽／未建立技能',icon:'◇',color:'#3c7880',
    active:book.active!==false,sourceLayer:'local',kb_id:null,publicId:null,openingMode:book.openingMode});
-  BOOK_CARDS[book.id]=[...(book.contentIds||[])];
+  BOOK_CARDS[book.id]=book.openingMode==='atlas'?['public.gaming.atlas']:[...(book.contentIds||[])];
  }
  return true;
 }
@@ -485,9 +485,9 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
- else if(id==='public.gaming.book.creation'&&action==='summon-collection'){
-  const b=BOOKS.find(b=>b.id==='cardCollection');if(!b)return;closeBook();select(b.id);
-  if(window.LivingScene?.atlas)window.LivingScene.atlas.placeCollection();else openBook();
+ else if(id==='public.gaming.book.creation'&&action==='open-created-book'){
+  let record;try{record=ObjectCraft.listBooks(localStorage).find(b=>b.id===event.data.bookId)}catch(e){toast(e.message);return}
+  if(!record)return;closeBook();select(record.id);openBook();
  }
  else if(id==='public.system.controls'&&action==='update-preferences'){
   const input=event.data.settings;
@@ -521,7 +521,8 @@ window.addEventListener('message',event=>{
  }
 });
 function openCardReader(card){
- if(card.id==='public.gaming.atlas'&&window.LivingScene?.atlas){closeBook();window.LivingScene.atlas.summon();return}
+ if(card.id==='public.gaming.atlas'&&window.LivingScene?.atlas){const b=book();closeBook();if(b.openingMode==='atlas')window.LivingScene.atlas.placeCollection(b.id);else window.LivingScene.atlas.summon();return}
+ if(card.id==='public.gaming.atlas'&&book().openingMode==='atlas')card={...card,url:'./atlas-controls.html?book='+encodeURIComponent(book().id)};
  storeBooks();
  readerCard=card;
  $('readerTitle').textContent=card.title;
@@ -642,7 +643,7 @@ function renderFunctions(b){
 }
 
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){const b=book();if(!b)return;if(b.id==='cardCollection'&&window.LivingScene?.atlas){window.LivingScene.atlas.placeCollection();return;}closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function openBook(){const b=book();if(!b)return;if((b.id==='cardCollection'||b.openingMode==='atlas')&&window.LivingScene?.atlas){window.LivingScene.atlas.placeCollection(b.id==='cardCollection'?undefined:b.id);return;}closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;
@@ -752,7 +753,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
- setCollectionActive(active){const b=BOOKS.find(x=>x.id==='cardCollection');if(b)setBookActive(b,active)},
+ setCollectionActive(active,id='local.atlas.collection'){const b=BOOKS.find(x=>x.id===(id==='local.atlas.collection'?'cardCollection':id));if(b)setBookActive(b,active)},
  getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
   let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
@@ -1469,7 +1470,7 @@ function targetFor(o,t){
 function updateOrbit(t,now=performance.now()){
  currentOrbitTime=t;
  for(const o of bookEntities){
-  if(o.id==='cardCollection'&&atlasRuntime?.isCollectionDragging())continue;
+  if(atlasRuntime?.isCollectionDragging(o.id==='cardCollection'?'local.atlas.collection':o.id))continue;
   const target=targetFor(o,t),g=o.group,flight=o.flight;
   if(flight&&!preferReduced){
    const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
@@ -1521,8 +1522,8 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  craft:window.LivingObjectCraft,storage:localStorage,reduced:preferReduced,toast,
  smoke:{create:createCardSmoke,update:updateCardSmoke,remove:removeCardSmoke},
  invalidate:()=>window.LivingScene?.syncRender?.(),
- controls:controlPrefs,collectionEntity:()=>entityById.get('cardCollection')?.group,
- setCollectionActive:active=>window.LivingLibrary.setCollectionActive(active),
+ controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
+ setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
  openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
@@ -1706,7 +1707,7 @@ function paint(now){
  updateFloatingCards(now);
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
- for(const entry of bookEntities)if(entry.id!=='cardCollection')entry.group.visible=!atlasRuntime?.inFocus;
+ for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
  keeper.visible=!atlasRuntime?.inFocus;
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
