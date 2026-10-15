@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node living-library-p0.cjs && node interaction-session.cjs && node interaction-dispatch.cjs && node action-payload.cjs && node character-tap.cjs && node spell-preflight.cjs && node definition-snapshot.cjs && node spell-store.cjs && node object-backup.cjs"
+    "test": "node living-library-p0.cjs && node interaction-session.cjs && node interaction-dispatch.cjs && node action-payload.cjs && node character-tap.cjs && node spell-preflight.cjs && node definition-snapshot.cjs && node spell-store.cjs && node object-backup.cjs && node object-outbox.cjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",

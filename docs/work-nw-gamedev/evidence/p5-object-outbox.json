@@ -1,0 +1,44 @@
+{
+  "schema": "nw-object-outbox-evidence-v1",
+  "work_item_id": "P5-OBJECT-OUTBOX-001",
+  "state": "VERIFYING_CI",
+  "observed_at": "2026-10-15T06:32:23.084Z",
+  "base_sha": "71f44572a10d40838ddca64ade8ecbaa1b5a9912",
+  "upstream_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+  "upstream_merge": "Clean except browser package test-command conflict resolved by preserving all previous tests and new released backup checks; live source blobs match upstream main exactly",
+  "scope": "P2_P5_PREPARATORY_ONLY",
+  "features": [
+    "Stable object IDs/revisions and entire inert object text captured to separate IndexedDB outbox, recycled records included",
+    "Atomic versions/pending write; duplicate exact snapshots do not requeue; higher revisions coalesce",
+    "Cross-connection readwrite transactions reject stale revision or same-revision divergent payload; source change during capture rejected",
+    "Missing IDs/absent source do not infer deletion or clear pending"
+  ],
+  "tests": {
+    "local_node": {
+      "result": "PASS",
+      "tests": 341,
+      "fail": 0,
+      "skipped": 0
+    },
+    "schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "parity": 56
+    },
+    "browser": "PENDING"
+  },
+  "limits": {
+    "production_feature_delta": 0,
+    "live_auto_capture": "NOT_ENABLED",
+    "transport": "NOT_IMPLEMENTED; pending_authorization is a local state only",
+    "source_atomicity": "LocalStorage and IndexedDB are separate stores. Checks reject observed source changes, but no cross-storage atomic save guarantee; later local edits require explicit recapture. No automatic source writer/worker installed.",
+    "delivery_lock": "Cross-tab transport lease not implemented",
+    "remote_roundtrip": "NOT_TESTED",
+    "ai_readback": "NOT_TESTED",
+    "device": "NOT_TESTED",
+    "staging": "NOT_TESTED",
+    "release": "NOT_RELEASED"
+  },
+  "privacy": "Synthetic fixtures only; no private source data, credential, audio or network"
+}

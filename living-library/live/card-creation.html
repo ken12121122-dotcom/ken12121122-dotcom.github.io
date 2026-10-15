@@ -158,7 +158,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    const restore=document.createElement('button');restore.type='button';
    restore.textContent='♻';restore.setAttribute('aria-label','還原 '+card.title);restore.title='還原卡片';
    restore.addEventListener('click',()=>{
-    try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('已還原卡片，將重新進入 3D 懸浮軌道。')}
+    try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('卡片已還原，將退出書頁並從 3D 煙霧中重新誕生。')}
     catch(e){status(e.message,true)}
    });
    row.append(label,restore);bin.append(row);

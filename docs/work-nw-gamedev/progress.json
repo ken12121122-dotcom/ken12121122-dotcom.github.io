@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T06:28:53.759Z",
+  "updated_at": "2026-10-15T06:32:23.084Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -436,6 +436,18 @@
       "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
       "release": "RELEASED_STANDALONE_PR234_DEVICE_NOT_TESTED",
       "release_evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
+    },
+    {
+      "work_item_id": "P5-OBJECT-OUTBOX-001",
+      "state": "VERIFYING_CI",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_P5_PREPARATORY_ONLY; explicit isolated ObjectCraft capture, no production loader or transport",
+      "rollback_sha": "71f44572a10d40838ddca64ade8ecbaa1b5a9912",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+      ]
     }
   ],
   "last_run": {
@@ -449,8 +461,8 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-14",
     "lease_expires_at": "2026-10-15T06:53:53.759Z",
-    "heartbeat_at": "2026-10-15T06:28:53.759Z",
-    "state": "BUILDING_OBJECT_OUTBOX",
+    "heartbeat_at": "2026-10-15T06:32:23.084Z",
+    "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",

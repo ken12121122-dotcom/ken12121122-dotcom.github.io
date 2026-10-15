@@ -35,11 +35,38 @@ test('both in-book recycle and focus-mode confirm trigger one shared effect; red
  const cardPage=await load('living-library/live/card-creation.html');
  assert.match(s,/event\.data\.action==='card-recycled'/);
  assert.match(s,/ObjectCraft\.listRecycledCards\(localStorage\)\.some\(card=>card\.id===id\)/);
- assert.match(s,/scene\?\.startCardRecycle\?\.\(id\)/);
+ assert.match(s,/if\(scene\.startCardRecycle\(id\)\)return/);
  assert.match(s,/window\.LivingObjectCraft\.recycleCard\(localStorage,id\)/);
  assert.match(s,/if\(!startCardRecycle\(id\)\)refreshFloatingCards\(\)/);
  assert.match(s,/if\(preferReduced\)\{refreshFloatingCards\(\);return true\}/);
  assert.match(s,/filter\(x=>!x\.summon&&!x\.recycle\)/);
  assert.match(cardPage,/notify\('card-recycled',id\)/);
  assert.match(cardPage,/notify\('card-restored',card\.id\)/);
+});
+
+test('focus confirmation returns to the normal overview before any smoke is created',async()=>{
+ const s=await load('living-library/live/index.html');
+ const callback=s.slice(s.indexOf("document.getElementById('cardRecycleAccept')"),s.indexOf("document.addEventListener('keydown',e=>",s.indexOf("document.getElementById('cardRecycleAccept')")));
+ const stored=callback.indexOf('window.LivingObjectCraft.recycleCard(localStorage,id)');
+ const exited=callback.indexOf('exitCardFocus()');
+ const effect=callback.indexOf('startCardRecycle(id)');
+ assert.ok(stored>=0&&exited>stored&&effect>exited,
+  'persist, return camera to overview, then start recycling');
+ const pageCallback=s.slice(s.indexOf("if(event.data.action==='card-recycled'"),s.indexOf("if(event.data.action==='card-created'"));
+ assert.ok(pageCallback.indexOf('closeBook()')<pageCallback.indexOf('scene.startCardRecycle(id)'),
+  'close page before the small in-world smoke begins');
+ assert.ok(s.includes('entry.recycle={startAt:performance.now()+350,origin:null,puffs:null}'));
+ assert.ok(s.includes('if(now<fx.startAt)'),'card is displayed at normal scale before the puff');
+ assert.ok(s.includes('fx.puffs=createCardSmoke(fx.origin,true)'));
+});
+test('small recycling puff leaves the previously verified creation smoke untouched',async()=>{
+ const s=await load('living-library/live/index.html');
+ assert.match(s,/function createCardSmoke\(origin,compact=false\)/);
+ assert.match(s,/const puffs=\[\],multiplier=compact \? 0\.43 : 1/);
+ assert.match(s,/for\(let i=0;i<\(compact\?8:14\);i\+\+\)/);
+ assert.match(s,/function startCardSummon\(id\)/);
+ assert.match(s,/puffs:createCardSmoke\(origin\)/);
+ assert.match(s,/updateCardSmoke\(summon\.puffs,origin,age,duration\)/);
+ assert.match(s,/const radius=\(\.1\+Math\.min\(t,1\.2\)\*\.28\)\*scale/);
+ assert.match(s,/if\(preferReduced\)\{refreshFloatingCards\(\);return true\}/);
 });
