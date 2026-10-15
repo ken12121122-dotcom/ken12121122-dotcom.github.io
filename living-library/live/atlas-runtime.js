@@ -62,7 +62,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function dragWorld(e,position){rayAt(e);const normal=camera.getWorldDirection(new THREE.Vector3()),plane=new THREE.Plane().setFromNormalAndCoplanarPoint(normal,position);return ray.ray.intersectPlane(plane,new THREE.Vector3())}
  function pointerMove(e){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;
   if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)p.moved=true;
-  if(p.kind==='card'&&p.moved){const v=dragWorld(e,p.position);if(v){p.entry.group.position.copy(v);p.entry.group.quaternion.copy(camera.quaternion);p.entry.group.scale.setScalar(m.group.scale.x*1.3)}highlight(hoveredSlot(e))}
+  if(p.kind==='card'&&p.moved){const v=dragWorld(e,p.position);if(v){p.entry.group.position.copy(v);p.entry.group.quaternion.copy(camera.quaternion);p.entry.group.scale.setScalar(BASE*1.3)}highlight(hoveredSlot(e))}
   if(p.kind==='book'&&p.book===State.COLLECTION&&p.moved&&performance.now()-p.start>=330){
    if(!p.dragging){p.dragging=true;const obj=p.outer?collectionEntity():collection.group;p.position=obj.position.clone();p.object=obj;collection.dragging=true;collection.setOpen(0)}
    const v=dragWorld(e,p.position);if(v)p.object.position.copy(v);
