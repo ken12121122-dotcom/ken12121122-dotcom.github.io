@@ -1107,7 +1107,7 @@ function smokeMap(){
 function createCardSmoke(origin,compact=false){
  // Creation smoke keeps its validated size. Recycling uses fewer, smaller puffs
  // so a card in the world turns into a LITTLE cloud, not a screen-sized effect.
- const puffs=[],multiplier=compact?.43:1;
+ const puffs=[],multiplier=compact ? 0.43 : 1;
  for(let i=0;i<(compact?8:14);i++){
   const material=new THREE.SpriteMaterial({map:smokeMap(),transparent:true,opacity:.7,
    depthTest:true,depthWrite:false});
