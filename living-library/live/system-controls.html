@@ -27,20 +27,51 @@
 <label class="game-slider" for="cardSize"><span class="slider-head"><span>卡片尺寸</span><output id="cardSizeValue" for="cardSize">100%</output></span><input type="range" id="cardSize" min="0.65" max="1.2" step="0.05" value="1"><small>只調整 3D 卡片大小，進入專注模式也會套用。</small></label>
 <label class="game-slider" for="cardOrbitDistance"><span class="slider-head"><span>卡片軌道距離</span><output id="cardOrbitDistanceValue" for="cardOrbitDistance">100%</output></span><input type="range" id="cardOrbitDistance" min="0.88" max="1.06" step="0.02" value="1"><small>調整人物與卡片之間的內圈距離；不能移到漂浮書本外圈。</small></label>
 <label class="game-slider" for="cardOrbitSpeed"><span class="slider-head"><span>環繞速度</span><output id="cardOrbitSpeedValue" for="cardOrbitSpeed">1.0×</output></span><input type="range" id="cardOrbitSpeed" min="0" max="1.8" step="0.1" value="1"><small>0× 暫停公轉；不影響書本自身的環繞速度。</small></label>
-<label class="game-slider" for="cardSummonDuration"><span class="slider-head"><span>召喚動畫時間</span><output id="cardSummonDurationValue" for="cardSummonDuration">2.9 秒</output></span><input type="range" id="cardSummonDuration" min="1800" max="4500" step="50" value="2850"><small>從煙霧生成到小卡飛入專屬軌道的時間。</small></label>
+<label class="game-slider" for="cardSummonDuration"><span class="slider-head"><span>召喚動畫時間</span><output id="cardSummonDurationValue" for="cardSummonDuration">2.9 秒</output></span><input type="range" id="cardSummonDuration" min="1800" max="4500" step="50" value="2850"><small>只影響下一次施放卡片創造術，不會重播已存在卡片的動畫。</small></label>
 <button type="button" id="resetCardParams" aria-label="恢復卡片參數預設值" title="恢復卡片參數預設值">↺</button>
 </div>
 <p class="feedback" id="prefStatus" role="status" aria-live="polite"></p>
 <p class="prefs-note">操作設定會在這台裝置保留；與知識庫、GBA 存檔及 GEN2 授權分開儲存。</p>
 </section><div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
+<script src="./card-placement.js"></script>
 <script>
 const allowed=new Set(['connect-gen2','reconnect-web','update-preferences','relocate-joystick']);
+let latestRequestId=0,latestAcknowledgedId=0,confirmationTimer=null;
+function setFeedback(message){document.getElementById('prefStatus').textContent=message}
 function send(action,settings){
  if(!allowed.has(action))return;
  const data={kind:'living-library-public-card-action',action};
- if(action==='update-preferences')data.settings=settings;
+ if(action==='update-preferences'){
+  data.settings=settings;data.requestId=++latestRequestId;
+  setFeedback('⏳ 正在將設定送往 3D 世界…');
+  if(confirmationTimer!==null)clearTimeout(confirmationTimer);
+  const waitingFor=data.requestId;
+  confirmationTimer=setTimeout(()=>{
+   if(latestAcknowledgedId<waitingFor)setFeedback('⚠ 尚未收到 3D 場景確認；請從《系統之書》進入並檢查版本');
+  },1800);
+ }
+ if(window.parent===window){
+  if(action==='update-preferences')setFeedback('⚠ 請從遊戲《系統之書》開啟這張卡，才能連動 3D');
+  return;
+ }
  window.parent.postMessage(data,window.location.origin);
 }
+// The parent only acknowledges after its guarded message handler calls saveControls.
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin||event.source!==window.parent)return;
+ const data=event.data;
+ if(data?.kind!=='living-library-public-card-action-result'||data.action!=='update-preferences')return;
+ if(!Number.isSafeInteger(data.requestId)||data.requestId<latestRequestId||data.requestId<=latestAcknowledgedId)return;
+ latestAcknowledgedId=data.requestId;
+ if(confirmationTimer!==null){clearTimeout(confirmationTimer);confirmationTimer=null}
+ if(!data.applied||typeof data.applied!=='object')return;
+ // Actual values reported by the parent are authoritative; never claim success on slider movement alone.
+ Object.assign(saved,data.applied);
+ restoreCardValues(saved);
+ if(!data.persisted)setFeedback('⚠ 已送到 3D，但儲存失敗；重新開啟可能還原');
+ else if(!data.sceneReady)setFeedback('⚠ 設定已儲存，但目前無 3D 場景，無法確認套用');
+ else setFeedback('✓ 已套用到 3D 場景；關閉書頁即可查看');
+});
 document.querySelectorAll('button[data-action]').forEach(button=>button.addEventListener('click',()=>send(button.dataset.action)));
 const ids=['rotationEnabled','rotationMode','joystickEnabled','joystickMode','cardReorder'];
 const defaults={rotationEnabled:true,rotationMode:'dual',joystickEnabled:true,joystickMode:'follow',cardReorder:true};
@@ -53,7 +84,7 @@ for(const key of ids){
  input.addEventListener('change',()=>{
   const value=input.type==='checkbox'?input.checked:input.value;
   send('update-preferences',{[key]:value});
-  document.getElementById('prefStatus').textContent='✓ 已套用「'+input.closest('.setting').querySelector('label').firstChild.textContent.trim()+'」';
+  // Wait for the same-origin parent acknowledgement; no optimistic "applied" claim.
   syncDependent();
  });
 }
@@ -64,11 +95,9 @@ function syncDependent(){
  document.getElementById('relocateJoystick').disabled=!enabled;
 }
 document.getElementById('relocateJoystick').addEventListener('click',()=>send('relocate-joystick'));
-const cardParameterDefaults={cardSize:1,cardOrbitDistance:1,cardOrbitSpeed:1,cardSummonDuration:2850};
-const cardParameterLimits={
- cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
- cardOrbitSpeed:[0,1.8],cardSummonDuration:[1800,4500]
-};
+// Import exactly the same defaults and bounds used by the 3D world.
+const cardParameterDefaults=window.LivingCardPlacement.DEFAULTS;
+const cardParameterLimits=window.LivingCardPlacement.LIMITS;
 function displayCardParameter(key,value){
  const output=document.getElementById(key+'Value');
  if(key==='cardSize'||key==='cardOrbitDistance')output.textContent=Math.round(value*100)+'%';
@@ -84,19 +113,27 @@ function restoreCardValues(values){
  }
 }
 restoreCardValues(saved);
+const pendingSliderTimers=Object.create(null);
+function sendCardParameter(key){
+ const value=Number(document.getElementById(key).value);
+ if(Number.isFinite(value))send('update-preferences',{[key]:value});
+}
 for(const key of Object.keys(cardParameterDefaults)){
  const input=document.getElementById(key);
- input.addEventListener('input',()=>displayCardParameter(key,Number(input.value)));
+ input.addEventListener('input',()=>{
+  displayCardParameter(key,Number(input.value));
+  if(pendingSliderTimers[key])clearTimeout(pendingSliderTimers[key]);
+  pendingSliderTimers[key]=setTimeout(()=>{pendingSliderTimers[key]=null;sendCardParameter(key)},100);
+ });
  input.addEventListener('change',()=>{
-  const value=Number(input.value);if(!Number.isFinite(value))return;
-  send('update-preferences',{[key]:value});
-  document.getElementById('prefStatus').textContent='✓ 已儲存卡片參數；返回場景查看';
+  if(pendingSliderTimers[key]){clearTimeout(pendingSliderTimers[key]);pendingSliderTimers[key]=null}
+  sendCardParameter(key);
  });
 }
 document.getElementById('resetCardParams').addEventListener('click',()=>{
+ for(const key of Object.keys(pendingSliderTimers))if(pendingSliderTimers[key])clearTimeout(pendingSliderTimers[key]);
  restoreCardValues(cardParameterDefaults);
  send('update-preferences',{...cardParameterDefaults});
- document.getElementById('prefStatus').textContent='✓ 已恢復卡片參數預設值';
 });
 syncDependent();
 </script></body></html>

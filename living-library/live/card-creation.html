@@ -45,6 +45,7 @@ summary{color:#c5b795;cursor:pointer}
 #recycleDialog{border:1px solid #b49a72;border-radius:15px;background:#192b3d;color:#f4e6d1;max-width:min(92%,420px);padding:21px}
 #recycleDialog::backdrop{background:#03080fc7}
 #recycleDialog button{min-width:56px;min-height:46px;border:1px solid #b69d76;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
+.backupActions button{min-width:46px;min-height:46px;border:1px solid #b9a37f;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
 @media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
@@ -80,6 +81,12 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
 <p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
 <div id="recycleList"></div></details>
+<details id="localBackup"><summary>本機備份與救援檢查</summary>
+<p>↓ 下載目前瀏覽器的全部自製卡片、書本及回收站；⌕ 檢查備份完整性與數量，不還原、不覆寫、不轉換成法術、不送出雲端。備份含私人創作，請保留在自己的裝置，不要貼到公開 PR。校驗碼僅檢查資料損毀，不保證來源可信；檢查通過不代表已還原。</p>
+<div class="backupActions"><button id="exportObjects" type="button" aria-label="下載本機創作備份" title="下載本機創作備份">↓</button>
+<button id="inspectObjects" type="button" aria-label="選取備份並檢查，不還原" title="檢查備份，不還原">⌕</button></div>
+<input id="backupFile" type="file" accept=".json,application/json" hidden>
+<output id="backupStatus" role="status" aria-live="polite"></output></details>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
 <div><button id="cancelRecycle" type="button" aria-label="取消回收" title="取消">×</button>
@@ -87,6 +94,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
 <script src="./object-craft.js"></script>
+<script src="./object-backup.js"></script>
 <script>
 (function(){
  'use strict';
@@ -95,6 +103,30 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  const query=new URL(location.href).searchParams.get('card');
  let currentId=null;
  const cards=()=>Craft.listCards(localStorage);
+ const Backup=window.LivingObjectBackup;
+ $('exportObjects').addEventListener('click',async()=>{
+  $('exportObjects').disabled=true;
+  try{
+   const text=await Backup.exportBackup(localStorage);
+   const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+   try{const link=document.createElement('a');link.href=url;link.download='living-library-creations-backup-v1.json';link.click()}
+   finally{setTimeout(()=>URL.revokeObjectURL(url),30000)}
+   $('backupStatus').textContent='已交給瀏覽器下載；請確認檔案已保存。本機資料未變更，未同步雲端。';
+  }catch(_){$('backupStatus').textContent='無法產生備份；原存檔未變更。請保留原資料並檢查裝置儲存與版本。'}
+  finally{$('exportObjects').disabled=false}
+ });
+ $('inspectObjects').addEventListener('click',()=>$('backupFile').click());
+ $('backupFile').addEventListener('change',async()=>{
+  const file=$('backupFile').files[0];if(!file)return;
+  $('inspectObjects').disabled=true;
+  try{
+   if(file.size>Backup.MAX_BYTES*6+1024)throw Error('oversize');
+   const {summary:s}=await Backup.inspectBackup(await file.text());
+   $('backupStatus').textContent='檢查通過：卡片 '+s.cards+'（含回收 '+s.recycled+'）、書本 '+s.books+'、其他 '+s.other+
+    (s.present?'':'；原來源尚無存檔')+'。未還原、未變更本機資料，未同步雲端。';
+  }catch(_){$('backupStatus').textContent='備份檢查未通過：格式、版本或校驗碼不相符。未還原，原存檔未變更。'}
+  finally{$('inspectObjects').disabled=false;$('backupFile').value=''}
+ });
  function status(text,error=false){$('status').textContent=text;$('status').style.color=error?'#ffbca8':'#a9e0c4'}
  function notify(action,cardId){
   if(window.parent!==window)window.parent.postMessage({
