@@ -393,10 +393,10 @@
     "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
   },
   "execution": {
-    "lease_owner": "NW-UI-CLEAN-20261015",
-    "lease_expires_at": "2026-10-15T01:11:31.796Z",
-    "heartbeat_at": "2026-10-15T00:52:34.629Z",
-    "state": "BUILDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T00:56:43.973Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -541,6 +541,14 @@
       "run_id": 38660234949,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949",
       "scope": "250 scoped Node tests + Schema/56 parity + 9 public destinations + 34 synthetic browser checks including 6 real IndexedDB persistence cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
+      "run_id": 38662737806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
+      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
     }
   ],
   "candidate_validation": {
@@ -569,14 +577,15 @@
       "ci_run_id": 38660234949,
       "scope": "9 public destinations, fallback/storage, 28 prior synthetic module cases + 6 real IndexedDB synthetic persistence cases; no deployed UI/3D/device claim"
     },
-    "live_scene_change": "NONE",
+    "live_scene_change": "PRESENTATION_ONLY_CLEAN_VIEW; geometry/input unchanged",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
-      "checkout_commit": "9d4b54db3cd82ec91c82abcc6f0049ea8a3a0fc5",
-      "run_id": 38660234949,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949"
+      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
+      "run_id": 38662737806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
+      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -731,11 +740,37 @@
         "result": "PASS",
         "tests": 305
       },
-      "browser": "CI_PENDING",
+      "ci_node": {
+        "result": "PASS",
+        "tests": 250
+      },
+      "browser": "PASS",
       "phone": "NOT_TESTED",
       "staging": "NOT_TESTED"
     },
     "release": "NOT_RELEASED",
-    "rollback_ref": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77"
+    "rollback_ref": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77",
+    "candidate_sha": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+    "state": "PASS_CANDIDATE_NOT_RELEASED",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-clean-view.json",
+    "ci": {
+      "result": "PASS",
+      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
+      "run_id": 38662737806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
+      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
+    },
+    "defects": [
+      {
+        "id": "RELOAD_UPDATE_DIALOG_INTERCEPTS_REGRESSION",
+        "effective_fixes": 1,
+        "consecutive_same_failure": 0,
+        "observed_failure_runs": [
+          38662589398
+        ],
+        "result": "RESOLVED_TEST_FLOW"
+      }
+    ]
   }
 }
