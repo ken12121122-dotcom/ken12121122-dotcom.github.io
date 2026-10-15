@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T09:32:31.543Z",
+  "updated_at": "2026-10-15T10:27:30Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -928,8 +928,8 @@
         "WORK_START_PROMPT_v1.2.md"
       ],
       "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated",
-      "current_run_v12_zip": "NOT_EXPANDED_THIS_RUN; Library read reports no readable content. Prior local archive was pruned. Explicit user seven-step cycle contract used; no claim of reading four archive entries.",
-      "current_run_other": "Read v1.0 Start/Skill/Workflow/release matrix, v1.1 entry/extension and v0.4 product plan. No spatial or Agent Magic child activated."
+      "current_run_v12_zip": "EXPANDED_AND_READ: downloaded canonical libfile_d2161de8334c81918bd377173f3366fb via current Library helper; Python zipfile read skill/00_START_HERE_v1.2.md, WORK_CYCLE_P0_P7_v1.2.md/.yaml, WORK_START_PROMPT_v1.2.md and audit changelog. Standalone spatial v1.2 entry was not substituted.",
+      "current_run_other": "Holistic substantive product review recorded in owner_execution_direction.plans_reviewed; root/living-library AGENTS reread. No implementation or child feature falsely activated."
     }
   },
   "acceptance_scan": {
@@ -1003,10 +1003,10 @@
     "state": "ACTIONABLE_GAPS_REMAIN",
     "preserved_passes": "Previous reliable card reconciliation, engine and released manual queue evidence preserved; main28c5418 remains unchanged, no defect budgets reset",
     "highest_value_gap": "P2 in-book spell editing/local save independent candidate; private transport remains gated",
-    "next_action": "READ/SCAN current main/PR219, canonical progress, lease and KB-defined Rune/Spell book placement. Prioritize the first independent P2 player-visible spell authoring/save/reload slice using existing SpellStore and prescribed in-book container, with explicit draft identity and no implicit conversion of blank ObjectCraft cards. Keep scene integration disabled until P0 evidence; name/incantation/local save can be candidate preparation only if original dependencies permit. Before any automatic ObjectCraft sender, still implement durable retry/backoff, authenticated scope-bound receipts and cross-context delivery lease in isolation. Private transport/OAuth/remote roundtrip/AI readback and formal releases remain WAIT_OWNER/NOT_TESTED.",
+    "next_action": "Choose by current player value and dependencies, not numeric phase order. First target: candidate in-book SpellCard authoring/name/incantation/local save/reopen using existing reader and SpellStore; verify canonical container/identity against latest catalog and UI registry before code. Then real usable spell interaction as P0 evidence permits. Interleave spatial/Agent work when independently justified. Preserve all reliable evidence, phase gates, defect budgets and private/production approvals; avoid further speculative transport work without a concrete player deliverable.",
     "production_playable_feature_delta": 0,
     "candidate_player_feature_delta": 0,
-    "priority_note": "User asked why queue preparation was being built; no design change or new permission inferred. Re-evaluate first player-visible P2 authoring slice before more transport infrastructure.",
+    "priority_note": "Latest OWNER explicitly grants adaptive execution ordering after reading all plans; supersedes mechanical phase-order scheduling, without changing product design, acceptance criteria or approval scope.",
     "sync_preparation_delta": "Explicit ObjectCraft local receipt settlement verified; no real remote delivery"
   },
   "ui_clean_view": {
@@ -1315,5 +1315,49 @@
     "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
     "effective_fixes": 0,
     "failure_fingerprints": []
+  },
+  "owner_execution_direction": {
+    "id": "NW-OWNER-ADAPTIVE-EXECUTION-20261015",
+    "recorded_at": "2026-10-15T10:27:30Z",
+    "owner_quote": "我覺得你不要按照步驟你看完所有的計畫，自由決定",
+    "interpretation": "OWNER authorizes adaptive implementation ordering after holistic plan review. Phase numbers are acceptance dimensions, not a mandatory linear task queue. Choose independently testable slices by actual player value, dependencies, data integrity and risk; routine reversible implementation/testing/candidate work does not require repeated confirmation.",
+    "decision": "Prioritize in-book SpellCard authoring and local save/reload, then one real usable spell loop. Reuse existing reader/card language and SpellStore; do not silently convert ObjectCraft blank cards. Interleave spatial/Agent Magic work only when dependencies and available verification justify it.",
+    "priority_criteria": [
+      "Fix demonstrated regression, data loss or security defects first",
+      "Deliver player-visible creation/save/reopen/use loops before additional speculative infrastructure",
+      "Build only infrastructure necessary for the selected deliverable",
+      "Keep blocked GPU/device/private-auth acceptance local to that item and continue independent safe work"
+    ],
+    "retained_constraints": [
+      "Preserve agreed product design and all current public/GBA/GEN2/player-save functionality",
+      "Preserve phase acceptance gates, evidence distinctions and existing defect budgets",
+      "Icon-only action controls with accessible names and mobile targets",
+      "No blanket new production release, private sync, native permissions, spending or destructive migration approval"
+    ],
+    "plans_reviewed": [
+      "30_BUILD/RUNE_ENGINE_DELIVERY_PLAN_v0.4.md",
+      "10_SYSTEMS/RUNE_ENGINE_SPELL_CARDS_v0.4.md",
+      "20_PLATFORM/RUNE_SYNC_AI_REPAIR_v0.4.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/AGENT_MAGIC_BRIDGE_v0.1/PLAN_MAGIC_AGENT_BRIDGE_v0.1.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORK_EXTENSION_AGENT_MAGIC_v1.1.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORK_EXTENSION_SPATIAL_OBJECTS_v1.2.md",
+      "30_BUILD/MVP_WORKFLOW.md",
+      "00_CORE/WORLD_CHARTER.md",
+      "00_CORE/WORLD_RULES.md",
+      "10_SYSTEMS/CARD_SPACE_PROTOCOL.md",
+      "10_SYSTEMS/BOOK_CRAFTING_PROTOCOL.md",
+      "10_SYSTEMS/GAMEPLAY_NPC_QUESTS.md",
+      "10_SYSTEMS/CAREERS_EXPERIENCE.md",
+      "20_PLATFORM/CARD_APPLICATION_PLATFORM_v0.2.md",
+      "20_PLATFORM/INTEGRATION_BOUNDARIES.md",
+      "20_PLATFORM/MODES_WORLD_TRANSFER.md",
+      "20_PLATFORM/MARKET_ECONOMY.md",
+      "90_AUDIT/DECISIONS_SOURCES_GAPS.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/SKILL-WORK-NW-GAMEDEV-001_v1.0.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORKFLOW-WORK-NW-GAMEDEV-001_v1.0.yaml",
+      "30_BUILD/WORK_GAME_DEV_SKILL/VALIDATION_RELEASE_MATRIX_v1.0.md"
+    ],
+    "review_limits": "Reviewed current substantive main/subproject plans and their supporting product contracts. Historical duplicate archives and every individual Agent skill file were not exhaustively reread; no claim otherwise.",
+    "validation": "Direction/progress metadata update only; no game code, phase PASS, test totals or production version changed."
   }
 }
