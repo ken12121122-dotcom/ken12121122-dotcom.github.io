@@ -1,0 +1,60 @@
+{
+  "schema": "nw-p2-local-save-v1",
+  "scope": "P2_P5_PREPARATORY_ONLY; unloaded transactional spell store and pending outbox",
+  "result": "CI_PENDING",
+  "observed_at": "2026-10-15T00:28:26.016Z",
+  "acceptance": "Synthetic spell saved with durable pending sync intent; reload/offline edit/exact retries/stale versions/transaction failure checked with real Chromium IndexedDB",
+  "implementation": [
+    "living-library/live/spell-store.js",
+    "tests/browser/spell-store.cjs"
+  ],
+  "local_tests": {
+    "node": {
+      "result": "PASS",
+      "tests": 305
+    },
+    "schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "parity_cases": 56
+    }
+  },
+  "browser": {
+    "result": "PENDING",
+    "planned_cases": 6
+  },
+  "playable_feature_delta": {
+    "production": 0,
+    "candidate": "Isolated browser fixture can click save and reload a synthetic spell; no in-book editor/scene integration"
+  },
+  "sync_checks": {
+    "local_save": {
+      "result": "CI_PENDING",
+      "scope": "Unloaded IndexedDB spell candidate; not live/mobile"
+    },
+    "outbox": {
+      "result": "CI_PENDING",
+      "scope": "Atomic pending intent, latest-version coalescing, exact retry dedupe; transport retry not yet built"
+    },
+    "authorized_transport": {
+      "result": "WAIT_OWNER",
+      "scope": "No private repo/OAuth/GitHub App transport authorized/configured"
+    },
+    "remote_roundtrip": {
+      "result": "NOT_TESTED"
+    },
+    "ai_readback": {
+      "result": "NOT_TESTED"
+    }
+  },
+  "limits": [
+    "Spell cards only; standalone RuneCard persistence/export/migration pending",
+    "No transport, network calls, credentials, private repo writes, backoff or remote/AI readback",
+    "Deduplication compares exact serialized snapshot; semantic key-order canonicalization not claimed",
+    "Browser storage is subject to origin/quota/eviction; permanent backup/device storage not verified",
+    "No existing player database/localStorage modified; no destructive migration API",
+    "Live 3D/core and public catalog unchanged, staging/device not tested"
+  ],
+  "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2"
+}

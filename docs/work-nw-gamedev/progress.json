@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T00:26:58.113Z",
+  "updated_at": "2026-10-15T00:28:26.016Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -75,9 +75,11 @@
     },
     {
       "id": "P2",
-      "state": "NOT_STARTED",
+      "state": "P2_PREPARATORY_ONLY",
       "acceptance": "NOT_TESTED",
-      "evidence_refs": [],
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+      ],
       "blockers": []
     },
     {
@@ -96,9 +98,11 @@
     },
     {
       "id": "P5",
-      "state": "NOT_STARTED",
+      "state": "P5_PREPARATORY_ONLY",
       "acceptance": "NOT_TESTED",
-      "evidence_refs": [],
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+      ],
       "blockers": []
     },
     {
@@ -363,6 +367,18 @@
       "candidate_sha": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
       "ci_run_id": 38654474897,
       "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
+    },
+    {
+      "work_item_id": "P2-LOCAL-SAVE-001",
+      "state": "CI_PENDING",
+      "attempts": 1,
+      "scope": "P2_P5_PREPARATORY_ONLY; unloaded transactional spell store and pending outbox",
+      "failure_fingerprints": [],
+      "result": "Implemented candidate: atomic card/outbox, optimistic revisions, exact retry dedupe, pending coalescing. Real Chromium IndexedDB 6 cases pending CI. Existing local Node 305/305 and Schema/56 parity fixtures PASS.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+      ],
+      "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2"
     }
   ],
   "last_run": {
@@ -377,8 +393,8 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-10",
     "lease_expires_at": "2026-10-15T00:51:58.113Z",
-    "heartbeat_at": "2026-10-15T00:26:58.113Z",
-    "state": "BUILDING",
+    "heartbeat_at": "2026-10-15T00:28:26.016Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -583,5 +599,93 @@
       "scope": "Read repository workflow inventory; living-library-ci.yml is isolated intercepted candidate testing and living-library-live-proof.yml checks already-deployed public Pages. No verified staging deploy method/URL identified. External provider deployment state remains NOT_TESTED."
     },
     "state": "PREPARED_NOT_ACTIVATED"
+  },
+  "cycle_policy": {
+    "version": "1.2.0",
+    "skill_id": "WORK-NW-GAMEDEV-001",
+    "steps": [
+      "READ",
+      "SCAN",
+      "SELECT",
+      "BUILD",
+      "VERIFY",
+      "PREVIEW",
+      "PERSIST"
+    ],
+    "requirements_read": {
+      "v12_zip": "libfile_fe7b2ac264108191893d13e639239edb",
+      "zip_contents_read": [
+        "00_START_HERE_v1.2.md",
+        "WORK_CYCLE_P0_P7_v1.2.md",
+        "WORK_CYCLE_P0_P7_v1.2.yaml",
+        "WORK_START_PROMPT_v1.2.md"
+      ],
+      "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated"
+    }
+  },
+  "acceptance_scan": {
+    "observed_at": "2026-10-15T00:28:26.016Z",
+    "phases": [
+      {
+        "id": "P0",
+        "result": "BLOCKED",
+        "gap": "Real WebGL2, isolated deployment and full device checklist; existing phone usable PASS_REPORTED_BY_OWNER"
+      },
+      {
+        "id": "P1",
+        "result": "NOT_TESTED",
+        "gap": "Real character.tap scene integration remains unverified"
+      },
+      {
+        "id": "P2",
+        "result": "NOT_TESTED",
+        "gap": "Book-contained spell editor and reload/save/device acceptance missing; isolated store slice selected"
+      },
+      {
+        "id": "P3",
+        "result": "NOT_TESTED",
+        "gap": "Real grab/release/return interaction not implemented"
+      },
+      {
+        "id": "P4",
+        "result": "NOT_TESTED",
+        "gap": "Voice+gesture phone loop not implemented"
+      },
+      {
+        "id": "P5",
+        "result": "NOT_TESTED",
+        "gap": "Private authorization, retry transport, remote revision and AI readback missing; local outbox slice selected"
+      },
+      {
+        "id": "P6",
+        "result": "NOT_TESTED",
+        "gap": "Player-visible evidence-based feedback not integrated"
+      },
+      {
+        "id": "P7",
+        "result": "NOT_TESTED",
+        "gap": "Candidate only, no verified staging/device/release"
+      }
+    ]
+  },
+  "sync_checks": {
+    "local_save": {
+      "result": "CI_PENDING",
+      "scope": "Unloaded IndexedDB spell candidate; not live/mobile"
+    },
+    "outbox": {
+      "result": "CI_PENDING",
+      "scope": "Atomic pending intent, latest-version coalescing, exact retry dedupe; transport retry not yet built"
+    },
+    "authorized_transport": {
+      "result": "WAIT_OWNER",
+      "scope": "No private repo/OAuth/GitHub App transport authorized/configured"
+    },
+    "remote_roundtrip": {
+      "result": "NOT_TESTED"
+    },
+    "ai_readback": {
+      "result": "NOT_TESTED"
+    }
   }
 }
