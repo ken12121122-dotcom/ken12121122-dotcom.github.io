@@ -7,13 +7,13 @@ const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const live=require('../living-library/live/public-catalog.js');
 const root=require('../living-library/public-catalog.js');
 test('System Book retains original cards, glossary and approved control card',()=>{
- for(const cat of [live,root]){const d=cat.buildCatalog();assert.equal(d.books.length,14);
+ for(const cat of [live,root]){const d=cat.buildCatalog();assert.equal(d.books.length,cat===live?15:14);
  const expected=cat===live?['public.vault.web','public.canvas.workbench','public.gpt.skills','public.system.ui.map','public.system.controls']:['public.vault.web','public.canvas.workbench','public.system.ui.map'];
  assert.deepEqual(d.bookCards.system,expected);
  assert.equal(d.cards['public.system.ui.map'].number,'10');
  assert.equal(d.cards['public.system.ui.map'].url,'https://ken12121122-dotcom.github.io/living-library/ui-map.html');
  assert.equal(d.bookCards.android.length,16)}
- assert.deepEqual(live.buildCatalog().bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation']);
+ assert.deepEqual(live.buildCatalog().bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas']);
 });
 test('Glossary indexes 14 books, known selectors and public capability',async()=>{
  const h=await read('living-library/ui-map.html');

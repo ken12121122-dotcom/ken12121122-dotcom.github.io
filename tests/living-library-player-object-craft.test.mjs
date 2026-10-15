@@ -57,10 +57,10 @@ test('malformed local save and restricted patches never erase an existing record
 });
 test('original Game Book destinations remain and both independent creation spells are embedded',async()=>{
  const c=catalog.buildCatalog();
- assert.equal(c.books.length,14);
+ assert.equal(c.books.length,15);
  assert.deepEqual(c.bookCards.gaming,[
   'public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014',
-  'public.gaming.card.creation','public.gaming.book.creation'
+  'public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas'
  ]);
  for(const [id,url] of [['public.gaming.card.creation','./card-creation.html'],['public.gaming.book.creation','./book-creation.html']]){
   assert.equal(c.cards[id].kind,'public_function');

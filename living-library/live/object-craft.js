@@ -73,6 +73,17 @@
   const objects=[...state.objects];objects[at]={...objects[at],active,revision:(objects[at].revision||1)+1};
   write(storage,objects);return {...objects[at]};
  }
+ // Atomic card transfers: a full destination rejects; no duplicate card registry.
+ function placeCard(storage,id,containerId,slotIndex=null,clock=()=>new Date().toISOString()){
+  const sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
+  if(containerId!==null&&(!Object.hasOwn(sizes,containerId)||!Number.isInteger(slotIndex)||slotIndex<0||slotIndex>=sizes[containerId]))throw Error('無效卡槽');
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到卡片');
+  if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
+  const old=state.objects[at],next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
+   placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
+  const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
+ }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
@@ -114,5 +125,5 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,setBookActive,editCard,recycleCard,restoreCard};
+  createBlankCard,createBlankBook,setBookActive,editCard,recycleCard,restoreCard,placeCard};
 });

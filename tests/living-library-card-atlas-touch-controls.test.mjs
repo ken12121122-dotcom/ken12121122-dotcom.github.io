@@ -14,8 +14,8 @@ const Catalog=require('../living-library/live/public-catalog.js');
 const catalog=Catalog.buildCatalog();
 
 test('keep 14 books, GBA route, game atlas and native Android routes; relocate only approved actions',()=>{
- assert.equal(catalog.books.length,14);
- assert.equal(catalog.bookCards.gaming.length,5);
+ assert.equal(catalog.books.length,15);
+ assert.equal(catalog.bookCards.gaming.length,6);
  assert.equal(catalog.bookCards.android.length,16);
  assert.equal(catalog.cards['public.gba.runtime'].nativeRoute,'gba');
  assert.equal(catalog.cards['public.knowledge.search'].url,'./knowledge-search.html');

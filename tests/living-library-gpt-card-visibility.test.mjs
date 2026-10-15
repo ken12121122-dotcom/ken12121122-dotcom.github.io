@@ -14,8 +14,8 @@ test('GPT skill card is reachable from GPT Book AND System Book by one canonical
  assert.ok(c.bookCards.system.includes(id));
  assert.equal(c.bookCards.system.filter(x=>x===id).length,1);
  assert.equal(c.cards[id].url,'./gpt-skills.html');
- assert.equal(c.books.length,14);
- assert.equal(c.bookCards.gaming.length,5);
+ assert.equal(c.books.length,15);
+ assert.equal(c.bookCards.gaming.length,6);
  assert.equal(c.bookCards.android.length,16);
  const post=catalog.buildCatalog({source:{commit:'a'.repeat(40)},books:[],cards:{}});
  assert.ok(post.bookCards.system.includes(id));

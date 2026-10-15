@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.local-object-queue-v1">
+<meta name="living-library-release" content="2026-10-15.atlas-integration-review.2">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -210,10 +210,21 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
+#atlasActions[hidden],#atlasVoiceState[hidden]{display:none!important}
+#atlasActions{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:18;display:flex;gap:7px}
+#atlasActions button{width:46px;height:46px;border:1px solid #d7bb83;border-radius:50%;background:#152539ed;color:#fff0c9;font-size:24px;touch-action:manipulation}
+#atlasActions button:focus-visible{outline:3px solid #94e3cf}
+#atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div id="atlasActions" hidden aria-label="卡冊操作">
+<button id="atlasCollectionClose" type="button" aria-label="合上卡片之書，留在內圈" title="合上書本">▰</button>
+<button id="atlasCollectionShelf" type="button" aria-label="卡片之書回到書架" title="回到書架">⇥</button>
+<button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
+<button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
+<span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
 <button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
@@ -280,7 +291,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -403,6 +414,7 @@ function isLocalFunctionPage(url){
     new URL('./system-controls.html',current).pathname,
     new URL('./card-creation.html',current).pathname,
     new URL('./book-creation.html',current).pathname,
+    new URL('./atlas-controls.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -505,6 +517,7 @@ window.addEventListener('message',event=>{
  }
 });
 function openCardReader(card){
+ if(card.id==='public.gaming.atlas'&&window.LivingScene?.atlas){closeBook();window.LivingScene.atlas.summon();return}
  storeBooks();
  readerCard=card;
  $('readerTitle').textContent=card.title;
@@ -535,6 +548,7 @@ function closeReader(){
  $('drawerWrap').querySelector('.drawer')?.classList.remove('reader-active');
  $('readerFrame').removeAttribute('src');$('sourcePage').replaceChildren();$('sourcePage').hidden=true;
  readerCard=null;
+ window.LivingScene?.atlas?.showReaderReturn();
  $('drawerFunctions').querySelector('.codex-slot.selected')?.focus();
 }
 function revealCard(card,button){
@@ -624,7 +638,7 @@ function renderFunctions(b){
 }
 
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function openBook(){const b=book();if(!b)return;if(b.id==='cardCollection'&&window.LivingScene?.atlas){window.LivingScene.atlas.placeCollection();return;}closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;
@@ -734,6 +748,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ setCollectionActive(active){const b=BOOKS.find(x=>x.id==='cardCollection');if(b)setBookActive(b,active)},
  getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
   let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
@@ -968,13 +983,14 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
+let atlasRuntime=null,atlasVoice=null;
 let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
 function resetJoystick(hide=false){
  joy={x:0,y:0};joystickPointer=null;
  walkKnob.style.transform='translate(-50%,-50%)';
- if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
+ if(hide&&!atlasRuntime?.inFocus){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true;atlasVoice?.stop()}
 }
 function positionJoystick(x,y){
  const mx=Math.min(65,window.innerWidth/2),my=Math.min(65,window.innerHeight/2);
@@ -986,6 +1002,7 @@ function showJoystick(e){
  resetJoystick(false);
  if(controlPrefs.joystickMode==='fixed')positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
  else positionJoystick(e.clientX,e.clientY);
+ atlasRuntime?.audioStart();atlasVoice?.start();
  // The camera never zooms when the joystick appears.
 }
 function beginJoystickPlacement(){
@@ -1045,7 +1062,8 @@ document.addEventListener('keyup',e=>{
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
  if(!hasWalkInput()){keeper.position.y=.46;return false}
- const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
+ const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
+ const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
@@ -1161,19 +1179,7 @@ function removeCardSmoke(puffs){
  for(const p of puffs){scene.remove(p.sprite);p.sprite.material.dispose()}
 }
 function newFloatingCard(record){
- const canvas=document.createElement('canvas');canvas.width=384;canvas.height=540;
- const ctx=canvas.getContext('2d');
- ctx.fillStyle='#eadbb9';ctx.fillRect(0,0,384,540);
- ctx.strokeStyle='#97754b';ctx.lineWidth=12;ctx.strokeRect(17,17,350,506);
- ctx.lineWidth=3;ctx.strokeRect(36,36,312,467);
- ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#786040';
- ctx.font='96px serif';ctx.fillText('◇',192,157);
- ctx.font='bold 36px "Noto Sans TC",sans-serif';
- const chars=[...String(record.title||'空白卡片')];
- for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)
-  ctx.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
- ctx.font='22px monospace';ctx.fillText('BLANK CARD',192,470);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const texture=window.LivingAtlasModel.cardTexture(THREE,record);
  const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
  const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
  const group=new THREE.Group();
@@ -1194,7 +1200,7 @@ function disposeFloatingCard(entry){
 }
 function refreshFloatingCards(){
  let records;
- try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
+ try{records=window.LivingObjectCraft?.listCards(localStorage)||[]}
  catch(err){console.warn('Card storage unreadable; no overwrite',err);return}
  const next=new Map(records.map(x=>[x.id,x]));
  for(const [id,entry] of [...floatingCardMeshes]){
@@ -1211,7 +1217,7 @@ function refreshFloatingCards(){
 }
 function queueCardSummon(id){
  const entry=floatingCardMeshes.get(id);
- if(!entry)return false;
+ if(!entry||entry.record.containerId)return false;
  reservedCardSummons.add(id);entry.group.visible=false;return true;
 }
 function startCardSummon(id){
@@ -1249,6 +1255,8 @@ function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
   const entry=items[i];
+  if(atlasRuntime?.isDraggingCard(entry.id))continue;
+  if(entry.record.containerId){entry.group.visible=false;continue}
   if(entry.recycle){
    const fx=entry.recycle;
    // First show the original small card in the normal world orbit, unzoomed.
@@ -1369,7 +1377,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
 });
 function pickFloatingCard(ray){
- const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon&&!x.recycle)
+ const targets=[...floatingCardMeshes.values()].filter(x=>x.group.visible&&!x.summon&&!x.recycle)
   .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
@@ -1456,6 +1464,7 @@ function targetFor(o,t){
 function updateOrbit(t,now=performance.now()){
  currentOrbitTime=t;
  for(const o of bookEntities){
+  if(o.id==='cardCollection'&&atlasRuntime?.isCollectionDragging())continue;
   const target=targetFor(o,t),g=o.group,flight=o.flight;
   if(flight&&!preferReduced){
    const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
@@ -1503,6 +1512,22 @@ function rebuild(){
  updateOrbit(currentOrbitTime,now);
 }
 let selectedId=null;rebuild();refreshFloatingCards();
+atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:renderer.domElement,keeper,cards:floatingCardMeshes,
+ craft:window.LivingObjectCraft,storage:localStorage,reduced:preferReduced,toast,
+ smoke:{create:createCardSmoke,update:updateCardSmoke,remove:removeCardSmoke},
+ invalidate:()=>window.LivingScene?.syncRender?.(),
+ collectionEntity:()=>entityById.get('cardCollection')?.group,
+ setCollectionActive:active=>window.LivingLibrary.setCollectionActive(active),
+ openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
+atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
+ onState:state=>{const el=document.getElementById('atlasVoiceState');
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  stage.dataset.voiceState=state.status;
+  if(state.status==='listening')toast('語音已開啟：Book');
+ }});
+window.addEventListener('pagehide',()=>atlasVoice.stop());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
+
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
@@ -1512,7 +1537,7 @@ function pick(e){
  if(pickFloatingCard(ray))return 'card';
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
- bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ bookEntities.filter(o=>o.group.visible).forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
  const bookHit=ray.intersectObjects(targets,false)[0];
  if(bookHit){
   resetJoystick(true);
@@ -1538,6 +1563,7 @@ function contactPair(){
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
  if(focusedCard)return;
+ if(!insideJoystick(e)&&atlasRuntime.pointerDown(e)){syncRender();return}
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1559,6 +1585,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
 });
 renderer.domElement.addEventListener('pointermove',e=>{
  if(focusedCard)return;
+ if(e.pointerId!==joystickPointer&&atlasRuntime.pointerMove(e)){syncRender();return}
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
  if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
@@ -1593,6 +1620,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
 });
 renderer.domElement.addEventListener('pointerup',e=>{
  if(focusedCard)return;
+ if(e.pointerId!==joystickPointer&&atlasRuntime.pointerUp(e)){syncRender();return}
  if(placingJoystick){
   if(joystickOrigin){
    const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
@@ -1612,11 +1640,13 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ atlasRuntime.cancelPointer(e.pointerId);
  if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ atlasRuntime.cancelPointer(e.pointerId);
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
@@ -1624,7 +1654,7 @@ renderer.domElement.addEventListener('lostpointercapture',e=>{
 });
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();
- if(focusedCard)return;
+ if(focusedCard||atlasRuntime.inFocus)return;
  distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
  cameraUpdate();
 },{passive:false});
@@ -1669,6 +1699,10 @@ function paint(now){
  stepAvatar(dt);
  updateOrbit(elapsed,now);
  updateFloatingCards(now);
+ atlasRuntime?.tick(now);
+ // Other physical books keep their state/position but cannot occlude close-up pages.
+ for(const entry of bookEntities)if(entry.id!=='cardCollection')entry.group.visible=!atlasRuntime?.inFocus;
+ keeper.visible=!atlasRuntime?.inFocus;
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
@@ -1692,11 +1726,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active())syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -1707,7 +1741,7 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
 window.addEventListener('pageshow',syncRender);
 window.addEventListener('pagehide',stopRenderLoop);
 initPhase='FIRST_RENDER';
@@ -1718,6 +1752,7 @@ notifyReady({
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
+ atlas:atlasRuntime,
  beginJoystickPlacement,applyControls:applyControlPrefs,
  refreshFloatingCards,queueCardSummon,startCardSummon,startCardRecycle,exitCardFocus,
  syncRender,invalidate

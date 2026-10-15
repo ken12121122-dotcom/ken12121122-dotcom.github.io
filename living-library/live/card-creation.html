@@ -152,7 +152,8 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
   $('saveCard').disabled=!card;
-  $('recycleCard').disabled=!card;
+  $('recycleCard').disabled=!card||!!card.containerId;
+  $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
   const preview=$('cardPreview');preview.classList.remove('summon','hover');
   if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
   else if(card)preview.classList.add('hover');
@@ -208,7 +209,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   event.preventDefault();if(!currentId)return;
   try{
    const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
-   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存；卡片仍保持懸浮，等待放進你創造的書。');
+   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存卡片草稿，保留目前的軌道或書內位置。');
   }catch(e){status(e.message||'儲存失敗',true)}
  });
  try{

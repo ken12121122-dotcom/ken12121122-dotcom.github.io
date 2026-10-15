@@ -39,7 +39,7 @@ test('both in-book recycle and focus-mode confirm trigger one shared effect; red
  assert.match(s,/window\.LivingObjectCraft\.recycleCard\(localStorage,id\)/);
  assert.match(s,/if\(!startCardRecycle\(id\)\)refreshFloatingCards\(\)/);
  assert.match(s,/if\(preferReduced\)\{refreshFloatingCards\(\);return true\}/);
- assert.match(s,/filter\(x=>!x\.summon&&!x\.recycle\)/);
+ assert.match(s,/filter\(x=>x\.group\.visible&&!x\.summon&&!x\.recycle\)/);
  assert.match(cardPage,/notify\('card-recycled',id\)/);
  assert.match(cardPage,/notify\('card-restored',card\.id\)/);
 });

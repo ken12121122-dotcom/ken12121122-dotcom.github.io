@@ -97,9 +97,9 @@ async function main(){
   await p.keyboard.press('Escape');
   assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-pressed'),'false');
   report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance.'});
-  assert.equal(await p.locator('#bookList button').count(),14);
+  assert.equal(await p.locator('#bookList button').count(),15);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
-  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:14,joystick_hidden:true});
+  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:15,joystick_hidden:true});
   for(const capability of contract.capabilities){
    const b=catalog.books.find(b=>b.id===capability.book);
    // The mobile catalog is collapsed by default.
@@ -154,7 +154,7 @@ async function main(){
    return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
     duration:value.cardSummonDuration,bookCount:window.LivingLibrary.books.length};
   });
-  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:14});
+  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:15});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
   await p.getByRole('button',{name:'選取系統之書',exact:true}).click();

@@ -19,10 +19,12 @@ PUBLIC_BOOKS.push(
 {id:'system',name:'系統之書',kind:'裝置與維護',tag:'SYSTEM',icon:'⚙',color:'#77717f',description:'當 3D 功能不足或需要維護時，前往原有網頁控制與系統資訊入口。原生更新及權限仍保留在 Pocket GBA 控制中心。',target:'系統維護／原工作台',active:false},
 {id:'gpt',name:'GPT 之書',kind:'AI 知識導航',tag:'GPT ARCHIVE',icon:'✧',color:'#9a7956',description:'通往 ChatGPT Library 的知識檔案、GEN2 正式來源與 AI／Work 協作方式；不公開私有資料。',target:'ChatGPT Library／GEN2 知識路由',active:true}
 );
+PUBLIC_BOOKS.push({id:'cardCollection',name:'卡片之書',kind:'本機卡冊',tag:'CARDS',icon:'▣',color:'#426b71',description:'左右各九格的實體卡冊；長按搬到身邊展開，保存卡片並可跨書移動。',target:'卡片收藏／交換',active:true});
 const SITE='https://ken12121122-dotcom.github.io';
 // One canonical card = one existing destination. Multiple books may reference it,
 // but the collectible mark and displayed name stay unchanged.
 const PUBLIC_CARDS=Object.freeze({
+atlas:{id:'atlas',seal:'✦',number:'15',title:'萬物圖鑑',guild:'遊戲之書 · 隨身卡冊',desc:'在主場景召喚萬物圖鑑；Book 語音待實機測試。左九格、右側讀卡區。',url:'./atlas-controls.html'},
 research:{id:'research',seal:'✧',number:'01',title:'研究導航',guild:'探索',desc:'研究方法、文獻與心智圖。',url:SITE+'/packagecanvas/research-navigation-v04.html'},
 canvas:{id:'canvas',seal:'✦',number:'02',title:'知識工作台',guild:'編纂',desc:'開啟原有 PackageCanvas 知識架構工作台。',url:SITE+'/packagecanvas/'},
 startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線',desc:'公司設立任務、日程與研究事業規劃。',url:SITE+'/packagecanvas/startup.html'},
@@ -39,6 +41,7 @@ cardCreation:{id:'cardCreation',seal:'◇',number:'13',title:'卡片創造術',g
 systemControls:{id:'systemControls',seal:'⚙',number:'12',title:'連線與版本',guild:'系統之書 · 設定',desc:'統一管理 GEN2 來源授權與手動重新連結、更新公告；平時自動檢查版本。',url:'./system-controls.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
+cardCollection:['atlas'],
 research:['research','canvas'],
 startup:['startup','calendar','canvas'],
 knowledge:['world','canvas','knowledgeSearch'],
@@ -55,7 +58,7 @@ gpt:['gptBridge','gptSkills']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation'};
+const PUBLIC_IDS={atlas:'public.gaming.atlas',research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 // Native navigation only. These cards open existing screens; they execute no
 // commands and are never GEN2 Skill definitions or permission grants.
@@ -95,7 +98,7 @@ function buildCatalog(projection=null){
  }
  cards['public.gba.runtime'].nativeRoute='gba';
  bookCards.startup.push(RESEARCH_ID);
- bookCards.gaming.push(GAME_DESIGN_ID,canonicalPublicId('cardCreation'),canonicalPublicId('bookCreation'));
+ bookCards.gaming.push(GAME_DESIGN_ID,canonicalPublicId('cardCreation'),canonicalPublicId('bookCreation'),canonicalPublicId('atlas'));
  for(const [id,c] of Object.entries(projection?.cards||{}))cards[id]={...c,sourceLayer:'gen2',seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(projection.cards).indexOf(id)+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
  for(const [i,b] of (projection?.books||[]).entries()){
   // This is a navigation alias, never an alternative kb_id or source registry.
