@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T08:26:52.425Z",
+  "updated_at": "2026-10-15T08:34:01.095Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -84,7 +84,8 @@
         "docs/work-nw-gamedev/evidence/p2-local-save.json",
         "docs/work-nw-gamedev/evidence/p2-object-backup.json",
         "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
-        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json"
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
       ],
       "blockers": []
     },
@@ -111,7 +112,8 @@
         "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json",
         "docs/work-nw-gamedev/evidence/p5-outbox-pump.json",
         "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
-        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json"
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
       ],
       "blockers": []
     },
@@ -130,7 +132,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P5-BOOK-RECONCILE-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -479,7 +481,7 @@
     },
     {
       "work_item_id": "P5-BOOK-RECONCILE-001",
-      "state": "IN_PROGRESS",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "effective_fixes": 0,
       "failure_fingerprints": [],
@@ -487,6 +489,18 @@
       "rollback_sha": "bf1c27f2115367ba00297e36d9f9dcce35c280e9",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
+      ],
+      "candidate_sha": "81a959a5a83bd6934fc39ec1b57c66198a471a14",
+      "ci_run_id": 38706186001,
+      "local_node_tests": 345,
+      "browser_cases": 7,
+      "result": "Existing book creator now prepares local ObjectCraft outbox on successful creation/open/reopen/storage/visibility; manual icon rescue, same ID, original preview/parent notification preserved. Queue failure leaves saved book; source failure produces no book/intent/success message. Actual iframe interruption recovery and malformed-source protection PASS.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and valid lease. Next independent P5 candidate slice: adapt ObjectCraft's existing separate object outbox to injected synthetic delivery with revision/hash/idempotency-bound receipts, preserving newer edits and source data; durable retry/backoff and cross-context delivery coordination before enabling any automatic sender. Reuse established SpellStore receipt/pump behavior where compatible without converting ObjectCraft into nw.spell.v1. No real endpoint/private OAuth/upload or 3D core changes. Card/book creator automatic local preparation remains candidate-only and needs separate OWNER approval before release. Staging, phone/full P0-P7, private remote roundtrip and AI readback remain NOT_TESTED/WAIT_OWNER.",
+      "approval_required": "Scoped production release/private transport only; independent candidate work remains available",
+      "source_files": [
+        "living-library/live/book-creation.html",
+        "tests/browser/book-reconcile.cjs",
+        "tests/browser/package.json"
       ]
     }
   ],
@@ -496,13 +510,18 @@
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "Implement and verify book creator local outbox/reopen/source failure behavior"
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and valid lease. Next independent P5 candidate slice: adapt ObjectCraft's existing separate object outbox to injected synthetic delivery with revision/hash/idempotency-bound receipts, preserving newer edits and source data; durable retry/backoff and cross-context delivery coordination before enabling any automatic sender. Reuse established SpellStore receipt/pump behavior where compatible without converting ObjectCraft into nw.spell.v1. No real endpoint/private OAuth/upload or 3D core changes. Card/book creator automatic local preparation remains candidate-only and needs separate OWNER approval before release. Staging, phone/full P0-P7, private remote roundtrip and AI readback remain NOT_TESTED/WAIT_OWNER.",
+    "ended_at": "2026-10-15T08:34:01.095Z",
+    "candidate_sha": "81a959a5a83bd6934fc39ec1b57c66198a471a14",
+    "ci_run_id": 38706186001,
+    "requirements_zip": "NOT_EXPANDED_THIS_RUN; Library plain-text extraction unsupported; explicit user cycle contract used",
+    "environment_note": "Prior local git worktree parent was pruned; fresh clone from GitHub recovered source. Terminal transport disconnected during optional archive helper attempt after local tests/code submission; GitHub source readback and CI independently completed. Not a product defect."
   },
   "execution": {
-    "lease_owner": "codex-cycle16-book-reconciliation",
-    "lease_expires_at": "2026-10-15T08:56:52.426Z",
-    "heartbeat_at": "2026-10-15T08:26:52.425Z",
-    "state": "BUILD",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T08:34:01.095Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -727,19 +746,19 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38698921195,
-      "scope": "290 scoped Node + 2 positive/8 negative Schema +56 parity; 9 public destinations/control checks and61 synthetic browser module cases including6 real creator reconciliation cases. No staging/GPU/device/private remote."
+      "ci_run_id": 38706186001,
+      "scope": "290 scoped Node, 2 positive/8 negative Schema and56 contract parity; 9 public destinations/control checks plus68 synthetic browser module cases, including7 actual book creator/iframe/local source failure cases. No staging/GPU/device/private remote acceptance."
     },
     "live_scene_change": "NONE; exact main28c5418 scene/ObjectCraft/system/public catalog/placement/GEN2/manifests",
-    "release": "NOT_RELEASED_NEW_CREATOR_AUTO_RECONCILIATION; PR235_MANUAL_QUEUE_RELEASE_RETAINED",
+    "release": "NOT_RELEASED_CARD_BOOK_AUTOMATIC_LOCAL_RECONCILIATION; PR235_MANUAL_QUEUE_RELEASE_RETAINED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "9e6442a172923cce572f8eda5a79098479c4e1eb",
-      "checkout_commit": "4421a20b773768ca5a0d9043807fc907d3b25952",
-      "run_id": 38698921195,
-      "job_id": 116302069422,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38698921195",
-      "scope": "290 scoped Node + 2 positive/8 negative Schema +56 parity; 9 public destinations/control checks and61 synthetic browser module cases including6 real creator reconciliation cases. No staging/GPU/device/private remote."
+      "commit": "81a959a5a83bd6934fc39ec1b57c66198a471a14",
+      "checkout_commit": "a029cfbf7802e88b14f146c25ceda098c6ce5f0e",
+      "run_id": 38706186001,
+      "job_id": 116326068908,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38706186001",
+      "scope": "290 scoped Node, 2 positive/8 negative Schema and56 contract parity; 9 public destinations/control checks plus68 synthetic browser module cases, including7 actual book creator/iframe/local source failure cases. No staging/GPU/device/private remote acceptance."
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -781,6 +800,16 @@
       "staging": "NOT_TESTED",
       "device": "NOT_TESTED",
       "ci_run_id": 38698921195
+    },
+    "book_reconciliation": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "actual_ui": "book-creation.html #form / #queueBook",
+      "browser_cases": 7,
+      "ci_run_id": 38706186001,
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED",
+      "private_transport": "WAIT_OWNER"
     }
   },
   "owner_approvals": [
@@ -867,11 +896,12 @@
         "WORK_START_PROMPT_v1.2.md"
       ],
       "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated",
-      "current_run_v12_zip": "Materialized canonical zip and read all four named v1.2 entries (start, workflow md/yaml, start prompt); v1.0/v1.1 mother/additive workflows and v0.4 plan read. No Agent Magic subproject activated."
+      "current_run_v12_zip": "NOT_EXPANDED_THIS_RUN: Library zip read returned no readable content, previous local archive absent, helper retrieval/materialization attempt interrupted by transient terminal transport disconnection. Executed user's explicit seven-step cycle contract; no claim to have reread four zip entries.",
+      "current_run_other": "Read v1.0 Start/Skill/Workflow/validation, v1.1 entry/extension and v0.4 plan. Standalone v1.2 Start/Prompt are a different spatial-object subproject, not the cycle archive; not activated or substituted."
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T07:31:05.238Z",
+    "observed_at": "2026-10-15T08:34:01.095Z",
     "phases": [
       {
         "id": "P0",
@@ -886,7 +916,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "Released backup/manual queue retained. Candidate creator save/reopen automatically prepares local queue; quota/interruption recovery preserves source, six actual Chromium cases PASS. Full Rune editor/migration/import recovery/cross-store atomicity/device validation remain unverified."
+        "gap": "Card/book creator automatic local preparation candidate PASS; actual book offline create, save failure, queue failure/manual rescue, iframe reopen and corrupt-source safety verified. Source localStorage+queue IDB not atomic; full Rune editor/migration/import recovery/device gates incomplete."
       },
       {
         "id": "P3",
@@ -901,7 +931,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Manual queue separately released PR235. New automatic creator local reconciliation candidate PASS; scene/book-creator closed-page changes still require reopen of card creator. No object transport/ACK/private remote/AI readback, full P5 NOT_TESTED."
+        "gap": "Manual queue remains released PR235. Card and book creator automatic local capture candidates PASS; no closed-scene worker, ObjectCraft transport/ACK/private remote/AI readback. Full P5 remains NOT_TESTED."
       },
       {
         "id": "P6",
@@ -918,11 +948,11 @@
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "Actual creator offline edit/recycle/restore, quota failure source save and iframe interrupted-open source persistence/recovery verified. Source ObjectCraft localStorage remains authoritative; full Rune editor/recovery/device NOT_TESTED."
+      "scope": "Book creator offline save+queue quota independence, failed source write with no success notification, iframe interrupted open/reopen and malformed-source retention verified with synthetic real Chromium; prior card evidence retained. Actual source write module unchanged. Device/full Rune editor/recovery NOT_TESTED."
     },
     "outbox": {
-      "result": "PASS_ISOLATED_CREATOR_AUTOMATIC_LOCAL_RECONCILIATION",
-      "scope": "Existing ObjectCraft local intents retained. Candidate creator open/reopen, visible/storage and successful mutation triggers bounded capture; one-flight/max2pass, source-change-only immediate retry, quota pause/new-trigger recovery PASS. Manual rescue preserved. No scene writer hook/closed-page worker/object transport/ACK. Prior SpellStore isolated mock evidence retained; no conversion."
+      "result": "PASS_ISOLATED_CARD_AND_BOOK_CREATOR_LOCAL_RECONCILIATION",
+      "scope": "Existing shared ObjectReconciler used by both creator pages; bounded local capture on open/visible/storage/successful save, manual rescue and dedup PASS. No scene writer hook/closed-page worker/ObjectCraft transport/ACK. SpellStore mock evidence retained separately."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
@@ -937,11 +967,11 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T07:31:05.238Z",
+    "observed_at": "2026-10-15T08:34:01.095Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
-    "preserved_passes": "PR235 released manual queue and main28c5418 source retained; previous engine proofs and all defect budgets preserved",
-    "highest_value_gap": "Book creator local queue integration, then ObjectCraft receipt/mock-delivery coordination; private transport still unauthorized",
-    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
+    "preserved_passes": "Previous reliable card reconciliation, engine and released manual queue evidence preserved; main28c5418 remains unchanged, no defect budgets reset",
+    "highest_value_gap": "ObjectCraft injected delivery and safe receipts/retries; real private transport still unauthorized",
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and valid lease. Next independent P5 candidate slice: adapt ObjectCraft's existing separate object outbox to injected synthetic delivery with revision/hash/idempotency-bound receipts, preserving newer edits and source data; durable retry/backoff and cross-context delivery coordination before enabling any automatic sender. Reuse established SpellStore receipt/pump behavior where compatible without converting ObjectCraft into nw.spell.v1. No real endpoint/private OAuth/upload or 3D core changes. Card/book creator automatic local preparation remains candidate-only and needs separate OWNER approval before release. Staging, phone/full P0-P7, private remote roundtrip and AI readback remain NOT_TESTED/WAIT_OWNER.",
     "production_playable_feature_delta": 0,
     "candidate_player_feature_delta": 1
   },
