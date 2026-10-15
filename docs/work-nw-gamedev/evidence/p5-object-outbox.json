@@ -2,11 +2,11 @@
   "schema": "nw-object-outbox-evidence-v1",
   "work_item_id": "P5-OBJECT-OUTBOX-001",
   "state": "PASS_PREPARATORY_ONLY",
-  "observed_at": "2026-10-15T06:37:06.896Z",
+  "observed_at": "2026-10-15T06:49:50.605Z",
   "base_sha": "71f44572a10d40838ddca64ade8ecbaa1b5a9912",
   "upstream_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
   "upstream_merge": "Clean except browser package test-command conflict resolved by preserving all previous tests and new released backup checks; live source blobs match upstream main exactly",
-  "scope": "P2_P5_PREPARATORY_ONLY; candidate creator manual local capture plus isolated durable outbox",
+  "scope": "P2_P5_PREPARATORY_ONLY; explicit local creator queue separately released PR235; full phases unverified",
   "features": [
     "Stable object IDs/revisions and entire inert object text captured to separate IndexedDB outbox, recycled records included",
     "Atomic versions/pending write; duplicate exact snapshots do not requeue; higher revisions coalesce",
@@ -500,7 +500,7 @@
     }
   },
   "limits": {
-    "production_feature_delta": 0,
+    "production_feature_delta": 1,
     "live_auto_capture": "NOT_ENABLED; explicit creator button only",
     "transport": "NOT_IMPLEMENTED; pending_authorization is a local state only",
     "source_atomicity": "LocalStorage and IndexedDB are separate stores. Checks reject observed source changes, but no cross-storage atomic save guarantee; later local edits require explicit recapture. No automatic source writer/worker installed.",
@@ -509,7 +509,7 @@
     "ai_readback": "NOT_TESTED",
     "device": "NOT_TESTED",
     "staging": "NOT_TESTED",
-    "release": "NOT_RELEASED",
+    "release": "RELEASED_MANUAL_CAPTURE_ONLY_PR235",
     "candidate_player_features": 1
   },
   "privacy": "Synthetic fixtures only; no private source data, credential, audio or network",
@@ -524,7 +524,7 @@
   },
   "effective_fixes": 0,
   "failure_fingerprints": [],
-  "next_action": "READ latest main, PR219, progress and lease. Next independent slice: connect confirmed ObjectCraft local mutations and creator reopen to bounded local outbox reconciliation, retaining explicit manual rescue and recovering failed/interrupted queue capture without blocking local save. Use synthetic quota failure/iframe lifecycle/reopen tests; do not rewrite 3D scene or silently convert objects into nw.spell.v1. Source localStorage and queue IndexedDB are not one atomic transaction, so preserve source and expose pending reconciliation honestly. Object delivery receipts/cross-tab transport leases, scoped private transport and AI remote readback remain unimplemented or WAIT_OWNER. Existing three-item release approval is exhausted and does not publish this new queue UI.",
+  "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
   "source_files": [
     "living-library/live/object-outbox.js",
     "living-library/live/card-creation.html",
@@ -533,5 +533,389 @@
     "tests/browser/object-backup.cjs",
     "tests/browser/package.json"
   ],
-  "requirements_read": "Materialized canonical zip and read all four named v1.2 entries (start, workflow md/yaml, start prompt); v1.0/v1.1 mother/additive workflows and v0.4 plan read. No Agent Magic subproject activated."
+  "requirements_read": "Materialized canonical zip and read all four named v1.2 entries (start, workflow md/yaml, start prompt); v1.0/v1.1 mother/additive workflows and v0.4 plan read. No Agent Magic subproject activated.",
+  "release": {
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "owner_quote": "發布",
+    "owner_approval": "OWNER current conversation; explicit local queue UI only",
+    "pr": 235,
+    "source_commit": "21b55b65991f312ecd81a1ee1f2655fb6d5e7b43",
+    "base_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "release_marker": "2026-10-15.local-object-queue-v1",
+    "local_tests": {
+      "node": 185,
+      "browser_backup": 4,
+      "browser_outbox": 8,
+      "result": "PASS",
+      "source": "EXACT_EIGHT_FILES_MATCH_RELEASE_BRANCH"
+    },
+    "device": "NOT_TESTED",
+    "staging": "NOT_TESTED",
+    "private_upload": "NOT_AUTHORIZED_NOT_IMPLEMENTED",
+    "auto_capture": "NOT_IMPLEMENTED",
+    "rollback": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+    "main_commit": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "ci": {
+      "premerge": 38694285552,
+      "premerge_job": 116287116446,
+      "premerge_checkout": "8678b85f0da4c6d6348cfba5c5a75a67795e2120",
+      "premerge_result": "PASS",
+      "node_tests": 185,
+      "postmerge": 38694461719,
+      "postmerge_job": 116287672161,
+      "result": "PASS",
+      "browser_scope": "15 nav/control observations: 14 PASS and actual_3d_startup NOT_TESTED; backup/actual creator UI 4 PASS; ObjectOutbox 8 PASS"
+    },
+    "released_at": "2026-10-15T06:49:50.605Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "pages": {
+      "run_id": 38694460950,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38694461788,
+      "job_id": 116287672015,
+      "result": "PASS_EXACT_SEVEN_ASSET_HASHES",
+      "sha256": {
+        "index.html": "06171852b4e8e112918df0968de2eaad0cdc6c943b5ebde2101f2715d15615b1",
+        "clean-view.js": "a35c569d012600e31eeda97fc9e033d33dbb815c985f6a6061f4a689e1b49238",
+        "card-creation.html": "b7982e17dadd50d32e4af7f997a22bf78da03f0ddf527115bbca500efc357532",
+        "object-backup.js": "4d227d21cc056fd94b05fa969ff72baf3f180530e0acaf9fc11e3dc5519a8e41",
+        "object-outbox.js": "1c101d5de8eb4b566d64c4550e07870e659f8028e22884e34093850c430a6000",
+        "system-controls.html": "9bc28ac994a5032ddb7dbc580fd83b83e6bd7ff57d7111f6be2bae842a479d49",
+        "card-placement.js": "4fbc7be74ff70524c6ef8e20c3943e5ac3d6531f4836cf219cdd705b599c2328"
+      }
+    },
+    "scope": [
+      "Explicit creator local queue preparation of ObjectCraft cards/books/recycled state",
+      "Durable IndexedDB coalescing and repeated capture deduplication"
+    ],
+    "excluded": [
+      "Automatic capture",
+      "Object remote transport or acknowledgements",
+      "Private OAuth/App upload",
+      "Full Rune Engine release",
+      "APK/native permissions"
+    ],
+    "preserved": "ObjectCraft source, public catalog, controls, placement, GEN2 and manifests byte-identical to base; main 3D body differs only release meta",
+    "changed_files": [
+      ".github/workflows/living-library-live-proof.yml",
+      "living-library/live/card-creation.html",
+      "living-library/live/index.html",
+      "living-library/live/object-outbox.js",
+      "tests/browser/object-backup.cjs",
+      "tests/browser/object-outbox.cjs",
+      "tests/browser/package.json",
+      "tests/living-library-object-outbox.test.mjs"
+    ],
+    "tests": {
+      "premerge_browser": [
+        {
+          "schema": "nw-p0-browser-proof-v1",
+          "commit": "8678b85f0da4c6d6348cfba5c5a75a67795e2120",
+          "observed_at": "2026-10-15T06:45:58.436Z",
+          "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+          "checks": [
+            {
+              "id": "actual_3d_startup",
+              "result": "NOT_TESTED",
+              "ready": false,
+              "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+              "release": "2026-10-15.local-object-queue-v1",
+              "logs": [
+                "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:877:8"
+              ],
+              "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+            },
+            {
+              "id": "icon_first_controls",
+              "result": "PASS",
+              "scope": "Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved."
+            },
+            {
+              "id": "clean_view_restore_reload",
+              "result": "PASS",
+              "scope": "Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance."
+            },
+            {
+              "id": "forced_engine_failure_fallback",
+              "result": "PASS",
+              "books": 14,
+              "joystick_hidden": true
+            },
+            {
+              "id": "public.research.navigation",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.canvas.workbench",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.startup.tasks",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.calendar",
+              "result": "PASS",
+              "scope": "External link target only; no sign-in"
+            },
+            {
+              "id": "public.knowledge.world",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.gba.runtime",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.vault.web",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.gpt.bridge",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.system.ui.map",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "system_book_3d_preferences_ack_fallback",
+              "result": "PASS",
+              "scope": "Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU."
+            },
+            {
+              "id": "unrelated_storage_preserved",
+              "result": "PASS",
+              "scope": "Synthetic sentinel; not a real GBA-save test"
+            }
+          ]
+        },
+        {
+          "schema": "nw-object-backup-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+              "result": "PASS"
+            },
+            {
+              "case": "offline file inspection validates counts without restoring or sending",
+              "result": "PASS"
+            },
+            {
+              "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+              "result": "PASS"
+            },
+            {
+              "case": "actual creator icon prepares durable local intents offline, reload retry deduplicates and clearly remains not uploaded",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "schema": "nw-object-outbox-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "actual blank card/book IDs, versions and unknown object fields captured once without changing source",
+              "result": "PASS"
+            },
+            {
+              "case": "reload/offline edit/recycle coalesces latest same-ID intent and retains original saves",
+              "result": "PASS"
+            },
+            {
+              "case": "independent connection cannot overwrite newer revision or equal-revision different contents",
+              "result": "PASS"
+            },
+            {
+              "case": "pending write failure rolls back version ledger atomically; same revision can retry without source loss",
+              "result": "PASS"
+            },
+            {
+              "case": "changed source is rejected; absent storage never erases pending intents or infers deletion",
+              "result": "PASS"
+            },
+            {
+              "case": "unsupported public/foreign object rejects whole capture rather than silently dropping or converting it",
+              "result": "PASS"
+            },
+            {
+              "case": "competing IDB connections serialize batches and keep highest observed object revision",
+              "result": "PASS"
+            },
+            {
+              "case": "synthetic idempotent consumer reads object text twice with one mock write per key; queue stays pending authorization",
+              "result": "PASS"
+            }
+          ],
+          "scope": "Explicit isolated local capture; no scene hook, background worker, real remote, credentials or AI readback"
+        }
+      ],
+      "postmerge_browser": [
+        {
+          "schema": "nw-p0-browser-proof-v1",
+          "commit": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+          "observed_at": "2026-10-15T06:47:26.823Z",
+          "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+          "checks": [
+            {
+              "id": "actual_3d_startup",
+              "result": "NOT_TESTED",
+              "ready": false,
+              "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+              "release": "2026-10-15.local-object-queue-v1",
+              "logs": [
+                "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:877:8"
+              ],
+              "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+            },
+            {
+              "id": "icon_first_controls",
+              "result": "PASS",
+              "scope": "Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved."
+            },
+            {
+              "id": "clean_view_restore_reload",
+              "result": "PASS",
+              "scope": "Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance."
+            },
+            {
+              "id": "forced_engine_failure_fallback",
+              "result": "PASS",
+              "books": 14,
+              "joystick_hidden": true
+            },
+            {
+              "id": "public.research.navigation",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.canvas.workbench",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.startup.tasks",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.calendar",
+              "result": "PASS",
+              "scope": "External link target only; no sign-in"
+            },
+            {
+              "id": "public.knowledge.world",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.gba.runtime",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.vault.web",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.gpt.bridge",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "public.system.ui.map",
+              "result": "PASS",
+              "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+            },
+            {
+              "id": "system_book_3d_preferences_ack_fallback",
+              "result": "PASS",
+              "scope": "Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU."
+            },
+            {
+              "id": "unrelated_storage_preserved",
+              "result": "PASS",
+              "scope": "Synthetic sentinel; not a real GBA-save test"
+            }
+          ]
+        },
+        {
+          "schema": "nw-object-backup-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+              "result": "PASS"
+            },
+            {
+              "case": "offline file inspection validates counts without restoring or sending",
+              "result": "PASS"
+            },
+            {
+              "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+              "result": "PASS"
+            },
+            {
+              "case": "actual creator icon prepares durable local intents offline, reload retry deduplicates and clearly remains not uploaded",
+              "result": "PASS"
+            }
+          ]
+        },
+        {
+          "schema": "nw-object-outbox-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "actual blank card/book IDs, versions and unknown object fields captured once without changing source",
+              "result": "PASS"
+            },
+            {
+              "case": "reload/offline edit/recycle coalesces latest same-ID intent and retains original saves",
+              "result": "PASS"
+            },
+            {
+              "case": "independent connection cannot overwrite newer revision or equal-revision different contents",
+              "result": "PASS"
+            },
+            {
+              "case": "pending write failure rolls back version ledger atomically; same revision can retry without source loss",
+              "result": "PASS"
+            },
+            {
+              "case": "changed source is rejected; absent storage never erases pending intents or infers deletion",
+              "result": "PASS"
+            },
+            {
+              "case": "unsupported public/foreign object rejects whole capture rather than silently dropping or converting it",
+              "result": "PASS"
+            },
+            {
+              "case": "competing IDB connections serialize batches and keep highest observed object revision",
+              "result": "PASS"
+            },
+            {
+              "case": "synthetic idempotent consumer reads object text twice with one mock write per key; queue stays pending authorization",
+              "result": "PASS"
+            }
+          ],
+          "scope": "Explicit isolated local capture; no scene hook, background worker, real remote, credentials or AI readback"
+        }
+      ]
+    }
+  }
 }

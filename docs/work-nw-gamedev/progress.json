@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T06:47:28.084Z",
+  "updated_at": "2026-10-15T06:49:50.605Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -14,25 +14,25 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "main_sha": "28c5418908aeda6dce9514a9c15ad9158a229d35",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
     "repo_read": "PASS",
     "repo_write": "PASS_BRANCH_CREATED",
     "staging_deploy": "NOT_TESTED",
-    "owner_release_approval": "SCOPED_THREE_ITEMS_EXECUTED_PR234; FULL_RUNE_AND_PRIVATE_SYNC_NOT_GRANTED",
+    "owner_release_approval": "SCOPED_UI_PR221_THREE_ITEMS_PR234_LOCAL_QUEUE_PR235_EXECUTED; FULL_RUNE_PRIVATE_SYNC_NOT_GRANTED",
     "android_device_access": "NOT_TESTED"
   },
   "deployment": {
     "staging_url": null,
     "staging_verified": "NOT_TESTED",
     "pages_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
-    "pages_verified": "PASS_APPROVED_THREE_ITEM_RELEASE_EXACT_SIX_ASSET_HASHES",
+    "pages_verified": "PASS_LOCAL_QUEUE_RELEASE_EXACT_SEVEN_ASSET_HASHES",
     "android_verified": "NOT_TESTED",
-    "pages_release_marker": "2026-10-15.approved-controls-restore-backup-v1",
-    "pages_proof_run_id": 38687221116,
-    "pages_last_verified_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e"
+    "pages_release_marker": "2026-10-15.local-object-queue-v1",
+    "pages_proof_run_id": 38694461788,
+    "pages_last_verified_main": "28c5418908aeda6dce9514a9c15ad9158a229d35"
   },
   "phases": [
     {
@@ -452,8 +452,9 @@
       ],
       "candidate_sha": "f04568d042f407458544b3fa2757e18095444b7a",
       "ci_run_id": 38693194557,
-      "result": "Explicit creator icon prepares durable local ObjectCraft intents. Real IDB reload/offline/coalescing/cross-connection version conflict/atomic rollback PASS; synthetic idempotent consumer only. No real upload, automatic capture, 3D hook, AI readback or release.",
-      "next_action": "READ latest main, PR219, progress and lease. Next independent slice: connect confirmed ObjectCraft local mutations and creator reopen to bounded local outbox reconciliation, retaining explicit manual rescue and recovering failed/interrupted queue capture without blocking local save. Use synthetic quota failure/iframe lifecycle/reopen tests; do not rewrite 3D scene or silently convert objects into nw.spell.v1. Source localStorage and queue IndexedDB are not one atomic transaction, so preserve source and expose pending reconciliation honestly. Object delivery receipts/cross-tab transport leases, scoped private transport and AI remote readback remain unimplemented or WAIT_OWNER. Existing three-item release approval is exhausted and does not publish this new queue UI."
+      "result": "Explicit creator icon prepares durable local ObjectCraft intents; manual local UI separately released PR235 with CI/Pages/HTTP proof. Full P5 transport/auto-capture/AI/device gates incomplete.",
+      "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
+      "release": "RELEASED_MANUAL_CAPTURE_PR235_DEVICE_NOT_TESTED"
     }
   ],
   "last_run": {
@@ -462,14 +463,14 @@
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "READ latest main, PR219, progress and lease. Next independent slice: connect confirmed ObjectCraft local mutations and creator reopen to bounded local outbox reconciliation, retaining explicit manual rescue and recovering failed/interrupted queue capture without blocking local save. Use synthetic quota failure/iframe lifecycle/reopen tests; do not rewrite 3D scene or silently convert objects into nw.spell.v1. Source localStorage and queue IndexedDB are not one atomic transaction, so preserve source and expose pending reconciliation honestly. Object delivery receipts/cross-tab transport leases, scoped private transport and AI remote readback remain unimplemented or WAIT_OWNER. Existing three-item release approval is exhausted and does not publish this new queue UI.",
+    "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
     "ended_at": "2026-10-15T06:37:06.896Z"
   },
   "execution": {
-    "lease_owner": "codex-owner-local-queue-release-20261015",
-    "lease_expires_at": "2026-10-15T07:12:28.084Z",
-    "heartbeat_at": "2026-10-15T06:47:28.084Z",
-    "state": "MERGED_WAIT_PAGES_HTTP",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T06:49:50.605Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -698,7 +699,7 @@
       "scope": "286 scoped Node + 2 positive/8 negative Schema +56 parity +9 public destinations, icon/clean-view/settings ACK and55 synthetic browser module cases (8 ObjectOutbox +4 actual creator backup/local-queue UI). Real Chromium; no staging/GPU/device/private remote."
     },
     "live_scene_change": "NONE_BY_OBJECT_OUTBOX; main5fa scene/system controls/ObjectCraft source preserved exactly",
-    "release": "NOT_RELEASED_NEW_OBJECT_QUEUE_UI",
+    "release": "ONLY_EXPLICIT_OBJECT_QUEUE_RELEASED_PR235; OTHER_RUNE_ENGINE_PREPARATIONS_NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
       "commit": "f04568d042f407458544b3fa2757e18095444b7a",
@@ -712,7 +713,7 @@
       "ci_run_id": 38660234949,
       "cases": 6
     },
-    "playable_features_added_to_production": 0,
+    "playable_features_added_to_production": 1,
     "rune_release": "NOT_RELEASED",
     "local_object_backup": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -733,7 +734,10 @@
       "browser_cases": 8,
       "creator_UI_cases": 4,
       "automatic_capture": "NOT_ENABLED",
-      "private_transport": "WAIT_OWNER"
+      "private_transport": "WAIT_OWNER",
+      "release": "RELEASED_STANDALONE_PR235_DEVICE_NOT_TESTED",
+      "production_player_features": 1,
+      "release_evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
     }
   },
   "owner_approvals": [
@@ -775,7 +779,7 @@
       "source": "OWNER current conversation",
       "quote": "發布",
       "scope": "Publish reviewed explicit local ObjectCraft outbox preparation UI only; no auto capture, Rune engine or private transport",
-      "status": "MERGED_WAIT_PAGES_HTTP"
+      "status": "EXECUTED_PR235"
     }
   ],
   "next_stage_preparation": {
@@ -824,7 +828,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T06:37:06.896Z",
+    "observed_at": "2026-10-15T06:49:50.605Z",
     "phases": [
       {
         "id": "P0",
@@ -839,7 +843,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "ObjectCraft backup already separately released. New candidate manual queue capture preserves source/IDs/recycle state and survives reload/offline. Actual Rune editor, migration/import recovery, atomic source+queue save and device validation incomplete."
+        "gap": "Local ObjectCraft backup (PR234) and explicit local outbox preparation (PR235) released with CI/Pages/HTTP proof. Full Rune editor, source+queue atomicity, migration/import recovery and device validation remain unverified."
       },
       {
         "id": "P3",
@@ -854,7 +858,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Separate versioned ObjectCraft durable local queue and manual candidate creator UI PASS; no automatic capture/transport/ACK for object rows. Existing SpellStore mock delivery evidence retained; private remote roundtrip and AI readback absent."
+        "gap": "Manual local ObjectCraft queue released PR235; rows remain pending_authorization. No automatic capture, object transport/ACK, private remote roundtrip or AI readback. Existing isolated SpellStore evidence retained; P5 not complete."
       },
       {
         "id": "P6",
@@ -864,22 +868,22 @@
       {
         "id": "P7",
         "result": "NOT_TESTED",
-        "gap": "OWNER approved three-item narrow web release completed via PR233/234, CI/Pages/exact HTTP evidence PASS. Full Rune Engine/staging/device gates NOT_TESTED."
+        "gap": "Narrow OWNER-approved web releases PR221/233/234/235 verified separately; full Rune/staging/device gates NOT_TESTED."
       }
     ]
   },
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "Original ObjectCraft source localStorage unchanged by queue, old released backup retained; real Chromium verifies exact source and unrelated save sentinel across capture/failure/reload. SpellStore IDB evidence retained. Device/full Rune editor/recovery remain NOT_TESTED."
+      "scope": "Released ObjectCraft local source and backup remain unchanged by queue; synthetic Chromium exact source preservation/reload/rollback PASS. Full Rune editor/recovery and device validation NOT_TESTED."
     },
     "outbox": {
       "result": "PASS_ISOLATED_OBJECT_CAPTURE_AND_PRIOR_SPELL_MOCK_DELIVERY",
-      "scope": "ObjectCraft separate nw.object-outbox.v1: explicit creator capture, reload/offline coalescing, stable IDs/revisions/recycled/unknown object fields, cross-connection stale/conflict rejection and atomic versions/pending rollback PASS. Object rows remain pending_authorization; no object transport/ACK/autoworker. Prior SpellStore pump mock delivery retained; schemas are not converted."
+      "scope": "ObjectCraft separate nw.object-outbox.v1: explicit creator capture, reload/offline coalescing, stable IDs/revisions/recycled/unknown object fields, cross-connection stale/conflict rejection and atomic versions/pending rollback PASS. Object rows remain pending_authorization; no object transport/ACK/autoworker. Prior SpellStore pump mock delivery retained; schemas are not converted. Manual creator capture now separately released via PR235, CI/Pages/exact seven assets PASS; device NOT_TESTED."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
-      "scope": "No scoped private OAuth/App transport. Existing UI release approval is not player-data upload authority."
+      "scope": "No scoped private OAuth/App transport; OWNER local queue release approval does not grant player-data uploads."
     },
     "remote_roundtrip": {
       "result": "NOT_TESTED",
@@ -890,13 +894,13 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T06:37:06.896Z",
+    "observed_at": "2026-10-15T06:49:50.605Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
     "preserved_passes": "Previous verified evidence and defect budgets retained; already approved release untouched. True parent merge main5fa; current main 3D/system/ObjectCraft source exact.",
     "highest_value_gap": "Local save/creator reopen -> honest outbox reconciliation and recovery; real private transport still unauthorized",
-    "next_action": "READ latest main, PR219, progress and lease. Next independent slice: connect confirmed ObjectCraft local mutations and creator reopen to bounded local outbox reconciliation, retaining explicit manual rescue and recovering failed/interrupted queue capture without blocking local save. Use synthetic quota failure/iframe lifecycle/reopen tests; do not rewrite 3D scene or silently convert objects into nw.spell.v1. Source localStorage and queue IndexedDB are not one atomic transaction, so preserve source and expose pending reconciliation honestly. Object delivery receipts/cross-tab transport leases, scoped private transport and AI remote readback remain unimplemented or WAIT_OWNER. Existing three-item release approval is exhausted and does not publish this new queue UI.",
-    "production_playable_feature_delta": 0,
-    "candidate_player_feature_delta": 1
+    "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
+    "production_playable_feature_delta": 1,
+    "candidate_player_feature_delta": 0
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
@@ -1026,7 +1030,7 @@
       "Full card creation cinematic and reversible recycle",
       "Newly published smoke disappearance for recycled cards"
     ],
-    "limits": "Candidate-only local queue UI added to creator. No formal release/3D core change/private upload.",
+    "limits": "Candidate currently based on merged main5fa; release PR235 is now main28c5418. Next candidate cycle must reconcile it. Only manual ObjectCraft queue UI published; full Rune/3D/device/private sync gates remain.",
     "main_ci": 38681574416,
     "pages": 38681574324,
     "http_proof": 38681574363,
@@ -1051,9 +1055,10 @@
         "conclusion": "success"
       }
     ],
-    "observed_latest_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "observed_latest_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
     "candidate_merged_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
-    "state": "MERGED_UPSTREAM_SOURCE_PRESERVED"
+    "state": "MERGED_UPSTREAM_SOURCE_PRESERVED",
+    "pending_candidate_reconciliation": "28c5418908aeda6dce9514a9c15ad9158a229d35"
   },
   "approved_three_item_release": {
     "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
@@ -1119,7 +1124,7 @@
     "evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
   },
   "local_queue_release": {
-    "state": "MERGED_WAIT_PAGES_HTTP",
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
     "owner_quote": "發布",
     "owner_approval": "OWNER current conversation; explicit local queue UI only",
     "pr": 235,
@@ -1145,7 +1150,63 @@
       "premerge_job": 116287116446,
       "premerge_checkout": "8678b85f0da4c6d6348cfba5c5a75a67795e2120",
       "premerge_result": "PASS",
-      "node_tests": 185
-    }
+      "node_tests": 185,
+      "postmerge": 38694461719,
+      "postmerge_job": 116287672161,
+      "result": "PASS",
+      "browser_scope": "15 nav/control observations: 14 PASS and actual_3d_startup NOT_TESTED; backup/actual creator UI 4 PASS; ObjectOutbox 8 PASS"
+    },
+    "released_at": "2026-10-15T06:49:50.605Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "pages": {
+      "run_id": 38694460950,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38694461788,
+      "job_id": 116287672015,
+      "result": "PASS_EXACT_SEVEN_ASSET_HASHES",
+      "sha256": {
+        "index.html": "06171852b4e8e112918df0968de2eaad0cdc6c943b5ebde2101f2715d15615b1",
+        "clean-view.js": "a35c569d012600e31eeda97fc9e033d33dbb815c985f6a6061f4a689e1b49238",
+        "card-creation.html": "b7982e17dadd50d32e4af7f997a22bf78da03f0ddf527115bbca500efc357532",
+        "object-backup.js": "4d227d21cc056fd94b05fa969ff72baf3f180530e0acaf9fc11e3dc5519a8e41",
+        "object-outbox.js": "1c101d5de8eb4b566d64c4550e07870e659f8028e22884e34093850c430a6000",
+        "system-controls.html": "9bc28ac994a5032ddb7dbc580fd83b83e6bd7ff57d7111f6be2bae842a479d49",
+        "card-placement.js": "4fbc7be74ff70524c6ef8e20c3943e5ac3d6531f4836cf219cdd705b599c2328"
+      }
+    },
+    "scope": [
+      "Explicit creator local queue preparation of ObjectCraft cards/books/recycled state",
+      "Durable IndexedDB coalescing and repeated capture deduplication"
+    ],
+    "excluded": [
+      "Automatic capture",
+      "Object remote transport or acknowledgements",
+      "Private OAuth/App upload",
+      "Full Rune Engine release",
+      "APK/native permissions"
+    ],
+    "preserved": "ObjectCraft source, public catalog, controls, placement, GEN2 and manifests byte-identical to base; main 3D body differs only release meta",
+    "changed_files": [
+      ".github/workflows/living-library-live-proof.yml",
+      "living-library/live/card-creation.html",
+      "living-library/live/index.html",
+      "living-library/live/object-outbox.js",
+      "tests/browser/object-backup.cjs",
+      "tests/browser/object-outbox.cjs",
+      "tests/browser/package.json",
+      "tests/living-library-object-outbox.test.mjs"
+    ]
+  },
+  "last_release_check": {
+    "pr": 235,
+    "checked_at": "2026-10-15T06:49:50.605Z",
+    "result": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "source_commit": "21b55b65991f312ecd81a1ee1f2655fb6d5e7b43",
+    "main_commit": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
+    "effective_fixes": 0,
+    "failure_fingerprints": []
   }
 }
