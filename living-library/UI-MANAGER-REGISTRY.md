@@ -90,3 +90,10 @@
 | 卡片召喚時間 | `cardSummonDuration` | 1700 ms | 900～2600 ms | 3D 煙霧創卡後移入軌道的動畫長度 |
 
 **程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library/live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
+
+## 9. 法術卡草稿候選入口（未正式發布）
+
+- `book_id=gaming`，`card_id=public.gaming.spell.creation`，`living-library/live/spell-creation.html`，書內既有 `readerFrame`。只新增一張本機編輯入口，不新增書本、不改動既有卡片 ID／排列，也不轉換 ObjectCraft 空白卡。
+- 編輯名稱、用途、咒語與替代說法；既有 SpellStore `nw-rune-creations-v1` 以單一 IndexedDB 交易保存卡片及待同步意圖。列表讀回同一草稿 ID，以 revision 阻止多頁靜默覆蓋。
+- 此切片僅為停用的歸書術配方文字編輯；符文拖曳、真實 handler、語音、3D 施法、私人遠端、migration／匯入救援及手機驗收未完成。metadata 不註冊假 handler、不載入 executor；本機保存不代表雲端同步。
+- 操作按鈕僅圖示；內容欄位、失敗與待授權說明保留。正式發布另遵循 OWNER Gate。

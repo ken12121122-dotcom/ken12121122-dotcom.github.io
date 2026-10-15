@@ -13,7 +13,7 @@ test('System Book retains original cards, glossary and approved control card',()
  assert.equal(d.cards['public.system.ui.map'].number,'10');
  assert.equal(d.cards['public.system.ui.map'].url,'https://ken12121122-dotcom.github.io/living-library/ui-map.html');
  assert.equal(d.bookCards.android.length,16)}
- assert.deepEqual(live.buildCatalog().bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation']);
+ assert.deepEqual(live.buildCatalog().bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.spell.creation']);
 });
 test('Glossary indexes 14 books, known selectors and public capability',async()=>{
  const h=await read('living-library/ui-map.html');

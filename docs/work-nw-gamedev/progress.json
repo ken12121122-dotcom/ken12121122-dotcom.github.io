@@ -1,0 +1,1479 @@
+{
+  "schema": "work-nw-gamedev-progress-v1",
+  "skill_id": "WORK-NW-GAMEDEV-001",
+  "workflow_id": "WF-WORK-NW-GAMEDEV-001",
+  "is_template": false,
+  "project": "living-library-rune-engine",
+  "created_at": "2026-10-14T15:27:11.568574+00:00",
+  "updated_at": "2026-10-15T12:00:02.520Z",
+  "canonical_state_location": {
+    "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+    "branch": "work/nw-gamedev-p0-20261014",
+    "path": "docs/work-nw-gamedev/progress.json"
+  },
+  "status": "PAUSED_BY_OWNER",
+  "source_of_truth": {
+    "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+    "main_sha": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
+  },
+  "permissions": {
+    "repo_read": "PASS",
+    "repo_write": "PASS_BRANCH_CREATED",
+    "staging_deploy": "NOT_TESTED",
+    "owner_release_approval": "SCOPED_UI_PR221_THREE_ITEMS_PR234_LOCAL_QUEUE_PR235_EXECUTED; FULL_RUNE_PRIVATE_SYNC_NOT_GRANTED",
+    "android_device_access": "NOT_TESTED"
+  },
+  "deployment": {
+    "staging_url": null,
+    "staging_verified": "NOT_TESTED",
+    "pages_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "pages_verified": "PASS_LOCAL_QUEUE_RELEASE_EXACT_SEVEN_ASSET_HASHES",
+    "android_verified": "NOT_TESTED",
+    "pages_release_marker": "2026-10-15.local-object-queue-v1",
+    "pages_proof_run_id": 38694461788,
+    "pages_last_verified_main": "28c5418908aeda6dce9514a9c15ad9158a229d35"
+  },
+  "phases": [
+    {
+      "id": "P0",
+      "state": "BLOCKED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p0-baseline.json",
+        "docs/work-nw-gamedev/evidence/p0-browser.json",
+        "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/pull/219#issuecomment-6172110244",
+        "docs/work-nw-gamedev/evidence/p0-browser-ci.json"
+      ],
+      "blockers": [
+        "P0-GPU",
+        "P0-STAGING",
+        "P0-DEVICE"
+      ]
+    },
+    {
+      "id": "P1",
+      "state": "P1_PREPARATORY_ONLY",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [
+        "tests/living-library-action-registry.test.mjs",
+        "tests/living-library-spell-contract.test.mjs",
+        "tests/browser/schema-contract.cjs",
+        "tests/living-library-spell-executor.test.mjs",
+        "tests/living-library-interaction-session.test.mjs",
+        "docs/work-nw-gamedev/evidence/p1-session.json",
+        "docs/work-nw-gamedev/evidence/p1-dispatch.json",
+        "docs/work-nw-gamedev/evidence/p1-action-schema.json",
+        "docs/work-nw-gamedev/evidence/p1-payload.json",
+        "docs/work-nw-gamedev/evidence/p1-character-tap.json",
+        "docs/work-nw-gamedev/evidence/p1-preflight.json",
+        "docs/work-nw-gamedev/evidence/p1-card-snapshot.json",
+        "docs/work-nw-gamedev/evidence/p1-contract-parity.json",
+        "docs/work-nw-gamedev/evidence/p1-definition-snapshot.json"
+      ],
+      "blockers": [
+        "P0 comprehensive 3D/device interaction gate remains NOT_TESTED",
+        "Real character scene event wiring and scene/voice integration remain unimplemented; synthetic adapters are not P1/device acceptance"
+      ]
+    },
+    {
+      "id": "P2",
+      "state": "P2_PREPARATORY_ONLY",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json",
+        "docs/work-nw-gamedev/evidence/p2-object-backup.json",
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p2-spell-authoring.json"
+      ],
+      "blockers": [
+        "Full draggable rune graph editing, migration/export/recovery, staging and device gates incomplete; current editor saves disabled recipe metadata only."
+      ]
+    },
+    {
+      "id": "P3",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P4",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P5",
+      "state": "P5_PREPARATORY_ONLY",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json",
+        "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json",
+        "docs/work-nw-gamedev/evidence/p5-outbox-pump.json",
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p5-object-receipt.json"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "P6",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    },
+    {
+      "id": "P7",
+      "state": "NOT_STARTED",
+      "acceptance": "NOT_TESTED",
+      "evidence_refs": [],
+      "blockers": []
+    }
+  ],
+  "active_work_item": null,
+  "work_items": [
+    {
+      "work_item_id": "P0-TEST-001",
+      "state": "PASS",
+      "attempts": 1,
+      "hypothesis": "await in a non-async test callback prevents all five GPT-card regression tests from loading",
+      "patch": "Mark that test callback async",
+      "expected_observable_change": "File parses; five GPT-card tests run",
+      "result": "Full suite 157/157 PASS, no skips",
+      "candidate_sha_ref": "Containing candidate commit; resolve from Git history",
+      "evidence_ref": "docs/work-nw-gamedev/evidence/p0-baseline.json"
+    },
+    {
+      "work_item_id": "P0-BROWSER-001",
+      "state": "PASS_LOCAL_NAVIGATION",
+      "attempts": 2,
+      "scope": "Isolated Chromium: actual startup observation, engine-failure fallback, all public contract card clicks and iframe return, synthetic unrelated-storage preservation",
+      "local_runner": "PASS_HEADLESS_SHELL",
+      "next_action": "Execute candidate tests in GitHub CI runner; inspect artifacts and fix actual failures within budget",
+      "result": "9 public contract navigation checks + forced-engine-failure fallback + unrelated-storage sentinel PASS; unchanged 3D policy NOT_TESTED due ENGINE_IMPORT network failure",
+      "failures": [
+        {
+          "fingerprint": "RUNNER_CLICK_BEHIND_ALREADY_OPEN_DRAWER",
+          "attempts": 1,
+          "resolved": true
+        },
+        {
+          "fingerprint": "RUNNER_RELATIVE_URL_BASE",
+          "attempts": 1,
+          "resolved": true
+        }
+      ],
+      "evidence_ref": "docs/work-nw-gamedev/evidence/p0-browser.json"
+    },
+    {
+      "work_item_id": "P1-REGISTRY-001",
+      "state": "PASS_UNIT_ONLY",
+      "attempts": 1,
+      "files": [
+        "living-library/live/action-registry.js",
+        "tests/living-library-action-registry.test.mjs"
+      ],
+      "result": "7 new registry tests PASS; full Node suite 164/164 PASS",
+      "limits": "Candidate core only. Not imported by the scene; no new user-facing spell or real character event evidence. P1 gate remains NOT_TESTED.",
+      "next_action": "Complete Rune/Spell schemas and typed graph validation in next isolated slice, then hook and verify a real character event after P0 runtime gate."
+    },
+    {
+      "work_item_id": "P1-CONTRACT-001",
+      "state": "PASS_UNIT_ONLY",
+      "attempts": 1,
+      "result": "AND/SEQUENCE, cycle, missing handler, stable rune identity, target/output type and version checks tested. 171/171 complete Node suite PASS. Draft2020-12 schemas compile in Ajv; 2 positive and 8 negative structural cases PASS.",
+      "scope": "Unloaded candidate modules only; no new scene behavior, microphone, sync or external access",
+      "evidence_refs": [
+        "tests/living-library-spell-contract.test.mjs",
+        "tests/browser/schema-contract.cjs"
+      ],
+      "next_action": "P1 SpellExecutor and real event adapter remain; keep 3D integration behind P0 runtime evidence."
+    },
+    {
+      "work_item_id": "P1-EXECUTOR-001",
+      "state": "PASS_UNIT_ONLY",
+      "attempts": 1,
+      "result": "6 offline executor tests PASS, including error-code redaction and explicit uncertain effect receipts. Full Node suite 177/177 PASS.",
+      "scope": "Synthetic local handlers only; module is not loaded by production scene",
+      "evidence_refs": [
+        "tests/living-library-spell-executor.test.mjs"
+      ],
+      "next_action": "Real event/gesture context binding is the next P1 gate; do not claim a playable spell."
+    },
+    {
+      "work_item_id": "P1-SESSION-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "Target-scoped transient gesture/voice-result correlation only; no microphone or scene changes",
+      "acceptance": "Delayed, cancelled, replaced, expired or replayed results cannot match the wrong target; synthetic tests only",
+      "local_tests": {
+        "result": "PASS",
+        "targeted_tests": 9,
+        "full_suite": 186,
+        "fail": 0,
+        "skipped": 0,
+        "command": "node --test tests/*.test.mjs"
+      },
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-session.json"
+      ],
+      "result": "9 context-binding unit tests and 4 synthetic DOM click cases PASS. Full local Node 186/186 PASS; CI Node+Schema+public-navigation+session fixture PASS.",
+      "candidate_sha": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "ci_run_id": 38598464614,
+      "rollback_sha": "e42a76f1ea4cda659130d167dbe74b2477f21c1e",
+      "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
+    },
+    {
+      "work_item_id": "P1-DISPATCH-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "failure_fingerprints": [],
+      "scope": "P1_PREPARATORY_ONLY; unloaded controlled local dispatch adapter",
+      "result": "11 new dispatch unit cases PASS. Full local Node 197/197 PASS; CI scoped Node 142/142, Schema 2 positive/8 negative, 9 public destinations, 4 session and 4 dispatch synthetic DOM checks PASS.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-dispatch.json"
+      ],
+      "rollback_sha": "64f40d335928906e08dc4b5fb406077b9473bfc3",
+      "next_action": "Harden ActionRegistry schema-definition boundary checks with deterministic malformed/nested-schema tests in an unloaded P1 slice; keep real character/scene wiring behind P0 runtime evidence.",
+      "candidate_sha": "81219b0057ef7148c0f1291a1df04386f12b4548",
+      "ci_run_id": 38607322312
+    },
+    {
+      "work_item_id": "P1-ACTION-SCHEMA-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; ActionRegistry local schema subset, not scene integration",
+      "defect_id": "SCHEMA_DEFINITION_FAIL_OPEN",
+      "failure_fingerprints": [],
+      "reproduction": {
+        "tests": 9,
+        "pass": 1,
+        "fail": 8
+      },
+      "result": "Schema fail-open reproduction (1/9 passing before) fixed on first patch. 9/9 targeted and full local Node 206/206 PASS; CI scoped Node 151/151, Schema 2 positive/8 negative and existing 9 public destinations + 8 synthetic DOM cases PASS.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-action-schema.json"
+      ],
+      "rollback_sha": "9dae995ab13a572b0153581d07c903321f63e3b4",
+      "next_action": "Harden ActionRegistry payload snapshot fidelity: reject sparse/non-JSON payloads before JSON copy so validated and executed inputs cannot diverge; synthetic P1 tests only, no scene loading.",
+      "candidate_sha": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "ci_run_id": 38614917999
+    },
+    {
+      "work_item_id": "P1-PAYLOAD-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; isolated ActionRegistry input/output snapshot fidelity",
+      "defect_id": "PAYLOAD_SNAPSHOT_DIVERGENCE",
+      "reproduction": {
+        "command": "node --test tests/living-library-action-payload.test.mjs",
+        "tests": 8,
+        "pass": 4,
+        "fail": 4,
+        "fingerprint": "PAYLOAD_SNAPSHOT_DIVERGENCE"
+      },
+      "failure_fingerprints": [],
+      "result": "Snapshot divergence reproduction (4/8 passing before) fixed on first patch. Targeted 8/8 and complete local Node 214/214 PASS; CI scoped Node 159/159, Schema 2 positive/8 negative, 9 public destinations and 12 synthetic module/session/dispatch browser checks PASS.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-payload.json"
+      ],
+      "rollback_sha": "bc16422b82b611b7de4efcd8f9a1f08c577864c5",
+      "next_action": "Prepare an unloaded character.tap to registered local-feedback event adapter with synthetic event tests; no live scene wiring until P0 runtime Gate. Preserve real P1 event acceptance as NOT_TESTED.",
+      "candidate_sha": "b41eafa319520a62671138d5e52715ba9b5ab0de",
+      "ci_run_id": 38624605830
+    },
+    {
+      "work_item_id": "P1-CHARACTER-TAP-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded character.tap to registered ui.toast adapter, synthetic events only",
+      "failure_fingerprints": [],
+      "result": "Unloaded character.tap to local feedback adapter: 9 targeted and complete local Node 223/223 PASS. CI scoped Node 168/168, Schema 2 positive/8 negative, 9 public destinations and 16 synthetic browser checks (including 4 new tap cases) PASS. Real P1 event Gate remains NOT_TESTED.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-character-tap.json"
+      ],
+      "rollback_sha": "4af2bd902ad4ef329d053488060bce20f8eea2af",
+      "next_action": "Audit and test SpellExecutor parameter preflight for malformed later-effect parameters before avoidable earlier effects; preserve invocation guards, fixed P0/P1 Gate and unloaded scene status.",
+      "candidate_sha": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "ci_run_id": 38632497911
+    },
+    {
+      "work_item_id": "P1-PREFLIGHT-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded executor static parameter preflight",
+      "defect_id": "LATE_PARAMETER_PARTIAL_EFFECT",
+      "reproduction": {
+        "tests": 8,
+        "pass": 4,
+        "fail": 4,
+        "fingerprint": "LATE_PARAMETER_PARTIAL_EFFECT"
+      },
+      "failure_fingerprints": [],
+      "result": "First patch resolved reproduced avoidable partial effects (before: 4/8 passing). Targeted 8/8, full local Node 231/231, CI scoped Node 176/176, schema 2 positive/8 negative, 9 public destinations and 20 synthetic browser checks PASS. No scene/device acceptance.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-preflight.json"
+      ],
+      "rollback_sha": "53fca6abe121ccdffafb8364760e12e125b4ee93",
+      "candidate_sha": "05144fd07174e24474b908604c3f3f5b1527b579",
+      "ci_run_id": 38640094944,
+      "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
+    },
+    {
+      "work_item_id": "P1-CARD-SNAPSHOT-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded executor configuration boundary",
+      "defect_id": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE",
+      "reproduction": {
+        "tests": 8,
+        "pass": 2,
+        "fail": 6,
+        "fingerprint": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE"
+      },
+      "failure_fingerprints": [],
+      "result": "Reproduced configuration snapshot divergence (2/8 passing before), resolved on first patch. Targeted 8/8, full local Node 239/239, CI scoped Node 184/184, schema 2 positive/8 negative, 9 public destinations and 24 synthetic browser checks PASS. Real P0/P1 Gates unchanged.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-card-snapshot.json"
+      ],
+      "rollback_sha": "8cdd1455099f89680da12eb5ac8c93fd3e2fadae",
+      "candidate_sha": "ebb803e68a7474190b238a791b1e9a1c256797fe",
+      "ci_run_id": 38647418806,
+      "next_action": "Audit Rune/Spell structural validator against the published JSON Schemas using deterministic parity fixtures; preserve draft parameter late binding, graph semantics, existing IDs and fixed acceptance Gates. Unloaded P1 contract preparation only."
+    },
+    {
+      "work_item_id": "P1-CONTRACT-PARITY-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; shared deterministic contract/JSON Schema audit",
+      "failure_fingerprints": [],
+      "result": "Shared 56-case audit PASS without runtime/schema changes: 6 accepted, 41 structural rejects, 9 intentionally stricter semantic rejects. Full local Node 295/295, CI scoped Node 240/240, original schema 2 positive/8 negative + 56 parity cases, 9 public destinations and 24 synthetic browser checks PASS. Not exhaustive equivalence or P0/P1 acceptance.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-contract-parity.json"
+      ],
+      "rollback_sha": "5c04e502d806700b23a421ec27072e4acc855317",
+      "candidate_sha": "3ee1da96f673718addf7165d1a011ad427bef837",
+      "ci_run_id": 38648221166,
+      "next_action": "Audit ActionRegistry definition metadata snapshots so schema/platform/policy validated at registration are identical to immutable stored metadata; use synthetic malformed/getter/serialization-hook fixtures, without scene imports, authority expansion or design changes."
+    },
+    {
+      "work_item_id": "P1-DEFINITION-SNAPSHOT-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P1_PREPARATORY_ONLY; unloaded ActionRegistry definition registration boundary",
+      "defect_id": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE",
+      "reproduction": {
+        "tests": 10,
+        "pass": 2,
+        "fail": 8,
+        "fingerprint": "DEFINITION_METADATA_SNAPSHOT_DIVERGENCE"
+      },
+      "failure_fingerprints": [],
+      "result": "Definition metadata divergence reproduced (2/10 passing before), resolved on first patch. Targeted 10/10, full local Node 305/305, CI scoped Node 250/250, Schema 2 positive/8 negative + 56 parity fixtures, 9 public destinations and 28 synthetic browser checks PASS. No scene/device acceptance.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p1-definition-snapshot.json"
+      ],
+      "rollback_sha": "7bbca7c4d4fa7eaa6f5ba09c15585f87e7eaeeb2",
+      "candidate_sha": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+      "ci_run_id": 38654474897,
+      "next_action": "Audit SpellExecutor AbortSignal cancellation during awaited dynamic guards so cancellation blocks handler entry, not only the next rune; use the existing trusted deny-only registry checkpoint with synthetic tests. Preserve context/owner/platform/input/output guards and unloaded P1 status."
+    },
+    {
+      "work_item_id": "P2-LOCAL-SAVE-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P2_P5_PREPARATORY_ONLY; unloaded transactional spell store and pending outbox",
+      "failure_fingerprints": [],
+      "result": "Implemented atomic IndexedDB spell+outbox and exact retry/coalescing/version-conflict handling. Real Chromium 6/6 local persistence cases PASS, including click/reload/offline/stale concurrent writer/transaction rollback. Existing full Node 305/305, CI scoped 250/250, Schema+56 parity fixtures and 9 public destinations+34 synthetic browser cases PASS. Not an in-game editor, deployed site, phone acceptance or cloud sync.",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+      ],
+      "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2",
+      "candidate_sha": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+      "ci_run_id": 38660234949,
+      "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
+    },
+    {
+      "work_item_id": "P5-OUTBOX-RECEIPT-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "scope": "P2_P5_PREPARATORY_ONLY; unloaded store receipt and retry metadata, synthetic remote fixture only",
+      "failure_fingerprints": [],
+      "rollback_sha": "45acc7e63d32e595eb1c1e9c7c1c0fb7e419dce7",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json"
+      ],
+      "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete.",
+      "candidate_sha": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
+      "ci_run_id": 38666248987,
+      "result": "Real Chromium confirms version/hash matched ACK, duplicate/stale rejection, durable retry schedule across reload, synthetic recovery and atomic ACK rollback. No actual transport, worker, private sync or AI readback."
+    },
+    {
+      "work_item_id": "P5-OUTBOX-PUMP-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "failure_fingerprints": [],
+      "scope": "P5_PREPARATORY_ONLY; injected synthetic transport, no live scene or private network",
+      "rollback_sha": "aa59393f72f8c126d84ab3cf91c04dd7416f6044",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-outbox-pump.json"
+      ],
+      "candidate_sha": "55bcb892f2ee1f51c65538009f535df04411ce29",
+      "ci_run_id": 38677077443,
+      "result": "Bounded explicit delivery pump verified with real IndexedDB and injected synthetic idempotent transport. Single-flight shared per store object; cancel/timeout ignore late receipts; retry preserves key; edits during send stay pending. Not actual private sync.",
+      "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates."
+    },
+    {
+      "work_item_id": "P2-OBJECT-BACKUP-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_PREPARATORY_ONLY; existing card creation page read-only backup and file inspection",
+      "rollback_sha": "670de4ec2bdc3176d83548786bdb738259475860",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-object-backup.json"
+      ],
+      "candidate_sha": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+      "ci_run_id": 38682223106,
+      "result": "Existing card-creation page now offers icon-only full local object backup download and read-only checksum/count inspection; real Chromium synthetic download/offline inspection/tamper rejection PASS. No import, restore, cloud upload or production release.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent slice: an explicit versioned ObjectCraft outbox adapter preserving local.card/local.book IDs, revisions, recycle state and unknown fields, without converting to nw.spell.v1 or touching existing saves. Define stale-snapshot/conflict and deduplication semantics; use isolated synthetic storage and mocked transport. Do not enable private uploads before scoped OWNER authorization or cross-context delivery coordination. Backup import/actual recovery, Android WebView download/file-picker and full P0-P7 gates remain unverified.",
+      "release": "RELEASED_STANDALONE_PR234_DEVICE_NOT_TESTED",
+      "release_evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
+    },
+    {
+      "work_item_id": "P5-OBJECT-OUTBOX-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_P5_PREPARATORY_ONLY; explicit creator local queue UI, no 3D hook or transport",
+      "rollback_sha": "71f44572a10d40838ddca64ade8ecbaa1b5a9912",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+      ],
+      "candidate_sha": "f04568d042f407458544b3fa2757e18095444b7a",
+      "ci_run_id": 38693194557,
+      "result": "Explicit creator icon prepares durable local ObjectCraft intents; manual local UI separately released PR235 with CI/Pages/HTTP proof. Full P5 transport/auto-capture/AI/device gates incomplete.",
+      "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
+      "release": "RELEASED_MANUAL_CAPTURE_PR235_DEVICE_NOT_TESTED"
+    },
+    {
+      "work_item_id": "P5-OBJECT-RECONCILE-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_P5_PREPARATORY_ONLY; creator reopen/mutation bounded local queue reconciliation, candidate only",
+      "rollback_sha": "6bae41faf76080fba9cab50d6ae6020201c1fd25",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json"
+      ],
+      "candidate_sha": "9e6442a172923cce572f8eda5a79098479c4e1eb",
+      "ci_run_id": 38698921195,
+      "local_node_tests": 345,
+      "local_browser_cases": 6,
+      "result": "Candidate actual creator automatically reconciles on reopen/visibility/storage changes and successful mutations; bounded single-flight, quota failure leaves source saved and reports repair pending, fresh iframe repairs interrupted capture. Six browser cases PASS. No formal release/private transport.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
+      "approval_required": "Only for production release/private transport; independent local candidate work continues"
+    },
+    {
+      "work_item_id": "P5-BOOK-RECONCILE-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_P5_PREPARATORY_ONLY; reuse local reconciler in existing book creator, no scene/transport changes",
+      "rollback_sha": "bf1c27f2115367ba00297e36d9f9dcce35c280e9",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
+      ],
+      "candidate_sha": "81a959a5a83bd6934fc39ec1b57c66198a471a14",
+      "ci_run_id": 38706186001,
+      "local_node_tests": 345,
+      "browser_cases": 7,
+      "result": "Existing book creator now prepares local ObjectCraft outbox on successful creation/open/reopen/storage/visibility; manual icon rescue, same ID, original preview/parent notification preserved. Queue failure leaves saved book; source failure produces no book/intent/success message. Actual iframe interruption recovery and malformed-source protection PASS.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and valid lease. Next independent P5 candidate slice: adapt ObjectCraft's existing separate object outbox to injected synthetic delivery with revision/hash/idempotency-bound receipts, preserving newer edits and source data; durable retry/backoff and cross-context delivery coordination before enabling any automatic sender. Reuse established SpellStore receipt/pump behavior where compatible without converting ObjectCraft into nw.spell.v1. No real endpoint/private OAuth/upload or 3D core changes. Card/book creator automatic local preparation remains candidate-only and needs separate OWNER approval before release. Staging, phone/full P0-P7, private remote roundtrip and AI readback remain NOT_TESTED/WAIT_OWNER.",
+      "approval_required": "Scoped production release/private transport only; independent candidate work remains available",
+      "source_files": [
+        "living-library/live/book-creation.html",
+        "tests/browser/book-reconcile.cjs",
+        "tests/browser/package.json"
+      ]
+    },
+    {
+      "work_item_id": "P5-OBJECT-RECEIPT-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P5_PREPARATORY_ONLY; explicit local receipt comparison, synthetic receiver only",
+      "rollback_sha": "2dba395b6c494523136b96dae0d4fd47da3cb6cf",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-object-receipt.json"
+      ],
+      "candidate_sha": "6b6d09efc8ace84f92aef322d404bac1e8759a7c",
+      "local_node_tests": 345,
+      "local_browser_cases": 32,
+      "ci_run_id": 38713336543,
+      "result": "Explicit local ObjectCraft acknowledgement verifies attempt+receipt identity/revision/hash/idempotency, atomically removes only matching pending row, retains version ledger. Synthetic receiver, stale second connection, rollback/reload/accessor rejection/new-edit recovery PASS. No sender, UI integration, real transport or released feature.",
+      "next_action": "READ/SCAN current main/PR219, canonical progress, lease and KB-defined Rune/Spell book placement. Prioritize the first independent P2 player-visible spell authoring/save/reload slice using existing SpellStore and prescribed in-book container, with explicit draft identity and no implicit conversion of blank ObjectCraft cards. Keep scene integration disabled until P0 evidence; name/incantation/local save can be candidate preparation only if original dependencies permit. Before any automatic ObjectCraft sender, still implement durable retry/backoff, authenticated scope-bound receipts and cross-context delivery lease in isolation. Private transport/OAuth/remote roundtrip/AI readback and formal releases remain WAIT_OWNER/NOT_TESTED.",
+      "source_files": [
+        "living-library/live/object-outbox.js",
+        "tests/browser/object-receipt.cjs",
+        "tests/browser/package.json"
+      ]
+    },
+    {
+      "work_item_id": "P2-SPELL-AUTHORING-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "test_repairs": [
+        {
+          "id": "CATALOG_EXPECTATION_UPDATE",
+          "effective_fixes": 2,
+          "result": "PASS"
+        },
+        {
+          "id": "FIELDSET_DISABLED_ASSERTION",
+          "effective_fixes": 1,
+          "result": "PASS"
+        },
+        {
+          "id": "UNCHANGED_RELOAD_DIALOG_EXPECTATION",
+          "effective_fixes": 1,
+          "result": "PASS",
+          "reason": "Unchanged library reload correctly omits first-update dialog; await fallback then dismiss only if present."
+        }
+      ],
+      "scope": "P2_PREPARATORY_ONLY; actual existing book/reader UI, disabled SpellCard metadata authoring with local IDB+outbox",
+      "rollback_sha": "ec39299d397b45649bc653353b777a00c53e6842",
+      "candidate_sha": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-spell-authoring.json"
+      ],
+      "local_node_tests": 345,
+      "local_browser_cases": 26,
+      "ci_run_id": 38728310675,
+      "result": "One candidate player-visible local draft editor: name/purpose/incantations/aliases, same ID save/load/reload, offline coalescing, quota rollback and stale-editor conflict. Planned catalog has no executor/registered handlers; all drafts disabled. Not a complete P2 or usable spell.",
+      "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
+      "source_files": [
+        "living-library/UI-MANAGER-REGISTRY.md",
+        "living-library/live/index.html",
+        "living-library/live/public-catalog.js",
+        "living-library/live/spell-store.js",
+        "tests/browser/package.json",
+        "tests/gpt-skills-embedded-card.test.mjs",
+        "tests/living-library-card-atlas-touch-controls.test.mjs",
+        "tests/living-library-encyclopedia-controls.test.mjs",
+        "tests/living-library-gpt-card-visibility.test.mjs",
+        "tests/living-library-live-walking-book-titles.test.mjs",
+        "tests/living-library-player-object-craft.test.mjs",
+        "tests/living-library-ui-manager.test.mjs",
+        "tests/living-library-ui-map.test.mjs",
+        "tests/living-library-web-runtime-contract.test.mjs",
+        "living-library/live/spell-creation.html",
+        "living-library/live/spell-creation.js",
+        "living-library/live/spell-draft.js",
+        "tests/browser/spell-creation.cjs"
+      ]
+    }
+  ],
+  "last_run": {
+    "run_id": "NW-CYCLE-20261015-19",
+    "started_at": "2026-10-15T11:29:30.360Z",
+    "ended_at": "2026-10-15T11:37:46.880Z",
+    "attempts": 1,
+    "effective_fixes": 0,
+    "failure_fingerprints": [],
+    "candidate_sha": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+    "ci_run_id": 38728310675,
+    "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
+    "local_browser_scope": "11 real candidate book/iframe authoring cases +15 SpellStore cases PASS; local full Node345 PASS; CI full configured suite PASS",
+    "requirements_zip": "Expanded canonical cycle v1.2 archive and read four skill files plus audit in preceding context; scope retained after scratch pruning; no substitution by spatial v1.2"
+  },
+  "execution": {
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T11:37:46.880Z",
+    "state": "PAUSED_BY_OWNER",
+    "resume_policy": "OWNER paused autonomous development for product/progress alignment on 2026-10-15. Read-only alignment only. Do not resume implementation, scheduled development or release until OWNER explicitly asks to resume; prior adaptive-order direction does not override this pause."
+  },
+  "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+  "privacy_review": "PASS_NO_PRIVATE_PAYLOAD_OR_CREDENTIALS",
+  "notes": [
+    "This is the only canonical progress file. ChatGPT Library contains requirements, not a second mutable progress copy.",
+    "Hourly automation created; future runs are conditional on available tools. No Work mode or process restart capability claimed.",
+    "Previous Node CI confirmed success: workflow run 38589585932 for e875f94f9c96bb8b1416e5f8b8121acd05bfef00. Local browser installed but socket creation is denied; do not retry local launch unchanged.",
+    "Standard Chrome launch failed due singleton socket permissions, but supported Headless Shell ran successfully. Do not treat the earlier local launch limitation as an overall project blocker.",
+    "P1_PREPARATORY_ONLY records source/unit-test preparation, not completion of the P0 or P1 acceptance gates.",
+    "OWNER 2026-10-15 confirmed existing phone operations remain usable. Prioritize clearing actual runtime/staging verification gaps and concrete scene integration preparation over further generic hardening. Fixed P0-P7 acceptance and release authority unchanged.",
+    "OWNER approval received 2026-10-15 07:54 +08:00 to proceed. Real scene hook and preservation checklist located; no configured preview deployment found in repository workflows. Do not mark P0/P1 PASS or claim release from this approval."
+  ],
+  "owner_observations": [
+    {
+      "id": "android_3d_visual_owner_report",
+      "result": "PASS_REPORTED_BY_OWNER",
+      "source_ref": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/pull/219#issuecomment-6172110244",
+      "scope": "Samsung Android 3D bookshelf/avatar/floating-book visuals and daily use reported in PR discussion; not automated or comprehensive device acceptance"
+    },
+    {
+      "id": "android_existing_operations_owner_report_20261015",
+      "result": "PASS_REPORTED_BY_OWNER",
+      "reported_at": "2026-10-15T07:53:23+08:00",
+      "source": "OWNER statement in current project conversation",
+      "owner_quote": "都還可以用",
+      "scope": "Broad owner confirmation that current phone version's existing operations remain usable, in reply to discussion of 3D/person/joystick/camera/books/cards regression. Not a separately observed per-step checklist.",
+      "limits": "Installed runtime/commit was not independently identified. This confirms existing phone behavior by owner report, not candidate Rune Engine integration, staging deployment or automated WebGL2/device/voice acceptance."
+    }
+  ],
+  "ci_evidence": [
+    {
+      "commit": "e875f94f9c96bb8b1416e5f8b8121acd05bfef00",
+      "run_id": 38589585932,
+      "result": "PASS",
+      "scope": "Node regression before browser runner"
+    },
+    {
+      "commit": "484558d49924d37cee5f45fc0fa771484c9e33b1",
+      "run_id": 38590511626,
+      "result": "FAIL",
+      "scope": "Initial browser script clicked fallbackOpen after drawer was already open; fixed"
+    },
+    {
+      "commit": "dd529a69661b150c9c21d94d27cdd24427ff1125",
+      "run_id": 38591256122,
+      "result": "PASS",
+      "scope": "Node + isolated Chromium public navigation; 3D renderer NOT_TESTED under software-GPU policy"
+    },
+    {
+      "commit": "32bcc606c6b50a06ffbccd445f17d0eb04106ebe",
+      "run_id": 38591812999,
+      "result": "PASS",
+      "scope": "Node + Ajv schema cases + isolated public navigation. Later executor candidate CI tracked separately."
+    },
+    {
+      "commit": "61e989c481b8dad4e9396c5adfb061a0ef34f757",
+      "run_id": 38592180420,
+      "result": "PASS",
+      "scope": "Node + Schema + Chromium; later error-code redaction checked locally and tracked in subsequent CI"
+    },
+    {
+      "commit": "f04aa9c3c2ced4b57be067a17f94364e98aec555",
+      "run_id": 38592460682,
+      "result": "PASS",
+      "scope": "Node, Draft2020-12 Schema cases and isolated Chromium public navigation. No 3D/device acceptance claimed."
+    },
+    {
+      "commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "run_id": 38598464614,
+      "result": "PASS",
+      "scope": "Node+JSON Schema+public navigation+4 synthetic interaction-session browser cases; no scene/voice/device integration"
+    },
+    {
+      "result": "PASS",
+      "commit": "81219b0057ef7148c0f1291a1df04386f12b4548",
+      "checkout_commit": "d2feb050588bfb4a69897192bc4f218f79214a14",
+      "run_id": 38607322312,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38607322312",
+      "scope": "142 scoped Node tests + Schema + 9 public navigation + 4 session + 4 dispatch synthetic DOM cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "1f37905f1105bc520206709baa3e83eb1924b11b",
+      "checkout_commit": "4148f4004adee2e6bd053abc2db0e52c8d038c7b",
+      "run_id": 38614917999,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38614917999",
+      "scope": "151 scoped Node tests + 2 positive/8 negative schema cases + 9 public destinations + 4 session/4 dispatch synthetic DOM checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "b41eafa319520a62671138d5e52715ba9b5ab0de",
+      "checkout_commit": "d7e3f30c22f52d6fc907818a758ee4510047d73e",
+      "run_id": 38624605830,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38624605830",
+      "scope": "159 scoped Node tests + Schema + 9 public destinations + 4 session/4 dispatch/4 payload Chromium module checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "987e44411078dcc5b8a168fe3d5a512060831d31",
+      "checkout_commit": "b49f80288ebcef28636cfc6c27152bf62e976611",
+      "run_id": 38632497911,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38632497911",
+      "scope": "168 scoped Node tests + Schema + 9 public destinations + 4 session/4 dispatch/4 payload/4 synthetic character tap browser cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "05144fd07174e24474b908604c3f3f5b1527b579",
+      "checkout_commit": "46fad2373c43448f197efe65165276a8ebeb177f",
+      "run_id": 38640094944,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38640094944",
+      "scope": "176 scoped Node tests + Schema 2 positive/8 negative + 9 public destinations + 20 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "ebb803e68a7474190b238a791b1e9a1c256797fe",
+      "checkout_commit": "3a5b2b90496fb45858dbc8c8f8a503509ef48744",
+      "run_id": 38647418806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38647418806",
+      "scope": "184 scoped Node tests + Schema 2 positive/8 negative + 9 public destinations + 24 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "3ee1da96f673718addf7165d1a011ad427bef837",
+      "checkout_commit": "3a55d19f55f12d1eb40765d2f8c29ae5afa63558",
+      "run_id": 38648221166,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38648221166",
+      "scope": "240 scoped Node tests + 2 positive/8 negative Schema + 56 contract parity fixtures + 9 public destinations + 24 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "f4f9971a4209b09c17f5360f96fc0e111902ba51",
+      "checkout_commit": "6715c86ed4988f8a00f84584e0aead632d4cfe6b",
+      "run_id": 38654474897,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38654474897",
+      "scope": "250 scoped Node tests + Schema/56 parity fixtures + 9 public destinations + 28 synthetic browser checks; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+      "checkout_commit": "9d4b54db3cd82ec91c82abcc6f0049ea8a3a0fc5",
+      "run_id": 38660234949,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949",
+      "scope": "250 scoped Node tests + Schema/56 parity + 9 public destinations + 34 synthetic browser checks including 6 real IndexedDB persistence cases; no scene/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
+      "run_id": 38662737806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
+      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
+      "run_id": 38663912422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
+      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
+      "checkout_commit": "78eaa23e565f8697184815980bf179539bb01525",
+      "run_id": 38666248987,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38666248987",
+      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
+    },
+    {
+      "result": "PASS",
+      "commit": "55bcb892f2ee1f51c65538009f535df04411ce29",
+      "checkout_commit": "33d31775dfb0b5de1a8da27683d399932869f5d9",
+      "run_id": 38677077443,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38677077443",
+      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
+    },
+    {
+      "result": "PASS",
+      "commit": "539073883bf81f7ea0c0ab5d1ff592d6b5d1b5a0",
+      "checkout_commit": "058cef0f0b0fe56c68c4bb68e84311ccc382be2a",
+      "run_id": 38682223106,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38682223106",
+      "scope": "281 scoped Node + Schema 2 positive/8 negative + 56 parity + 9 public destinations, clean-view/icon controls and 46 synthetic module browser cases, including 3 actual candidate backup UI download/inspection cases. No staging/device/private sync."
+    },
+    {
+      "result": "PASS",
+      "commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+      "run_id": 38687221049,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38687221049",
+      "scope": "Narrow authorized web release only; 183 full Node tests and candidate source navigation/settings/download tests; no GPU/Android acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "f04568d042f407458544b3fa2757e18095444b7a",
+      "checkout_commit": "eebc17665441bd9d0a2f2f0bce86ca3356f69114",
+      "run_id": 38693194557,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38693194557",
+      "scope": "286 scoped Node + 2 positive/8 negative Schema +56 parity +9 public destinations, icon/clean-view/settings ACK and55 synthetic browser module cases (8 ObjectOutbox +4 actual creator backup/local-queue UI). Real Chromium; no staging/GPU/device/private remote."
+    },
+    {
+      "result": "PASS",
+      "commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "checkout_commit": "08821f6f3d77d1fe897201f028644d81e06296f0",
+      "run_id": 38728310675,
+      "job_id": 116399524975,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38728310675",
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
+    }
+  ],
+  "candidate_validation": {
+    "node": {
+      "result": "PASS",
+      "tests": 345,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs"
+    },
+    "json_schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "command": "node tests/browser/schema-contract.cjs",
+      "contract_parity": {
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9
+      }
+    },
+    "browser": {
+      "result": "PASS",
+      "ci_run_id": 38728310675,
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
+    },
+    "live_scene_change": "3D module bytes identical to main28c5418; index change only same-origin spell page whitelist. Catalog appends one gaming card; no scene/action/voice hookup, ObjectCraft or native change.",
+    "release": "NOT_RELEASED_SPELL_AUTHORING_OR_PRIOR_UNRELEASED_PREPARATION; historical approved releases retained",
+    "latest_ci": {
+      "result": "PASS",
+      "commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "checkout_commit": "08821f6f3d77d1fe897201f028644d81e06296f0",
+      "run_id": 38728310675,
+      "job_id": 116399524975,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38728310675",
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
+    },
+    "local_persistence": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "ci_run_id": 38660234949,
+      "cases": 6
+    },
+    "playable_features_added_to_production": 0,
+    "rune_release": "NOT_RELEASED",
+    "local_object_backup": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "features": [
+        "download full local cards/books/recycle backup",
+        "inspect selected backup checksum/counts offline without restoring"
+      ],
+      "ui_path": "living-library/live/card-creation.html",
+      "canonical_card_id": "public.gaming.card.creation",
+      "browser_cases": 3,
+      "actual_restore": "NOT_IMPLEMENTED",
+      "android_download_file_picker": "NOT_TESTED"
+    },
+    "object_outbox": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "actual_ui": "card-creation.html #queueObjects",
+      "browser_cases": 8,
+      "creator_UI_cases": 4,
+      "automatic_capture": "NOT_ENABLED",
+      "private_transport": "WAIT_OWNER",
+      "release": "RELEASED_STANDALONE_PR235_DEVICE_NOT_TESTED",
+      "production_player_features": 1,
+      "release_evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+    },
+    "object_reconciliation": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "browser_cases": 6,
+      "automatic_capture": "CREATOR_PAGE_TRIGGERS_ONLY",
+      "private_transport": "WAIT_OWNER",
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED",
+      "ci_run_id": 38698921195
+    },
+    "book_reconciliation": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "actual_ui": "book-creation.html #form / #queueBook",
+      "browser_cases": 7,
+      "ci_run_id": 38706186001,
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED",
+      "private_transport": "WAIT_OWNER"
+    },
+    "object_receipt": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "browser_cases": 7,
+      "ci_run_id": 38713336543,
+      "creator_sender": "NOT_ENABLED",
+      "remote_provenance": "NOT_TESTED",
+      "playable_feature_delta": 0
+    },
+    "spell_authoring": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "production_player_features": 0,
+      "book_id": "gaming",
+      "card_id": "public.gaming.spell.creation",
+      "browser_cases": 11,
+      "ci_run_id": 38728310675,
+      "enabled": false,
+      "full_graph_editor": "NOT_IMPLEMENTED",
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED"
+    }
+  },
+  "owner_approvals": [
+    {
+      "id": "owner_proceed_20261015_075446",
+      "received_at": "2026-10-15T07:54:46+08:00",
+      "owner_quote": "核准",
+      "context": "Reply to proposed isolation verification and real character.tap -> controlled feedback preparation; assistant also mentioned later release approval.",
+      "effective_action": "Proceed with the proposed next-stage verification and integration preparation. Preserve all fixed test gates. No specific release candidate/version has yet passed the gates or been presented for final release.",
+      "status": "RECORDED"
+    },
+    {
+      "id": "owner_ui_release_20261015",
+      "source": "OWNER current conversation",
+      "quote": "發布",
+      "scope": "Specific reviewed clean-view and icon-only UI; not all Rune Engine phases or private sync",
+      "result": "EXECUTED_PR221"
+    },
+    {
+      "id": "owner_three_item_release_20261015_132633",
+      "source": "OWNER current conversation",
+      "quote": "核准上述三項",
+      "scope": [
+        "3D parameter linkage repair",
+        "Restore card summon animation once, avoid duplicate PRs",
+        "Separate ObjectCraft backup download/inspection only from PR219"
+      ],
+      "excludes": [
+        "Full Rune Engine release",
+        "Private sync or OAuth/App authority",
+        "Magic-circle design change",
+        "Android APK/permissions"
+      ],
+      "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED",
+      "status": "EXECUTED_PR234"
+    },
+    {
+      "id": "owner_local_queue_release_20261015",
+      "source": "OWNER current conversation",
+      "quote": "發布",
+      "scope": "Publish reviewed explicit local ObjectCraft outbox preparation UI only; no auto capture, Rune engine or private transport",
+      "status": "EXECUTED_PR235"
+    }
+  ],
+  "next_stage_preparation": {
+    "observed_at": "2026-10-14T23:55:50.366Z",
+    "source_commit": "c054499734dba47498f372eb85286b1ceef923fd",
+    "scene_entry": "living-library/live/index.html: avatarHit branch currently calls showJoystick(e) and returns avatar",
+    "candidate_adapter": "living-library/live/character-tap-adapter.js: CharacterTapAdapter.dispatch(target_id,{signal})",
+    "preserve": [
+      "Book hit priority and readable books with joystick visible",
+      "showJoystick on actual avatar hit and existing empty-space dismissal",
+      "Movement/camera/touch/card-order/storage/public/private boundaries"
+    ],
+    "verification_required": [
+      "P0 real 3D regression evidence and identifiable runtime",
+      "Isolated candidate browser/runtime before activation",
+      "Actual character tap -> registered local feedback; synthetic module tests alone are insufficient"
+    ],
+    "deployment_inspection": {
+      "result": "NO_CONFIGURED_PREVIEW_FOUND_IN_REPO_WORKFLOWS",
+      "scope": "Read repository workflow inventory; living-library-ci.yml is isolated intercepted candidate testing and living-library-live-proof.yml checks already-deployed public Pages. No verified staging deploy method/URL identified. External provider deployment state remains NOT_TESTED."
+    },
+    "state": "PREPARED_NOT_ACTIVATED"
+  },
+  "cycle_policy": {
+    "version": "1.2.0",
+    "skill_id": "WORK-NW-GAMEDEV-001",
+    "steps": [
+      "READ",
+      "SCAN",
+      "SELECT",
+      "BUILD",
+      "VERIFY",
+      "PREVIEW",
+      "PERSIST"
+    ],
+    "requirements_read": {
+      "v12_zip": "念動世界_Work_P0-P7循環技能_v1.2.zip",
+      "zip_contents_read": [
+        "00_START_HERE_v1.2.md",
+        "WORK_CYCLE_P0_P7_v1.2.md",
+        "WORK_CYCLE_P0_P7_v1.2.yaml",
+        "WORK_START_PROMPT_v1.2.md"
+      ],
+      "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated",
+      "current_run_v12_zip": "EXPANDED_AND_READ: downloaded canonical libfile_d2161de8334c81918bd377173f3366fb via current Library helper; Python zipfile read skill/00_START_HERE_v1.2.md, WORK_CYCLE_P0_P7_v1.2.md/.yaml, WORK_START_PROMPT_v1.2.md and audit changelog. Standalone spatial v1.2 entry was not substituted.",
+      "current_run_other": "Holistic substantive product review recorded in owner_execution_direction.plans_reviewed; root/living-library AGENTS reread. No implementation or child feature falsely activated."
+    }
+  },
+  "acceptance_scan": {
+    "observed_at": "2026-10-15T11:37:46.880Z",
+    "phases": [
+      {
+        "id": "P0",
+        "result": "BLOCKED",
+        "gap": "Current main28c5418 scene/source preserved exactly; public/fallback/settings regression PASS. Cloud software GPU remains environment limitation, full GPU/staging/device/gesture gate NOT_TESTED; OWNER visual report remains PASS_REPORTED_BY_OWNER."
+      },
+      {
+        "id": "P1",
+        "result": "NOT_TESTED",
+        "gap": "Real character.tap scene integration remains unverified"
+      },
+      {
+        "id": "P2",
+        "result": "NOT_TESTED",
+        "gap": "Actual existing-book authoring/save/reload candidate PASS with same stable SpellCard identity and transactional IDB+outbox; full rune arrangement, migration/export/recovery and device/staging incomplete. No implicit ObjectCraft conversion."
+      },
+      {
+        "id": "P3",
+        "result": "NOT_TESTED",
+        "gap": "Real grab/release/return interaction not implemented"
+      },
+      {
+        "id": "P4",
+        "result": "NOT_TESTED",
+        "gap": "Voice+gesture phone loop not implemented"
+      },
+      {
+        "id": "P5",
+        "result": "NOT_TESTED",
+        "gap": "Card/book local capture retained. New explicit local ObjectCraft receipt settlement candidate verified against synthetic receiver; stale/mismatched acknowledgements retain pending edits. No authenticated private transport, automatic ObjectCraft sender, retry/backoff/lease, remote roundtrip or AI readback; P5 remains NOT_TESTED."
+      },
+      {
+        "id": "P6",
+        "result": "NOT_TESTED",
+        "gap": "Player-visible evidence-based feedback not integrated"
+      },
+      {
+        "id": "P7",
+        "result": "NOT_TESTED",
+        "gap": "Narrow OWNER-approved web releases PR221/233/234/235 verified separately; full Rune/staging/device gates NOT_TESTED."
+      }
+    ]
+  },
+  "sync_checks": {
+    "local_save": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "scope": "Book creator offline save+queue quota independence, failed source write with no success notification, iframe interrupted open/reopen and malformed-source retention verified with synthetic real Chromium; prior card evidence retained. Actual source write module unchanged. Device/full Rune editor/recovery NOT_TESTED. New disabled SpellCard actual book-form save/reopen/full reload/offline edits verified using existing atomic SpellStore."
+    },
+    "outbox": {
+      "result": "PASS_ISOLATED_LOCAL_CAPTURE_AND_RECEIPT_SETTLEMENT",
+      "scope": "Existing card/book preparation retained; local compare-and-delete receipts verified with actual IDB, synthetic receiver deduplication, stale independent connection, transaction rollback, reload/version ledger and new edits. Correlation is not authentication; creator UI never invokes acknowledgement. No automatic sender/private endpoint. Actual SpellCard authoring now writes existing versioned intent atomically with each saved draft; no delivery enabled."
+    },
+    "authorized_transport": {
+      "result": "WAIT_OWNER",
+      "scope": "No private OAuth/App/upload authority; matching local receipt fields are not authentication or remote evidence."
+    },
+    "remote_roundtrip": {
+      "result": "NOT_TESTED",
+      "scope": "In-page synthetic Map receiver only, no HTTP/private remote; local receipt removal cannot establish real sync"
+    },
+    "ai_readback": {
+      "result": "NOT_TESTED"
+    }
+  },
+  "cycle_rescan": {
+    "observed_at": "2026-10-15T11:37:46.880Z",
+    "state": "ACTIONABLE_GAPS_REMAIN",
+    "preserved_passes": "Previous reliable card reconciliation, engine and released manual queue evidence preserved; main28c5418 remains unchanged, no defect budgets reset",
+    "highest_value_gap": "P2 user-editable rune arrangement and local export/recovery in existing book",
+    "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
+    "production_playable_feature_delta": 0,
+    "candidate_player_feature_delta": 1,
+    "priority_note": "Latest OWNER explicitly grants adaptive execution ordering after reading all plans; supersedes mechanical phase-order scheduling, without changing product design, acceptance criteria or approval scope.",
+    "sync_preparation_delta": "Real book-form SpellCard metadata save+pending intent; no private remote delivery"
+  },
+  "ui_clean_view": {
+    "request": "OWNER requested removal of all upper-left text and a clean full scene view",
+    "base_sha": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77",
+    "surface_path": "living-library/live/index.html",
+    "scope_level": "L2_PRESENTATION_ONLY",
+    "changes": [
+      "Removed visible upper-left English/Chinese title and subtitle; accessible runtime status retained off screen",
+      "Added remembered clean-view toggle for top ornament, right book list and bottom controls; restore button and Escape remain available"
+    ],
+    "preserved_features": [
+      "Scene geometry, avatar, camera, joystick and book interactions unchanged",
+      "14 public books, public/private catalog and reader paths unchanged",
+      "Existing save keys untouched; one independent presentation preference"
+    ],
+    "tests": {
+      "node": {
+        "result": "PASS",
+        "tests": 305
+      },
+      "ci_node": {
+        "result": "PASS",
+        "tests": 250
+      },
+      "browser": "PASS",
+      "phone": "NOT_TESTED",
+      "staging": "NOT_TESTED"
+    },
+    "release": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "rollback_ref": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77",
+    "candidate_sha": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+    "state": "PASS_CANDIDATE_NOT_RELEASED",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-clean-view.json",
+    "ci": {
+      "result": "PASS",
+      "commit": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
+      "checkout_commit": "ededaa857ad532b5968741b0ff5362a09a928324",
+      "run_id": 38662737806,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38662737806",
+      "scope": "UI clean-view/reload/restore + 9 public destinations + 34 existing synthetic browser checks; scoped Node 250; no deployed 3D/device acceptance"
+    },
+    "defects": [
+      {
+        "id": "RELOAD_UPDATE_DIALOG_INTERCEPTS_REGRESSION",
+        "effective_fixes": 1,
+        "consecutive_same_failure": 0,
+        "observed_failure_runs": [
+          38662589398
+        ],
+        "result": "RESOLVED_TEST_FLOW"
+      }
+    ]
+  },
+  "ui_design_standard": {
+    "id": "NW-UI-ICON-ONLY-001",
+    "source": "OWNER project conversation 2026-10-15, latest correction: 我認為直接不要按鈕文字",
+    "rule": "ICON_ONLY_ACTION_BUTTONS: no visible button words. Full accessible names/tooltips and separate permission explanations remain; content titles are not action labels.",
+    "registry_path": "living-library/UI-MANAGER-REGISTRY.md",
+    "implementation_scope": "living-library/live/index.html action controls, including reader/dialog and dynamic move action; not all embedded applications or native screens",
+    "candidate_base_sha": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
+    "tests": {
+      "local_node": {
+        "result": "PASS",
+        "tests": 305
+      },
+      "ci_node": {
+        "result": "PASS",
+        "tests": 250
+      },
+      "browser": "PASS",
+      "device": "NOT_TESTED",
+      "staging": "NOT_TESTED"
+    },
+    "release": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "state": "PASS_CANDIDATE_NOT_RELEASED",
+    "candidate_sha": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+    "ci": {
+      "result": "PASS",
+      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
+      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
+      "run_id": 38663912422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
+      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
+    },
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-icon-only.json",
+    "rollback_ref": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
+    "effective_fixes": 0,
+    "failure_fingerprints": []
+  },
+  "ui_release": {
+    "owner_approval": "OWNER current conversation: 發布",
+    "approved_scope": "Upper-left title removal, clean view and icon-only action controls; no unfinished Rune Engine or player sync release",
+    "base_main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "pr": 221,
+    "source_commit": "cdac8728ccabc7d64eac9ae50a2ddaccff64af99",
+    "main_commit": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+    "release_marker": "2026-10-15.icon-only-clean-view-v1",
+    "released_at": "2026-10-15T01:29:24.940Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "ci": {
+      "premerge": 38665658759,
+      "postmerge": 38665794311,
+      "result": "PASS"
+    },
+    "pages": {
+      "run_id": 38665793490,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38665794302,
+      "job_id": 116197341294,
+      "result": "PASS_EXACT_HTML_AND_SCRIPT_HASH"
+    },
+    "device": "NOT_TESTED",
+    "full_rune_engine_release": "NOT_RELEASED",
+    "rollback": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "scene_module_sha256": "b07e756c89705a41559701ca9d41c50d705cf56d2494c4c8b16ae82b481a251f",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json"
+  },
+  "upstream_main_reconciliation": {
+    "from_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "to_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "merge_result": "True two-parent merge in candidate source9e6442a: creator wording baseline main selected, all prior engine browser commands plus new reconcile command retained. No unresolved conflicts.",
+    "observed_features": [
+      "Card/blank-book creation, inner orbit and configurable parameters",
+      "Full card creation cinematic and reversible recycle",
+      "Newly published smoke disappearance for recycled cards"
+    ],
+    "limits": "New creator local reconciliation candidate only; prior manual queue release retained. Full Rune/GPU/device/private transport gates unchanged.",
+    "main_ci": 38694461719,
+    "pages": 38694460950,
+    "http_proof": 38694461788,
+    "owner_card_count": "NOT_OBSERVABLE_FROM_REPO",
+    "observed_workflow_runs": [
+      {
+        "id": 38687221049,
+        "name": "Living Library web regression",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 38687221116,
+        "name": "Living Library deployed website proof",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 38687220278,
+        "name": "pages build and deployment",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "observed_latest_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "candidate_merged_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "state": "MERGED_UPSTREAM_SOURCE_PRESERVED",
+    "pending_candidate_reconciliation": null
+  },
+  "approved_three_item_release": {
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "approved_at": "2026-10-15T13:26:33+08:00",
+    "owner_quote": "核准上述三項",
+    "scope": [
+      "3D parameter linkage/ACK repair",
+      "Existing restored-card summon animation from merged PR233, no duplicate merge",
+      "Standalone local ObjectCraft backup download and read-only integrity inspection"
+    ],
+    "excluded": [
+      "Full Rune Engine/SpellStore/outbox release",
+      "Private upload/OAuth/App",
+      "Magic-circle design change",
+      "APK/native permissions"
+    ],
+    "pr": 234,
+    "source_commit": "90d16df2619964173e1ca22108fc56138a32a213",
+    "main_commit": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "base_main": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+    "release_marker": "2026-10-15.approved-controls-restore-backup-v1",
+    "released_at": "2026-10-15T05:34:32.500Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "ci": {
+      "premerge": 38687051815,
+      "premerge_checkout": "41857ed8ecf30524ae7992c7a206a7b29aa88320",
+      "postmerge": 38687221049,
+      "result": "PASS",
+      "node_tests": 183,
+      "browser_scope": "15 navigation/control checks (3D startup NOT_TESTED); 3 real download/offline inspection/tamper rejection cases PASS"
+    },
+    "pages": {
+      "run_id": 38687220278,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38687221116,
+      "job_id": 116264724846,
+      "result": "PASS_EXACT_SIX_ASSET_HASHES",
+      "files": [
+        "index.html",
+        "clean-view.js",
+        "card-creation.html",
+        "object-backup.js",
+        "system-controls.html",
+        "card-placement.js"
+      ]
+    },
+    "restore_animation": {
+      "pr": 233,
+      "main_commit": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+      "pages_run_id": 38686769390,
+      "proof_run_id": 38686769981
+    },
+    "superseded_prs": [
+      229,
+      231,
+      232
+    ],
+    "branches_deleted": false,
+    "device": "NOT_TESTED; OWNER post-release 3D slider, restore animation and Android download/file picker acceptance pending",
+    "rollback": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
+  },
+  "local_queue_release": {
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "owner_quote": "發布",
+    "owner_approval": "OWNER current conversation; explicit local queue UI only",
+    "pr": 235,
+    "source_commit": "21b55b65991f312ecd81a1ee1f2655fb6d5e7b43",
+    "base_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "release_marker": "2026-10-15.local-object-queue-v1",
+    "local_tests": {
+      "node": 185,
+      "browser_backup": 4,
+      "browser_outbox": 8,
+      "result": "PASS",
+      "source": "EXACT_EIGHT_FILES_MATCH_RELEASE_BRANCH"
+    },
+    "device": "NOT_TESTED",
+    "staging": "NOT_TESTED",
+    "private_upload": "NOT_AUTHORIZED_NOT_IMPLEMENTED",
+    "auto_capture": "NOT_IMPLEMENTED",
+    "rollback": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+    "main_commit": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "ci": {
+      "premerge": 38694285552,
+      "premerge_job": 116287116446,
+      "premerge_checkout": "8678b85f0da4c6d6348cfba5c5a75a67795e2120",
+      "premerge_result": "PASS",
+      "node_tests": 185,
+      "postmerge": 38694461719,
+      "postmerge_job": 116287672161,
+      "result": "PASS",
+      "browser_scope": "15 nav/control observations: 14 PASS and actual_3d_startup NOT_TESTED; backup/actual creator UI 4 PASS; ObjectOutbox 8 PASS"
+    },
+    "released_at": "2026-10-15T06:49:50.605Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "pages": {
+      "run_id": 38694460950,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38694461788,
+      "job_id": 116287672015,
+      "result": "PASS_EXACT_SEVEN_ASSET_HASHES",
+      "sha256": {
+        "index.html": "06171852b4e8e112918df0968de2eaad0cdc6c943b5ebde2101f2715d15615b1",
+        "clean-view.js": "a35c569d012600e31eeda97fc9e033d33dbb815c985f6a6061f4a689e1b49238",
+        "card-creation.html": "b7982e17dadd50d32e4af7f997a22bf78da03f0ddf527115bbca500efc357532",
+        "object-backup.js": "4d227d21cc056fd94b05fa969ff72baf3f180530e0acaf9fc11e3dc5519a8e41",
+        "object-outbox.js": "1c101d5de8eb4b566d64c4550e07870e659f8028e22884e34093850c430a6000",
+        "system-controls.html": "9bc28ac994a5032ddb7dbc580fd83b83e6bd7ff57d7111f6be2bae842a479d49",
+        "card-placement.js": "4fbc7be74ff70524c6ef8e20c3943e5ac3d6531f4836cf219cdd705b599c2328"
+      }
+    },
+    "scope": [
+      "Explicit creator local queue preparation of ObjectCraft cards/books/recycled state",
+      "Durable IndexedDB coalescing and repeated capture deduplication"
+    ],
+    "excluded": [
+      "Automatic capture",
+      "Object remote transport or acknowledgements",
+      "Private OAuth/App upload",
+      "Full Rune Engine release",
+      "APK/native permissions"
+    ],
+    "preserved": "ObjectCraft source, public catalog, controls, placement, GEN2 and manifests byte-identical to base; main 3D body differs only release meta",
+    "changed_files": [
+      ".github/workflows/living-library-live-proof.yml",
+      "living-library/live/card-creation.html",
+      "living-library/live/index.html",
+      "living-library/live/object-outbox.js",
+      "tests/browser/object-backup.cjs",
+      "tests/browser/object-outbox.cjs",
+      "tests/browser/package.json",
+      "tests/living-library-object-outbox.test.mjs"
+    ]
+  },
+  "last_release_check": {
+    "pr": 235,
+    "checked_at": "2026-10-15T06:49:50.605Z",
+    "result": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "source_commit": "21b55b65991f312ecd81a1ee1f2655fb6d5e7b43",
+    "main_commit": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
+    "effective_fixes": 0,
+    "failure_fingerprints": []
+  },
+  "owner_execution_direction": {
+    "id": "NW-OWNER-ADAPTIVE-EXECUTION-20261015",
+    "recorded_at": "2026-10-15T10:27:30Z",
+    "owner_quote": "我覺得你不要按照步驟你看完所有的計畫，自由決定",
+    "interpretation": "OWNER authorizes adaptive implementation ordering after holistic plan review. Phase numbers are acceptance dimensions, not a mandatory linear task queue. Choose independently testable slices by actual player value, dependencies, data integrity and risk; routine reversible implementation/testing/candidate work does not require repeated confirmation.",
+    "decision": "Prioritize in-book SpellCard authoring and local save/reload, then one real usable spell loop. Reuse existing reader/card language and SpellStore; do not silently convert ObjectCraft blank cards. Interleave spatial/Agent Magic work only when dependencies and available verification justify it.",
+    "priority_criteria": [
+      "Fix demonstrated regression, data loss or security defects first",
+      "Deliver player-visible creation/save/reopen/use loops before additional speculative infrastructure",
+      "Build only infrastructure necessary for the selected deliverable",
+      "Keep blocked GPU/device/private-auth acceptance local to that item and continue independent safe work"
+    ],
+    "retained_constraints": [
+      "Preserve agreed product design and all current public/GBA/GEN2/player-save functionality",
+      "Preserve phase acceptance gates, evidence distinctions and existing defect budgets",
+      "Icon-only action controls with accessible names and mobile targets",
+      "No blanket new production release, private sync, native permissions, spending or destructive migration approval"
+    ],
+    "plans_reviewed": [
+      "30_BUILD/RUNE_ENGINE_DELIVERY_PLAN_v0.4.md",
+      "10_SYSTEMS/RUNE_ENGINE_SPELL_CARDS_v0.4.md",
+      "20_PLATFORM/RUNE_SYNC_AI_REPAIR_v0.4.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/AGENT_MAGIC_BRIDGE_v0.1/PLAN_MAGIC_AGENT_BRIDGE_v0.1.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORK_EXTENSION_AGENT_MAGIC_v1.1.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORK_EXTENSION_SPATIAL_OBJECTS_v1.2.md",
+      "30_BUILD/MVP_WORKFLOW.md",
+      "00_CORE/WORLD_CHARTER.md",
+      "00_CORE/WORLD_RULES.md",
+      "10_SYSTEMS/CARD_SPACE_PROTOCOL.md",
+      "10_SYSTEMS/BOOK_CRAFTING_PROTOCOL.md",
+      "10_SYSTEMS/GAMEPLAY_NPC_QUESTS.md",
+      "10_SYSTEMS/CAREERS_EXPERIENCE.md",
+      "20_PLATFORM/CARD_APPLICATION_PLATFORM_v0.2.md",
+      "20_PLATFORM/INTEGRATION_BOUNDARIES.md",
+      "20_PLATFORM/MODES_WORLD_TRANSFER.md",
+      "20_PLATFORM/MARKET_ECONOMY.md",
+      "90_AUDIT/DECISIONS_SOURCES_GAPS.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/SKILL-WORK-NW-GAMEDEV-001_v1.0.md",
+      "30_BUILD/WORK_GAME_DEV_SKILL/WORKFLOW-WORK-NW-GAMEDEV-001_v1.0.yaml",
+      "30_BUILD/WORK_GAME_DEV_SKILL/VALIDATION_RELEASE_MATRIX_v1.0.md"
+    ],
+    "review_limits": "Reviewed current substantive main/subproject plans and their supporting product contracts. Historical duplicate archives and every individual Agent skill file were not exhaustively reread; no claim otherwise.",
+    "validation": "Direction/progress metadata update only; no game code, phase PASS, test totals or production version changed."
+  },
+  "recovery_checkpoint": {
+    "work_item_id": "P2-SPELL-AUTHORING-001",
+    "reason": "Workspace maintenance removed uncommitted candidate before GitHub source persistence; recover implementation, verify fresh exact bytes, preserve previous test repair history.",
+    "previous_local_results": "Node345 PASS and authoring8 PASS plus SpellStore15 PASS observed before pruning; NOT evidence for reconstructed bytes until rerun",
+    "test_repairs": [
+      {
+        "id": "CATALOG_EXPECTATION_UPDATE",
+        "effective_fixes": 2,
+        "result": "PASS"
+      },
+      {
+        "id": "FIELDSET_DISABLED_ASSERTION",
+        "effective_fixes": 1,
+        "result": "PASS"
+      },
+      {
+        "id": "UNCHANGED_RELOAD_DIALOG_EXPECTATION",
+        "effective_fixes": 1,
+        "result": "PASS",
+        "reason": "Unchanged library reload correctly omits first-update dialog; await fallback then dismiss only if present."
+      }
+    ],
+    "product_effective_fixes": 0,
+    "result": "RECOVERED_SOURCE_COMMITTED_AND_FRESHLY_VERIFIED",
+    "source_commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687"
+  },
+  "owner_pause": {
+    "observed_at": "2026-10-15T12:00:02.520Z",
+    "owner_quote": "等等現在的計畫感覺有點偏離你在跟我對齊一些進度 或是先停止自動更新",
+    "state": "PAUSED_PENDING_ALIGNMENT",
+    "automation_title": "念動世界循環開發",
+    "automation_enabled": false,
+    "scope": "Pause scheduled autonomous development and new implementation/release. Preserve current production and candidate source/evidence for review; no rollback or deletion requested.",
+    "next_action": "Read-only compare original in-card rune composition/Spell Book design with current Game Book fixed-recipe draft editor and prior local-sync preparation; obtain explicit aligned goal before resuming."
+  }
+}
