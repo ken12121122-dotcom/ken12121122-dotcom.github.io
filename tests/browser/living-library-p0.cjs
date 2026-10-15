@@ -128,6 +128,49 @@ async function main(){
    await p.locator('#closeDrawer').click();
    report.checks.push({id:capability.id,result:'PASS',scope:capability.external?'External link target only; no sign-in':'Public card click, rendered iframe and return; underlying application actions not exercised'});
   }
+  // End-to-end regression: real System Book -> same-origin iframe slider ->
+  // guarded parent handler -> actual shared preference object -> acknowledged value.
+  if(await p.locator('#catalogHead').getAttribute('aria-expanded')==='false')await p.locator('#catalogHead').click();
+  await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
+  if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))
+   await p.locator('#fallbackOpen').click();
+  await p.locator('[data-card-id="public.system.controls"]').dispatchEvent('click');
+  const prefsFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await prefsFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/system-controls.html'));
+  await prefsFrame.locator('#cardSummonDuration').waitFor();
+  await prefsFrame.locator('#cardSummonDuration').focus();
+  await prefsFrame.locator('#cardSummonDuration').press('End');
+  await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSummonDuration===4500);
+  await prefsFrame.waitForFunction(()=>document.querySelector('#prefStatus')?.textContent.includes('無 3D 場景'));
+  assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('living-library-controls-v1')).cardSummonDuration),4500);
+  await prefsFrame.locator('#cardSize').focus();
+  await prefsFrame.locator('#cardSize').press('End');
+  await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSize===1.2);
+  await prefsFrame.locator('#cardOrbitSpeed').focus();
+  await prefsFrame.locator('#cardOrbitSpeed').press('Home');
+  await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardOrbitSpeed===0);
+  const state=await p.evaluate(()=>{
+   const value=window.LivingLibrary.controls;
+   return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
+    duration:value.cardSummonDuration,bookCount:window.LivingLibrary.books.length};
+  });
+  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:14});
+  await p.locator('#readerBack').click();
+  await p.locator('#closeDrawer').click();
+  await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
+  if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))
+   await p.locator('#fallbackOpen').click();
+  await p.locator('[data-card-id="public.system.controls"]').dispatchEvent('click');
+  const restoredFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await restoredFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/system-controls.html'));
+  assert.equal(await restoredFrame.locator('#cardSummonDuration').inputValue(),'4500');
+  await restoredFrame.locator('#resetCardParams').click();
+  await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSize===1&&window.LivingLibrary?.controls?.cardSummonDuration===2850&&window.LivingLibrary?.controls?.cardOrbitSpeed===1);
+  await restoredFrame.waitForFunction(()=>document.querySelector('#prefStatus')?.textContent.includes('無 3D 場景'));
+  report.checks.push({id:'system_book_3d_preferences_ack_fallback',result:'PASS',
+   scope:'Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU.'});
+  await p.locator('#readerBack').click();
+  await p.locator('#closeDrawer').click();
   // Placement preferences must never wipe unrelated player data on reload.
   await p.evaluate(()=>localStorage.setItem('nw-p0-save-sentinel','synthetic-preserve-me'));
   await p.reload({waitUntil:'domcontentloaded'});
