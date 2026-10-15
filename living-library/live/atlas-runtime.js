@@ -83,7 +83,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   }
   invalidate();return true;
  }
- function cancelPointer(){if(pointer)pointerUp({pointerId:pointer.id},true)}
+ function cancelPointer(id){if(pointer&&(id===undefined||id===pointer.id))pointerUp({pointerId:pointer.id},true)}
  function refresh(){root.LivingScene?.refreshFloatingCards?.();invalidate()}
  function updateCamera(now){
   if(focus){const m=models.get(focus.id);if(!m.group.visible){exitFocus();return}

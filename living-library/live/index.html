@@ -1640,13 +1640,13 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
- atlasRuntime.cancelPointer();
+ atlasRuntime.cancelPointer(e.pointerId);
  if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
- atlasRuntime.cancelPointer();
+ atlasRuntime.cancelPointer(e.pointerId);
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
