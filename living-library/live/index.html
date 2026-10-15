@@ -424,7 +424,8 @@ window.addEventListener('message',event=>{
   if(!exists||cardSpellExitTimer!==null)return;
   const scene=window.LivingScene;
   if(typeof scene?.startCardSummon==='function'){
-   // Fade the open page first. The 3D summon starts AFTER the world is revealed.
+   // Reserve the card hidden BEFORE fading, preventing a one-frame orbit flash.
+   if(!scene.queueCardSummon(id))return;
    const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
    cardSpellExitTimer=setTimeout(()=>{
     cardSpellExitTimer=null;
@@ -1074,6 +1075,7 @@ const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
 const floatingCardMeshes=new Map(),CardPlacement=window.LivingCardPlacement;
 if(!CardPlacement)throw Error('3D card placement module not loaded');
 let focusedCard=null,smokeTexture=null;
+const reservedCardSummons=new Set();
 // Book fade is 240ms; 3D phases last 2850ms at default (≈3.1s overall).
 const CARD_SUMMON_PHASES=Object.freeze({gather:.24,emerge:.48,flight:.87});
 function smokeMap(){
@@ -1138,6 +1140,7 @@ function newFloatingCard(record){
   summon:null};
 }
 function disposeFloatingCard(entry){
+ reservedCardSummons.delete(entry.id);
  if(entry.summon)removeCardSmoke(entry.summon.puffs);
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
@@ -1157,9 +1160,15 @@ function refreshFloatingCards(){
   floatingCardMeshes.set(record.id,newFloatingCard(record));
  window.LivingScene?.syncRender?.();
 }
+function queueCardSummon(id){
+ const entry=floatingCardMeshes.get(id);
+ if(!entry)return false;
+ reservedCardSummons.add(id);entry.group.visible=false;return true;
+}
 function startCardSummon(id){
  const card=floatingCardMeshes.get(id);
  if(!card)return false;
+ reservedCardSummons.delete(id);
  if(card.summon)removeCardSmoke(card.summon.puffs);
  // Place the spell between the viewer and character so it remains visible
  // regardless of player yaw, without forcing the camera to rotate or zoom.
@@ -1212,7 +1221,8 @@ function updateFloatingCards(now){
     entry.group.scale.setScalar(controlPrefs.cardSize);
    }
    if(t>=1){removeCardSmoke(summon.puffs);entry.summon=null;entry.group.visible=true}
-  }else{entry.group.position.copy(target);entry.group.visible=true;
+  }else{entry.group.position.copy(target);
+   entry.group.visible=!reservedCardSummons.has(entry.id);
    entry.group.scale.setScalar(controlPrefs.cardSize)}
   // Face the viewer, without changing the card's own independent world-space path.
   entry.group.quaternion.copy(camera.quaternion);
@@ -1618,7 +1628,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
- refreshFloatingCards,startCardSummon,exitCardFocus,
+ refreshFloatingCards,queueCardSummon,startCardSummon,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
