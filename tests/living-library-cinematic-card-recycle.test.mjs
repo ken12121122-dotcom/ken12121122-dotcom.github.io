@@ -64,3 +64,26 @@ test('cinematic sequence lives in actual 3D renderer and no iframe-only preview 
  assert.match(html,/getLocalObjectStats\(\)/);
  assert.ok(html.includes("if(pickFloatingCard(ray))return 'card'"));
 });
+
+test('restored card replays the SAME smoke, card-emergence and inner-orbit flight as creation',async()=>{
+ const html=await read('living-library/live/index.html');
+ const form=await read('living-library/live/card-creation.html');
+ const handler=html.slice(html.indexOf('let readerCard=null,cardSpellExitTimer=null;'),
+  html.indexOf('// Only a trusted, currently opened same-origin card iframe can request an existing control action.'));
+ assert.match(handler,/event\.origin!==location\.origin\|\|event\.source!==\$\('readerFrame'\)\.contentWindow/);
+ assert.match(handler,/const isCreateSpell=event\.data\.action==='card-created'/);
+ assert.match(handler,/const isRestoreSpell=event\.data\.action==='card-restored'/);
+ assert.match(handler,/if\(isCreateSpell\|\|isRestoreSpell\)\{/);
+ assert.match(handler,/ObjectCraft\.floatingCards\(localStorage\)\.some\(card=>card\.id===id\)/);
+ assert.match(handler,/scene\.queueCardSummon\(id\)/);
+ assert.match(handler,/scene\.startCardSummon\(id\)/);
+ assert.match(handler,/cardSpellExitTimer=setTimeout/);
+ const restoreIndex=form.indexOf("Craft.restoreCard(localStorage,card.id)");
+ const notifyIndex=form.indexOf("notify('card-restored',card.id)",restoreIndex);
+ assert.ok(restoreIndex>=0&&notifyIndex>restoreIndex,'only notify after restored data is persisted');
+ // Both actions share one scene path, rather than instantiating a new local card ID.
+ assert.equal((handler.match(/scene\.startCardSummon\(id\)/g)||[]).length,1);
+ assert.match(html,/function startCardSummon\(id\)/);
+ assert.match(html,/puffs:createCardSmoke\(origin\)/);
+ assert.match(html,/entry\.group\.position\.copy\(from\)\.lerp\(target,eased\)/);
+});
