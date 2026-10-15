@@ -443,7 +443,7 @@
       "attempts": 1,
       "effective_fixes": 0,
       "failure_fingerprints": [],
-      "scope": "P2_P5_PREPARATORY_ONLY; explicit isolated ObjectCraft capture, no production loader or transport",
+      "scope": "P2_P5_PREPARATORY_ONLY; explicit creator local queue UI, no 3D hook or transport",
       "rollback_sha": "71f44572a10d40838ddca64ade8ecbaa1b5a9912",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
@@ -461,7 +461,7 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-14",
     "lease_expires_at": "2026-10-15T06:53:53.759Z",
-    "heartbeat_at": "2026-10-15T06:32:23.084Z",
+    "heartbeat_at": "2026-10-15T06:34:06.979Z",
     "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },

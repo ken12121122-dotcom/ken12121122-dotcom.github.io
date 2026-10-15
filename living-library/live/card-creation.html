@@ -84,7 +84,9 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <details id="localBackup"><summary>本機備份與救援檢查</summary>
 <p>↓ 下載目前瀏覽器的全部自製卡片、書本及回收站；⌕ 檢查備份完整性與數量，不還原、不覆寫、不轉換成法術、不送出雲端。備份含私人創作，請保留在自己的裝置，不要貼到公開 PR。校驗碼僅檢查資料損毀，不保證來源可信；檢查通過不代表已還原。</p>
 <div class="backupActions"><button id="exportObjects" type="button" aria-label="下載本機創作備份" title="下載本機創作備份">↓</button>
-<button id="inspectObjects" type="button" aria-label="選取備份並檢查，不還原" title="檢查備份，不還原">⌕</button></div>
+<button id="inspectObjects" type="button" aria-label="選取備份並檢查，不還原" title="檢查備份，不還原">⌕</button>
+<button id="queueObjects" type="button" aria-label="準備本機待同步佇列，不上傳" title="準備本機待同步佇列，不上傳">⇧</button></div>
+<p>⇧ 將目前本機卡片、書本與回收狀態放入待同步佇列，不改動原存檔。此候選尚未連接私人遠端，稍後的修改需再次準備；待同步不代表雲端備份。</p>
 <input id="backupFile" type="file" accept=".json,application/json" hidden>
 <output id="backupStatus" role="status" aria-live="polite"></output></details>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
@@ -95,6 +97,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 </main>
 <script src="./object-craft.js"></script>
 <script src="./object-backup.js"></script>
+<script src="./object-outbox.js"></script>
 <script>
 (function(){
  'use strict';
@@ -104,6 +107,15 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  let currentId=null;
  const cards=()=>Craft.listCards(localStorage);
  const Backup=window.LivingObjectBackup;
+ $('queueObjects').addEventListener('click',async()=>{
+  $('queueObjects').disabled=true;let queue;
+  try{
+   queue=await window.LivingObjectOutbox.ObjectOutbox.open();
+   const result=await queue.capture(localStorage),count=(await queue.pending()).length;
+   $('backupStatus').textContent='本機待同步 '+count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更，後續修改需再次準備。';
+  }catch(_){$('backupStatus').textContent='無法準備待同步佇列：資料可能已更新或儲存不可用。原存檔未變更，未上傳雲端；可重新操作或先下載備份。'}
+  finally{queue?.close();$('queueObjects').disabled=false}
+ });
  $('exportObjects').addEventListener('click',async()=>{
   $('exportObjects').disabled=true;
   try{

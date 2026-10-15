@@ -11,7 +11,8 @@
     "Stable object IDs/revisions and entire inert object text captured to separate IndexedDB outbox, recycled records included",
     "Atomic versions/pending write; duplicate exact snapshots do not requeue; higher revisions coalesce",
     "Cross-connection readwrite transactions reject stale revision or same-revision divergent payload; source change during capture rejected",
-    "Missing IDs/absent source do not infer deletion or clear pending"
+    "Missing IDs/absent source do not infer deletion or clear pending",
+    "Existing creator page icon explicitly prepares local intents and reports pending authorization/not uploaded; original saves stay authoritative"
   ],
   "tests": {
     "local_node": {
@@ -26,11 +27,78 @@
       "negative": 8,
       "parity": 56
     },
-    "browser": "PENDING"
+    "browser": "PENDING",
+    "local_browser": {
+      "result": "PASS",
+      "environment": "Pinned Playwright1.56.1 Chromium Headless Shell1194",
+      "proofs": [
+        {
+          "schema": "nw-object-outbox-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "actual blank card/book IDs, versions and unknown object fields captured once without changing source",
+              "result": "PASS"
+            },
+            {
+              "case": "reload/offline edit/recycle coalesces latest same-ID intent and retains original saves",
+              "result": "PASS"
+            },
+            {
+              "case": "independent connection cannot overwrite newer revision or equal-revision different contents",
+              "result": "PASS"
+            },
+            {
+              "case": "pending write failure rolls back version ledger atomically; same revision can retry without source loss",
+              "result": "PASS"
+            },
+            {
+              "case": "changed source is rejected; absent storage never erases pending intents or infers deletion",
+              "result": "PASS"
+            },
+            {
+              "case": "unsupported public/foreign object rejects whole capture rather than silently dropping or converting it",
+              "result": "PASS"
+            },
+            {
+              "case": "competing IDB connections serialize batches and keep highest observed object revision",
+              "result": "PASS"
+            },
+            {
+              "case": "synthetic idempotent consumer reads object text twice with one mock write per key; queue stays pending authorization",
+              "result": "PASS"
+            }
+          ],
+          "scope": "Explicit isolated local capture; no scene hook, background worker, real remote, credentials or AI readback"
+        },
+        {
+          "schema": "nw-object-backup-browser-v1",
+          "result": "PASS",
+          "checks": [
+            {
+              "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+              "result": "PASS"
+            },
+            {
+              "case": "offline file inspection validates counts without restoring or sending",
+              "result": "PASS"
+            },
+            {
+              "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+              "result": "PASS"
+            },
+            {
+              "case": "actual creator icon prepares durable local intents offline, reload retry deduplicates and clearly remains not uploaded",
+              "result": "PASS"
+            }
+          ]
+        }
+      ]
+    }
   },
   "limits": {
     "production_feature_delta": 0,
-    "live_auto_capture": "NOT_ENABLED",
+    "live_auto_capture": "NOT_ENABLED; explicit creator button only",
     "transport": "NOT_IMPLEMENTED; pending_authorization is a local state only",
     "source_atomicity": "LocalStorage and IndexedDB are separate stores. Checks reject observed source changes, but no cross-storage atomic save guarantee; later local edits require explicit recapture. No automatic source writer/worker installed.",
     "delivery_lock": "Cross-tab transport lease not implemented",
@@ -38,7 +106,8 @@
     "ai_readback": "NOT_TESTED",
     "device": "NOT_TESTED",
     "staging": "NOT_TESTED",
-    "release": "NOT_RELEASED"
+    "release": "NOT_RELEASED",
+    "candidate_player_features": 1
   },
   "privacy": "Synthetic fixtures only; no private source data, credential, audio or network"
 }

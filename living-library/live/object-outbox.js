@@ -1,4 +1,4 @@
-/* P2/P5 isolated preparation. Explicit local capture only; NOT loaded by scene/UI.
+/* P2/P5 isolated preparation. Explicit creator capture only; NOT loaded by 3D scene.
  * ObjectCraft stays authoritative in localStorage. No migration, remote transport,
  * deletion inference, acknowledgement or credential authority is provided here. */
 (function(root,factory){
