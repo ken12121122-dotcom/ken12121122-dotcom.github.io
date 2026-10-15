@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T11:29:30.360Z",
+  "updated_at": "2026-10-15T11:37:46.880Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -85,9 +85,12 @@
         "docs/work-nw-gamedev/evidence/p2-object-backup.json",
         "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
         "docs/work-nw-gamedev/evidence/p5-object-reconcile.json",
-        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json"
+        "docs/work-nw-gamedev/evidence/p5-book-reconcile.json",
+        "docs/work-nw-gamedev/evidence/p2-spell-authoring.json"
       ],
-      "blockers": []
+      "blockers": [
+        "Full draggable rune graph editing, migration/export/recovery, staging and device gates incomplete; current editor saves disabled recipe metadata only."
+      ]
     },
     {
       "id": "P3",
@@ -133,7 +136,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P2-SPELL-AUTHORING-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -526,26 +529,82 @@
         "tests/browser/object-receipt.cjs",
         "tests/browser/package.json"
       ]
+    },
+    {
+      "work_item_id": "P2-SPELL-AUTHORING-001",
+      "state": "PASS_PREPARATORY_ONLY",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "test_repairs": [
+        {
+          "id": "CATALOG_EXPECTATION_UPDATE",
+          "effective_fixes": 2,
+          "result": "PASS"
+        },
+        {
+          "id": "FIELDSET_DISABLED_ASSERTION",
+          "effective_fixes": 1,
+          "result": "PASS"
+        },
+        {
+          "id": "UNCHANGED_RELOAD_DIALOG_EXPECTATION",
+          "effective_fixes": 1,
+          "result": "PASS",
+          "reason": "Unchanged library reload correctly omits first-update dialog; await fallback then dismiss only if present."
+        }
+      ],
+      "scope": "P2_PREPARATORY_ONLY; actual existing book/reader UI, disabled SpellCard metadata authoring with local IDB+outbox",
+      "rollback_sha": "ec39299d397b45649bc653353b777a00c53e6842",
+      "candidate_sha": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-spell-authoring.json"
+      ],
+      "local_node_tests": 345,
+      "local_browser_cases": 26,
+      "ci_run_id": 38728310675,
+      "result": "One candidate player-visible local draft editor: name/purpose/incantations/aliases, same ID save/load/reload, offline coalescing, quota rollback and stale-editor conflict. Planned catalog has no executor/registered handlers; all drafts disabled. Not a complete P2 or usable spell.",
+      "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
+      "source_files": [
+        "living-library/UI-MANAGER-REGISTRY.md",
+        "living-library/live/index.html",
+        "living-library/live/public-catalog.js",
+        "living-library/live/spell-store.js",
+        "tests/browser/package.json",
+        "tests/gpt-skills-embedded-card.test.mjs",
+        "tests/living-library-card-atlas-touch-controls.test.mjs",
+        "tests/living-library-encyclopedia-controls.test.mjs",
+        "tests/living-library-gpt-card-visibility.test.mjs",
+        "tests/living-library-live-walking-book-titles.test.mjs",
+        "tests/living-library-player-object-craft.test.mjs",
+        "tests/living-library-ui-manager.test.mjs",
+        "tests/living-library-ui-map.test.mjs",
+        "tests/living-library-web-runtime-contract.test.mjs",
+        "living-library/live/spell-creation.html",
+        "living-library/live/spell-creation.js",
+        "living-library/live/spell-draft.js",
+        "tests/browser/spell-creation.cjs"
+      ]
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-17",
-    "started_at": "2026-10-15T09:26:31.671Z",
+    "run_id": "NW-CYCLE-20261015-19",
+    "started_at": "2026-10-15T11:29:30.360Z",
+    "ended_at": "2026-10-15T11:37:46.880Z",
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "ended_at": "2026-10-15T09:32:31.543Z",
-    "candidate_sha": "6b6d09efc8ace84f92aef322d404bac1e8759a7c",
-    "ci_run_id": 38713336543,
-    "next_action": "READ/SCAN current main/PR219, canonical progress, lease and KB-defined Rune/Spell book placement. Prioritize the first independent P2 player-visible spell authoring/save/reload slice using existing SpellStore and prescribed in-book container, with explicit draft identity and no implicit conversion of blank ObjectCraft cards. Keep scene integration disabled until P0 evidence; name/incantation/local save can be candidate preparation only if original dependencies permit. Before any automatic ObjectCraft sender, still implement durable retry/backoff, authenticated scope-bound receipts and cross-context delivery lease in isolation. Private transport/OAuth/remote roundtrip/AI readback and formal releases remain WAIT_OWNER/NOT_TESTED.",
-    "local_browser_scope": "32 affected ObjectCraft cases PASS; public/GPU baseline reused locally, CI full suite executed once",
-    "requirements_zip": "NOT_EXPANDED; Library plaintext unsupported and prior local bytes pruned; explicit user cycle contract followed"
+    "candidate_sha": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+    "ci_run_id": 38728310675,
+    "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
+    "local_browser_scope": "11 real candidate book/iframe authoring cases +15 SpellStore cases PASS; local full Node345 PASS; CI full configured suite PASS",
+    "requirements_zip": "Expanded canonical cycle v1.2 archive and read four skill files plus audit in preceding context; scope retained after scratch pruning; no substitution by spatial v1.2"
   },
   "execution": {
-    "lease_owner": "nw-cycle19-recover-authoring",
-    "lease_expires_at": "2026-10-15T12:09:30.360Z",
-    "heartbeat_at": "2026-10-15T11:29:30.360Z",
-    "state": "RECOVERING_CANDIDATE",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T11:37:46.880Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -745,6 +804,15 @@
       "run_id": 38693194557,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38693194557",
       "scope": "286 scoped Node + 2 positive/8 negative Schema +56 parity +9 public destinations, icon/clean-view/settings ACK and55 synthetic browser module cases (8 ObjectOutbox +4 actual creator backup/local-queue UI). Real Chromium; no staging/GPU/device/private remote."
+    },
+    {
+      "result": "PASS",
+      "commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "checkout_commit": "08821f6f3d77d1fe897201f028644d81e06296f0",
+      "run_id": 38728310675,
+      "job_id": 116399524975,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38728310675",
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
     }
   ],
   "candidate_validation": {
@@ -770,19 +838,19 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38713336543,
-      "scope": "290 scoped Node +2 positive/8 negative Schema +56 parity; nine public destinations/control observations and75 synthetic browser module cases, including7 ObjectCraft receipt cases. GPU/device/staging/private remote NOT_TESTED."
+      "ci_run_id": 38728310675,
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
     },
-    "live_scene_change": "NONE; exact main28c5418 scene/ObjectCraft/system/public catalog/placement/GEN2/manifests",
-    "release": "NOT_RELEASED_CURRENT_OBJECT_RECEIPT_OR_PRIOR_AUTOMATIC_CREATOR_CAPTURE; HISTORICAL_MANUAL_QUEUE_PR235_RETAINED",
+    "live_scene_change": "3D module bytes identical to main28c5418; index change only same-origin spell page whitelist. Catalog appends one gaming card; no scene/action/voice hookup, ObjectCraft or native change.",
+    "release": "NOT_RELEASED_SPELL_AUTHORING_OR_PRIOR_UNRELEASED_PREPARATION; historical approved releases retained",
     "latest_ci": {
       "result": "PASS",
-      "commit": "6b6d09efc8ace84f92aef322d404bac1e8759a7c",
-      "checkout_commit": "75d9f2d8d8267834831350da6d45fe813a3d3751",
-      "run_id": 38713336543,
-      "job_id": 116349907812,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38713336543",
-      "scope": "290 scoped Node +2 positive/8 negative Schema +56 parity; nine public destinations/control observations and75 synthetic browser module cases, including7 ObjectCraft receipt cases. GPU/device/staging/private remote NOT_TESTED."
+      "commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687",
+      "checkout_commit": "08821f6f3d77d1fe897201f028644d81e06296f0",
+      "run_id": 38728310675,
+      "job_id": 116399524975,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38728310675",
+      "scope": "290 scoped Node, Schema2 positive/8 negative+56 parity;15 public navigation/control observations (3D NOT_TESTED) and86 synthetic browser cases including11 real book/iframe authoring cases."
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -842,6 +910,19 @@
       "creator_sender": "NOT_ENABLED",
       "remote_provenance": "NOT_TESTED",
       "playable_feature_delta": 0
+    },
+    "spell_authoring": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "production_player_features": 0,
+      "book_id": "gaming",
+      "card_id": "public.gaming.spell.creation",
+      "browser_cases": 11,
+      "ci_run_id": 38728310675,
+      "enabled": false,
+      "full_graph_editor": "NOT_IMPLEMENTED",
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED"
     }
   },
   "owner_approvals": [
@@ -933,7 +1014,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T09:32:31.543Z",
+    "observed_at": "2026-10-15T11:37:46.880Z",
     "phases": [
       {
         "id": "P0",
@@ -948,7 +1029,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "Card/book creator automatic local preparation candidate PASS; actual book offline create, save failure, queue failure/manual rescue, iframe reopen and corrupt-source safety verified. Source localStorage+queue IDB not atomic; full Rune editor/migration/import recovery/device gates incomplete."
+        "gap": "Actual existing-book authoring/save/reload candidate PASS with same stable SpellCard identity and transactional IDB+outbox; full rune arrangement, migration/export/recovery and device/staging incomplete. No implicit ObjectCraft conversion."
       },
       {
         "id": "P3",
@@ -980,11 +1061,11 @@
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "Book creator offline save+queue quota independence, failed source write with no success notification, iframe interrupted open/reopen and malformed-source retention verified with synthetic real Chromium; prior card evidence retained. Actual source write module unchanged. Device/full Rune editor/recovery NOT_TESTED."
+      "scope": "Book creator offline save+queue quota independence, failed source write with no success notification, iframe interrupted open/reopen and malformed-source retention verified with synthetic real Chromium; prior card evidence retained. Actual source write module unchanged. Device/full Rune editor/recovery NOT_TESTED. New disabled SpellCard actual book-form save/reopen/full reload/offline edits verified using existing atomic SpellStore."
     },
     "outbox": {
       "result": "PASS_ISOLATED_LOCAL_CAPTURE_AND_RECEIPT_SETTLEMENT",
-      "scope": "Existing card/book preparation retained; local compare-and-delete receipts verified with actual IDB, synthetic receiver deduplication, stale independent connection, transaction rollback, reload/version ledger and new edits. Correlation is not authentication; creator UI never invokes acknowledgement. No automatic sender/private endpoint."
+      "scope": "Existing card/book preparation retained; local compare-and-delete receipts verified with actual IDB, synthetic receiver deduplication, stale independent connection, transaction rollback, reload/version ledger and new edits. Correlation is not authentication; creator UI never invokes acknowledgement. No automatic sender/private endpoint. Actual SpellCard authoring now writes existing versioned intent atomically with each saved draft; no delivery enabled."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
@@ -999,15 +1080,15 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T09:32:31.543Z",
+    "observed_at": "2026-10-15T11:37:46.880Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
     "preserved_passes": "Previous reliable card reconciliation, engine and released manual queue evidence preserved; main28c5418 remains unchanged, no defect budgets reset",
-    "highest_value_gap": "P2 in-book spell editing/local save independent candidate; private transport remains gated",
-    "next_action": "Choose by current player value and dependencies, not numeric phase order. First target: candidate in-book SpellCard authoring/name/incantation/local save/reopen using existing reader and SpellStore; verify canonical container/identity against latest catalog and UI registry before code. Then real usable spell interaction as P0 evidence permits. Interleave spatial/Agent work when independently justified. Preserve all reliable evidence, phase gates, defect budgets and private/production approvals; avoid further speculative transport work without a concrete player deliverable.",
+    "highest_value_gap": "P2 user-editable rune arrangement and local export/recovery in existing book",
+    "next_action": "READ current main/PR219/canonical progress/lease; use OWNER adaptive ordering and retain all phase gates. Next deliverable: bounded user-editable rune condition/effect arrangement and structural validation in the same book reader, using existing contract/store and disabled draft identity. Preserve nonmatching saved graphs and ObjectCraft source; add export/recovery before production readiness. No real scene activation without P0 evidence; no private endpoint/OAuth/remote roundtrip/AI readback or main/Pages/APK release without matching approval. Do not repeat unchanged GPU probes or re-do valid passes.",
     "production_playable_feature_delta": 0,
-    "candidate_player_feature_delta": 0,
+    "candidate_player_feature_delta": 1,
     "priority_note": "Latest OWNER explicitly grants adaptive execution ordering after reading all plans; supersedes mechanical phase-order scheduling, without changing product design, acceptance criteria or approval scope.",
-    "sync_preparation_delta": "Explicit ObjectCraft local receipt settlement verified; no real remote delivery"
+    "sync_preparation_delta": "Real book-form SpellCard metadata save+pending intent; no private remote delivery"
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
@@ -1368,16 +1449,22 @@
       {
         "id": "CATALOG_EXPECTATION_UPDATE",
         "effective_fixes": 2,
-        "result": "PASS_BEFORE_PRUNING",
-        "note": "Updated existing exact catalog count and ordered gaming-list expectations including missed multiline fixture."
+        "result": "PASS"
       },
       {
         "id": "FIELDSET_DISABLED_ASSERTION",
         "effective_fixes": 1,
-        "result": "REVERIFY_AFTER_RECOVERY",
-        "note": "Playwright isDisabled must target actual save button inheriting fieldset disabled; do not change product to satisfy wrong fieldset assertion."
+        "result": "PASS"
+      },
+      {
+        "id": "UNCHANGED_RELOAD_DIALOG_EXPECTATION",
+        "effective_fixes": 1,
+        "result": "PASS",
+        "reason": "Unchanged library reload correctly omits first-update dialog; await fallback then dismiss only if present."
       }
     ],
-    "product_effective_fixes": 0
+    "product_effective_fixes": 0,
+    "result": "RECOVERED_SOURCE_COMMITTED_AND_FRESHLY_VERIFIED",
+    "source_commit": "f101e331d7a7c3b77a8d4e1a703e582ba61cc687"
   }
 }
