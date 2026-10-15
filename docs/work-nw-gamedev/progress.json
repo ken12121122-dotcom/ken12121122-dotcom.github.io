@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T03:35:11.372Z",
+  "updated_at": "2026-10-15T03:38:26.319Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -31,7 +31,8 @@
     "pages_verified": "PASS_UI_RELEASE_EXACT_HTML_AND_SCRIPT_HASH",
     "android_verified": "NOT_TESTED",
     "pages_release_marker": "2026-10-15.icon-only-clean-view-v1",
-    "pages_proof_run_id": 38665794302
+    "pages_proof_run_id": 38675561949,
+    "pages_last_verified_main": "49d373c114bc1a312e72d0a9627333824a8505a6"
   },
   "phases": [
     {
@@ -103,7 +104,9 @@
       "state": "P5_PREPARATORY_ONLY",
       "acceptance": "NOT_TESTED",
       "evidence_refs": [
-        "docs/work-nw-gamedev/evidence/p2-local-save.json"
+        "docs/work-nw-gamedev/evidence/p2-local-save.json",
+        "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json",
+        "docs/work-nw-gamedev/evidence/p5-outbox-pump.json"
       ],
       "blockers": []
     },
@@ -122,7 +125,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P5-OUTBOX-PUMP-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -402,29 +405,33 @@
     },
     {
       "work_item_id": "P5-OUTBOX-PUMP-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "failure_fingerprints": [],
       "scope": "P5_PREPARATORY_ONLY; injected synthetic transport, no live scene or private network",
       "rollback_sha": "aa59393f72f8c126d84ab3cf91c04dd7416f6044",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p5-outbox-pump.json"
-      ]
+      ],
+      "candidate_sha": "55bcb892f2ee1f51c65538009f535df04411ce29",
+      "ci_run_id": 38677077443,
+      "result": "Bounded explicit delivery pump verified with real IndexedDB and injected synthetic idempotent transport. Single-flight shared per store object; cancel/timeout ignore late receipts; retry preserves key; edits during send stay pending. Not actual private sync.",
+      "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates."
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-11",
-    "started_at": "2026-10-15T01:30:26.408Z",
-    "ended_at": "2026-10-15T01:35:01.176Z",
+    "run_id": "NW-CYCLE-20261015-12",
+    "started_at": "2026-10-15T03:29:58.992Z",
+    "ended_at": "2026-10-15T03:38:26.319Z",
     "attempts": 1,
     "failure_fingerprints": [],
-    "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete."
+    "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates."
   },
   "execution": {
-    "lease_owner": "NW-CYCLE-20261015-12",
-    "lease_expires_at": "2026-10-15T03:54:58.992Z",
-    "heartbeat_at": "2026-10-15T03:35:11.372Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T03:38:26.319Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -593,12 +600,20 @@
       "run_id": 38666248987,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38666248987",
       "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
+    },
+    {
+      "result": "PASS",
+      "commit": "55bcb892f2ee1f51c65538009f535df04411ce29",
+      "checkout_commit": "33d31775dfb0b5de1a8da27683d399932869f5d9",
+      "run_id": 38677077443,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38677077443",
+      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
     }
   ],
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 305,
+      "tests": 321,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
@@ -618,18 +633,18 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38666248987,
-      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
+      "ci_run_id": 38677077443,
+      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
     },
-    "live_scene_change": "PRESENTATION_ONLY_CLEAN_VIEW; geometry/input unchanged",
+    "live_scene_change": "NO_NEW_SCENE_CHANGE_BY_THIS_SLICE; preserved main49d creation/orbit code through merge",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
-      "checkout_commit": "78eaa23e565f8697184815980bf179539bb01525",
-      "run_id": 38666248987,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38666248987",
-      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
+      "commit": "55bcb892f2ee1f51c65538009f535df04411ce29",
+      "checkout_commit": "33d31775dfb0b5de1a8da27683d399932869f5d9",
+      "run_id": 38677077443,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38677077443",
+      "scope": "266 scoped Node + Schema/56 parity + 9 public destinations + controls/clean-view + 43 synthetic browser module cases (15 real IDB store/receipt/pump cases). No staging/device/private transport."
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -701,12 +716,12 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T03:35:11.372Z",
+    "observed_at": "2026-10-15T03:38:26.319Z",
     "phases": [
       {
         "id": "P0",
         "result": "BLOCKED",
-        "gap": "Real WebGL2, isolated deployment and full device checklist; existing phone usable PASS_REPORTED_BY_OWNER"
+        "gap": "Latest main creation/orbit changes preserved and public/fallback regressions rerun. Full WebGL2/staging/device checklist remains unverified; existing phone report only PASS_REPORTED_BY_OWNER."
       },
       {
         "id": "P1",
@@ -731,7 +746,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Isolated receipt/retry state PASS; bounded injected transport pump CI pending. No authenticated private transport, player-object adapter or AI remote readback."
+        "gap": "Isolated mock delivery pump PASS. Real private transport, cross-context coordination, ObjectCraft data adapter and AI remote readback are missing."
       },
       {
         "id": "P6",
@@ -748,32 +763,31 @@
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
+      "scope": "SpellStore IDB cases pass. Main ObjectCraft blank-card/book localStorage is a distinct contract; source/Node verified but owner's actual device records/count are not remotely observable or adapted to this outbox."
     },
     "outbox": {
-      "result": "CI_PENDING",
-      "scope": "Bounded caller-driven single-flight delivery pump over existing durable receipt/retry store; injected synthetic transport only"
+      "result": "PASS_ISOLATED_MOCK_DELIVERY",
+      "scope": "Durable queue/ACK/retry plus bounded injected delivery pump; same-store-object single-flight, cancel/timeout and synthetic dedupe recovery pass. No live scene worker, automatic scheduling, cross-tab lease or real private endpoint."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
-      "scope": "No scoped private transport; UI release approval does not authorize player private-data writes"
+      "scope": "No scoped private OAuth/App transport. Existing UI release approval is not player-data upload authority."
     },
     "remote_roundtrip": {
       "result": "NOT_TESTED",
-      "scope": "Synthetic in-page mock only; no actual remote"
+      "scope": "Only injected in-page synthetic mock, no HTTP or private remote"
     },
     "ai_readback": {
       "result": "NOT_TESTED"
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T01:35:01.176Z",
+    "observed_at": "2026-10-15T03:38:26.319Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
-    "preserved_passes": "Earlier verified tests and defect budgets preserved. Main UI release reconciled as a true merge parent.",
-    "highest_value_gap": "Bounded outbox delivery with injected synthetic idempotent transport, then private authorization/device/readback",
-    "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete.",
-    "production_rune_playable_feature_delta": 0,
-    "production_ui_release": "PR221 deployed and exact HTTP hash verified"
+    "preserved_passes": "Reliable prior passes and defect budgets retained; current main merged without rewriting new creation logic.",
+    "highest_value_gap": "Actual ObjectCraft local data export/recovery and explicit future outbox adapter; real sync remains blocked on scoped authorization",
+    "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates.",
+    "production_playable_feature_delta": 0
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
