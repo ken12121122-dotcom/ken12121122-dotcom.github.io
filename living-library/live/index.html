@@ -436,20 +436,37 @@ window.addEventListener('message',event=>{
   let exists=false;
   try{exists=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
   catch(e){toast(e.message);return}
-  if(!exists||cardSpellExitTimer!==null)return;
-  const scene=window.LivingScene;
-  if(typeof scene?.startCardSummon==='function'){
-   // Reserve the card hidden BEFORE fading, preventing a one-frame orbit flash.
-   if(!scene.queueCardSummon(id))return;
-   const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
-   cardSpellExitTimer=setTimeout(()=>{
-    cardSpellExitTimer=null;
-    scene.startCardSummon(id); // Stage the invisible card before the first scene frame.
-    closeBook();drawer.classList.remove('card-spell-leaving');
-   },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
-  }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
+  if(exists)launchCardArrival(id);
+ }
+ if(event.data.action==='card-restored'&&
+    (readerCard?.id==='public.gaming.card.creation'||readerCard?.id?.startsWith('local.card.'))){
+  const id=event.data.cardId;
+  // An existing recycled card has been restored locally by the user.
+  // Do NOT create a second record: the exact same card ID must reappear.
+  let restored=false;
+  try{restored=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
+  catch(e){toast(e.message);return}
+  if(restored)launchCardArrival(id);
  }
 });
+// Use the SAME already-verified 3D birth animation for both creation and recovery.
+function launchCardArrival(id){
+ if(cardSpellExitTimer!==null)return false;
+ const scene=window.LivingScene;
+ if(typeof scene?.startCardSummon!=='function'||typeof scene?.queueCardSummon!=='function'){
+  toast('卡片已保存在本機；3D 場景目前不可使用，稍後返回世界仍可看到卡片。');
+  return false;
+ }
+ // Reserve the same card mesh BEFORE page fade to prevent one-frame orbit flashes.
+ if(!scene.queueCardSummon(id))return false;
+ const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
+ cardSpellExitTimer=setTimeout(()=>{
+  cardSpellExitTimer=null;
+  scene.startCardSummon(id); // Stage the invisible card before the first scene frame.
+  closeBook();drawer.classList.remove('card-spell-leaving');
+ },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
+ return true;
+}
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
 window.addEventListener('message',event=>{
  if(event.origin!==window.location.origin||event.source!==document.getElementById('readerFrame').contentWindow)return;
