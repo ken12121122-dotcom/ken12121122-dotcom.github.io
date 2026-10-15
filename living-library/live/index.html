@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.atlas-integration-review.1">
+<meta name="living-library-release" content="2026-10-15.atlas-integration-review.2">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -1521,7 +1521,7 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
-  el.hidden=['off','listening'].includes(state.status);el.textContent=state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
   stage.dataset.voiceState=state.status;
   if(state.status==='listening')toast('語音已開啟：Book');
  }});

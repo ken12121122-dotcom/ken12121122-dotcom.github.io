@@ -49,7 +49,7 @@ for(const [side,sign] of [[left,-1],[right,1]]){
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
 let screenKey='';
-return {group,targets,buttons,setOpen(amount){left.rotation.y=-Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
+return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
  screen(card){if(!screen)return;const key=card?card.id+':'+card.revision:'';if(key===screenKey)return;screenKey=key;screen.material.map.dispose();screen.material.map=textMap(card?[card.title,'已放入讀卡區','● 開啟內頁']:[],!!card)},
  dispose(){const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};
 },

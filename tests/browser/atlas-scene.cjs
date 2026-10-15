@@ -7,6 +7,13 @@ const gradient={addColorStop(){}},context=new Proxy({createLinearGradient:()=>gr
 const els=new Map();const doc={getElementById:id=>{if(!els.has(id))els.set(id,element());return els.get(id)},createElement:()=>element()};
 const host={document:doc,innerWidth:900,innerHeight:650,performance:{now:()=>clock},addEventListener(){},console};host.self=host;
 for(const name of ['atlas-state.js','atlas-model.js','atlas-runtime.js'])vm.runInNewContext(fs.readFileSync(root+'/living-library/live/'+name,'utf8'),host);
+// The left leaf must fold through the page-facing (+Z) half-space, never behind the cover.
+for(const collection of [false,true]){
+ const model=host.LivingAtlasModel.create(THREE,collection),leaf=model.targets.find(t=>t.index===0).node;
+ model.setOpen(1);model.group.updateMatrixWorld(true);const open=leaf.getWorldPosition(new THREE.Vector3());assert.ok(open.x<0);
+ model.setOpen(.5);model.group.updateMatrixWorld(true);const half=leaf.getWorldPosition(new THREE.Vector3());assert.ok(half.z>1,'left page folds inward over the right page');
+ model.setOpen(0);model.group.updateMatrixWorld(true);const closed=leaf.getWorldPosition(new THREE.Vector3());assert.ok(closed.z<0);assert.ok(closed.x>0,'left leaf reaches right-hand closed pose');model.dispose();
+}
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(48,900/650,.1,110),keeper=new THREE.Group();keeper.position.set(0,.46,0);scene.add(keeper);camera.position.set(0,3,12);camera.lookAt(0,2,0);camera.updateMatrixWorld();
 const backing=new Map(),storage={getItem:k=>backing.get(k)??null,setItem:(k,v)=>backing.set(k,v)},cards=new Map(),canvas={parentElement:element(),getBoundingClientRect:()=>({left:0,top:0,width:900,height:650}),setPointerCapture(){}};
 const outer=new THREE.Group();outer.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));outer.position.set(4,3,0);scene.add(outer);
