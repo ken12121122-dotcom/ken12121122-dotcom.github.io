@@ -54,9 +54,16 @@
   const at=clock();
   const book={id,objectType:'book',templateId:'blank-book-v1',title:name.trim(),
    description:'可放入相容卡片的空白書，尚未賦予特殊能力',
-   contentIds:[],status:'draft',openingMode:'legacy',reusePolicy:'local-only',
+   contentIds:[],status:'draft',openingMode:'legacy',active:true,reusePolicy:'local-only',
    createdAt:at,updatedAt:at,revision:1};
   write(storage,[...state.objects,book]);return {...book};
+ }
+ function setBookActive(storage,id,active){
+  if(typeof active!=='boolean')throw Error('書本位置設定不正確');
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&x.objectType==='book'&&x.templateId==='blank-book-v1');
+  if(at<0)throw Error('找不到這本本機書');
+  const objects=[...state.objects];objects[at]={...objects[at],active,revision:(objects[at].revision||1)+1};
+  write(storage,objects);return {...objects[at]};
  }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&x.objectType==='card'&&x.templateId==='blank-card-v1');
@@ -77,5 +84,5 @@
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
  }
- return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,read,listCards,floatingCards,listBooks,createBlankCard,createBlankBook,editCard};
+ return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,read,listCards,floatingCards,listBooks,createBlankCard,createBlankBook,setBookActive,editCard};
 });
