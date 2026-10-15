@@ -97,9 +97,9 @@ async function main(){
   await p.keyboard.press('Escape');
   assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-pressed'),'false');
   report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance.'});
-  assert.equal(await p.locator('#bookList button').count(),14);
+  assert.equal(await p.locator('#bookList button').count(),15);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
-  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:14,joystick_hidden:true});
+  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:15,joystick_hidden:true});
   for(const capability of contract.capabilities){
    const b=catalog.books.find(b=>b.id===capability.book);
    // The mobile catalog is collapsed by default.

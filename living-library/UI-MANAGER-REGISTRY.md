@@ -90,3 +90,13 @@
 | 卡片召喚時間 | `cardSummonDuration` | 1700 ms | 900～2600 ms | 3D 煙霧創卡後移入軌道的動畫長度 |
 
 **程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library/live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
+
+## 萬物圖鑑整合（2026-10-15 開發分支）
+
+- 新增 `book_id=cardCollection`（卡片之書）與 `card_id=public.gaming.atlas`；原 14 本書及遊戲之書原 5 張卡均保留。Live 合計 15 本書、遊戲之書 6 張入口；Dev 舊版維持原樣。
+- 萬物圖鑑不是額外公開 KB：場景模型 `local.atlas.compendium`，左右 9+1 格，無歸架按鈕；卡片之書的卡片容器為 `local.atlas.collection`，左右 9+9 格。
+- `ObjectCraft` 是本機卡片正本：卡片 ID 不變，`containerId`、`ownerBookId`、`slotIndex` 記錄移動；所有格子是有限整數且滿格拒絕轉移。卡片之書的位置偏好另存版本 key，不存私有 GEN2。
+- `atlas-state.js` 定義格位；`atlas-model.js` 承接提供的 v0.2 3D 原型；`atlas-runtime.js` 重用原 renderer、煙霧與閱讀器；`atlas-voice.js` 使用原生訊息通道或瀏覽器辨識，網頁負責命令路由。
+- 主場景點人物開啟搖桿及語音；鬆開／移動搖桿不停止辨識。進入專注保留搖桿，× 只退出視角；卡片之書另有合上、歸架。語音在頁面隱藏／離開 APP 時停止。
+- 無 WebGL 時以 `atlas-controls.html` 操作同一份卡片資料；同源 allowlist 明確加入此頁。原始 GBA、GEN2、存檔、Android 路由不變。
+- 網頁正式發布仍需 OWNER 驗收。原生語音連接由使用者於本次對話另行授權直接更新 APP；Android 自動檢查及語音手機實測分別記錄，不將 parser／幾何測試冒充實機證據。

@@ -2,11 +2,11 @@
 (function(root){'use strict';
 root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke,toast,invalidate,openCard,focusCard,collectionEntity,setCollectionActive,reduced=false}){
  const State=root.LivingAtlasState,KEY='living-library-atlas-view-v1',BASE=.36;
- let saved={collection:'outer'};try{const raw=storage.getItem(KEY);if(raw){const parsed=JSON.parse(raw);if(parsed?.version!==1||!['outer','inner','shelf'].includes(parsed.collection))throw Error('卡冊位置資料版本不相容');saved=parsed}}catch(e){toast(e.message);saved={collection:'outer',readonly:true}}
- function persist(){if(saved.readonly)return;try{storage.setItem(KEY,JSON.stringify({version:1,collection:saved.collection}))}catch(e){toast('位置保存失敗：'+e.message)}}
+ let saved={collection:'outer',collectionOpen:true};try{const raw=storage.getItem(KEY);if(raw){const parsed=JSON.parse(raw);if(parsed?.version!==1||!['outer','inner','shelf'].includes(parsed.collection))throw Error('卡冊位置資料版本不相容');saved=parsed}}catch(e){toast(e.message);saved={collection:'outer',readonly:true}}
+ function persist(){if(saved.readonly)return;try{storage.setItem(KEY,JSON.stringify({version:1,collection:saved.collection,collectionOpen:saved.collectionOpen!==false}))}catch(e){toast('位置保存失敗：'+e.message)}}
  const atlas=root.LivingAtlasModel.create(THREE),collection=root.LivingAtlasModel.create(THREE,true);
  const models=new Map([[State.ATLAS,atlas],[State.COLLECTION,collection]]);
- for(const [id,m] of models){m.id=id;m.group.scale.setScalar(BASE);m.group.visible=false;m.open=0;m.desired=false;m.animation=null;m.puffs=null;m.center=new THREE.Vector3();m.rotation=new THREE.Quaternion();m.setOpen(0);scene.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.userData.atlasBook=id})}
+ for(const [id,m] of models){m.id=id;m.group.userData.atlasId=id;m.group.scale.setScalar(BASE);m.group.visible=false;m.open=0;m.desired=false;m.animation=null;m.puffs=null;m.center=new THREE.Vector3();m.rotation=new THREE.Quaternion();m.setOpen(0);scene.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.userData.atlasBook=id})}
  let focus=null,returning=null,pointer=null,slotHighlight=null,audio=null,disposed=false;
  const ray=new THREE.Raycaster(),uv=new THREE.Vector2();
  const toolbar=document.getElementById('atlasActions'),exit=document.getElementById('atlasFocusExit'),close=document.getElementById('atlasCollectionClose'),shelf=document.getElementById('atlasCollectionShelf'),switcher=document.getElementById('atlasFocusSwitch');
@@ -16,15 +16,15 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function audioStart(){try{const AC=root.AudioContext||root.webkitAudioContext;if(AC&&!audio)audio=new AC();if(audio?.state==='suspended')audio.resume().catch(()=>{})}catch{}}
  function sound(show){audioStart();if(!audio)return;try{const n=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=show?'sine':'triangle';o.frequency.setValueAtTime(show?245:360,n);o.frequency.exponentialRampToValueAtTime(show?760:85,n+.23);g.gain.setValueAtTime(.001,n);g.gain.exponentialRampToValueAtTime(.12,n+.025);g.gain.exponentialRampToValueAtTime(.001,n+.3);o.connect(g).connect(audio.destination);o.start(n);o.stop(n+.32)}catch{}}
  function setInnerPose(m){const direction=camera.position.clone().sub(keeper.position);direction.y=0;if(direction.lengthSq()<.1)direction.set(0,0,1);direction.normalize();const sideways=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction);
-  m.offset=direction.multiplyScalar(1.95).addScaledVector(sideways,m===atlas?-.95:.95);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),Math.atan2(m.offset.x-(m===atlas?-.95:.95)*sideways.x,m.offset.z-(m===atlas?-.95:.95)*sideways.z));
+  const yaw=Math.atan2(direction.x,direction.z);m.offset=direction.multiplyScalar(1.95).addScaledVector(sideways,m===atlas?-.95:.95);m.rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
   // Both books share the same page-facing orientation for cross-book drag.
   const peer=m===atlas?collection:atlas;if(peer.group.visible)m.rotation.copy(peer.rotation);
  }
  function begin(m,show){if(m.animation)return;m.group.visible=true;if(!m.offset)setInnerPose(m);m.animation={show,start:performance.now()};sound(show);if(show)m.puffs=smoke.create(m.center.clone(),false);invalidate()}
  function toggle(){cancelPointer();audioStart();atlas.desired=!atlas.desired;if(!atlas.animation)begin(atlas,atlas.desired);syncUI()}
- function summon(){if(!atlas.desired)toggle();else enterFocus(State.ATLAS)}
- function placeCollection(){cancelPointer();saved.collection='inner';persist();collection.desired=true;setInnerPose(collection);setCollectionActive(true);if(!collection.animation)begin(collection,true);syncUI();invalidate()}
- function foldCollection(toShelf=false){cancelPointer();collection.desired=false;collection.afterClose=toShelf?'shelf':'closed';if(!collection.animation)begin(collection,false);syncUI();invalidate()}
+ function summon(){if(!atlas.desired)toggle();else focusBook(State.ATLAS)}
+ function placeCollection(){cancelPointer();saved.collection='inner';saved.collectionOpen=true;persist();collection.desired=true;setInnerPose(collection);setCollectionActive(true);if(!collection.animation)begin(collection,true);syncUI();invalidate()}
+ function foldCollection(toShelf=false){cancelPointer();saved.collectionOpen=false;persist();collection.desired=false;collection.afterClose=toShelf?'shelf':'closed';if(!collection.animation)begin(collection,false);syncUI();invalidate()}
  function enterFocus(id){const m=models.get(id);if(!m?.group.visible||m.animation)return;
   if(!focus){focus={id,from:camera.position.clone(),rotation:camera.quaternion.clone(),keeper:keeper.position.clone(),started:performance.now()}}else{focus={...focus,id,started:performance.now(),from:camera.position.clone(),rotation:camera.quaternion.clone()}}
   returning=null;syncUI();invalidate();
@@ -62,7 +62,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function dragWorld(e,position){rayAt(e);const normal=camera.getWorldDirection(new THREE.Vector3()),plane=new THREE.Plane().setFromNormalAndCoplanarPoint(normal,position);return ray.ray.intersectPlane(plane,new THREE.Vector3())}
  function pointerMove(e){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;
   if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)p.moved=true;
-  if(p.kind==='card'&&p.moved){const v=dragWorld(e,p.position);if(v){p.entry.group.position.copy(v);p.entry.group.quaternion.copy(camera.quaternion);p.entry.group.scale.setScalar(BASE*1.3)}highlight(hoveredSlot(e))}
+  if(p.kind==='card'&&p.moved){const v=dragWorld(e,p.position);if(v){p.entry.group.position.copy(v);p.entry.group.quaternion.copy(camera.quaternion);p.entry.group.scale.setScalar(m.group.scale.x*1.3)}highlight(hoveredSlot(e))}
   if(p.kind==='book'&&p.book===State.COLLECTION&&p.moved&&performance.now()-p.start>=330){
    if(!p.dragging){p.dragging=true;const obj=p.outer?collectionEntity():collection.group;p.position=obj.position.clone();p.object=obj;collection.dragging=true;collection.setOpen(0)}
    const v=dragWorld(e,p.position);if(v)p.object.position.copy(v);
@@ -72,13 +72,13 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function pointerUp(e,cancel=false){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;pointer=null;highlight(null);
   if(p.kind==='card'){
    if(p.moved&&!cancel){const slot=hoveredSlot(e);try{craft.placeCard(storage,p.entry.id,slot?slot.id:null,slot?.slot??null);refresh()}catch(err){toast(err.message)}}
-   else if(!cancel){if(p.entry.record.containerId){openCard(p.entry.id)}else focusCard(p.entry.id)}
+   else if(!cancel){if(p.entry.record.containerId){toast('拖曳可移動卡片；右側 ● 開啟讀卡內頁')}else focusCard(p.entry.id)}
    p.entry.group.position.copy(p.position);p.entry.group.quaternion.copy(p.quaternion);p.entry.group.scale.setScalar(p.scale);
   }else if(p.kind==='control'&&!p.moved&&!cancel){const card=[...cards.values()].find(c=>State.readerActive(c.record));if(card)openCard(card.id);else toast('先將卡片放入右側讀卡區')}
   else if(p.kind==='book'){
    collection.dragging=false;
    if(p.dragging&&!cancel){const position=p.object.position,dist=Math.hypot(position.x-keeper.position.x,position.z-keeper.position.z);if(dist<3.6)placeCollection();else foldCollection(true)}
-   else if(!p.moved&&!cancel){if(p.outer)placeCollection();else if(collection.open<.1&&p.book===State.COLLECTION){collection.desired=true;begin(collection,true)}else focusBook(p.book)}
+   else if(!p.moved&&!cancel){if(p.outer)placeCollection();else if(collection.open<.1&&p.book===State.COLLECTION){collection.desired=true;saved.collectionOpen=true;persist();begin(collection,true)}else focusBook(p.book)}
    if(p.dragging&&cancel&&p.object)p.object.position.copy(p.position);
   }
   invalidate();return true;
@@ -105,6 +105,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    if(!m.dragging){m.center.set(keeper.position.x+(m.offset?.x||0),2.35,keeper.position.z+(m.offset?.z||0));m.group.position.copy(m.center);m.group.quaternion.copy(m.rotation)}
    if(m.animation){const a=m.animation,age=now-a.start;let complete=false;
     if(a.show){const t=reduced?1:Math.min(1,age/1800);m.group.scale.setScalar(BASE*(t<.35?Math.max(.001,t/.35):1));m.open=Math.max(0,Math.min(1,(t-.42)/.58));if(m.puffs)smoke.update(m.puffs,m.center,age,1800);complete=t>=1}
+    else if(m===collection&&m.afterClose==='closed'){const t=reduced?1:Math.min(1,age/650);m.open=1-t;m.group.scale.setScalar(BASE);complete=t>=1}
     else{const t=reduced?1:Math.min(1,age/1600);m.open=1-Math.min(1,t/.45);if(t>=.45&&!m.puffs)m.puffs=smoke.create(m.center.clone(),false);if(m.puffs)smoke.update(m.puffs,m.center,Math.max(0,age-720),880);m.group.scale.setScalar(BASE*Math.max(.001,t<.5?1:1-(t-.5)*2));complete=t>=1}
     m.setOpen(m.open);
     if(complete){if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.animation=null;m.group.scale.setScalar(BASE);
@@ -118,8 +119,8 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   for(const entry of cards.values()){
    const record=entry.record;if(pointer?.entry?.id===entry.id&&pointer.moved)continue;
    if(!record.containerId)continue;const m=models.get(record.containerId),target=m?.targets.find(t=>t.index===record.slotIndex);
-   entry.group.visible=!!target&&m.group.visible&&m.open>.98&&!m.animation;
-   if(entry.group.visible){target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);target.node.getWorldQuaternion(entry.group.quaternion);entry.group.scale.setScalar(BASE*1.3)}
+   entry.group.visible=!!target&&m.group.visible&&m.open>.03;
+   if(entry.group.visible){target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);target.node.getWorldQuaternion(entry.group.quaternion);entry.group.scale.setScalar(m.group.scale.x*1.3)}
   }
   atlas.screen([...cards.values()].find(c=>State.readerActive(c.record))?.record||null);
   updateCamera(now);
@@ -128,10 +129,10 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
  function showReaderReturn(){restoreFocusCamera();invalidate()}
  function dispose(){disposed=true;cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
- if(saved.collection==='inner'){collection.desired=true;setInnerPose(collection);collection.group.visible=true;collection.open=1;collection.setOpen(1)}
+ if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
  if(saved.collection==='shelf')setCollectionActive(false);
  syncUI();
- root.addEventListener('pagehide',dispose,{once:true});
+ root.addEventListener('pagehide',e=>{if(!e.persisted)dispose();else cancelPointer()});
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:()=>!!collection.dragging,
   get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,

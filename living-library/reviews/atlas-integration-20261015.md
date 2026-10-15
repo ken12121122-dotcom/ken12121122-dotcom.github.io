@@ -1,39 +1,45 @@
-# 萬物圖鑑整合開發中檢查點
+# 萬物圖鑑整合驗收紀錄
 
 status: draft
 review_status: generated
 base_sha: 28c5418908aeda6dce9514a9c15ad9158a229d35
 branch: feat/living-atlas-integration-20261015
-production_changed: false
+production_web_changed: false
 
-## 已對齊的需求
+## 行為
 
-- 人物點選開搖桿與辨識，搖桿存續期間聆聽 Book；Book 反覆切換圖鑑。
-- 萬物圖鑑左九格右讀卡區，隨身不可歸架。
-- 卡片之書左右九格，外圈、內圈、書架；僅此書提供合書與歸架操作。
-- 卡片創造術的原 ID、資料、編輯與回收沿用；拖入空槽轉移，滿格不交換；取消回來源。
-- 單書直式／雙書橫式專注，同場景平滑運鏡，保留搖桿。
-- 原世界卡片煙霧共用；合書後才消失，召喚先出現合起的書再展開。
-- 右側讀卡按鈕開現有內頁閱讀器，關閉返回。
-- 未經 OWNER 驗收不得合併 main／發布正式版。
+人物點選開搖桿與辨識；鬆手不停止辨識，Book 可反覆召喚／合書化煙收起圖鑑。
+萬物圖鑑左九格右讀卡區，隨身不可歸架。
+卡片之書左右九格，可在外圈、內圈、書架間搬動；只有它提供合書與歸架。
+卡片創造術原 ID、資料、編輯與回收沿用；拖入空槽轉移，滿格拒絕且回來源；取消不寫入，無有效目標回軌道。
+直式單書／橫式雙書專注；共用場景與相機，平滑拉近／退出；搖桿可保留。
+重用世界卡片煙霧。圖鑑先合書再消失；召喚先出現合起的書再展開。
+右側按鈕開現有卡片內頁閱讀器，關閉後回圖鑑。
+無 WebGL 時有同資料的 2D 格位操作頁。
 
-## 目前進度（非可驗收成品）
+## 新舊覆蓋
 
-已新增候選的狀態／模型／語音生命週期／場景控制模組，並初接主場景。
-尚未完成：2D 備援頁 atlas-controls.html、互動修正、測試期望更新、完整回歸、圖形／手機驗收、私有預覽。
-首輪原有 Living Library Node 測試 125 個中 115 通過、10 失敗。失敗涉及原先固定 14 本書與 5 張遊戲卡的契約；新候選新增卡片之書及第六張入口，仍需逐項審查並更新測試，不得視為全數通過。
-新模組 JavaScript syntax check 通過，尚不足以證明實際觸控與渲染可用。
+原 14 本公開書與原有全部公開卡保留；遊戲之書前五張順序保留，第六張是萬物圖鑑。
+新增第十五本卡片之書。Android 16 個既有路由保留。
+未授權入口、GEN2 疊加與斷線清除、相機跟隨、空書架、卡片創造／回收、備份及待送佇列由原回歸測試覆蓋。
+不修改 Dev 舊版目錄、不修改私有 GEN2、不授予卡片新權限。
 
-## 原生語音阻塞
+## 驗證
 
-查得 origin/release/android 有 LivingLibraryActivity.java、VoiceCommandActivity.java 及 FloatingVoiceController.java。
-LivingLibraryActivity 目前明確無 JS bridge，沒有嵌入式 SpeechRecognizer，VoiceCommandActivity 是獨立原生頁面。
-現有語音入口不等於圖書館頁面已可在搖桿顯示期間持續接收語音。
-網頁模組只在 SpeechRecognition/WebkitSpeechRecognition 存在時啟動，否則清楚回報 unsupported；沒有偽造原生接口。
-需要 OWNER 決定是否本輪一併新增原生連接並提供 CI-only 候選 APK。原生工作應從 release/android 另建對應 feature 分支，不把其龐大歷史合回 main。
+- 本機 Node：191/191 PASS，含卡片跨書原子轉移、滿格／錯誤不覆寫、語音生命週期及原生 session 過期回覆隔離。
+- 實際 Three.js 幾何／射線運算：PASS。測試十個圖鑑格位、收藏冊第十八格跨書移動、右側讀卡、煙霧清理、合書保留卡片、相機插值與回到原視角。
+- 上項不是 WebGL 實際渲染證據。瀏覽器回歸交由 GitHub CI；目前操作環境未提供受支援的瀏覽器控制。
+- 真實手機觸控、麥克風、語音反覆循環、音效聽感：NOT_TESTED，供 OWNER 驗收。
+- 原生連接另外位於 feature 分支及 PR #236，目標 release/android；不把該分支完整歷史合回 main。
 
-## 回退與安全
+## 語音權責
 
-目前修改只在 feature 分支；main、release/android、APK manifest、正式網頁版本號均未變更。
-卡片保存沿用 ObjectCraft key，新增 placeCard 原子轉移，不重建卡片身份；卡冊顯示偏好另有版本 key。
-未完成的原生、WebView、真實語音與圖形驗證皆 NOT_TESTED。
+原生 APP 提供前景限定、主框架及精確 origin/path 檢查的文字通道；網頁決定 Book 及未來口令。
+原生無任意 Activity／檔案／權限執行能力。不新增麥克風權限，沿用已有 RECORD_AUDIO。
+網頁／APP 進入背景、導航、銷毀時停止收音；拒絕權限顯示錯誤，不假裝正在聆聽。
+
+## 回退
+
+網頁回到 base_sha 即原樣；新增本機容器資料保留，不以回退清空卡片、GBA、GEN2 或其他儲存。
+若回退至不認識新容器的舊版，書內卡片仍存在原始 ObjectCraft 資料，但舊版不提供取出 UI；應先用新頁移回軌道或保留新 2D 操作頁。
+原生回退應另行建置同簽章、較高 versionCode 的已驗證來源，不要求使用者解除安裝遺失資料。

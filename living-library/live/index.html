@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.local-object-queue-v1">
+<meta name="living-library-release" content="2026-10-15.atlas-integration-review.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -1376,7 +1376,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
 });
 function pickFloatingCard(ray){
- const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon&&!x.recycle)
+ const targets=[...floatingCardMeshes.values()].filter(x=>x.group.visible&&!x.summon&&!x.recycle)
   .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
@@ -1520,11 +1520,12 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
-  el.hidden=['off','listening'].includes(state.status);el.textContent=state.status==='starting'?'正在啟動語音辨識…':state.detail;
+  el.hidden=['off','listening'].includes(state.status);el.textContent=state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
   stage.dataset.voiceState=state.status;
   if(state.status==='listening')toast('語音已開啟：Book');
  }});
 window.addEventListener('pagehide',()=>atlasVoice.stop());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
 
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 function pick(e){
@@ -1535,7 +1536,7 @@ function pick(e){
  if(pickFloatingCard(ray))return 'card';
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
- bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ bookEntities.filter(o=>o.group.visible).forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
  const bookHit=ray.intersectObjects(targets,false)[0];
  if(bookHit){
   resetJoystick(true);

@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs"
+    "test": "node atlas-scene.cjs && node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",
-    "playwright": "1.56.1"
+    "playwright": "1.56.1",
+    "three": "0.185.0"
   }
 }

@@ -3,15 +3,25 @@
 'use strict';
 function create({host,commands,onState=()=>{},now=()=>Date.now()}){
  const Recognition=host.SpeechRecognition||host.webkitSpeechRecognition;
- let wanted=false,recognition=null,starting=false,timer=null,generation=0,last=-Infinity,failures=0;
+ let wanted=false,recognition=null,starting=false,timer=null,generation=0,last=-Infinity,failures=0,nativeSession=null;
+ const native=host.LivingLibraryNativeVoice;
  function state(status,detail=''){onState({status,detail,wanted})}
  function dispatch(text){if(!wanted)return;const word=String(text).trim().toLowerCase();
   const command=Object.keys(commands).find(k=>new RegExp('(^|[^a-z])'+k+'([^a-z]|$)','i').test(word));
   if(!command||now()-last<1100)return;last=now();commands[command]();
  }
- function stop(){wanted=false;generation++;starting=false;if(timer!==null)host.clearTimeout(timer);timer=null;
+ function stop(){if(nativeSession){try{native.postMessage(JSON.stringify({v:1,op:'stop',session:nativeSession}))}catch{}nativeSession=null}wanted=false;generation++;starting=false;if(timer!==null)host.clearTimeout(timer);timer=null;
   if(recognition){recognition.onend=null;recognition.onresult=null;recognition.onerror=null;try{recognition.abort()}catch{}}recognition=null;state('off');}
  function start(){if(wanted)return;wanted=true;const run=++generation;
+  if(native&&typeof native.postMessage==='function'){
+   nativeSession='voice-'+now()+'-'+generation;
+   native.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return}if(d.v!==1||d.session!==nativeSession||run!==generation)return;
+    if(d.status==='result'){if(wanted)dispatch(d.text)}else if(['starting','listening','off','error'].includes(d.status)){
+     if(d.status==='off'||d.status==='error')wanted=false;state(d.status,d.detail||'');
+    }
+   };
+   state('starting');try{native.postMessage(JSON.stringify({v:1,op:'start',session:nativeSession}))}catch(e){wanted=false;state('error',e.message)}return;
+  }
   if(!Recognition){wanted=false;state('unsupported','此環境沒有語音辨識接口；APP 語音連接待測');return}
   recognition=new Recognition();recognition.lang='en-US';recognition.continuous=true;recognition.interimResults=false;
   const current=recognition;
