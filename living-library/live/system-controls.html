@@ -23,17 +23,26 @@
 <div class="setting"><label for="cardReorder">長按卡片交換位置<small>僅儲存本機的書內順序，不修改資料來源</small></label><input type="checkbox" id="cardReorder" checked></div>
 <div class="game-tuning" aria-labelledby="game-tuning-title">
 <h3 id="game-tuning-title">🪄 3D 世界參數（實驗）</h3>
-<p>人物與書本之間的懸浮卡片。更改後返回世界即可查看效果；只修改這部裝置上的卡片外觀與動態，不影響書本軌道與已創造的卡片內容。</p>
+<p>人物與書本之間的懸浮卡片。更改後返回世界即可查看效果；設定保留在這部裝置；不修改卡片內容或其他書本的軌道。</p>
 <label class="game-slider" for="cardSize"><span class="slider-head"><span>卡片尺寸</span><output id="cardSizeValue" for="cardSize">100%</output></span><input type="range" id="cardSize" min="0.65" max="1.2" step="0.05" value="1"><small>只調整 3D 卡片大小，進入專注模式也會套用。</small></label>
 <label class="game-slider" for="cardOrbitDistance"><span class="slider-head"><span>卡片軌道距離</span><output id="cardOrbitDistanceValue" for="cardOrbitDistance">100%</output></span><input type="range" id="cardOrbitDistance" min="0.88" max="1.06" step="0.02" value="1"><small>調整人物與卡片之間的內圈距離；不能移到漂浮書本外圈。</small></label>
 <label class="game-slider" for="cardOrbitSpeed"><span class="slider-head"><span>環繞速度</span><output id="cardOrbitSpeedValue" for="cardOrbitSpeed">1.0×</output></span><input type="range" id="cardOrbitSpeed" min="0" max="1.8" step="0.1" value="1"><small>0× 暫停公轉；不影響書本自身的環繞速度。</small></label>
 <label class="game-slider" for="cardSummonDuration"><span class="slider-head"><span>召喚動畫時間</span><output id="cardSummonDurationValue" for="cardSummonDuration">2.9 秒</output></span><input type="range" id="cardSummonDuration" min="1800" max="4500" step="50" value="2850"><small>只影響下一次施放卡片創造術，不會重播已存在卡片的動畫。</small></label>
 <button type="button" id="resetCardParams" aria-label="恢復卡片參數預設值" title="恢復卡片參數預設值">↺</button>
 </div>
+<div class="game-tuning" aria-labelledby="atlas-tuning-title"><h3 id="atlas-tuning-title">📖 圖鑑與卡片之書</h3><p>距離與高度使用世界單位。調整後關閉書頁查看；可隨時恢復預設。卡片之書已存在，不需使用書本創造術。</p>
+<label class="game-slider" for="atlasDistance"><span class="slider-head"><span>圖鑑離人物的距離</span><output id="atlasDistanceValue" for="atlasDistance"></output></span><input type="range" id="atlasDistance" min="0.8" max="2.8" step="0.05" value="1.35"><small>拉近可減少與外圍書本重疊；兩本新書一起套用。</small></label>
+<label class="game-slider" for="atlasHeight"><span class="slider-head"><span>圖鑑高度</span><output id="atlasHeightValue" for="atlasHeight"></output></span><input type="range" id="atlasHeight" min="1.2" max="3.6" step="0.05" value="2.35"><small>調整新書離地面的高度。</small></label>
+<label class="game-slider" for="atlasSize"><span class="slider-head"><span>圖鑑／卡片之書大小</span><output id="atlasSizeValue" for="atlasSize"></output></span><input type="range" id="atlasSize" min="0.65" max="1.4" step="0.05" value="1"><small>兩本新書的整體大小；原有外圍書本不變。</small></label>
+<label class="game-slider" for="atlasSeparation"><span class="slider-head"><span>兩本書左右間距</span><output id="atlasSeparationValue" for="atlasSeparation"></output></span><input type="range" id="atlasSeparation" min="0.65" max="1.8" step="0.05" value="0.95"><small>每本距離中央的偏移；放大書本時可加寬間距。</small></label>
+<label class="game-slider" for="atlasFocusDistance"><span class="slider-head"><span>專注視角距離</span><output id="atlasFocusDistanceValue" for="atlasFocusDistance"></output></span><input type="range" id="atlasFocusDistance" min="0.75" max="1.5" step="0.05" value="1"><small>數值越小越近；太近可能看不到完整書頁。</small></label>
+<label class="game-slider" for="atlasCardSize"><span class="slider-head"><span>書內卡片大小</span><output id="atlasCardSizeValue" for="atlasCardSize"></output></span><input type="range" id="atlasCardSize" min="0.65" max="1" step="0.05" value="1"><small>以卡槽大小為基準，保留卡框與讀卡按鈕。</small></label>
+<button type="button" id="resetAtlasParams" aria-label="恢復圖鑑參數預設值" title="恢復圖鑑參數預設值" style="min-width:44px;min-height:44px;font-size:24px">↺</button></div>
 <p class="feedback" id="prefStatus" role="status" aria-live="polite"></p>
 <p class="prefs-note">操作設定會在這台裝置保留；與知識庫、GBA 存檔及 GEN2 授權分開儲存。</p>
 </section><div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
 <script src="./card-placement.js"></script>
+<script src="./atlas-state.js"></script>
 <script>
 const allowed=new Set(['connect-gen2','reconnect-web','update-preferences','relocate-joystick']);
 let latestRequestId=0,latestAcknowledgedId=0,confirmationTimer=null;
@@ -96,11 +105,13 @@ function syncDependent(){
 }
 document.getElementById('relocateJoystick').addEventListener('click',()=>send('relocate-joystick'));
 // Import exactly the same defaults and bounds used by the 3D world.
-const cardParameterDefaults=window.LivingCardPlacement.DEFAULTS;
-const cardParameterLimits=window.LivingCardPlacement.LIMITS;
+const cardParameterDefaults={...window.LivingCardPlacement.DEFAULTS,...window.LivingAtlasState.DEFAULTS};
+const cardParameterLimits={...window.LivingCardPlacement.LIMITS,...window.LivingAtlasState.LIMITS};
 function displayCardParameter(key,value){
  const output=document.getElementById(key+'Value');
- if(key==='cardSize'||key==='cardOrbitDistance')output.textContent=Math.round(value*100)+'%';
+ if(['atlasSize','atlasCardSize','atlasFocusDistance'].includes(key))output.textContent=Math.round(value*100)+'%';
+ else if(['atlasDistance','atlasHeight','atlasSeparation'].includes(key))output.textContent=value.toFixed(2);
+ else if(key==='cardSize'||key==='cardOrbitDistance')output.textContent=Math.round(value*100)+'%';
  else if(key==='cardOrbitSpeed')output.textContent=value.toFixed(1)+'×';
  else output.textContent=(value/1000).toFixed(1)+' 秒';
 }
@@ -132,8 +143,13 @@ for(const key of Object.keys(cardParameterDefaults)){
 }
 document.getElementById('resetCardParams').addEventListener('click',()=>{
  for(const key of Object.keys(pendingSliderTimers))if(pendingSliderTimers[key])clearTimeout(pendingSliderTimers[key]);
- restoreCardValues(cardParameterDefaults);
- send('update-preferences',{...cardParameterDefaults});
+ restoreCardValues({...saved,...window.LivingCardPlacement.DEFAULTS});
+ send('update-preferences',{...window.LivingCardPlacement.DEFAULTS});
+});
+document.getElementById('resetAtlasParams').addEventListener('click',()=>{
+ for(const key of Object.keys(pendingSliderTimers))if(pendingSliderTimers[key])clearTimeout(pendingSliderTimers[key]);
+ restoreCardValues({...saved,...window.LivingAtlasState.DEFAULTS});
+ send('update-preferences',{...window.LivingAtlasState.DEFAULTS});
 });
 syncDependent();
 </script></body></html>

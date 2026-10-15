@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.atlas-integration-review.2">
+<meta name="living-library-release" content="2026-10-15.atlas-player-tuning.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -344,7 +344,7 @@ const clampUnit=(n,min,max)=>Math.min(max,Math.max(min,n));
 function normalizeControls(raw){
  const d=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
  const p=d.joystickPosition&&typeof d.joystickPosition==='object'?d.joystickPosition:{};
- return {rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
+ return {...window.LivingAtlasState.normalizeSettings(d),rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
  rotationMode:d.rotationMode==='single'||d.rotationMode==='dual'?d.rotationMode:(d.singleFingerRotate===true?'single':'dual'),
  joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
@@ -380,8 +380,8 @@ function swapCardSlots(bookId,first,second){
  try{localStorage.setItem(CARD_ORDER_KEY,JSON.stringify(cardOrders))}catch(_){}
  swapFrom=null;renderFunctions(book());toast('已交換卡片位置（不修改原始資料）');return true;
 }
-function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
-function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,known:BOOKS.filter(b=>b.publicId).map(b=>b.publicId),active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)||(b.id==='cardCollection'&&window.LivingAtlasState.introduceCollection(value,localStorage.getItem('living-library-atlas-view-v1')))})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
@@ -485,6 +485,10 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+ else if(id==='public.gaming.book.creation'&&action==='summon-collection'){
+  const b=BOOKS.find(b=>b.id==='cardCollection');if(!b)return;closeBook();select(b.id);
+  if(window.LivingScene?.atlas)window.LivingScene.atlas.placeCollection();else openBook();
+ }
  else if(id==='public.system.controls'&&action==='update-preferences'){
   const input=event.data.settings;
   if(!input||typeof input!=='object'||Array.isArray(input))return;
@@ -493,10 +497,10 @@ window.addEventListener('message',event=>{
   if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
   // Single source of truth: these are the SAME limits used by the 3D orbit and slider.
-  for(const [field,limits] of Object.entries(CardTuning?.LIMITS||{
+  for(const [field,limits] of Object.entries({...window.LivingAtlasState.LIMITS,...(CardTuning?.LIMITS||{
    cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
    cardOrbitSpeed:[0,1.8],cardSummonDuration:[1800,4500]
-  }))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
+  })}))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
    next[field]=clampUnit(input[field],...limits);
   if(Object.keys(next).length){
    const persisted=saveControls(next);
@@ -1012,6 +1016,7 @@ function beginJoystickPlacement(){
 }
 function applyControlPrefs(){
  // Inspectable proof of the settings received by the live 3D scene. No new visible UI.
+ for(const key of Object.keys(window.LivingAtlasState.DEFAULTS))stage.dataset[key]=String(controlPrefs[key]);
  stage.dataset.cardSize=String(controlPrefs.cardSize);
  stage.dataset.cardOrbitDistance=String(controlPrefs.cardOrbitDistance);
  stage.dataset.cardOrbitSpeed=String(controlPrefs.cardOrbitSpeed);
@@ -1516,7 +1521,7 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  craft:window.LivingObjectCraft,storage:localStorage,reduced:preferReduced,toast,
  smoke:{create:createCardSmoke,update:updateCardSmoke,remove:removeCardSmoke},
  invalidate:()=>window.LivingScene?.syncRender?.(),
- collectionEntity:()=>entityById.get('cardCollection')?.group,
+ controls:controlPrefs,collectionEntity:()=>entityById.get('cardCollection')?.group,
  setCollectionActive:active=>window.LivingLibrary.setCollectionActive(active),
  openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},

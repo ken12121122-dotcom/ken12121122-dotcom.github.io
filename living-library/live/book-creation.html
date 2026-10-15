@@ -28,6 +28,7 @@ footer{margin-top:21px;border-top:1px solid #45576b;padding-top:12px;font-size:1
 </style></head><body><main>
 <header><h1>✧ 書本創造術</h1><small>LOCAL BOOK FORGE · MVP</small></header>
 <p>為世界創造一本空白魔法書。它會保留獨立 ID，以現有 3D 書本模型加入人物環繞軌道；先不改動一般書。下一階段再測試將懸浮卡放進你創造的書。</p>
+<section class="panel" aria-labelledby="collection-title"><h2 id="collection-title">▣ 卡片之書</h2><p>左右各九格的現成卡冊。從這裡拿到身邊展開；保留上次的卡片與擺放位置，不重複創造書本。</p><button type="button" id="openCollection" aria-label="開啟卡片之書" title="開啟卡片之書">📖</button><p id="collectionStatus" role="status" aria-live="polite"></p></section>
 <div class="cols"><section class="summon" aria-label="製書法陣"><div id="bookModel" class="book">空白魔法書</div></section>
 <section class="panel"><form id="form"><label for="name">書本名稱</label><input id="name" maxlength="30" value="我的魔法實驗書" required autocomplete="off"><button id="create" type="submit" aria-label="施放書本創造術" title="施放書本創造術">✦</button></form>
 <p>書頁：空白；可收納卡片的資料欄位已建立。書本目前沿用一般書的開啟模式，實體雙頁動畫會在後續測試。</p><div id="status" role="status" aria-live="polite"></div></section></div>
@@ -46,6 +47,10 @@ function render(){
   const info=document.createElement('small');info.textContent='# '+b.id.slice(-8)+' · 空白書';item.append(label,info);list.append(item);
  }
 }
+$('openCollection').addEventListener('click',()=>{
+ if(window.parent===window){$('collectionStatus').textContent='請從《遊戲之書》的「書本創造術」開啟，才能把卡片之書拿到 3D 場景。';return}
+ window.parent.postMessage({kind:'living-library-public-card-action',action:'summon-collection'},location.origin);
+});
 $('form').addEventListener('submit',e=>{e.preventDefault();
  try{const book=C.createBlankBook(localStorage,window.crypto,$('name').value);
  const model=$('bookModel');model.textContent=book.title;model.classList.remove('spawn','float');

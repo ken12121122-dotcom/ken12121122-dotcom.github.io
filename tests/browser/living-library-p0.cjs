@@ -149,6 +149,11 @@ async function main(){
   await prefsFrame.locator('#cardOrbitSpeed').focus();
   await prefsFrame.locator('#cardOrbitSpeed').press('Home');
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardOrbitSpeed===0);
+  for(const [key,value,press] of [['atlasDistance',.8,'Home'],['atlasHeight',3.6,'End'],['atlasSize',1.4,'End'],['atlasSeparation',1.8,'End'],['atlasFocusDistance',.75,'Home'],['atlasCardSize',.65,'Home']]){
+   await prefsFrame.locator('#'+key).focus();await prefsFrame.locator('#'+key).press(press);
+   await p.waitForFunction(([k,v])=>window.LivingLibrary?.controls?.[k]===v,[key,value]);
+   assert.equal(await p.evaluate(k=>JSON.parse(localStorage.getItem('living-library-controls-v1'))[k],key),value);
+  }
   const state=await p.evaluate(()=>{
    const value=window.LivingLibrary.controls;
    return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
@@ -167,10 +172,25 @@ async function main(){
   await restoredFrame.locator('#resetCardParams').click();
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSize===1&&window.LivingLibrary?.controls?.cardSummonDuration===2850&&window.LivingLibrary?.controls?.cardOrbitSpeed===1);
   await restoredFrame.waitForFunction(()=>document.querySelector('#prefStatus')?.textContent.includes('無 3D 場景'));
+  assert.equal(await restoredFrame.locator('#atlasDistance').inputValue(),'0.8');
+  assert.equal(await p.evaluate(()=>LivingLibrary.controls.atlasSize),1.4,'card reset preserves atlas settings');
+  await restoredFrame.locator('#resetAtlasParams').click();
+  await p.waitForFunction(()=>LivingLibrary.controls.atlasDistance===1.35&&LivingLibrary.controls.atlasSize===1);
   report.checks.push({id:'system_book_3d_preferences_ack_fallback',result:'PASS',
    scope:'Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU.'});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
+  await p.getByRole('button',{name:'選取遊戲之書',exact:true}).click();
+  if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))await p.locator('#fallbackOpen').click();
+  await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
+  const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
+  const booksBefore=await p.evaluate(()=>LivingLibrary.books.length);
+  await forge.getByRole('button',{name:'開啟卡片之書',exact:true}).click();
+  await p.waitForFunction(()=>document.querySelector('#drawerTitle').textContent==='卡片之書');
+  assert.equal(await p.evaluate(()=>LivingLibrary.books.length),booksBefore,'opening existing collection never creates a duplicate');
+  await p.locator('#closeDrawer').click();
+  report.checks.push({id:'book_forge_existing_collection_entry',result:'PASS',scope:'Real creator iframe action opens existing collection fallback without adding a book.'});
   // Placement preferences must never wipe unrelated player data on reload.
   await p.evaluate(()=>localStorage.setItem('nw-p0-save-sentinel','synthetic-preserve-me'));
   await p.reload({waitUntil:'domcontentloaded'});

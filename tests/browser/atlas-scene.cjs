@@ -19,7 +19,7 @@ const backing=new Map(),storage={getItem:k=>backing.get(k)??null,setItem:(k,v)=>
 const outer=new THREE.Group();outer.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));outer.position.set(4,3,0);scene.add(outer);
 let smokes=0,removed=0,opened=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
 function refresh(){for(const r of craft.listCards(storage)){if(cards.has(r.id))cards.get(r.id).record=r;else{const g=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),new THREE.MeshBasicMaterial());mesh.userData.localCardId=r.id;g.add(mesh);g.position.set(0,2,4);scene.add(g);cards.set(r.id,{id:r.id,record:r,group:g})}}}
-const runtime=host.LivingAtlasRuntime.create({THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:()=>outer,setCollectionActive(){},reduced:false});
+const controls={};const runtime=host.LivingAtlasRuntime.create({controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:()=>outer,setCollectionActive(){},reduced:false});
 function tick(ms){clock+=ms;runtime.tick(clock);scene.updateMatrixWorld(true);camera.updateMatrixWorld(true)}
 function group(id){return scene.children.find(x=>x.userData.atlasId===id)}
 function meshSlot(id,index){let mesh;group(id).traverse(x=>{if(x.userData.atlasSlot===index)mesh=x});return mesh}
@@ -50,4 +50,11 @@ runtime.focus(State.COLLECTION);tick(900);doc.getElementById('atlasCollectionClo
 runtime.toggle();tick(1700);assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(1900);assert.equal(craft.listCards(storage).length,1);assert.equal(cards.size,1);
 // Releasing a different joystick finger must not cancel an in-progress card drag.
 tick(900);craft.placeCard(storage,card.id,null);refresh();const free=cards.get(card.id);free.group.visible=true;free.group.position.set(0,2,4);free.group.quaternion.copy(camera.quaternion);const down=point(free.group);runtime.pointerDown(down);runtime.pointerMove({...down,clientX:down.clientX+20});assert.equal(runtime.isDraggingCard(card.id),true);runtime.cancelPointer(2);assert.equal(runtime.isDraggingCard(card.id),true);runtime.cancelPointer(1);assert.equal(runtime.isDraggingCard(card.id),false);assert.equal(craft.listCards(storage)[0].containerId,null);
+// Persisted settings drive the actual model, slots and focused camera without touching card data.
+const recordBefore=JSON.stringify(craft.listCards(storage));
+runtime.focus(State.ATLAS);tick(900);const focusBefore=camera.position.clone();
+Object.assign(controls,{atlasDistance:.8,atlasHeight:3.1,atlasSize:1.2,atlasSeparation:1.4,atlasFocusDistance:.8,atlasCardSize:.7});tick(1);tick(900);
+const changed=runtime.inspect();assert.equal(changed.atlasScale,.36*1.2);assert.equal(changed.atlasPosition[1],3.1);assert.ok(Math.abs(Math.hypot(changed.atlasPosition[0]-keeper.position.x,changed.atlasPosition[2]-keeper.position.z)-Math.hypot(.8,1.4))<1e-8);assert.ok(camera.position.distanceTo(focusBefore)>.1);
+craft.placeCard(storage,card.id,State.ATLAS,0);refresh();tick(1);assert.ok(Math.abs(cards.get(card.id).group.scale.x-.36*1.2*1.3*.7)<1e-9);
+craft.placeCard(storage,card.id,null);refresh();assert.equal(JSON.stringify(craft.listCards(storage).map(({revision,updatedAt,...r})=>r)),JSON.stringify(JSON.parse(recordBefore).map(({revision,updatedAt,...r})=>r)),'tuning retains card contents and identity');
 runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 10 atlas slots, all 18 collection slots and cross-book transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');
