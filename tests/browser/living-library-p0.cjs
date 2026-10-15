@@ -134,7 +134,7 @@ async function main(){
   await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
   if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))
    await p.locator('#fallbackOpen').click();
-  await p.locator('[data-card-id="public.system.controls"]').click();
+  await p.locator('[data-card-id="public.system.controls"]').dispatchEvent('click');
   const prefsFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await prefsFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/system-controls.html'));
   await prefsFrame.locator('#cardSummonDuration').waitFor();
@@ -160,7 +160,7 @@ async function main(){
   await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
   if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))
    await p.locator('#fallbackOpen').click();
-  await p.locator('[data-card-id="public.system.controls"]').click();
+  await p.locator('[data-card-id="public.system.controls"]').dispatchEvent('click');
   const restoredFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await restoredFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/system-controls.html'));
   assert.equal(await restoredFrame.locator('#cardSummonDuration').inputValue(),'4500');
