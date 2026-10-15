@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T00:31:02.218Z",
+  "updated_at": "2026-10-15T01:30:26.408Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -393,10 +393,10 @@
     "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
   },
   "execution": {
-    "lease_owner": "NW-UI-RELEASE-20261015",
-    "lease_expires_at": "2026-10-15T01:49:50.840Z",
-    "heartbeat_at": "2026-10-15T01:24:50.840Z",
-    "state": "RELEASING_UI_ONLY",
+    "lease_owner": "NW-CYCLE-20261015-11",
+    "lease_expires_at": "2026-10-15T01:55:26.408Z",
+    "heartbeat_at": "2026-10-15T01:30:26.408Z",
+    "state": "BUILDING_OUTBOX_PREPARATION",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -610,6 +610,13 @@
       "context": "Reply to proposed isolation verification and real character.tap -> controlled feedback preparation; assistant also mentioned later release approval.",
       "effective_action": "Proceed with the proposed next-stage verification and integration preparation. Preserve all fixed test gates. No specific release candidate/version has yet passed the gates or been presented for final release.",
       "status": "RECORDED"
+    },
+    {
+      "id": "owner_ui_release_20261015",
+      "source": "OWNER current conversation",
+      "quote": "發布",
+      "scope": "Specific reviewed clean-view and icon-only UI; not all Rune Engine phases or private sync",
+      "result": "EXECUTED_PR221"
     }
   ],
   "next_stage_preparation": {
@@ -756,7 +763,7 @@
       "phone": "NOT_TESTED",
       "staging": "NOT_TESTED"
     },
-    "release": "NOT_RELEASED",
+    "release": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
     "rollback_ref": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77",
     "candidate_sha": "8a1cc11fdbb531c7a9b8b05a2398646ef7e56212",
     "state": "PASS_CANDIDATE_NOT_RELEASED",
@@ -801,7 +808,7 @@
       "device": "NOT_TESTED",
       "staging": "NOT_TESTED"
     },
-    "release": "NOT_RELEASED",
+    "release": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
     "state": "PASS_CANDIDATE_NOT_RELEASED",
     "candidate_sha": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
     "ci": {
@@ -821,6 +828,31 @@
     "owner_approval": "OWNER current conversation: 發布",
     "approved_scope": "Upper-left title removal, clean view and icon-only action controls; no unfinished Rune Engine or player sync release",
     "base_main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
-    "state": "BUILDING_RELEASE_BRANCH"
+    "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+    "pr": 221,
+    "source_commit": "cdac8728ccabc7d64eac9ae50a2ddaccff64af99",
+    "main_commit": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+    "release_marker": "2026-10-15.icon-only-clean-view-v1",
+    "released_at": "2026-10-15T01:29:24.940Z",
+    "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+    "ci": {
+      "premerge": 38665658759,
+      "postmerge": 38665794311,
+      "result": "PASS"
+    },
+    "pages": {
+      "run_id": 38665793490,
+      "result": "PASS"
+    },
+    "http": {
+      "run_id": 38665794302,
+      "job_id": 116197341294,
+      "result": "PASS_EXACT_HTML_AND_SCRIPT_HASH"
+    },
+    "device": "NOT_TESTED",
+    "full_rune_engine_release": "NOT_RELEASED",
+    "rollback": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "scene_module_sha256": "b07e756c89705a41559701ca9d41c50d705cf56d2494c4c8b16ae82b481a251f",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json"
   }
 }

@@ -12,6 +12,36 @@ permissions:
   contents: read
 
 jobs:
+  verify-clean-ui-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify actual live HTML and clean-view script match published commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://ken12121122-dotcom.github.io/living-library/live"
+          for attempt in $(seq 1 32); do
+            verified=true
+            for file in index.html clean-view.js; do
+              if ! curl -fLsS --max-time 15 "${base}/${file}?v=$(date +%s)" -o "/tmp/live-${file}"; then
+                verified=false
+                break
+              fi
+              expected=$(sha256sum "living-library/live/${file}" | cut -d ' ' -f 1)
+              actual=$(sha256sum "/tmp/live-${file}" | cut -d ' ' -f 1)
+              if [[ "$actual" != "$expected" ]]; then verified=false; fi
+            done
+            if [[ "$verified" == true ]]; then
+              echo "PASS: actual live HTML and clean-view.js match ${GITHUB_SHA}"
+              grep -F 'living-library-release" content=' /tmp/live-index.html
+              exit 0
+            fi
+            if (( attempt < 32 )); then sleep 15; fi
+          done
+          echo 'FAIL: actual live UI assets do not match this commit'
+          exit 1
   check-live-github-pages:
     runs-on: ubuntu-latest
     timeout-minutes: 12
