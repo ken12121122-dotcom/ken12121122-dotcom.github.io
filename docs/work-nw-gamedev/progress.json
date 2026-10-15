@@ -410,10 +410,10 @@
     "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T01:35:01.176Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "NW-CYCLE-20261015-12",
+    "lease_expires_at": "2026-10-15T03:54:58.992Z",
+    "heartbeat_at": "2026-10-15T03:29:58.992Z",
+    "state": "RECONCILE_MAIN",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
