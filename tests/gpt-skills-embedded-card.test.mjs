@@ -30,7 +30,7 @@ test('GPT Book adds a real embeddable webpage card, preserving all 14 books and 
  assert.ok(projected.bookCards.gpt.includes('public.gpt.skills'));
 });
 
-test('GPT card actually opens through trusted in-book iframe and supports direct navigation',()=>{
+test('GPT card actually opens through trusted in-book iframe and supports direct navigation',async()=>{
  assert.doesNotMatch(shell,/id="gptSkillsShortcut"/);
  assert.match(shell,/new URL\('\.\/gpt-skills\.html',current\)\.pathname/);
  assert.match(shell,/if\(route\.get\('card'\)==='public\.gpt\.skills'\)/);
