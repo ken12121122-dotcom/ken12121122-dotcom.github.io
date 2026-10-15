@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-14T23:55:50.366Z",
+  "updated_at": "2026-10-15T00:26:58.113Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -116,7 +116,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P2-LOCAL-SAVE-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -375,10 +375,10 @@
     "next_action": "PRIORITY OWNER UPDATE 2026-10-15: existing phone operations reported usable ('都還可以用'). First inspect available authorized isolated deployment/WebGL2 verification routes and prepare the smallest real character.tap -> controlled feedback integration with a concrete regression checklist, keeping activation behind the unchanged P0 Gate. Do not repeatedly ask OWNER whether existing controls work or repeat unchanged cloud GPU retries. Keep device report PASS_REPORTED_BY_OWNER; staging and candidate scene integration remain unverified. If no runnable environment is available, persist the exact missing capability and continue only independently testable P1 work. Deferred bounded task: AbortSignal cancellation during awaited dynamic guards."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-14T23:31:48.731Z",
-    "state": "READY_NEXT_SLICE",
+    "lease_owner": "NW-CYCLE-20261015-10",
+    "lease_expires_at": "2026-10-15T00:51:58.113Z",
+    "heartbeat_at": "2026-10-15T00:26:58.113Z",
+    "state": "BUILDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
