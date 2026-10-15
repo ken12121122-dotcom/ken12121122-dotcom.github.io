@@ -423,8 +423,10 @@ window.addEventListener('message',event=>{
   try{recycled=typeof id==='string'&&ObjectCraft.listRecycledCards(localStorage).some(card=>card.id===id)}
   catch(e){toast(e.message)}
   const scene=window.LivingScene;
-  if(recycled&&scene?.startCardRecycle?.(id)){
-   closeBook();return;
+  if(recycled&&typeof scene?.startCardRecycle==='function'){
+   // First reveal the ordinary world camera; only then schedule the small puff.
+   closeBook();
+   if(scene.startCardRecycle(id))return;
   }
  }
  window.LivingScene?.refreshFloatingCards?.();
@@ -1102,14 +1104,16 @@ function smokeMap(){
  ctx.fillStyle=g;ctx.fillRect(0,0,64,64);
  smokeTexture=new THREE.CanvasTexture(canvas);return smokeTexture;
 }
-function createCardSmoke(origin){
- const puffs=[];
- for(let i=0;i<14;i++){
+function createCardSmoke(origin,compact=false){
+ // Creation smoke keeps its validated size. Recycling uses fewer, smaller puffs
+ // so a card in the world turns into a LITTLE cloud, not a screen-sized effect.
+ const puffs=[],multiplier=compact?.43:1;
+ for(let i=0;i<(compact?8:14);i++){
   const material=new THREE.SpriteMaterial({map:smokeMap(),transparent:true,opacity:.7,
    depthTest:true,depthWrite:false});
   const sprite=new THREE.Sprite(material);sprite.position.copy(origin);
-  sprite.scale.set(.23,.23,1);scene.add(sprite);
-  puffs.push({sprite,angle:i*2.39996,delay:(i%5)*.085});
+  sprite.scale.set(.23*multiplier,.23*multiplier,1);scene.add(sprite);
+  puffs.push({sprite,angle:i*2.39996,delay:(i%5)*.085,multiplier});
  }
  return puffs;
 }
@@ -1118,11 +1122,11 @@ function updateCardSmoke(puffs,origin,age,duration){
  // First gather into a bright cloud, then lift and dissipate as the card flies out.
  const envelope=Math.min(1,progress/.16)*Math.max(0,1-Math.max(0,progress-.49)/.48);
  for(const p of puffs){
-  const t=Math.max(0,seconds-p.delay);
-  const radius=.1+Math.min(t,1.2)*.28;
+  const t=Math.max(0,seconds-p.delay),scale=p.multiplier||1;
+  const radius=(.1+Math.min(t,1.2)*.28)*scale;
   p.sprite.position.set(origin.x+Math.cos(p.angle+seconds*2.1)*radius,
-   origin.y+.1+t*.45,origin.z+Math.sin(p.angle+seconds*2.1)*radius);
-  const size=.22+Math.min(t,1.3)*.35;p.sprite.scale.set(size,size,1);
+   origin.y+(.1+t*.45)*scale,origin.z+Math.sin(p.angle+seconds*2.1)*radius);
+  const size=(.22+Math.min(t,1.3)*.35)*scale;p.sprite.scale.set(size,size,1);
   p.sprite.material.opacity=.76*envelope;
  }
 }
@@ -1156,7 +1160,7 @@ function newFloatingCard(record){
 function disposeFloatingCard(entry){
  reservedCardSummons.delete(entry.id);
  if(entry.summon)removeCardSmoke(entry.summon.puffs);
- if(entry.recycle)removeCardSmoke(entry.recycle.puffs);
+ if(entry.recycle?.puffs)removeCardSmoke(entry.recycle.puffs);
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
@@ -1207,9 +1211,9 @@ function startCardRecycle(id){
  if(preferReduced){refreshFloatingCards();return true}
  if(entry.summon){removeCardSmoke(entry.summon.puffs);entry.summon=null}
  reservedCardSummons.delete(id);
- // Anchor the smoke at the card's ACTUAL 3D world position, including focus view.
- const origin=entry.group.position.clone();
- entry.recycle={started:performance.now(),origin,puffs:createCardSmoke(origin)};
+ // The card remains at NORMAL ORBIT SIZE for a moment after returning to the
+ // world view. Only then does a tiny smoke cloud grow from that very card.
+ entry.recycle={startAt:performance.now()+350,origin:null,puffs:null};
  document.getElementById('cardFocusActions').hidden=true;
  syncRender();return true;
 }
@@ -1219,10 +1223,24 @@ function updateFloatingCards(now){
  for(let i=0;i<items.length;i++){
   const entry=items[i];
   if(entry.recycle){
-   const fx=entry.recycle,age=Math.max(0,now-fx.started),u=Math.min(1,age/CARD_RECYCLE_MS);
-   // A short rise and spiral of smoke conceals the card shrinking to nothing.
+   const fx=entry.recycle;
+   // First show the original small card in the normal world orbit, unzoomed.
+   if(now<fx.startAt){
+    const p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
+    entry.group.position.set(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
+    entry.group.quaternion.copy(camera.quaternion);
+    entry.group.scale.setScalar(controlPrefs.cardSize);
+    continue;
+   }
+   // Anchor the little puff to the actual card, never its earlier focus camera.
+   if(!fx.puffs){
+    fx.origin=entry.group.position.clone();
+    fx.puffs=createCardSmoke(fx.origin,true);
+   }
+   const age=Math.max(0,now-fx.startAt),u=Math.min(1,age/CARD_RECYCLE_MS);
+   // The card itself dissolves into a compact spiral of its OWN smoke.
    updateCardSmoke(fx.puffs,fx.origin,age,CARD_RECYCLE_MS);
-   entry.group.position.copy(fx.origin);entry.group.position.y+=u*.24;
+   entry.group.position.copy(fx.origin);entry.group.position.y+=u*.12;
    entry.group.quaternion.copy(camera.quaternion);
    entry.group.scale.setScalar(controlPrefs.cardSize*Math.max(.001,1-u*u));
    if(u>=1){
@@ -1314,6 +1332,8 @@ document.getElementById('cardRecycleAccept').addEventListener('click',()=>{
  const id=focusedCard?.id;cardRecycleDialog.close();if(!id)return;
  try{
   window.LivingObjectCraft.recycleCard(localStorage,id);
+  // Restore the player's original 3D overview BEFORE the disappearance effect.
+  exitCardFocus();
   if(!startCardRecycle(id))refreshFloatingCards();
   window.LivingLibrary?.toast?.('卡片回收中；可在卡片創造術中還原');
  }catch(e){window.LivingLibrary?.toast?.(e.message||'回收失敗')}
