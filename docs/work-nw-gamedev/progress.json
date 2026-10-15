@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T10:29:30.337Z",
+  "updated_at": "2026-10-15T11:29:30.360Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -542,10 +542,10 @@
     "requirements_zip": "NOT_EXPANDED; Library plaintext unsupported and prior local bytes pruned; explicit user cycle contract followed"
   },
   "execution": {
-    "lease_owner": "nw-cycle18-spell-authoring",
-    "lease_expires_at": "2026-10-15T11:14:30.337Z",
-    "heartbeat_at": "2026-10-15T10:29:30.337Z",
-    "state": "BUILDING_CANDIDATE",
+    "lease_owner": "nw-cycle19-recover-authoring",
+    "lease_expires_at": "2026-10-15T12:09:30.360Z",
+    "heartbeat_at": "2026-10-15T11:29:30.360Z",
+    "state": "RECOVERING_CANDIDATE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -1359,5 +1359,25 @@
     ],
     "review_limits": "Reviewed current substantive main/subproject plans and their supporting product contracts. Historical duplicate archives and every individual Agent skill file were not exhaustively reread; no claim otherwise.",
     "validation": "Direction/progress metadata update only; no game code, phase PASS, test totals or production version changed."
+  },
+  "recovery_checkpoint": {
+    "work_item_id": "P2-SPELL-AUTHORING-001",
+    "reason": "Workspace maintenance removed uncommitted candidate before GitHub source persistence; recover implementation, verify fresh exact bytes, preserve previous test repair history.",
+    "previous_local_results": "Node345 PASS and authoring8 PASS plus SpellStore15 PASS observed before pruning; NOT evidence for reconstructed bytes until rerun",
+    "test_repairs": [
+      {
+        "id": "CATALOG_EXPECTATION_UPDATE",
+        "effective_fixes": 2,
+        "result": "PASS_BEFORE_PRUNING",
+        "note": "Updated existing exact catalog count and ordered gaming-list expectations including missed multiline fixture."
+      },
+      {
+        "id": "FIELDSET_DISABLED_ASSERTION",
+        "effective_fixes": 1,
+        "result": "REVERIFY_AFTER_RECOVERY",
+        "note": "Playwright isDisabled must target actual save button inheriting fieldset disabled; do not change product to satisfy wrong fieldset assertion."
+      }
+    ],
+    "product_effective_fixes": 0
   }
 }
