@@ -1,0 +1,555 @@
+{
+  "schema": "nw-object-reconcile-evidence-v1",
+  "work_item_id": "P5-OBJECT-RECONCILE-001",
+  "state": "LOCAL_PASS_CI_PENDING",
+  "observed_at": "2026-10-15T07:28:52.212Z",
+  "candidate_sha": "9e6442a172923cce572f8eda5a79098479c4e1eb",
+  "rollback_sha": "6bae41faf76080fba9cab50d6ae6020201c1fd25",
+  "upstream_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+  "scope": "P2_P5_PREPARATORY_ONLY; creator local save to outbox reconciliation, no scene source hook",
+  "expected_behavior": "Creator open/reopen, source storage event, becoming visible and successful local mutation request bounded capture; quota failure never reverses source save; manual rescue preserved",
+  "before": "Released PR235 only captures on explicit manual icon; reopening after save interruption does not repair the queue automatically",
+  "after": "Candidate creator automatically attempts local capture on listed triggers; max two passes per burst, source-change only immediate retry, other failures wait for next trigger; no background loop or transport",
+  "tests": {
+    "local_node": {
+      "result": "PASS",
+      "tests": 345,
+      "fail": 0,
+      "skipped": 0
+    },
+    "schema": [
+      {
+        "schema": "nw-card-json-schema-proof-v1",
+        "result": "PASS",
+        "positive_cases": 2,
+        "negative_cases": 8,
+        "meta_schema": "Draft 2020-12",
+        "limits": "Structural validation only; registry/graph semantic validation is a separate gate"
+      },
+      {
+        "schema": "nw-card-contract-parity-v1",
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9,
+        "scope": "Deterministic synthetic JSON; semantic checks intentionally stricter than structural Schema; not runtime acceptance"
+      }
+    ],
+    "browser": [
+      {
+        "schema": "nw-p0-browser-proof-v1",
+        "commit": null,
+        "observed_at": "2026-10-15T07:26:54.377Z",
+        "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+        "checks": [
+          {
+            "id": "actual_3d_startup",
+            "result": "NOT_TESTED",
+            "ready": false,
+            "diagnostic": "診斷 ENGINE_IMPORT · Error · 兩個 Three.js 引擎來源均無法下載",
+            "release": "2026-10-15.local-object-queue-v1",
+            "logs": [
+              "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+              "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+              "Living Library 3D init failed ENGINE_IMPORT Error: 兩個 Three.js 引擎來源均無法下載\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:861:21"
+            ],
+            "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+          },
+          {
+            "id": "icon_first_controls",
+            "result": "PASS",
+            "scope": "Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved."
+          },
+          {
+            "id": "clean_view_restore_reload",
+            "result": "PASS",
+            "scope": "Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance."
+          },
+          {
+            "id": "forced_engine_failure_fallback",
+            "result": "PASS",
+            "books": 14,
+            "joystick_hidden": true
+          },
+          {
+            "id": "public.research.navigation",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.canvas.workbench",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.startup.tasks",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.calendar",
+            "result": "PASS",
+            "scope": "External link target only; no sign-in"
+          },
+          {
+            "id": "public.knowledge.world",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gba.runtime",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.vault.web",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.gpt.bridge",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "public.system.ui.map",
+            "result": "PASS",
+            "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+          },
+          {
+            "id": "system_book_3d_preferences_ack_fallback",
+            "result": "PASS",
+            "scope": "Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU."
+          },
+          {
+            "id": "unrelated_storage_preserved",
+            "result": "PASS",
+            "scope": "Synthetic sentinel; not a real GBA-save test"
+          }
+        ]
+      },
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "card_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "card_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "non_json",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse_phrase",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      },
+      {
+        "schema": "nw-definition-snapshot-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "input_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "policy_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "platform_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "valid_and_owner_gate",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic definition registration and local invocation; no scene/device claim"
+      },
+      {
+        "schema": "nw-spell-store-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "click saves card and outbox atomically",
+            "result": "PASS"
+          },
+          {
+            "case": "reload preserves card/outbox and unrelated storage",
+            "result": "PASS"
+          },
+          {
+            "case": "offline edits coalesce and exact retries do not duplicate",
+            "result": "PASS"
+          },
+          {
+            "case": "stale second connection cannot overwrite durable revision",
+            "result": "PASS"
+          },
+          {
+            "case": "outbox write failure rolls back both stores",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid cards rejected with zero external transport",
+            "result": "PASS"
+          },
+          {
+            "case": "mismatched hash receipt cannot clear pending intent",
+            "result": "PASS"
+          },
+          {
+            "case": "failure persists backoff and duplicate failure does not advance attempts",
+            "result": "PASS"
+          },
+          {
+            "case": "reload retains retry schedule and synthetic remote recovery acknowledges exactly once",
+            "result": "PASS"
+          },
+          {
+            "case": "delayed old acknowledgement cannot remove newer offline edit",
+            "result": "PASS"
+          },
+          {
+            "case": "acknowledgement write failure rolls back card and outbox with no external transport",
+            "result": "PASS"
+          },
+          {
+            "case": "pump delivers through injected mock, persists failed delivery and retries only when due",
+            "result": "PASS"
+          },
+          {
+            "case": "cancelled in-flight pump ignores late receipt and retains one-flight guard until settled",
+            "result": "PASS"
+          },
+          {
+            "case": "offline edit during transport cannot be acknowledged by the old send",
+            "result": "PASS"
+          },
+          {
+            "case": "timeout plus late response recovers with same idempotency key and one synthetic remote write",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Isolated real IndexedDB; synthetic card and outbox only, no network transport, scene, deployed UI or device claim"
+      },
+      {
+        "schema": "nw-object-backup-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+            "result": "PASS"
+          },
+          {
+            "case": "offline file inspection validates counts without restoring or sending",
+            "result": "PASS"
+          },
+          {
+            "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+            "result": "PASS"
+          },
+          {
+            "case": "actual creator icon prepares durable local intents offline, reload retry deduplicates and clearly remains not uploaded",
+            "result": "PASS"
+          }
+        ]
+      },
+      {
+        "schema": "nw-object-outbox-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "actual blank card/book IDs, versions and unknown object fields captured once without changing source",
+            "result": "PASS"
+          },
+          {
+            "case": "reload/offline edit/recycle coalesces latest same-ID intent and retains original saves",
+            "result": "PASS"
+          },
+          {
+            "case": "independent connection cannot overwrite newer revision or equal-revision different contents",
+            "result": "PASS"
+          },
+          {
+            "case": "pending write failure rolls back version ledger atomically; same revision can retry without source loss",
+            "result": "PASS"
+          },
+          {
+            "case": "changed source is rejected; absent storage never erases pending intents or infers deletion",
+            "result": "PASS"
+          },
+          {
+            "case": "unsupported public/foreign object rejects whole capture rather than silently dropping or converting it",
+            "result": "PASS"
+          },
+          {
+            "case": "competing IDB connections serialize batches and keep highest observed object revision",
+            "result": "PASS"
+          },
+          {
+            "case": "synthetic idempotent consumer reads object text twice with one mock write per key; queue stays pending authorization",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Explicit isolated local capture; no scene hook, background worker, real remote, credentials or AI readback"
+      },
+      {
+        "schema": "nw-object-reconcile-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "reopening actual creator automatically captures existing card and book without touching source",
+            "result": "PASS"
+          },
+          {
+            "case": "offline save, recycle and restore prepare latest same-ID local intents through actual UI",
+            "result": "PASS"
+          },
+          {
+            "case": "injected queue quota failure preserves completed save, reports pending repair once and reopening catches up",
+            "result": "PASS"
+          },
+          {
+            "case": "same-origin storage event catches peer book revision without rewriting scene or source",
+            "result": "PASS"
+          },
+          {
+            "case": "manual icon rescue remains available and repeated automatic/manual capture does not duplicate",
+            "result": "PASS"
+          },
+          {
+            "case": "actual iframe destroyed during paused queue open retains save; fresh creator iframe repairs latest revision without remote requests",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate creator only; no staging, 3D, device, private transport or real remote"
+      }
+    ],
+    "reconciliation": {
+      "schema": "nw-object-reconcile-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "case": "reopening actual creator automatically captures existing card and book without touching source",
+          "result": "PASS"
+        },
+        {
+          "case": "offline save, recycle and restore prepare latest same-ID local intents through actual UI",
+          "result": "PASS"
+        },
+        {
+          "case": "injected queue quota failure preserves completed save, reports pending repair once and reopening catches up",
+          "result": "PASS"
+        },
+        {
+          "case": "same-origin storage event catches peer book revision without rewriting scene or source",
+          "result": "PASS"
+        },
+        {
+          "case": "manual icon rescue remains available and repeated automatic/manual capture does not duplicate",
+          "result": "PASS"
+        },
+        {
+          "case": "actual iframe destroyed during paused queue open retains save; fresh creator iframe repairs latest revision without remote requests",
+          "result": "PASS"
+        }
+      ],
+      "scope": "Candidate creator only; no staging, 3D, device, private transport or real remote"
+    },
+    "protected_main_blobs": {
+      "result": "PASS",
+      "files": [
+        "index.html (entire 3D scene)",
+        "object-craft.js",
+        "public-catalog.js",
+        "system-controls.html",
+        "card-placement.js",
+        "GEN2 source",
+        "native/runtime manifests"
+      ]
+    }
+  },
+  "ci": {
+    "result": "IN_PROGRESS",
+    "run_id": 38698921195
+  },
+  "preview": {
+    "staging": "NOT_TESTED",
+    "device": "NOT_TESTED",
+    "gpu": "NOT_TESTED",
+    "release": "NOT_RELEASED_THIS_SLICE"
+  },
+  "privacy": "Synthetic records only; no credentials/audio/private card content in repository, CI or evidence; zero outbound in isolated reconciliation test",
+  "limits": [
+    "localStorage source and IndexedDB queue are separate; no cross-store atomicity",
+    "Closing iframe can interrupt queue preparation; creator reopen repairs, no guarantee during closed page",
+    "Changes on scene/other creator surfaces are captured only when this creator is opened or receives a storage/lifecycle trigger",
+    "No auto network, authorized transport, remote acknowledgement or AI readback",
+    "Full P0/P1/P2/P5/P7 gates remain unverified"
+  ],
+  "source_files": [
+    ".github/workflows/living-library-live-proof.yml",
+    "living-library/live/index.html",
+    "living-library/live/card-creation.html",
+    "living-library/live/object-reconciler.js",
+    "tests/browser/object-backup.cjs",
+    "tests/browser/object-reconcile.cjs",
+    "tests/browser/package.json",
+    "tests/living-library-object-reconciler.test.mjs"
+  ],
+  "requirements_read": "v1.0 mother Skill/Workflow/validation, v1.1 additive entry/extension and v0.4 delivery plan read; canonical v1.2 cycle zip four named entries read from existing exact resolved file; no spatial or Agent Magic subproject enabled",
+  "effective_fixes": 0,
+  "failure_fingerprints": [],
+  "environment_events": [
+    {
+      "code": "PLAYWRIGHT_BINARY_MISSING_NEW_RUNTIME",
+      "result": "RESOLVED",
+      "action": "Installed pinned Playwright1.56.1 Chromium Headless Shell1194, then ran real browser tests; not classified as product failure"
+    }
+  ]
+}
