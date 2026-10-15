@@ -58,4 +58,27 @@ public final class LivingLibraryActivityTest {
         }
         fail("Public workbench did not complete in real WebView: " + result);
     }
+    @Test public void voiceTransportExistsOnlyWithSupportedWebMessageFeature() throws Exception {
+        long deadline = System.currentTimeMillis() + 30000;
+        while (System.currentTimeMillis() < deadline) {
+            java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.atomic.AtomicReference<String> value = new java.util.concurrent.atomic.AtomicReference<>("");
+            final boolean[] supported = {false};
+            rule.getScenario().onActivity(activity -> {
+                supported[0] = androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER);
+                activity.workbenchView().evaluateJavascript(
+                    "(function(){if(!window.LivingLibrary)return 'loading';"
+                    + "var bridge=window.LivingLibraryNativeVoice;"
+                    + "if(!bridge)return 'unsupported';"
+                    + "bridge.postMessage(JSON.stringify({v:1,op:'start',session:'invalid session!'}));"
+                    + "return typeof bridge.postMessage==='function'&&typeof AminGen2==='undefined'&&typeof AminPackageCanvasFiles==='undefined'?'scoped':'unsafe';})()",
+                    answer -> { value.set(answer); latch.countDown(); });
+            });
+            if (!latch.await(5, java.util.concurrent.TimeUnit.SECONDS)) continue;
+            if ("\"loading\"".equals(value.get())) { Thread.sleep(100); continue; }
+            assertEquals(supported[0] ? "\"scoped\"" : "\"unsupported\"", value.get());
+            return;
+        }
+        fail("Voice transport did not initialize in trusted library WebView");
+    }
 }

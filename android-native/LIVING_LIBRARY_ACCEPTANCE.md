@@ -51,3 +51,11 @@ OWNER 明確要求「發布新版，這次有其他的更動一起更新」，�
 本版 metadata channel=release，versionCode=203 / 0.11.24-rc1-bridge107。發布不代表 OWNER 實際裝置全項驗收通過；遠端載入、斷線退回、GBA 遊戲存檔/手把、原生入口與同證書原地升級需要驗收，失敗時不得宣稱已成功。簽章證書指紋與既有通道一致。
 
 **後續正常網頁新增與調整仍透過 Pages**，只有新 Android 權限、原生能力或修正原生 WebView 啟動機制才需重新產生 APK。
+
+## 2026-10-15｜圖書館前景語音通道更新
+
+OWNER 在本次對話明確要求「不用候選，直接幫我更新」，授權 APP 的語音連接更新。網頁整合仍保留獨立分支供驗收。
+
+Bridge108 / code204 / 0.11.24-rc2：使用 WebViewCompat 的精確 origin + 主框架 + 前景 + 首頁 path 檢查，只提供 start/stop 與文字結果，不執行任何口令。命令映射在網頁，以後追加 Book 以外的單字不用逐次改 APK。permission、session、背景／導航停止均由原生處理；不新增權限，不搬移 GEN2 或存檔。
+
+PR #236 第一輪 unit/lint/build 已成功；API35 emulator 圖書館導覽／返回已成功。增加橋接可見性及非法 session 測試與本次版本資訊後重新跑同 SHA 檢查。真實麥克風及辨識率仍 NOT_TESTED；先前需求已將語音列為待測，不得宣稱實機驗收通過。

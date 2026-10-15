@@ -1,18 +1,18 @@
 {
-  "versionCode": 203,
-  "versionName": "0.11.24-rc1",
+  "versionCode": 204,
+  "versionName": "0.11.24-rc2",
   "channel": "release",
-  "bridge": 107,
-  "releaseSequence": 41,
+  "bridge": 108,
+  "releaseSequence": 42,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
   "packageId": "com.amin.pocketgba",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
   "releaseNotes": [
-    "念動圖書館現在優先載入 GitHub Pages 線上 3D 圖書館；一般書籍、卡片、網頁 UI 與城堡房間後續透過網頁更新，不需為每張卡片更新 APK。",
-    "《遊戲之書》新增「知識城堡｜遊戲設計」卡片及記憶宮殿介紹；原有 GBA、Pocket Vault 卡片與存檔／手把功能保留。",
-    "保留 Bridge 106 的 3D 書架、書名、安卓之書16項原生入口、GEN2 授權後投影；網路載入失敗時使用 APK 內建離線書庫。",
-    "安全：線上圖書館僅有既有白名單原生路由，須主框架真實點擊；未新增 Android 權限、JS Bridge 或私有知識封裝。",
-    "版本 0.11.24-rc1-bridge107 / code203；Android CI 與模擬器已驗證，OWNER 手機網路切換、GBA 存檔與原地更新仍需實機驗收。"
+    "新增圖書館前景語音文字通道：網頁可啟動／停止 APP 辨識並接收文字，Book 與未來口令由網頁定義。",
+    "語音限定可信圖書館主頁及主框架；離開頁面、切換 APP 或銷毀時停止。沿用已有麥克風權限，不新增語音球或語音跳轉頁。",
+    "保留原有 GBA、存檔、手把、安卓之書與離線書庫。一般書卡及動畫更新仍由網頁提供。",
+    "萬物圖鑑及卡片之書的網頁整合另提供預覽，未併入正式網頁；本次先更新 APP 連接能力。",
+    "實際手機語音辨識、權限首次授予及長時間搖桿操作需裝置驗收，不表示已完成麥克風實測。"
   ]
 }
