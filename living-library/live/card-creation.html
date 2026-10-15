@@ -38,6 +38,13 @@ summary{color:#c5b795;cursor:pointer}
 #cardList{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px;margin-top:14px}
 .mini{width:100%;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #7d6e59;border-radius:9px;background:#e7d5b5;color:#4c3824;overflow-wrap:anywhere}
 .mini.active{outline:3px solid #8bd4c7}.mini strong{font-size:13px}
+#recycleList{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px;padding-top:10px}
+.recycleItem{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:10px;border:1px dashed #96856c;border-radius:9px;background:#17263a}
+.recycleItem span{overflow-wrap:anywhere;min-width:0}
+.recycleItem button,#recycleCard{min-width:46px;min-height:46px;border-radius:8px;border:1px solid #b9a37f;background:#574a3e;color:#fff0d7;font-size:22px;cursor:pointer}
+#recycleDialog{border:1px solid #b49a72;border-radius:15px;background:#192b3d;color:#f4e6d1;max-width:min(92%,420px);padding:21px}
+#recycleDialog::backdrop{background:#03080fc7}
+#recycleDialog button{min-width:56px;min-height:46px;border:1px solid #b69d76;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
 @media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
@@ -47,7 +54,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <main>
 <header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
-<p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入獨立的遠距環繞軌道，尚未放入任何書。</p>
+<p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入人物與漂浮書本之間的專屬內圈軌道，尚未放入任何書。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
   <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
@@ -61,13 +68,22 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
    <label>預期用途（純文字草稿）<textarea id="editDescription" maxlength="500" placeholder="例如：我希望這張卡能讓書本合上"></textarea></label>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
+   <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
  </section>
 </div>
 <h1>已創造的卡片 <small id="cardCount"></small></h1>
+<p id="objectStats" aria-live="polite"></p>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
+<details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
+<p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
+<div id="recycleList"></div></details>
+<dialog id="recycleDialog" aria-label="確認回收卡片">
+<p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
+<div><button id="cancelRecycle" type="button" aria-label="取消回收" title="取消">×</button>
+<button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
 <script src="./object-craft.js"></script>
@@ -92,12 +108,29 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
   $('saveCard').disabled=!card;
+  $('recycleCard').disabled=!card;
   const preview=$('cardPreview');preview.classList.remove('summon','hover');
   if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
   else if(card)preview.classList.add('hover');
  }
  function refresh(){
-  const items=cards();$('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
+  const items=cards(),stats=Craft.getStats(localStorage),deleted=Craft.listRecycledCards(localStorage);
+  $('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
+  $('objectStats').textContent='懸浮 '+stats.floatingCards+' ｜ 書內 '+stats.inBooks+
+   ' ｜ 自製書 '+stats.createdBooks+' ｜ 回收 '+stats.recycledCards;
+  $('recycleCount').textContent=stats.recycledCards;
+  const bin=$('recycleList');bin.replaceChildren();
+  for(const card of [...deleted].reverse()){
+   const row=document.createElement('div');row.className='recycleItem';
+   const label=document.createElement('span');label.textContent=card.title+' #'+card.id.slice(-8);
+   const restore=document.createElement('button');restore.type='button';
+   restore.textContent='♻';restore.setAttribute('aria-label','還原 '+card.title);restore.title='還原卡片';
+   restore.addEventListener('click',()=>{
+    try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('已還原卡片，將重新進入 3D 懸浮軌道。')}
+    catch(e){status(e.message,true)}
+   });
+   row.append(label,restore);bin.append(row);
+  }
   $('createCard').disabled=items.length>=Craft.MAX_CARDS;
   const host=$('cardList');host.replaceChildren();
   for(const card of [...items].reverse()){
@@ -110,8 +143,21 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    host.append(btn);
   }
  }
+ $('recycleCard').addEventListener('click',()=>{
+  if(!currentId)return;
+  $('recyclePrompt').textContent='確定回收「'+$('editName').value+'」？卡片會退出 3D 軌道，但仍可還原。';
+  $('recycleDialog').showModal();
+ });
+ $('cancelRecycle').addEventListener('click',()=>$('recycleDialog').close());
+ $('confirmRecycle').addEventListener('click',()=>{
+  const id=currentId;$('recycleDialog').close();
+  if(!id)return;
+  try{Craft.recycleCard(localStorage,id);const remain=cards();show(remain.at(-1)||null);refresh();
+   notify('card-recycled',id);status('卡片已進入回收站，可從下方還原。');}
+  catch(e){status(e.message||'回收失敗',true)}
+ });
  $('createCard').onclick=()=>{
-  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
  $('editForm').addEventListener('submit',event=>{
@@ -124,7 +170,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  try{
   const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
- }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;status(e.message||'本機讀取失敗',true)}
+ }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
 </script>
 </body></html>

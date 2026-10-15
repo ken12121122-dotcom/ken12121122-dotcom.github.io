@@ -42,7 +42,7 @@ test('new creation event exits its iframe book before visible smoke in the origi
  assert.match(html,/event\.source!==\$\('readerFrame'\)\.contentWindow/);
  assert.match(html,/readerCard\?\.id==='public\.gaming\.card\.creation'/);
  assert.match(html,/floatingCards\(localStorage\)\.some\(card=>card\.id===id\)/);
- assert.match(html,/closeBook\(\); \/\/ Reveal the real 3D scene immediately/);
+ assert.match(html,/scene\.startCardSummon\(id\); \/\/ Stage the invisible card before the first scene frame/);
  assert.match(html,/scene\.startCardSummon\(id\)/);
  assert.match(html,/function startCardSummon\(id\)/);
  assert.match(html,/createCardSmoke\(origin\)/);
@@ -51,7 +51,7 @@ test('new creation event exits its iframe book before visible smoke in the origi
  assert.match(html,/hasCardSummon\(\)/);
  assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(html,/BoxGeometry\(\.45,\.66,\.025\)/);
- assert.match(html,/refreshFloatingCards,startCardSummon,exitCardFocus/);
+ assert.match(html,/refreshFloatingCards,queueCardSummon,startCardSummon,exitCardFocus/);
  const p=await read('living-library/live/card-placement.js');
  assert.match(p,/Independent|INNER|Inner/);
  assert.doesNotMatch(p,/6\.35|7\.42|8\.48/);
@@ -78,14 +78,14 @@ test('System Book contains bounded working game-parameter controls, not a new du
  assert.match(page,/restoreCardValues\(cardParameterDefaults\)/);
  assert.match(live,/for\(const \[field,limits\] of Object\.entries/);
  assert.match(live,/const entry=items\[i\],p=CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
- assert.match(live,/age\/controlPrefs\.cardSummonDuration/);
+ assert.match(live,/age\/duration/);
  assert.match(live,/\*controlPrefs\.cardSize/);
  assert.doesNotMatch(page,/github_pat_|sk-proj-/);
 });
 test('card orbit tuner clamps range, leaves core book orbit unchanged, and supports pausing',()=>{
  const original=Books.orbitPosition(0,0);
  const opts=C.normalizeOptions({cardSize:999,cardOrbitDistance:999,cardOrbitSpeed:-12,cardSummonDuration:1e9});
- assert.deepEqual(opts,{cardSize:1.2,cardOrbitDistance:1.06,cardOrbitSpeed:0,cardSummonDuration:2600});
+ assert.deepEqual(opts,{cardSize:1.2,cardOrbitDistance:1.06,cardOrbitSpeed:0,cardSummonDuration:4500});
  const frozen=C.orbitPosition(0,11,{cardOrbitSpeed:0});
  const later=C.orbitPosition(0,300,{cardOrbitSpeed:0});
  assert.ok(Math.abs(frozen.x-later.x)<1e-10 && Math.abs(frozen.z-later.z)<1e-10);

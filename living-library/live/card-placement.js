@@ -11,8 +11,8 @@
  const RADII=[1.52,1.57,1.62,1.68,1.74];
  const HEIGHTS=[2.22,2.90,3.58,4.26,4.94];
  const MAX_CARDS=CAPACITIES.reduce((n,x)=>n+x,0);
- const DEFAULTS=Object.freeze({cardSize:1,cardOrbitDistance:1,cardOrbitSpeed:1,cardSummonDuration:1700});
- const LIMITS=Object.freeze({cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],cardOrbitSpeed:[0,1.8],cardSummonDuration:[900,2600]});
+ const DEFAULTS=Object.freeze({cardSize:1,cardOrbitDistance:1,cardOrbitSpeed:1,cardSummonDuration:2850});
+ const LIMITS=Object.freeze({cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],cardOrbitSpeed:[0,1.8],cardSummonDuration:[1800,4500]});
  function normalizeOptions(raw){
   const obj=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
   const result={};
