@@ -128,6 +128,14 @@ async function main(){
    await p.locator('#closeDrawer').click();
    report.checks.push({id:capability.id,result:'PASS',scope:capability.external?'External link target only; no sign-in':'Public card click, rendered iframe and return; underlying application actions not exercised'});
   }
+  // Focus presentation hides obstructing panels without overwriting the user's clean-view preference.
+  const cleanBefore=await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1'));
+  await p.evaluate(()=>document.body.classList.add('atlas-focused'));
+  for(const selector of ['#catalog','.bottom','.top','#cleanViewToggle'])assert.equal(await p.locator(selector).isVisible(),false);
+  await p.evaluate(()=>document.body.classList.remove('atlas-focused'));
+  assert.equal(await p.locator('#catalog').isVisible(),true);assert.equal(await p.locator('.bottom').isVisible(),true);
+  assert.equal(await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1')),cleanBefore);
+  report.checks.push({id:'atlas_focus_overlay_visibility',result:'PASS',scope:'Actual CSS focus class hides catalog/navigation and restores them without changing clean-view preference; geometry/state tested separately.'});
   // End-to-end regression: real System Book -> same-origin iframe slider ->
   // guarded parent handler -> actual shared preference object -> acknowledged value.
   if(await p.locator('#catalogHead').getAttribute('aria-expanded')==='false')await p.locator('#catalogHead').click();
