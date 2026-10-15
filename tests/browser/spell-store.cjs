@@ -25,6 +25,43 @@ async function main(){
   const conflict=await page.evaluate(async()=>{const other=await LivingSpellStore.SpellStore.open(registry,{database:'nw-rune-creations-browser-test'});let code;try{await other.save({...card,name:'Stale edit'},{expected_revision:1})}catch(e){code=e.code}other.close();return {code,current:await store.get(card.spell_id),queue:await store.pending()}});assert.equal(conflict.code,'LOCAL_REVISION_CONFLICT');assert.equal(conflict.current.local_revision,2);assert.equal(conflict.queue[0].payload.name,'Edited offline');proof.checks.push({case:'stale second connection cannot overwrite durable revision',result:'PASS'});
   const atomic=await page.evaluate(async()=>{const original=IDBObjectStore.prototype.put;let code;IDBObjectStore.prototype.put=function(...args){if(this.name==='outbox')throw new DOMException('synthetic quota','QuotaExceededError');return original.apply(this,args)};try{await store.save({...card,name:'Failed save'},{expected_revision:2})}catch(e){code=e.code}finally{IDBObjectStore.prototype.put=original}return {code,current:await store.get(card.spell_id),queue:await store.pending()}});assert.equal(atomic.code,'LOCAL_SAVE_FAILED');assert.equal(atomic.current.local_revision,2);assert.equal(atomic.queue[0].local_revision,2);proof.checks.push({case:'outbox write failure rolls back both stores',result:'PASS'});
   const invalid=await page.evaluate(async()=>{const bad={...card,javascript:'synthetic'};let code;try{await store.save(bad,{expected_revision:2})}catch(e){code=e.code}return {code,queue:await store.pending()}});assert.equal(invalid.code,'INVALID_CARD_SCHEMA');assert.equal(invalid.queue.length,1);assert.equal(outbound,0);proof.checks.push({case:'invalid cards rejected with zero external transport',result:'PASS'});
+  await page.evaluate(()=>{
+   window.ticketOf=row=>({spell_id:row.spell_id,local_revision:row.local_revision,content_hash:row.content_hash,idempotency_key:row.idempotency_key,attempts:row.attempts});
+   window.receiptOf=t=>({spell_id:t.spell_id,local_revision:t.local_revision,content_hash:t.content_hash,idempotency_key:t.idempotency_key,remote_revision:'mock.commit.001'});
+  });
+  const mismatch=await page.evaluate(async()=>{const t=ticketOf((await store.pending())[0]);const result=await store.acknowledge(t,{...receiptOf(t),content_hash:'0'.repeat(64)});return {result,rows:await store.pending(),card:await store.get(t.spell_id)}});
+  assert.equal(mismatch.result.reason,'ACK_MISMATCH');assert.equal(mismatch.rows.length,1);assert.equal(mismatch.card.sync_state,'pending_sync');proof.checks.push({case:'mismatched hash receipt cannot clear pending intent',result:'PASS'});
+  const retry=await page.evaluate(async()=>{const t=ticketOf((await store.pending())[0]);window.oldTicket=t;const failed=await store.recordFailure(t,{now:1000});const duplicate=await store.recordFailure(t,{now:1000});return {failed,duplicate,before:await store.due({now:1999}),at:await store.due({now:2000})}});
+  assert.equal(retry.failed.next_attempt_at,2000);assert.equal(retry.duplicate.reason,'STALE_OUTBOX');assert.equal(retry.before.length,0);assert.equal(retry.at[0].attempts,1);proof.checks.push({case:'failure persists backoff and duplicate failure does not advance attempts',result:'PASS'});
+  // Reload real IndexedDB before a second failed delivery and recovery.
+  await page.reload();
+  for(const file of ['action-registry','spell-contract','spell-store'])await page.addScriptTag({path:path.resolve(__dirname,'../../living-library/live/'+file+'.js')});
+  await page.evaluate(async()=>{
+   const registry=new LivingActionRegistry.ActionRegistry();
+   for(const [action_id,kind] of [['book.drag_active','condition'],['book.synthetic_effect','effect']])registry.register({action_id,name:action_id,kind,version:'0.1.0',target_type:'library.book_instance',inputs:{type:'object',properties:{},required:[],additionalProperties:false},outputs:{type:'boolean'},platform:['web'],policy:{scope:'local'},guard:()=>false,execute:()=>false});
+   window.registry=registry;window.store=await LivingSpellStore.SpellStore.open(registry,{database:'nw-rune-creations-browser-test'});
+   window.ticketOf=row=>({spell_id:row.spell_id,local_revision:row.local_revision,content_hash:row.content_hash,idempotency_key:row.idempotency_key,attempts:row.attempts});
+   window.receiptOf=t=>({spell_id:t.spell_id,local_revision:t.local_revision,content_hash:t.content_hash,idempotency_key:t.idempotency_key,remote_revision:'mock.commit.001'});
+  });
+  const recovered=await page.evaluate(async()=>{
+   const before=await store.due({now:1999});const row=(await store.pending())[0];const failed=await store.recordFailure(ticketOf(row),{now:2000});const waiting=await store.due({now:3999});const t=ticketOf((await store.due({now:4000}))[0]);
+   // Synthetic remote fixture only: no HTTP and no real private data.
+   const mockRemote=async attempt=>receiptOf(attempt);const result=await store.acknowledge(t,await mockRemote(t),{now:4000});
+   return {before,failed,waiting,result,rows:await store.pending(),card:await store.get(t.spell_id),duplicate:await store.acknowledge(t,receiptOf(t),{now:4000}),t};
+  });
+  assert.equal(recovered.before.length,0);assert.equal(recovered.failed.next_attempt_at,4000);assert.equal(recovered.waiting.length,0);assert.equal(recovered.result.reason,'ACKNOWLEDGED');assert.equal(recovered.rows.length,0);assert.equal(recovered.card.local_revision,2);assert.equal(recovered.card.sync_state,'remote_acknowledged');assert.equal(recovered.duplicate.reason,'STALE_OUTBOX');proof.checks.push({case:'reload retains retry schedule and synthetic remote recovery acknowledges exactly once',result:'PASS'});
+  const stale=await page.evaluate(async old=>{
+   const prior=await store.get(old.spell_id);const edit=await store.save({...prior.card,name:'Newer offline revision'},{expected_revision:2});const ignored=await store.acknowledge(old,receiptOf(old));return {ignored,edit,rows:await store.pending()};
+  },recovered.t);
+  assert.equal(stale.ignored.reason,'STALE_OUTBOX');assert.equal(stale.rows[0].local_revision,3);assert.equal(stale.edit.sync_state,'pending_sync');proof.checks.push({case:'delayed old acknowledgement cannot remove newer offline edit',result:'PASS'});
+  const rollback=await page.evaluate(async()=>{
+   const t=ticketOf((await store.pending())[0]);const original=IDBObjectStore.prototype.delete;let code;
+   IDBObjectStore.prototype.delete=function(...args){if(this.name==='outbox')throw Error('synthetic failure');return original.apply(this,args)};
+   try{await store.acknowledge(t,receiptOf(t))}catch(e){code=e.code}finally{IDBObjectStore.prototype.delete=original}
+   let invalid;try{await store.acknowledge(t,null)}catch(e){invalid=e.code}
+   return {code,invalid,rows:await store.pending(),card:await store.get(t.spell_id)};
+  });
+  assert.equal(rollback.code,'OUTBOX_UPDATE_FAILED');assert.equal(rollback.invalid,'INVALID_SYNC_RECEIPT');assert.equal(rollback.rows.length,1);assert.equal(rollback.card.sync_state,'pending_sync');assert.equal(outbound,0);proof.checks.push({case:'acknowledgement write failure rolls back card and outbox with no external transport',result:'PASS'});
   await page.evaluate(()=>store.close());await context.close();proof.result='PASS';
  }finally{await browser.close()}
 }

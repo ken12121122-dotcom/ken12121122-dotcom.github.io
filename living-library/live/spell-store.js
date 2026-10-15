@@ -3,6 +3,13 @@
  'use strict';
  const fail=code=>{const error=new Error(code);error.code=code;throw error};
  const validID=id=>typeof id==='string'&&/^[a-z][a-z0-9_.-]{0,127}$/.test(id);
+ const validTime=now=>Number.isSafeInteger(now)&&now>=0&&now<=8640000000000000-300000;
+ function ticket(input){
+  let value;try{value=Registry.snapshotJSON(input)}catch{fail('INVALID_OUTBOX_TICKET')}
+  if(!value||Object.keys(value).sort().join(',')!=='attempts,content_hash,idempotency_key,local_revision,spell_id'||!validID(value.spell_id)||!Number.isSafeInteger(value.local_revision)||value.local_revision<1||!Number.isSafeInteger(value.attempts)||value.attempts<0||!/^\w{64}$/.test(value.content_hash)||!/^[0-9a-f]{64}$/.test(value.content_hash)||value.idempotency_key!==value.spell_id+':'+value.local_revision+':'+value.content_hash)fail('INVALID_OUTBOX_TICKET');
+  return value;
+ }
+ const same=(a,b)=>!!a&&a.spell_id===b.spell_id&&a.local_revision===b.local_revision&&a.content_hash===b.content_hash&&a.idempotency_key===b.idempotency_key;
  const freezeRecord=row=>row==null?null:Object.freeze({...row,...(row.card?{card:Registry.snapshotJSON(row.card)}:{}),...(row.payload?{payload:Registry.snapshotJSON(row.payload)}:{})});
  async function hash(card){const bytes=new TextEncoder().encode(JSON.stringify(card));const digest=await globalThis.crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
  class SpellStore{
@@ -29,6 +36,46 @@
   }
   get(spell_id){if(!validID(spell_id))fail('INVALID_SPELL_ID');return this.#read('spells',spell_id)}
   pending(){return this.#read('outbox')}
+  async due({now=Date.now()}={}){
+   if(!validTime(now))fail('INVALID_SYNC_TIME');
+   return Object.freeze((await this.pending()).filter(row=>(row.next_attempt_at||0)<=now));
+  }
+  #settle(input,receipt,now){
+   if(this.#closed)fail('STORAGE_CLOSED');
+   const attempt=ticket(input);if(!validTime(now))fail('INVALID_SYNC_TIME');
+   let ack;
+   if(receipt!==null){
+    try{ack=Registry.snapshotJSON(receipt)}catch{fail('INVALID_SYNC_RECEIPT')}
+    if(!ack||Object.keys(ack).sort().join(',')!=='content_hash,idempotency_key,local_revision,remote_revision,spell_id'||typeof ack.remote_revision!=='string'||!/^[a-zA-Z0-9_.:-]{1,128}$/.test(ack.remote_revision))fail('INVALID_SYNC_RECEIPT');
+    if(!same(ack,attempt))return Promise.resolve(Object.freeze({applied:false,reason:'ACK_MISMATCH'}));
+   }
+   return new Promise((resolve,reject)=>{
+    const tx=this.#db.transaction(['spells','outbox'],'readwrite'),spells=tx.objectStore('spells'),outbox=tx.objectStore('outbox');let result,current,queued,ready=0;
+    tx.onabort=()=>reject(Object.assign(new Error('OUTBOX_UPDATE_FAILED'),{code:'OUTBOX_UPDATE_FAILED'}));
+    tx.oncomplete=()=>resolve(Object.freeze(result));
+    const apply=()=>{
+     if(++ready!==2)return;
+     try{
+      if(!same(queued,attempt)||queued.attempts!==attempt.attempts||current?.local_revision!==attempt.local_revision||current?.content_hash!==attempt.content_hash){result={applied:false,reason:'STALE_OUTBOX'};return}
+      if(ack){
+       spells.put({...current,sync_state:'remote_acknowledged',remote_revision:ack.remote_revision,remote_content_hash:ack.content_hash,acknowledged_at:new Date(now).toISOString()});outbox.delete(attempt.spell_id);
+       result={applied:true,reason:'ACKNOWLEDGED'};
+      }else{
+       if(!Number.isSafeInteger(queued.attempts+1)){tx.abort();return}
+       const next_attempt_at=now+Math.min(300000,1000*2**Math.min(queued.attempts,9));
+       outbox.put({...queued,attempts:queued.attempts+1,sync_state:'retry_wait',last_error_code:'TRANSPORT_FAILED',next_attempt_at});
+       result={applied:true,reason:'RETRY_SCHEDULED',next_attempt_at};
+      }
+     }catch{tx.abort()}
+    };
+    const a=spells.get(attempt.spell_id),b=outbox.get(attempt.spell_id);
+    a.onsuccess=()=>{current=a.result;apply()};b.onsuccess=()=>{queued=b.result;apply()};
+   });
+  }
+  // Receipts come only from a separately authorized caller. These methods do
+  // not authenticate a remote or transmit data, and are not loaded by the scene.
+  acknowledge(attempt,receipt,{now=Date.now()}={}){if(receipt==null)fail('INVALID_SYNC_RECEIPT');return this.#settle(attempt,receipt,now)}
+  recordFailure(attempt,{now=Date.now()}={}){return this.#settle(attempt,null,now)}
   async save(card,{expected_revision=0}={}){
    if(this.#closed)fail('STORAGE_CLOSED');
    if(!Number.isSafeInteger(expected_revision)||expected_revision<0)fail('INVALID_REVISION');

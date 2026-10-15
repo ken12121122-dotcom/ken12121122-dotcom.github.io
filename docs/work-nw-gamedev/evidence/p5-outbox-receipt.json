@@ -1,0 +1,31 @@
+{
+  "schema": "nw-outbox-receipt-v1",
+  "work_item_id": "P5-OUTBOX-RECEIPT-001",
+  "state": "CI_PENDING",
+  "source_baseline": "45acc7e63d32e595eb1c1e9c7c1c0fb7e419dce7",
+  "scope": "P2_P5_PREPARATORY_ONLY; unloaded store receipt and retry metadata, synthetic remote fixture only",
+  "changes": [
+    "Due queue reads persisted next_attempt_at",
+    "Failure compares original version/hash/idempotency/attempt count before increment; duplicate/stale failures ignored",
+    "Retry schedule 1s then exponential doubling capped at 300s; caller-driven only, no background timer",
+    "Matching acknowledgement updates local receipt and deletes pending intent in one transaction",
+    "Newer edits and storage errors preserve current pending data"
+  ],
+  "local_node": {
+    "result": "PASS",
+    "tests": 305,
+    "scope": "Existing regression suite; IndexedDB runtime evidence pending CI"
+  },
+  "staging": "NOT_TESTED",
+  "device": "NOT_TESTED",
+  "authorized_transport": "WAIT_OWNER",
+  "remote_roundtrip": "NOT_TESTED",
+  "ai_readback": "NOT_TESTED",
+  "production_rune_feature_delta": 0,
+  "limits": [
+    "No network client or automatic worker",
+    "Receipts are data from a separately authorized caller; this store does not authenticate a remote",
+    "Synthetic mock is not private GitHub synchronization",
+    "No server conflict resolution, export or migration acceptance"
+  ]
+}

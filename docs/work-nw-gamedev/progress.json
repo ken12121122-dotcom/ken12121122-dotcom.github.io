@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T01:30:26.408Z",
+  "updated_at": "2026-10-15T01:32:50.152Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -120,7 +120,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P5-OUTBOX-RECEIPT-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -382,6 +382,18 @@
       "candidate_sha": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
       "ci_run_id": 38660234949,
       "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
+    },
+    {
+      "work_item_id": "P5-OUTBOX-RECEIPT-001",
+      "state": "CI_PENDING",
+      "attempts": 1,
+      "scope": "P2_P5_PREPARATORY_ONLY; unloaded store receipt and retry metadata, synthetic remote fixture only",
+      "failure_fingerprints": [],
+      "rollback_sha": "45acc7e63d32e595eb1c1e9c7c1c0fb7e419dce7",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json"
+      ],
+      "next_action": "Verify real Chromium IndexedDB stale ACK, retry reload, recovery and atomic ACK rollback; preserve full phase gates."
     }
   ],
   "last_run": {
@@ -395,8 +407,8 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-11",
     "lease_expires_at": "2026-10-15T01:55:26.408Z",
-    "heartbeat_at": "2026-10-15T01:30:26.408Z",
-    "state": "BUILDING_OUTBOX_PREPARATION",
+    "heartbeat_at": "2026-10-15T01:32:50.152Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -664,7 +676,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T00:28:26.016Z",
+    "observed_at": "2026-10-15T01:32:50.152Z",
     "phases": [
       {
         "id": "P0",
@@ -694,7 +706,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Private authorization, retry transport, remote revision and AI readback missing; local outbox slice selected"
+        "gap": "Version/hash matched receipts and durable retry/backoff implemented in isolated store; browser CI pending. No private transport or device/AI readback."
       },
       {
         "id": "P6",
@@ -704,7 +716,7 @@
       {
         "id": "P7",
         "result": "NOT_TESTED",
-        "gap": "Candidate only, no verified staging/device/release"
+        "gap": "Only reviewed UI released via PR221/Pages/HTTP; full Rune Engine/staging/device gates incomplete"
       }
     ]
   },
@@ -714,8 +726,8 @@
       "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
     },
     "outbox": {
-      "result": "PASS_PENDING_INTENT_ONLY",
-      "scope": "Atomic pending intent, exact retry dedupe, latest edit coalescing; delivery/ack/retry/backoff NOT_TESTED"
+      "result": "CI_PENDING",
+      "scope": "Atomic local intent plus version/hash/attempt-matched ACK, durable exponential retry schedule and mock recovery; no background delivery or real transport"
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
