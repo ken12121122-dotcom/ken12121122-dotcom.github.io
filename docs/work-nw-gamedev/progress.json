@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T06:43:30.405Z",
+  "updated_at": "2026-10-15T06:45:36.428Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -466,10 +466,10 @@
     "ended_at": "2026-10-15T06:37:06.896Z"
   },
   "execution": {
-    "lease_owner": "codex-owner-local-queue-release-20261015",
-    "lease_expires_at": "2026-10-15T07:13:30.405Z",
-    "heartbeat_at": "2026-10-15T06:43:30.405Z",
-    "state": "RELEASING_SCOPED_LOCAL_QUEUE",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T06:45:36.428Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -769,13 +769,6 @@
       ],
       "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED",
       "status": "EXECUTED_PR234"
-    },
-    {
-      "id": "owner_local_queue_release_20261015",
-      "source": "OWNER current conversation",
-      "quote": "發布",
-      "scope": "Publish reviewed explicit local ObjectCraft outbox preparation UI only; no auto capture, Rune engine or private transport",
-      "status": "IN_PROGRESS"
     }
   ],
   "next_stage_preparation": {
@@ -1117,5 +1110,27 @@
     "device": "NOT_TESTED; OWNER post-release 3D slider, restore animation and Android download/file picker acceptance pending",
     "rollback": "f983cd52eefc18a0bb1924b9a4138c3dd5f6a675",
     "evidence_ref": "docs/work-nw-gamedev/evidence/approved-three-item-release.json"
+  },
+  "local_queue_release": {
+    "state": "CI_PENDING",
+    "owner_quote": "發布",
+    "owner_approval": "OWNER current conversation; explicit local queue UI only",
+    "pr": 235,
+    "source_commit": "21b55b65991f312ecd81a1ee1f2655fb6d5e7b43",
+    "base_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "release_marker": "2026-10-15.local-object-queue-v1",
+    "local_tests": {
+      "node": 185,
+      "browser_backup": 4,
+      "browser_outbox": 8,
+      "result": "PASS",
+      "source": "EXACT_EIGHT_FILES_MATCH_RELEASE_BRANCH"
+    },
+    "device": "NOT_TESTED",
+    "staging": "NOT_TESTED",
+    "private_upload": "NOT_AUTHORIZED_NOT_IMPLEMENTED",
+    "auto_capture": "NOT_IMPLEMENTED",
+    "rollback": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
   }
 }
