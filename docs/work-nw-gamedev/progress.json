@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T06:37:06.896Z",
+  "updated_at": "2026-10-15T06:43:30.405Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -466,10 +466,10 @@
     "ended_at": "2026-10-15T06:37:06.896Z"
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T06:37:06.896Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "codex-owner-local-queue-release-20261015",
+    "lease_expires_at": "2026-10-15T07:13:30.405Z",
+    "heartbeat_at": "2026-10-15T06:43:30.405Z",
+    "state": "RELEASING_SCOPED_LOCAL_QUEUE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -769,6 +769,13 @@
       ],
       "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED",
       "status": "EXECUTED_PR234"
+    },
+    {
+      "id": "owner_local_queue_release_20261015",
+      "source": "OWNER current conversation",
+      "quote": "發布",
+      "scope": "Publish reviewed explicit local ObjectCraft outbox preparation UI only; no auto capture, Rune engine or private transport",
+      "status": "IN_PROGRESS"
     }
   ],
   "next_stage_preparation": {
