@@ -154,7 +154,7 @@ async function main(){
    return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
     duration:value.cardSummonDuration,bookCount:window.LivingLibrary.books.length};
   });
-  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:14});
+  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:15});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
   await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
