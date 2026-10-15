@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T05:34:32.500Z",
+  "updated_at": "2026-10-15T06:28:53.759Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -126,7 +126,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P5-OBJECT-OUTBOX-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -439,19 +439,18 @@
     }
   ],
   "last_run": {
-    "run_id": "NW-APPROVED-RELEASE-20261015",
-    "started_at": "2026-10-15T05:27:59.316Z",
-    "ended_at": "2026-10-15T05:34:32.500Z",
+    "run_id": "NW-CYCLE-20261015-14",
+    "started_at": "2026-10-15T06:28:53.759Z",
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "READ latest main/PR/lease and reconcile main 5fa285355d12ca6fdbb5c9e260770b9c1cc8492e (or newer) into canonical candidate before any new work; candidate code still based on da45241. Do not re-release approved UI/backup or re-open duplicate restore PRs. Continue explicit ObjectCraft outbox adapter with stable IDs/revisions/recycle state and stale snapshot/conflict/dedupe tests. Keep separate SpellStore, no automatic conversion or private upload; private OAuth/App and full P0-P7/device gates remain."
+    "next_action": "ObjectCraft snapshot -> isolated durable outbox; no network"
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T05:34:32.500Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "NW-CYCLE-20261015-14",
+    "lease_expires_at": "2026-10-15T06:53:53.759Z",
+    "heartbeat_at": "2026-10-15T06:28:53.759Z",
+    "state": "BUILDING_OBJECT_OUTBOX",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -778,7 +777,7 @@
         "WORK_START_PROMPT_v1.2.md"
       ],
       "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated",
-      "current_run_v12_zip": "Library metadata accessible, direct read returned no readable content; local zip absent. Explicit user cycle contract applied; not claiming current zip contents read."
+      "current_run_v12_zip": "Materialized canonical Library zip and read all four named v1.2 entries; 2026-10-15 cycle14."
     }
   },
   "acceptance_scan": {
