@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T07:28:52.212Z",
+  "updated_at": "2026-10-15T07:31:05.238Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -83,7 +83,8 @@
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p2-local-save.json",
         "docs/work-nw-gamedev/evidence/p2-object-backup.json",
-        "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json"
       ],
       "blockers": []
     },
@@ -109,7 +110,8 @@
         "docs/work-nw-gamedev/evidence/p2-local-save.json",
         "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json",
         "docs/work-nw-gamedev/evidence/p5-outbox-pump.json",
-        "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+        "docs/work-nw-gamedev/evidence/p5-object-outbox.json",
+        "docs/work-nw-gamedev/evidence/p5-object-reconcile.json"
       ],
       "blockers": []
     },
@@ -128,7 +130,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P5-OBJECT-RECONCILE-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -458,7 +460,7 @@
     },
     {
       "work_item_id": "P5-OBJECT-RECONCILE-001",
-      "state": "LOCAL_PASS_CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "effective_fixes": 0,
       "failure_fingerprints": [],
@@ -471,7 +473,9 @@
       "ci_run_id": 38698921195,
       "local_node_tests": 345,
       "local_browser_cases": 6,
-      "result": "Creator reopen/mutation reconciliation locally verified, queue failure preserves authoritative save; candidate only"
+      "result": "Candidate actual creator automatically reconciles on reopen/visibility/storage changes and successful mutations; bounded single-flight, quota failure leaves source saved and reports repair pending, fresh iframe repairs interrupted capture. Six browser cases PASS. No formal release/private transport.",
+      "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
+      "approval_required": "Only for production release/private transport; independent local candidate work continues"
     }
   ],
   "last_run": {
@@ -480,13 +484,17 @@
     "attempts": 1,
     "effective_fixes": 0,
     "failure_fingerprints": [],
-    "next_action": "Implement and verify bounded local ObjectCraft reconciliation in creator only; preserve source and manual rescue"
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
+    "ended_at": "2026-10-15T07:31:05.238Z",
+    "candidate_sha": "9e6442a172923cce572f8eda5a79098479c4e1eb",
+    "ci_run_id": 38698921195,
+    "local_environment": "Pinned Playwright1.56.1 Headless Shell1194 installed and executed successfully; missing binary at initial launch resolved; no GPU acceptance inferred"
   },
   "execution": {
-    "lease_owner": "codex-cycle15-object-reconciliation",
-    "lease_expires_at": "2026-10-15T07:58:02.639Z",
-    "heartbeat_at": "2026-10-15T07:28:52.212Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T07:31:05.238Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -691,7 +699,7 @@
   "candidate_validation": {
     "node": {
       "result": "PASS",
-      "tests": 341,
+      "tests": 345,
       "fail": 0,
       "skipped": 0,
       "command": "node --test tests/*.test.mjs"
@@ -711,25 +719,26 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38693194557,
-      "scope": "286 scoped Node + 2 positive/8 negative Schema +56 parity +9 public destinations, icon/clean-view/settings ACK and55 synthetic browser module cases (8 ObjectOutbox +4 actual creator backup/local-queue UI). Real Chromium; no staging/GPU/device/private remote."
+      "ci_run_id": 38698921195,
+      "scope": "290 scoped Node + 2 positive/8 negative Schema +56 parity; 9 public destinations/control checks and61 synthetic browser module cases including6 real creator reconciliation cases. No staging/GPU/device/private remote."
     },
-    "live_scene_change": "NONE_BY_OBJECT_OUTBOX; main5fa scene/system controls/ObjectCraft source preserved exactly",
-    "release": "ONLY_EXPLICIT_OBJECT_QUEUE_RELEASED_PR235; OTHER_RUNE_ENGINE_PREPARATIONS_NOT_RELEASED",
+    "live_scene_change": "NONE; exact main28c5418 scene/ObjectCraft/system/public catalog/placement/GEN2/manifests",
+    "release": "NOT_RELEASED_NEW_CREATOR_AUTO_RECONCILIATION; PR235_MANUAL_QUEUE_RELEASE_RETAINED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "f04568d042f407458544b3fa2757e18095444b7a",
-      "checkout_commit": "eebc17665441bd9d0a2f2f0bce86ca3356f69114",
-      "run_id": 38693194557,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38693194557",
-      "scope": "286 scoped Node + 2 positive/8 negative Schema +56 parity +9 public destinations, icon/clean-view/settings ACK and55 synthetic browser module cases (8 ObjectOutbox +4 actual creator backup/local-queue UI). Real Chromium; no staging/GPU/device/private remote."
+      "commit": "9e6442a172923cce572f8eda5a79098479c4e1eb",
+      "checkout_commit": "4421a20b773768ca5a0d9043807fc907d3b25952",
+      "run_id": 38698921195,
+      "job_id": 116302069422,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38698921195",
+      "scope": "290 scoped Node + 2 positive/8 negative Schema +56 parity; 9 public destinations/control checks and61 synthetic browser module cases including6 real creator reconciliation cases. No staging/GPU/device/private remote."
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
       "ci_run_id": 38660234949,
       "cases": 6
     },
-    "playable_features_added_to_production": 1,
+    "playable_features_added_to_production": 0,
     "rune_release": "NOT_RELEASED",
     "local_object_backup": {
       "result": "PASS_ISOLATED_CANDIDATE",
@@ -754,6 +763,16 @@
       "release": "RELEASED_STANDALONE_PR235_DEVICE_NOT_TESTED",
       "production_player_features": 1,
       "release_evidence_ref": "docs/work-nw-gamedev/evidence/p5-object-outbox.json"
+    },
+    "object_reconciliation": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "candidate_player_features": 1,
+      "browser_cases": 6,
+      "automatic_capture": "CREATOR_PAGE_TRIGGERS_ONLY",
+      "private_transport": "WAIT_OWNER",
+      "staging": "NOT_TESTED",
+      "device": "NOT_TESTED",
+      "ci_run_id": 38698921195
     }
   },
   "owner_approvals": [
@@ -844,12 +863,12 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T06:49:50.605Z",
+    "observed_at": "2026-10-15T07:31:05.238Z",
     "phases": [
       {
         "id": "P0",
         "result": "BLOCKED",
-        "gap": "Current main5fa scene source exact in candidate; public/fallback/settings regressions PASS. Full GPU/staging/device/gesture gate remains NOT_TESTED, owner visual observation only PASS_REPORTED_BY_OWNER."
+        "gap": "Current main28c5418 scene/source preserved exactly; public/fallback/settings regression PASS. Cloud software GPU remains environment limitation, full GPU/staging/device/gesture gate NOT_TESTED; OWNER visual report remains PASS_REPORTED_BY_OWNER."
       },
       {
         "id": "P1",
@@ -859,7 +878,7 @@
       {
         "id": "P2",
         "result": "NOT_TESTED",
-        "gap": "Local ObjectCraft backup (PR234) and explicit local outbox preparation (PR235) released with CI/Pages/HTTP proof. Full Rune editor, source+queue atomicity, migration/import recovery and device validation remain unverified."
+        "gap": "Released backup/manual queue retained. Candidate creator save/reopen automatically prepares local queue; quota/interruption recovery preserves source, six actual Chromium cases PASS. Full Rune editor/migration/import recovery/cross-store atomicity/device validation remain unverified."
       },
       {
         "id": "P3",
@@ -874,7 +893,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Manual local ObjectCraft queue released PR235; rows remain pending_authorization. No automatic capture, object transport/ACK, private remote roundtrip or AI readback. Existing isolated SpellStore evidence retained; P5 not complete."
+        "gap": "Manual queue separately released PR235. New automatic creator local reconciliation candidate PASS; scene/book-creator closed-page changes still require reopen of card creator. No object transport/ACK/private remote/AI readback, full P5 NOT_TESTED."
       },
       {
         "id": "P6",
@@ -891,11 +910,11 @@
   "sync_checks": {
     "local_save": {
       "result": "PASS_ISOLATED_CANDIDATE",
-      "scope": "Released ObjectCraft local source and backup remain unchanged by queue; synthetic Chromium exact source preservation/reload/rollback PASS. Full Rune editor/recovery and device validation NOT_TESTED."
+      "scope": "Actual creator offline edit/recycle/restore, quota failure source save and iframe interrupted-open source persistence/recovery verified. Source ObjectCraft localStorage remains authoritative; full Rune editor/recovery/device NOT_TESTED."
     },
     "outbox": {
-      "result": "PASS_ISOLATED_OBJECT_CAPTURE_AND_PRIOR_SPELL_MOCK_DELIVERY",
-      "scope": "ObjectCraft separate nw.object-outbox.v1: explicit creator capture, reload/offline coalescing, stable IDs/revisions/recycled/unknown object fields, cross-connection stale/conflict rejection and atomic versions/pending rollback PASS. Object rows remain pending_authorization; no object transport/ACK/autoworker. Prior SpellStore pump mock delivery retained; schemas are not converted. Manual creator capture now separately released via PR235, CI/Pages/exact seven assets PASS; device NOT_TESTED."
+      "result": "PASS_ISOLATED_CREATOR_AUTOMATIC_LOCAL_RECONCILIATION",
+      "scope": "Existing ObjectCraft local intents retained. Candidate creator open/reopen, visible/storage and successful mutation triggers bounded capture; one-flight/max2pass, source-change-only immediate retry, quota pause/new-trigger recovery PASS. Manual rescue preserved. No scene writer hook/closed-page worker/object transport/ACK. Prior SpellStore isolated mock evidence retained; no conversion."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
@@ -910,13 +929,13 @@
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T06:49:50.605Z",
+    "observed_at": "2026-10-15T07:31:05.238Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
-    "preserved_passes": "Previous verified evidence and defect budgets retained; already approved release untouched. True parent merge main5fa; current main 3D/system/ObjectCraft source exact.",
-    "highest_value_gap": "Local save/creator reopen -> honest outbox reconciliation and recovery; real private transport still unauthorized",
-    "next_action": "READ latest main/PR219/canonical progress and lease; reconcile main 28c5418908aeda6dce9514a9c15ad9158a229d35 (released explicit local queue) into candidate without losing prior engine tests or released wording/marker. Next independent candidate slice: bounded ObjectCraft creator reopen/local mutation outbox reconciliation with quota/interruption recovery; preserve authoritative localStorage and manual rescue, disclose separate-store non-atomicity. Do not modify 3D core or convert ObjectCraft to nw.spell.v1. Private transport, remote roundtrip, AI readback and device/full P0-P7 gates remain WAIT_OWNER/NOT_TESTED. This local queue release approval does not authorize future auto-capture UI or private upload releases.",
-    "production_playable_feature_delta": 1,
-    "candidate_player_feature_delta": 0
+    "preserved_passes": "PR235 released manual queue and main28c5418 source retained; previous engine proofs and all defect budgets preserved",
+    "highest_value_gap": "Book creator local queue integration, then ObjectCraft receipt/mock-delivery coordination; private transport still unauthorized",
+    "next_action": "READ/SCAN latest main, PR219, canonical progress and lease. Next independent candidate slice: reuse ObjectReconciler for existing book-creation page reopen/successful local creation, with actual iframe close/reopen and local save failure tests, preserving stable IDs and scene animation/notifications. Do not touch 3D core or convert ObjectCraft into nw.spell.v1. Follow with bounded ObjectCraft mock delivery/receipt + cross-context lease work, without real private upload. Source localStorage and queue IDB remain non-atomic; unsupported/stale data stays recoverable through source export. New creator auto-capture release requires scoped OWNER approval; prior PR235 authority covered manual preparation only.",
+    "production_playable_feature_delta": 0,
+    "candidate_player_feature_delta": 1
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
@@ -1038,18 +1057,18 @@
     "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json"
   },
   "upstream_main_reconciliation": {
-    "from_main": "da45241e0134a92de22e963d1121607e17f01936",
-    "to_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
-    "merge_result": "One browser test-command conflict resolved preserving old engine tests and all new released UI tests; live scene source exact main blob",
+    "from_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "to_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+    "merge_result": "True two-parent merge in candidate source9e6442a: creator wording baseline main selected, all prior engine browser commands plus new reconcile command retained. No unresolved conflicts.",
     "observed_features": [
       "Card/blank-book creation, inner orbit and configurable parameters",
       "Full card creation cinematic and reversible recycle",
       "Newly published smoke disappearance for recycled cards"
     ],
-    "limits": "Candidate currently based on merged main5fa; release PR235 is now main28c5418. Next candidate cycle must reconcile it. Only manual ObjectCraft queue UI published; full Rune/3D/device/private sync gates remain.",
-    "main_ci": 38681574416,
-    "pages": 38681574324,
-    "http_proof": 38681574363,
+    "limits": "New creator local reconciliation candidate only; prior manual queue release retained. Full Rune/GPU/device/private transport gates unchanged.",
+    "main_ci": 38694461719,
+    "pages": 38694460950,
+    "http_proof": 38694461788,
     "owner_card_count": "NOT_OBSERVABLE_FROM_REPO",
     "observed_workflow_runs": [
       {
@@ -1072,9 +1091,9 @@
       }
     ],
     "observed_latest_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
-    "candidate_merged_main": "5fa285355d12ca6fdbb5c9e260770b9c1cc8492e",
+    "candidate_merged_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
     "state": "MERGED_UPSTREAM_SOURCE_PRESERVED",
-    "pending_candidate_reconciliation": "28c5418908aeda6dce9514a9c15ad9158a229d35"
+    "pending_candidate_reconciliation": null
   },
   "approved_three_item_release": {
     "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
