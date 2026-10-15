@@ -1,0 +1,30 @@
+/* One extensible command dispatcher; enabled by a character gesture, not on load. */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.LivingAtlasVoice=api;})(typeof self!=='undefined'?self:this,function(){
+'use strict';
+function create({host,commands,onState=()=>{},now=()=>Date.now()}){
+ const Recognition=host.SpeechRecognition||host.webkitSpeechRecognition;
+ let wanted=false,recognition=null,starting=false,timer=null,generation=0,last=-Infinity,failures=0;
+ function state(status,detail=''){onState({status,detail,wanted})}
+ function dispatch(text){if(!wanted)return;const word=String(text).trim().toLowerCase();
+  const command=Object.keys(commands).find(k=>new RegExp('(^|[^a-z])'+k+'([^a-z]|$)','i').test(word));
+  if(!command||now()-last<1100)return;last=now();commands[command]();
+ }
+ function stop(){wanted=false;generation++;starting=false;if(timer!==null)host.clearTimeout(timer);timer=null;
+  if(recognition){recognition.onend=null;recognition.onresult=null;recognition.onerror=null;try{recognition.abort()}catch{}}recognition=null;state('off');}
+ function start(){if(wanted)return;wanted=true;const run=++generation;
+  if(!Recognition){wanted=false;state('unsupported','此環境沒有語音辨識接口；APP 語音連接待測');return}
+  recognition=new Recognition();recognition.lang='en-US';recognition.continuous=true;recognition.interimResults=false;
+  const current=recognition;
+  function begin(){if(!wanted||run!==generation||starting)return;starting=true;try{current.start()}catch(e){starting=false;wanted=false;state('error',e.message)}}
+  current.onstart=()=>{if(run!==generation)return;starting=false;failures=0;state('listening')};
+  current.onresult=e=>{if(run!==generation)return;for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)dispatch(e.results[i][0].transcript)};
+  current.onerror=e=>{if(run!==generation)return;starting=false;
+   if(['not-allowed','service-not-allowed','audio-capture','network'].includes(e.error)||++failures>=3){wanted=false;state('error',e.error)}
+  };
+  current.onend=()=>{if(run!==generation||!wanted)return;starting=false;timer=host.setTimeout(()=>{timer=null;begin()},600)};
+  state('starting');begin();
+ }
+ return {start,stop,dispatch,get wanted(){return wanted}};
+}
+return {create};
+});
