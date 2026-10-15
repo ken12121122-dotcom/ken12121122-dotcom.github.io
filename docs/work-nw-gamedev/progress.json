@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T01:32:50.152Z",
+  "updated_at": "2026-10-15T01:35:01.176Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -14,7 +14,7 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "main_sha": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
@@ -28,8 +28,10 @@
     "staging_url": null,
     "staging_verified": "NOT_TESTED",
     "pages_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
-    "pages_verified": "PASS_BASELINE_HTML_ONLY",
-    "android_verified": "NOT_TESTED"
+    "pages_verified": "PASS_UI_RELEASE_EXACT_HTML_AND_SCRIPT_HASH",
+    "android_verified": "NOT_TESTED",
+    "pages_release_marker": "2026-10-15.icon-only-clean-view-v1",
+    "pages_proof_run_id": 38665794302
   },
   "phases": [
     {
@@ -120,7 +122,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": "P5-OUTBOX-RECEIPT-001",
+  "active_work_item": null,
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -385,7 +387,7 @@
     },
     {
       "work_item_id": "P5-OUTBOX-RECEIPT-001",
-      "state": "CI_PENDING",
+      "state": "PASS_PREPARATORY_ONLY",
       "attempts": 1,
       "scope": "P2_P5_PREPARATORY_ONLY; unloaded store receipt and retry metadata, synthetic remote fixture only",
       "failure_fingerprints": [],
@@ -393,22 +395,25 @@
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p5-outbox-receipt.json"
       ],
-      "next_action": "Verify real Chromium IndexedDB stale ACK, retry reload, recovery and atomic ACK rollback; preserve full phase gates."
+      "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete.",
+      "candidate_sha": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
+      "ci_run_id": 38666248987,
+      "result": "Real Chromium confirms version/hash matched ACK, duplicate/stale rejection, durable retry schedule across reload, synthetic recovery and atomic ACK rollback. No actual transport, worker, private sync or AI readback."
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-10",
-    "started_at": "2026-10-15T00:26:58.113Z",
-    "ended_at": "2026-10-15T00:31:02.218Z",
+    "run_id": "NW-CYCLE-20261015-11",
+    "started_at": "2026-10-15T01:30:26.408Z",
+    "ended_at": "2026-10-15T01:35:01.176Z",
     "attempts": 1,
     "failure_fingerprints": [],
-    "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
+    "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete."
   },
   "execution": {
-    "lease_owner": "NW-CYCLE-20261015-11",
-    "lease_expires_at": "2026-10-15T01:55:26.408Z",
-    "heartbeat_at": "2026-10-15T01:32:50.152Z",
-    "state": "CI_PENDING",
+    "lease_owner": null,
+    "lease_expires_at": null,
+    "heartbeat_at": "2026-10-15T01:35:01.176Z",
+    "state": "READY_NEXT_CYCLE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -569,6 +574,14 @@
       "run_id": 38663912422,
       "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
       "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
+    },
+    {
+      "result": "PASS",
+      "commit": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
+      "checkout_commit": "78eaa23e565f8697184815980bf179539bb01525",
+      "run_id": 38666248987,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38666248987",
+      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
     }
   ],
   "candidate_validation": {
@@ -594,25 +607,26 @@
     },
     "browser": {
       "result": "PASS",
-      "ci_run_id": 38660234949,
-      "scope": "9 public destinations, fallback/storage, 28 prior synthetic module cases + 6 real IndexedDB synthetic persistence cases; no deployed UI/3D/device claim"
+      "ci_run_id": 38666248987,
+      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
     },
     "live_scene_change": "PRESENTATION_ONLY_CLEAN_VIEW; geometry/input unchanged",
     "release": "NOT_RELEASED",
     "latest_ci": {
       "result": "PASS",
-      "commit": "aab727ae6391d6e4e38eb9eb9fccbf1ce1225704",
-      "checkout_commit": "79cd48bc0d56ac0f0c5d6f350a352fe59d73e59f",
-      "run_id": 38663912422,
-      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38663912422",
-      "scope": "Icon-only control names and 44px targets, actual previous/next/open/close, clean view, nine public destinations and 34 prior synthetic browser checks; 250 scoped Node. No 3D/device/deployment acceptance"
+      "commit": "8ca94f1107970dcaacec9831f69d6587d72bafb8",
+      "checkout_commit": "78eaa23e565f8697184815980bf179539bb01525",
+      "run_id": 38666248987,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38666248987",
+      "scope": "250 scoped Node + Schema/56 parity + 9 public destinations, 2 UI controls checks and 39 synthetic browser module checks including 11 real IDB store/receipt/retry cases. No staging/device/full Rune release"
     },
     "local_persistence": {
       "result": "PASS_ISOLATED_CANDIDATE",
       "ci_run_id": 38660234949,
       "cases": 6
     },
-    "playable_features_added_to_production": 0
+    "playable_features_added_to_production": 0,
+    "rune_release": "NOT_RELEASED"
   },
   "owner_approvals": [
     {
@@ -676,7 +690,7 @@
     }
   },
   "acceptance_scan": {
-    "observed_at": "2026-10-15T01:32:50.152Z",
+    "observed_at": "2026-10-15T01:35:01.176Z",
     "phases": [
       {
         "id": "P0",
@@ -706,7 +720,7 @@
       {
         "id": "P5",
         "result": "NOT_TESTED",
-        "gap": "Version/hash matched receipts and durable retry/backoff implemented in isolated store; browser CI pending. No private transport or device/AI readback."
+        "gap": "Isolated local receipt/retry state PASS; no delivery worker, private transport, remote conflict resolution or authorized AI readback"
       },
       {
         "id": "P6",
@@ -726,27 +740,29 @@
       "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
     },
     "outbox": {
-      "result": "CI_PENDING",
-      "scope": "Atomic local intent plus version/hash/attempt-matched ACK, durable exponential retry schedule and mock recovery; no background delivery or real transport"
+      "result": "PASS_ISOLATED_RECEIPT_RETRY_STATE",
+      "scope": "Atomic intent; exact duplicate coalescing; version/hash/idempotency/attempt matched ACK and failure; durable backoff; synthetic recovery. Real delivery, worker and remote conflict resolution still missing."
     },
     "authorized_transport": {
       "result": "WAIT_OWNER",
-      "scope": "No scoped private repo/OAuth/GitHub App transport configured"
+      "scope": "No scoped private transport; UI release approval does not authorize player private-data writes"
     },
     "remote_roundtrip": {
-      "result": "NOT_TESTED"
+      "result": "NOT_TESTED",
+      "scope": "Synthetic in-page mock only; no actual remote"
     },
     "ai_readback": {
       "result": "NOT_TESTED"
     }
   },
   "cycle_rescan": {
-    "observed_at": "2026-10-15T00:31:02.218Z",
+    "observed_at": "2026-10-15T01:35:01.176Z",
     "state": "ACTIONABLE_GAPS_REMAIN",
-    "preserved_passes": "No prior PASS invalidated; no defect retry counters reset",
-    "highest_value_gap": "Outbox acknowledgements/retry/mock remote before real private synchronization",
-    "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default.",
-    "production_playable_feature_delta": 0
+    "preserved_passes": "Earlier verified tests and defect budgets preserved. Main UI release reconciled as a true merge parent.",
+    "highest_value_gap": "Bounded outbox delivery with injected synthetic idempotent transport, then private authorization/device/readback",
+    "next_action": "READ/SCAN P0-P7 and five save/sync checks. Next independent slice: a bounded caller-driven outbox delivery pump with one in-flight batch, cancellation and injected synthetic idempotent transport; verify timeout/recovery and stale edit while awaiting transport. No private credentials or real remote writes without scoped OWNER approval. UI release PR221 is already deployed; don't re-release or downgrade it. Full scene/device gates remain incomplete.",
+    "production_rune_playable_feature_delta": 0,
+    "production_ui_release": "PR221 deployed and exact HTTP hash verified"
   },
   "ui_clean_view": {
     "request": "OWNER requested removal of all upper-left text and a clean full scene view",
