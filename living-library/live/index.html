@@ -449,6 +449,27 @@ window.addEventListener('message',event=>{
    },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
   }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
  }
+ // Restoring a card reuses EXACTLY the existing 3D creation spell: same smoke
+ // sprites, reveal, arc, inner orbit and stable local.card.* identity.
+ if(event.data.action==='card-restored'&&
+    (readerCard?.id==='public.gaming.card.creation'||
+     (readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))){
+  const id=event.data.cardId;
+  let restored=false;
+  try{restored=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
+  catch(e){toast(e.message);return}
+  if(!restored||cardSpellExitTimer!==null)return;
+  const scene=window.LivingScene;
+  if(typeof scene?.queueCardSummon==='function'&&typeof scene?.startCardSummon==='function'){
+   if(!scene.queueCardSummon(id))return; // Hide before the book starts fading.
+   const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
+   cardSpellExitTimer=setTimeout(()=>{
+    cardSpellExitTimer=null;
+    scene.startCardSummon(id); // Reuse the already-verified creation effect, not a new mesh.
+    closeBook();drawer.classList.remove('card-spell-leaving');
+   },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
+  }else toast('卡片已還原，但 3D 場景暫時不可用；資料仍保留在本機。');
+ }
 });
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
 window.addEventListener('message',event=>{
