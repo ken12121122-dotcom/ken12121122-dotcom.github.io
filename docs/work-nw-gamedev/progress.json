@@ -393,10 +393,10 @@
     "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T01:09:02.915Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "NW-UI-RELEASE-20261015",
+    "lease_expires_at": "2026-10-15T01:49:50.840Z",
+    "heartbeat_at": "2026-10-15T01:24:50.840Z",
+    "state": "RELEASING_UI_ONLY",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -816,5 +816,11 @@
     "rollback_ref": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
     "effective_fixes": 0,
     "failure_fingerprints": []
+  },
+  "ui_release": {
+    "owner_approval": "OWNER current conversation: 發布",
+    "approved_scope": "Upper-left title removal, clean view and icon-only action controls; no unfinished Rune Engine or player sync release",
+    "base_main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+    "state": "BUILDING_RELEASE_BRANCH"
   }
 }
