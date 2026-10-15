@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T09:26:31.671Z",
+  "updated_at": "2026-10-15T09:30:20.774Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -505,7 +505,7 @@
     },
     {
       "work_item_id": "P5-OBJECT-RECEIPT-001",
-      "state": "IN_PROGRESS",
+      "state": "LOCAL_PASS_CI_PENDING",
       "attempts": 1,
       "effective_fixes": 0,
       "failure_fingerprints": [],
@@ -513,7 +513,10 @@
       "rollback_sha": "2dba395b6c494523136b96dae0d4fd47da3cb6cf",
       "evidence_refs": [
         "docs/work-nw-gamedev/evidence/p5-object-receipt.json"
-      ]
+      ],
+      "candidate_sha": "6b6d09efc8ace84f92aef322d404bac1e8759a7c",
+      "local_node_tests": 345,
+      "local_browser_cases": 32
     }
   ],
   "last_run": {
@@ -526,8 +529,8 @@
   "execution": {
     "lease_owner": "codex-cycle17-object-receipts",
     "lease_expires_at": "2026-10-15T09:51:31.672Z",
-    "heartbeat_at": "2026-10-15T09:26:31.671Z",
-    "state": "BUILD",
+    "heartbeat_at": "2026-10-15T09:30:20.774Z",
+    "state": "CI_PENDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",

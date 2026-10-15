@@ -1,0 +1,234 @@
+{
+  "schema": "nw-object-receipt-evidence-v1",
+  "work_item_id": "P5-OBJECT-RECEIPT-001",
+  "state": "LOCAL_PASS_CI_PENDING",
+  "observed_at": "2026-10-15T09:30:20.774Z",
+  "candidate_sha": "6b6d09efc8ace84f92aef322d404bac1e8759a7c",
+  "rollback_sha": "2dba395b6c494523136b96dae0d4fd47da3cb6cf",
+  "upstream_main": "28c5418908aeda6dce9514a9c15ad9158a229d35",
+  "scope": "P5_PREPARATORY_ONLY; explicit local compare-and-delete acknowledgement with synthetic receiver, no sender/network",
+  "before": "ObjectCraft outbox retained all rows; no receipt settlement API existed",
+  "after": "Exact identity/revision/hash/idempotency receipt and attempt matching before atomic local deletion; stale attempts retain newer rows, version ledger retained for exact retry dedup",
+  "tests": {
+    "local_node": {
+      "result": "PASS",
+      "tests": 345,
+      "fail": 0,
+      "skipped": 0
+    },
+    "local_browser": [
+      {
+        "schema": "nw-object-receipt-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "mismatched content hash receipt cannot clear pending object or modify source",
+            "result": "PASS"
+          },
+          {
+            "case": "delayed old acknowledgement from independent connection preserves newer offline edit",
+            "result": "PASS"
+          },
+          {
+            "case": "receipt deletion failure aborts transaction and retains exact pending intent for retry",
+            "result": "PASS"
+          },
+          {
+            "case": "synthetic receiver deduplicates same object key; exact receipt removes only matching local intent and replay is harmless",
+            "result": "PASS"
+          },
+          {
+            "case": "reload retains version ledger; unchanged acknowledged source does not requeue while unrelated book remains pending",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and invalid remote revision receipts rejected without invoking getter or touching queue",
+            "result": "PASS"
+          },
+          {
+            "case": "new edit after acknowledged version produces a new local intent; no automatic transport or external request",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Explicit local receipt settlement with synthetic receiver; no UI sender, network, credentials or remote verification"
+      },
+      {
+        "schema": "nw-object-backup-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "real candidate page icon downloads full synthetic book/card/recycle backup",
+            "result": "PASS"
+          },
+          {
+            "case": "offline file inspection validates counts without restoring or sending",
+            "result": "PASS"
+          },
+          {
+            "case": "tampered file rejected with exact source and unrelated saves untouched, zero external requests",
+            "result": "PASS"
+          },
+          {
+            "case": "actual creator icon prepares durable local intents offline, reload retry deduplicates and clearly remains not uploaded",
+            "result": "PASS"
+          }
+        ]
+      },
+      {
+        "schema": "nw-object-outbox-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "actual blank card/book IDs, versions and unknown object fields captured once without changing source",
+            "result": "PASS"
+          },
+          {
+            "case": "reload/offline edit/recycle coalesces latest same-ID intent and retains original saves",
+            "result": "PASS"
+          },
+          {
+            "case": "independent connection cannot overwrite newer revision or equal-revision different contents",
+            "result": "PASS"
+          },
+          {
+            "case": "pending write failure rolls back version ledger atomically; same revision can retry without source loss",
+            "result": "PASS"
+          },
+          {
+            "case": "changed source is rejected; absent storage never erases pending intents or infers deletion",
+            "result": "PASS"
+          },
+          {
+            "case": "unsupported public/foreign object rejects whole capture rather than silently dropping or converting it",
+            "result": "PASS"
+          },
+          {
+            "case": "competing IDB connections serialize batches and keep highest observed object revision",
+            "result": "PASS"
+          },
+          {
+            "case": "synthetic idempotent consumer reads object text twice with one mock write per key; queue stays pending authorization",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Explicit isolated local capture; no scene hook, background worker, real remote, credentials or AI readback"
+      },
+      {
+        "schema": "nw-object-reconcile-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "reopening actual creator automatically captures existing card and book without touching source",
+            "result": "PASS"
+          },
+          {
+            "case": "offline save, recycle and restore prepare latest same-ID local intents through actual UI",
+            "result": "PASS"
+          },
+          {
+            "case": "injected queue quota failure preserves completed save, reports pending repair once and reopening catches up",
+            "result": "PASS"
+          },
+          {
+            "case": "same-origin storage event catches peer book revision without rewriting scene or source",
+            "result": "PASS"
+          },
+          {
+            "case": "manual icon rescue remains available and repeated automatic/manual capture does not duplicate",
+            "result": "PASS"
+          },
+          {
+            "case": "actual iframe destroyed during paused queue open retains save; fresh creator iframe repairs latest revision without remote requests",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate creator only; no staging, 3D, device, private transport or real remote"
+      },
+      {
+        "schema": "nw-book-reconcile-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "book creator reopen captures existing cards, book and recycle state without changing original saves",
+            "result": "PASS"
+          },
+          {
+            "case": "actual offline create keeps unique book ID and local preview while preparing same-record outbox intent",
+            "result": "PASS"
+          },
+          {
+            "case": "queue quota failure is bounded, leaves successfully saved book intact and reports unsent repair pending",
+            "result": "PASS"
+          },
+          {
+            "case": "icon-only accessible manual rescue captures failed book once without changing source or duplicating intents",
+            "result": "PASS"
+          },
+          {
+            "case": "original parent notification retained; iframe destroyed during paused queue open recovers saved book on new iframe",
+            "result": "PASS"
+          },
+          {
+            "case": "source save failure creates no new book, no outbox intent and no success notification",
+            "result": "PASS"
+          },
+          {
+            "case": "malformed original save stays untouched on reopen, creation stops and no network upload occurs",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate book page only; no staging, 3D first frame, device or private remote"
+      }
+    ],
+    "schema": [
+      {
+        "schema": "nw-card-json-schema-proof-v1",
+        "result": "PASS",
+        "positive_cases": 2,
+        "negative_cases": 8,
+        "meta_schema": "Draft 2020-12",
+        "limits": "Structural validation only; registry/graph semantic validation is a separate gate"
+      },
+      {
+        "schema": "nw-card-contract-parity-v1",
+        "result": "PASS",
+        "cases": 56,
+        "accepted": 6,
+        "structural_rejected": 41,
+        "semantic_only_rejected": 9,
+        "scope": "Deterministic synthetic JSON; semantic checks intentionally stricter than structural Schema; not runtime acceptance"
+      }
+    ],
+    "source_readback": "PASS_EXACT_THREE_FILES"
+  },
+  "limits": [
+    "Matching receipt fields do not authenticate a server; a future authorized transport must verify provenance before calling",
+    "No creator/scene/UI sender calls acknowledge; no private remote or credentials configured",
+    "Comparison is against durable pending intent, not a cross-store atomic localStorage snapshot; later uncaptured source needs reconciliation",
+    "No receipt history/remote evidence is persisted; source ObjectCraft and version ledger are untouched",
+    "Durable retry/backoff/cross-context sender lease and real private roundtrip/AI readback remain unimplemented or unverified"
+  ],
+  "privacy": "Synthetic fixtures only, isolated receiver Map and zero outbound requests; no private data, token, audio or real endpoint",
+  "effective_fixes": 0,
+  "failure_fingerprints": [],
+  "source_files": [
+    "living-library/live/object-outbox.js",
+    "tests/browser/object-receipt.cjs",
+    "tests/browser/package.json"
+  ],
+  "preview": {
+    "staging": "NOT_TESTED",
+    "gpu": "NOT_TESTED",
+    "device": "NOT_TESTED",
+    "release": "NOT_RELEASED"
+  },
+  "requirements_read": "v1.0 mother Skill/Workflow/release matrix, v1.1 entry/extension, v0.4 delivery plan read. Cycle zip cannot be read as text and previous local bytes pruned; user's explicit cycle contract used, no four-entry read claim.",
+  "ci": {
+    "result": "PENDING"
+  },
+  "playable_feature_delta": {
+    "candidate_ui": 0,
+    "production": 0
+  },
+  "sync_preparation_delta": "ObjectCraft local receipt settlement available only for explicit test/authorized future adapter"
+}
