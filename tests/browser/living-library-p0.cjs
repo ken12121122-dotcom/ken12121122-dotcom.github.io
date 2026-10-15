@@ -57,6 +57,21 @@ async function main(){
   await p.goto(origin+'/living-library/live/index.html',{waitUntil:'domcontentloaded'});
   await p.locator('#fallback.show').waitFor({timeout:15000});
   await dismissUpdate(p);
+  for(const [id,icon,label] of [['prevBtn','‹','前一本'],['openBtn','▤','展開書頁'],['nextBtn','›','下一本']]){
+   const button=p.locator('#'+id);
+   assert.equal(await button.innerText(),icon);
+   assert.equal(await button.getAttribute('aria-label'),label);
+   const bounds=await button.boundingBox();
+   assert.ok(bounds.width>=44&&bounds.height>=44,'Touch target shrank: '+id);
+  }
+  const firstTitle=await p.locator('#focusTitle').innerText();
+  await p.getByRole('button',{name:'下一本',exact:true}).click();
+  assert.notEqual(await p.locator('#focusTitle').innerText(),firstTitle);
+  await p.getByRole('button',{name:'前一本',exact:true}).click();
+  assert.equal(await p.locator('#focusTitle').innerText(),firstTitle);
+  await p.getByRole('button',{name:'展開書頁',exact:true}).click();
+  await p.getByRole('button',{name:'關閉書頁',exact:true}).click();
+  report.checks.push({id:'icon_first_controls',result:'PASS',scope:'Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved.'});
   assert.equal(await p.locator('.brand').innerText(),'✧');
   const cleanToggle=p.locator('#cleanViewToggle');
   await p.evaluate(()=>localStorage.setItem('nw-clean-save-sentinel','preserve'));

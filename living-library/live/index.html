@@ -199,6 +199,9 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 body.clean-view>.top,body.clean-view>.catalog,body.clean-view>.bottom{display:none!important}
 body.clean-view #cleanViewToggle{opacity:.45}
 body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-visible{opacity:1}
+/* Compact visual labels retain full accessible names and touch targets. */
+.pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
+.drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
 </style>
 </head>
 <body>
@@ -211,12 +214,12 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <div id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div>
 <button id="cleanViewToggle" type="button" aria-label="開啟乾淨畫面" title="開啟乾淨畫面" aria-pressed="false" aria-controls="catalog">◌</button>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
-<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button" aria-label="前一本" title="前一本">‹</button><span class="divider"></span><button id="openBtn" class="action main" type="button" aria-label="展開書頁" title="展開書頁">▤</button><span class="divider"></span><button id="nextBtn" class="action" type="button" aria-label="下一本" title="下一本">›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
 <div id="walkPad" class="walk-pad" role="group" aria-label="觸點搖桿：按住拖曳移動，放開停止" hidden>
 <div id="walkKnob" class="walk-knob"></div></div>
 </div>
-<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">正在確認圖書館 3D 啟動狀態。</p><p id="fallbackDiag" role="status" style="color:#e1c6a0;font-size:12px;overflow-wrap:anywhere" hidden></p><button id="retry3d" type="button" hidden>↻ 重新嘗試 3D</button> <button id="fallbackOpen" type="button">開啟選取書本</button></div></div>
+<div class="fallback" id="fallback"><div><h2>圖書館暫時無法載入 3D</h2><p id="fallbackNote">正在確認圖書館 3D 啟動狀態。</p><p id="fallbackDiag" role="status" style="color:#e1c6a0;font-size:12px;overflow-wrap:anywhere" hidden></p><button id="retry3d" type="button" hidden aria-label="重新嘗試 3D" title="重新嘗試 3D">↻</button> <button id="fallbackOpen" type="button" aria-label="開啟選取書本" title="開啟選取書本">▤</button></div></div>
 <div class="drawer-wrap" id="drawerWrap" role="presentation"><section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><button class="close" id="closeDrawer" aria-label="關閉書頁">×</button><div class="eyebrow" id="drawerMeta">ACTIVE GRIMOIRE</div><div class="book-icon" id="drawerIcon">✦</div><h2 id="drawerTitle">研究之書</h2><p id="drawerDesc"></p><div class="layout"><div class="detail-cell"><small>書籍類型</small><strong id="drawerCategory"></strong></div><div class="detail-cell"><small>存放位置</small><strong id="drawerLocation"></strong></div><div class="detail-cell"><small>預期開啟介面</small><strong id="drawerTarget"></strong></div><div class="detail-cell"><small>內容來源狀態</small><strong id="drawerSource">公開功能入口，非 GEN2 知識庫</strong></div></div><section class="compendium" aria-label="魔法卡片圖鑑">
 <header class="compendium-top"><strong>✧ 魔導卡冊</strong><small id="codexHeader">第一卷 · 已收錄 0 / 6</small></header>
 <div class="compendium-pages">
@@ -229,22 +232,22 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <div class="compendium-index"><strong>收錄圖鑑 · <span id="codexBookLabel">創業之書</span></strong><span>✦ 觸碰卡片查看</span></div>
 <div id="drawerFunctions" class="card-slots"></div>
 <section id="cardReveal" class="card-reveal" hidden aria-live="polite">
-<div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard">返回圖鑑</button></div>
+<div class="card-reveal-head"><div><small id="cardSeal">◆ 01 · 已收錄</small><h3 id="cardTitle">公司設立</h3></div><button type="button" id="closeCard" aria-label="返回圖鑑" title="返回圖鑑">←</button></div>
 <p id="cardDescription" class="card-reveal-desc"></p><div id="cardLinks"></div>
 </section><p class="catalog-note">公開功能入口無需 GEN2 授權；私有 Skill／Workflow 授權後加入。外部研究卡為候選，並非 GEN2 技能。超過六張會自動延展。</p>
 </section></div></section><section id="readerShell" class="reader-shell" hidden aria-label="書內功能頁面">
 <div class="reader-toolbar">
-<button id="readerBack" class="reader-back" type="button">‹ 返回卡冊</button>
+<button id="readerBack" class="reader-back" type="button" aria-label="返回卡冊" title="返回卡冊">←</button>
 <div class="reader-toolbar-title"><strong id="readerTitle">功能卡片</strong><small id="readerSeal">卡片內容 · 可上下捲動</small></div>
-<button id="readerClose" class="reader-back" type="button">關閉書本</button>
+<button id="readerClose" class="reader-back" type="button" aria-label="關閉書本" title="關閉書本">×</button>
 </div>
 <div class="reader-viewport">
-<section id="editorPane" class="md-editor" hidden><div class="editor-controls"><button id="cancelEdit" type="button">返回閱讀</button><button id="validateEdit" type="button">檢查完整候選</button><button id="copyEdit" type="button">複製候選 MD</button></div><label class="editor-label" for="editText">完整候選 MD（只在本頁暫存）</label><textarea id="editText" spellcheck="false"></textarea><div class="submit-controls"><label>本次 PR 寫入權杖 <input id="writeToken" type="password" autocomplete="off" spellcheck="false"></label><button id="submitEdit" type="button">提交 Draft PR</button></div><p id="editorResult" role="status">正式 main 不會被修改；提交需要另一個具 Contents／Pull requests 寫入權限的 session token，不能沿用唯讀權杖。</p></section><article id="sourcePage" class="source-page" hidden></article><iframe id="readerFrame" class="reader-frame" title="書內功能" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>
+<section id="editorPane" class="md-editor" hidden><div class="editor-controls"><button id="cancelEdit" type="button" aria-label="返回閱讀" title="返回閱讀">←</button><button id="validateEdit" type="button" aria-label="檢查完整候選" title="檢查完整候選">✓</button><button id="copyEdit" type="button" aria-label="複製候選 MD" title="複製候選 MD">⧉</button></div><label class="editor-label" for="editText">完整候選 MD（只在本頁暫存）</label><textarea id="editText" spellcheck="false"></textarea><div class="submit-controls"><label>本次 PR 寫入權杖 <input id="writeToken" type="password" autocomplete="off" spellcheck="false"></label><button id="submitEdit" type="button" aria-label="提交 Draft PR，等待核准" title="提交 Draft PR，等待核准">送審</button></div><p id="editorResult" role="status">正式 main 不會被修改；提交需要另一個具 Contents／Pull requests 寫入權限的 session token，不能沿用唯讀權杖。</p></section><article id="sourcePage" class="source-page" hidden></article><iframe id="readerFrame" class="reader-frame" title="書內功能" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-read; clipboard-write"></iframe>
 </div>
 <footer class="reader-foot"><span>✧ 你仍在圖書館 · 書頁內容可上下滑動</span><a id="readerExternal" class="reader-external" target="_blank" rel="noopener noreferrer" href="#">若無法顯示，另開原頁 ↗</a></footer>
-</section><div class="drawer-actions"><button id="readBookMD" type="button">查閱本書 MD</button><button class="primary" id="moveBtn" type="button">移回書架</button><button id="backBtn" type="button">返回場景</button></div><p class="blank">✦ 同站功能現在於書本內頁開啟，3D 圖書館保留在背景；Google 日曆等外部網站仍需另開。書本環繞設定保留於本機，未更動原生 Pocket GBA。</p></section></div>
-<dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button">返回圖書館</button></dialog>
-<dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button">讀取正式書庫</button> <button id="reuseGen2" type="button">沿用此站 PackageCanvas 授權</button> <button id="disconnectGen2" type="button">斷線清除</button> <button>關閉</button></p><p id="authStatus" role="status"></p></form></dialog>
+</section><div class="drawer-actions"><button id="readBookMD" type="button" aria-label="查閱本書 MD" title="查閱本書 MD">MD</button><button class="primary" id="moveBtn" type="button" aria-label="歸還書架" title="歸還書架">⇥</button><button id="backBtn" type="button" aria-label="返回場景" title="返回場景">←</button></div><p class="blank">✦ 同站功能現在於書本內頁開啟，3D 圖書館保留在背景；Google 日曆等外部網站仍需另開。書本環繞設定保留於本機，未更動原生 Pocket GBA。</p></section></div>
+<dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button" aria-label="返回圖書館" title="返回圖書館">←</button></dialog>
+<dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">唯讀連線</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">沿用授權</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">斷線清除</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
@@ -253,7 +256,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
  <p class="ll-update-summary" id="llUpdateSummary"></p>
  <ul id="llUpdateList" class="ll-update-list" aria-label="本次更新項目"></ul>
  <p class="ll-update-warning">重新連結後，僅重設這座圖書館的書本選取、環繞及書架顯示紀錄。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
- <div class="ll-update-actions"><button type="button" id="llUpdateDone">✓ 知道了，繼續閱讀</button></div>
+ <div class="ll-update-actions"><button type="button" id="llUpdateDone" aria-label="知道了，繼續閱讀" title="知道了，繼續閱讀">✓</button></div>
 </dialog>
 <script src="../../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
 <script>
@@ -435,8 +438,8 @@ function revealCard(card,button){
  $('readerFrame').removeAttribute('src');$('readerFrame').hidden=true;
  const page=$('sourcePage');page.hidden=false;page.replaceChildren();
  const meta=document.createElement('p');meta.textContent=card.id+' · '+card.kind+' · 來源狀態 '+card.status+' · 版本 '+(card.version||'未標示')+'\n'+card.sourcePath+'\n來源 commit '+card.sourceCommit+'\n'+(card.runtime==='defined_owner_gate'?'含 gen2-run 定義；啟動與 OWNER Gate 仍由既有工作台處理':'能力文件已收錄；本頁不自動執行或寫入外部服務');page.append(meta);
- const doc=projectionState?.documents.find(d=>d.path===card.sourcePath);const edit=document.createElement('button');edit.textContent='編輯候選 MD';edit.disabled=!doc?.editable;edit.onclick=()=>openEditor(doc);page.append(edit);const ai=document.createElement('button');ai.textContent='複製給 AI 執行';ai.onclick=()=>copyAI(doc);page.append(ai);
- const action=document.createElement('button');action.textContent='在書內開啟既有 GEN2 工作台';action.onclick=()=>openCardReader({...card,url:SITE+'/packagecanvas/?gen2ref=main'});page.append(action);
+ const doc=projectionState?.documents.find(d=>d.path===card.sourcePath);const edit=document.createElement('button');edit.textContent='✎';edit.setAttribute('aria-label','編輯候選 MD');edit.title='編輯候選 MD';edit.disabled=!doc?.editable;edit.onclick=()=>openEditor(doc);page.append(edit);const ai=document.createElement('button');ai.textContent='AI';ai.setAttribute('aria-label','複製給 AI 執行');ai.title='複製給 AI 執行';ai.onclick=()=>copyAI(doc);page.append(ai);
+ const action=document.createElement('button');action.textContent='工作台';action.setAttribute('aria-label','在書內開啟既有 GEN2 工作台');action.title='在書內開啟既有 GEN2 工作台';action.onclick=()=>openCardReader({...card,url:SITE+'/packagecanvas/?gen2ref=main'});page.append(action);
  const content=document.createElement('div');content.textContent=card.body;page.append(content);
  $('readerBack').focus();
 }
@@ -509,7 +512,7 @@ function renderFunctions(b){
 }
 
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥ 歸還書架':'✦ 召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;

@@ -395,7 +395,7 @@
   "execution": {
     "lease_owner": "NW-UI-ICON-20261015",
     "lease_expires_at": "2026-10-15T01:24:52.061Z",
-    "heartbeat_at": "2026-10-15T01:04:52.061Z",
+    "heartbeat_at": "2026-10-15T01:06:29.871Z",
     "state": "BUILDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
@@ -772,5 +772,22 @@
         "result": "RESOLVED_TEST_FLOW"
       }
     ]
+  },
+  "ui_design_standard": {
+    "id": "NW-UI-ICON-FIRST-001",
+    "source": "OWNER project conversation 2026-10-15: 所有按鈕可以不要有文字，如果一定要有盡量極簡化；指定為 UI 設計標準",
+    "rule": "Icon-first controls; shortest unambiguous labels where needed; retain complete accessible names, content identity and touch targets",
+    "registry_path": "living-library/UI-MANAGER-REGISTRY.md",
+    "implementation_scope": "living-library/live/index.html action controls, including reader/dialog and dynamic move action; not all embedded applications or native screens",
+    "candidate_base_sha": "744f7c8bc0523d799b9c1a24045a94c7ef43c871",
+    "tests": {
+      "local_node": {
+        "result": "PASS",
+        "tests": 305
+      },
+      "browser": "CI_PENDING",
+      "device": "NOT_TESTED"
+    },
+    "release": "NOT_RELEASED"
   }
 }
