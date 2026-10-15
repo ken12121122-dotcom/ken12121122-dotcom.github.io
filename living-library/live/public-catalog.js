@@ -34,6 +34,7 @@ gptBridge:{id:'gptBridge',seal:'✧',number:'08',title:'知識庫連結導覽',g
 gptSkills:{id:'gptSkills',seal:'✦',number:'09',title:'GPT 技能總覽',guild:'GPT／能力與工作流',desc:'在書內開啟可搜尋的 GPT 技能規程、工具入口、四層路由與「某某卡」網頁嵌入規則。這是公開唯讀快照，不是外部 App 授權或執行器。',url:'./gpt-skills.html'},
 uiMap:{id:'uiMap',seal:'⚙',number:'10',title:'UI 名詞與書籍分工',guild:'圖書館管理員',desc:'查閱 UI 命名、書籍職責、獨立 Card ID、Live/Dev 差異及公開 GitHub 分支／PR 狀態。',url:SITE+'/living-library/ui-map.html'},
 knowledgeSearch:{id:'knowledgeSearch',seal:'⌕',number:'11',title:'正式 MD 搜尋',guild:'知識世界 · 檢索',desc:'從知識世界圖鑑呼叫已授權 GEN2 正式 MD 搜尋；未連線先授權。',url:'./knowledge-search.html'},
+cardCreation:{id:'cardCreation',seal:'◇',number:'13',title:'卡片創造術',guild:'遊戲之書 · 本機創作',desc:'施放卡片創造術，建立並保存一張懸浮空白卡；尚未放入任何書，也沒有執行權限。',url:'./card-creation.html'},
 systemControls:{id:'systemControls',seal:'⚙',number:'12',title:'連線與版本',guild:'系統之書 · 設定',desc:'統一管理 GEN2 來源授權與手動重新連結、更新公告；平時自動檢查版本。',url:'./system-controls.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
@@ -53,7 +54,7 @@ gpt:['gptBridge','gptSkills']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls'};
+const PUBLIC_IDS={research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 // Native navigation only. These cards open existing screens; they execute no
 // commands and are never GEN2 Skill definitions or permission grants.
@@ -93,7 +94,7 @@ function buildCatalog(projection=null){
  }
  cards['public.gba.runtime'].nativeRoute='gba';
  bookCards.startup.push(RESEARCH_ID);
- bookCards.gaming.push(GAME_DESIGN_ID);
+ bookCards.gaming.push(GAME_DESIGN_ID,canonicalPublicId('cardCreation'));
  for(const [id,c] of Object.entries(projection?.cards||{}))cards[id]={...c,sourceLayer:'gen2',seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(projection.cards).indexOf(id)+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
  for(const [i,b] of (projection?.books||[]).entries()){
   // This is a navigation alias, never an alternative kb_id or source registry.
