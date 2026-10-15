@@ -207,6 +207,67 @@ footer{margin-top:50px;padding:25px 0 40px;border-top:1px solid #40536b;color:#9
 </section>
 <!-- END NW-GAME-KB-001 WORLD ATLAS v0.3 -->
 
+<!-- BEGIN NW-GAME-KB-001 / 2026-10-15 MAGIC BOOK AND GESTURE DESIGN ADDENDUM: PROPOSED ONLY -->
+<section class="section" id="nw-magic-books-20261015" data-design-date="2026-10-15" data-design-status="proposed">
+ <div class="sectionhead"><div><span>18 / MAGIC BOOK SYSTEM · NEW CONCEPT</span><h2>魔法書互動新構想｜多書種類並存</h2></div><p>追加到同一張《遊戲之書》設計卡後面，不取代原有世界觀。</p></div>
+ <p class="atlas-meta">2026-10-15 構想紀錄　·　既有 Card ID：KW-GAME-MEMORY-PALACE-20261014　·　WORK-NW-GAMEDEV-001 待實作／待實機驗證</p>
+ <p><strong>最高原則：保留不同種類及不同版本的書本供測試比較。</strong> 現有一般書仍使用原本開啟方式、功能卡、圖鑑與內嵌閱讀器；新增一本獨立 3D 實驗書驗證動畫，不直接更換所有既有書。書本「類型」「開啟模式」「可收納卡片」「左右書頁配置」獨立設定，未來可由製書工作臺選擇。</p>
+ <div class="atlas-grid">
+  <article class="atlas-card"><h3>📚 一般書｜LEGACY</h3><p>維持目前的點書、閱讀器、卡片與書架操作。原有公開功能與無 WebGL 的 2D 備援不可移除。</p></article>
+  <article class="atlas-card"><h3>📖 3D 實驗書｜DOUBLE PAGE</h3><p>獨立試驗：飛近、左右頁實體展開、專注視角、雙指合書、上滑回環繞及長按移位。</p></article>
+  <article class="atlas-card"><h3>📙 符文書｜RUNE</h3><p>建立事件、條件、動作等符文卡；允許其他書以卡片 ID 重複引用。</p></article>
+  <article class="atlas-card"><h3>📘 法術書｜SPELL</h3><p>建立法術卡，將符文卡編排成受控觸發、條件與效果節點；法術卡自身也可成為可引用的動作節點。</p></article>
+  <article class="atlas-card"><h3>📗 手勢書｜GESTURE</h3><p>預設一名玩家一本。左頁放手勢卡、右頁放動作或法術卡；可翻頁、點開綁定卡再設定目標與條件。</p></article>
+  <article class="atlas-card"><h3>🛠️ 製書工作臺｜BOOK FORGE</h3><p>玩家自選書本種類、封面、名稱、允許卡片白名單、左右書頁配置與手勢；先實作通用資料契約，工作臺稍後開發。</p></article>
+ </div>
+</section>
+<section class="section" id="nw-magic-book-spaces">
+ <div class="sectionhead"><div><span>19 / BOOK SPACE AND ANIMATION</span><h2>一本真正的 3D 書：開合、位置與視角分離</h2></div><p>人物移動會帶著工作區，視角轉動不會把書本旋轉到眼前。</p></div>
+ <table class="atlas-table"><thead><tr><th>書本所在位置</th><th>定位規則</th><th>開合狀態</th></tr></thead><tbody>
+  <tr><td>實體書架</td><td>固定在指定書格、同一本模型可再次召喚</td><td>依書架展示規則</td></tr>
+  <tr><td>外圍環繞軌道</td><td>多書緩慢繞人物公轉，軌道中心跟著人物走</td><td>可閉合、可展開</td></tr>
+  <tr><td>近身工作軌道</td><td>在人物附近固定相對位置、跟人走但不公轉、不隨相機轉動</td><td>可閉合、可展開</td></tr>
+  <tr><td>專注閱讀視角</td><td>鏡頭靠近選定的展開書並對準左右頁；可退出並恢復原視角</td><td>維持同一實體書與原位置</td></tr>
+ </tbody></table>
+ <p>點擊外圍漂浮書 → 同一本書沿魔法弧線飛向人物 → 封面與左右頁自行展開 → 固定在近身工作位置；不強迫鏡頭看書。轉動視角可再點第二本，第二本自動飛到同一工作軌道的下一個空位，第三本亦然。關閉其中一本後，其他書不瞬間跳位；下次新書優先使用空位。開啟的書可長按拖到玩家指定的工作位置。</p>
+ <p>合書只把雙頁合起來，不強迫移動。上滑將書送回環繞軌道，<strong>保留當時開合狀態</strong>，所以展開的書也能繼續環繞。另設「歸還書架」：書本沿可見魔法路線定位、轉向並插回指定實體書格，不得只隱藏模型。漂浮書可長按挪位，放手後仍自動環繞；已展開工作書挪位後固定。</p>
+</section>
+<section class="section" id="nw-magic-book-controls">
+ <div class="sectionhead"><div><span>20 / TOUCH GESTURES</span><h2>手勢辨識 → 情境判斷 → 動作綁定</h2></div><p>手勢是輸入，不等於動作；共用白名單動作／符文引擎。</p></div>
+ <table class="atlas-table"><thead><tr><th>手勢與對象</th><th>執行效果</th></tr></thead><tbody>
+  <tr><td>點擊漂浮書</td><td>飛近並自動展開雙頁</td></tr>
+  <tr><td>點擊已展開書</td><td>進入可退出的全書全螢幕專注模式；離開不合書</td></tr>
+  <tr><td>在書頁上雙指向內靠攏</td><td>雙頁跟著手指逐步合攏，達到門檻後完成合書動畫；取消則恢復</td></tr>
+  <tr><td>在書本邊緣由下往上滑</td><td>書本沿弧線返回外圍環繞，維持目前開合狀態</td></tr>
+  <tr><td>長按書本並拖曳</td><td>調整世界空間位置：工作書固定、環繞書仍公轉</td></tr>
+  <tr><td>書頁正常滑動／場景空白雙指捏放</td><td>分別保留捲動、翻頁與原本相機縮放，不得誤觸合書或回軌道</td></tr>
+ </tbody></table>
+ <p>通用鏈路為「GestureRecognizer → Object/Context/Guard → GestureBinding → ActionRegistry/SpellExecutor → 3D 動畫或受控效果」。相同雙指手勢在書頁、場景或不同類型物件上可以有不同動作。手勢、語音、AI 分身可觸發同一已註冊效果，但任何外部執行仍必須另外驗證授權與平台能力。介面盡量不顯示文字按鈕，保留必要的安全退出方式。</p>
+</section>
+<section class="section" id="nw-magic-book-cards">
+ <div class="sectionhead"><div><span>21 / HOVERING REUSABLE CARDS</span><h2>卡片懸浮與跨書交換：引用，不是拿走原卡</h2></div><p>只有允許重複引用的卡片才能抽出懸浮。</p></div>
+ <div class="atlas-grid">
+  <article class="atlas-card"><h3>🃏 共享懸浮卡</h3><p>在《符文書》建立一張動作符文。長按可重用卡片，卡片由書頁浮到 3D 空間；拖至《法術書》節點欄或《手勢書》右頁，原卡仍存在。使用 canonical Card ID 建立引用，不製作不受控的平行複本。</p></article>
+  <article class="atlas-card"><h3>📖 雙頁操作</h3><p>可在右頁瀏覽卡片，抽出卡片放到左頁展開詳細說明；也可以翻頁尋找綁定、開啟設定卡，再拖入動作卡。書本種類決定左右頁允許的容器和卡片。</p></article>
+  <article class="atlas-card"><h3>🔗 法術可被手勢觸發</h3><p>例如「雙指靠攏」＋「目標為展開書」→「合上書本」；或指定手勢觸發「歸書術」。一張法術卡能被其他法術或綁定規則引用，但執行需防循環及權限核對。</p></article>
+  <article class="atlas-card"><h3>🔒 卡片使用規則</h3><p>分成可重用共享卡、僅原書使用卡、受限制／可能單次消耗卡。未放置的懸浮卡可取消並回來源，不讓圖書館堆積遺失卡。共享資格不等於外部服務寫入權限。</p></article>
+ </div>
+</section>
+<section class="section" id="nw-magic-book-work-plan">
+ <div class="sectionhead"><div><span>22 / WORK-NW-GAMEDEV-001 ROADMAP ADDENDUM</span><h2>慢慢做：以玩家實際能操作的成果分段交付</h2></div><p>沿用既有 P0～P7 循環，不另建立競爭中的 Work 母計畫。</p></div>
+ <table class="atlas-table"><thead><tr><th>開發段落</th><th>工作內容</th><th>驗收重點</th></tr></thead><tbody>
+  <tr><td>W01～W02</td><td>書本類型／開啟模式契約、獨立 3D 實驗書、最小手勢綁定</td><td>一般書原功能保留；新書與基礎動作可獨立測試</td></tr>
+  <tr><td>W03～W04</td><td>單書飛近展開雙頁、跟隨人物、專注模式、即時合書</td><td>手機能看見真正 3D 開書並以雙指合上</td></tr>
+  <tr><td>W05～W06</td><td>上滑返回軌道、長按拖移、多本書自動排列</td><td>可多書共存且不失去自由鏡頭</td></tr>
+  <tr><td>W07～W08</td><td>雙頁卡片詳細檢視、3D 懸浮卡、跨書拖放</td><td>共享卡跨書引用，原卡身分不變</td></tr>
+  <tr><td>W09～W10</td><td>手勢書的綁定卡編輯、符文與法術互用、製書工作臺</td><td>玩家可組合可控動作並製作不同種類的書</td></tr>
+  <tr><td>W11（跨階段）</td><td>本地卡片保存、離線待同步佇列、安全私人遠端同步</td><td>重開仍在、斷線可補傳、經授權遠端與 AI 可回讀；同步不可冒稱已完成</td></tr>
+ </tbody></table>
+ <p>Work 優先交付可玩閉環，不以純單元測試數充作遊戲成果。每輪重新查 P0～P7 缺口，已可靠驗收的功能不重新開始；缺少 GPU／手機／安全授權時可繼續其他獨立切片。保護既有 3D／書架／相機／人物／GBA／GEN2／卡片與玩家資料。正式 main、Pages、APK、私人 GitHub 寫入與權限擴大仍依 OWNER Gate 審批。</p>
+ <p class="atlas-meta">備註：以上全部屬 2026-10-15 設計構想紀錄，並不代表開書動畫、手勢書、懸浮卡、製書工作臺或雲端自動同步已上線。</p>
+</section>
+<!-- END NW-GAME-KB-001 / 2026-10-15 MAGIC BOOK AND GESTURE DESIGN ADDENDUM -->
+
 </main>
 <footer><div class="wrap"><div class="status">設計卡狀態：generated / experimental candidate / 未核准正式實作</div><p style="margin-top:9px">本頁僅整理 OWNER 於 2026-10-14 討論的公開遊戲設計概念，不建立新 GEN2 Skill、不呼叫 AI／工具、不讀取私有資料、不修改主程式及 Android 權限。既有 GBA 存檔與更新鏈應維持不變。</p><a href="./world.html">↶ 回到知識世界</a></div></footer>
 <script>
