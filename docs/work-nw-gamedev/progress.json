@@ -395,7 +395,7 @@
   "execution": {
     "lease_owner": "NW-UI-CLEAN-20261015",
     "lease_expires_at": "2026-10-15T01:11:31.796Z",
-    "heartbeat_at": "2026-10-15T00:51:31.796Z",
+    "heartbeat_at": "2026-10-15T00:52:34.629Z",
     "state": "BUILDING",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
@@ -711,5 +711,31 @@
     "highest_value_gap": "Outbox acknowledgements/retry/mock remote before real private synchronization",
     "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default.",
     "production_playable_feature_delta": 0
+  },
+  "ui_clean_view": {
+    "request": "OWNER requested removal of all upper-left text and a clean full scene view",
+    "base_sha": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77",
+    "surface_path": "living-library/live/index.html",
+    "scope_level": "L2_PRESENTATION_ONLY",
+    "changes": [
+      "Removed visible upper-left English/Chinese title and subtitle; accessible runtime status retained off screen",
+      "Added remembered clean-view toggle for top ornament, right book list and bottom controls; restore button and Escape remain available"
+    ],
+    "preserved_features": [
+      "Scene geometry, avatar, camera, joystick and book interactions unchanged",
+      "14 public books, public/private catalog and reader paths unchanged",
+      "Existing save keys untouched; one independent presentation preference"
+    ],
+    "tests": {
+      "node": {
+        "result": "PASS",
+        "tests": 305
+      },
+      "browser": "CI_PENDING",
+      "phone": "NOT_TESTED",
+      "staging": "NOT_TESTED"
+    },
+    "release": "NOT_RELEASED",
+    "rollback_ref": "d5bed0bfa8618fc3dba06f635c6a7d53910dba77"
   }
 }

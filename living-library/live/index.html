@@ -195,15 +195,21 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .walk-pad{position:fixed!important;left:0;top:0;transform:translate(-50%,-50%);width:112px;height:112px;pointer-events:none!important}
 .walk-ui[hidden],.walk-pad[hidden]{display:none!important}
 @media(max-width:650px){.walk-ui{inset:0!important;left:0!important;top:0!important;bottom:auto!important}.walk-pad{width:112px;height:112px}}
+#cleanViewToggle{position:fixed;right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:8;width:44px;height:44px;border:1px solid #bca67b66;border-radius:50%;background:#0c1623cc;color:#e5c28d;font-size:22px;touch-action:manipulation}
+body.clean-view>.top,body.clean-view>.catalog,body.clean-view>.bottom{display:none!important}
+body.clean-view #cleanViewToggle{opacity:.45}
+body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-visible{opacity:1}
 </style>
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
-<div class="brand"><div class="emblem"><span>✧</span></div><div><div class="kicker">THE LIVING ARCHIVE</div><div class="headline">念動圖書館</div><div class="meta">POCKET GBA · MAIN WORKBENCH BETA</div><div class="meta" id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div></div></div>
+<div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
 
 </header>
+<div id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div>
+<button id="cleanViewToggle" type="button" aria-label="開啟乾淨畫面" title="開啟乾淨畫面" aria-pressed="false" aria-controls="catalog">◌</button>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button">‹ 前一本</button><span class="divider"></span><button id="openBtn" class="action main" type="button">◈ 展開書頁</button><span class="divider"></span><button id="nextBtn" class="action" type="button">下一本 ›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
@@ -1331,4 +1337,5 @@ syncRender();
  if(proof)proof.textContent='3D 初始化失敗\n'+initPhase+'\n'+rawMessage;
 }
 </script>
+<script src="./clean-view.js"></script>
 </body></html>

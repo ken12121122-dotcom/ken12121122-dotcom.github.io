@@ -57,6 +57,26 @@ async function main(){
   await p.goto(origin+'/living-library/live/index.html',{waitUntil:'domcontentloaded'});
   await p.locator('#fallback.show').waitFor({timeout:15000});
   await dismissUpdate(p);
+  assert.equal(await p.locator('.brand').innerText(),'✧');
+  const cleanToggle=p.locator('#cleanViewToggle');
+  await p.evaluate(()=>localStorage.setItem('nw-clean-save-sentinel','preserve'));
+  await cleanToggle.click();
+  assert.equal(await p.locator('#catalog').isVisible(),false);
+  assert.equal(await p.locator('.bottom').isVisible(),false);
+  assert.equal(await cleanToggle.getAttribute('aria-label'),'顯示操作介面');
+  assert.equal(await p.locator('#fallbackOpen').isVisible(),true);
+  await p.reload({waitUntil:'domcontentloaded'});
+  await p.waitForFunction(()=>document.body.classList.contains('clean-view'));
+  await p.locator('#fallback.show').waitFor();
+  // Restore remains available on a phone, without relying on a keyboard.
+  await p.locator('#cleanViewToggle').click();
+  assert.equal(await p.locator('#catalog').isVisible(),true);
+  assert.equal(await p.locator('.bottom').isVisible(),true);
+  assert.equal(await p.evaluate(()=>localStorage.getItem('nw-clean-save-sentinel')),'preserve');
+  await p.locator('#cleanViewToggle').click();
+  await p.keyboard.press('Escape');
+  assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-pressed'),'false');
+  report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance.'});
   assert.equal(await p.locator('#bookList button').count(),14);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
   report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:14,joystick_hidden:true});
