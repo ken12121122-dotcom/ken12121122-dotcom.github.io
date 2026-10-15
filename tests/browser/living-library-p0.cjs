@@ -68,6 +68,7 @@ async function main(){
   await p.reload({waitUntil:'domcontentloaded'});
   await p.waitForFunction(()=>document.body.classList.contains('clean-view'));
   await p.locator('#fallback.show').waitFor();
+  await dismissUpdate(p);
   // Restore remains available on a phone, without relying on a keyboard.
   await p.locator('#cleanViewToggle').click();
   assert.equal(await p.locator('#catalog').isVisible(),true);
