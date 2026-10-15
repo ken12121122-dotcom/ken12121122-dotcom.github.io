@@ -663,7 +663,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
   if(!card)return;
   select('gaming');openBook();
   openCardReader({id,title:card.title,desc:card.description||'',seal:'◇',number:'00',
-   guild:'本機空白卡 · 草稿',kind:'public_function',url:'./card-creation.html?card='+encodeURIComponent(id)});
+   guild:'本機空白卡 · 草稿',kind:'local_draft',url:'./card-creation.html?card='+encodeURIComponent(id)});
  },
  controls:controlPrefs,saveControls,clampUnit,toast,
  notifyReady(scene){window.LivingScene=scene;ready=true;scene.select?.(selectedId);updateUI();},showFallback(reason,diagnostic){
