@@ -6,7 +6,7 @@
  else root.LivingObjectCraft=api;
 })(typeof self!=='undefined'?self:this,function(){
  'use strict';
- const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64,MAX_BOOKS=12;
+ const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64,MAX_BOOKS=12,MAX_RECYCLED=128;
  function read(storage){
   const raw=storage.getItem(KEY);
   if(raw===null)return {version:VERSION,objects:[]};
@@ -17,9 +17,17 @@
   return state;
  }
  function write(storage,objects){storage.setItem(KEY,JSON.stringify({version:VERSION,objects}))}
+ function isPlayerCard(x){return x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.')}
  function listCards(storage){
-  return read(storage).objects.filter(x=>x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.'))
-   .map(x=>({...x}));
+  return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
+ }
+ function listRecycledCards(storage){
+  return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').map(x=>({...x}));
+ }
+ function getStats(storage){
+  const cards=listCards(storage),recycled=listRecycledCards(storage),books=listBooks(storage);
+  return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId).length,
+   inBooks:cards.filter(x=>!!x.containerId).length,recycledCards:recycled.length,createdBooks:books.length};
  }
  // Cards stay unassigned and floating until the future book-forge placement is implemented.
  function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId)}
@@ -33,7 +41,7 @@
   throw Error('無法安全產生卡片識別碼');
  }
  function createBlankCard(storage,random,clock=()=>new Date().toISOString()){
-  const state=read(storage);if(state.objects.filter(x=>x.objectType==='card').length>=MAX_CARDS)
+  const state=read(storage);if(state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').length>=MAX_CARDS)
    throw Error('試作上限 64 張；沒有覆蓋既有卡片');
   const used=new Set(state.objects.map(x=>x.id));let id;
   for(let i=0;i<5;i++){id='local.card.'+token(random);if(!used.has(id))break}
@@ -66,8 +74,8 @@
   write(storage,objects);return {...objects[at]};
  }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
-  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&x.objectType==='card'&&x.templateId==='blank-card-v1');
-  if(at<0)throw Error('找不到這張本機卡片');
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到可編輯的本機卡片');
   if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description'].includes(x)))
    throw Error('目前只能設定卡名及說明');
   const card={...state.objects[at]};
@@ -84,5 +92,27 @@
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
  }
- return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,read,listCards,floatingCards,listBooks,createBlankCard,createBlankBook,setBookActive,editCard};
+ function recycleCard(storage,id,clock=()=>new Date().toISOString()){
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到可回收的本機卡片');
+  const old=state.objects[at];
+  if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
+  if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
+   throw Error('回收站已滿，未修改卡片');
+  const when=clock(),next={...old,status:'recycled',placement:'recycled',recycledAt:when,
+   restorePlacement:old.placement,revision:old.revision+1,updatedAt:when};
+  const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
+ }
+ function restoreCard(storage,id,clock=()=>new Date().toISOString()){
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status==='recycled');
+  if(at<0)throw Error('找不到可還原的卡片');
+  if(state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').length>=MAX_CARDS)
+   throw Error('目前有 64 張有效卡片，無法還原；原卡仍留在回收站');
+  const old=state.objects[at],when=clock();
+  const next={...old,status:'draft',placement:old.restorePlacement==='hover'?'hover':'hover',
+   recycledAt:null,restorePlacement:null,revision:old.revision+1,updatedAt:when};
+  const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
+ }
+ return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
+  createBlankCard,createBlankBook,setBookActive,editCard,recycleCard,restoreCard};
 });
