@@ -300,6 +300,7 @@ const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
 const ObjectCraft=window.LivingObjectCraft;
+const CardTuning=window.LivingCardPlacement; // Shared numeric contract with the 3D card orbit and the System Book.
 // Player-made objects use LOCAL, non-GEN2 identities. They never alter the public catalog's source registry.
 function syncPlayerObjects(){
  if(!ObjectCraft)return false;
@@ -338,10 +339,10 @@ function normalizeControls(raw){
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
  cardReorder:typeof d.cardReorder==='boolean'?d.cardReorder:true,
  // Game parameters for the inner card orbit; separate from the existing books.
- cardSize:clampUnit(Number.isFinite(d.cardSize)?d.cardSize:1,.65,1.2),
- cardOrbitDistance:clampUnit(Number.isFinite(d.cardOrbitDistance)?d.cardOrbitDistance:1,.88,1.06),
- cardOrbitSpeed:clampUnit(Number.isFinite(d.cardOrbitSpeed)?d.cardOrbitSpeed:1,0,1.8),
- cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:2850,1800,4500),
+ cardSize:clampUnit(Number.isFinite(d.cardSize)?d.cardSize:(CardTuning?.DEFAULTS?.cardSize??1),...(CardTuning?.LIMITS?.cardSize||[.65,1.2])),
+ cardOrbitDistance:clampUnit(Number.isFinite(d.cardOrbitDistance)?d.cardOrbitDistance:(CardTuning?.DEFAULTS?.cardOrbitDistance??1),...(CardTuning?.LIMITS?.cardOrbitDistance||[.88,1.06])),
+ cardOrbitSpeed:clampUnit(Number.isFinite(d.cardOrbitSpeed)?d.cardOrbitSpeed:(CardTuning?.DEFAULTS?.cardOrbitSpeed??1),...(CardTuning?.LIMITS?.cardOrbitSpeed||[0,1.8])),
+ cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:(CardTuning?.DEFAULTS?.cardSummonDuration??2850),...(CardTuning?.LIMITS?.cardSummonDuration||[1800,4500])),
  joystickPosition:{x:Number.isFinite(p.x)?clampUnit(p.x,.08,.92):.23,y:Number.isFinite(p.y)?clampUnit(p.y,.12,.88):.7}};
 }
 let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getItem(CONTROLS_PREFS_KEY)||'null'))}catch(_){return normalizeControls(null)}})();
@@ -350,9 +351,11 @@ let swapFrom=null;
 function saveControls(patch){
  // Keep the same shared object identity: the independent 3D module reads it.
  Object.assign(controlPrefs,normalizeControls({...controlPrefs,...patch}));
- try{localStorage.setItem(CONTROLS_PREFS_KEY,JSON.stringify(controlPrefs))}catch(_){}
+ let persisted=false;
+ try{localStorage.setItem(CONTROLS_PREFS_KEY,JSON.stringify(controlPrefs));persisted=true}catch(e){console.warn('3D preferences could not be persisted',e)}
  if(!controlPrefs.cardReorder)swapFrom=null;
  window.LivingScene?.applyControls?.();
+ return persisted;
 }
 function orderedCardIds(bookId){
  const original=BOOK_CARDS[bookId]||[],previous=Array.isArray(cardOrders[bookId])?cardOrders[bookId]:[];
@@ -468,12 +471,24 @@ window.addEventListener('message',event=>{
   for(const field of ['rotationEnabled','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
   if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
-  for(const [field,limits] of Object.entries({
+  // Single source of truth: these are the SAME limits used by the 3D orbit and slider.
+  for(const [field,limits] of Object.entries(CardTuning?.LIMITS||{
    cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
-   cardOrbitSpeed:[0,1.8],cardSummonDuration:[900,2600]
+   cardOrbitSpeed:[0,1.8],cardSummonDuration:[1800,4500]
   }))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
    next[field]=clampUnit(input[field],...limits);
-  if(Object.keys(next).length){saveControls(next);toast('操作偏好已儲存')}
+  if(Object.keys(next).length){
+   const persisted=saveControls(next);
+   // A slider moving inside the iframe is NOT evidence of a 3D update. Acknowledge
+   // only AFTER the shared preferences object and scene apply path have been updated.
+   event.source.postMessage({
+    kind:'living-library-public-card-action-result',action:'update-preferences',
+    requestId:event.data.requestId,
+    applied:Object.fromEntries(Object.keys(next).map(k=>[k,controlPrefs[k]])),
+    persisted,sceneReady:!!window.LivingScene?.applyControls
+   },event.origin);
+   if(!persisted)toast('參數已套用，但本機儲存失敗；請檢查網站儲存空間');
+  }
  }
  else if(id==='public.system.controls'&&action==='relocate-joystick'){
   saveControls({joystickMode:'fixed',joystickEnabled:true});closeBook();
@@ -970,6 +985,11 @@ function beginJoystickPlacement(){
  toast('在場景按住並拖曳，放開即可設定搖桿喚醒位置');
 }
 function applyControlPrefs(){
+ // Inspectable proof of the settings received by the live 3D scene. No new visible UI.
+ stage.dataset.cardSize=String(controlPrefs.cardSize);
+ stage.dataset.cardOrbitDistance=String(controlPrefs.cardOrbitDistance);
+ stage.dataset.cardOrbitSpeed=String(controlPrefs.cardOrbitSpeed);
+ stage.dataset.cardSummonDuration=String(controlPrefs.cardSummonDuration);
  if(!controlPrefs.joystickEnabled){placingJoystick=false;resetJoystick(true)}
  else if(joystickVisible&&controlPrefs.joystickMode==='fixed'&&!placingJoystick)
   positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
