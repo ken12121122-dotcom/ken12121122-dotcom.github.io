@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T04:30:53.044Z",
+  "updated_at": "2026-10-15T04:33:34.396Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -14,7 +14,7 @@
   "status": "IN_PROGRESS",
   "source_of_truth": {
     "repo": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-    "main_sha": "49d373c114bc1a312e72d0a9627333824a8505a6",
+    "main_sha": "c771ab9524e4030bdb545657b580c1ee7a93052e",
     "requirements_ref": "NW-RUNE-BUILD-001 v0.4.0"
   },
   "permissions": {
@@ -417,6 +417,18 @@
       "ci_run_id": 38677077443,
       "result": "Bounded explicit delivery pump verified with real IndexedDB and injected synthetic idempotent transport. Single-flight shared per store object; cancel/timeout ignore late receipts; retry preserves key; edits during send stay pending. Not actual private sync.",
       "next_action": "READ/SCAN current main and all P0-P7/five sync checks. Next highest-value independent slice: versioned read-only export/recovery for existing ObjectCraft blank cards/books, using synthetic records and preserving canonical IDs/revisions, then define an explicit outbox adapter. Do not silently convert blank objects into nw.spell.v1 or overwrite/migrate player storage. Before enabling real delivery, also resolve cross-tab/independent-store coordination and authorized idempotent transport. Keep private writes, scene/device and final release Gates."
+    },
+    {
+      "work_item_id": "P2-OBJECT-BACKUP-001",
+      "state": "VERIFYING_CI",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P2_PREPARATORY_ONLY; existing card creation page read-only backup and file inspection",
+      "rollback_sha": "670de4ec2bdc3176d83548786bdb738259475860",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p2-object-backup.json"
+      ]
     }
   ],
   "last_run": {
@@ -429,8 +441,8 @@
   "execution": {
     "lease_owner": "NW-CYCLE-20261015-13",
     "lease_expires_at": "2026-10-15T04:55:53.044Z",
-    "heartbeat_at": "2026-10-15T04:30:53.044Z",
-    "state": "BUILDING",
+    "heartbeat_at": "2026-10-15T04:33:34.396Z",
+    "state": "VERIFYING_CI",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -711,7 +723,8 @@
         "WORK_CYCLE_P0_P7_v1.2.yaml",
         "WORK_START_PROMPT_v1.2.md"
       ],
-      "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated"
+      "v10_v11": "Read existing mother workflow and additive agent entry; no Agent Magic subproject activated",
+      "current_run_v12_zip": "Library metadata accessible, direct read returned no readable content; local zip absent. Explicit user cycle contract applied; not claiming current zip contents read."
     }
   },
   "acceptance_scan": {

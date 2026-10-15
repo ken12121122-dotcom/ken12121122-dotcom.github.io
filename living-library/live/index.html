@@ -203,6 +203,10 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
 #cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
 #cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
+#drawerWrap.card-spell-leaving{opacity:0;pointer-events:none;transition:opacity .24s ease}
+#cardRecycleConfirm{max-width:min(92vw,430px);border:1px solid #cfb98f;border-radius:14px;background:#1c2d3d;color:#f7ebcf;padding:24px}
+#cardRecycleConfirm::backdrop{background:#08111dc7}
+#cardRecycleConfirm button{min-height:48px;min-width:56px;margin:6px;border-radius:8px;border:1px solid #c9ab79;background:#334858;color:#f7e0ae;font-size:24px}
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
@@ -212,7 +216,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
+<button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
 <button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
+<dialog id="cardRecycleConfirm" aria-label="確認回收懸浮卡">
+<p>要將這張卡移到回收站嗎？卡片會離開環繞軌道，但可從《卡片創造術》的回收站還原。</p>
+<button id="cardRecycleCancel" type="button" aria-label="取消回收" title="取消">×</button>
+<button id="cardRecycleAccept" type="button" aria-label="確認回收" title="確認回收">✓</button>
+</dialog>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
@@ -327,6 +337,11 @@ function normalizeControls(raw){
  joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
  cardReorder:typeof d.cardReorder==='boolean'?d.cardReorder:true,
+ // Game parameters for the inner card orbit; separate from the existing books.
+ cardSize:clampUnit(Number.isFinite(d.cardSize)?d.cardSize:1,.65,1.2),
+ cardOrbitDistance:clampUnit(Number.isFinite(d.cardOrbitDistance)?d.cardOrbitDistance:1,.88,1.06),
+ cardOrbitSpeed:clampUnit(Number.isFinite(d.cardOrbitSpeed)?d.cardOrbitSpeed:1,0,1.8),
+ cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:2850,1800,4500),
  joystickPosition:{x:Number.isFinite(p.x)?clampUnit(p.x,.08,.92):.23,y:Number.isFinite(p.y)?clampUnit(p.y,.12,.88):.7}};
 }
 let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getItem(CONTROLS_PREFS_KEY)||'null'))}catch(_){return normalizeControls(null)}})();
@@ -391,7 +406,7 @@ function isLocalFunctionPage(url){
     (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));
  }catch(_){return false}
 }
-let readerCard=null;
+let readerCard=null,cardSpellExitTimer=null;
 // Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
@@ -402,14 +417,22 @@ window.addEventListener('message',event=>{
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
  if(event.data.action==='card-created'&&readerCard?.id==='public.gaming.card.creation'){
   const id=event.data.cardId;
-  // Only accept an ID that was actually written to local craft storage.
-  const exists=typeof id==='string'&&ObjectCraft?.floatingCards(localStorage).some(card=>card.id===id);
-  if(!exists)return;
+  // Only accept real locally persisted player cards, never arbitrary iframe payloads.
+  let exists=false;
+  try{exists=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
+  catch(e){toast(e.message);return}
+  if(!exists||cardSpellExitTimer!==null)return;
   const scene=window.LivingScene;
   if(typeof scene?.startCardSummon==='function'){
-   closeBook(); // Reveal the real 3D scene immediately, not an iframe animation.
-   scene.startCardSummon(id);
-  }else toast('卡片已儲存；3D 場景目前不可用，請稍後重新進入。');
+   // Reserve the card hidden BEFORE fading, preventing a one-frame orbit flash.
+   if(!scene.queueCardSummon(id))return;
+   const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
+   cardSpellExitTimer=setTimeout(()=>{
+    cardSpellExitTimer=null;
+    scene.startCardSummon(id); // Stage the invisible card before the first scene frame.
+    closeBook();drawer.classList.remove('card-spell-leaving');
+   },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
+  }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
  }
 });
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
@@ -432,6 +455,11 @@ window.addEventListener('message',event=>{
   for(const field of ['rotationEnabled','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
   if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
+  for(const [field,limits] of Object.entries({
+   cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
+   cardOrbitSpeed:[0,1.8],cardSummonDuration:[900,2600]
+  }))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
+   next[field]=clampUnit(input[field],...limits);
   if(Object.keys(next).length){saveControls(next);toast('操作偏好已儲存')}
  }
  else if(id==='public.system.controls'&&action==='relocate-joystick'){
@@ -669,6 +697,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
   let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
   if(!card)return;
@@ -1046,7 +1075,9 @@ const coverMaterials=new Map(),bookEntities=[],entityById=new Map();
 const floatingCardMeshes=new Map(),CardPlacement=window.LivingCardPlacement;
 if(!CardPlacement)throw Error('3D card placement module not loaded');
 let focusedCard=null,smokeTexture=null;
-const CARD_SUMMON_MS=1700;
+const reservedCardSummons=new Set();
+// Book fade is 240ms; 3D phases last 2850ms at default (≈3.1s overall).
+const CARD_SUMMON_PHASES=Object.freeze({gather:.24,emerge:.48,flight:.87});
 function smokeMap(){
  if(smokeTexture)return smokeTexture;
  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
@@ -1068,15 +1099,17 @@ function createCardSmoke(origin){
  }
  return puffs;
 }
-function updateCardSmoke(puffs,origin,elapsed){
- const seconds=elapsed*.001,fade=Math.max(0,1-elapsed/1350);
+function updateCardSmoke(puffs,origin,age,duration){
+ const progress=Math.min(1,age/duration),seconds=age*.001;
+ // First gather into a bright cloud, then lift and dissipate as the card flies out.
+ const envelope=Math.min(1,progress/.16)*Math.max(0,1-Math.max(0,progress-.49)/.48);
  for(const p of puffs){
   const t=Math.max(0,seconds-p.delay);
-  const radius=.08+t*.43;
-  p.sprite.position.set(origin.x+Math.cos(p.angle)*radius,
-   origin.y+.18+t*.55,origin.z+Math.sin(p.angle)*radius);
-  const size=.23+t*.48;p.sprite.scale.set(size,size,1);
-  p.sprite.material.opacity=.55*fade;
+  const radius=.1+Math.min(t,1.2)*.28;
+  p.sprite.position.set(origin.x+Math.cos(p.angle+seconds*2.1)*radius,
+   origin.y+.1+t*.45,origin.z+Math.sin(p.angle+seconds*2.1)*radius);
+  const size=.22+Math.min(t,1.3)*.35;p.sprite.scale.set(size,size,1);
+  p.sprite.material.opacity=.76*envelope;
  }
 }
 function removeCardSmoke(puffs){
@@ -1107,6 +1140,7 @@ function newFloatingCard(record){
   summon:null};
 }
 function disposeFloatingCard(entry){
+ reservedCardSummons.delete(entry.id);
  if(entry.summon)removeCardSmoke(entry.summon.puffs);
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
@@ -1126,51 +1160,85 @@ function refreshFloatingCards(){
   floatingCardMeshes.set(record.id,newFloatingCard(record));
  window.LivingScene?.syncRender?.();
 }
+function queueCardSummon(id){
+ const entry=floatingCardMeshes.get(id);
+ if(!entry)return false;
+ reservedCardSummons.add(id);entry.group.visible=false;return true;
+}
 function startCardSummon(id){
  const card=floatingCardMeshes.get(id);
- if(!card)return;
+ if(!card)return false;
+ reservedCardSummons.delete(id);
  if(card.summon)removeCardSmoke(card.summon.puffs);
- // Origin is the avatar's local magic point; the SAME card flies to its orbit.
- const origin=new THREE.Vector3(keeper.position.x,2.15,keeper.position.z+.37);
- card.summon=preferReduced?null:{started:performance.now(),origin,
+ // Place the spell between the viewer and character so it remains visible
+ // regardless of player yaw, without forcing the camera to rotate or zoom.
+ const toViewer=camera.position.clone().sub(keeper.position);toViewer.y=0;
+ if(toViewer.lengthSq()<.001)toViewer.set(0,0,1);
+ toViewer.normalize().multiplyScalar(.78);
+ const originOffset={x:toViewer.x,z:toViewer.z};
+ const origin=new THREE.Vector3(keeper.position.x+originOffset.x,2.12,
+  keeper.position.z+originOffset.z);
+ card.group.visible=preferReduced;
+ card.summon=preferReduced?null:{started:performance.now(),originOffset,
   puffs:createCardSmoke(origin)};
- syncRender();
+ syncRender();return true;
 }
 function hasCardSummon(){return [...floatingCardMeshes.values()].some(x=>!!x.summon)}
 function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
-  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime);
+  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
   const target=new THREE.Vector3(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
   const summon=entry.summon;
   if(summon){
    const age=Math.max(0,now-summon.started);
-   const t=Math.min(1,age/CARD_SUMMON_MS),smooth=t*t*(3-2*t);
-   const origin=summon.origin.clone();
-   origin.x+=keeper.position.x-summon.origin.x;
-   origin.z+=keeper.position.z-(summon.origin.z-.37);
-   entry.group.position.copy(origin).lerp(target,smooth);
-   entry.group.position.y+=Math.sin(Math.PI*t)*.58;
-   updateCardSmoke(summon.puffs,origin,age);
-   if(t>=1){removeCardSmoke(summon.puffs);entry.summon=null}
-  }else entry.group.position.copy(target);
+   const duration=controlPrefs.cardSummonDuration;
+   const t=Math.min(1,age/duration);
+   const origin=new THREE.Vector3(keeper.position.x+summon.originOffset.x,2.12,
+    keeper.position.z+summon.originOffset.z);
+   updateCardSmoke(summon.puffs,origin,age,duration);
+   entry.group.visible=t>=CARD_SUMMON_PHASES.gather;
+   if(t<CARD_SUMMON_PHASES.emerge){
+    // The card is born inside the smoke, rising into view.
+    const u=Math.max(0,(t-CARD_SUMMON_PHASES.gather)/
+     (CARD_SUMMON_PHASES.emerge-CARD_SUMMON_PHASES.gather));
+    entry.group.position.copy(origin);
+    entry.group.position.y+=.06+u*.67;
+    entry.group.scale.setScalar(Math.max(.001,u)*controlPrefs.cardSize*.8);
+   }else if(t<CARD_SUMMON_PHASES.flight){
+    // A smooth arc carries the SAME 3D card into the card-only inner orbit.
+    const u=(t-CARD_SUMMON_PHASES.emerge)/
+     (CARD_SUMMON_PHASES.flight-CARD_SUMMON_PHASES.emerge);
+    const eased=u*u*(3-2*u);
+    const from=origin.clone();from.y+=.73;
+    entry.group.position.copy(from).lerp(target,eased);
+    entry.group.position.y+=Math.sin(Math.PI*u)*.48;
+    entry.group.scale.setScalar(controlPrefs.cardSize*(.8+.2*eased));
+   }else{
+    const u=(t-CARD_SUMMON_PHASES.flight)/(1-CARD_SUMMON_PHASES.flight);
+    entry.group.position.copy(target);
+    entry.group.position.y+=Math.sin(Math.PI*Math.min(u,1))*.08;
+    entry.group.scale.setScalar(controlPrefs.cardSize);
+   }
+   if(t>=1){removeCardSmoke(summon.puffs);entry.summon=null;entry.group.visible=true}
+  }else{entry.group.position.copy(target);
+   entry.group.visible=!reservedCardSummons.has(entry.id);
+   entry.group.scale.setScalar(controlPrefs.cardSize)}
   // Face the viewer, without changing the card's own independent world-space path.
   entry.group.quaternion.copy(camera.quaternion);
-  const appear=summon?Math.min(1,(now-summon.started)/490):1;
-  entry.group.scale.setScalar(Math.max(.03,appear));
  }
  if(focusedCard){
   const entry=floatingCardMeshes.get(focusedCard.id);
   if(!entry){exitCardFocus();return}
   const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
-  const focusDistance=Math.max(.72/(2*halfTan*.79),.49/(2*halfTan*camera.aspect*.84));
+  const focusDistance=Math.max(.72*controlPrefs.cardSize/(2*halfTan*.79),.49*controlPrefs.cardSize/(2*halfTan*camera.aspect*.84));
   const target=entry.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
   const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
   const smooth=t*t*(3-2*t);
   camera.position.copy(focusedCard.from).lerp(target,smooth);
   camera.lookAt(entry.group.position);
   entry.group.quaternion.copy(camera.quaternion);
-  entry.group.scale.setScalar(1);
+  entry.group.scale.setScalar(controlPrefs.cardSize);
  }
 }
 function focusCard(id){
@@ -1191,6 +1259,20 @@ document.getElementById('cardFocusClose').addEventListener('click',exitCardFocus
 document.getElementById('cardFocusEdit').addEventListener('click',()=>{
  const id=focusedCard?.id;if(!id)return;exitCardFocus();
  window.LivingLibrary.openLocalCardEditor?.(id);
+});
+const cardRecycleDialog=document.getElementById('cardRecycleConfirm');
+document.getElementById('cardFocusRecycle').addEventListener('click',()=>{
+ if(!focusedCard)return;
+ cardRecycleDialog.showModal();
+});
+document.getElementById('cardRecycleCancel').addEventListener('click',()=>cardRecycleDialog.close());
+document.getElementById('cardRecycleAccept').addEventListener('click',()=>{
+ const id=focusedCard?.id;cardRecycleDialog.close();if(!id)return;
+ try{
+  window.LivingObjectCraft.recycleCard(localStorage,id);
+  refreshFloatingCards(); // removes the card mesh and exits focus automatically
+  window.LivingLibrary?.toast?.('卡片已回收，可在卡片創造術中還原');
+ }catch(e){window.LivingLibrary?.toast?.(e.message||'回收失敗')}
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
@@ -1546,7 +1628,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  beginJoystickPlacement,applyControls:applyControlPrefs,
- refreshFloatingCards,startCardSummon,exitCardFocus,
+ refreshFloatingCards,queueCardSummon,startCardSummon,exitCardFocus,
  syncRender,invalidate
 });
 exploreUI.hidden=false;
