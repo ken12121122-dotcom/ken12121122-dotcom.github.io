@@ -6,6 +6,14 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.pm.PackageManager;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
+import androidx.webkit.JavaScriptReplyProxy;
+import org.json.JSONObject;
+import org.json.JSONException;
+import java.util.HashSet;
+import java.util.Arrays;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -24,10 +32,38 @@ import java.util.Map;
 import java.util.Collections;
 
 /** Trusted GitHub Pages web UI with bundled offline fallback; private GEN2
- * remains an explicit browser-session GitHub read. No JS bridge is added. */
+ * remains an explicit browser-session GitHub read. Voice transport is scoped to the exact home document. */
 public final class LivingLibraryActivity extends Activity {
     private WebView web;
     private boolean fallbackStarted;
+    private boolean foreground;
+    private LivingLibraryVoiceController voice;
+    private JavaScriptReplyProxy voiceReply;
+    private String voiceOrigin = "";
+    private boolean voiceAuthorized() {
+        return web != null && LivingLibraryVoicePolicy.allowed(committedUrl, web.getUrl(), voiceOrigin, true, foreground);
+    }
+    private void configureVoiceTransport() {
+        voice = new LivingLibraryVoiceController(this, this::voiceAuthorized, json -> {
+            if (voiceReply != null && voiceAuthorized()) voiceReply.postMessage(json);
+        });
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
+        WebViewCompat.addWebMessageListener(web, "LivingLibraryNativeVoice",
+                new HashSet<>(Arrays.asList("https://ken12121122-dotcom.github.io", "https://appassets.androidplatform.net")),
+                (view, message, origin, mainFrame, reply) -> {
+                    if (!LivingLibraryVoicePolicy.allowed(committedUrl, view.getUrl(), origin.toString(), mainFrame, foreground)) return;
+                    String data = message.getData(); if (data == null || data.length() > 512) return;
+                    try {
+                        JSONObject request = new JSONObject(data);
+                        if (request.optInt("v") != 1) return;
+                        String op = request.optString("op"), session = request.optString("session");
+                        if (!LivingLibraryVoicePolicy.validSession(session)) return;
+                        voiceOrigin = origin.toString(); voiceReply = reply;
+                        if ("start".equals(op)) voice.request(session);
+                        else if ("stop".equals(op)) voice.stopSession(session);
+                    } catch (JSONException ignored) { }
+                });
+    }
     volatile String committedUrl = "";
     @SuppressLint("SetJavaScriptEnabled")
     @Override protected void onCreate(Bundle state) {
@@ -46,6 +82,7 @@ public final class LivingLibraryActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSafeBrowsingEnabled(true);
         settings.setUserAgentString(settings.getUserAgentString() + " LivingLibraryNative/" + BuildConfig.VERSION_NAME);
+        configureVoiceTransport();
         web.setWebViewClient(new WebViewClient() {
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -77,7 +114,7 @@ public final class LivingLibraryActivity extends Activity {
                     });
                 }
             }
-            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { committedUrl = ""; }
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { if (voice != null) voice.stop(); voiceReply = null; voiceOrigin = ""; committedUrl = ""; }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String route = LivingLibraryPolicy.route(request.getUrl().toString());
                 if (route != null) {
@@ -146,9 +183,15 @@ public final class LivingLibraryActivity extends Activity {
             if (!"true".equals(result)) { if (web.canGoBack()) web.goBack(); else LivingLibraryActivity.super.onBackPressed(); }
         });
     }
-    @Override protected void onPause() { if (web != null) web.onPause(); super.onPause(); }
-    @Override protected void onResume() { super.onResume(); if (web != null) web.onResume(); }
+    @Override protected void onPause() { if (voice != null) voice.stop(); foreground = false; if (web != null) web.onPause(); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); foreground = true; if (web != null) web.onResume(); }
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == LivingLibraryVoiceController.AUDIO_PERMISSION_REQUEST && voice != null)
+            voice.permissionResult(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED);
+    }
     @Override protected void onDestroy() {
+        if (voice != null) voice.destroy(); voiceReply = null;
         if (web != null) { web.stopLoading(); web.loadUrl("about:blank"); web.removeAllViews(); web.destroy(); web = null; }
         super.onDestroy();
     }
