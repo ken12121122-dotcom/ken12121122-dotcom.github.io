@@ -10,7 +10,7 @@ async function main(){
    const url=new URL(route.request().url());
    if(url.origin!=='https://nw-backup.invalid'){outbound++;return route.abort()}
    const name=path.basename(url.pathname);
-   if(!['card-creation.html','object-craft.js','object-backup.js','object-outbox.js'].includes(name))return route.abort();
+   if(!['card-creation.html','object-craft.js','object-backup.js','object-outbox.js','object-reconciler.js'].includes(name))return route.abort();
    return route.fulfill({contentType:name.endsWith('.js')?'text/javascript':'text/html',body:await fs.readFile(path.resolve(__dirname,'../../living-library/live',name))});
   });
   await page.goto('https://nw-backup.invalid/card-creation.html');
@@ -38,8 +38,9 @@ async function main(){
   await page.waitForFunction(()=>document.querySelector('#backupStatus').textContent.includes('檢查未通過'));
   assert.deepEqual(await page.evaluate(()=>({raw:localStorage.getItem(LivingObjectCraft.KEY),sentinel:localStorage.getItem('synthetic-gba-sentinel')})),{raw,sentinel:'keep'});assert.equal(outbound,0);
   proof.checks.push({case:'tampered file rejected with exact source and unrelated saves untouched, zero external requests',result:'PASS'});
+  await page.waitForFunction(()=>document.querySelector('#queueStatus').textContent==='本機待同步 2 筆；尚未上傳雲端。');
   await page.locator('#queueObjects').click();
-  await page.waitForFunction(()=>document.querySelector('#backupStatus').textContent.includes('本機待同步 2 筆；本次更新 2 筆'));
+  await page.waitForFunction(()=>document.querySelector('#backupStatus').textContent.includes('本機待同步 2 筆；本次更新 0 筆'));
   await page.reload();await page.locator('#localBackup summary').click();await page.locator('#queueObjects').click();
   await page.waitForFunction(()=>document.querySelector('#backupStatus').textContent.includes('本機待同步 2 筆；本次更新 0 筆'));
   const queued=await page.evaluate(async()=>{const q=await LivingObjectOutbox.ObjectOutbox.open();try{return {rows:await q.pending(),raw:localStorage.getItem(LivingObjectCraft.KEY),sentinel:localStorage.getItem('synthetic-gba-sentinel')}}finally{q.close()}});

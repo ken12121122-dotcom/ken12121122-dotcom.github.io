@@ -81,12 +81,13 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
 <p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
 <div id="recycleList"></div></details>
+<output id="queueStatus" role="status" aria-live="polite"></output>
 <details id="localBackup"><summary>本機備份與救援檢查</summary>
 <p>↓ 下載目前瀏覽器的全部自製卡片、書本及回收站；⌕ 檢查備份完整性與數量，不還原、不覆寫、不轉換成法術、不送出雲端。備份含私人創作，請保留在自己的裝置，不要貼到公開 PR。校驗碼僅檢查資料損毀，不保證來源可信；檢查通過不代表已還原。</p>
 <div class="backupActions"><button id="exportObjects" type="button" aria-label="下載本機創作備份" title="下載本機創作備份">↓</button>
 <button id="inspectObjects" type="button" aria-label="選取備份並檢查，不還原" title="檢查備份，不還原">⌕</button>
 <button id="queueObjects" type="button" aria-label="準備本機待同步佇列，不上傳" title="準備本機待同步佇列，不上傳">⇧</button></div>
-<p>⇧ 將目前本機卡片、書本與回收狀態放入待同步佇列，不改動原存檔。此候選尚未連接私人遠端，稍後的修改需再次準備；待同步不代表雲端備份。</p>
+<p>本候選在此創作頁開啟、返回可見或完成本頁修改後，自動準備本機卡片、書本與回收狀態的待同步佇列；⇧ 可手動重試。離開頁面可能中斷，重新開頁會再次核對。原存檔不變；尚未連接私人遠端，待同步不代表雲端備份。其他頁面的變動要回到本頁才會補齊。</p>
 <input id="backupFile" type="file" accept=".json,application/json" hidden>
 <output id="backupStatus" role="status" aria-live="polite"></output></details>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
@@ -98,6 +99,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <script src="./object-craft.js"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
+<script src="./object-reconciler.js"></script>
 <script>
 (function(){
  'use strict';
@@ -107,14 +109,23 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  let currentId=null;
  const cards=()=>Craft.listCards(localStorage);
  const Backup=window.LivingObjectBackup;
+ const reconciler=window.LivingObjectReconciler.create({storage:{getItem:key=>localStorage.getItem(key)},onStatus:result=>{
+  $('queueStatus').textContent=result.state==='LOCAL_PENDING'?'本機待同步 '+result.count+' 筆；尚未上傳雲端。':
+   result.state==='PREPARING'?'正在核對本機待同步佇列；尚未上傳雲端。':
+   '本機佇列待補齊；原存檔保留，未上傳雲端。請點 ⇧ 重試或先下載備份。';
+ }});
+ window.addEventListener('pageshow',()=>reconciler.request());
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)reconciler.request()});
+ window.addEventListener('storage',event=>{if(event.key===Craft.KEY||event.key===null)reconciler.request()});
+ window.addEventListener('pagehide',event=>{if(!event.persisted)reconciler.dispose()});
  $('queueObjects').addEventListener('click',async()=>{
-  $('queueObjects').disabled=true;let queue;
+  $('queueObjects').disabled=true;
   try{
-   queue=await window.LivingObjectOutbox.ObjectOutbox.open();
-   const result=await queue.capture(localStorage),count=(await queue.pending()).length;
-   $('backupStatus').textContent='本機待同步 '+count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更，後續修改需再次準備。';
+   const result=await reconciler.request();
+   if(result.state!=='LOCAL_PENDING')throw Error('local queue pending');
+   $('backupStatus').textContent='本機待同步 '+result.count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更。';
   }catch(_){$('backupStatus').textContent='無法準備待同步佇列：資料可能已更新或儲存不可用。原存檔未變更，未上傳雲端；可重新操作或先下載備份。'}
-  finally{queue?.close();$('queueObjects').disabled=false}
+  finally{$('queueObjects').disabled=false}
  });
  $('exportObjects').addEventListener('click',async()=>{
   $('exportObjects').disabled=true;
@@ -141,6 +152,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  });
  function status(text,error=false){$('status').textContent=text;$('status').style.color=error?'#ffbca8':'#a9e0c4'}
  function notify(action,cardId){
+  reconciler.request();
   if(window.parent!==window)window.parent.postMessage({
    kind:'living-library-local-objects-updated',action,cardId
   },location.origin);
@@ -214,6 +226,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  try{
   const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
+  reconciler.request();
  }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
 </script>
