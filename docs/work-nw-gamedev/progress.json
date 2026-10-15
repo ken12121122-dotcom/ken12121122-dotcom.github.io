@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T04:37:24.769Z",
+  "updated_at": "2026-10-15T05:27:59.316Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -446,10 +446,10 @@
     "effective_fixes": 0
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T04:37:24.769Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "NW-APPROVED-RELEASE-20261015",
+    "lease_expires_at": "2026-10-15T05:52:59.316Z",
+    "heartbeat_at": "2026-10-15T05:27:59.316Z",
+    "state": "PREPARING_APPROVED_NARROW_RELEASE",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
@@ -707,6 +707,23 @@
       "quote": "發布",
       "scope": "Specific reviewed clean-view and icon-only UI; not all Rune Engine phases or private sync",
       "result": "EXECUTED_PR221"
+    },
+    {
+      "id": "owner_three_item_release_20261015_132633",
+      "source": "OWNER current conversation",
+      "quote": "核准上述三項",
+      "scope": [
+        "3D parameter linkage repair",
+        "Restore card summon animation once, avoid duplicate PRs",
+        "Separate ObjectCraft backup download/inspection only from PR219"
+      ],
+      "excludes": [
+        "Full Rune Engine release",
+        "Private sync or OAuth/App authority",
+        "Magic-circle design change",
+        "Android APK/permissions"
+      ],
+      "device": "Pending OWNER post-deployment test, not DEVICE_VERIFIED"
     }
   ],
   "next_stage_preparation": {
