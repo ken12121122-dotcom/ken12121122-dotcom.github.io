@@ -75,3 +75,18 @@
 - GitHub 查詢設計：僅由操作員點擊按鈕，以公開 GET 讀 GitHub API；無 token、無網頁自動 poll、不得將私有 GEN2 或手機原生憑證寫入公共網頁。API 失敗顯示 `FAIL／未驗證`。
 - 真正刪除歷史 GitHub 分支／合併尚未通過的 PR 是另一個需經 OWNER 明確批准的受控行為；本頁不提供此類寫入功能。
 - 更新方法：改動目錄／UI 名稱先更新 canonical `book_id`／`card_id`，測試 Live 與 Dev 是否一致；版本發布後 UI 只會顯示其當下已部署的公開資料，不能以 PR 的候選頁聲稱主站已更新。
+
+## 8. 3D 遊戲參數的既有卡片歸屬（2026-10-15 候選版）
+
+**避免誤認兩張 UI 卡**：`public.system.ui.map`（《系統之書》→「UI 名詞與書籍分工」）是**UI／卡片路由與管理索引**，不是即時編輯器；玩家真正能調整操作偏好的既有卡是 `public.system.controls`（《系統之書》→「連線與版本」，`living-library/live/system-controls.html`）。
+
+2026-10-15 新增於 PR #224（**候選，不表示已在正式手機上生效**）：「3D 世界參數（實驗）」區塊，使用原本 `living-library-controls-v1` 本機偏好及既有同源 iframe 訊息白名單；**不新增第 15 本書或獨立設定卡**。
+
+| 參數 | 內部欄位 | 預設 | 可調區間 | 影響範圍 |
+| --- | --- | ---: | ---: | --- |
+| 3D 卡片尺寸 | `cardSize` | 1.0× | 0.65～1.20× | 世界內與專注模式的卡片模型外觀 |
+| 卡片內圈距離 | `cardOrbitDistance` | 1.0× | 0.88～1.06× | 人物與最內圈卡片間的軌道距離倍率，仍在書本軌道內側 |
+| 卡片環繞速度 | `cardOrbitSpeed` | 1.0× | 0～1.8× | 卡片公轉，不影響書本公轉 |
+| 卡片召喚時間 | `cardSummonDuration` | 1700 ms | 900～2600 ms | 3D 煙霧創卡後移入軌道的動畫長度 |
+
+**程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library/live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
