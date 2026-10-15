@@ -60,7 +60,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   <form id="editForm">
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
    <label>預期用途（純文字草稿）<textarea id="editDescription" maxlength="500" placeholder="例如：我希望這張卡能讓書本合上"></textarea></label>
-   <button id="saveCard" type="submit" disabled>✓ 儲存草稿</button>
+   <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
   </form>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
