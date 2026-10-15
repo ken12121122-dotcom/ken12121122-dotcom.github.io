@@ -203,6 +203,10 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
 #cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
 #cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
+#drawerWrap.card-spell-leaving{opacity:0;pointer-events:none;transition:opacity .24s ease}
+#cardRecycleConfirm{max-width:min(92vw,430px);border:1px solid #cfb98f;border-radius:14px;background:#1c2d3d;color:#f7ebcf;padding:24px}
+#cardRecycleConfirm::backdrop{background:#08111dc7}
+#cardRecycleConfirm button{min-height:48px;min-width:56px;margin:6px;border-radius:8px;border:1px solid #c9ab79;background:#334858;color:#f7e0ae;font-size:24px}
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
@@ -212,7 +216,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
+<button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
 <button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
+<dialog id="cardRecycleConfirm" aria-label="確認回收懸浮卡">
+<p>要將這張卡移到回收站嗎？卡片會離開環繞軌道，但可從《卡片創造術》的回收站還原。</p>
+<button id="cardRecycleCancel" type="button" aria-label="取消回收" title="取消">×</button>
+<button id="cardRecycleAccept" type="button" aria-label="確認回收" title="確認回收">✓</button>
+</dialog>
 <div class="vignette"></div><div class="mist"></div>
 <header class="top">
 <div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
@@ -396,7 +406,7 @@ function isLocalFunctionPage(url){
     (u.pathname.startsWith('/packagecanvas/')||u.pathname.startsWith('/amin-vault/'));
  }catch(_){return false}
 }
-let readerCard=null;
+let readerCard=null,cardSpellExitTimer=null;
 // Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
@@ -407,14 +417,21 @@ window.addEventListener('message',event=>{
  updateUI();window.LivingScene?.rebuild?.();window.LivingScene?.refreshFloatingCards?.();
  if(event.data.action==='card-created'&&readerCard?.id==='public.gaming.card.creation'){
   const id=event.data.cardId;
-  // Only accept an ID that was actually written to local craft storage.
-  const exists=typeof id==='string'&&ObjectCraft?.floatingCards(localStorage).some(card=>card.id===id);
-  if(!exists)return;
+  // Only accept real locally persisted player cards, never arbitrary iframe payloads.
+  let exists=false;
+  try{exists=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
+  catch(e){toast(e.message);return}
+  if(!exists||cardSpellExitTimer!==null)return;
   const scene=window.LivingScene;
   if(typeof scene?.startCardSummon==='function'){
-   closeBook(); // Reveal the real 3D scene immediately, not an iframe animation.
-   scene.startCardSummon(id);
-  }else toast('卡片已儲存；3D 場景目前不可用，請稍後重新進入。');
+   // Fade the open page first. The 3D summon starts AFTER the world is revealed.
+   const drawer=$('drawerWrap');drawer.classList.add('card-spell-leaving');
+   cardSpellExitTimer=setTimeout(()=>{
+    cardSpellExitTimer=null;
+    closeBook();drawer.classList.remove('card-spell-leaving');
+    scene.startCardSummon(id);
+   },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
+  }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
  }
 });
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
@@ -679,6 +696,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+ getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
   let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
   if(!card)return;
