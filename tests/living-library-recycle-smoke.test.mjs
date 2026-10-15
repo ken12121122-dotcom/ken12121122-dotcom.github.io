@@ -62,7 +62,7 @@ test('focus confirmation returns to the normal overview before any smoke is crea
 test('small recycling puff leaves the previously verified creation smoke untouched',async()=>{
  const s=await load('living-library/live/index.html');
  assert.match(s,/function createCardSmoke\(origin,compact=false\)/);
- assert.match(s,/const puffs=\[\],multiplier=compact\?\.43:1/);
+ assert.match(s,/const puffs=\[\],multiplier=compact \? 0\.43 : 1/);
  assert.match(s,/for\(let i=0;i<\(compact\?8:14\);i\+\+\)/);
  assert.match(s,/function startCardSummon\(id\)/);
  assert.match(s,/puffs:createCardSmoke\(origin\)/);
