@@ -5,7 +5,7 @@
   "is_template": false,
   "project": "living-library-rune-engine",
   "created_at": "2026-10-14T15:27:11.568574+00:00",
-  "updated_at": "2026-10-15T08:34:01.095Z",
+  "updated_at": "2026-10-15T09:26:31.671Z",
   "canonical_state_location": {
     "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
     "branch": "work/nw-gamedev-p0-20261014",
@@ -132,7 +132,7 @@
       "blockers": []
     }
   ],
-  "active_work_item": null,
+  "active_work_item": "P5-OBJECT-RECEIPT-001",
   "work_items": [
     {
       "work_item_id": "P0-TEST-001",
@@ -502,26 +502,32 @@
         "tests/browser/book-reconcile.cjs",
         "tests/browser/package.json"
       ]
+    },
+    {
+      "work_item_id": "P5-OBJECT-RECEIPT-001",
+      "state": "IN_PROGRESS",
+      "attempts": 1,
+      "effective_fixes": 0,
+      "failure_fingerprints": [],
+      "scope": "P5_PREPARATORY_ONLY; explicit local receipt comparison, synthetic receiver only",
+      "rollback_sha": "2dba395b6c494523136b96dae0d4fd47da3cb6cf",
+      "evidence_refs": [
+        "docs/work-nw-gamedev/evidence/p5-object-receipt.json"
+      ]
     }
   ],
   "last_run": {
-    "run_id": "NW-CYCLE-20261015-16",
-    "started_at": "2026-10-15T08:26:52.425Z",
+    "run_id": "NW-CYCLE-20261015-17",
+    "started_at": "2026-10-15T09:26:31.671Z",
     "attempts": 1,
     "effective_fixes": 0,
-    "failure_fingerprints": [],
-    "next_action": "READ/SCAN latest main, PR219, canonical progress and valid lease. Next independent P5 candidate slice: adapt ObjectCraft's existing separate object outbox to injected synthetic delivery with revision/hash/idempotency-bound receipts, preserving newer edits and source data; durable retry/backoff and cross-context delivery coordination before enabling any automatic sender. Reuse established SpellStore receipt/pump behavior where compatible without converting ObjectCraft into nw.spell.v1. No real endpoint/private OAuth/upload or 3D core changes. Card/book creator automatic local preparation remains candidate-only and needs separate OWNER approval before release. Staging, phone/full P0-P7, private remote roundtrip and AI readback remain NOT_TESTED/WAIT_OWNER.",
-    "ended_at": "2026-10-15T08:34:01.095Z",
-    "candidate_sha": "81a959a5a83bd6934fc39ec1b57c66198a471a14",
-    "ci_run_id": 38706186001,
-    "requirements_zip": "NOT_EXPANDED_THIS_RUN; Library plain-text extraction unsupported; explicit user cycle contract used",
-    "environment_note": "Prior local git worktree parent was pruned; fresh clone from GitHub recovered source. Terminal transport disconnected during optional archive helper attempt after local tests/code submission; GitHub source readback and CI independently completed. Not a product defect."
+    "failure_fingerprints": []
   },
   "execution": {
-    "lease_owner": null,
-    "lease_expires_at": null,
-    "heartbeat_at": "2026-10-15T08:34:01.095Z",
-    "state": "READY_NEXT_CYCLE",
+    "lease_owner": "codex-cycle17-object-receipts",
+    "lease_expires_at": "2026-10-15T09:51:31.672Z",
+    "heartbeat_at": "2026-10-15T09:26:31.671Z",
+    "state": "BUILD",
     "resume_policy": "Reconcile latest main/candidate and prior evidence. Resume P0 if WebGL2 runner or device evidence becomes available; do not reset defect retry budgets. Never run concurrently if another valid lease exists."
   },
   "rollback_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
