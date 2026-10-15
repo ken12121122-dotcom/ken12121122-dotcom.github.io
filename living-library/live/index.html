@@ -430,9 +430,16 @@ window.addEventListener('message',event=>{
   }
  }
  window.LivingScene?.refreshFloatingCards?.();
- if(event.data.action==='card-created'&&readerCard?.id==='public.gaming.card.creation'){
+ // Creation and recycle-bin restoration use the SAME validated 3D summon.
+ // A local-card editor may contain the recycle bin as well as the Game Book.
+ const isCreateSpell=event.data.action==='card-created'&&readerCard?.id==='public.gaming.card.creation';
+ const isRestoreSpell=event.data.action==='card-restored'&&
+  (readerCard?.id==='public.gaming.card.creation'||
+   (readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')));
+ if(isCreateSpell||isRestoreSpell){
   const id=event.data.cardId;
-  // Only accept real locally persisted player cards, never arbitrary iframe payloads.
+  // Verify the restored card is actually back in the current local store.
+  // Reusing the same ID and mesh pathway never calls createBlankCard again.
   let exists=false;
   try{exists=typeof id==='string'&&ObjectCraft.floatingCards(localStorage).some(card=>card.id===id)}
   catch(e){toast(e.message);return}
@@ -447,7 +454,7 @@ window.addEventListener('message',event=>{
     scene.startCardSummon(id); // Stage the invisible card before the first scene frame.
     closeBook();drawer.classList.remove('card-spell-leaving');
    },window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
-  }else toast('卡片已保存，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
+  }else toast('卡片已儲存／還原，但 3D 目前不可使用。請返回場景，卡片仍會存在。');
  }
 });
 // Only a trusted, currently opened same-origin card iframe can request an existing control action.
