@@ -20,8 +20,8 @@ p{margin:6px 0 14px;color:var(--soft)}
 .circle:before{content:"";width:245px;height:90px;border:1px solid #cba97e77;border-radius:50%;position:absolute;bottom:46px;box-shadow:0 0 22px #c7aa6e33;transform:rotateX(60deg)}
 .paper{display:flex;flex-direction:column;justify-content:space-between;align-items:center;width:142px;height:203px;padding:15px;border:3px double #a67e4e;border-radius:10px;background:linear-gradient(140deg,#fcf3d7,#d4c7a8);color:#4f3b24;box-shadow:12px 18px 26px #060a16aa,inset 0 0 0 4px #f5e8c2;text-align:center;z-index:1;transform:rotate(-5deg)}
 .paper .rune{font-size:39px;line-height:1.2;color:#8b6a40}.paper b{font:700 17px/1.4 Georgia,"Noto Serif TC",serif;overflow-wrap:anywhere;max-height:110px;overflow:hidden}.paper small{color:#695439;font-size:10px;max-width:100%;overflow-wrap:anywhere}
-.paper.summon{animation:summon 850ms cubic-bezier(.12,.84,.3,1.15) both}
-@keyframes summon{from{opacity:0;transform:translateY(80px) scale(.35) rotate(-24deg);filter:blur(8px)}70%{filter:blur(0)}to{opacity:1;transform:translateY(0) scale(1) rotate(-5deg)}}
+.paper.summon{animation:summon 850ms cubic-bezier(.12,.84,.3,1.15) both}.paper.hover{animation:hover 3s ease-in-out infinite alternate;transform:translateY(-8px) rotate(-5deg)}@keyframes hover{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-14px) rotate(-3deg)}}
+@keyframes summon{from{opacity:0;transform:translateY(80px) scale(.35) rotate(-24deg);filter:blur(8px)}70%{filter:blur(0)}to{opacity:1;transform:translateY(-10px) scale(1) rotate(-5deg)}}
 .circle button{position:relative;z-index:2;margin-top:21px;width:54px;height:54px;border-radius:50%;border:1px solid #ebd3a2;background:#bb9a68;color:#152234;font-size:28px;box-shadow:0 0 18px #d3b98255}
 button{font:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #89ded3;outline-offset:3px}
@@ -40,14 +40,14 @@ summary{color:#c5b795;cursor:pointer}
 .mini.active{outline:3px solid #8bd4c7}.mini strong{font-size:13px}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
 @media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
-@media(prefers-reduced-motion:reduce){.paper.summon{animation:none}}
+@media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
 </style>
 </head>
 <body>
 <main>
 <header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
-<p>觸碰符印，創造一張真正有獨立身分的空白卡。卡片會保存在這部裝置，並收錄到《遊戲之書》；目前不具備任何可執行能力。</p>
+<p>觸碰符印，創造一張真正有獨立身分的空白卡。卡片會保存在這部裝置，並保持懸浮在人物身邊，尚未放入任何書。之後再測試製書與放卡；目前不具備執行能力。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
   <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
@@ -68,7 +68,7 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 </div>
 <h1>已創造的卡片 <small id="cardCount"></small></h1>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
-<footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。</footer>
+<footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
 <script src="./object-craft.js"></script>
 <script>
@@ -88,8 +88,9 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
   $('saveCard').disabled=!card;
-  const preview=$('cardPreview');preview.classList.remove('summon');
-  if(animate){void preview.offsetWidth;preview.classList.add('summon')}
+  const preview=$('cardPreview');preview.classList.remove('summon','hover');
+  if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
+  else if(card)preview.classList.add('hover');
  }
  function refresh(){
   const items=cards();$('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
@@ -106,14 +107,14 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   }
  }
  $('createCard').onclick=()=>{
-  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify();status('✦ 已創造空白卡，並收錄至《遊戲之書》。')}
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,true);refresh();notify();status('✦ 空白卡已生成，保持懸浮中。返回 3D 世界即可看到，尚未放入任何書。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
  $('editForm').addEventListener('submit',event=>{
   event.preventDefault();if(!currentId)return;
   try{
    const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
-   show(card);refresh();notify();status('✓ 已儲存；返回《遊戲之書》也能找到這張卡。');
+   show(card);refresh();notify();status('✓ 已儲存；卡片會繼續懸浮，等待未來放進你創造的書。');
   }catch(e){status(e.message||'儲存失敗',true)}
  });
  try{
