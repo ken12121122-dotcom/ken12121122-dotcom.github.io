@@ -327,6 +327,11 @@ function normalizeControls(raw){
  joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
  cardReorder:typeof d.cardReorder==='boolean'?d.cardReorder:true,
+ // Game parameters for the inner card orbit; separate from the existing books.
+ cardSize:clampUnit(Number.isFinite(d.cardSize)?d.cardSize:1,.65,1.2),
+ cardOrbitDistance:clampUnit(Number.isFinite(d.cardOrbitDistance)?d.cardOrbitDistance:1,.88,1.06),
+ cardOrbitSpeed:clampUnit(Number.isFinite(d.cardOrbitSpeed)?d.cardOrbitSpeed:1,0,1.8),
+ cardSummonDuration:clampUnit(Number.isFinite(d.cardSummonDuration)?d.cardSummonDuration:1700,900,2600),
  joystickPosition:{x:Number.isFinite(p.x)?clampUnit(p.x,.08,.92):.23,y:Number.isFinite(p.y)?clampUnit(p.y,.12,.88):.7}};
 }
 let controlPrefs=(()=>{try{return normalizeControls(JSON.parse(localStorage.getItem(CONTROLS_PREFS_KEY)||'null'))}catch(_){return normalizeControls(null)}})();
@@ -432,6 +437,11 @@ window.addEventListener('message',event=>{
   for(const field of ['rotationEnabled','joystickEnabled','cardReorder'])if(typeof input[field]==='boolean')next[field]=input[field];
   if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
+  for(const [field,limits] of Object.entries({
+   cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
+   cardOrbitSpeed:[0,1.8],cardSummonDuration:[900,2600]
+  }))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
+   next[field]=clampUnit(input[field],...limits);
   if(Object.keys(next).length){saveControls(next);toast('操作偏好已儲存')}
  }
  else if(id==='public.system.controls'&&action==='relocate-joystick'){
@@ -1140,12 +1150,12 @@ function hasCardSummon(){return [...floatingCardMeshes.values()].some(x=>!!x.sum
 function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
-  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime);
+  const entry=items[i],p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
   const target=new THREE.Vector3(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
   const summon=entry.summon;
   if(summon){
    const age=Math.max(0,now-summon.started);
-   const t=Math.min(1,age/CARD_SUMMON_MS),smooth=t*t*(3-2*t);
+   const t=Math.min(1,age/controlPrefs.cardSummonDuration),smooth=t*t*(3-2*t);
    const origin=summon.origin.clone();
    origin.x+=keeper.position.x-summon.origin.x;
    origin.z+=keeper.position.z-(summon.origin.z-.37);
@@ -1157,20 +1167,20 @@ function updateFloatingCards(now){
   // Face the viewer, without changing the card's own independent world-space path.
   entry.group.quaternion.copy(camera.quaternion);
   const appear=summon?Math.min(1,(now-summon.started)/490):1;
-  entry.group.scale.setScalar(Math.max(.03,appear));
+  entry.group.scale.setScalar(Math.max(.03,appear)*controlPrefs.cardSize);
  }
  if(focusedCard){
   const entry=floatingCardMeshes.get(focusedCard.id);
   if(!entry){exitCardFocus();return}
   const halfTan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
-  const focusDistance=Math.max(.72/(2*halfTan*.79),.49/(2*halfTan*camera.aspect*.84));
+  const focusDistance=Math.max(.72*controlPrefs.cardSize/(2*halfTan*.79),.49*controlPrefs.cardSize/(2*halfTan*camera.aspect*.84));
   const target=entry.group.position.clone().addScaledVector(focusedCard.direction,focusDistance);
   const t=preferReduced?1:Math.min(1,(now-focusedCard.began)/500);
   const smooth=t*t*(3-2*t);
   camera.position.copy(focusedCard.from).lerp(target,smooth);
   camera.lookAt(entry.group.position);
   entry.group.quaternion.copy(camera.quaternion);
-  entry.group.scale.setScalar(1);
+  entry.group.scale.setScalar(controlPrefs.cardSize);
  }
 }
 function focusCard(id){

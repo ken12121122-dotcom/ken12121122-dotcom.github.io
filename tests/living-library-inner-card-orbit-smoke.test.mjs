@@ -49,7 +49,7 @@ test('new creation event exits its iframe book before visible smoke in the origi
  assert.match(html,/new THREE\.Sprite\(material\)/);
  assert.match(html,/function hasCardSummon\(\)/);
  assert.match(html,/hasCardSummon\(\)/);
- assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime\)/);
+ assert.match(html,/CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(html,/BoxGeometry\(\.45,\.66,\.025\)/);
  assert.match(html,/refreshFloatingCards,startCardSummon,exitCardFocus/);
  const p=await read('living-library/live/card-placement.js');
@@ -60,4 +60,39 @@ test('original book placement math is not changed',()=>{
  assert.equal(Books.orbitPosition(0,0).ring,0);
  assert.equal(Books.ringCount(14),2);
  assert.equal(C.MAX_CARDS,64);
+});
+
+test('System Book contains bounded working game-parameter controls, not a new duplicate card',async()=>{
+ const page=await read('living-library/live/system-controls.html');
+ const live=await read('living-library/live/index.html');
+ const registry=require('../living-library/live/public-catalog.js').buildCatalog();
+ assert.ok(registry.bookCards.system.includes('public.system.controls'));
+ assert.equal(registry.cards['public.system.controls'].url,'./system-controls.html');
+ for(const key of ['cardSize','cardOrbitDistance','cardOrbitSpeed','cardSummonDuration']){
+  assert.match(page,new RegExp('id="'+key+'"'));
+  assert.match(page,new RegExp('id="'+key+'Value"'));
+  assert.match(page,new RegExp("send\\('update-preferences'"));
+  assert.match(live,new RegExp(key+':clampUnit'));
+ }
+ assert.match(page,/id="resetCardParams" aria-label="恢復卡片參數預設值"/);
+ assert.match(page,/restoreCardValues\(cardParameterDefaults\)/);
+ assert.match(live,/for\(const \[field,limits\] of Object\.entries/);
+ assert.match(live,/const entry=items\[i\],p=CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
+ assert.match(live,/age\/controlPrefs\.cardSummonDuration/);
+ assert.match(live,/\*controlPrefs\.cardSize/);
+ assert.doesNotMatch(page,/github_pat_|sk-proj-/);
+});
+test('card orbit tuner clamps range, leaves core book orbit unchanged, and supports pausing',()=>{
+ const original=Books.orbitPosition(0,0);
+ const opts=C.normalizeOptions({cardSize:999,cardOrbitDistance:999,cardOrbitSpeed:-12,cardSummonDuration:1e9});
+ assert.deepEqual(opts,{cardSize:1.2,cardOrbitDistance:1.06,cardOrbitSpeed:0,cardSummonDuration:2600});
+ const frozen=C.orbitPosition(0,11,{cardOrbitSpeed:0});
+ const later=C.orbitPosition(0,300,{cardOrbitSpeed:0});
+ assert.ok(Math.abs(frozen.x-later.x)<1e-10 && Math.abs(frozen.z-later.z)<1e-10);
+ const near=C.orbitPosition(0,0,{cardOrbitDistance:.88});
+ const far=C.orbitPosition(0,0,{cardOrbitDistance:1.06});
+ assert.ok(Math.hypot(near.x,near.z)<Math.hypot(far.x,far.z));
+ assert.ok(Math.hypot(far.x,far.z)<2.78*.82+.12-.35);
+ assert.deepEqual(Books.orbitPosition(0,0),original);
+ assert.deepEqual(C.normalizeOptions({cardSize:Infinity,cardOrbitDistance:'2.0'}),C.DEFAULTS);
 });
