@@ -38,14 +38,31 @@ for(let i=0;i<10;i++){
  moveTo(State.ATLAS,i,entry);assert.equal(craft.listCards(storage)[0].slotIndex,i,'raycast/drop into slot '+i);assert.equal(craft.listCards(storage)[0].containerId,State.ATLAS);
 }
 // Reader can only open the card physically occupying the right reader slot.
-runtime.focus(State.ATLAS);tick(900);let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
+runtime.focus(State.ATLAS);tick(900);let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='A'&&x.isMesh&&x.geometry.type==='CylinderGeometry')confirm=x});
+assert.ok(confirm,'GBA A button exists');runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
 const control=name=>{let target;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl===name)target=x});return target};
 const tapControl=name=>{const e=point(control(name));runtime.pointerDown(e);runtime.pointerUp(e);tick(1)};
 const beforeObservation=storage.getItem(craft.KEY);
-tapControl('right');assert.equal(runtime.inspect().screenMode,'observe');
-tapControl('confirm');assert.deepEqual(observed,[card.id]);assert.equal(storage.getItem(craft.KEY),beforeObservation,'AI read must not change source');
-tapControl('up');assert.equal(runtime.inspect().screenMode,'card');
-tapControl('confirm');assert.deepEqual(opened,[card.id,card.id],'existing reader confirm remains reachable');
+const labels=[];group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl&&x.isMesh&&x.geometry.type==='CylinderGeometry')labels.push(x.userData.atlasControl)});
+for(const key of ['UP','DOWN','LEFT','RIGHT','A','B','SELECT','START','L','R'])
+ assert.ok(labels.includes(key),'physical GBA button '+key);
+tapControl('SELECT');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('A');assert.deepEqual(observed,[card.id]);assert.equal(storage.getItem(craft.KEY),beforeObservation,'AI read must not change source');
+tapControl('B');assert.equal(runtime.inspect().screenMode,'card');
+tapControl('A');assert.deepEqual(opened,[card.id,card.id],'GBA A retains original open card');
+tapControl('DOWN');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('UP');assert.equal(runtime.inspect().screenMode,'card');
+tapControl('RIGHT');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('LEFT');assert.equal(runtime.inspect().screenMode,'card');
+tapControl('START');tick(900);
+assert.equal(runtime.inspect().gbaFocus,true,'START zooms into actual right page');
+const gbaCamera=camera.position.clone();const overview=runtime.inspect();
+assert.equal(overview.focus,State.ATLAS);
+tapControl('B');tick(900);
+assert.equal(runtime.inspect().gbaFocus,false,'B returns to normal book focus');
+assert.ok(gbaCamera.distanceTo(camera.position)>.3,'close-up is actually closer/different than regular atlas focus');
+tapControl('START');tick(900);tapControl('START');tick(900);assert.equal(runtime.inspect().gbaFocus,false,'START toggles back');
+assert.equal(storage.getItem(craft.KEY),beforeObservation,'zoom preserves card bytes');
 runtime.placeCollection();tick(1900);assert.equal(runtime.inspect().collectionOpen,1);assert.equal(outer.visible,false);
 for(let i=0;i<18;i++){moveTo(State.COLLECTION,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].slotIndex,i)}assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
 runtime.exitFocus();tick(900);
