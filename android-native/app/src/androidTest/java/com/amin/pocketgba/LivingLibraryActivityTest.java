@@ -43,7 +43,7 @@ public final class LivingLibraryActivityTest {
             java.util.concurrent.atomic.AtomicReference<String> value = new java.util.concurrent.atomic.AtomicReference<>("");
             rule.getScenario().onActivity(activity -> activity.workbenchView().evaluateJavascript(
                 "(function(){var l=window.LivingLibrary;if(!l)return 'loading';"
-                + "if(l.books.length!==14||typeof AminPackageCanvasFiles!=='undefined'||typeof AminGen2!=='undefined')return 'unsafe';"
+                + "if(!['research','startup','knowledge','missions','learning','finance','safety','writing','design','teaching','gaming','system','gpt','android'].every(id=>l.books.some(b=>b.id===id))||new Set(l.books.map(b=>b.id)).size!==l.books.length||typeof AminPackageCanvasFiles!=='undefined'||typeof AminGen2!=='undefined')return 'unsafe';"
                 + "l.select('android');l.openBook();var cards=document.querySelectorAll('#drawerFunctions button');"
                 + "if(cards.length!==16)return 'missing-cards';var p=document.querySelector('[data-card-id=\\\"public.android.permissions\\\"]');p.click();"
                 + "var a=document.querySelector('#sourcePage a');if(!a||a.getAttribute('href')!=='amin-library://permissions')return 'missing-route';"
