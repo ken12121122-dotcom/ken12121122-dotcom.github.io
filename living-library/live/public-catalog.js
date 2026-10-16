@@ -24,7 +24,7 @@ const SITE='https://ken12121122-dotcom.github.io';
 // One canonical card = one existing destination. Multiple books may reference it,
 // but the collectible mark and displayed name stay unchanged.
 const PUBLIC_CARDS=Object.freeze({
-atlas:{id:'atlas',seal:'✦',number:'15',title:'萬物圖鑑',guild:'遊戲之書 · 隨身卡冊',desc:'在主場景召喚萬物圖鑑；Book 語音待實機測試。左九格、右側讀卡區。',url:'./atlas-controls.html'},
+atlas:{id:'atlas',seal:'✦',number:'15',title:'萬物圖鑑',guild:'遊戲之書 · 隨身卡冊',desc:'萬物圖鑑唯一性規則的互動審查網頁 v0.1；僅供預覽，尚未核准納入正式遊戲或系統規則。3D 圖鑑仍在主場景召喚。',url:'./atlas-rulebook-review.html'},
 research:{id:'research',seal:'✧',number:'01',title:'研究導航',guild:'探索',desc:'研究方法、文獻與心智圖。',url:SITE+'/packagecanvas/research-navigation-v04.html'},
 canvas:{id:'canvas',seal:'✦',number:'02',title:'知識工作台',guild:'編纂',desc:'開啟原有 PackageCanvas 知識架構工作台。',url:SITE+'/packagecanvas/'},
 startup:{id:'startup',seal:'◆',number:'03',title:'創業計畫',guild:'主線',desc:'公司設立任務、日程與研究事業規劃。',url:SITE+'/packagecanvas/startup.html'},
