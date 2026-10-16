@@ -55,14 +55,9 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
  dispose(){const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};
 },
 cardTexture(THREE,record){
- const c=document.createElement('canvas');c.width=560;c.height=780;const x=c.getContext('2d');
- x.fillStyle='#d8b776';x.fillRect(0,0,560,780);x.strokeStyle='#876331';x.lineWidth=13;x.strokeRect(16,16,528,748);
- x.fillStyle='#f8e9bc';x.fillRect(37,38,486,87);x.fillStyle='#46341c';x.font='bold 40px sans-serif';x.fillText(record.title||'空白卡片',53,93,450);
- x.fillStyle='#916a3c';x.fillRect(41,145,478,427);const neb=x.createRadialGradient(282,355,28,282,355,305);neb.addColorStop(0,'#377ba9');neb.addColorStop(1,'#09152e');x.fillStyle=neb;x.fillRect(54,158,452,400);
- x.strokeStyle='#d8bb73';x.lineWidth=7;for(const r of [50,114,160]){x.beginPath();x.arc(280,360,r,0,Math.PI*2);x.stroke()}
- x.fillStyle='#ffe6a2';x.font='130px serif';x.textAlign='center';x.fillText('✦',280,405);x.textAlign='left';
- x.strokeStyle='#fce6a3';x.strokeRect(56,160,448,396);x.fillStyle='#f5eddb';x.fillRect(38,588,484,149);x.fillStyle='#3c372c';x.font='25px sans-serif';
- const chars=[...(record.description||'空白卡片 · 點選可編輯')];for(let i=0;i<3;i++)x.fillText(chars.slice(i*17,(i+1)*17).join(''),55,628+i*38,450);
- const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+ const c=document.createElement('canvas');
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+ const cancel=root.LivingCompendiumCard.draw(c,record,()=>{t.needsUpdate=true;root.LivingScene?.invalidate?.()});
+ t.needsUpdate=true;t.addEventListener('dispose',cancel);return t;
 }};
 })(typeof self!=='undefined'?self:this);

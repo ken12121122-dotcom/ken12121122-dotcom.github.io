@@ -48,7 +48,7 @@
   if(used.has(id))throw Error('卡片識別碼重複');
   const at=clock();
   const card={id,objectType:'card',templateId:'blank-card-v1',title:'空白卡片',
-   description:'',ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
+   description:'',cardLayout:'compendium-v2',cardType:'',image:null,linkedCardId:null,ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
    permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
   write(storage,[...state.objects,card]);return {...card};
  }
@@ -97,8 +97,8 @@
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
-  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description'].includes(x)))
-   throw Error('目前只能設定卡名及說明');
+  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardType','image','linkedCardId'].includes(x)))
+   throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
   if(Object.hasOwn(patch,'title')){
    if(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>40)
@@ -110,6 +110,23 @@
     throw Error('卡片說明不可超過 500 字');
    card.description=patch.description;
   }
+  if(Object.hasOwn(patch,'cardType')){
+   if(typeof patch.cardType!=='string'||patch.cardType.length>20)throw Error('內容類型不可超過 20 字');
+   card.cardType=patch.cardType.trim();
+  }
+  if(Object.hasOwn(patch,'linkedCardId')){
+   if(patch.linkedCardId!==null&&(typeof patch.linkedCardId!=='string'||!/^public\.[a-z0-9.]+$/.test(patch.linkedCardId)||patch.linkedCardId.length>100))throw Error('只能連結既有公開卡片');
+   card.linkedCardId=patch.linkedCardId;
+  }
+  if(Object.hasOwn(patch,'image')){
+   const v=patch.image;
+   if(v!==null&&(!v||Array.isArray(v)||typeof v!=='object'||Object.keys(v).sort().join(',')!=='dataUrl,scale,x,y'||
+     typeof v.dataUrl!=='string'||v.dataUrl.length>70000||!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(v.dataUrl)||
+     !Number.isFinite(v.scale)||v.scale<1||v.scale>3||!Number.isFinite(v.x)||v.x<0||v.x>100||!Number.isFinite(v.y)||v.y<0||v.y>100))
+    throw Error('圖片格式或裁切參數無效，未修改卡片');
+   card.image=v===null?null:{...v};
+  }
+  card.cardLayout='compendium-v2';
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
  }

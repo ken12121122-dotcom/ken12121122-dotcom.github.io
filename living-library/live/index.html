@@ -292,7 +292,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -429,6 +429,13 @@ window.addEventListener('message',event=>{
  if(event.data?.kind!=='living-library-local-objects-updated')return;
  if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
     !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
+ if(event.data.action==='open-card-link'){
+  const local=ObjectCraft.listCards(localStorage).find(c=>c.id===event.data.cardId);
+  if(readerCard?.id?.startsWith('local.card.')&&readerCard.id!==local?.id)return;
+  const target=local?.linkedCardId&&CARDS[local.linkedCardId];
+  if(target?.sourceLayer==='public'&&isLocalFunctionPage(target.url))openCardReader(target);
+  return;
+ }
  if(!syncPlayerObjects())return;
  updateUI();window.LivingScene?.rebuild?.();
  // Recycle is staged before the 3D mesh is removed. Both the in-book UI and
@@ -541,7 +548,9 @@ function openCardReader(card){
   if(navigator.userAgent.includes('LivingLibraryNative/')){const a=document.createElement('a');a.href='amin-library://'+card.nativeRoute;a.textContent='開啟 '+card.title+' →';page.append(a);}
   else{const p=document.createElement('p');p.textContent='目前為網頁模式。此功能需使用新版念動圖書館 APK。';page.append(p);}
  }
- else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;}
+ else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;
+  if(new URL(card.url,location.href).pathname.endsWith('/card-creation.html')){const fresh=new URL(card.url,location.href);fresh.searchParams.set('v','compendium-v2-20261016');$('readerFrame').src=fresh.toString()}
+  else $('readerFrame').src=card.url;}
  else{$('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();const p=document.createElement('p');p.textContent=card.desc+'\n此功能使用原網站登入，於新分頁開啟。';const a=document.createElement('a');a.href=card.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='開啟 '+card.title+' ↗';page.append(p,a);}
 
  $('readerBack').focus();

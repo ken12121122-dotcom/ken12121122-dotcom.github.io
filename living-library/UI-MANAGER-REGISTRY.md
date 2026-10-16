@@ -114,3 +114,11 @@ OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打�
 以此段取代上文「第二本從固定現成書入口開啟」的解讀。`public.gaming.book.creation` 內選擇空白魔法書（legacy）／卡片之書（atlas），再創造具有獨立 `local.book.*` ID 的實體書。`ObjectCraft` 保留既有 blank-book-v1 封套，atlas 型別由 openingMode 區別，十八格容器就是自己的 Book ID；不能把卡片放進 legacy 書或不存在的 ID。
 
 創造清單可開啟每本原書；`open-created-book` 僅接受當前書本創造術 iframe，同源與 record ID 均驗證。atlas 型別在場景具備卡冊模型、拖曳、放卡／跨書、合上留內圈、歸架與獨立保存，legacy 型別保持原有閱讀方式。原固定卡片之書與既有資料保留相容，不代替創造型別。調整參數仍只放於 system/public.system.controls。
+
+## 空白圖鑑卡第二版（OWNER 2026-10-16 授權發布）
+
+沿用《遊戲之書》`public.gaming.card.creation` 與既有本機卡 ID、尺寸、召喚及放卡模型。`card-creation.html` 提供自行輸入卡名／類型／說明、選擇 PNG/JPEG/WebP 圖片並壓縮為小型 JPEG、調整圖片縮放與位置、翻面檢視紀錄及保存。文字全部黑色。新卡沒有法陣、圖片、分類或執行能力。
+
+`compendium-card.js` 只繪製 2D 卡面，`atlas-model.js` 在原卡片模型套用同一卡面；不新增 3D 幾何。`object-craft.js` 保留 version=1 與 blank-card-v1 既有身分，僅增加可選卡面欄位。圖片資料只存本機創作資料與使用者主動下載的備份；不自動上傳。失敗不清除既有資料。
+
+連結先支援目錄內既有同站公開功能卡；從可信當前編輯器讀回已保存的 linkedCardId，重用閱讀器白名單。新遊戲物件／法陣執行未實作，不接受任意 URL 或程式。唯一圖鑑收錄、分類規則、999 容量、配號與固定位置均未實作。收藏號保留未登錄。
