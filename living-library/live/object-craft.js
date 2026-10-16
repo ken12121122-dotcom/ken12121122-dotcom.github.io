@@ -110,6 +110,13 @@
   write(storage,objects);return {...objects[at]};
  }
  // Atomic card transfers: a full destination rejects; no duplicate card registry.
+ // A rune-linked card remains a valid upgrade candidate in the RIGHT GBA reader.
+ // The 9 left display wells and all other book pages are intentionally locked.
+ // Returning a card to the floating orbit never clears its rune contract.
+ function canStoreBoundCard(card,containerId,slotIndex){
+  if(!card?.runeBinding?.runeId)return true;
+  return containerId===null||(containerId==='local.atlas.compendium'&&slotIndex===9);
+ }
  function placeCard(storage,id,containerId,slotIndex=null,clock=()=>new Date().toISOString()){
   const state=read(storage),sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
   for(const book of state.objects)if(book.objectType==='book'&&book.templateId==='blank-book-v1'&&book.openingMode==='atlas'&&book.id.startsWith('local.book.'))sizes[book.id]=18;
@@ -118,7 +125,8 @@
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
   const old=state.objects[at];
-  if(old.runeBinding?.runeId&&containerId)throw Error('已連結法陣的卡片須先解除契約才能收進卡冊');
+  if(!canStoreBoundCard(old,containerId,slotIndex))
+   throw Error('已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
@@ -187,5 +195,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard};
 });
