@@ -319,7 +319,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js','music-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js','music-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -440,7 +440,7 @@ function isLocalFunctionPage(url){
     new URL('./gpt-skills.html',current).pathname,
     new URL('./knowledge-search.html',current).pathname,
     new URL('./system-controls.html',current).pathname,
-     new URL('./music-player.html',current).pathname,
+    new URL('./music-player.html',current).pathname,
     new URL('./card-creation.html',current).pathname,
     new URL('./book-creation.html',current).pathname,
     new URL('./atlas-controls.html',current).pathname,
@@ -1037,10 +1037,17 @@ function torus(R,r,x,y,z,mat,parent=scene,rx=0){const m=new THREE.Mesh(new THREE
 const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);
 for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2}
 for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let z=-24;z<=24;z+=3.9){box(50,.018,.018,0,-.24,z,stone2)}
-cyl(3.02,3.35,.36,0,-.13,0,stone2);cyl(2.85,2.96,.22,0,.16,0,blackstone);cyl(2.4,2.5,.055,0,.30,0,gold);cyl(2.38,2.39,.055,0,.35,0,stone);
-for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,scene,Math.PI/2);
+// RUNE-01: real origin-ground sigil becomes one tagged scene entity.
+// No new geometry, visual changes, touch consumption or save mutations.
+const RuneContract=window.LivingRuneContract;
+if(!RuneContract)throw Error('Rune identity contract unavailable');
+const runeGroup=new THREE.Group();runeGroup.name='OriginRune';runeGroup.userData.runeId=RuneContract.RUNE_ID;scene.add(runeGroup);
+cyl(3.02,3.35,.36,0,-.13,0,stone2,runeGroup);cyl(2.85,2.96,.22,0,.16,0,blackstone,runeGroup);
+cyl(2.4,2.5,.055,0,.30,0,gold,runeGroup);cyl(2.38,2.39,.055,0,.35,0,stone,runeGroup);
+for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,runeGroup,Math.PI/2);
 const runes=[];
-for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold);rune.rotation.y=-a;runes.push(rune)}
+for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold,runeGroup);rune.rotation.y=-a;runes.push(rune)}
+runeGroup.traverse(mesh=>{if(mesh.isMesh)mesh.userData.runeId=RuneContract.RUNE_ID});
 // Seven real, empty 5×5 bookcases occupy only the front arc of the world.
 // No decorative/fake book meshes: only registered public or authorized GEN2 books occupy a slot.
 const shelves=[];
@@ -1639,6 +1646,37 @@ window.addEventListener('pagehide',()=>atlasVoice.stop());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
 
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
+// RUNE-01 read-only hit-test. Pointer hold & binding belong to RUNE-02/03.
+const runeHitRay=new THREE.Raycaster(),runeHitPointer=new THREE.Vector2();
+function runeHitTest(clientX,clientY){
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!Number.isFinite(clientX)||!Number.isFinite(clientY)||!rect.width||!rect.height)return false;
+ if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return false;
+ runeHitPointer.set(((clientX-rect.left)/rect.width)*2-1,-((clientY-rect.top)/rect.height)*2+1);
+ runeHitRay.setFromCamera(runeHitPointer,camera);
+ return runeHitRay.intersectObject(runeGroup,true).some(hit=>hit.object.userData.runeId===RuneContract.RUNE_ID);
+}
+function runeWorldAnchor(){
+ runeGroup.updateWorldMatrix(true,false);
+ const p=runeGroup.getWorldPosition(new THREE.Vector3());return {x:p.x,y:p.y,z:p.z};
+}
+function findNearestRuneCard(){
+ const entries=[...floatingCardMeshes.values()].map(entry=>{
+  entry.group.updateWorldMatrix(true,false);
+  const p=entry.group.getWorldPosition(new THREE.Vector3());
+  return {id:entry.id,record:entry.record,position:{x:p.x,y:p.y,z:p.z},
+   visible:entry.group.visible&&!atlasRuntime?.inFocus,
+   isDragging:!!atlasRuntime?.isDraggingCard(entry.id),
+   isSummoning:!!entry.summon||reservedCardSummons.has(entry.id),
+   isRecycling:!!entry.recycle,isFocused:focusedCard?.id===entry.id};
+ });
+ return RuneContract.findNearestEligibleCard(runeWorldAnchor(),entries);
+}
+const runeInspection=Object.freeze({
+ id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
+ anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
+ hitTest:runeHitTest,findNearestCard:findNearestRuneCard
+});
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
@@ -1863,6 +1901,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  atlas:atlasRuntime,
+ rune:runeInspection,
  beginJoystickPlacement,applyControls:applyControlPrefs,
  refreshFloatingCards,queueCardSummon,startCardSummon,startCardRecycle,exitCardFocus,
  syncRender,invalidate
