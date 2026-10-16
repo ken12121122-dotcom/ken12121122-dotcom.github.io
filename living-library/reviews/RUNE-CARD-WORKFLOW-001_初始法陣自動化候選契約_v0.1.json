@@ -115,7 +115,9 @@
       "next_states": {
         "yes": "sealing",
         "no": "available"
-      }
+      },
+      "issue_number": false,
+      "l2_certified": false
     },
     {
       "name": "seal_contract",
@@ -213,7 +215,8 @@
         "rune": true,
         "card": false
       },
-      "issue_number": false
+      "issue_number": false,
+      "l2_certified": false
     }
   ],
   "interruption_reasons": [
