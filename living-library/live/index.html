@@ -821,7 +821,7 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
    reportGithub(id,'error','GITHUB_TOKEN_REQUIRED');return;
   }
   githubBusy=true;$('atlasGithubSend').disabled=true;
-  reportGithub(id,'sending');githubDialog.close();
+  reportGithub(id,'sending');pendingGithubCard=null;githubDialog.close();
   try{
    const result=await window.LivingCardGithubInbox.upload({
     storage:localStorage,craft:ObjectCraft,observer:window.LivingCardObserver,cardId:id,token
