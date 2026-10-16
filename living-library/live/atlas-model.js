@@ -70,9 +70,9 @@ for(const [side,sign] of [[left,-1],[right,1]]){
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
- screen(card,mode='card',interactive=false){
+ screen(card,mode='card',interactive=false,upload={state:'idle',code:''}){
   if(!screen)return;
-  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK'):'empty';
+  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK')+':'+upload.state+':'+upload.code:'empty';
   if(key===screenKey)return;
   screenCancel();screenCancel=()=>{};screenKey=key;
   const map=screen.material.map,ctx=map.image.getContext('2d');
@@ -105,11 +105,25 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
     txt('近距離專注',318,283,26);
     txt('按鍵於下階段啟用',318,342,19);
    }else if(mode==='observe'){
-    txt('AI 唯讀',318,174,31);
-    txt('版次 '+(card.revision||'—'),318,221,24);
-    txt('SELECT 模式 / B 返回',318,272,17);
-    txt('A 讀取唯讀資料',318,319,19);
-    txt('手動分享 · 不上傳',318,356,16);
+    txt('AI → GITHUB',318,174,26);
+    if(upload.state==='sending'){
+     txt('傳送中…',318,225,29);txt('請稍候',318,288,21);
+    }else if(upload.state==='ok'){
+     txt('✓ 上傳成功',318,225,29);
+     txt('私人資料庫',318,281,21);
+     txt((upload.code||'').slice(0,12),318,333,18);
+    }else if(upload.state==='error'){
+     txt('✕ 上傳失敗',318,225,29);
+     txt((upload.code||'GITHUB_ERROR').slice(0,24),318,281,16);
+     txt('A 重試',318,333,22);
+    }else if(upload.state==='auth'){
+     txt('待 GitHub 授權',318,225,23);
+     txt('請在視窗確認',318,291,20);
+    }else{
+     txt('等待發送卡片',318,228,25);
+     txt('SELECT 模式切換',318,285,19);
+     txt('A 發送私人 GitHub',318,334,20);
+    }
    }else{
     txt(card.cardType||'未分類',318,172,24);
     txt(card.image?'圖片已載入':'尚未放入圖片',318,223,21);
