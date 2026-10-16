@@ -218,6 +218,36 @@ async function main(){
   await p.locator('#readerBack').click();
   assert.equal(await p.locator('#drawerTitle').textContent(),'遊戲之書');
   report.checks.push({id:'game_atlas_card_opens_rules_preview',result:'PASS',scope:'Existing gaming card embeds draft page and returns; created card book still accesses its 18-slot 2D reader.'});
+
+  // P1 pivot: ordinary card upgrades are requested BEFORE permanent numbers exist.
+  const upgradeCtx=await context(browser,true),upgradePage=await upgradeCtx.newPage();
+  await upgradePage.goto(origin+'/living-library/live/card-creation.html',{waitUntil:'domcontentloaded'});
+  await upgradePage.locator('#requestUpgrade').waitFor();
+  const candidateCardId=await upgradePage.evaluate(()=>{
+   const Craft=window.LivingObjectCraft;
+   const card=Craft.createBlankCard(localStorage,window.crypto);
+   Craft.editCard(localStorage,card.id,{title:'升級測試卡',description:'原本只是普通卡'},()=>new Date().toISOString());
+   Craft.placeCard(localStorage,card.id,'local.atlas.compendium',9);
+   return card.id;
+  });
+  await upgradePage.reload({waitUntil:'domcontentloaded'});
+  assert.equal(await upgradePage.locator('#requestUpgrade').isEnabled(),true);
+  await upgradePage.locator('#requestUpgrade').click();
+  const upgradeProof=await upgradePage.evaluate(id=>{
+   const c=window.LivingObjectCraft.listCards(localStorage).find(x=>x.id===id);
+   return {id:c.id,status:c.status,number:c.cardNumber,request:c.upgradeRequest};
+  },candidateCardId);
+  assert.equal(upgradeProof.id,candidateCardId);
+  assert.equal(upgradeProof.status,'draft');
+  assert.equal(upgradeProof.number,'');
+  assert.equal(upgradeProof.request.state,'requested');
+  assert.equal(upgradeProof.request.l2Certified,false);
+  assert.equal(upgradeProof.request.permanentNumber,null);
+  assert.match(await upgradePage.locator('#upgradeState').innerText(),/永久編號仍空白/);
+  await upgradeCtx.close();
+  report.checks.push({id:'atlas_gba_upgrade_request_precedes_number',result:'PASS',
+   scope:'Browser creates ordinary card, places it in GBA reader and submits a local candidate without creating L2 or a permanent number.'});
+
   await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
   const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
