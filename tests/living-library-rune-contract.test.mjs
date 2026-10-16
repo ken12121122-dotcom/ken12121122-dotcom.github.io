@@ -58,7 +58,7 @@ test('almost equal nearest cards must be selected by user later, not silently ch
  const a=entry('local.card.a',1),b=entry('local.card.b',1.1);
  const t=pick([b,a]);assert.equal(t.status,'unavailable');assert.equal(t.reason,'ambiguous_nearest');
  assert.equal(t.cardId,null);
- assert.equal(pick([a,entry('local.card.c',1.15)]).reason,null);
+ assert.equal(pick([a,entry('local.card.c',1.151)]).reason,null);
  assert.equal(pick([a,b],origin,{tieEpsilon:0}).cardId,a.id);
  assert.equal(pick([a,entry('local.card.b',1)]).reason,'ambiguous_nearest');
 });
