@@ -49,6 +49,21 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function exitFocus(){if(!focus)return;const f=focus;focus=null;returning={from:camera.position.clone(),rotation:camera.quaternion.clone(),target:f.originalPosition||f.from.clone(),quaternion:f.originalQuaternion||f.rotation.clone(),keeper:f.originalKeeper||f.keeper.clone(),layout:new Map(f.ids.map(id=>[id,models.get(id).group.position.clone()])),layoutKeeper:keeper.position.clone(),start:performance.now()};syncUI();invalidate()}
  // Preserve the overview snapshot even when portrait focus switches books.
  function focusBook(id){const before=focus;if(!before){enterFocus(id);if(focus){focus.originalPosition=focus.from.clone();focus.originalQuaternion=focus.rotation.clone();focus.originalKeeper=focus.keeper.clone()}}else{const original={originalPosition:before.originalPosition,originalQuaternion:before.originalQuaternion,originalKeeper:before.originalKeeper};enterFocus(id);Object.assign(focus,original)}}
+ // START toggles a closer camera centered solely on the right-side GBA reader.
+ // Returning with B restores normal book focus; the existing × exits to overview.
+ function focusGba(){
+  if(focus?.gba){
+   focus.gba=false;focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.keeper=keeper.position.clone();
+   focus.layoutFrom=new Map(focus.ids.map(id=>[id,models.get(id).group.position.clone()]));
+   focus.started=performance.now();syncUI();invalidate();return;
+  }
+  const m=models.get(State.ATLAS);if(!present(m)||m.open<.98||m.animation)return;
+  if(!focus||focus.id!==State.ATLAS)focusBook(State.ATLAS);
+  if(!focus||focus.id!==State.ATLAS)return;
+  focus.gba=true;focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();
+  focus.keeper=keeper.position.clone();focus.layoutFrom=new Map(focus.ids.map(id=>[id,models.get(id).group.position.clone()]));
+  focus.started=performance.now();syncUI();invalidate();
+ }
  exit.addEventListener('click',exitFocus);close.addEventListener('click',()=>foldCollection(false));shelf.addEventListener('click',()=>foldCollection(true));switcher.addEventListener('click',()=>focusBook(focus?.ids.find(id=>id!==focus.id)||focus?.id));
  function rayAt(e){const r=canvas.getBoundingClientRect();uv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(uv,camera);scene.updateMatrixWorld(true)}
  function hits(e){rayAt(e);const active=[...models.values()].filter(m=>m.group.visible&&!m.animation);const hits=[];
@@ -92,17 +107,24 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    else if(!cancel){if(p.entry.record.containerId){toast('拖曳可移動卡片；右側 ● 開啟讀卡內頁')}else focusCard(p.entry.id)}
    p.entry.group.position.copy(p.position);p.entry.group.quaternion.copy(p.quaternion);p.entry.group.scale.setScalar(p.scale);
    }else if(p.kind==='control'&&!p.moved&&!cancel){
-    const card=[...cards.values()].find(c=>State.readerActive(c.record));
-    if(!card){toast('先將卡片放入右側讀卡區');}
-    else if(p.control==='left'||p.control==='right'){
+    const key=p.control;
+    const reader=[...cards.values()].find(c=>State.readerActive(c.record));
+    if(key==='START'){focusGba()}
+    else if(key==='B'){
+      if(screenMode==='observe'){screenMode='card';atlas.screen(reader?.record||null,screenMode)}
+      else if(focus?.gba)focusGba();
+      else if(focus)exitFocus();
+      invalidate();
+    }else if(!reader){toast('先將卡片放入右側讀卡區')}
+    else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
       screenMode=screenMode==='card'?'observe':'card';
-      atlas.screen(card.record,screenMode);invalidate();
-    }else if(p.control==='up'||p.control==='down'){
-      screenMode=p.control==='up'?'card':'observe';
-      atlas.screen(card.record,screenMode);invalidate();
-    }else if(p.control==='confirm'){
-      if(screenMode==='observe'&&typeof observeCard==='function')observeCard(card.id);
-      else openCard(card.id);
+      atlas.screen(reader.record,screenMode);invalidate();
+    }else if(key==='UP'||key==='DOWN'){
+      screenMode=key==='UP'?'card':'observe';
+      atlas.screen(reader.record,screenMode);invalidate();
+    }else if(key==='A'){
+      if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
+      else openCard(reader.id);
     }
    }
   else if(p.kind==='book'){
@@ -117,7 +139,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function refresh(){root.LivingScene?.refreshFloatingCards?.();invalidate()}
  function applyFocusLayout(now){
   if(focus){
-   const members=focusMembers(),chosen=root.innerWidth>root.innerHeight?members:[models.get(focus.id)];
+   const members=focusMembers(),chosen=focus.gba?[models.get(State.ATLAS)]:(root.innerWidth>root.innerHeight?members:[models.get(focus.id)]);
    const center=new THREE.Vector3();for(const m of chosen)center.add(m.center);if(chosen.length)center.multiplyScalar(1/chosen.length);
    const side=new THREE.Vector3(1,0,0).applyQuaternion(models.get(focus.id).group.quaternion);
    chosen.sort((a,b)=>a.center.dot(side)-b.center.dot(side));
@@ -131,15 +153,18 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  }
  function updateCamera(now){
   if(focus){const m=models.get(focus.id);if(!m.group.visible){exitFocus();return}
-   const visible=root.innerWidth>root.innerHeight?focusMembers():[m];
+   const visible=focus.gba?[m]:(root.innerWidth>root.innerHeight?focusMembers():[m]);
    const bounds=new THREE.Box3();for(const x of visible)bounds.union(new THREE.Box3().setFromObject(x.group));
-   const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
+   const center=bounds.getCenter(new THREE.Vector3());
    // Measure in the book frame, independent of world yaw.
    const side=new THREE.Vector3(1,0,0).applyQuaternion(m.group.quaternion),positions=visible.map(x=>x.group.position.dot(side));
-   const width=5.4*BASE+Math.max(...positions)-Math.min(...positions),height=3.7*BASE,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
+   const width=focus.gba?2.66*BASE:5.4*BASE+Math.max(...positions)-Math.min(...positions),height=3.7*BASE,tan=Math.tan(THREE.MathUtils.degToRad(camera.fov)*.5);
    const viewportHeight=Math.max(160,root.innerHeight),top=72,bottom=16,usable=Math.max(.3,(viewportHeight-top-bottom)/viewportHeight);
    const dist=(Math.max(height/(2*tan*usable*.9),width/(2*tan*camera.aspect*.9))+.15)*tuning.atlasFocusDistance;
-   const aim=center.clone().add(new THREE.Vector3(0,(top-bottom)/viewportHeight*dist*tan,0));
+   m.group.updateMatrixWorld(true);
+   // Camera targets the actual right page, not a duplicated UI overlay.
+   const pageCenter=focus.gba?new THREE.Vector3(1.34,0,.20).applyMatrix4(m.group.matrixWorld):center;
+   const aim=pageCenter.clone().add(new THREE.Vector3(0,(top-bottom)/viewportHeight*dist*tan,0));
    const normal=new THREE.Vector3(0,0,1).applyQuaternion(m.group.quaternion),target=aim.clone().addScaledVector(normal,dist);
    const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(target,aim,new THREE.Vector3(0,1,0)));
    const t=reduced?1:Math.min(1,(now-focus.started)/850),u=t*t*(3-2*t);camera.position.copy(focus.from).lerp(target,u);camera.quaternion.copy(focus.rotation).slerp(q,u);
@@ -198,6 +223,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
-  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);
