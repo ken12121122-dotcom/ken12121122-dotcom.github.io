@@ -99,6 +99,15 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
 .blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
 .fallback{pointer-events:none;display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}#fallbackOpen,#retry3d{pointer-events:auto;touch-action:manipulation}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.rune-bind-dialog{position:fixed;z-index:30;width:min(91vw,400px);max-width:400px;border:2px solid #c6a779;border-radius:18px;padding:22px 24px 19px;background:linear-gradient(160deg,#fdf4e3,#e9d7b5);color:#1d2b30;box-shadow:0 24px 85px #030812db,inset 0 0 0 4px #f7edda}
+.rune-bind-dialog::backdrop{background:#00091590;backdrop-filter:blur(3px)}
+.rune-bind-dialog h2{font-size:20px;font-weight:750;color:#1a2a30;margin:0 0 10px}
+.rune-bind-dialog p{font-size:14px;line-height:1.7;margin:5px 0;color:#26383d}
+.rune-bind-dialog strong{color:#0b2926;overflow-wrap:anywhere}
+.rune-bind-dialog small{display:block;color:#5d574d;margin-top:9px}
+.rune-bind-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:17px}
+.rune-bind-actions button{min-width:48px;min-height:44px;border:1px solid #8c7653;border-radius:11px;background:#eee4d1;color:#142b30;font-size:22px;font-weight:bold}
+.rune-bind-actions button.primary{background:#254d49;color:#fff6df;border-color:#244a43}
 .toast{position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #90775c;border-radius:10px;background:#112235ee;padding:10px 15px;font-size:12px;opacity:0;transition:opacity .3s;white-space:nowrap}.toast.show{opacity:1}
 .quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
 @media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
@@ -305,6 +314,11 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button" aria-label="返回圖書館" title="返回圖書館">←</button></dialog>
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
+<h2 id="runeBindTitle">✧ 法陣已選取</h2><p id="runeBindDescription">是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？</p>
+<small>確認後產生契約印記。卡片暫不會被吸收；封印儀式稍後開放。</small>
+<div class="rune-bind-actions"><button id="runeBindCancel" type="button" aria-label="取消法陣連結" title="取消">×</button>
+<button id="runeBindConfirm" class="primary" type="button" aria-label="確認連結法陣與卡片" title="確認連結">✓</button></div></dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
@@ -1298,12 +1312,20 @@ function newFloatingCard(record){
  const texture=window.LivingAtlasModel.cardTexture(THREE,record);
  const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
  const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
- const group=new THREE.Group();
+ const group=new THREE.Group(),bindingMaterials=[];
+ if(record.runeBinding?.runeId===window.LivingRuneContract?.RUNE_ID){
+  const sealMat=new THREE.MeshBasicMaterial({color:0xdac18a,side:THREE.DoubleSide,transparent:true,opacity:.95,depthTest:false});
+  const mark=new THREE.Mesh(new THREE.TorusGeometry(.058,.009,5,36),sealMat);
+  mark.position.set(.15,-.235,.038);group.add(mark);bindingMaterials.push(sealMat);
+  const iconMat=new THREE.MeshBasicMaterial({color:0x76caba,side:THREE.DoubleSide,depthTest:false});
+  const icon=new THREE.Mesh(new THREE.OctahedronGeometry(.026,0),iconMat);
+  icon.position.set(.15,-.235,.039);group.add(icon);bindingMaterials.push(iconMat);
+ }
  const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
  const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
  back.userData.localCardId=record.id;face.userData.localCardId=record.id;
  group.add(back,face);scene.add(group);
- return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now(),
+ return {id:record.id,record,group,texture,faceMat,frameMat,bindingMaterials,born:performance.now(),
   summon:null,recycle:null};
 }
 function disposeFloatingCard(entry){
@@ -1313,6 +1335,7 @@ function disposeFloatingCard(entry){
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+ for(const material of entry.bindingMaterials||[])material.dispose();
 }
 function refreshFloatingCards(){
  let records;
