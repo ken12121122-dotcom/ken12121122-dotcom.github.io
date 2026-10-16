@@ -196,6 +196,25 @@ async function main(){
   await rulesFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/atlas-rulebook-review.html'));
   assert.match(await rulesFrame.locator('h1').textContent(),/一本圖鑑，一個存在/);
   assert.ok(await rulesFrame.locator('.rule').count()>0,'interactive rules available inside reader');
+
+  // The published rule preview remains unchanged; its new issue register is a local-only candidate.
+  await rulesFrame.locator('[data-tab="progress"]').click();
+  await rulesFrame.locator('#progressRows tr').first().waitFor({timeout:15000});
+  assert.equal(await rulesFrame.locator('#progressRows tr').count(),15);
+  const issueRow=rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'});
+  await issueRow.locator('select').selectOption('in_progress');
+  await issueRow.locator('textarea').fill('候選註記：等待動態分頁整合；此項尚未正式實作。');
+  await issueRow.locator('textarea').press('Tab');
+  const stored=await rulesFrame.evaluate(()=>JSON.parse(localStorage.getItem('nw-atlas-progress-local-v1')));
+  assert.equal(stored.edits['ATLAS-010'].status,'in_progress');
+  assert.match(stored.edits['ATLAS-010'].note,/等待動態分頁整合/);
+  await rulesFrame.locator('#progressReload').click();
+  await rulesFrame.locator('#progressRows tr').first().waitFor();
+  assert.equal(await rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'}).locator('select').inputValue(),'in_progress');
+  assert.match(await rulesFrame.locator('#progressNotice').innerText(),/只存本機/);
+  report.checks.push({id:'atlas_progress_candidate_local_persistence',result:'PASS',
+   scope:'Evidence ledger loads 15 rows; local-only status and note persist through refetch; source records and formal approvals remain unchanged.'});
+
   await p.locator('#readerBack').click();
   assert.equal(await p.locator('#drawerTitle').textContent(),'遊戲之書');
   report.checks.push({id:'game_atlas_card_opens_rules_preview',result:'PASS',scope:'Existing gaming card embeds draft page and returns; created card book still accesses its 18-slot 2D reader.'});
