@@ -54,7 +54,7 @@ test('standalone review adds a local-draft progress panel without changing exist
  assert.match(catalog,/public\.gaming\.atlas/);
  assert.match(catalog,/url:'\.\/atlas-rulebook-review\.html'/);
  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
- assert.match(html,/src="\.\/atlas-identity-contract\.js"/);
+ assert.match(html,/src="\.\/atlas-card-upgrade-plan\.js"/);
  const inline=scripts.filter(x=>x[1].trim());
  assert.equal(inline.length,1);
  assert.doesNotThrow(()=>new vm.Script(inline[0][1],{filename:page}));
