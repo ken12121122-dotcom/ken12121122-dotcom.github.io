@@ -284,7 +284,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
  <h2 class="ll-update-title" id="llUpdateHeading">知識書庫更新完成</h2></div></div>
  <p class="ll-update-summary" id="llUpdateSummary"></p>
  <ul id="llUpdateList" class="ll-update-list" aria-label="本次更新項目"></ul>
- <p class="ll-update-warning">重新連結後，僅重設這座圖書館的書本選取、環繞及書架顯示紀錄。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
+ <p class="ll-update-warning">更新會保留你的書本選取、環繞及書架配置。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
  <div class="ll-update-actions"><button type="button" id="llUpdateDone" aria-label="知道了，繼續閱讀" title="知道了，繼續閱讀">✓</button></div>
 </dialog>
 <script src="../../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
@@ -333,7 +333,7 @@ syncPlayerObjects();
 const Updates=window.LivingLibraryUpdates;
 const previousUpdate=Updates?.read(localStorage,Updates.BASELINE_KEY)||null;
 const pendingUpdate=Updates?.read(sessionStorage,Updates.PENDING_KEY)||null;
-if(Updates&&(!previousUpdate||pendingUpdate))Updates.resetView(localStorage);
+// Update metadata must never reset the player's saved book placement.
 const gptSkillsReady=!!CARDS['public.gpt.skills']&&(BOOK_CARDS.gpt||[]).includes('public.gpt.skills')&&(BOOK_CARDS.system||[]).includes('public.gpt.skills');
 const stamp=document.getElementById('webRuntimeStamp');
 if(stamp){stamp.dataset.catalog=gptSkillsReady?'ready':'missing';stamp.textContent=gptSkillsReady?'WEB LIVE r2 · GPT 技能卡已載入':'WEB LIVE r2 · 卡片目錄仍是舊版';}
@@ -775,7 +775,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
 },isMotion:()=>motion};
 
  // Release watchdog: public cards, UI buttons, and source fingerprints only.
- // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
+ // Never stores private GEN2 projection or credentials, or resets player layout.
  let refreshBusy=false, queuedReconnect=false;
  const updateDialog=$('llUpdateDialog');
  const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
@@ -786,13 +786,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
  const updateButtons=()=>document.querySelectorAll('button[id]');
  function updateSnapshot(fingerprints){
   return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
- }
- function resetLibraryView(){
-  Updates.resetView(localStorage);
-  const defaults=new Map(Catalog.buildCatalog().books.map(b=>[b.publicId||b.id,b.active]));
-  for(const b of BOOKS)if(b.sourceLayer==='public')b.active=!!defaults.get(b.publicId||b.id);
-  selectedId='research';storeBooks();updateUI();window.LivingScene?.rebuild?.();
-  window.LivingScene?.select?.(selectedId);window.LivingScene?.syncRender?.();
  }
  function showUpdateNotice(items,firstVisit){
   $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
@@ -813,7 +806,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
   if(!Updates||refreshBusy)return;
   queuedReconnect=false;
   Updates.write(sessionStorage,Updates.PENDING_KEY,{previous:Updates.read(localStorage,Updates.BASELINE_KEY)||null,at:Date.now()});
-  Updates.resetView(localStorage);
   window.location.replace(Updates.reconnectUrl(location.href,Date.now()));
  }
  function canRefreshSilently(){
@@ -833,7 +825,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
        previousUpdate?.version!==now.version||
        JSON.stringify(previousUpdate?.cards)!==JSON.stringify(now.cards)||
        JSON.stringify(previousUpdate?.buttons)!==JSON.stringify(now.buttons)){
-      resetLibraryView();
       const items=Updates.differences(was,now);
       Updates.write(localStorage,Updates.BASELINE_KEY,now);
       try{sessionStorage.removeItem(Updates.PENDING_KEY)}catch(_){}
