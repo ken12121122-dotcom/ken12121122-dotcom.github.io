@@ -95,11 +95,11 @@ test('public in-book controls use same-origin iframe gated messages and no crede
  assert.doesNotMatch(systemPage,/github_pat_|sk-proj-/);
 });
 
-test('update notice stays automatic and booklet-styled, only private web book display preferences reset',()=>{
+test('update notice stays automatic and booklet-styled without resetting saved book placement',()=>{
  assert.match(html,/id="llUpdateDialog"/);
  assert.match(html,/ll-update-dialog/);
  assert.match(html,/setInterval\(\(\)=>\{if\(!document\.hidden\)refreshWebVersion\(\)\},180000\)/);
- assert.match(html,/Updates\.resetView\(localStorage\)/);
+ assert.doesNotMatch(html,/Updates\.resetView\(localStorage\)/);
  assert.doesNotMatch(html,/localStorage\.clear\(\)/);
  assert.match(html,/window\.location\.replace\(Updates\.reconnectUrl\(location\.href,Date\.now\(\)\)\)/);
 });

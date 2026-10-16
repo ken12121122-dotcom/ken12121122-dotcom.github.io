@@ -1,4 +1,5 @@
 import test from 'node:test';
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
 import {createRequire} from 'node:module';
@@ -82,24 +83,55 @@ test('remote signatures bypass caches for all public UI assets and local card pa
  assert.equal(Updates.changed(signatures,{...signatures,'index.html':'changed'}),true);
  assert.equal(Updates.changed(signatures,structuredClone(signatures)),false);
 });
-test('magic-book update dialog, public-only reset and automatic app reconnect are actually wired',async()=>{
+test('magic-book update dialog and automatic reconnect preserve player layout',async()=>{
  assert.doesNotMatch(shell,/id="llUpdateReconnect"/);
  assert.match(shell,/id="llUpdateDialog"/);
  assert.match(shell,/reconnectNow\(\)/);
  assert.match(shell,/id="llUpdateDialog"/);
  assert.match(shell,/class="ll-update-dialog"/);
  assert.match(shell,/id="llUpdateList"/);
- assert.match(shell,/重新連結後，僅重設這座圖書館/);
+ assert.match(shell,/更新會保留你的書本選取、環繞及書架配置/);
  assert.match(shell,/不會清除 GBA 存檔/);
  assert.match(shell,/window\.location\.replace\(Updates\.reconnectUrl\(location\.href,Date\.now\(\)\)\)/);
  assert.match(shell,/const scripts=\['book-placement\.js','avatar-movement\.js','public-catalog\.js'/);
  assert.match(shell,/document\.write\('<scr'\+'ipt src="'/);
  assert.match(shell,/async function refreshWebVersion\(initial=false\)/);
  assert.match(shell,/setInterval\(\(\)=>\{if\(!document\.hidden\)refreshWebVersion\(\)\},180000\)/);
- assert.match(shell,/Updates\.resetView\(localStorage\)/);
+ assert.doesNotMatch(shell,/Updates\.resetView\(localStorage\)|resetLibraryView/);
  assert.match(shell,/window\.LivingLibrary=\{books:BOOKS,select,openBook/);
  await access(new URL('living-library/live/update-manager.js',root));
  const scripts=[...shell.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
  assert.ok(scripts.length>=4);
  for(const [i,m] of scripts.entries())assert.doesNotThrow(()=>new Function(m[1].includes('module')?'return async function(){'+m[2]+'}':m[2]),'inline '+i);
+});
+
+// Execute the production watchdog with storage and DOM doubles, including a reload.
+test('first visit, changed release and pending reconnect keep saved book state byte-for-byte',async()=>{
+ const bootstrap=shell.slice(shell.indexOf('const Updates=window.LivingLibraryUpdates;'),shell.indexOf('const gptSkillsReady='));
+ const watchdog=shell.slice(shell.indexOf(' // Release watchdog:'),shell.indexOf('  // Existing direct links'));
+ for(const scenario of ['first','changed','pending']){
+  const layout=JSON.stringify({selectedId:'gaming',known:['research','gaming'],active:['gaming']});
+  const localStorage=store({[Updates.VIEW_KEY]:layout,'living-library-controls-v1':'{"cardSize":0.8}'});
+  const sessionStorage=store();
+  if(scenario!=='first')Updates.write(localStorage,Updates.BASELINE_KEY,{...snapshot(),version:'old'});
+  if(scenario==='pending')Updates.write(sessionStorage,Updates.PENDING_KEY,{previous:snapshot()});
+  let reload=null;
+  const elements=new Map();
+  const $=id=>{if(!elements.has(id))elements.set(id,{open:false,textContent:'',classList:{contains:()=>false},addEventListener(){},replaceChildren(){},append(){},showModal(){this.open=true;}});return elements.get(id)};
+  const context=vm.createContext({URL,Date,console,localStorage,sessionStorage,$,
+   window:{LivingLibraryUpdates:{...Updates,fetchFingerprints:async()=>({'index.html':'new'})},location:{href:'https://ken12121122-dotcom.github.io/living-library/live/index.html',replace:u=>reload=u}},
+   location:{href:'https://ken12121122-dotcom.github.io/living-library/live/index.html'},
+   document:{hidden:false,querySelector:()=>({content:'new'}),querySelectorAll:()=>[],createElement:()=>({append(){}}),addEventListener(){}},
+   initialCatalog:Catalog.buildCatalog(),syncScene(){},toast(){},setTimeout(){},setInterval(){}});
+  context.window.fetch=()=>{};
+  vm.runInContext(bootstrap+watchdog,context);
+  await vm.runInContext('refreshWebVersion(true)',context);
+  assert.equal(localStorage.getItem(Updates.VIEW_KEY),layout,scenario+' notice');
+  assert.equal($('llUpdateDialog').open,true);
+  assert.equal(sessionStorage.getItem(Updates.PENDING_KEY),null);
+  vm.runInContext('reconnectNow()',context);
+  assert.equal(localStorage.getItem(Updates.VIEW_KEY),layout,scenario+' reload');
+  assert.equal(localStorage.getItem('living-library-controls-v1'),'{"cardSize":0.8}');
+  assert.match(reload,/\?v=\d+$/);
+ }
 });
