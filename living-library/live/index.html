@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-16.atlas-github-inbox-pilot.1">
+<meta name="living-library-release" content="2026-10-16.atlas-rules-card-preview.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -443,6 +443,7 @@ function isLocalFunctionPage(url){
     new URL('./card-creation.html',current).pathname,
     new URL('./book-creation.html',current).pathname,
     new URL('./atlas-controls.html',current).pathname,
+    new URL('./atlas-rulebook-review.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -556,8 +557,12 @@ window.addEventListener('message',event=>{
  }
 });
 function openCardReader(card){
- if(card.id==='public.gaming.atlas'&&window.LivingScene?.atlas){const b=book();closeBook();if(b.openingMode==='atlas')window.LivingScene.atlas.placeCollection(b.id);else window.LivingScene.atlas.summon();return}
- if(card.id==='public.gaming.atlas'&&book().openingMode==='atlas')card={...card,url:'./atlas-controls.html?book='+encodeURIComponent(book().id)};
+ // Only the existing card in 遊戲之書 changes its destination to the rules preview.
+ // The atlas portals in created books and 2D fallback keep their working routes.
+ const atlasPortal=card.id==='public.gaming.atlas'&&book().id!=='gaming';
+ if(atlasPortal&&window.LivingScene?.atlas){const b=book();closeBook();if(b.openingMode==='atlas')window.LivingScene.atlas.placeCollection(b.id);else window.LivingScene.atlas.summon();return}
+ if(atlasPortal&&book().openingMode==='atlas')card={...card,url:'./atlas-controls.html?book='+encodeURIComponent(book().id)};
+ else if(atlasPortal&&book().id==='cardCollection')card={...card,url:'./atlas-controls.html'};
  storeBooks();
  readerCard=card;
  $('readerTitle').textContent=card.title;

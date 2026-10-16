@@ -190,6 +190,15 @@ async function main(){
   await p.locator('#closeDrawer').click();
   await p.getByRole('button',{name:'選取遊戲之書',exact:true}).click();
   if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))await p.locator('#fallbackOpen').click();
+  // Existing Game Book card links to interactive rules, not the world atlas.
+  await p.locator('[data-card-id="public.gaming.atlas"]').dispatchEvent('click');
+  const rulesFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await rulesFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/atlas-rulebook-review.html'));
+  assert.match(await rulesFrame.locator('h1').textContent(),/一本圖鑑，一個存在/);
+  assert.ok(await rulesFrame.locator('.rule').count()>0,'interactive rules available inside reader');
+  await p.locator('#readerBack').click();
+  assert.equal(await p.locator('#drawerTitle').textContent(),'遊戲之書');
+  report.checks.push({id:'game_atlas_card_opens_rules_preview',result:'PASS',scope:'Existing gaming card embeds draft page and returns; created card book still accesses its 18-slot 2D reader.'});
   await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
   const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
