@@ -56,7 +56,7 @@ test('moving or editing after a request makes it stale; previously approved data
  assert.equal(Craft.editCard(store,card.id,{description:'新版本'},clock).upgradeRequest.state,'stale');
  assert.equal(Craft.listCards(store)[0].cardNumber,'');
 });
-test('upgrading does not edit any other card, does not reserve a number, and is forbidden outside reader',()=>{
+test('upgrading does not edit any other card, does not reserve a number, and is forbidden outside reader',async()=>{
  const store=fake(),first=make(store);
  const second=Craft.createBlankCard(store,{randomUUID:()=>'other-uuid'},clock);
  Craft.editCard(store,first.id,{title:'第一張',description:'A'},clock);
