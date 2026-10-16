@@ -38,7 +38,8 @@ uiMap:{id:'uiMap',seal:'⚙',number:'10',title:'UI 名詞與書籍分工',guild:
 knowledgeSearch:{id:'knowledgeSearch',seal:'⌕',number:'11',title:'正式 MD 搜尋',guild:'知識世界 · 檢索',desc:'從知識世界圖鑑呼叫已授權 GEN2 正式 MD 搜尋；未連線先授權。',url:'./knowledge-search.html'},
 bookCreation:{id:'bookCreation',seal:'▣',number:'14',title:'書本創造術',guild:'遊戲之書 · 本機創作',desc:'創造一本空白魔法書，以獨立 3D 書本身分進入現有圖書館；未賦予特殊能力。',url:'./book-creation.html'},
 cardCreation:{id:'cardCreation',seal:'◇',number:'13',title:'卡片創造術',guild:'遊戲之書 · 本機創作',desc:'施放卡片創造術，建立並保存一張懸浮空白卡；尚未放入任何書，也沒有執行權限。',url:'./card-creation.html'},
-systemControls:{id:'systemControls',seal:'⚙',number:'12',title:'連線與版本',guild:'系統之書 · 設定',desc:'統一管理 GEN2 來源授權與手動重新連結、更新公告；平時自動檢查版本。',url:'./system-controls.html'}
+systemControls:{id:'systemControls',seal:'⚙',number:'12',title:'連線與版本',guild:'系統之書 · 設定',desc:'統一管理 GEN2 來源授權與手動重新連結、更新公告；平時自動檢查版本。',url:'./system-controls.html'},
+ musicPlayer:{id:'musicPlayer',seal:'♫',number:'16',title:'音樂播放術',guild:'系統之書 · 本機音訊',desc:'本機音樂播放清單；播放可在圖書館書頁關閉後維持，網頁完全關閉後需重新選曲。這是網頁候選功能，不是 Android 原生背景播放服務。',url:'./music-player.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
 cardCollection:['atlas'],
@@ -53,12 +54,12 @@ writing:['canvas'],
 design:['canvas'],
 teaching:['research'],
 gaming:['gba','vault'],
-system:['vault','canvas','gptSkills','uiMap','systemControls'],
+system:['vault','canvas','gptSkills','uiMap','systemControls','musicPlayer'],
 gpt:['gptBridge','gptSkills']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={atlas:'public.gaming.atlas',research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation'};
+const PUBLIC_IDS={atlas:'public.gaming.atlas',research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',musicPlayer:'public.system.music.player',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 // Native navigation only. These cards open existing screens; they execute no
 // commands and are never GEN2 Skill definitions or permission grants.
