@@ -45,6 +45,24 @@
   const objects=[...state.objects];objects[at]=next;
   write(storage,objects);return {...next};
  }
+ function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('目前僅支援初始法陣');
+  const state=read(storage);
+  const matches=state.objects.map((item,index)=>({item,index})).filter(x=>
+   isPlayerCard(x.item)&&x.item.runeBinding?.runeId===runeId&&x.item.status!=='recycled');
+  if(matches.length!==1)throw Error('找不到唯一的待還原契約卡');
+  const {item:old,index}=matches[0];
+  if(old.runeBinding.state!=='bound')throw Error('封印後的契約不可直接還原');
+  if(old.status!=='draft'||!['hover','book'].includes(old.placement)||
+     (old.containerId&&(old.containerId!=='local.atlas.compendium'||old.slotIndex!==9)))
+   throw Error('卡片狀態不符，未修改');
+  if(old.upgradeRequest?.state==='requested')throw Error('卡片升級申請尚未結束');
+  const {runeBinding,...unchanged}=old;
+  const result={...unchanged,containerId:null,ownerBookId:null,slotIndex:null,placement:'hover',
+   revision:(old.revision||0)+1,updatedAt:clock()};
+  const objects=[...state.objects];objects[index]=result;
+  write(storage,objects);return {...result};
+ }
  function listCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
  }
@@ -195,5 +213,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard};
 });
