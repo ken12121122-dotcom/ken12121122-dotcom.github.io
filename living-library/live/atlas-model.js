@@ -64,7 +64,7 @@ for(const [side,sign] of [[left,-1],[right,1]]){
    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
    const mark=new THREE.Mesh(new THREE.PlaneGeometry(radius*1.88,radius*1.88),
     new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
-   mark.position.z=.063;mark.userData.atlasControl=control;b.add(mark);
+   mark.position.set(x,y,.38);mark.userData.atlasControl=control;side.add(mark);
   }
  }
 }
