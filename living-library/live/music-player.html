@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101e30">
+<title>音樂播放術｜念動圖書館</title>
+<style>
+:root{color-scheme:dark;--bg:#101d2c;--panel:#192b3c;--line:#ad9269;--ink:#f5ebdb;--sub:#b7c6ce}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,"Noto Sans TC",sans-serif}
+main{max-width:620px;padding:clamp(14px,4vw,24px);margin:auto}
+h1{font:600 24px Georgia,"Noto Serif TC",serif;margin:7px 0 10px;letter-spacing:.1em}
+p{color:var(--sub);font-size:13px}
+.card{border:1px solid #786a5b;background:linear-gradient(145deg,#213446,#101d2c);border-radius:17px;padding:19px;margin:16px 0;box-shadow:0 12px 35px #0005}
+.caption{color:var(--line);letter-spacing:.19em;font-size:10px;font-weight:800}
+.file{display:block;width:100%;border:1px dashed var(--line);padding:13px;text-align:center;border-radius:9px;color:#ffe7bc;cursor:pointer;touch-action:manipulation}
+.file:focus-within{outline:2px solid #acdcd4}.file input{position:absolute;opacity:0;width:1px;height:1px}
+.track-title{font-size:18px;overflow-wrap:anywhere;font-weight:750;margin:13px 0 3px}
+.controls{display:flex;justify-content:center;gap:clamp(8px,3vw,16px);margin:13px 0;flex-wrap:wrap}
+button{min-width:46px;height:46px;border:1px solid #bca479;border-radius:50%;background:#273f51;color:#ffefcf;font-size:20px;cursor:pointer;touch-action:manipulation}
+button.primary{background:#c7a775;color:#14202c;font-size:23px;font-weight:900}
+button[aria-pressed="true"]{background:#6f573a;color:#fff8eb}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:2px solid #a4e2d5;outline-offset:3px}
+.opts{display:flex;align-items:center;justify-content:center;gap:13px;flex-wrap:wrap}
+.opts label{display:flex;align-items:center;gap:7px;font-size:12px;color:#e3d6be}
+input[type=range]{width:122px;accent-color:#dbbc81}
+#status{min-height:27px;color:#c5dcd9;margin:10px 0;font-size:12px;overflow-wrap:anywhere}
+#tracks{max-height:240px;overflow-y:auto;padding:0;margin:12px 0 0;list-style:none}
+#tracks li{margin:3px 0}
+#tracks button{display:block;width:100%;min-width:0;height:auto;min-height:44px;border-radius:8px;padding:8px 12px;font-size:12px;text-align:left;border:1px solid transparent;background:#22394b;overflow-wrap:anywhere}
+#tracks button[aria-current="true"]{border-color:#e6c48f;background:#4c483f}
+</style>
+</head>
+<body>
+<main>
+<div class="caption">SYSTEM BOOK · MUSIC</div>
+<h1>♫ 音樂播放術</h1>
+<p>挑選裝置上的音樂。點選下方 ＋ 載入曲目；關閉書頁後，只要圖書館仍開啟，就會繼續播放。</p>
+<div class="card">
+<label class="file"><span aria-hidden="true">＋</span><input id="files" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.opus,.webm" multiple aria-label="選擇音樂檔案"></label>
+<div id="trackTitle" class="track-title">尚未選曲</div>
+<div id="count" class="caption">PLAYLIST · 0</div>
+<div class="controls" role="group" aria-label="播放控制">
+<button id="prev" type="button" title="上一首" aria-label="上一首">⏮</button>
+<button id="play" class="primary" type="button" title="播放" aria-label="播放">▶</button>
+<button id="next" type="button" title="下一首" aria-label="下一首">⏭</button>
+<button id="stop" type="button" title="停止" aria-label="停止">■</button>
+</div>
+<div class="opts"><button id="repeat" type="button" title="循環播放" aria-label="循環播放" aria-pressed="true">↻</button>
+<button id="shuffle" type="button" title="隨機播放" aria-label="隨機播放" aria-pressed="false">⇄</button>
+<label for="volume">音量 <input id="volume" type="range" min="0" max="100" value="70" aria-label="音量"></label></div>
+<div id="status" role="status" aria-live="polite">載入中……</div>
+<ul id="tracks" aria-label="播放清單"></ul>
+</div>
+<p>音樂僅於本機播放，不上傳至 GitHub 或知識庫。網頁重整或完全關閉後需重新選曲；若在 Android 背景或鎖屏，播放是否持續取決於瀏覽器／WebView，與原生音樂服務不同。</p>
+</main>
+<script>
+(function () {
+  'use strict';
+  let host = window;
+  try {if (parent !== window && parent.location.origin === location.origin && parent.LivingMusicPlayer) host = parent;} catch (_) {}
+  function ready() {
+    const music = host.LivingMusicPlayer;
+    const $ = (id) => document.getElementById(id);
+    if (!music) { $('status').textContent = '播放器無法載入'; return; }
+    const select = $('files');
+    let namesKey = '';
+    const update = (s) => {
+      $('status').textContent = s.message;
+      $('trackTitle').textContent = s.tracks[s.position] || '尚未選曲';
+      $('count').textContent = `PLAYLIST · ${s.tracks.length} 首`;
+      $('play').textContent = s.playing ? '❚❚' : '▶';
+      $('play').setAttribute('aria-label', s.playing ? '暫停' : '播放');
+      $('play').title = s.playing ? '暫停' : '播放';
+      for (const id of ['prev','play','next','stop','repeat','shuffle']) $(id).disabled = !s.tracks.length;
+      $('repeat').setAttribute('aria-pressed', String(s.repeat));
+      $('shuffle').setAttribute('aria-pressed', String(s.shuffle));
+      $('volume').value = Math.round(s.volume * 100);
+      const key = JSON.stringify([s.tracks, s.position]);
+      if (key !== namesKey) {
+        namesKey = key;
+        $('tracks').replaceChildren(...s.tracks.map((name, i) => {
+          const li = document.createElement('li'), btn = document.createElement('button');
+          btn.type = 'button';btn.textContent = `${i + 1}. ${name}`;
+          btn.setAttribute('aria-current', String(i === s.position));
+          btn.onclick = async () => {if (i !== music.snapshot().position) await music.moveTo(i);};
+          li.append(btn);return li;
+        }));
+      }
+    };
+    const unlisten = music.subscribe(update);
+    window.addEventListener('pagehide', unlisten, {once:true});
+    select.onchange = (event) => music.selectFiles(event.target.files);
+    $('play').onclick = () => {const s = music.snapshot();if (s.playing) music.pause();else music.play();};
+    $('prev').onclick = () => music.move(-1);
+    $('next').onclick = () => music.move(1);
+    $('stop').onclick = () => music.stop();
+    $('repeat').onclick = () => music.setRepeat(!music.snapshot().repeat);
+    $('shuffle').onclick = () => music.setShuffle(!music.snapshot().shuffle);
+    $('volume').oninput = (e) => music.setVolume(Number(e.target.value)/100);
+  }
+  if (host.LivingMusicPlayer) ready();
+  else {const script=document.createElement('script');script.src='./music-runtime.js';script.onload=ready;script.onerror=()=>{document.getElementById('status').textContent='播放器模組載入失敗';};document.head.append(script);}
+})();
+</script>
+</body>
+</html>
