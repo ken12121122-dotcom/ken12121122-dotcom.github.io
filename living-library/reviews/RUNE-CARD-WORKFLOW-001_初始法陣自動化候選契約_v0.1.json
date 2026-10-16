@@ -1,0 +1,264 @@
+{
+  "schema": "nw-rune-card-workflow-candidate-v1",
+  "workflow_id": "RUNE-CARD-WORKFLOW-001",
+  "version": "0.1.0",
+  "date": "2026-10-16",
+  "title": "法陣卡片化之術 — 初始法陣試點",
+  "project": "NW-ATLAS",
+  "review_status": "generated",
+  "release_status": "draft_only",
+  "authorized_for_publish": false,
+  "authorized_to_modify_game": false,
+  "asset_preservation": {
+    "branch": "feature/atlas-l2-3d-relic-preview-20261016",
+    "preview_path": "living-library/live/atlas-l2-threejs-preview.html",
+    "preview_type": "visual_only",
+    "do_not_overwrite": true,
+    "certification": "not_granted"
+  },
+  "initial_target": {
+    "source_id_candidate": "local.world.sigil.initial",
+    "source_display_name_candidate": "初始法陣",
+    "source_runtime_implementation": "existing_scene_geometry_without_entity_id",
+    "anchor": {
+      "scene": "living-library/live/index.html",
+      "position": {
+        "x": 0,
+        "y": 0.41,
+        "z": 0
+      },
+      "rotation": "snapshot_required",
+      "scale": "snapshot_required"
+    },
+    "reversible": true
+  },
+  "configuration": {
+    "first_hold_ms": 3000,
+    "second_hold_ms": 3000,
+    "nearest_card_max_distance_world_units_candidate": 3.6,
+    "pointer_move_tolerance_px_candidate": 12,
+    "tie_break": "distance_then_lexical_card_id",
+    "position_reference": "world_space_xyz",
+    "single_selection_only": true,
+    "allow_unapproved_L2": false,
+    "issue_number": false,
+    "candidate_name_required": true,
+    "already_bound_allowed": false
+  },
+  "states": [
+    {
+      "state": "available",
+      "active_form": "world",
+      "persistent": true
+    },
+    {
+      "state": "preview",
+      "active_form": "world",
+      "persistent": false
+    },
+    {
+      "state": "sealing",
+      "active_form": "transition_locked",
+      "persistent": true
+    },
+    {
+      "state": "sealed",
+      "active_form": "world",
+      "persistent": true
+    },
+    {
+      "state": "cardifying",
+      "active_form": "transition_locked",
+      "persistent": true
+    },
+    {
+      "state": "card_active",
+      "active_form": "card",
+      "persistent": true
+    },
+    {
+      "state": "restoring",
+      "active_form": "transition_locked",
+      "persistent": true,
+      "planned_only": true
+    },
+    {
+      "state": "world_active",
+      "active_form": "world",
+      "persistent": true,
+      "planned_only": true
+    }
+  ],
+  "operations": [
+    {
+      "name": "select_and_preview",
+      "start_state": "available",
+      "trigger": {
+        "event": "long_press_rune",
+        "duration_ms": 3000
+      },
+      "guards": [
+        "raycast_hits_source",
+        "single_pointer",
+        "no_drag_or_camera_gesture",
+        "movement_within_tolerance",
+        "eligible_nearest_card_exists",
+        "distance_in_radius",
+        "no_existing_active_contract"
+      ],
+      "effects": [
+        "rune_selection_ring",
+        "nearest_card_temporary_mark",
+        "ask_confirm_sigil_cardification_ritual"
+      ],
+      "writes_storage": false,
+      "next_states": {
+        "yes": "sealing",
+        "no": "available"
+      }
+    },
+    {
+      "name": "seal_contract",
+      "start_state": "sealing",
+      "trigger": {
+        "event": "owner_confirms_ritual"
+      },
+      "guards": [
+        "card_id_matches",
+        "card_revision_matches",
+        "source_id_matches",
+        "source_revision_matches",
+        "no_conflicts",
+        "storage_write_success"
+      ],
+      "animations": [
+        {
+          "id": "rune_ignites",
+          "start_ms": 0,
+          "end_ms": 550
+        },
+        {
+          "id": "mark_and_tether",
+          "start_ms": 550,
+          "end_ms": 1300
+        },
+        {
+          "id": "existing_card_flight_into_rune",
+          "start_ms": 1300,
+          "end_ms": 2500
+        },
+        {
+          "id": "seal_complete",
+          "start_ms": 2500,
+          "end_ms": 3100
+        }
+      ],
+      "preserve": [
+        "card.id",
+        "card.title",
+        "card.description",
+        "card.image",
+        "source_anchor"
+      ],
+      "result_state": "sealed",
+      "final_visible": {
+        "rune": true,
+        "card": false
+      },
+      "issue_number": false,
+      "l2_certified": false
+    },
+    {
+      "name": "cardify",
+      "start_state": "sealed",
+      "trigger": {
+        "event": "long_press_rune",
+        "duration_ms": 3000
+      },
+      "confirm_text_template": "是否將「{sourceName}」變成卡片？",
+      "guards": [
+        "contract_active",
+        "anchor_valid",
+        "source_card_pair_matches",
+        "storage_write_success"
+      ],
+      "animations": [
+        "seal_pulse",
+        "rune_into_core",
+        "same_card_emerges",
+        "same_card_enters_avatar_orbit"
+      ],
+      "result_state": "card_active",
+      "final_visible": {
+        "rune": false,
+        "card": true
+      },
+      "issue_number": false,
+      "l2_certified": false
+    },
+    {
+      "name": "restore_world",
+      "start_state": "card_active",
+      "trigger": {
+        "event": "future_confirm_from_card"
+      },
+      "planned_only": true,
+      "guards": [
+        "contract_active",
+        "source_anchor_valid",
+        "same_card_id"
+      ],
+      "result_state": "world_active",
+      "final_visible": {
+        "rune": true,
+        "card": false
+      },
+      "issue_number": false
+    }
+  ],
+  "interruption_reasons": [
+    "early_pointer_release",
+    "pointer_cancel",
+    "lost_pointer_capture",
+    "pointer_move_outside_tolerance",
+    "second_finger",
+    "tab_hidden",
+    "window_blur",
+    "source_changed",
+    "card_changed",
+    "write_failure",
+    "webgl_context_lost",
+    "duplicate_ritual_id"
+  ],
+  "invariants": [
+    "one_source_one_card",
+    "one_card_one_source",
+    "one_interactable_form_at_a_time",
+    "reuse_same_card_id",
+    "never_auto_approve_L2",
+    "never_allocate_permanent_number",
+    "never_mutate_real_save_on_preview",
+    "source_anchor_fixed_in_world_coordinates",
+    "recovery_does_not_duplicate_mesh_or_record"
+  ],
+  "modules_candidate": [
+    "living-library/live/rune-ritual-contract.js",
+    "living-library/live/rune-ritual-visual.js",
+    "living-library/live/rune-ritual-runtime.js"
+  ],
+  "integration_sources": [
+    "living-library/live/index.html",
+    "living-library/live/card-placement.js",
+    "living-library/live/object-craft.js",
+    "living-library/live/atlas-runtime.js"
+  ],
+  "owner_decisions_pending": [
+    "official_source_name_and_id",
+    "search_radius_3_6_world_units",
+    "precise_confirmation_spell_name",
+    "visual_card_style_before_L2",
+    "restore_world_trigger_UI",
+    "official_L2_upgrade_after_contract",
+    "cross_device_authority_and_permanent_index"
+  ]
+}
