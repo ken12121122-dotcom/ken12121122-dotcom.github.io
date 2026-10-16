@@ -201,6 +201,17 @@ async function main(){
   await rulesFrame.locator('[data-tab="progress"]').click();
   await rulesFrame.locator('#progressRows tr').first().waitFor({timeout:15000});
   assert.equal(await rulesFrame.locator('#progressRows tr').count(),15);
+  // P1 must not allocate a permanent atlas ID even when proposed syntax matches.
+  await rulesFrame.locator('#atlasCandidateId').fill('ATLAS-0001');
+  await rulesFrame.locator('#atlasCheckCandidate').click();
+  const identityResult=JSON.parse(await rulesFrame.locator('#atlasCandidateJson').textContent());
+  assert.equal(identityResult.format_status,'matches_proposed_format');
+  assert.equal(identityResult.review_status,'generated');
+  assert.equal(identityResult.identity_issued,false);
+  assert.equal(identityResult.may_register,false);
+  assert.equal(identityResult.conflict_status,'not_checked');
+  report.checks.push({id:'atlas_p1_identity_candidate_fail_closed',result:'PASS',
+   scope:'Unapproved ID example is syntactically checked, never issued and never auto-approved.'});
   const issueRow=rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'});
   await issueRow.locator('select').selectOption('in_progress');
   await issueRow.locator('textarea').fill('候選註記：等待動態分頁整合；此項尚未正式實作。');
