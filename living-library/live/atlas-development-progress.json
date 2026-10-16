@@ -3,7 +3,7 @@
   "project_id": "NW-ATLAS",
   "card_id": "public.gaming.atlas",
   "source_page": "living-library/live/atlas-rulebook-review.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "review_status": "generated",
   "updated_at": "2026-10-16",
   "scope": "GitHub 程式唯讀審查後形成的候選進度基準；實作狀態與人工核准嚴格區分。",
@@ -51,23 +51,35 @@
       "last_updated": "2026-10-16"
     },
     {
-      "id": "ATLAS-002",
+      "id": "ATLAS-006",
       "phase": "P1",
-      "title": "唯一圖鑑本體正式 ID",
-      "problem": "ATLAS-0001 僅是提議格式，未正式配發，也未確立圖鑑本體唯一登記。",
-      "implementation_state": "decision_pending",
-      "status": "blocked",
-      "priority": "高",
-      "next_action": "由 OWNER 決定編號命名與發放規則，再建立不可重用身分。",
+      "title": "先升級普通卡：GBA 申請、認證與 L2 鎖定",
+      "problem": "普通卡進入 GBA 時已可在候選分支建立本機升級申請；正式物件綁定、AI 核驗、OWNER 核准與 L2 不可逆鎖定尚未實作，因此沒有合法的永久配號。",
+      "implementation_state": "prototype_only",
+      "status": "in_progress",
+      "priority": "極高",
+      "next_action": "先驗證 GBA 申請→真實物件綁定→AI 審查→OWNER 核准→L2 唯讀保護。上述通過後才啟動 ATLAS-002 的永久編號階段。",
       "sources": [
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
           "path": "living-library/live/atlas-rulebook-review.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/card-creation.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "tests/living-library-atlas-upgrade.test.mjs"
         }
       ],
       "human_approval_required": true,
-      "revision": 1,
-      "note": "",
+      "revision": 2,
+      "note": "本輪候選實作：GBA 右側讀卡格 slotIndex=9 才能提出升級申請；儲存在普通卡的 upgradeRequest 中，卡片內容／位置變更則失效；不給予 L2 或永久編號。",
       "last_updated": "2026-10-16"
     },
     {
@@ -127,30 +139,6 @@
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
           "path": "living-library/live/atlas-model.js"
-        },
-        {
-          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-          "path": "living-library/live/atlas-rulebook-review.html"
-        }
-      ],
-      "human_approval_required": true,
-      "revision": 1,
-      "note": "",
-      "last_updated": "2026-10-16"
-    },
-    {
-      "id": "ATLAS-006",
-      "phase": "P2",
-      "title": "L2 永久認證與原子配號",
-      "problem": "普通卡提出升級、AI 核驗、OWNER 核准及原子配號目前只是規則文字，沒有正式交易狀態機。",
-      "implementation_state": "not_implemented",
-      "status": "not_started",
-      "priority": "極高",
-      "next_action": "設計認證 Schema、版本鎖與拒絕/撤銷候選流程，經 OWNER 核准後才實作。",
-      "sources": [
-        {
-          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-          "path": "living-library/live/object-craft.js"
         },
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
@@ -228,6 +216,26 @@
       "human_approval_required": false,
       "revision": 1,
       "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-002",
+      "phase": "P3",
+      "title": "唯一圖鑑本體正式 ID",
+      "problem": "曾提議的 ATLAS-0001 是四位前置零的示例，OWNER 已否決先決定此格式。圖鑑本體 ID 格式與卡牌永久編號都應延後：必須先完成卡牌升級、認證、綁定及核准。",
+      "implementation_state": "decision_pending",
+      "status": "blocked",
+      "priority": "中",
+      "next_action": "等卡牌升級與 L2 鎖定實際驗收後，再由 OWNER 決定圖鑑本體識別形式與卡牌三位數永久收藏號；未核准不配號。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 2,
+      "note": "2026-10-16 OWNER 指示：四位 ATLAS-0001 不採用，先升級卡牌後再討論編號；原 PR #249 已關閉而未發布。",
       "last_updated": "2026-10-16"
     },
     {
@@ -380,6 +388,24 @@
       "review_status": "generated",
       "source": "GitHub main PR #247 + 程式檢查",
       "note": "建立開發落差基準；未變更任何正式圖鑑規則、L2 身分、卡片或主場景。"
+    },
+    {
+      "record_id": "ATLAS-LOG-002",
+      "date": "2026-10-16",
+      "actor": "AI",
+      "action": "owner_direction_upgrade_first",
+      "review_status": "generated",
+      "source": "OWNER 2026-10-16 correction and closed PR #249",
+      "note": "撤回先配號與四位 ATLAS-0001 示意，優先進行 ATLAS-006 普通卡本機升級申請。L2 正式認證、權威世界綁定仍未實作；不影響既有卡片及主場景。"
+    },
+    {
+      "record_id": "ATLAS-LOG-003",
+      "date": "2026-10-16",
+      "actor": "AI",
+      "action": "prioritize_upgrade_in_progress_view",
+      "review_status": "generated",
+      "source": "ATLAS-006 P1 then ATLAS-002 P3",
+      "note": "進度顯示順序：P0 已驗證入口→P1 卡片升級→其餘規則→最後討論永久身分編號。"
     }
   ]
 }

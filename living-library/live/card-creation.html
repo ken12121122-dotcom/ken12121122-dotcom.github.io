@@ -72,7 +72,7 @@ button:disabled{opacity:.45}
 <main>
 <header><strong>✦ 卡片創造術</strong><small>圖鑑卡 / V0.2</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
-<p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入人物與漂浮書本之間的專屬內圈軌道，尚未放入任何書。</p>
+<p>先建立普通卡、編輯內容，再由 GBA 讀卡格提出升級申請。正式認證與世界實體綁定完成以前，不配發永久收藏號。空白卡建立後會進入 3D 內圈軌道。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
   <div id="cardPreview" class="paper"><canvas id="cardFace" width="560" height="780" aria-label="空白圖鑑卡卡面預覽"></canvas><b id="cardTitle" hidden>空白卡片</b><small id="cardMark" hidden>尚未召喚</small></div>
@@ -81,7 +81,7 @@ button:disabled{opacity:.45}
  </section>
  <section class="controls" aria-label="空白卡片資訊">
   <strong>空白圖鑑卡</strong>
-  <p>創造空白卡後，自行放入圖片、修改文字，再連結既有公開內容。圖片與說明本身不會產生施法能力。</p>
+  <p>先完成卡片名稱與內容；將普通卡移至萬物圖鑑右側 GBA 讀卡格，才可點 ✧ 提出升級候選。候選申請不是 L2 認證。圖片與說明本身不會產生施法能力。</p>
   <form id="editForm">
    <label>卡片編號<input id="editNumber" type="text" maxlength="20" autocomplete="off" placeholder="例如 001，可留空"></label>
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
@@ -94,9 +94,11 @@ button:disabled{opacity:.45}
    <p id="linkNote">先儲存，再按 ↗ 開啟連結。未收錄的遊戲物件暫不可連結。</p>
    <button id="openLink" type="button" disabled aria-label="開啟已儲存的內容連結" title="開啟連結">↗</button>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
+   <button id="requestUpgrade" type="button" disabled aria-label="向 GBA 提出卡片升級申請，尚非 L2 認證" title="申請升級候選（未認證）">✧</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
+  <output id="upgradeState" role="status" aria-live="polite">普通卡 · 尚未申請升級；正式編號留空。</output>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
  </section>
 </div>
@@ -201,6 +203,14 @@ button:disabled{opacity:.45}
   $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
   paint();
   $('saveCard').disabled=!card;
+  const ready=!!card&&card.containerId==='local.atlas.compendium'&&card.slotIndex===9;
+  $('requestUpgrade').disabled=!ready||card?.upgradeRequest?.state==='requested';
+  $('requestUpgrade').title=!ready?'先將卡片放進 GBA 讀卡格':card?.upgradeRequest?.state==='requested'?'升級申請已送入本機待驗證':'申請升級候選（未認證）';
+  $('upgradeState').textContent=card?.upgradeRequest?.state==='requested'
+   ?'✧ 升級申請：待 GBA 正式認證、世界實體綁定、AI 審核及本人核准。永久編號仍空白。'
+   :card?.upgradeRequest?.state==='stale'
+   ?'△ 先前升級申請因卡面或位置變更已失效；需重新檢查並送出。'
+   :'普通卡 · 尚未申請升級；永久編號不預先配發。';
   $('recycleCard').disabled=!card||!!card.containerId;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
   const preview=$('cardPreview');preview.classList.remove('summon','hover');
@@ -254,6 +264,14 @@ button:disabled{opacity:.45}
   try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
+ $('requestUpgrade').addEventListener('click',()=>{
+  if(!currentId)return;
+  try{
+   const saved=Craft.requestCardUpgrade(localStorage,currentId);
+   show(saved);refresh();notify('card-edited',saved.id);
+   status('✧ 已建立本機升級候選。仍須 GBA 真實驗證、物件綁定與 OWNER 核准；尚未升級 L2、尚未配號。');
+  }catch(e){status(e.message||'無法建立升級申請',true)}
+ });
  $('editForm').addEventListener('submit',event=>{
   event.preventDefault();if(!currentId)return;
   try{
