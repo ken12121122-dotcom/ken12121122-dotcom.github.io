@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>萬物圖鑑｜唯一性規則・獨立審查網頁 v0.1</title>
+<title>萬物圖鑑｜唯一性規則・獨立審查網頁 v0.2</title>
 <style>
 :root{--ink:#242725;--ink2:#55594f;--cream:#f8f5ee;--paper:#fffdf7;--gold:#967846;--edge:#d8c7aa;--teal:#347b6f;--brown:#604e37;--line:#e6dfd0;--coral:#9a5a4d;--soft:#eae2d3}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:linear-gradient(140deg,#e8e7df 0%,#f6f2e9 45%,#e9e4da 100%);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
@@ -15,10 +15,44 @@ button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus
 @media(max-width:680px){.wide{padding:0 12px}.hero{padding-top:29px}.hero h1{font-size:36px}.book-wrap{padding:15px 10px 14px;border-width:4px;border-radius:14px}.book-label{font-size:10px}.book{gap:3px;min-height:365px}.book:before{left:calc(50% - 4px);width:8px}.leaf{padding:13px 5px 13px}.leaf-title{font-size:10px;letter-spacing:0;padding-bottom:7px;margin:0 0 10px}.nine{gap:3px;min-height:306px}.slot{padding:5px 1px;border-radius:5px}.slot .no{font-size:10px}.slot .icon{font-size:20px}.slot .stat{font-size:8px}.place-name{font-size:7px}.gba{padding:5px;border-width:2px;border-radius:10px 10px 18px 14px}.gba h3{font-size:8px;margin:0 0 4px}.gba-display{min-height:170px;padding:5px 3px 4px;border-width:4px}.gba-display .lcd-head{font-size:7px}.lcd-row{font-size:8px;padding:6px 1px;gap:1px}.lcd-row .ptr{width:10px}.lcd-hint{font-size:8px;margin-top:3px}.gba-keys{gap:1px;padding:7px 0 0}.dpad{grid-template-columns:repeat(3,20px);grid-template-rows:repeat(3,21px)}.dpad .control{width:20px;height:21px;font-size:10px}.round{width:31px;height:31px;font-size:12px}.ab{gap:2px}.gba-bottom{margin:4px 0 0;gap:5px}.tiny{font-size:7px;min-width:38px;padding:4px 3px}.zero-well{margin-top:6px;padding:3px;gap:3px;border-radius:6px}.zero-well .zero-number{font-size:19px}.zero-well .zero-info{font-size:8px}.zero-well button{font-size:8px;padding:2px}.home-bookmark{top:66px;right:-17px;padding:2px 8px;font-size:9px}.book-actions .flat-btn{font-size:12px;padding:8px 10px}.page-num{font-size:9px}.notes{grid-template-columns:1fr}.rule-grid,.check-list{grid-template-columns:1fr}.rule{padding:19px}.notice{flex-direction:column;gap:5px}.tabs .tab{padding:7px 13px}.bottom{margin-top:25px}}
 @media(max-width:385px){.gba-keys{grid-template-columns:1fr 1fr}.dpad{grid-template-columns:repeat(3,17px);grid-template-rows:repeat(3,18px)}.dpad .control{width:17px;height:18px}.round{width:28px;height:28px}.leaf{padding:11px 3px}.nine{gap:2px}.book-wrap{padding-left:7px;padding-right:7px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* Evidence-linked progress register. All form edits remain local draft data. */
+.progress-intro{background:#f3efe4;border:1px solid #d4c2a4;padding:14px 16px;border-radius:12px;margin:0 0 17px;color:#514a3d;font-size:13px}
+.progress-intro strong{color:#2c2c26}
+.progress-tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.progress-tools button{background:#f1e6cf;color:#2b291f;border:1px solid #a5916d;border-radius:9px;font-weight:800;padding:9px 14px;min-height:42px}
+.progress-tools button:disabled{opacity:.5}
+.progress-summary{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0;padding:14px;background:#fffdf7;border:1px solid #d8c9ac;border-radius:12px}
+.progress-summary strong{color:#263d37}
+.progress-meter{height:10px;background:#e6e0d1;border-radius:12px;overflow:hidden;flex:1;min-width:120px}
+.progress-meter span{display:block;height:100%;background:#4b8876;width:0;transition:width .2s}
+.progress-status{padding:8px 12px;background:#f7f3e9;border:1px solid #d7c7a7;border-radius:9px;margin:10px 0;font-size:12px;white-space:pre-wrap}
+.progress-status.error{background:#fff0ea;border-color:#a75e51;color:#7a3d32}
+.progress-status.warning{background:#fff6dd;border-color:#bba069;color:#5b4d2d}
+.progress-wrap{overflow-x:auto;border:1px solid #d7cbb6;border-radius:12px;background:#fffdf7}
+.progress-table{border-collapse:collapse;min-width:980px;width:100%;font-size:12px;line-height:1.6}
+.progress-table th,.progress-table td{border-bottom:1px solid #e8ddc9;padding:12px 10px;vertical-align:top;text-align:left}
+.progress-table th{background:#efe7d8;font-size:12px;white-space:nowrap;color:#3a382f}
+.progress-table tr:last-child td{border-bottom:0}
+.progress-table td strong{display:block;font-size:13px;margin-bottom:4px;color:#252a26}
+.progress-table small{display:block;font-size:11px;color:#655b4c;overflow-wrap:anywhere}
+.progress-table .p-title{min-width:155px}
+.progress-table .p-issue{min-width:235px}
+.progress-table .p-action{min-width:190px}
+.progress-table .p-controls{min-width:185px}
+.progress-table select,.progress-table textarea{font:inherit;color:#292c27;border:1px solid #af9f82;background:#fffdf8;border-radius:7px;width:100%;padding:7px}
+.progress-table select{min-height:38px}
+.progress-table textarea{min-height:76px;resize:vertical;margin-top:7px}
+.progress-table a{color:#1e6758;text-decoration:underline;overflow-wrap:anywhere}
+.progress-tag{display:inline-block;background:#ece2c9;border:1px solid #ccb88d;border-radius:7px;font-size:10px;padding:2px 6px;margin:4px 4px 2px 0;color:#494238}
+.progress-critical{background:#ffe9dc;border-color:#dba995;color:#7e352a}
+.progress-fallback{width:100%;min-height:145px;resize:vertical;font:12px/1.6 ui-monospace,Consolas,monospace;background:#fffdf8;border:1px solid #a39072;border-radius:9px;padding:12px}
+@media(max-width:680px){.progress-wrap{overflow:visible;border:0;background:transparent}.progress-table{min-width:0;display:block}.progress-table thead{display:none}.progress-table tbody{display:grid;gap:12px}.progress-table tr{display:block;background:#fffdf7;border:1px solid #d8cbb2;border-radius:12px;padding:6px 10px}.progress-table td{display:block;border:0;padding:8px 4px;min-width:0!important}.progress-table td+td{border-top:1px solid #eee6d8}.progress-table td:before{display:block;content:attr(data-label);font-size:10px;font-weight:900;letter-spacing:.08em;color:#857150;margin:0 0 5px}.progress-table textarea{min-height:62px}}
+
 </style>
 </head>
 <body>
-<header class="topbar"><div class="wide"><div class="toprow"><div class="brand">◈ 萬物圖鑑 <span style="font-weight:500;color:#837255;font-size:11px">/ 唯一實體規則</span></div><span class="badge">獨立審查版 v0.1</span></div><nav class="tabs" role="tablist" aria-label="內容切換"><button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-book" data-tab="book">📖 互動預覽</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-rules" data-tab="rules">⚖ 規則草案</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-review" data-tab="review">☑ 審核清單</button></nav></div></header>
+<header class="topbar"><div class="wide"><div class="toprow"><div class="brand">◈ 萬物圖鑑 <span style="font-weight:500;color:#837255;font-size:11px">/ 唯一實體規則</span></div><span class="badge">獨立審查版 v0.2 · 進度追蹤</span></div><nav class="tabs" role="tablist" aria-label="內容切換"><button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-book" data-tab="book">📖 互動預覽</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-rules" data-tab="rules">⚖ 規則草案</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-review" data-tab="review">☑ 審核清單</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-progress" data-tab="progress">▤ 問題與進度</button></nav></div></header>
 <main class="wide"><div class="hero"><div class="eyebrow">UNIQUE ENTITY ATLAS · PROPOSAL 001</div><h1>一本圖鑑，一個存在。</h1><p class="subtitle">把我們已討論的「永久編號、0 號暫存格、GBA、翻頁定位、卡片升級、物件互斥、受控修改」整理成可操作的獨立規則網頁。先審核邏輯，再決定要收錄於遊戲之書或系統之書。</p><div class="notice" role="note"><strong>⚠ 審核示意</strong><div>本網頁<strong>不會</strong>修改目前遊戲、卡片、GitHub 或正式知識庫。畫面上的卡片與狀態皆為示例；《初代法陣》現有卡片 <strong>001 尚未正式完成唯一認證與物件綁定</strong>。圖鑑 ID <strong>ATLAS-0001</strong> 為建議格式、未正式配發。</div></div></div>
 <section id="tab-book" class="panel active" role="tabpanel"><div class="section-head"><h2>圖鑑運作預覽</h2><span class="meta">九格／頁 · GBA 首頁 · 雙頁十八格 · 0 號暫存格</span></div><div class="demo-layout"><div class="book-wrap"><div class="book-label"><span>✦ ATLAS-0001 <span style="opacity:.68;font-weight:500">（編號示意）</span></span><span id="bookRange">GBA 首頁　001–009</span></div><button class="home-bookmark" id="bookmark" title="任何頁快速返回 GBA 首頁" aria-label="快速回 GBA 首頁" hidden>⌂ GBA</button><div class="book" id="book" aria-label="圖鑑雙頁展示"><article class="leaf left"><h3 class="leaf-title" id="leftTitle">永久登錄 · 001–009</h3><div class="nine" id="leftSlots"></div></article><article class="leaf right"><h3 class="leaf-title" id="rightTitle">控制核心 · GBA／0 號</h3><div id="rightContent"><div class="gba"><h3>ATLAS ◈ GBA</h3><div class="gba-display" id="gbaScreen"><div class="lcd-head"><span>永久卡片簿</span><span>目錄</span></div><div class="lcd-row">讀取中</div></div><div class="gba-keys"><div class="dpad" aria-label="GBA 十字方向鍵"><button class="control up" data-control="UP" aria-label="目錄上一個">▲</button><button class="control leftkey" data-control="LEFT" aria-label="左鍵（未於預覽配置）">◀</button><span class="control center" aria-hidden="true"></span><button class="control rightkey" data-control="RIGHT" aria-label="右鍵（未於預覽配置）">▶</button><button class="control down" data-control="DOWN" aria-label="目錄下一個">▼</button></div><div class="ab"><button class="control round b" data-control="B" title="原遊戲返回上一層專注">B</button><button class="control round a" data-control="A" title="選擇目錄頁面">A</button></div></div><div class="gba-bottom"><button class="control tiny" data-control="SELECT">SELECT</button><button class="control tiny" data-control="START">START</button></div></div><div class="zero-well"><div class="zero-number">0</div><div class="zero-info"><strong>唯一暫存格</strong><br>初代法陣 · 普通卡（示例）</div><button id="zeroDetails">查看</button></div></div><div class="nine" id="rightSlots" hidden></div></article></div><div class="book-actions"><button class="flat-btn" id="prev">‹ 上一展開</button><div class="page-num" id="pageCounter">首頁 · GBA</div><button class="flat-btn" id="next">下一展開 ›</button></div></div><aside class="notes"><div class="info-card"><h3>◉ 永久地址，不等於目前形態</h3><div class="state-line"><span>圖鑑 ID</span><strong>ATLAS-0001（待核准）</strong></div><div class="state-line"><span>0 號格容量</span><strong>1 張（任意類型）</strong></div><div class="state-line"><span>首頁左頁</span><strong>001–009</strong></div><div class="state-line"><span>後續每一展開</span><strong>左右各 9 格，共 18 格</strong></div><div class="state-line"><span>正式卡片</span><strong>升級後不可降級</strong></div><div class="state-line"><span>身份與位置</span><strong>永久鎖定／不回收編號</strong></div></div><div class="info-card"><h3>操作示意</h3><ul class="info-list"><li>首頁 GBA 的 <span class="key">▲</span> <span class="key">▼</span> 移動頁面游標，<span class="key">A</span> 自動翻至該展開。</li><li>後續頁面可按右側 <span class="key">⌂ GBA</span> 書籤瞬間返回控制首頁。</li><li>點任何永久位置，可查詢它的身分與形態；<strong>搜尋不會改變登錄資料</strong>。</li><li>GBA 按鍵在這個獨立規則頁中僅示意導覽，<strong>未更動正式遊戲現有按鈕</strong>；此頁沒有 GitHub 上傳。</li></ul><button class="soft-btn" id="goRules">閱讀完整規則 →</button></div></aside></div><p class="meta" style="padding:12px 0 0">本頁刻意保留空格：尚未登錄時不生成假的實體卡片；顯示「實體化」的編號也不會同時顯示實體卡片。</p>
 <div class="section-head" style="margin-top:34px"><h2>3 秒形態轉換｜獨立模擬</h2><span class="meta">純互動示意 · 不影響真實法陣</span></div><div class="info-card trans"><div class="trans-meta"><h3>唯一形態互斥</h3><p>短按世界物件：開啟它的卡片資料；長按 3 秒：顯示圓形進度，完成後卡片化。實體化時回到記錄的原始場景與座標；卡片與世界物件不得同時可見。</p><p id="formStatus" style="font-weight:900;color:#286a59">目前形態：世界實體（模擬）</p><div style="font-size:12px;margin-bottom:10px">卡片永久身分／登錄位置仍保留於資料簿</div><button class="soft-btn" id="materialize" disabled>模擬：從卡片回原位實體化 ↗</button></div><div class="trans-space"><button id="transform" class="transform-btn" aria-label="按住三秒將法陣卡片化"><span class="trans-inner"><span class="trans-art" id="formIcon">◉</span><strong id="formLabel" style="font-size:12px">長按 3 秒</strong><span class="trans-count" id="formCount">0%</span></span></button><div class="anchor">固定錨點：示例座標，未連結實際物件</div></div></div>
@@ -36,7 +70,20 @@ button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus
 <article class="rule full-span"><div class="rule-no">UPGRADE / FLOW</div><h3>正式認證 → 永久鎖定</h3><div class="workflow"><span>普通卡置入 0 號</span><b>›</b><span>提出綁定</span><b>›</b><span>AI 核驗</span><b>›</b><span>你核准</span><b>›</b><span>原子配號與綁定</span><b>›</b><span>永久鎖定</span><b>›</b><span>歸入指定格</span></div><p style="margin:14px 0 0">獲准後變更採單次限定範圍的變更請求，不讓卡片進入任何人都能自由編輯的「解鎖狀態」。</p></article>
 </div><div class="kicker">仍待你後續決定（本版沒有擅自定案）</div><div class="pending"><h3>待定：真正編號、圖鑑本體世界錨點，以及「遊戲之書／系統之書」歸屬</h3><p>ATLAS-0001 只是假設編號。既有《初代法陣》普通卡雖有手填 001，但沒有完成唯一認證；正式編號與位置不可在批准前視為已綁定。圖鑑本體固定在世界某處，或允許召喚而永久身分固定，也尚未完全確認。最後應把規則放入哪一本書，等你看過網頁後再決定。</p></div></section>
 <section id="tab-review" class="panel" role="tabpanel"><div class="section-head"><h2>審核清單</h2><span class="meta">勾選代表「你認為這項設計可接受」，不是系統已完成實作</span></div><p class="review-head">請先看過互動圖鑑與規則草案，再逐項標示。這裡不會將勾選寫入遊戲、GitHub 或任何審批紀錄。最後可以複製你的回覆，貼回 ChatGPT 繼續討論。</p><div class="check-list" id="checkList"></div><div class="review-actions"><button class="review-btn" id="copyReview">複製審核結果</button><span class="review-summary" id="reviewCount" role="status" aria-live="polite"></span></div><div class="kicker">收錄目的地｜審核通過後再決定</div><div class="info-card"><p>候選 <strong>遊戲之書</strong>：偏向玩家操作、GBA、翻頁、卡片升級與形態轉換玩法。</p><p>候選 <strong>系統之書</strong>：偏向唯一性、公信記錄、授權、編號、交易原則與不可違反的底層規範。</p><p><strong>建議：</strong>日後可把操作流程放遊戲之書、唯一性不可變規範放系統之書，但本輪不自動拆分、也不寫入任何一本書。</p></div><div class="pending" style="margin-top:15px"><h3>審核標準</h3><p>本頁是「規則與畫面流程草案」，不是正式綁定程式。它不會登入 GitHub，不會真實配發流水號，不會更新《初代法陣》的認證等級，也不會修改目前發布的 GBA 按鍵。</p></div></section>
-<footer class="bottom"><div>◈ 萬物圖鑑｜唯一性規則 · review v0.1</div><div>獨立原型，不接入正式遊戲；所有模擬資料均不持久化。</div></footer></main>
+
+<section id="tab-progress" class="panel" role="tabpanel" aria-label="問題與開發進度">
+ <div class="section-head"><h2>問題追蹤與開發進度</h2><span class="meta">來源查證：2026-10-16 · 後續由版本紀錄更新</span></div>
+ <div class="progress-intro"><strong>這是候選技術進度表，不是正式驗收。</strong><br>
+   項目及來源由同目錄的版本化 <code>atlas-development-progress.json</code> 載入；AI 可在未來透過 GitHub PR 更新它。
+   你在此選擇狀態、填寫備註後，僅儲存於<strong>本裝置瀏覽器</strong>。需要跨裝置或由 AI 正式記錄時，請按「複製交接 JSON」貼回聊天；未經核准不會覆寫 GitHub 正式紀錄，也不會修改任何卡片或世界實體。</div>
+ <div class="progress-summary"><strong id="progressCount">載入中…</strong><div class="progress-meter" role="progressbar" id="progressMeter" aria-label="來源確認的項目比例" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div><small id="progressVersion">待讀取來源</small></div>
+ <div id="progressNotice" class="progress-status" role="status" aria-live="polite">正在讀取 GitHub 版本化進度資料…</div>
+ <div class="progress-tools"><button type="button" id="progressCopy">複製交接 JSON</button><button type="button" id="progressReload">重新讀取來源</button><small>已驗證＝原始碼證據確認；不代表已完工或經 OWNER 核准。</small></div>
+ <div class="progress-wrap"><table class="progress-table"><thead><tr><th scope="col">階段／項目</th><th scope="col">目前問題／落差</th><th scope="col">來源與證據</th><th scope="col">下一步／人工核准</th><th scope="col">本機進度／備註</th></tr></thead><tbody id="progressRows"></tbody></table></div>
+ <div class="kicker">交接與稽核邊界</div><div class="info-card"><p>正式卡片：<code>public.gaming.atlas</code>；本頁：規則審查與進度查看。正式圖鑑 ID、L2 認證、0 號格資料遷移、交易／權限修改都尚未因填寫本表而生效。</p><p>GitHub JSON 是候選基準，可保留來源、版本與修改歷程；裝置上的狀態與備註是<strong>未提交草稿</strong>。來源版本變動時停止套用舊版草稿，先複製交接後重新核對，避免靜默覆寫。</p><div id="progressCopyFallback" hidden><p>自動複製失敗，請自行複製下方內容：</p><textarea class="progress-fallback" id="progressFallbackText" readonly aria-label="交接 JSON 文字"></textarea></div></div>
+</section>
+
+<footer class="bottom"><div>◈ 萬物圖鑑｜唯一性規則 · review v0.2</div><div>獨立原型，不接入正式遊戲；所有模擬資料均不持久化。</div></footer></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div><div class="overlay" id="overlay" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-label" id="modalNo"></div><h3 id="modalTitle"></h3><p id="modalBody"></p><div class="state-line"><span>資料身分</span><strong id="modalIdentity"></strong></div><div class="state-line"><span>卡槽／位置</span><strong id="modalPlace"></strong></div><div class="state-line"><span>世界實體</span><strong id="modalWorld"></strong></div><footer><button id="modalClose">關閉 ×</button></footer></div></div>
 <script>
 (()=>{'use strict';
@@ -78,6 +125,121 @@ const transform=$('transform');const materialize=$('materialize');function reset
 function animateHold(){if(!holding)return;const t=Math.min(1,(performance.now()-holdStart)/3000);transform.style.setProperty('--hold',(t*360)+'deg');$('formCount').textContent=Math.round(t*100)+'%';if(t>=1){resetHold();form='card';renderForm();notify('模擬卡片化完成。原座標已保留。');return}raf=requestAnimationFrame(animateHold)}
 function renderForm(){const isWorld=form==='world';$('formIcon').textContent=isWorld?'◉':'▣';$('formLabel').textContent=isWorld?'長按 3 秒':'唯一卡片';$('formStatus').textContent=isWorld?'目前形態：世界實體（模擬）':'目前形態：實體卡片（模擬）';materialize.disabled=isWorld;transform.disabled=!isWorld}
 transform.addEventListener('pointerdown',e=>{if(form!=='world'||holding)return;if(e.button!==0&&e.pointerType==='mouse')return;e.preventDefault();holding=true;holdStart=performance.now();try{transform.setPointerCapture(e.pointerId)}catch(_){}animateHold()});['pointerup','pointercancel','lostpointercapture','pointerleave'].forEach(ev=>transform.addEventListener(ev,()=>{if(holding)resetHold()}));window.addEventListener('blur',resetHold);document.addEventListener('visibilitychange',()=>{if(document.hidden)resetHold()});transform.addEventListener('contextmenu',e=>e.preventDefault());transform.addEventListener('click',()=>{if(form==='world')notify('短按：僅開啟資料介面示意。長按滿 3 秒才卡片化。')});materialize.addEventListener('click',()=>{form='world';renderForm();notify('已模擬原位實體化，卡片外觀隨之消失。')});
+
+/* Versioned project ledger in GitHub; browser edits are an explicit local draft. */
+const PROGRESS_KEY='nw-atlas-progress-local-v1',PROGRESS_URL='./atlas-development-progress.json';
+const PROGRESS_STATE={not_started:'未開始',in_progress:'進行中',blocked:'受阻',awaiting_review:'待審核',verified:'來源已驗證'};
+const PROGRESS_IMPL={source_verified:'程式已查證',decision_pending:'待決策',prototype_only:'僅原型／模擬',not_implemented:'尚未實作',needs_verification:'缺實機驗證'};
+let progressBase=null,progressLocal=null,progressWritable=true;
+function progressMessage(message,kind=''){
+ const el=$('progressNotice');el.className='progress-status'+(kind?' '+kind:'');el.textContent=message;
+}
+function progressDraft(base){
+ const fresh={schema:'nw-atlas-progress-local-v1',base_version:base.version,edits:{},history:[]};
+ try{
+  const raw=localStorage.getItem(PROGRESS_KEY);
+  if(!raw)return fresh;
+  const parsed=JSON.parse(raw);
+  if(parsed?.schema!=='nw-atlas-progress-local-v1'||typeof parsed.edits!=='object'||Array.isArray(parsed.edits)||!Array.isArray(parsed.history)||typeof parsed.base_version!=='string')throw Error('本機草稿格式有誤');
+  return parsed;
+ }catch(e){progressWritable=false;progressMessage('本機草稿無法安全讀取，已停止寫入，以避免覆蓋資料：'+e.message,'error');return fresh}
+}
+function progressValue(item){
+ const edit=progressLocal?.base_version===progressBase?.version?progressLocal?.edits[item.id]:null;
+ return {status:edit?.status||item.status,note:edit?.note??item.note??'',updated_at:edit?.updated_at||item.last_updated};
+}
+function progressCell(row,label,cls=''){
+ const td=document.createElement('td');td.dataset.label=label;td.className=cls;row.append(td);return td;
+}
+function progressText(parent,tag,value){
+ const el=document.createElement(tag);el.textContent=String(value);parent.append(el);return el;
+}
+function renderProgress(){
+ if(!progressBase)return;
+ const old=$('progressRows');old.replaceChildren();
+ const outdated=progressLocal?.base_version!==progressBase.version;
+ const writable=progressWritable&&!outdated;
+ const count={};Object.keys(PROGRESS_STATE).forEach(k=>count[k]=0);
+ const items=progressBase.items;
+ for(const item of items){
+  const current=progressValue(item);count[current.status]=(count[current.status]||0)+1;
+  const tr=document.createElement('tr');
+  const title=progressCell(tr,'階段／項目','p-title');
+  progressText(title,'strong',item.id+' · '+item.title);
+  progressText(title,'small',item.phase+' ／ 優先：'+item.priority);
+  progressText(title,'span',PROGRESS_IMPL[item.implementation_state]||'來源待補').className='progress-tag'+(item.priority==='極高'?' progress-critical':'');
+  const issue=progressCell(tr,'目前問題／落差','p-issue');
+  progressText(issue,'span',item.problem);
+  const sources=progressCell(tr,'來源與證據');
+  let valid=0;
+  for(const src of item.sources||[]){
+   if(src.repository!=='ken12121122-dotcom/ken12121122-dotcom.github.io'||!/^[-\w./]+$/.test(src.path))continue;
+   if(valid++)sources.append(document.createElement('br'));
+   const a=document.createElement('a');a.href='https://github.com/'+src.repository+'/blob/main/'+src.path;
+   a.target='_blank';a.rel='noopener noreferrer';a.textContent=src.path.split('/').at(-1);a.title=src.path;sources.append(a);
+  }
+  if(!valid)progressText(sources,'span','待補來源');
+  const next=progressCell(tr,'下一步／人工核准','p-action');
+  progressText(next,'span',item.next_action);
+  progressText(next,'small',item.human_approval_required?'⚠ 須 OWNER 人工核准':'可先執行候選分析／測試');
+  const controls=progressCell(tr,'本機進度／備註','p-controls');
+  const select=document.createElement('select');select.setAttribute('aria-label',item.id+' 進度狀態');select.disabled=!writable;
+  for(const [status,label] of Object.entries(PROGRESS_STATE)){
+   const opt=document.createElement('option');opt.value=status;opt.textContent=label;select.append(opt);
+  }
+  select.value=current.status;
+  const note=document.createElement('textarea');note.setAttribute('aria-label',item.id+' 進度備註');note.placeholder='記錄實測結果或待補證據（限 600 字）';note.maxLength=600;note.value=current.note;note.disabled=!writable;
+  select.addEventListener('change',()=>saveProgress(item,select.value,note.value));
+  note.addEventListener('change',()=>saveProgress(item,select.value,note.value));
+  controls.append(select,note);
+  progressText(controls,'small','最後變更：'+(current.updated_at||'待確認'));
+  old.append(tr);
+ }
+ const verified=count.verified||0,percent=Math.round(verified/items.length*100);
+ $('progressCount').textContent='來源已驗證 '+verified+' / '+items.length+' · 進行中 '+(count.in_progress||0)+' · 受阻 '+(count.blocked||0)+' · 待審核 '+(count.awaiting_review||0);
+ $('progressFill').style.width=percent+'%';$('progressMeter').setAttribute('aria-valuenow',String(percent));
+ $('progressVersion').textContent='紀錄 v'+progressBase.version+' · review_status: '+progressBase.review_status;
+ $('progressCopy').disabled=false;
+ if(outdated)progressMessage('⚠ GitHub 進度版本已變更（目前 '+progressBase.version+'，本機 '+progressLocal.base_version+'）。為避免覆蓋新版資料，編輯已暫停；請先複製交接 JSON，讓 AI 核對差異。','warning');
+ else if(!progressWritable)progressMessage('⚠ 儲存空間無法安全使用；請先檢查本機草稿，不能假稱已保存。','error');
+ else progressMessage('✅ 已讀取 '+items.length+' 項來源記錄。修改只存本機；正式同步須將交接 JSON 提供給 AI 並通過審核。');
+}
+function saveProgress(item,status,note){
+ if(!progressBase||!progressLocal||!progressWritable||progressLocal.base_version!==progressBase.version)return;
+ if(!Object.hasOwn(PROGRESS_STATE,status)||typeof note!=='string'||note.length>600)return;
+ const before=progressValue(item);
+ if(before.status===status&&before.note===note)return;
+ const at=new Date().toISOString();
+ const next={status,note,updated_at:at,base_revision:item.revision};
+ const changed={...progressLocal,edits:{...progressLocal.edits,[item.id]:next},
+  history:[...progressLocal.history,{id:item.id,at,from:before.status,to:status,note_changed:before.note!==note}].slice(-150)};
+ try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(changed));progressLocal=changed;renderProgress()}
+ catch(e){progressWritable=false;progressMessage('儲存失敗，未寫入本機：'+e.message,'error');renderProgress()}
+}
+async function loadProgress(){
+ progressMessage('正在讀取版本化進度紀錄…');
+ try{
+  const response=await fetch(PROGRESS_URL,{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const data=await response.json();
+  if(data?.schema!=='nw-atlas-progress-v1'||data.card_id!=='public.gaming.atlas'||data.review_status!=='generated'||!Array.isArray(data.items)||data.items.length===0||new Set(data.items.map(x=>x.id)).size!==data.items.length||data.items.some(x=>!x.id||!Object.hasOwn(PROGRESS_STATE,x.status)||!Array.isArray(x.sources)||!Number.isInteger(x.revision)))throw Error('進度 Schema 驗證失敗');
+  progressBase=data;progressWritable=true;progressLocal=progressDraft(data);renderProgress();
+ }catch(e){progressBase=null;$('progressRows').replaceChildren();$('progressCount').textContent='來源讀取失敗';$('progressVersion').textContent='資料不可用';$('progressCopy').disabled=true;progressMessage('⚠ 無法驗證進度來源：'+e.message+'。不顯示推測資料，也不寫入本機。','error')}
+}
+$('progressReload').addEventListener('click',loadProgress);
+$('progressCopy').addEventListener('click',async()=>{
+ if(!progressBase||!progressLocal)return;
+ const changes=Object.entries(progressLocal.edits).map(([id,edit])=>({id,...edit}));
+ const handoff={schema:'nw-atlas-progress-handoff-v1',project_id:progressBase.project_id,card_id:progressBase.card_id,
+  base_version:progressLocal.base_version,github_version:progressBase.version,review_status:'generated',
+  generated_at:new Date().toISOString(),changes,history:progressLocal.history,
+  instruction:'此為本機候選進度。請依每筆來源查驗後，透過 GitHub Draft PR 版控更新；未經 OWNER 核准不可發布或標記 approved。'};
+ const data=JSON.stringify(handoff,null,2);
+ try{await navigator.clipboard.writeText(data);$('progressCopyFallback').hidden=true;progressMessage('已複製 '+changes.length+' 筆本機變更與修改歷程，請貼回 ChatGPT 進行 GitHub 來源核對。')}
+ catch(e){$('progressCopyFallback').hidden=false;$('progressFallbackText').value=data;progressMessage('無法存取剪貼簿，請使用下方文字框手動複製。','warning')}
+});
+loadProgress();
+
 update();renderForm();
 })();
 </script>
