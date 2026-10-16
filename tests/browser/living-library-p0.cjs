@@ -128,6 +128,14 @@ async function main(){
    await p.locator('#closeDrawer').click();
    report.checks.push({id:capability.id,result:'PASS',scope:capability.external?'External link target only; no sign-in':'Public card click, rendered iframe and return; underlying application actions not exercised'});
   }
+  // Focus presentation hides obstructing panels without overwriting the user's clean-view preference.
+  const cleanBefore=await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1'));
+  await p.evaluate(()=>document.body.classList.add('atlas-focused'));
+  for(const selector of ['#catalog','.bottom','.top','#cleanViewToggle'])assert.equal(await p.locator(selector).isVisible(),false);
+  await p.evaluate(()=>document.body.classList.remove('atlas-focused'));
+  assert.equal(await p.locator('#catalog').isVisible(),true);assert.equal(await p.locator('.bottom').isVisible(),true);
+  assert.equal(await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1')),cleanBefore);
+  report.checks.push({id:'atlas_focus_overlay_visibility',result:'PASS',scope:'Actual CSS focus class hides catalog/navigation and restores them without changing clean-view preference; geometry/state tested separately.'});
   // End-to-end regression: real System Book -> same-origin iframe slider ->
   // guarded parent handler -> actual shared preference object -> acknowledged value.
   if(await p.locator('#catalogHead').getAttribute('aria-expanded')==='false')await p.locator('#catalogHead').click();
@@ -149,6 +157,11 @@ async function main(){
   await prefsFrame.locator('#cardOrbitSpeed').focus();
   await prefsFrame.locator('#cardOrbitSpeed').press('Home');
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardOrbitSpeed===0);
+  for(const [key,value,press] of [['atlasDistance',.8,'Home'],['atlasHeight',3.6,'End'],['atlasSize',1.4,'End'],['atlasSeparation',1.8,'End'],['atlasFocusDistance',.75,'Home'],['atlasCardSize',.65,'Home']]){
+   await prefsFrame.locator('#'+key).focus();await prefsFrame.locator('#'+key).press(press);
+   await p.waitForFunction(([k,v])=>window.LivingLibrary?.controls?.[k]===v,[key,value]);
+   assert.equal(await p.evaluate(k=>JSON.parse(localStorage.getItem('living-library-controls-v1'))[k],key),value);
+  }
   const state=await p.evaluate(()=>{
    const value=window.LivingLibrary.controls;
    return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
@@ -167,10 +180,33 @@ async function main(){
   await restoredFrame.locator('#resetCardParams').click();
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSize===1&&window.LivingLibrary?.controls?.cardSummonDuration===2850&&window.LivingLibrary?.controls?.cardOrbitSpeed===1);
   await restoredFrame.waitForFunction(()=>document.querySelector('#prefStatus')?.textContent.includes('無 3D 場景'));
+  assert.equal(await restoredFrame.locator('#atlasDistance').inputValue(),'0.8');
+  assert.equal(await p.evaluate(()=>LivingLibrary.controls.atlasSize),1.4,'card reset preserves atlas settings');
+  await restoredFrame.locator('#resetAtlasParams').click();
+  await p.waitForFunction(()=>LivingLibrary.controls.atlasDistance===1.35&&LivingLibrary.controls.atlasSize===1);
   report.checks.push({id:'system_book_3d_preferences_ack_fallback',result:'PASS',
    scope:'Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU.'});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
+  await p.getByRole('button',{name:'選取遊戲之書',exact:true}).click();
+  if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))await p.locator('#fallbackOpen').click();
+  await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
+  const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
+  const booksBefore=await p.evaluate(()=>LivingLibrary.books.length);
+  await forge.locator('#bookType').selectOption('atlas');await forge.locator('#name').fill('測試九加九卡冊');
+  await forge.getByRole('button',{name:'施放書本創造術',exact:true}).click();
+  await p.waitForFunction(n=>LivingLibrary.books.length===n+1,booksBefore);
+  const forgedId=await p.evaluate(()=>LivingObjectCraft.listBooks(localStorage).find(b=>b.title==='測試九加九卡冊')?.id);
+  assert.ok(forgedId);assert.equal(await p.evaluate(id=>LivingLibrary.books.find(b=>b.id===id).openingMode,forgedId),'atlas');
+  await forge.getByRole('button',{name:'開啟測試九加九卡冊',exact:true}).click();
+  await p.waitForFunction(()=>document.querySelector('#drawerTitle').textContent==='測試九加九卡冊');
+  await p.locator('[data-card-id="public.gaming.atlas"]').dispatchEvent('click');
+  const forgedFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forgedFrame.waitForURL(url=>url.searchParams.get('book')===forgedId);
+  assert.equal(await forgedFrame.locator('.slot').count(),18);assert.equal(await forgedFrame.locator('#bookPicker').inputValue(),forgedId);
+  await p.locator('#readerBack').click();await p.locator('#closeDrawer').click();
+  report.checks.push({id:'book_forge_template_collection',result:'PASS',scope:'Real template choice creates an independently identified 18-slot card book; its own reader selects that exact container.'});
   // Placement preferences must never wipe unrelated player data on reload.
   await p.evaluate(()=>localStorage.setItem('nw-p0-save-sentinel','synthetic-preserve-me'));
   await p.reload({waitUntil:'domcontentloaded'});

@@ -2,17 +2,22 @@
 <style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#102032;color:#f6e7c9;font:15px system-ui;padding:18px}h1{font-size:20px}button{min-height:44px;min-width:44px;border:1px solid #b59a6b;border-radius:8px;background:#263d50;color:#ffe8b4;cursor:pointer}button:focus-visible{outline:3px solid #87dfc8}.tabs{display:flex;gap:8px}.tabs button{padding:8px 14px}.pages{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.slot{min-height:86px;padding:4px;font-size:12px;overflow-wrap:anywhere}.selected{outline:3px solid #81dfc2}#screen{min-height:100px;background:#07101b;border:2px solid #bba475;padding:12px;overflow-wrap:anywhere}#cards{display:flex;gap:8px;flex-wrap:wrap}#cards button{max-width:140px;padding:8px}#status{min-height:42px}small{color:#b2c2cb}.actions{display:flex;gap:8px;margin:12px 0}</style>
 <h1>萬物圖鑑／卡片之書</h1><p>無 3D 時可在此整理原有卡片。先點卡，再點空格移入；點已選卡後按「↗」移回軌道。資料儲存在此裝置。</p>
 <div class="tabs"><button id="atlasTab" aria-label="萬物圖鑑">✦</button><button id="collectionTab" aria-label="卡片之書">▣</button><button id="orbit" aria-label="選取卡片回到軌道">↗</button><button id="read" aria-label="讀取右側卡片內頁">●</button></div>
-<p id="label"></p><div class="pages"><div id="left" class="slots"></div><div id="right"></div></div><h2>軌道卡片</h2><div id="cards"></div><p id="status" role="status"></p><small>語音須由主場景點人物啟動；APP 需具備語音連接更新。此頁不自行開啟麥克風。</small><script src="object-craft.js"></script><script src="atlas-state.js"></script><script>
+<label for="bookPicker">卡冊</label><select id="bookPicker" style="min-height:44px;max-width:100%;font:inherit"></select><p id="label"></p><div class="pages"><div id="left" class="slots"></div><div id="right"></div></div><h2>軌道卡片</h2><div id="cards"></div><p id="status" role="status"></p><small>語音須由主場景點人物啟動；APP 需具備語音連接更新。此頁不自行開啟麥克風。</small><script src="object-craft.js"></script><script src="atlas-state.js"></script><script>
 'use strict';const C=LivingObjectCraft,S=LivingAtlasState,by=id=>document.getElementById(id);let book=S.ATLAS,selected=null;
+const requested=new URLSearchParams(location.search).get('book');
+try{if(C.listBooks(localStorage).some(b=>b.id===requested&&b.openingMode==='atlas'))book=requested}catch(_){}
 function all(){return C.listCards(localStorage)}
 function render(){let cards;try{cards=all()}catch(e){by('status').textContent=e.message;return}
+ const picker=by('bookPicker');picker.replaceChildren();
+ for(const [id,name] of [[S.ATLAS,'萬物圖鑑'],[S.COLLECTION,'卡片之書（原有）'],...C.listBooks(localStorage).filter(b=>b.openingMode==='atlas').map(b=>[b.id,b.title])]){const o=document.createElement('option');o.value=id;o.textContent=name;picker.append(o)}picker.value=book;
  by('label').textContent=book===S.ATLAS?'萬物圖鑑：左九格／右側讀卡區':'卡片之書：左右各九格';by('left').replaceChildren();by('right').replaceChildren();by('cards').replaceChildren();
- const right=document.createElement('div');right.className='slots';if(book===S.COLLECTION)by('right').append(right);else{const screen=document.createElement('div');screen.id='screen';const reader=cards.find(c=>S.readerActive(c));screen.textContent=reader?reader.title+' · ● 開啟內頁':'待機';by('right').append(screen,right)}
+ const right=document.createElement('div');right.className='slots';if(S.isCollection(book))by('right').append(right);else{const screen=document.createElement('div');screen.id='screen';const reader=cards.find(c=>S.readerActive(c));screen.textContent=reader?reader.title+' · ● 開啟內頁':'待機';by('right').append(screen,right)}
  for(let i=0;i<S.capacity(book);i++){const card=cards.find(c=>c.containerId===book&&c.slotIndex===i),b=document.createElement('button');b.className='slot'+(card?.id===selected?' selected':'');b.textContent=card?.title||'＋';b.setAttribute('aria-label',(book===S.ATLAS&&i===9?'讀卡區':'卡槽 '+(i+1))+(card?'：'+card.title:'：空'));
  b.onclick=()=>{if(card){selected=card.id;render()}else if(selected)transfer(book,i)};(i<9?by('left'):right).append(b)}
  for(const card of cards.filter(c=>!c.containerId)){const b=document.createElement('button');b.textContent=card.title;b.className=selected===card.id?'selected':'';b.onclick=()=>{selected=card.id;render()};by('cards').append(b)}
 }
 function transfer(container,slot=null){try{if(!selected)throw Error('先選取一張卡片');C.placeCard(localStorage,selected,container,slot);selected=null;render();by('status').textContent='已保存卡片位置'}catch(e){by('status').textContent=e.message}}
+by('bookPicker').onchange=e=>{book=e.target.value;render()};
 by('atlasTab').onclick=()=>{book=S.ATLAS;render()};by('collectionTab').onclick=()=>{book=S.COLLECTION;render()};by('orbit').onclick=()=>transfer(null);
 by('read').onclick=()=>{const card=all().find(c=>S.readerActive(c));if(!card){by('status').textContent='先將卡片放入右側讀卡區';return}location.href='./card-creation.html?card='+encodeURIComponent(card.id)};
 window.addEventListener('storage',render);render();

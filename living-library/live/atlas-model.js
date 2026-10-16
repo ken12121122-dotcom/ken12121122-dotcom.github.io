@@ -1,6 +1,6 @@
 /* Three.js model derived from the user supplied v0.2 sandbox. No private data. */
 (function(root){'use strict';
-root.LivingAtlasModel={create(THREE,collection=false){
+root.LivingAtlasModel={create(THREE,collection=false,title=''){
 function coverArtwork(){
  const c=document.createElement('canvas');c.width=640;c.height=900;
  const x=c.getContext('2d');
@@ -21,6 +21,7 @@ function coverArtwork(){
  x.beginPath();x.arc(0,0,34,0,Math.PI*2);x.fillStyle='#12335f';x.fill();x.strokeStyle='#fff3c1';x.stroke();
  x.fillStyle='#e7c374';for(const p of [-240,240]){x.beginPath();x.moveTo(0,p-18);x.lineTo(13,p);x.lineTo(0,p+18);x.lineTo(-13,p);x.closePath();x.fill()}
  x.setTransform(1,0,0,1,0,0);
+ if(title){x.textAlign='center';x.fillStyle='#fff0b0';x.font='bold 42px sans-serif';const chars=[...title];for(let i=0;i<Math.ceil(chars.length/10);i++)x.fillText(chars.slice(i*10,(i+1)*10).join(''),320,130+i*54,490);x.textAlign='left'}
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
 }
 

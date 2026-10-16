@@ -100,3 +100,17 @@
 - 主場景點人物開啟搖桿及語音；鬆開／移動搖桿不停止辨識。進入專注保留搖桿，× 只退出視角；卡片之書另有合上、歸架。語音在頁面隱藏／離開 APP 時停止。
 - 無 WebGL 時以 `atlas-controls.html` 操作同一份卡片資料；同源 allowlist 明確加入此頁。原始 GBA、GEN2、存檔、Android 路由不變。
 - 網頁正式發布仍需 OWNER 驗收。原生語音連接由使用者於本次對話另行授權直接更新 APP；Android 自動檢查及語音手機實測分別記錄，不將 parser／幾何測試冒充實機證據。
+
+## 圖鑑調整（OWNER 2026-10-15 23:52 請求）
+
+沿用 `book_id=system` / `card_id=public.system.controls`「連線與版本」，不新增設定卡。`atlas-state.js` 是六個新參數的預設／範圍正本：距離 1.35（0.8–2.8）、高度 2.35（1.2–3.6）、書大小 1×（0.65–1.4）、左右偏移 0.95（0.65–1.8）、專注鏡頭距離 1×（0.75–1.5）、書內卡大小 1×（0.65–1）。共享本機 controls 偏好與既有 iframe 確認回覆；原四項卡片軌道參數保留，各組獨立恢復預設。
+
+第二本《卡片之書》已是現成公共書，不透過書本創造術建立。不含新書的舊偏好首次引入外圈；記錄 `known` 後尊重使用者歸架與既有 atlas 保存。書本創造術另提供開啟現成卡片之書的圖示入口；不增加卡片／書本身份。
+
+OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打開；沿用 `public.gaming.book.creation` 既有 reader iframe 的同源來源驗證，`summon-collection` 只接受這張卡。設定卡只放參數，不放新書入口。
+
+## 書本創造術型別選擇（OWNER 2026-10-16 00:09 更正）
+
+以此段取代上文「第二本從固定現成書入口開啟」的解讀。`public.gaming.book.creation` 內選擇空白魔法書（legacy）／卡片之書（atlas），再創造具有獨立 `local.book.*` ID 的實體書。`ObjectCraft` 保留既有 blank-book-v1 封套，atlas 型別由 openingMode 區別，十八格容器就是自己的 Book ID；不能把卡片放進 legacy 書或不存在的 ID。
+
+創造清單可開啟每本原書；`open-created-book` 僅接受當前書本創造術 iframe，同源與 record ID 均驗證。atlas 型別在場景具備卡冊模型、拖曳、放卡／跨書、合上留內圈、歸架與獨立保存，legacy 型別保持原有閱讀方式。原固定卡片之書與既有資料保留相容，不代替創造型別。調整參數仍只放於 system/public.system.controls。

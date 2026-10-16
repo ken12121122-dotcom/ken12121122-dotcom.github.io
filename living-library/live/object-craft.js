@@ -52,7 +52,7 @@
    permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
   write(storage,[...state.objects,card]);return {...card};
  }
- function createBlankBook(storage,random,name='空白魔法書',clock=()=>new Date().toISOString()){
+ function createBook(storage,random,name='空白魔法書',clock=()=>new Date().toISOString(),openingMode='legacy'){
   const state=read(storage);
   if(state.objects.filter(x=>x.objectType==='book').length>=MAX_BOOKS)throw Error('本機試製上限 12 本書，未修改既有書籍');
   if(typeof name!=='string'||!name.trim()||name.trim().length>30)throw Error('書名須介於 1～30 字');
@@ -61,10 +61,19 @@
   if(used.has(id))throw Error('書本識別碼重複');
   const at=clock();
   const book={id,objectType:'book',templateId:'blank-book-v1',title:name.trim(),
-   description:'可放入相容卡片的空白書，尚未賦予特殊能力',
-   contentIds:[],status:'draft',openingMode:'legacy',active:true,reusePolicy:'local-only',
+   description:openingMode==='atlas'?'左右各九格，可拖曳收藏與交換卡片':'可放入相容卡片的空白書，尚未賦予特殊能力',
+   contentIds:[],status:'draft',openingMode,viewMode:'outer',viewOpen:true,active:true,reusePolicy:'local-only',
    createdAt:at,updatedAt:at,revision:1};
   write(storage,[...state.objects,book]);return {...book};
+ }
+ function createBlankBook(storage,random,name='空白魔法書',clock){return createBook(storage,random,name,clock,'legacy')}
+ function createCardBook(storage,random,name='卡片之書',clock){return createBook(storage,random,name,clock,'atlas')}
+ function setBookView(storage,id,mode,open){
+  if(!['outer','inner','shelf'].includes(mode)||typeof open!=='boolean')throw Error('卡冊位置不正確');
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&x.objectType==='book'&&x.templateId==='blank-book-v1'&&x.openingMode==='atlas');
+  if(at<0)throw Error('找不到這本卡片之書');
+  const objects=[...state.objects];objects[at]={...objects[at],viewMode:mode,viewOpen:open,active:mode!=='shelf',revision:(objects[at].revision||1)+1};
+  write(storage,objects);return {...objects[at]};
  }
  function setBookActive(storage,id,active){
   if(typeof active!=='boolean')throw Error('書本位置設定不正確');
@@ -75,9 +84,10 @@
  }
  // Atomic card transfers: a full destination rejects; no duplicate card registry.
  function placeCard(storage,id,containerId,slotIndex=null,clock=()=>new Date().toISOString()){
-  const sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
+  const state=read(storage),sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
+  for(const book of state.objects)if(book.objectType==='book'&&book.templateId==='blank-book-v1'&&book.openingMode==='atlas'&&book.id.startsWith('local.book.'))sizes[book.id]=18;
   if(containerId!==null&&(!Object.hasOwn(sizes,containerId)||!Number.isInteger(slotIndex)||slotIndex<0||slotIndex>=sizes[containerId]))throw Error('無效卡槽');
-  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
   const old=state.objects[at],next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
@@ -125,5 +135,5 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,setBookActive,editCard,recycleCard,restoreCard,placeCard};
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard};
 });
