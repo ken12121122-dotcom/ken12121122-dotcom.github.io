@@ -55,9 +55,71 @@ test('stale revision, blank cards and invalid bindings preserve the existing sna
  assert.throws(()=>Craft.bindRuneCard(db,'other.rune','local.card.sample',7),/只支援/);
  assert.equal(db.raw(),before);
 });
-test('bonded card cannot be moved to a book or recycled without an unbinding ritual',()=>{
+test('linked card can use right GBA reader slot 9 without losing its rune bond, identity or image',()=>{
+ const db=storage(card()),original=bind(db),bond=original.runeBinding;
+ const placed=Craft.placeCard(db,original.id,'local.atlas.compendium',9,()=> '2026-10-17T00:00:00Z');
+ assert.equal(placed.containerId,'local.atlas.compendium');
+ assert.equal(placed.ownerBookId,'local.atlas.compendium');
+ assert.equal(placed.slotIndex,9);
+ assert.equal(placed.placement,'book');
+ assert.deepEqual(placed.runeBinding,bond);
+ assert.deepEqual(placed.image,original.image);
+ assert.equal(placed.cardNumber,original.cardNumber);
+ assert.equal(placed.id,original.id);
+ assert.equal(Craft.read(db).objects.length,1);
+ assert.equal(Craft.getRuneBoundCard(db).id,original.id);
+ assert.equal(require('../living-library/live/atlas-state.js').readerActive(placed),true);
+ // Undoing the reader placement returns the SAME linked card to the floating orbit.
+ const floated=Craft.placeCard(db,original.id,null,null,()=> '2026-10-17T00:01:00Z');
+ assert.equal(floated.placement,'hover');
+ assert.equal(floated.containerId,null);
+ assert.equal(floated.slotIndex,null);
+ assert.deepEqual(floated.runeBinding,bond);
+ assert.equal(floated.id,original.id);
+ assert.equal(Craft.read(db).objects.length,1);
+});
+test('linked card is locked out of nine left atlas cells and any other book, but remains readable in GBA',()=>{
+ const db=storage(card());bind(db);
+ for(const [container,slot] of [
+  ...Array.from({length:9},(_,i)=>['local.atlas.compendium',i]),
+  ['local.atlas.collection',0],['local.atlas.collection',17]
+ ]){
+  const before=db.raw();
+  assert.equal(Craft.canStoreBoundCard(Craft.listCards(db)[0],container,slot),false);
+  assert.throws(()=>Craft.placeCard(db,'local.card.sample',container,slot),/右側 GBA 讀卡格/);
+  assert.equal(db.raw(),before,'failed drop must never change user card data');
+ }
+ const bound=Craft.listCards(db)[0];
+ assert.equal(Craft.canStoreBoundCard(bound,'local.atlas.compendium',9),true);
+ assert.equal(Craft.canStoreBoundCard(bound,null,null),true);
+ assert.equal(Craft.canStoreBoundCard(bound,'local.atlas.compendium',8),false);
+ assert.equal(Craft.canStoreBoundCard(bound,'local.atlas.collection',0),false);
+ assert.throws(()=>Craft.recycleCard(db,'local.card.sample'),/已連結法陣/);
+});
+test('right GBA slot remains exclusive and respects quota failure atomically',()=>{
+ const db=storage(card());bind(db);
+ const objects=Craft.read(db).objects;
+ objects.push({...card('local.card.other'),title:'正常讀卡測試',containerId:'local.atlas.compendium',
+   ownerBookId:'local.atlas.compendium',placement:'book',slotIndex:9});
+ db.setItem(Craft.KEY,JSON.stringify({version:Craft.VERSION,objects}));
+ const before=db.raw();
+ assert.throws(()=>Craft.placeCard(db,'local.card.sample','local.atlas.compendium',9),/已有卡片/);
+ assert.equal(db.raw(),before);
+ const blocked={getItem:db.getItem,setItem:()=>{throw Error('quota')}};
+ assert.throws(()=>Craft.placeCard(blocked,'local.card.sample',null),/quota/);
+ assert.equal(db.raw(),before);
+});
+test('ordinary unbound cards retain all normal slot and book destinations',()=>{
+ const db=storage(card());
+ assert.equal(Craft.canStoreBoundCard(Craft.listCards(db)[0],'local.atlas.compendium',0),true);
+ let placed=Craft.placeCard(db,'local.card.sample','local.atlas.compendium',0);
+ assert.equal(placed.slotIndex,0);
+ placed=Craft.placeCard(db,'local.card.sample','local.atlas.collection',17);
+ assert.equal(placed.slotIndex,17);
+ assert.equal(Craft.read(db).objects.length,1);
+});
+test('rune binding cannot be recycled directly and still requires unbinding',()=>{
  const db=storage(card());bind(db);const before=db.raw();
- assert.throws(()=>Craft.placeCard(db,'local.card.sample','local.atlas.collection',0),/已連結法陣/);
  assert.throws(()=>Craft.recycleCard(db,'local.card.sample'),/已連結法陣/);
  assert.equal(db.raw(),before);
 });
@@ -75,4 +137,13 @@ test('UI renders a visible selection glow, beam, consent question and real card 
  assert.match(html,/refreshFloatingCards\(\); \/\/ Recreate the same card/);
  assert.match(html,/RUNE_ARC_SEGMENTS=192/);
  assert.doesNotMatch(html,/id="runeBind.*>3秒/);
+});
+
+test('3D atlas drag affordance follows the same GBA right-slot eligibility gate',async()=>{
+ const code=await readFile(new URL('../living-library/live/atlas-runtime.js',import.meta.url),'utf8');
+ assert.match(code,/craft\.canStoreBoundCard\(pointer\.entry\.record,target\.id,target\.slot\)/);
+ assert.match(code,/if\(!occupied&&allowed\)/);
+ const state=require('../living-library/live/atlas-state.js');
+ assert.equal(state.readerActive({containerId:state.ATLAS,slotIndex:9}),true);
+ assert.equal(state.readerActive({containerId:state.ATLAS,slotIndex:8}),false);
 });
