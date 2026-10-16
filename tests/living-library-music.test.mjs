@@ -38,9 +38,9 @@ test('existing System Book cards remain in order, and music is a single additive
 test('music page is loaded as a trusted same-origin in-book reader and uses parent audio',async()=>{
   const scene=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
   const player=await readFile(new URL('../living-library/live/music-player.html',import.meta.url),'utf8');
-  assert.match(scene,/new URL\\('\.\\/music-player\\.html',current\\)\\.pathname/);
-  assert.match(scene,/'music-runtime\\.js'/);
-  assert.match(player,/parent\\.LivingMusicPlayer/);
+  assert.ok(scene.includes("new URL('./music-player.html',current).pathname"));
+  assert.ok(scene.includes("'music-runtime.js'"));
+  assert.ok(player.includes('parent.LivingMusicPlayer'));
 });
 
 test('parent music engine accepts iframe File objects and keeps audio alive independently of iframe',async()=>{
