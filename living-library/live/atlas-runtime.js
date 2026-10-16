@@ -99,7 +99,10 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function highlight(target){if(slotHighlight)slotHighlight.material=slotHighlight.userData.originalMaterial;
   slotHighlight=null;if(!target)return;const occupied=[...cards.values()].some(c=>c.id!==pointer?.entry?.id&&c.record.containerId===target.id&&c.record.slotIndex===target.slot);
   target.well.userData.originalMaterial??=target.well.material;if(!target.well.userData.highlightMaterial){target.well.userData.highlightMaterial=target.well.material.clone();target.well.userData.highlightMaterial.color.set('#49d6b5')}
-  if(!occupied){slotHighlight=target.well;slotHighlight.material=slotHighlight.userData.highlightMaterial}}
+  // Do not advertise a locked left-side slot as a legal green drop target.
+  const allowed=!pointer?.entry||!craft.canStoreBoundCard||
+   craft.canStoreBoundCard(pointer.entry.record,target.id,target.slot);
+  if(!occupied&&allowed){slotHighlight=target.well;slotHighlight.material=slotHighlight.userData.highlightMaterial}}
  function dragWorld(e,position){rayAt(e);const normal=camera.getWorldDirection(new THREE.Vector3()),plane=new THREE.Plane().setFromNormalAndCoplanarPoint(normal,position);return ray.ray.intersectPlane(plane,new THREE.Vector3())}
  function pointerMove(e){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;
   if(Math.hypot(e.clientX-p.x,e.clientY-p.y)>8)p.moved=true;
