@@ -1734,6 +1734,20 @@ const runeBeamGeometry=new THREE.BufferGeometry();
 runeBeamGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
 const runeCandidateBeam=new THREE.Line(runeBeamGeometry,runeBeamMaterial);
 runeCandidateBeam.visible=false;scene.add(runeCandidateBeam);
+// Thin WebGL lines are often nearly invisible on phones; add a translucent
+// world-space tether and two traveling glints, without allocating per frame.
+const tetherMat=new THREE.MeshBasicMaterial({color:0x9bf4d4,transparent:true,opacity:.52,
+ blending:THREE.AdditiveBlending,depthWrite:false});
+const runeTether=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1,8),tetherMat);
+runeTether.visible=false;scene.add(runeTether);
+const glintMat=new THREE.MeshBasicMaterial({color:0xf5e3ae,transparent:true,
+ opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeGlints=[0,1].map(()=>{
+ const glint=new THREE.Mesh(new THREE.SphereGeometry(.059,10,8),glintMat);
+ glint.visible=false;scene.add(glint);return glint;
+});
+const tetherAxis=new THREE.Vector3(0,1,0),tetherVector=new THREE.Vector3();
+const tetherStart=new THREE.Vector3(),tetherEnd=new THREE.Vector3();
 let runeNearest=null,runeBindingPulseUntil=0,runeBindingCardId=null,runePromptTimer=null;
 let runeBound=null;
 try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
@@ -1760,7 +1774,8 @@ function updateRuneVisual(now){
  runeGlyphs.visible=(show||bindingFlash)&&!preferReduced;
  runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
  runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
- runeCandidateBeam.visible=false;
+ runeCandidateBeam.visible=false;runeTether.visible=false;
+ for(const glint of runeGlints)glint.visible=false;
  const linkCardId=info.phase==='selected'&&runeNearest?.status==='selected'
   ?runeNearest.cardId:bindingFlash?runeBindingCardId:null;
  if(linkCardId){
@@ -1773,6 +1788,20 @@ function updateRuneVisual(now){
    points.setXYZ(1,target.x,target.y,target.z);
    points.needsUpdate=true;
    runeCandidateBeam.visible=true;
+   tetherStart.set(anchor.x,.68,anchor.z);
+   tetherEnd.copy(target);tetherVector.copy(tetherEnd).sub(tetherStart);
+   const len=tetherVector.length();
+   if(len>.02){
+    runeTether.visible=true;runeTether.position.copy(tetherStart).addScaledVector(tetherVector,.5);
+    runeTether.quaternion.setFromUnitVectors(tetherAxis,tetherVector.clone().normalize());
+    runeTether.scale.set(1,len,1);
+    tetherMat.opacity=preferReduced?.45:.45+.14*Math.sin(now*.012);
+    for(let i=0;i<runeGlints.length;i++){
+     const particle=runeGlints[i];particle.visible=!preferReduced;
+     const t=(now*.00058+i*.5)%1;
+     particle.position.copy(tetherStart).addScaledVector(tetherVector,t);
+    }
+   }
    runeBeamMaterial.opacity=preferReduced?.88:.83+.15*Math.sin(now*.014);
   }
  }
