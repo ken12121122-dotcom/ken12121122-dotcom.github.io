@@ -7,6 +7,7 @@
 })(typeof self!=='undefined'?self:this,function(){
  'use strict';
  const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64,MAX_BOOKS=12,MAX_RECYCLED=128;
+ const ORIGIN_RUNE='local.rune.origin';
  function read(storage){
   const raw=storage.getItem(KEY);
   if(raw===null)return {version:VERSION,objects:[]};
@@ -18,6 +19,32 @@
  }
  function write(storage,objects){storage.setItem(KEY,JSON.stringify({version:VERSION,objects}))}
  function isPlayerCard(x){return x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.')}
+ // Return the same original card; a rune bond never creates a second card ID.
+ function getRuneBoundCard(storage,runeId=ORIGIN_RUNE){
+  return listCards(storage).find(x=>x.runeBinding?.runeId===runeId)||null;
+ }
+ function bindRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('目前只支援初始法陣');
+  if(typeof cardId!=='string'||!cardId.startsWith('local.card.'))throw Error('無效卡片識別碼');
+  const state=read(storage);
+  const at=state.objects.findIndex(x=>x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到可連結的普通卡');
+  const old=state.objects[at];
+  if(old.runeBinding?.runeId===runeId)return {...old}; // idempotent, no extra revision.
+  if(old.runeBinding||old.runeContract||old.boundRuneId)throw Error('這張卡片已與其他法陣建立契約');
+  if(state.objects.some(x=>x.id!==cardId&&isPlayerCard(x)&&x.status!=='recycled'&&x.runeBinding?.runeId===runeId))
+   throw Error('此法陣已經連結其他卡片');
+  if(!Number.isInteger(expectedRevision)||expectedRevision!==old.revision)throw Error('卡片已變動，請重新選擇');
+  if(old.status!=='draft'||old.placement!=='hover'||old.containerId||old.ownerBookId||
+     typeof old.title!=='string'||!old.title.trim()||old.title.trim()==='空白卡片'||
+     old.l2Certified===true||old.upgradeRequest?.l2Certified===true||old.certification?.level==='L2')
+   throw Error('此卡片不符合目前的法陣連結條件');
+  const atTime=clock();
+  const next={...old,runeBinding:{runeId,state:'bound',boundAt:atTime},
+   revision:old.revision+1,updatedAt:atTime};
+  const objects=[...state.objects];objects[at]=next;
+  write(storage,objects);return {...next};
+ }
  function listCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
  }
@@ -90,7 +117,9 @@
   const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
-  const old=state.objects[at],next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
+  const old=state.objects[at];
+  if(old.runeBinding?.runeId&&containerId)throw Error('已連結法陣的卡片須先解除契約才能收進卡冊');
+  const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
@@ -138,6 +167,7 @@
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
   const old=state.objects[at];
+  if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
   if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
    throw Error('回收站已滿，未修改卡片');
@@ -156,5 +186,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard};
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard};
 });

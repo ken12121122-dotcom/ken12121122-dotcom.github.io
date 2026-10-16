@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-16.atlas-rules-card-preview.1">
+<meta name="living-library-release" content="2026-10-16.rune-02-binding-glow.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -99,6 +99,15 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
 .blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
 .fallback{pointer-events:none;display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}#fallbackOpen,#retry3d{pointer-events:auto;touch-action:manipulation}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.rune-bind-dialog{position:fixed;z-index:30;width:min(91vw,400px);max-width:400px;border:2px solid #c6a779;border-radius:18px;padding:22px 24px 19px;background:linear-gradient(160deg,#fdf4e3,#e9d7b5);color:#1d2b30;box-shadow:0 24px 85px #030812db,inset 0 0 0 4px #f7edda}
+.rune-bind-dialog::backdrop{background:#00091590;backdrop-filter:blur(3px)}
+.rune-bind-dialog h2{font-size:20px;font-weight:750;color:#1a2a30;margin:0 0 10px}
+.rune-bind-dialog p{font-size:14px;line-height:1.7;margin:5px 0;color:#26383d}
+.rune-bind-dialog strong{color:#0b2926;overflow-wrap:anywhere}
+.rune-bind-dialog small{display:block;color:#5d574d;margin-top:9px}
+.rune-bind-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:17px}
+.rune-bind-actions button{min-width:48px;min-height:44px;border:1px solid #8c7653;border-radius:11px;background:#eee4d1;color:#142b30;font-size:22px;font-weight:bold}
+.rune-bind-actions button.primary{background:#254d49;color:#fff6df;border-color:#244a43}
 .toast{position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #90775c;border-radius:10px;background:#112235ee;padding:10px 15px;font-size:12px;opacity:0;transition:opacity .3s;white-space:nowrap}.toast.show{opacity:1}
 .quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
 @media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
@@ -305,6 +314,11 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button" aria-label="返回圖書館" title="返回圖書館">←</button></dialog>
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
+<h2 id="runeBindTitle">✧ 法陣已選取</h2><p id="runeBindDescription">是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？</p>
+<small>確認後產生契約印記。卡片暫不會被吸收；封印儀式稍後開放。</small>
+<div class="rune-bind-actions"><button id="runeBindCancel" type="button" aria-label="取消法陣連結" title="取消">×</button>
+<button id="runeBindConfirm" class="primary" type="button" aria-label="確認連結法陣與卡片" title="確認連結">✓</button></div></dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
@@ -319,7 +333,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1298,12 +1312,20 @@ function newFloatingCard(record){
  const texture=window.LivingAtlasModel.cardTexture(THREE,record);
  const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
  const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
- const group=new THREE.Group();
+ const group=new THREE.Group(),bindingMaterials=[];
+ if(record.runeBinding?.runeId===window.LivingRuneContract?.RUNE_ID){
+  const sealMat=new THREE.MeshBasicMaterial({color:0xdac18a,side:THREE.DoubleSide,transparent:true,opacity:.95,depthTest:false});
+  const mark=new THREE.Mesh(new THREE.TorusGeometry(.058,.009,5,36),sealMat);
+  mark.position.set(.15,-.235,.038);group.add(mark);bindingMaterials.push(sealMat);
+  const iconMat=new THREE.MeshBasicMaterial({color:0x76caba,side:THREE.DoubleSide,depthTest:false});
+  const icon=new THREE.Mesh(new THREE.OctahedronGeometry(.026,0),iconMat);
+  icon.position.set(.15,-.235,.039);group.add(icon);bindingMaterials.push(iconMat);
+ }
  const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
  const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
  back.userData.localCardId=record.id;face.userData.localCardId=record.id;
  group.add(back,face);scene.add(group);
- return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now(),
+ return {id:record.id,record,group,texture,faceMat,frameMat,bindingMaterials,born:performance.now(),
   summon:null,recycle:null};
 }
 function disposeFloatingCard(entry){
@@ -1313,6 +1335,7 @@ function disposeFloatingCard(entry){
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+ for(const material of entry.bindingMaterials||[])material.dispose();
 }
 function refreshFloatingCards(){
  let records;
@@ -1671,10 +1694,198 @@ function findNearestRuneCard(){
  });
  return RuneContract.findNearestEligibleCard(runeWorldAnchor(),entries);
 }
+// RUNE-02: no new save keys, no binding, no new card mesh.
+const RuneHold=window.LivingRuneHold;
+if(!RuneHold)throw Error('Rune hold gesture module unavailable');
+// Continuous circular countdown: a faint full-circle track and a bright arc
+// sweep through the full circumference over the 3000 ms hold. No time numerals.
+const RUNE_ARC_SEGMENTS=192;
+const runeTrack=new THREE.Mesh(new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS),
+ new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,
+  side:THREE.DoubleSide,depthWrite:false}));
+runeTrack.position.y=.495;runeTrack.rotation.x=-Math.PI/2;
+runeTrack.visible=false;runeGroup.add(runeTrack);
+const runeArcGeometry=new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS,1,-Math.PI/2,Math.PI*2);
+const runeProgress=new THREE.Mesh(runeArcGeometry,new THREE.MeshBasicMaterial({
+ color:0xf5d698,transparent:true,opacity:.98,
+ side:THREE.DoubleSide,depthWrite:false}));
+runeProgress.position.y=.498;runeProgress.rotation.x=-Math.PI/2;
+runeArcGeometry.setDrawRange(0,0);runeProgress.visible=false;runeGroup.add(runeProgress);
+const runeSelectionMat=new THREE.MeshBasicMaterial({
+ color:0xa8e7cf,transparent:true,opacity:.6,depthWrite:false});
+const runeSelectionRing=new THREE.Mesh(new THREE.TorusGeometry(2.48,.035,6,96),runeSelectionMat);
+runeSelectionRing.position.y=.49;runeSelectionRing.rotation.x=Math.PI/2;
+runeSelectionRing.visible=false;runeGroup.add(runeSelectionRing);
+const runeGlyphs=new THREE.Group();runeGroup.add(runeGlyphs);
+const runeGlyphMat=new THREE.MeshBasicMaterial({
+ color:0xe8c88e,transparent:true,opacity:.8,depthWrite:false});
+const runeGlyphShape=new THREE.BoxGeometry(.19,.022,.05);
+for(let i=0;i<12;i++){
+ const a=i*Math.PI/6;
+ const glyph=new THREE.Mesh(runeGlyphShape,runeGlyphMat);
+ glyph.position.set(Math.sin(a)*1.83,.485,Math.cos(a)*1.83);
+ glyph.rotation.y=a;
+ runeGlyphs.add(glyph);
+}
+runeGlyphs.visible=false;
+const runeBeamMaterial=new THREE.LineBasicMaterial({
+ color:0xb7e5d2,transparent:true,opacity:.98,depthWrite:false});
+const runeBeamGeometry=new THREE.BufferGeometry();
+runeBeamGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+const runeCandidateBeam=new THREE.Line(runeBeamGeometry,runeBeamMaterial);
+runeCandidateBeam.visible=false;scene.add(runeCandidateBeam);
+// Thin WebGL lines are often nearly invisible on phones; add a translucent
+// world-space tether and two traveling glints, without allocating per frame.
+const tetherMat=new THREE.MeshBasicMaterial({color:0x9bf4d4,transparent:true,opacity:.52,
+ blending:THREE.AdditiveBlending,depthWrite:false});
+const runeTether=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1,8),tetherMat);
+runeTether.visible=false;scene.add(runeTether);
+const glintMat=new THREE.MeshBasicMaterial({color:0xf5e3ae,transparent:true,
+ opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeGlints=[0,1].map(()=>{
+ const glint=new THREE.Mesh(new THREE.SphereGeometry(.059,10,8),glintMat);
+ glint.visible=false;scene.add(glint);return glint;
+});
+const tetherAxis=new THREE.Vector3(0,1,0),tetherVector=new THREE.Vector3();
+const tetherStart=new THREE.Vector3(),tetherEnd=new THREE.Vector3();
+let runeNearest=null,runeBindingPulseUntil=0,runeBindingCardId=null,runePromptTimer=null;
+let runeBound=null;
+try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
+const runeBindDialog=document.getElementById('runeBindDialog'),
+ runeBindCardName=document.getElementById('runeBindCardName');
+const runeGlowMaterial=new THREE.MeshBasicMaterial({color:0xafffe4,transparent:true,
+ opacity:.38,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+const runeGlow=new THREE.Mesh(new THREE.RingGeometry(1.25,2.42,96),runeGlowMaterial);
+runeGlow.rotation.x=-Math.PI/2;runeGlow.position.y=.477;
+runeGlow.visible=false;runeGroup.add(runeGlow);
+function updateRuneVisual(now){
+ const info=runeGesture.inspect(now);
+ const show=info.phase==='holding'||info.phase==='selected';
+ const bindingFlash=now<runeBindingPulseUntil;
+ const illuminated=show||bindingFlash||runeBindDialog.open;
+ runeGlow.visible=illuminated||!!runeBound;
+ runeGlowMaterial.opacity=illuminated?(.25+.12*Math.sin(now*.014)+.19*info.progress):.065;
+ runeSelectionRing.visible=illuminated||!!runeBound;
+ runeSelectionMat.opacity=illuminated?.92:.22;
+ runeTrack.visible=show;
+ runeProgress.visible=show;
+ // RingGeometry has six triangle indices per theta segment.
+ runeArcGeometry.setDrawRange(0,Math.floor(RUNE_ARC_SEGMENTS*info.progress)*6);
+ runeGlyphs.visible=(show||bindingFlash)&&!preferReduced;
+ runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
+ runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
+ runeCandidateBeam.visible=false;runeTether.visible=false;
+ for(const glint of runeGlints)glint.visible=false;
+ const linkCardId=info.phase==='selected'&&runeNearest?.status==='selected'
+  ?runeNearest.cardId:bindingFlash?runeBindingCardId:null;
+ if(linkCardId){
+  const card=floatingCardMeshes.get(linkCardId);
+  if(card&&card.group.visible&&!card.record.containerId){
+   card.group.updateWorldMatrix(true,false);
+   const target=card.group.getWorldPosition(new THREE.Vector3()),anchor=runeWorldAnchor();
+   const points=runeBeamGeometry.attributes.position;
+   points.setXYZ(0,anchor.x,.68,anchor.z);
+   points.setXYZ(1,target.x,target.y,target.z);
+   points.needsUpdate=true;
+   runeCandidateBeam.visible=true;
+   tetherStart.set(anchor.x,.68,anchor.z);
+   tetherEnd.copy(target);tetherVector.copy(tetherEnd).sub(tetherStart);
+   const len=tetherVector.length();
+   if(len>.02){
+    runeTether.visible=true;runeTether.position.copy(tetherStart).addScaledVector(tetherVector,.5);
+    runeTether.quaternion.setFromUnitVectors(tetherAxis,tetherVector.clone().normalize());
+    runeTether.scale.set(1,len,1);
+    tetherMat.opacity=preferReduced?.45:.45+.14*Math.sin(now*.012);
+    for(let i=0;i<runeGlints.length;i++){
+     const particle=runeGlints[i];particle.visible=!preferReduced;
+     const t=(now*.00058+i*.5)%1;
+     particle.position.copy(tetherStart).addScaledVector(tetherVector,t);
+    }
+   }
+   runeBeamMaterial.opacity=preferReduced?.88:.83+.15*Math.sin(now*.014);
+  }
+ }
+}
+function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
+ !atlasRuntime?.inFocus&&!placingJoystick}
+function canStartRunePress(e){
+ if(!runeAllowed()||touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
+ const runeHits=runeHitRay.intersectObject(runeGroup,true)
+  .filter(h=>h.object.userData.runeId===RuneContract.RUNE_ID);
+ if(!runeHits.length)return false;
+ const dist=runeHits[0].distance;
+ // Preserve taps on avatar/cards/books if those meshes are IN FRONT of the floor.
+ const blockers=[...runeHitRay.intersectObject(keeper,true),
+  ...[...floatingCardMeshes.values()].filter(c=>c.group.visible)
+    .flatMap(c=>runeHitRay.intersectObject(c.group,true))];
+ for(const b of bookEntities)if(b.group.visible)
+  blockers.push(...runeHitRay.intersectObject(b.group,true));
+ if(blockers.some(h=>h.distance<dist-.025))return false;
+ return true;
+}
+function closeRunePrompt(){
+ if(runePromptTimer!==null){clearTimeout(runePromptTimer);runePromptTimer=null}
+ if(runeBindDialog.open)runeBindDialog.close();
+}
+function confirmRuneBinding(){
+ const selected=runeNearest;
+ if(!selected||selected.status!=='selected')return;
+ try{
+  const latest=findNearestRuneCard();
+  if(latest.status!=='selected'||latest.cardId!==selected.cardId)
+   throw Error('卡片位置或狀態已改變，請重新長按法陣');
+  const record=floatingCardMeshes.get(selected.cardId)?.record;
+  if(!record)throw Error('候選卡片已不存在');
+  const bound=window.LivingObjectCraft.bindRuneCard(localStorage,RuneContract.RUNE_ID,
+   record.id,record.revision);
+  runeBound=bound;runeBindingCardId=bound.id;
+  runeBindingPulseUntil=performance.now()+2800;
+  closeRunePrompt();
+  refreshFloatingCards(); // Recreate the same card with its visible crest.
+  toast('✦ 連結成功 · 卡片上已生成法陣印記');
+  syncRender();
+ }catch(error){
+  closeRunePrompt();toast('無法連結：'+String(error?.message||error));syncRender();
+ }
+}
+document.getElementById('runeBindConfirm').addEventListener('click',confirmRuneBinding);
+document.getElementById('runeBindCancel').addEventListener('click',()=>{
+ closeRunePrompt();runeNearest=null;toast('已取消連結');syncRender();
+});
+runeBindDialog.addEventListener('cancel',()=>{runeNearest=null;syncRender()});
+runeBindDialog.addEventListener('close',()=>syncRender());
+const runeGesture=RuneHold.create({
+ isAllowed:runeAllowed,
+ onChange:()=>syncRender(),
+ onSelected:()=>{
+  if(runeBound){
+   runeBindingCardId=runeBound.id;runeBindingPulseUntil=performance.now()+2400;
+   toast('✦ 此法陣已連結「'+runeBound.title+'」· 封印儀式尚未開放');
+   return;
+  }
+  runeNearest=findNearestRuneCard();
+  if(runeNearest.status!=='selected'){
+   toast('✦ 法陣已選取 · 附近沒有唯一可連結的普通卡');return;
+  }
+  const record=floatingCardMeshes.get(runeNearest.cardId)?.record;
+  if(!record)return;
+  runeBindCardName.textContent=record.title;
+  // Let users SEE the luminous selection and animated beam before the modal.
+  if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+  runePromptTimer=setTimeout(()=>{
+   runePromptTimer=null;
+   if(!document.hidden&&!runeBindDialog.open&&runeNearest?.cardId===record.id)
+    runeBindDialog.showModal();
+  },700);
+  toast('✦ 法陣選取成功 · 已定位附近卡片');
+ }
+});
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
- hitTest:runeHitTest,findNearestCard:findNearestRuneCard
+ hitTest:runeHitTest,findNearestCard:findNearestRuneCard,
+ inspectHold:()=>Object.freeze({...runeGesture.inspect(),nearest:runeNearest}),
+ cancelHold:()=>runeGesture.cancelAll()
 });
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
@@ -1709,8 +1920,14 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ runeGesture.foreignDown(e.pointerId); // A second finger cancels the first hold.
  if(focusedCard)return;
  if(!insideJoystick(e)&&atlasRuntime.pointerDown(e)){syncRender();return}
+ if(!insideJoystick(e)&&canStartRunePress(e)&&runeGesture.pointerDown(e,RuneContract.RUNE_ID)){
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+  syncRender();return;
+ }
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1731,6 +1948,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(runeGesture.pointerMove(e)){syncRender();return}
  if(focusedCard)return;
  if(e.pointerId!==joystickPointer&&atlasRuntime.pointerMove(e)){syncRender();return}
  if(!touchPoints.has(e.pointerId))return;
@@ -1766,6 +1984,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(runeGesture.pointerUp(e)){syncRender();return}
  if(focusedCard)return;
  if(e.pointerId!==joystickPointer&&atlasRuntime.pointerUp(e)){syncRender();return}
  if(placingJoystick){
@@ -1787,12 +2006,14 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(runeGesture.pointerCancel(e)){syncRender();return}
  atlasRuntime.cancelPointer(e.pointerId);
  if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(runeGesture.pointerCancel(e)){syncRender();return}
  atlasRuntime.cancelPointer(e.pointerId);
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
@@ -1846,6 +2067,7 @@ function paint(now){
  stepAvatar(dt);
  updateOrbit(elapsed,now);
  updateFloatingCards(now);
+ runeGesture.tick();updateRuneVisual(now);
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
@@ -1873,11 +2095,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -1888,9 +2110,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){closeRunePrompt();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+window.addEventListener('blur',()=>{runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',stopRenderLoop);
+window.addEventListener('pagehide',()=>{closeRunePrompt();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
