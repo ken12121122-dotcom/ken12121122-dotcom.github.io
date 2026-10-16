@@ -100,6 +100,22 @@ async function main(){
   assert.equal(await p.locator('#bookList button').count(),15);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
   report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:15,joystick_hidden:true});
+  // RUNE-01 contract stays usable and read-only even if WebGL fails.
+  const runeContractProof=await p.evaluate(()=>{
+   const R=window.LivingRuneContract;
+   const original=localStorage.getItem('living-library-player-objects-v1');
+   const mk=id=>({id,record:{id,objectType:'card',templateId:'blank-card-v1',status:'draft',
+    placement:'hover',containerId:null,ownerBookId:null,title:'合成普通卡'},
+    visible:true,position:{x:1,y:3,z:0}});
+   const nearest=R.findNearestEligibleCard({x:0,y:0,z:0},[mk('local.card.browser')]);
+   return {id:R.RUNE_ID,nearest,untouched:localStorage.getItem('living-library-player-objects-v1')===original};
+  });
+  assert.equal(runeContractProof.id,'local.rune.origin');
+  assert.equal(runeContractProof.nearest.cardId,'local.card.browser');
+  assert.equal(runeContractProof.nearest.distance,1);
+  assert.equal(runeContractProof.untouched,true);
+  report.checks.push({id:'rune_01_fallback_contract_no_write',result:'PASS',
+   scope:'Candidate scene loads read-only rune identity and nearest X/Z calculation without storage mutations, even without WebGL; raycast requires GPU verification.'});
   for(const capability of contract.capabilities){
    const b=catalog.books.find(b=>b.id===capability.book);
    // The mobile catalog is collapsed by default.
@@ -211,6 +227,7 @@ async function main(){
   await rulesFrame.locator('#progressReload').click();
   await rulesFrame.locator('#progressRows tr').first().waitFor();
   assert.equal(await rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'}).locator('select').inputValue(),'in_progress');
+  await rulesFrame.waitForFunction(()=>document.querySelector('#progressNotice')?.textContent?.includes('只存本機'),null,{timeout:15000});
   assert.match(await rulesFrame.locator('#progressNotice').innerText(),/只存本機/);
   report.checks.push({id:'atlas_progress_candidate_local_persistence',result:'PASS',
    scope:'Evidence ledger loads 15 rows; local-only status and note persist through refetch; source records and formal approvals remain unchanged.'});
