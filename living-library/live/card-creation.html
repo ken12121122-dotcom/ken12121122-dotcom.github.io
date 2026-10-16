@@ -83,6 +83,7 @@ button:disabled{opacity:.45}
   <strong>空白圖鑑卡</strong>
   <p>創造空白卡後，自行放入圖片、修改文字，再連結既有公開內容。圖片與說明本身不會產生施法能力。</p>
   <form id="editForm">
+   <label>卡片編號<input id="editNumber" type="text" maxlength="20" autocomplete="off" placeholder="例如 001，可留空"></label>
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
    <label>卡片說明<textarea id="editDescription" maxlength="500" placeholder="自行填寫，亦可留空"></textarea></label>
    <label>內容類型<input id="editType" maxlength="20" autocomplete="off" placeholder="自行填寫，亦可留空"></label>
@@ -119,9 +120,9 @@ button:disabled{opacity:.45}
 <button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
-<script src="./compendium-card.js?v=compendium-v2-20261016"></script>
-<script src="./public-catalog.js?v=compendium-v2-20261016"></script>
-<script src="./object-craft.js?v=compendium-v2-20261016"></script>
+<script src="./compendium-card.js?v=compendium-number-20261016"></script>
+<script src="./public-catalog.js?v=compendium-number-20261016"></script>
+<script src="./object-craft.js?v=compendium-number-20261016"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -135,14 +136,14 @@ button:disabled{opacity:.45}
  const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
  for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
  const selected=()=>cards().find(c=>c.id===currentId);
- function draft(){return {title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,image:draftImage,linkedCardId:$('editLink').value||null}}
+ function draft(){return {cardNumber:$('editNumber').value,title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,image:draftImage,linkedCardId:$('editLink').value||null}}
  function paint(){
   const canvas=$('cardFace'),record=draft();
   if(!back){window.LivingCompendiumCard.draw(canvas,record);return}
-  window.LivingCompendiumCard.draw(canvas,{title:'卡片紀錄',description:'',cardType:record.cardType});
+  window.LivingCompendiumCard.draw(canvas,{title:'卡片紀錄',description:'',cardNumber:record.cardNumber,cardType:record.cardType});
   const x=canvas.getContext('2d');x.fillStyle='#f3ead2';x.fillRect(42,151,476,564);x.fillStyle='#000000';x.font='25px sans-serif';
   const actual=selected(),target=linkTargets.find(c=>c.id===record.linkedCardId);
-  ['收藏號：未登錄','版本：'+(actual?.revision||'—'),'來源：自行編輯','連結：'+(target?.title||'未連結'),'卡片身分：',actual?.id?.slice(-16)||'尚未創造'].forEach((line,i)=>x.fillText(line,45,206+i*65,470));
+  ['卡片編號：'+(record.cardNumber||'—'),'版本：'+(actual?.revision||'—'),'來源：自行編輯','連結：'+(target?.title||'未連結'),'卡片身分：',actual?.id?.slice(-16)||'尚未創造'].forEach((line,i)=>x.fillText(line,45,206+i*65,470));
  }
  function syncCrop(){if(draftImage){draftImage={...draftImage,scale:Number($('photoScale').value),x:Number($('photoX').value),y:Number($('photoY').value)}}}
  const cards=()=>Craft.listCards(localStorage);
@@ -189,6 +190,7 @@ button:disabled{opacity:.45}
   photoEpoch++;photoBusy=false;currentId=card?.id||null;draftImage=card?.image?{...card.image}:null;
   $('cardTitle').textContent=card?.title||'空白卡片';
   $('cardMark').textContent=card?'# '+card.id.slice(-8):'尚未召喚';
+  $('editNumber').value=card?.cardNumber||'';
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
   $('editType').value=card?.cardType||'';
@@ -260,7 +262,7 @@ button:disabled{opacity:.45}
    show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存卡片草稿，保留目前的軌道或書內位置。');
   }catch(e){status(e.name==='QuotaExceededError'?'儲存空間不足；原卡片未改動，請縮小圖片或移除本次圖片後再試。':e.message||'儲存失敗',true)}
  });
- ['editName','editDescription','editType','editLink'].forEach(id=>$(id).addEventListener('input',paint));
+ ['editNumber','editName','editDescription','editType','editLink'].forEach(id=>$(id).addEventListener('input',paint));
  ['photoScale','photoX','photoY'].forEach(id=>$(id).addEventListener('input',()=>{syncCrop();paint()}));
  $('flipCard').onclick=()=>{back=!back;$('flipCard').setAttribute('aria-pressed',String(back));$('flipCard').setAttribute('aria-label',back?'翻回卡片正面':'翻到卡片紀錄');paint()};
  $('choosePhoto').onclick=()=>$('photoFile').click();

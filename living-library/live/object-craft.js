@@ -48,7 +48,7 @@
   if(used.has(id))throw Error('卡片識別碼重複');
   const at=clock();
   const card={id,objectType:'card',templateId:'blank-card-v1',title:'空白卡片',
-   description:'',cardLayout:'compendium-v2',cardType:'',image:null,linkedCardId:null,ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
+   description:'',cardLayout:'compendium-v2',cardNumber:'',cardType:'',image:null,linkedCardId:null,ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
    permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
   write(storage,[...state.objects,card]);return {...card};
  }
@@ -97,7 +97,7 @@
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
-  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardType','image','linkedCardId'].includes(x)))
+  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
   if(Object.hasOwn(patch,'title')){
@@ -109,6 +109,10 @@
    if(typeof patch.description!=='string'||patch.description.length>500)
     throw Error('卡片說明不可超過 500 字');
    card.description=patch.description;
+  }
+  if(Object.hasOwn(patch,'cardNumber')){
+   if(typeof patch.cardNumber!=='string'||patch.cardNumber.length>20)throw Error('卡片編號不可超過 20 字');
+   card.cardNumber=patch.cardNumber.trim();
   }
   if(Object.hasOwn(patch,'cardType')){
    if(typeof patch.cardType!=='string'||patch.cardType.length>20)throw Error('內容類型不可超過 20 字');
