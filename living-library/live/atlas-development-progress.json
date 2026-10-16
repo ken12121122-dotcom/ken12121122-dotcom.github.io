@@ -1,0 +1,385 @@
+{
+  "schema": "nw-atlas-progress-v1",
+  "project_id": "NW-ATLAS",
+  "card_id": "public.gaming.atlas",
+  "source_page": "living-library/live/atlas-rulebook-review.html",
+  "version": "0.1.0",
+  "review_status": "generated",
+  "updated_at": "2026-10-16",
+  "scope": "GitHub 程式唯讀審查後形成的候選進度基準；實作狀態與人工核准嚴格區分。",
+  "status_values": [
+    "not_started",
+    "in_progress",
+    "blocked",
+    "awaiting_review",
+    "verified"
+  ],
+  "implementation_values": [
+    "source_verified",
+    "decision_pending",
+    "prototype_only",
+    "not_implemented",
+    "needs_verification"
+  ],
+  "items": [
+    {
+      "id": "ATLAS-001",
+      "phase": "P0",
+      "title": "卡片入口與來源定位",
+      "problem": "正式 Card ID public.gaming.atlas 與規則頁連結已由 GitHub 主分支驗證。",
+      "implementation_state": "source_verified",
+      "status": "verified",
+      "priority": "高",
+      "next_action": "維持單一 ID 與同源閱讀器；日後改址須檢查入口回歸。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/public-catalog.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/index.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "tests/browser/living-library-p0.cjs"
+        }
+      ],
+      "human_approval_required": false,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-002",
+      "phase": "P1",
+      "title": "唯一圖鑑本體正式 ID",
+      "problem": "ATLAS-0001 僅是提議格式，未正式配發，也未確立圖鑑本體唯一登記。",
+      "implementation_state": "decision_pending",
+      "status": "blocked",
+      "priority": "高",
+      "next_action": "由 OWNER 決定編號命名與發放規則，再建立不可重用身分。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-003",
+      "phase": "P1",
+      "title": "永久收藏的收錄資格",
+      "problem": "是否僅收錄不可複製或特殊意義實體，尚無可驗證的正式准入條件。",
+      "implementation_state": "decision_pending",
+      "status": "blocked",
+      "priority": "高",
+      "next_action": "提出可檢查的收錄條件、例外和拒絕原因供 OWNER 核准。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-004",
+      "phase": "P1",
+      "title": "規則歸屬與正式核准",
+      "problem": "操作規則歸遊戲之書或唯一性規範歸系統之書，網頁尚待審核；勾選不構成核准。",
+      "implementation_state": "decision_pending",
+      "status": "blocked",
+      "priority": "高",
+      "next_action": "完成規則版本審查、記錄核准人與核准範圍，未核准不回填正式系統。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-005",
+      "phase": "P2",
+      "title": "GBA 0 號格與現有 slotIndex 對映",
+      "problem": "新提案把 0 號列為唯一暫存格，但現有 3D atlas 右側讀卡格是 slotIndex=9，且容器容量只有十格。",
+      "implementation_state": "prototype_only",
+      "status": "not_started",
+      "priority": "高",
+      "next_action": "定義顯示編號與內部索引分離、資料遷移、互斥驗證及回退方式。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-state.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-model.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-006",
+      "phase": "P2",
+      "title": "L2 永久認證與原子配號",
+      "problem": "普通卡提出升級、AI 核驗、OWNER 核准及原子配號目前只是規則文字，沒有正式交易狀態機。",
+      "implementation_state": "not_implemented",
+      "status": "not_started",
+      "priority": "極高",
+      "next_action": "設計認證 Schema、版本鎖與拒絕/撤銷候選流程，經 OWNER 核准後才實作。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-007",
+      "phase": "P2",
+      "title": "L2 唯讀與受控修改",
+      "problem": "目前 editCard 仍可編輯 cardNumber、圖片和卡面，未建立 L2 不可降級和欄位授權檢查。",
+      "implementation_state": "not_implemented",
+      "status": "not_started",
+      "priority": "極高",
+      "next_action": "建立不可變欄位、單次範圍授權及版本與審核日誌。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-008",
+      "phase": "P2",
+      "title": "跨設備權威登錄與同步防重",
+      "problem": "現有 ObjectCraft 使用本機 localStorage；跨設備／備份恢復的絕對唯一性無後端權威交易保證。",
+      "implementation_state": "not_implemented",
+      "status": "blocked",
+      "priority": "極高",
+      "next_action": "先選擇權威登錄與同步協議，設計交易鎖、重試、衝突與回復規則。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-009",
+      "phase": "P2",
+      "title": "普通卡 64 張容量限制",
+      "problem": "現有 ObjectCraft MAX_CARDS=64，是試作限制；尚未與可擴充的永久編號註冊表分離。",
+      "implementation_state": "source_verified",
+      "status": "not_started",
+      "priority": "中",
+      "next_action": "將普通試作容量與永久索引分層，訂定遷移和容量壓力測試。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        }
+      ],
+      "human_approval_required": false,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-010",
+      "phase": "P3",
+      "title": "永久雙頁動態擴充",
+      "problem": "規則頁以 pages=7 限定預覽；宣告可無限延伸尚未實作動態分頁與資料驅動。",
+      "implementation_state": "prototype_only",
+      "status": "not_started",
+      "priority": "中",
+      "next_action": "用永久索引推導頁碼、左右九格與目前可見範圍，取消固定預覽上限。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": false,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-011",
+      "phase": "P3",
+      "title": "GBA 搜尋與精準翻頁整合",
+      "problem": "規則網頁可 ▲▼ 與 A 翻至示例頁，但主場景的 GBA/讀卡器尚未接上永久編號目錄。",
+      "implementation_state": "prototype_only",
+      "status": "not_started",
+      "priority": "中",
+      "next_action": "建立唯讀查詢接口與場景精準翻頁，保留原有 GBA 按鍵行為。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-runtime.js"
+        }
+      ],
+      "human_approval_required": false,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-012",
+      "phase": "P3",
+      "title": "世界實體與卡片絕對互斥",
+      "problem": "目前沒有完整的一卡一物權威對應與轉換交易，可能因舊版/備份/離線造成複本。",
+      "implementation_state": "not_implemented",
+      "status": "not_started",
+      "priority": "極高",
+      "next_action": "定義單一權威狀態機、錨點資料、冪等鍵、衝突拒絕及回退。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/object-craft.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-013",
+      "phase": "P3",
+      "title": "三秒卡片化及原位還原",
+      "problem": "審查頁已有三秒進度動畫和形態切換模擬，但未驗證真實世界錨點與物件狀態。",
+      "implementation_state": "prototype_only",
+      "status": "not_started",
+      "priority": "高",
+      "next_action": "先建立唯讀原位資料契約，再於隔離場景測取消、中斷和原位還原。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-runtime.js"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-014",
+      "phase": "P4",
+      "title": "真實設備與失敗回退驗收",
+      "problem": "GitHub PR #247 瀏覽器回歸成功；真實 Android 觸控、WebGL、收音及跨設備一致性未就此次規則整合驗證。",
+      "implementation_state": "needs_verification",
+      "status": "not_started",
+      "priority": "高",
+      "next_action": "完成手機實測、GBA 回歸、離線衝突、舊資料遷移與可回退驗收。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "tests/browser/living-library-p0.cjs"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/reviews/atlas-integration-20261015.md"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    },
+    {
+      "id": "ATLAS-015",
+      "phase": "P5",
+      "title": "卡片作為可獨立接手的專案索引",
+      "problem": "卡片能追溯 HTML 與程式，但未含可機讀的進度、核准決議、依賴與版本化交接資訊。",
+      "implementation_state": "not_implemented",
+      "status": "in_progress",
+      "priority": "高",
+      "next_action": "先建立版本化進度 JSON 與本機草稿匯出，再驗證新對話可依 Card ID 復原來源。",
+      "sources": [
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/public-catalog.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-rulebook-review.html"
+        }
+      ],
+      "human_approval_required": true,
+      "revision": 1,
+      "note": "",
+      "last_updated": "2026-10-16"
+    }
+  ],
+  "change_log": [
+    {
+      "record_id": "ATLAS-LOG-001",
+      "date": "2026-10-16",
+      "actor": "AI",
+      "action": "initial_source_audit",
+      "review_status": "generated",
+      "source": "GitHub main PR #247 + 程式檢查",
+      "note": "建立開發落差基準；未變更任何正式圖鑑規則、L2 身分、卡片或主場景。"
+    }
+  ]
+}
