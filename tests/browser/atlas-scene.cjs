@@ -6,7 +6,7 @@ function element(){return {hidden:false,dataset:{},listeners:{},addEventListener
 const gradient={addColorStop(){}},context=new Proxy({createLinearGradient:()=>gradient,createRadialGradient:()=>gradient},{get(o,k){return k in o?o[k]:(()=>{})},set(o,k,v){o[k]=v;return true}});
 const bodyClasses=new Set();const els=new Map();const doc={body:{classList:{toggle(k,on){if(on)bodyClasses.add(k);else bodyClasses.delete(k)}}},getElementById:id=>{if(!els.has(id))els.set(id,element());return els.get(id)},createElement:()=>element()};
 const host={document:doc,innerWidth:900,innerHeight:650,performance:{now:()=>clock},addEventListener(){},console};host.self=host;
-for(const name of ['atlas-state.js','atlas-model.js','atlas-runtime.js'])vm.runInNewContext(fs.readFileSync(root+'/living-library/live/'+name,'utf8'),host);
+for(const name of ['atlas-state.js','compendium-card.js','atlas-model.js','atlas-runtime.js'])vm.runInNewContext(fs.readFileSync(root+'/living-library/live/'+name,'utf8'),host);
 // The left leaf must fold through the page-facing (+Z) half-space, never behind the cover.
 for(const collection of [false,true]){
  const model=host.LivingAtlasModel.create(THREE,collection),leaf=model.targets.find(t=>t.index===0).node;
@@ -18,9 +18,9 @@ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(48,900/650,.1,1
 const backing=new Map(),storage={getItem:k=>backing.get(k)??null,setItem:(k,v)=>backing.set(k,v)},cards=new Map(),canvas={parentElement:element(),getBoundingClientRect:()=>({left:0,top:0,width:900,height:650}),setPointerCapture(){}};
 const outer=new THREE.Group();outer.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));outer.position.set(4,3,0);scene.add(outer);
 const entities=new Map([[State.COLLECTION,outer]]);
-let smokes=0,removed=0,opened=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
+let smokes=0,removed=0,opened=[],observed=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
 function refresh(){for(const r of craft.listCards(storage)){if(cards.has(r.id))cards.get(r.id).record=r;else{const g=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),new THREE.MeshBasicMaterial());mesh.userData.localCardId=r.id;g.add(mesh);g.position.set(0,2,4);scene.add(g);cards.set(r.id,{id:r.id,record:r,group:g})}}}
-const controls={};const runtimeOptions={controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:id=>entities.get(id),setCollectionActive(){},reduced:false};const runtime=host.LivingAtlasRuntime.create(runtimeOptions);
+const controls={};const runtimeOptions={controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),observeCard:id=>observed.push(id),focusCard(){},collectionEntity:id=>entities.get(id),setCollectionActive(){},reduced:false};const runtime=host.LivingAtlasRuntime.create(runtimeOptions);
 function tick(ms){clock+=ms;runtime.tick(clock);scene.updateMatrixWorld(true);camera.updateMatrixWorld(true)}
 function group(id){return scene.children.find(x=>x.userData.atlasId===id)}
 function meshSlot(id,index){let mesh;group(id).traverse(x=>{if(x.userData.atlasSlot===index)mesh=x});return mesh}
@@ -39,6 +39,13 @@ for(let i=0;i<10;i++){
 }
 // Reader can only open the card physically occupying the right reader slot.
 runtime.focus(State.ATLAS);tick(900);let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
+const control=name=>{let target;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl===name)target=x});return target};
+const tapControl=name=>{const e=point(control(name));runtime.pointerDown(e);runtime.pointerUp(e);tick(1)};
+const beforeObservation=storage.getItem(craft.KEY);
+tapControl('right');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('confirm');assert.deepEqual(observed,[card.id]);assert.equal(storage.getItem(craft.KEY),beforeObservation,'AI read must not change source');
+tapControl('up');assert.equal(runtime.inspect().screenMode,'card');
+tapControl('confirm');assert.deepEqual(opened,[card.id,card.id],'existing reader confirm remains reachable');
 runtime.placeCollection();tick(1900);assert.equal(runtime.inspect().collectionOpen,1);assert.equal(outer.visible,false);
 for(let i=0;i<18;i++){moveTo(State.COLLECTION,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].slotIndex,i)}assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
 runtime.exitFocus();tick(900);
