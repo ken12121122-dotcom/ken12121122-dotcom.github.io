@@ -90,9 +90,39 @@
   const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
-  const old=state.objects[at],next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
-   placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
+  const old=state.objects[at],when=clock();
+  const next=staleRequest({...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
+   placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:when},'card_placement_revised',when);
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
+ }
+ // Upgrade request only: never grants L2, permanent identity or a number.
+ function requestCardUpgrade(storage,id,clock=()=>new Date().toISOString()){
+  const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到可申請升級的卡片');
+  const old=state.objects[at];
+  if(old.containerId!=='local.atlas.compendium'||old.slotIndex!==9)
+   throw Error('先將普通卡放到萬物圖鑑 GBA 讀卡格，才可提出升級申請');
+  if(!old.title?.trim()||old.title.trim()==='空白卡片')
+   throw Error('請先完成卡片名稱，再提出升級申請');
+  if(!old.description?.trim()&&!old.image&&!old.linkedCardId)
+   throw Error('請先填入說明、圖片或連結內容，再提出升級申請');
+  if(old.upgradeRequest?.state==='requested')return {...old,upgradeRequest:{...old.upgradeRequest}};
+  const when=clock(),next={
+   ...old,upgradeRequest:{
+    schema:'nw-atlas-card-upgrade-request-v1',
+    state:'requested',requestedAt:when,
+    sourceCardId:id,contentRevision:old.revision,
+    gbaReader:'local_reader_slot_9',worldBinding:'unverified',
+    aiReview:'pending',ownerApproval:'pending',
+    l2Certified:false,permanentNumber:null
+   },revision:(old.revision||0)+1,updatedAt:when
+  };
+  const objects=[...state.objects];objects[at]=next;write(storage,objects);
+  return {...next,upgradeRequest:{...next.upgradeRequest}};
+ }
+ function staleRequest(card,reason,at){
+  if(card.upgradeRequest?.state!=='requested')return card;
+  return {...card,upgradeRequest:{...card.upgradeRequest,state:'stale',staleAt:at,staleReason:reason}};
  }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
@@ -132,7 +162,8 @@
   }
   card.cardLayout='compendium-v2';
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
-  const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
+  const saved=staleRequest(card,'card_edited',card.updatedAt);
+  const updated=[...state.objects];updated[at]=saved;write(storage,updated);return {...saved};
  }
  function recycleCard(storage,id,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
@@ -141,8 +172,8 @@
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
   if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
    throw Error('回收站已滿，未修改卡片');
-  const when=clock(),next={...old,status:'recycled',placement:'recycled',recycledAt:when,
-   restorePlacement:old.placement,revision:old.revision+1,updatedAt:when};
+  const when=clock(),next=staleRequest({...old,status:'recycled',placement:'recycled',recycledAt:when,
+   restorePlacement:old.placement,revision:old.revision+1,updatedAt:when},'card_recycled',when);
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  function restoreCard(storage,id,clock=()=>new Date().toISOString()){
@@ -156,5 +187,5 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard};
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,requestCardUpgrade};
 });
