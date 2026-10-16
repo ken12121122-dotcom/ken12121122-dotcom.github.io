@@ -352,7 +352,7 @@ jobs:
         run: |
           set -euxo pipefail
           adb shell am instrument -w -r \
-            -e class com.amin.pocketgba.LivingLibraryActivityTest \
+            -e class com.amin.pocketgba.LivingLibraryActivityTest,com.amin.pocketgba.LivingLibraryFileChooserTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/living-library-instrumentation.txt"
           grep -Eq 'OK \(4 tests\)' "$RUNNER_TEMP/living-library-instrumentation.txt"

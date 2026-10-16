@@ -19,6 +19,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
@@ -35,6 +37,46 @@ import java.util.Collections;
  * remains an explicit browser-session GitHub read. Voice transport is scoped to the exact home document. */
 public final class LivingLibraryActivity extends Activity {
     private WebView web;
+    private static final int REQUEST_LIBRARY_FILE = 4712;
+    private ValueCallback<Uri[]> fileCallback;
+    private String fileRequestPage = "";
+    private void cancelFileRequest() {
+        ValueCallback<Uri[]> previous = fileCallback;
+        fileCallback = null; fileRequestPage = "";
+        if (previous != null) previous.onReceiveValue(null);
+    }
+    boolean requestLibraryFile(ValueCallback<Uri[]> callback, WebChromeClient.FileChooserParams params) {
+        cancelFileRequest();
+        String[] types = params == null ? new String[0] : LivingLibraryFileChooserPolicy.mimeTypes(params.getAcceptTypes());
+        if (!foreground || web == null || !LivingLibraryFileChooserPolicy.allowedPage(committedUrl, web.getUrl())
+                || params == null || params.getMode() != WebChromeClient.FileChooserParams.MODE_OPEN
+                || params.isCaptureEnabled() || types.length == 0) {
+            callback.onReceiveValue(null); return true;
+        }
+        fileCallback = callback; fileRequestPage = committedUrl;
+        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("application/json".equals(types[0]) ? "application/json" : "image/*");
+        picker.putExtra(Intent.EXTRA_MIME_TYPES, types);
+        picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+        picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try { startActivityForResult(picker, REQUEST_LIBRARY_FILE); }
+        catch (ActivityNotFoundException | SecurityException error) {
+            cancelFileRequest();
+            Toast.makeText(this, "無法開啟檔案選擇器，請確認系統檔案 App 可用", Toast.LENGTH_SHORT).show();
+        }
+        return true;
+    }
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != REQUEST_LIBRARY_FILE || fileCallback == null) return;
+        ValueCallback<Uri[]> callback = fileCallback;
+        String page = fileRequestPage; fileCallback = null; fileRequestPage = "";
+        Uri[] selected = result == RESULT_OK ? WebChromeClient.FileChooserParams.parseResult(result, data) : null;
+        if (web == null || !page.equals(committedUrl) || !LivingLibraryFileChooserPolicy.allowedPage(committedUrl, web.getUrl())
+                || selected == null || selected.length != 1 || selected[0] == null || !"content".equals(selected[0].getScheme())) selected = null;
+        callback.onReceiveValue(selected);
+    }
     private boolean fallbackStarted;
     private boolean foreground;
     private LivingLibraryVoiceController voice;
@@ -83,6 +125,11 @@ public final class LivingLibraryActivity extends Activity {
         settings.setSafeBrowsingEnabled(true);
         settings.setUserAgentString(settings.getUserAgentString() + " LivingLibraryNative/" + BuildConfig.VERSION_NAME);
         configureVoiceTransport();
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                return requestLibraryFile(callback, params);
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -114,7 +161,7 @@ public final class LivingLibraryActivity extends Activity {
                     });
                 }
             }
-            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { if (voice != null) voice.stop(); voiceReply = null; voiceOrigin = ""; committedUrl = ""; }
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { cancelFileRequest(); if (voice != null) voice.stop(); voiceReply = null; voiceOrigin = ""; committedUrl = ""; }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String route = LivingLibraryPolicy.route(request.getUrl().toString());
                 if (route != null) {
@@ -191,6 +238,7 @@ public final class LivingLibraryActivity extends Activity {
             voice.permissionResult(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED);
     }
     @Override protected void onDestroy() {
+        cancelFileRequest();
         if (voice != null) voice.destroy(); voiceReply = null;
         if (web != null) { web.stopLoading(); web.loadUrl("about:blank"); web.removeAllViews(); web.destroy(); web = null; }
         super.onDestroy();
