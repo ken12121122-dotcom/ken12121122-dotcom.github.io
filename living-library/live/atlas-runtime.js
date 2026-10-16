@@ -43,7 +43,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   const peer=available.find(x=>x.id===(old&&old.id!==id?old.id:lastFocusId))||available.find(x=>old?.ids.includes(x.id))||available[0];
   const ids=[id,...(peer?[peer.id]:[])],layoutFrom=new Map(ids.map(key=>[key,models.get(key).group.position.clone()]));
   if(!focus){focus={id,from:camera.position.clone(),rotation:camera.quaternion.clone(),keeper:keeper.position.clone(),started:performance.now()}}else{focus={...focus,id,started:performance.now(),from:camera.position.clone(),rotation:camera.quaternion.clone(),keeper:keeper.position.clone()}}
-  focus.ids=ids;focus.layoutFrom=layoutFrom;lastFocusId=id;
+  focus.ids=ids;focus.layoutFrom=layoutFrom;focus.gba=false;lastFocusId=id;
   returning=null;syncUI();invalidate();
  }
  function exitFocus(){if(!focus)return;const f=focus;focus=null;returning={from:camera.position.clone(),rotation:camera.quaternion.clone(),target:f.originalPosition||f.from.clone(),quaternion:f.originalQuaternion||f.rotation.clone(),keeper:f.originalKeeper||f.keeper.clone(),layout:new Map(f.ids.map(id=>[id,models.get(id).group.position.clone()])),layoutKeeper:keeper.position.clone(),start:performance.now()};syncUI();invalidate()}
@@ -64,7 +64,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   focus.keeper=keeper.position.clone();focus.layoutFrom=new Map(focus.ids.map(id=>[id,models.get(id).group.position.clone()]));
   focus.started=performance.now();syncUI();invalidate();
  }
- exit.addEventListener('click',exitFocus);close.addEventListener('click',()=>foldCollection(false));shelf.addEventListener('click',()=>foldCollection(true));switcher.addEventListener('click',()=>focusBook(focus?.ids.find(id=>id!==focus.id)||focus?.id));
+ exit.addEventListener('click',()=>focus?.gba?focusGba():exitFocus());close.addEventListener('click',()=>foldCollection(false));shelf.addEventListener('click',()=>foldCollection(true));switcher.addEventListener('click',()=>focusBook(focus?.ids.find(id=>id!==focus.id)||focus?.id));
  function rayAt(e){const r=canvas.getBoundingClientRect();uv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(uv,camera);scene.updateMatrixWorld(true)}
  function hits(e){rayAt(e);const active=[...models.values()].filter(m=>m.group.visible&&!m.animation);const hits=[];
   for(const m of active)for(const h of ray.intersectObject(m.group,true))hits.push({...h,book:m.id});
@@ -79,7 +79,15 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    pointer={id:e.pointerId,kind:'card',entry,x:e.clientX,y:e.clientY,moved:false,position:entry.group.position.clone(),quaternion:entry.group.quaternion.clone(),scale:entry.group.scale.x};
   }else if(bookHit){
    const control=bookHit.object.userData.atlasControl;
-   pointer={id:e.pointerId,kind:control?'control':'book',book:bookHit.book,outer:!!bookHit.outer,control,x:e.clientX,y:e.clientY,moved:false,start:performance.now()};
+   const isAtlas=bookHit.book===State.ATLAS&&!bookHit.outer;
+   const pageHit=isAtlas?models.get(State.ATLAS).group.worldToLocal(bookHit.point.clone()):null;
+   // Overview: any atlas tap enters regular TWO-page focus.
+   // First focus: tap the RIGHT GBA console to enter the second closer focus.
+   // Its buttons cannot trigger actions until that second focus is active.
+   const enterGba=!!(focus?.id===State.ATLAS&&!focus.gba&&pageHit&&pageHit.x>.12);
+   const activeGba=!!(focus?.id===State.ATLAS&&focus.gba&&isAtlas);
+   pointer={id:e.pointerId,kind:enterGba?'gba-entry':activeGba?(control?'control':'gba-surface'):'book',
+    book:bookHit.book,outer:!!bookHit.outer,control,x:e.clientX,y:e.clientY,moved:false,start:performance.now()};
   }else return !!focus;
   canvas.setPointerCapture?.(e.pointerId);return true;
  }
@@ -106,16 +114,12 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    if(p.moved&&!cancel){const slot=hoveredSlot(e);try{craft.placeCard(storage,p.entry.id,slot?slot.id:null,slot?.slot??null);refresh()}catch(err){toast(err.message)}}
    else if(!cancel){if(p.entry.record.containerId){toast('拖曳可移動卡片；右側 ● 開啟讀卡內頁')}else focusCard(p.entry.id)}
    p.entry.group.position.copy(p.position);p.entry.group.quaternion.copy(p.quaternion);p.entry.group.scale.setScalar(p.scale);
-   }else if(p.kind==='control'&&!p.moved&&!cancel){
+   }else if(p.kind==='gba-entry'&&!p.moved&&!cancel){focusGba()}
+   else if(p.kind==='control'&&!p.moved&&!cancel){
     const key=p.control;
     const reader=[...cards.values()].find(c=>State.readerActive(c.record));
-    if(key==='START'){focusGba()}
-    else if(key==='B'){
-      if(screenMode==='observe'){screenMode='card';atlas.screen(reader?.record||null,screenMode)}
-      else if(focus?.gba)focusGba();
-      else if(focus)exitFocus();
-      invalidate();
-    }else if(!reader){toast('先將卡片放入右側讀卡區')}
+    if(key==='START'||key==='B'){focusGba()}
+    else if(!reader){toast('先將卡片放入右側讀卡區')}
     else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
       screenMode=screenMode==='card'?'observe':'card';
       atlas.screen(reader.record,screenMode);invalidate();
