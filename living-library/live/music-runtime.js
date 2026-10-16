@@ -4,7 +4,8 @@
   if (root.LivingMusicPlayer) return;
   const audio = new Audio();
   audio.preload = 'metadata';
-  const savedVolume = Number(root.localStorage?.getItem('living-library-music-volume-v1'));
+  let volumePref = null; try { volumePref = root.localStorage?.getItem('living-library-music-volume-v1') ?? null; } catch (_) {}
+  const savedVolume = volumePref === null ? NaN : Number(volumePref);
   audio.volume = Number.isFinite(savedVolume) && savedVolume >= 0 && savedVolume <= 1 ? savedVolume : 0.7;
   let tracks = [];
   let position = -1;
@@ -14,7 +15,8 @@
   const listeners = new Set();
   const supported = /\.(mp3|m4a|aac|wav|ogg|opus|flac|webm)$/i;
   function valid(file) {
-    return file instanceof File && file.size > 0 && file.size <= 250 * 1024 * 1024 &&
+    return !!file && typeof file.name === 'string' && typeof file.size === 'number' &&
+      typeof file.slice === 'function' && file.size > 0 && file.size <= 250 * 1024 * 1024 &&
       ((file.type && file.type.startsWith('audio/')) || supported.test(file.name));
   }
   function snapshot() {
