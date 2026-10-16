@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1826">
+<title>初始法陣｜契約還原</title>
+<style>
+:root{color-scheme:dark;font:16px/1.65 system-ui,"Noto Sans TC",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 15%,#283c4b,#0b1524 66%);color:#f6eddf;min-height:100dvh;display:grid;place-items:center;padding:22px}
+main{width:min(480px,100%);padding:clamp(22px,5vw,36px);background:#132439f0;border:1px solid #b2986c;border-radius:20px;box-shadow:0 19px 65px #020611dd}
+.sigil{display:grid;place-items:center;margin:auto auto 12px;width:82px;height:82px;font:52px Georgia,serif;color:#f4dba7;border-radius:50%;border:2px solid #b9d8c9;box-shadow:0 0 38px #a4ebd288,inset 0 0 24px #95e1cf33}
+h1{text-align:center;font:600 26px/1.35 Georgia,"Noto Sans TC",serif;margin:10px 0}p{font-size:14px;color:#dfdece;margin:12px 0}
+#card{color:#d3ffec;font-size:18px;word-break:break-word}
+aside{padding:12px;border:1px solid #758981;border-radius:12px;background:#0b1d2c;margin:17px 0;font-size:13px;color:#d5e8dd}
+#state{min-height:36px;font-size:14px;color:#eacb98}
+button,a{display:inline-grid;place-items:center;padding:12px 15px;min-height:48px;border-radius:12px;font:700 15px/1.3 inherit;cursor:pointer}
+button{background:#dfca9f;color:#1d302b;border:0;width:100%}button:disabled{background:#6c777c;color:#d3d5d0;cursor:default}
+a{color:#dbede5;text-decoration:none;border:1px solid #92aca9;margin-top:11px;width:100%}
+button:focus-visible,a:focus-visible{outline:3px solid #a6f3d7;outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+<div class="sigil" aria-hidden="true">✧</div>
+<h1>法陣契約還原</h1>
+<p>只將目前<strong>尚未封印</strong>的初始法陣契約卡，恢復為締結契約前的普通漂浮卡。</p>
+<div id="card" role="status" aria-live="polite">正在檢查本機卡片…</div>
+<aside>將清除這張卡的法陣連結及印記；若它位於右側 GBA 讀卡格，會移回漂浮位置。原卡片 ID、照片、卡名、內容及編號均保留。不影響其他卡片與存檔。</aside>
+<p id="state" role="alert"></p>
+<button type="button" id="restore" disabled>還原這張卡</button>
+<a href="./index.html">← 回到念動圖書館</a>
+</main>
+<script src="./object-craft.js?v=20261017-rune-restore-v1"></script>
+<script>
+(function(){
+ 'use strict';
+ const craft=window.LivingObjectCraft;
+ const target=document.getElementById('card'),status=document.getElementById('state'),
+  button=document.getElementById('restore');
+ let card=null;
+ function reload(){
+  try{
+   if(!craft||typeof craft.restoreUncommittedRuneCard!=='function')throw Error('還原程式未正確載入');
+   card=craft.getRuneBoundCard(localStorage);
+   if(!card){target.textContent='目前沒有已連結的初始法陣卡片。';status.textContent='若你曾建立契約，請使用原本建立卡片的瀏覽器／WebView 開啟這個頁面。';return}
+   target.textContent='目前連結：'+card.title;
+   if(card.runeBinding?.state!=='bound'){
+    status.textContent='這張卡片已進入封印階段，不能使用此還原操作。';return
+   }
+   button.disabled=false;
+   status.textContent='等待你確認；尚未更改任何資料。';
+  }catch(error){status.textContent='讀取失敗：'+String(error?.message||error)}
+ }
+ button.addEventListener('click',()=>{
+  if(!card||button.disabled)return;
+  const name=card.title;
+  if(!window.confirm('確定將「'+name+'」還原為未締結契約的普通卡？\n原卡圖片、內容、卡名及 ID 都會保留。'))return;
+  button.disabled=true;
+  try{
+   const result=craft.restoreUncommittedRuneCard(localStorage,craft.ORIGIN_RUNE);
+   target.textContent='已還原：'+result.title;
+   status.textContent='✓ 契約已解除，原卡回到漂浮狀態。返回圖書館即可看到。';
+   card=null;
+  }catch(error){
+   status.textContent='還原失敗，原始資料未修改：'+String(error?.message||error);
+   reload();
+  }
+ });
+ reload();
+})();
+</script>
+</body>
+</html>
