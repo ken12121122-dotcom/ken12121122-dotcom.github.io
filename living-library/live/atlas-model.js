@@ -70,9 +70,9 @@ for(const [side,sign] of [[left,-1],[right,1]]){
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
- screen(card,mode='card'){
+ screen(card,mode='card',interactive=false){
   if(!screen)return;
-  const key=card?card.id+':'+card.revision+':'+mode:'empty';
+  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK'):'empty';
   if(key===screenKey)return;
   screenCancel();screenCancel=()=>{};screenKey=key;
   const map=screen.material.map,ctx=map.image.getContext('2d');
@@ -99,7 +99,12 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
    ctx.fillStyle='#f4ecda';ctx.fillRect(300,23,307,361);
    txt('Nº '+(card.cardNumber||'—'),318,69,29);
    txt(card.title||'空白卡片',318,116,28);
-   if(mode==='observe'){
+   if(!interactive){
+    txt('圖鑑雙頁模式',318,170,28);
+    txt('點右側 GBA 進入',318,233,21);
+    txt('近距離專注',318,283,26);
+    txt('按鍵於下階段啟用',318,342,19);
+   }else if(mode==='observe'){
     txt('AI 唯讀',318,174,31);
     txt('版次 '+(card.revision||'—'),318,221,24);
     txt('SELECT 模式 / B 返回',318,272,17);
