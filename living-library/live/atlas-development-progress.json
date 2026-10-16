@@ -3,7 +3,7 @@
   "project_id": "NW-ATLAS",
   "card_id": "public.gaming.atlas",
   "source_page": "living-library/live/atlas-rulebook-review.html",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "review_status": "generated",
   "updated_at": "2026-10-16",
   "scope": "GitHub 程式唯讀審查後形成的候選進度基準；實作狀態與人工核准嚴格區分。",
@@ -52,30 +52,22 @@
     },
     {
       "id": "ATLAS-002",
-      "phase": "P1",
+      "phase": "P2",
       "title": "唯一圖鑑本體正式 ID",
       "problem": "ATLAS-0001 僅是提議格式，未正式配發，也未確立圖鑑本體唯一登記。",
       "implementation_state": "decision_pending",
-      "status": "in_progress",
+      "status": "blocked",
       "priority": "高",
-      "next_action": "OWNER 確認 ID 命名規格、不可重用身份的唯一權威來源及配發權限；核准前只允許唯讀格式驗證，禁止真實配號。",
+      "next_action": "先完成普通卡牌升級申請、AI 審核與 OWNER 核准流程（ATLAS-006）。卡牌升級規則通過驗收後，才重新討論圖鑑本體 ID 的形式及配發權限。",
       "sources": [
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
           "path": "living-library/live/atlas-rulebook-review.html"
-        },
-        {
-          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-          "path": "living-library/live/atlas-identity-contract.js"
-        },
-        {
-          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
-          "path": "tests/living-library-atlas-identity-contract.test.mjs"
         }
       ],
       "human_approval_required": true,
-      "revision": 2,
-      "note": "P1 第一步：已在候選分支新增 atlas-identity-contract.js 的 fail-closed 格式校驗、網頁輸入範例與測試。尚未核准命名規則，亦無跨裝置權威登錄或 ID 配發。",
+      "revision": 3,
+      "note": "使用者否決以 ATLAS-0001 四位英數編碼作為先行開發方向；此範例已從 v0.3 候選網頁移除。四位數前置零不代表千張容量，但目前沒有批准圖鑑本體編號格式。",
       "last_updated": "2026-10-16"
     },
     {
@@ -148,13 +140,13 @@
     },
     {
       "id": "ATLAS-006",
-      "phase": "P2",
+      "phase": "P1",
       "title": "L2 永久認證與原子配號",
       "problem": "普通卡提出升級、AI 核驗、OWNER 核准及原子配號目前只是規則文字，沒有正式交易狀態機。",
       "implementation_state": "not_implemented",
-      "status": "not_started",
+      "status": "in_progress",
       "priority": "極高",
-      "next_action": "設計認證 Schema、版本鎖與拒絕/撤銷候選流程，經 OWNER 核准後才實作。",
+      "next_action": "完成 L1 普通卡升級申請草稿、AI 及 OWNER 審查契約；不得先核發永久編號。正式 L2 與世界綁定仍須獨立審核和權威交易後才可實作。",
       "sources": [
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
@@ -163,11 +155,19 @@
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
           "path": "living-library/live/atlas-rulebook-review.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-card-upgrade-plan.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "tests/living-library-atlas-card-upgrade-plan.test.mjs"
         }
       ],
       "human_approval_required": true,
-      "revision": 1,
-      "note": "",
+      "revision": 2,
+      "note": "P1 第一步改為升級卡片先行。已新增純函式草稿審核 atlas-card-upgrade-plan.js、網頁輸入欄位與測試；不會修改 ObjectCraft 或執行 L2 認證。",
       "last_updated": "2026-10-16"
     },
     {
@@ -397,6 +397,15 @@
       "review_status": "generated",
       "source": "living-library/live/atlas-identity-contract.js",
       "note": "ATLAS-002 已開始候選格式與禁止正式配號的程式基礎，需求決策和正式發布未核准。其他十四項狀態不變。"
+    },
+    {
+      "record_id": "ATLAS-LOG-003",
+      "date": "2026-10-16",
+      "actor": "AI",
+      "action": "user_feedback_reprioritize_upgrade_before_numbering",
+      "review_status": "generated",
+      "source": "user correction 2026-10-16; object-craft.js and atlas-rulebook-review.html",
+      "note": "先卡片升級、後討論正式編號；三位卡槽序號 001–999 為顯示格式，超過 999 可延伸，不構成上限。未經 OWNER 核准不發號。"
     }
   ]
 }
