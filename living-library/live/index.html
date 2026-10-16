@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-16.atlas-gba-dual-focus.1">
+<meta name="living-library-release" content="2026-10-16.atlas-github-inbox-pilot.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -220,6 +220,11 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #atlasObservationDialog h2,#atlasObservationDialog p,#atlasObservationDialog output{color:#000}
 #atlasObservationJson{box-sizing:border-box;display:block;width:100%;height:min(40dvh,300px);min-height:130px;overflow:auto;resize:vertical;background:#fff;color:#000;border:1px solid #7d6a53;border-radius:8px;padding:12px;font:12px/1.5 monospace}
 #atlasObservationDialog button{min-width:48px;min-height:48px;margin:8px 7px 2px 0;border:1px solid #ad8c62;border-radius:9px;background:#e4d3b1;color:#000;font-size:22px}
+#atlasGithubDialog{box-sizing:border-box;width:min(92vw,550px);max-height:84dvh;overflow:auto;border:2px solid #a58655;border-radius:15px;background:#f5ecd9;color:#000;padding:18px}
+#atlasGithubDialog::backdrop{background:#07101bd9}
+#atlasGithubDialog :is(h2,p,strong,small,label,output){color:#000}
+#atlasGithubDialog input{width:100%;min-height:48px;padding:9px;margin:8px 0 16px;color:#000;background:#fff;border:1px solid #7d6a53;border-radius:8px;font:16px system-ui}
+#atlasGithubDialog button{min-width:56px;min-height:48px;margin:5px 7px 3px 0;background:#e4d3b1;color:#000;border:1px solid #ad8c62;border-radius:8px;font:700 18px system-ui}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -231,6 +236,16 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
 <button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
+<dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
+ <h2>發送到私人 GitHub</h2>
+ <p>僅發送右側讀卡格目前這張已儲存卡片，<strong>包含壓縮後的圖片</strong>。目標是私有的 <strong>gen2-knowledge / card-inbox</strong> 分支之 <strong>card-inbox/v1</strong> 資料夾；不會修改正式知識庫 main，也不會發送到公開網站儲存庫。</p>
+ <p>第一次測試請輸入只授權 <strong>gen2-knowledge</strong>、具有 <strong>Contents: Read and write</strong> 的 GitHub fine-grained token。權杖僅用於這次傳送，離開對話框後不儲存。</p>
+ <label for="atlasGithubToken">GitHub 授權權杖</label>
+ <input id="atlasGithubToken" type="password" autocomplete="off" spellcheck="false" inputmode="text" placeholder="github_pat_…" aria-label="GitHub 私人儲存庫單次授權權杖">
+ <div><button id="atlasGithubSend" type="button" aria-label="確認傳送這張卡片至私人 GitHub" title="確認傳送">↑</button>
+ <button id="atlasGithubCancel" type="button" aria-label="取消 GitHub 傳送" title="取消">×</button></div>
+ <output id="atlasGithubStatus" role="status" aria-live="polite"></output>
+</dialog>
 <dialog id="atlasObservationDialog" aria-label="萬物圖鑑 AI 唯讀觀察">
  <h2>AI 唯讀觀察</h2>
  <p>從圖鑑右側讀卡格讀取「已儲存」的單一卡片。此處不會發送資料給 AI 或 GitHub，不含照片內容；要讓 ChatGPT 看到圖片，請另外傳送截圖。按 ⧉ 自行複製文字資料。</p>
@@ -304,7 +319,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -775,6 +790,50 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
 const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObservationJson');
+ const githubDialog=$('atlasGithubDialog'),githubToken=$('atlasGithubToken');
+ let pendingGithubCard=null,githubBusy=false;
+ const reportGithub=(id,state,code='')=>window.LivingScene?.atlas?.reportGithubUpload?.(id,state,code);
+ function sendLocalCardToGithub(id){
+  if(githubBusy||githubDialog.open)return;
+  try{
+   const card=ObjectCraft.listCards(localStorage).find(x=>x.id===id&&
+    x.containerId==='local.atlas.compendium'&&x.slotIndex===9&&x.status!=='recycled');
+   if(!card)throw Error('單卡格沒有可傳送的已儲存卡片');
+   pendingGithubCard=id;
+   githubToken.value='';
+   $('atlasGithubStatus').textContent='尚未上傳。確認私人儲存庫與權杖後按 ↑ 發送。';
+   reportGithub(id,'auth');
+   githubDialog.showModal();
+  }catch(e){reportGithub(id,'error','GITHUB_CARD_NOT_IN_READER');toast(e.message)}
+ }
+ $('atlasGithubCancel').addEventListener('click',()=>{if(!githubBusy)githubDialog.close()});
+ githubDialog.addEventListener('close',()=>{
+  githubToken.value='';
+  if(!githubBusy&&pendingGithubCard)reportGithub(pendingGithubCard,'idle');
+  pendingGithubCard=null;
+ });
+ $('atlasGithubSend').addEventListener('click',async()=>{
+  if(githubBusy||!pendingGithubCard)return;
+  const id=pendingGithubCard,token=githubToken.value;
+  githubToken.value='';
+  if(!token||token.trim().length<10){
+   $('atlasGithubStatus').textContent='請輸入有效的 GitHub 私人儲存庫授權權杖。';
+   reportGithub(id,'error','GITHUB_TOKEN_REQUIRED');return;
+  }
+  githubBusy=true;$('atlasGithubSend').disabled=true;
+  reportGithub(id,'sending');pendingGithubCard=null;githubDialog.close();
+  try{
+   const result=await window.LivingCardGithubInbox.upload({
+    storage:localStorage,craft:ObjectCraft,observer:window.LivingCardObserver,cardId:id,token
+   });
+   reportGithub(id,'ok',result.commit_sha.slice(0,12));
+   toast('私人 GitHub 已確認儲存：'+result.commit_sha.slice(0,7));
+  }catch(e){
+   const code=typeof e?.code==='string'&&/^GITHUB_[A-Z_]+$/.test(e.code)?e.code:'GITHUB_SEND_FAILED';
+   reportGithub(id,'error',code);toast('GitHub 發送失敗：'+code);
+  }finally{githubBusy=false;$('atlasGithubSend').disabled=false}
+ });
+ window.addEventListener('pagehide',()=>{githubToken.value=''});
  function openAtlasObservation(id){
   try{
    // Only the ONE currently saved card physically placed in the right-side reader slot.
@@ -800,7 +859,7 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
   }
  });
  observationDialog.addEventListener('close',()=>{observationText.value='';$('atlasObservationStatus').textContent='';syncScene()});
- window.LivingLibrary={books:BOOKS,select,openBook,summonBook,openAtlasObservation,
+ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,openAtlasObservation,sendLocalCardToGithub,
  setCollectionActive(active,id='local.atlas.collection'){const b=BOOKS.find(x=>x.id===(id==='local.atlas.collection'?'cardCollection':id));if(b)setBookActive(b,active)},
  getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
@@ -1563,7 +1622,7 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  invalidate:()=>window.LivingScene?.syncRender?.(),
  controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
  setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
- openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.openAtlasObservation(id),focusCard});
+ openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.sendLocalCardToGithub(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
   el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;

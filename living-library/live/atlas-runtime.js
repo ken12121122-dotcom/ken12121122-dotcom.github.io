@@ -10,6 +10,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function prepareModel(id,m){m.id=id;m.group.userData.atlasId=id;m.group.scale.setScalar(BASE);m.group.visible=false;m.open=0;m.desired=false;m.animation=null;m.puffs=null;m.center=new THREE.Vector3();m.rotation=new THREE.Quaternion();m.setOpen(0);scene.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.userData.atlasBook=id});return m}
  for(const [id,m] of models)prepareModel(id,m);collection.view=saved;
  let focus=null,returning=null,pointer=null,slotHighlight=null,audio=null,disposed=false,lastFocusId=null,screenMode='card';
+ let uploadCardId=null,uploadStatus={state:'idle',code:''};
  const ray=new THREE.Raycaster(),uv=new THREE.Vector2();
  const toolbar=document.getElementById('atlasActions'),exit=document.getElementById('atlasFocusExit'),close=document.getElementById('atlasCollectionClose'),shelf=document.getElementById('atlasCollectionShelf'),switcher=document.getElementById('atlasFocusSwitch');
  function innerCollections(){return [...models.values()].filter(m=>m!==atlas&&m.view.collection==='inner')}
@@ -122,10 +123,10 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
     else if(!reader){toast('先將卡片放入右側讀卡區')}
     else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
       screenMode=screenMode==='card'?'observe':'card';
-      atlas.screen(reader.record,screenMode,true);invalidate();
+      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
     }else if(key==='UP'||key==='DOWN'){
       screenMode=key==='UP'?'card':'observe';
-      atlas.screen(reader.record,screenMode,true);invalidate();
+      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
     }else if(key==='A'){
       if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
       else openCard(reader.id);
@@ -212,8 +213,18 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    entry.group.visible=!!target&&m.group.visible&&m.open>.03;
    if(entry.group.visible){target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);target.node.getWorldQuaternion(entry.group.quaternion);entry.group.scale.setScalar(m.group.scale.x*1.3*tuning.atlasCardSize)}
   }
-  atlas.screen([...cards.values()].find(c=>State.readerActive(c.record))?.record||null,screenMode,!!focus?.gba);
+  const reader=[...cards.values()].find(c=>State.readerActive(c.record));
+  if(uploadCardId!==reader?.id){uploadCardId=reader?.id||null;uploadStatus={state:'idle',code:''}}
+  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus);
   updateCamera(now);stageData();
+ }
+ // Called only from the explicitly authorized per-card sender. Nothing is persisted.
+ function reportGithubUpload(cardId,state,code=''){
+  const reader=[...cards.values()].find(c=>State.readerActive(c.record));
+  if(!reader||reader.id!==cardId)return false;
+  if(!['idle','auth','sending','ok','error'].includes(state))return false;
+  uploadCardId=cardId;uploadStatus={state,code:String(code||'').slice(0,45)};
+  atlas.screen(reader.record,screenMode,!!focus?.gba,uploadStatus);invalidate();return true;
  }
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
@@ -226,7 +237,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  root.addEventListener('pagehide',e=>{if(!e.persisted)dispose();else cancelPointer()});
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
-  get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,
-  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,reportGithubUpload,
+  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);

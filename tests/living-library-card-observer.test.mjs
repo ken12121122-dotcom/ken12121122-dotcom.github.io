@@ -63,7 +63,8 @@ test('no write, network, background observation or arbitrary id',()=>{
  assert.match(main,/card-observer\.js/);
  assert.match(main,/id="atlasObservationDialog"/);
  assert.match(main,/containerId==='local\.atlas\.compendium'&&x\.slotIndex===9/);
- assert.match(main,/observeCard:id=>window\.LivingLibrary\.openAtlasObservation\(id\)/);
+ assert.match(main,/observeCard:id=>window\.LivingLibrary\.sendLocalCardToGithub\(id\)/);
+ assert.match(main,/function openAtlasObservation\(id\)/);
  for(const m of main.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g))
   assert.doesNotThrow(()=>new Function(m[1].includes('module')?'return async function(){'+m[2]+'}':m[2]));
 });
