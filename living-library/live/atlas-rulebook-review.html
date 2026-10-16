@@ -207,6 +207,7 @@ function renderProgress(){
 function saveProgress(item,status,note){
  if(!progressBase||!progressLocal||!progressWritable||progressLocal.base_version!==progressBase.version)return;
  if(!Object.hasOwn(PROGRESS_STATE,status)||typeof note!=='string'||note.length>600)return;
+ if(status==='verified'&&item.status!=='verified'&&!note.trim()){progressMessage('請先在備註填寫可追溯的驗證證據，再標示來源已驗證。','warning');renderProgress();return;}
  const before=progressValue(item);
  if(before.status===status&&before.note===note)return;
  const at=new Date().toISOString();
@@ -222,7 +223,7 @@ async function loadProgress(){
   const response=await fetch(PROGRESS_URL,{cache:'no-store'});
   if(!response.ok)throw Error('HTTP '+response.status);
   const data=await response.json();
-  if(data?.schema!=='nw-atlas-progress-v1'||data.card_id!=='public.gaming.atlas'||data.review_status!=='generated'||!Array.isArray(data.items)||data.items.length===0||new Set(data.items.map(x=>x.id)).size!==data.items.length||data.items.some(x=>!x.id||!Object.hasOwn(PROGRESS_STATE,x.status)||!Array.isArray(x.sources)||!Number.isInteger(x.revision)))throw Error('進度 Schema 驗證失敗');
+  if(data?.schema!=='nw-atlas-progress-v1'||data.card_id!=='public.gaming.atlas'||!['generated','reviewed','approved','rejected','deprecated'].includes(data.review_status)||!Array.isArray(data.items)||data.items.length===0||new Set(data.items.map(x=>x.id)).size!==data.items.length||data.items.some(x=>!x.id||!Object.hasOwn(PROGRESS_STATE,x.status)||!Array.isArray(x.sources)||!Number.isInteger(x.revision)))throw Error('進度 Schema 驗證失敗');
   progressBase=data;progressWritable=true;progressLocal=progressDraft(data);renderProgress();
  }catch(e){progressBase=null;$('progressRows').replaceChildren();$('progressCount').textContent='來源讀取失敗';$('progressVersion').textContent='資料不可用';$('progressCopy').disabled=true;progressMessage('⚠ 無法驗證進度來源：'+e.message+'。不顯示推測資料，也不寫入本機。','error')}
 }
