@@ -10,7 +10,7 @@ async function main(){
    const url=new URL(route.request().url());
    if(url.origin!=='https://nw-backup.invalid'){outbound++;return route.abort()}
    const name=path.basename(url.pathname);
-   if(!['card-creation.html','object-craft.js','object-backup.js','object-outbox.js'].includes(name))return route.abort();
+   if(!['card-creation.html','object-craft.js','object-backup.js','object-outbox.js','compendium-card.js','public-catalog.js'].includes(name))return route.abort();
    return route.fulfill({contentType:name.endsWith('.js')?'text/javascript':'text/html',body:await fs.readFile(path.resolve(__dirname,'../../living-library/live',name))});
   });
   await page.goto('https://nw-backup.invalid/card-creation.html');
