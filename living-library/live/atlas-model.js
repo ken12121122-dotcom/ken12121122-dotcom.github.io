@@ -42,7 +42,7 @@ for(const [side,sign] of [[left,-1],[right,1]]){
  else{
   box(side,2.13,1.73,.06,1.35,.66,.18,gold);
   screen=new THREE.Mesh(new THREE.PlaneGeometry(2.02,1.61),new THREE.MeshBasicMaterial({map:textMap([],false)}));screen.position.set(1.35,.66,.22);
-  screen.userData.atlasControl='START';side.add(screen);
+  screen.userData.atlasScreen=true;side.add(screen);
   slot(side,.92,-1.13,9);
   // Genuine GBA labels and distribution: D-pad to the LEFT of A/B, SELECT/START above.
   // Keep the single physical card well (x=.92) and display entirely unobstructed.
