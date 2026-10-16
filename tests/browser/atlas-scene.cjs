@@ -6,7 +6,7 @@ function element(){return {hidden:false,dataset:{},listeners:{},addEventListener
 const gradient={addColorStop(){}},context=new Proxy({createLinearGradient:()=>gradient,createRadialGradient:()=>gradient},{get(o,k){return k in o?o[k]:(()=>{})},set(o,k,v){o[k]=v;return true}});
 const bodyClasses=new Set();const els=new Map();const doc={body:{classList:{toggle(k,on){if(on)bodyClasses.add(k);else bodyClasses.delete(k)}}},getElementById:id=>{if(!els.has(id))els.set(id,element());return els.get(id)},createElement:()=>element()};
 const host={document:doc,innerWidth:900,innerHeight:650,performance:{now:()=>clock},addEventListener(){},console};host.self=host;
-for(const name of ['atlas-state.js','atlas-model.js','atlas-runtime.js'])vm.runInNewContext(fs.readFileSync(root+'/living-library/live/'+name,'utf8'),host);
+for(const name of ['atlas-state.js','compendium-card.js','atlas-model.js','atlas-runtime.js'])vm.runInNewContext(fs.readFileSync(root+'/living-library/live/'+name,'utf8'),host);
 // The left leaf must fold through the page-facing (+Z) half-space, never behind the cover.
 for(const collection of [false,true]){
  const model=host.LivingAtlasModel.create(THREE,collection),leaf=model.targets.find(t=>t.index===0).node;
@@ -18,9 +18,9 @@ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(48,900/650,.1,1
 const backing=new Map(),storage={getItem:k=>backing.get(k)??null,setItem:(k,v)=>backing.set(k,v)},cards=new Map(),canvas={parentElement:element(),getBoundingClientRect:()=>({left:0,top:0,width:900,height:650}),setPointerCapture(){}};
 const outer=new THREE.Group();outer.add(new THREE.Mesh(new THREE.BoxGeometry(.9,1.3,.2),new THREE.MeshBasicMaterial()));outer.position.set(4,3,0);scene.add(outer);
 const entities=new Map([[State.COLLECTION,outer]]);
-let smokes=0,removed=0,opened=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
+let smokes=0,removed=0,opened=[],observed=[],messages=[];host.LivingScene={refreshFloatingCards:refresh,syncRender(){}};
 function refresh(){for(const r of craft.listCards(storage)){if(cards.has(r.id))cards.get(r.id).record=r;else{const g=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),new THREE.MeshBasicMaterial());mesh.userData.localCardId=r.id;g.add(mesh);g.position.set(0,2,4);scene.add(g);cards.set(r.id,{id:r.id,record:r,group:g})}}}
-const controls={};const runtimeOptions={controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),focusCard(){},collectionEntity:id=>entities.get(id),setCollectionActive(){},reduced:false};const runtime=host.LivingAtlasRuntime.create(runtimeOptions);
+const controls={};const runtimeOptions={controls,THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke:{create(){smokes++;return []},update(){},remove(){removed++}},toast:x=>messages.push(x),invalidate(){},openCard:id=>opened.push(id),observeCard:id=>observed.push(id),focusCard(){},collectionEntity:id=>entities.get(id),setCollectionActive(){},reduced:false};const runtime=host.LivingAtlasRuntime.create(runtimeOptions);
 function tick(ms){clock+=ms;runtime.tick(clock);scene.updateMatrixWorld(true);camera.updateMatrixWorld(true)}
 function group(id){return scene.children.find(x=>x.userData.atlasId===id)}
 function meshSlot(id,index){let mesh;group(id).traverse(x=>{if(x.userData.atlasSlot===index)mesh=x});return mesh}
@@ -37,8 +37,49 @@ for(let i=0;i<10;i++){
  if(i)craft.placeCard(storage,card.id,null);refresh();const entry=cards.get(card.id);entry.group.visible=true;entry.group.position.set(0,2,4);entry.group.quaternion.copy(camera.quaternion);
  moveTo(State.ATLAS,i,entry);assert.equal(craft.listCards(storage)[0].slotIndex,i,'raycast/drop into slot '+i);assert.equal(craft.listCards(storage)[0].containerId,State.ATLAS);
 }
-// Reader can only open the card physically occupying the right reader slot.
-runtime.focus(State.ATLAS);tick(900);let confirm;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl==='confirm')confirm=x});runtime.pointerDown(point(confirm));runtime.pointerUp(point(confirm));assert.deepEqual(opened,[card.id]);
+// Two animated focus levels: book overview first; right GBA only becomes interactive on second.
+runtime.focus(State.ATLAS);tick(900);
+assert.equal(runtime.inspect().gbaFocus,false);
+const control=name=>{let target;group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl===name&&x.isMesh&&x.geometry.type==='CylinderGeometry')target=x});return target};
+const tapControl=name=>{const e=point(control(name));assert.ok(runtime.pointerDown(e),'GBA hit '+name);runtime.pointerUp(e);tick(1)};
+const beforeObservation=storage.getItem(craft.KEY);
+const labels=[];group(State.ATLAS).traverse(x=>{if(x.userData.atlasControl&&x.isMesh&&x.geometry.type==='CylinderGeometry')labels.push(x.userData.atlasControl)});
+for(const key of ['UP','DOWN','LEFT','RIGHT','A','B','SELECT','START','L','R'])
+ assert.ok(labels.includes(key),'physical GBA button '+key);
+const twoPageCamera=camera.position.clone();
+tapControl('A');
+assert.equal(runtime.inspect().gbaFocus,true,'first-stage button tap only enters second focus');
+assert.deepEqual(opened,[],'GBA A cannot execute in first-level focus');
+assert.deepEqual(observed,[],'AI cannot observe in first-level focus');
+const nearStart=camera.position.clone();tick(400);const nearMid=camera.position.clone();tick(450);
+const nearEnd=camera.position.clone();
+assert.ok(nearMid.distanceTo(nearStart)>.01,'near focus visibly animates from book view');
+assert.ok(nearMid.distanceTo(nearEnd)>.01,'near focus does not teleport directly to final state');
+assert.ok(nearEnd.distanceTo(twoPageCamera)>.3,'right GBA zoom actually moves closer');
+tapControl('A');assert.deepEqual(opened,[card.id],'GBA A works in SECOND focus only');
+tapControl('SELECT');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('A');assert.deepEqual(observed,[card.id]);assert.equal(storage.getItem(craft.KEY),beforeObservation,'AI read must not change source');
+tapControl('DOWN');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('UP');assert.equal(runtime.inspect().screenMode,'card');
+tapControl('RIGHT');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('LEFT');assert.equal(runtime.inspect().screenMode,'card');
+const outStart=camera.position.clone();
+tapControl('B');assert.equal(runtime.inspect().gbaFocus,false,'B returns to FIRST book focus');
+tick(400);const outMid=camera.position.clone();tick(450);
+assert.ok(outMid.distanceTo(outStart)>.01,'return camera pulls away gradually');
+assert.ok(outMid.distanceTo(camera.position)>.01,'return camera completes gradually');
+assert.ok(camera.position.distanceTo(twoPageCamera)<.05,'return restores two-page framing');
+tapControl('SELECT');assert.equal(runtime.inspect().gbaFocus,true,'first-focus SELECT only enters GBA, not switch screen');
+assert.equal(runtime.inspect().screenMode,'card','first-level controls must not select AI mode');
+tick(900);
+tapControl('START');tick(900);assert.equal(runtime.inspect().gbaFocus,false,'START from second focus returns to first');
+const actualScreen=(()=>{let el;group(State.ATLAS).traverse(x=>{if(x.userData.atlasScreen)el=x});return el})();
+assert.ok(actualScreen);
+const screenTap=point(actualScreen);runtime.pointerDown(screenTap);runtime.pointerUp(screenTap);tick(900);
+assert.equal(runtime.inspect().gbaFocus,true,'tapping real screen in first focus enters GBA zoom');
+tapControl('START');tick(900);
+assert.equal(runtime.inspect().gbaFocus,false);
+assert.equal(storage.getItem(craft.KEY),beforeObservation,'all camera changes preserve card data');
 runtime.placeCollection();tick(1900);assert.equal(runtime.inspect().collectionOpen,1);assert.equal(outer.visible,false);
 for(let i=0;i<18;i++){moveTo(State.COLLECTION,i,cards.get(card.id));assert.equal(craft.listCards(storage)[0].slotIndex,i)}assert.equal(craft.listCards(storage)[0].containerId,State.COLLECTION);assert.equal(craft.listCards(storage)[0].slotIndex,17);
 runtime.exitFocus();tick(900);

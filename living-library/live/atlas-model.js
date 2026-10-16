@@ -32,7 +32,7 @@ const leather=material(collection?'#294958':'#14366d',.2),gold=material('#d2ae63
 const targets=[],buttons=[],art=coverArtwork();
 function box(parent,w,h,d,x,y,z,mat){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);o.position.set(x,y,z);parent.add(o);return o}
 function textMap(lines,active){const c=document.createElement('canvas');c.width=640;c.height=410;const x=c.getContext('2d');x.fillStyle=active?'#102538':'#050a11';x.fillRect(0,0,640,410);if(active){x.fillStyle='#e4f7ff';x.font='bold 42px sans-serif';lines.forEach((line,i)=>x.fillText(line,30,85+i*70,575))}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
-let screen=null;
+let screen=null,screenKey='',screenCancel=()=>{};
 function slot(side,x,y,index){box(side,.68,.91,.045,x,y,.16,gold);const well=box(side,.62,.85,.025,x,y,.19,dark);well.userData.atlasSlot=index;
  const node=new THREE.Object3D();node.position.set(x,y,.26);side.add(node);targets.push({node,index,well});}
 for(const [side,sign] of [[left,-1],[right,1]]){
@@ -41,18 +41,87 @@ for(const [side,sign] of [[left,-1],[right,1]]){
  if(sign===-1||collection){for(let r=0;r<3;r++)for(let c=0;c<3;c++)slot(side,sign===-1?-2.05+c*.72:.61+c*.72,1.04-r*1.04,(sign===-1?0:9)+r*3+c)}
  else{
   box(side,2.13,1.73,.06,1.35,.66,.18,gold);
-  screen=new THREE.Mesh(new THREE.PlaneGeometry(2.02,1.61),new THREE.MeshBasicMaterial({map:textMap([],false)}));screen.position.set(1.35,.66,.22);side.add(screen);
+  screen=new THREE.Mesh(new THREE.PlaneGeometry(2.02,1.61),new THREE.MeshBasicMaterial({map:textMap([],false)}));screen.position.set(1.35,.66,.22);
+  screen.userData.atlasScreen=true;side.add(screen);
   slot(side,.92,-1.13,9);
-  for(const [control,x,y] of [['up',2.07,-.92],['down',2.07,-1.36],['left',1.85,-1.14],['right',2.29,-1.14],['confirm',2.07,-1.14]]){
-   const b=new THREE.Mesh(new THREE.CylinderGeometry(control==='confirm'?.13:.11,control==='confirm'?.13:.11,.08,24),gold);b.rotation.x=Math.PI/2;b.position.set(x,y,.23);b.userData.atlasControl=control;side.add(b);buttons.push(b);
+  // Genuine GBA labels and distribution: D-pad to the LEFT of A/B, SELECT/START above.
+  // Keep the single physical card well (x=.92) and display entirely unobstructed.
+  const specs=[
+   ['UP',1.57,-.85,.145,'▲'],['DOWN',1.57,-1.46,.145,'▼'],
+   ['LEFT',1.39,-1.15,.135,'◀'],['RIGHT',1.75,-1.15,.135,'▶'],
+   ['A',2.35,-.99,.195,'A'],['B',2.12,-1.43,.18,'B'],
+   ['SELECT',1.59,-.42,.13,'SEL'],['START',2.12,-.42,.13,'STA'],
+   ['L',.53,1.63,.115,'L'],['R',2.18,1.63,.115,'R']
+  ];
+  for(const [control,x,y,radius,label] of specs){
+   const color=control==='A'?'#d8b46f':control==='B'?'#8fc5b8':control==='START'||control==='SELECT'?'#65788c':'#303d53';
+   const mat=material(color),b=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,.11,32),mat);
+   b.rotation.x=Math.PI/2;b.position.set(x,y,.31);b.userData.atlasControl=control;side.add(b);buttons.push(b);
+   const c=document.createElement('canvas');c.width=128;c.height=128;const ctx=c.getContext('2d');
+   ctx.fillStyle=control==='A'||control==='B'?'#102231':'#ffffff';
+   ctx.font='bold '+(label.length>1?39:70)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.fillText(label,64,66,120);
+   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+   const mark=new THREE.Mesh(new THREE.PlaneGeometry(radius*1.88,radius*1.88),
+    new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
+   mark.position.set(x,y,.38);mark.userData.atlasControl=control;side.add(mark);
   }
  }
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
-let screenKey='';
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
- screen(card){if(!screen)return;const key=card?card.id+':'+card.revision:'';if(key===screenKey)return;screenKey=key;screen.material.map.dispose();screen.material.map=textMap(card?[card.title,'已放入讀卡區','● 開啟內頁']:[],!!card)},
- dispose(){const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};
+ screen(card,mode='card',interactive=false){
+  if(!screen)return;
+  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK'):'empty';
+  if(key===screenKey)return;
+  screenCancel();screenCancel=()=>{};screenKey=key;
+  const map=screen.material.map,ctx=map.image.getContext('2d');
+  const txt=(message,x,y,size=25)=>{
+   ctx.fillStyle='#000000';ctx.font='bold '+size+'px sans-serif';
+   const chars=Array.from(String(message||'')).slice(0,18).join('');
+   ctx.fillText(chars,x,y,320);
+  };
+  const base=()=>{
+   ctx.fillStyle='#e8e1ce';ctx.fillRect(0,0,640,410);
+   ctx.fillStyle='#b59c68';ctx.fillRect(8,8,624,394);
+   ctx.fillStyle='#f4ecda';ctx.fillRect(13,13,614,384);
+   ctx.fillStyle='#000000';
+  };
+  if(!card){
+   base();txt('萬物圖鑑',35,80,45);txt('右側讀卡格尚未放卡',35,150,29);
+   txt('放入一張卡片即可顯示',35,200,24);map.needsUpdate=true;return;
+  }
+  const face=document.createElement('canvas');face.width=560;face.height=780;
+  const redraw=()=>{
+   if(screenKey!==key)return;
+   base();ctx.drawImage(face,20,18,265,371);
+   ctx.fillStyle='#b59c68';ctx.fillRect(295,18,317,371);
+   ctx.fillStyle='#f4ecda';ctx.fillRect(300,23,307,361);
+   txt('Nº '+(card.cardNumber||'—'),318,69,29);
+   txt(card.title||'空白卡片',318,116,28);
+   if(!interactive){
+    txt('圖鑑雙頁模式',318,170,28);
+    txt('點右側 GBA 進入',318,233,21);
+    txt('近距離專注',318,283,26);
+    txt('按鍵於下階段啟用',318,342,19);
+   }else if(mode==='observe'){
+    txt('AI 唯讀',318,174,31);
+    txt('版次 '+(card.revision||'—'),318,221,24);
+    txt('SELECT 模式 / B 返回',318,272,17);
+    txt('A 讀取唯讀資料',318,319,19);
+    txt('手動分享 · 不上傳',318,356,16);
+   }else{
+    txt(card.cardType||'未分類',318,172,24);
+    txt(card.image?'圖片已載入':'尚未放入圖片',318,223,21);
+    txt('SELECT 切換 AI',318,278,19);
+    txt('A 開啟卡片',318,326,23);
+   }
+   map.needsUpdate=true;root.LivingScene?.invalidate?.();
+  };
+  screenCancel=root.LivingCompendiumCard.draw(face,card,redraw)||(()=>{});
+  redraw();
+ },
+ dispose(){screenCancel();const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};
 },
 cardTexture(THREE,record){
  const c=document.createElement('canvas');

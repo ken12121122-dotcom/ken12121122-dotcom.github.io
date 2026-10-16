@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-16.atlas-focus-layout.1">
+<meta name="living-library-release" content="2026-10-16.atlas-gba-dual-focus.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -215,6 +215,11 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #atlasActions{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:18;display:flex;gap:7px}
 #atlasActions button{width:46px;height:46px;border:1px solid #d7bb83;border-radius:50%;background:#152539ed;color:#fff0c9;font-size:24px;touch-action:manipulation}
 #atlasActions button:focus-visible{outline:3px solid #94e3cf}
+#atlasObservationDialog{box-sizing:border-box;width:min(92vw,590px);max-height:85dvh;overflow:auto;border:2px solid #a58655;border-radius:15px;background:#f5ecd9;color:#000;padding:18px}
+#atlasObservationDialog::backdrop{background:#07101bba}
+#atlasObservationDialog h2,#atlasObservationDialog p,#atlasObservationDialog output{color:#000}
+#atlasObservationJson{box-sizing:border-box;display:block;width:100%;height:min(40dvh,300px);min-height:130px;overflow:auto;resize:vertical;background:#fff;color:#000;border:1px solid #7d6a53;border-radius:8px;padding:12px;font:12px/1.5 monospace}
+#atlasObservationDialog button{min-width:48px;min-height:48px;margin:8px 7px 2px 0;border:1px solid #ad8c62;border-radius:9px;background:#e4d3b1;color:#000;font-size:22px}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -226,6 +231,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
 <button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
+<dialog id="atlasObservationDialog" aria-label="萬物圖鑑 AI 唯讀觀察">
+ <h2>AI 唯讀觀察</h2>
+ <p>從圖鑑右側讀卡格讀取「已儲存」的單一卡片。此處不會發送資料給 AI 或 GitHub，不含照片內容；要讓 ChatGPT 看到圖片，請另外傳送截圖。按 ⧉ 自行複製文字資料。</p>
+ <textarea id="atlasObservationJson" aria-label="唯讀卡片 JSON" readonly spellcheck="false"></textarea>
+ <div><button id="atlasObservationCopy" type="button" aria-label="複製卡片唯讀資料" title="複製資料">⧉</button><button id="atlasObservationClose" type="button" aria-label="關閉 AI 觀察畫面" title="關閉">×</button></div>
+ <output id="atlasObservationStatus" role="status" aria-live="polite"></output>
+</dialog>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
 <button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
@@ -292,7 +304,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -762,7 +774,33 @@ setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
-window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObservationJson');
+ function openAtlasObservation(id){
+  try{
+   // Only the ONE currently saved card physically placed in the right-side reader slot.
+   const card=ObjectCraft.listCards(localStorage).find(x=>x.id===id&&
+    x.containerId==='local.atlas.compendium'&&x.slotIndex===9);
+   if(!card)throw Error('請先將單張卡片放入圖鑑右側讀卡格');
+   const observation=window.LivingCardObserver.snapshot({storage:localStorage,craft:ObjectCraft,cardId:id});
+   observationText.value=JSON.stringify(observation,null,2);
+   $('atlasObservationStatus').textContent='僅讀取本機已儲存內容；尚未分享。';
+   if(!observationDialog.open)observationDialog.showModal();
+  }catch(e){toast(e.message||'讀卡失敗；資料未修改')}
+ }
+ $('atlasObservationClose').addEventListener('click',()=>observationDialog.close());
+ $('atlasObservationCopy').addEventListener('click',async()=>{
+  const data=observationText.value;if(!data)return;
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('clipboard_unavailable');
+   await navigator.clipboard.writeText(data);
+   $('atlasObservationStatus').textContent='已複製，請自行貼到 ChatGPT；未自動上傳。';
+  }catch(_){
+   observationText.focus();observationText.select();
+   $('atlasObservationStatus').textContent='已選取文字；請長按複製並自行貼到 ChatGPT。';
+  }
+ });
+ observationDialog.addEventListener('close',()=>{observationText.value='';$('atlasObservationStatus').textContent='';syncScene()});
+ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,openAtlasObservation,
  setCollectionActive(active,id='local.atlas.collection'){const b=BOOKS.find(x=>x.id===(id==='local.atlas.collection'?'cardCollection':id));if(b)setBookActive(b,active)},
  getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
@@ -1525,7 +1563,7 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  invalidate:()=>window.LivingScene?.syncRender?.(),
  controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
  setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
- openCard:id=>window.LivingLibrary.openLocalCardEditor(id),focusCard});
+ openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.openAtlasObservation(id),focusCard});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
   el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
