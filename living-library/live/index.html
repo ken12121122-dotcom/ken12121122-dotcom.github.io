@@ -1674,19 +1674,20 @@ function findNearestRuneCard(){
 // RUNE-02: no new save keys, no binding, no new card mesh.
 const RuneHold=window.LivingRuneHold;
 if(!RuneHold)throw Error('Rune hold gesture module unavailable');
-const RUNE_TICKS=48,runeTickMaterial=new THREE.MeshBasicMaterial({
- color:0xf2d4a0,transparent:true,opacity:.95,depthWrite:false});
-const runeProgress=new THREE.InstancedMesh(new THREE.BoxGeometry(.11,.026,.07),
- runeTickMaterial,RUNE_TICKS);
-const runeDummy=new THREE.Object3D();
-for(let i=0;i<RUNE_TICKS;i++){
- const angle=i*Math.PI*2/RUNE_TICKS;
- runeDummy.position.set(Math.cos(angle)*2.52,.475,Math.sin(angle)*2.52);
- runeDummy.rotation.set(0,-angle,0);runeDummy.updateMatrix();
- runeProgress.setMatrixAt(i,runeDummy.matrix);
-}
-runeProgress.instanceMatrix.needsUpdate=true;runeProgress.count=0;runeProgress.visible=false;
-runeGroup.add(runeProgress);
+// Continuous circular countdown: a faint full-circle track and a bright arc
+// sweep through the full circumference over the 3000 ms hold. No time numerals.
+const RUNE_ARC_SEGMENTS=192;
+const runeTrack=new THREE.Mesh(new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS),
+ new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,
+  side:THREE.DoubleSide,depthWrite:false}));
+runeTrack.position.y=.495;runeTrack.rotation.x=-Math.PI/2;
+runeTrack.visible=false;runeGroup.add(runeTrack);
+const runeArcGeometry=new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS,1,-Math.PI/2,Math.PI*2);
+const runeProgress=new THREE.Mesh(runeArcGeometry,new THREE.MeshBasicMaterial({
+ color:0xf5d698,transparent:true,opacity:.98,
+ side:THREE.DoubleSide,depthWrite:false}));
+runeProgress.position.y=.498;runeProgress.rotation.x=-Math.PI/2;
+runeArcGeometry.setDrawRange(0,0);runeProgress.visible=false;runeGroup.add(runeProgress);
 const runeSelectionMat=new THREE.MeshBasicMaterial({
  color:0xa8e7cf,transparent:true,opacity:.6,depthWrite:false});
 const runeSelectionRing=new THREE.Mesh(new THREE.TorusGeometry(2.48,.035,6,96),runeSelectionMat);
@@ -1714,8 +1715,10 @@ let runeNearest=null;
 function updateRuneVisual(now){
  const info=runeGesture.inspect(now);
  const show=info.phase==='holding'||info.phase==='selected';
+ runeTrack.visible=show;
  runeProgress.visible=show;
- runeProgress.count=info.phase==='selected'?RUNE_TICKS:Math.max(0,Math.floor(RUNE_TICKS*info.progress));
+ // RingGeometry has six triangle indices per theta segment.
+ runeArcGeometry.setDrawRange(0,Math.floor(RUNE_ARC_SEGMENTS*info.progress)*6);
  runeSelectionRing.visible=info.phase==='selected';
  runeGlyphs.visible=show&&!preferReduced;
  runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
@@ -1979,7 +1982,7 @@ function render(now){
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active()||runeGesture.active())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
