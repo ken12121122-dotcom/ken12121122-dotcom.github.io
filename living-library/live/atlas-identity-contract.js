@@ -1,6 +1,6 @@
 /* P1 candidate ID contract — validation-only. Never allocates a permanent ID.
  * "ATLAS-0001" is an unapproved example, NOT a registered atlas identity.
- * Nothing here touches localStorage, ObjectCraft, a network, or an authoritative ledger.
+ * No browser storage, ObjectCraft, network access, or authoritative ledger writes.
  */
 (function(root,factory){
  const api=factory();
