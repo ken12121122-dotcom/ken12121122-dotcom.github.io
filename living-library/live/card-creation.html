@@ -97,6 +97,13 @@ button:disabled{opacity:.45}
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
+  <details id="aiObservation"><summary>AI 唯讀觀察（手動分享）</summary>
+   <p>僅讀取目前選中的「已儲存卡片」。不會修改卡片、不傳送到網路，也不包含圖片像素。選擇 ◎ 產生文字資料，再按 ⧉ 複製貼到 ChatGPT；卡面請另外傳截圖。這不是雲端同步。</p>
+   <div class="backupActions"><button id="prepareCardObservation" type="button" disabled aria-label="讀取目前卡片的 AI 唯讀觀察資料" title="讀取已儲存卡片">◎</button>
+   <button id="copyCardObservation" type="button" disabled aria-label="複製 AI 唯讀觀察資料" title="複製觀察資料">⧉</button></div>
+   <textarea id="observationJson" readonly rows="7" spellcheck="false" aria-label="AI 唯讀卡片資料" placeholder="按 ◎ 從本機取得已儲存的卡片資料；不會自動上傳。"></textarea>
+   <output id="observationStatus" role="status" aria-live="polite"></output>
+  </details>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
  </section>
 </div>
@@ -123,6 +130,7 @@ button:disabled{opacity:.45}
 <script src="./compendium-card.js?v=compendium-number-20261016"></script>
 <script src="./public-catalog.js?v=compendium-number-20261016"></script>
 <script src="./object-craft.js?v=compendium-number-20261016"></script>
+<script src="./card-observer.js?v=ai-observer-20261016"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -148,6 +156,38 @@ button:disabled{opacity:.45}
  function syncCrop(){if(draftImage){draftImage={...draftImage,scale:Number($('photoScale').value),x:Number($('photoX').value),y:Number($('photoY').value)}}}
  const cards=()=>Craft.listCards(localStorage);
  const Backup=window.LivingObjectBackup;
+ const Observer=window.LivingCardObserver;
+ function clearObservation(){
+  $('observationJson').value='';
+  $('prepareCardObservation').disabled=!currentId;
+  $('copyCardObservation').disabled=true;
+  $('observationStatus').textContent='';
+ }
+ $('prepareCardObservation').addEventListener('click',()=>{
+  try{
+   if(!currentId)throw Error('尚未選擇卡片');
+   const result=Observer.snapshot({storage:localStorage,craft:Craft,cardId:currentId});
+   $('observationJson').value=JSON.stringify(result,null,2);
+   $('copyCardObservation').disabled=false;
+   $('observationStatus').textContent='已產生唯讀資料；只包含已儲存內容，尚未分享。按 ⧉ 複製後自行貼到對話中。';
+  }catch(_){
+   $('observationJson').value='';
+   $('copyCardObservation').disabled=true;
+   $('observationStatus').textContent='讀取失敗；卡片資料未改動，請先儲存或重新開啟卡片。';
+  }
+ });
+ $('copyCardObservation').addEventListener('click',async()=>{
+  const value=$('observationJson').value;
+  if(!value)return;
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');
+   await navigator.clipboard.writeText(value);
+   $('observationStatus').textContent='已複製。請自行貼到 ChatGPT；此頁未上傳任何資料。';
+  }catch(_){
+   $('observationJson').focus();$('observationJson').select();
+   $('observationStatus').textContent='系統不允許自動複製：已選取文字，請長按複製後自行貼到 ChatGPT。';
+  }
+ });
  $('queueObjects').addEventListener('click',async()=>{
   $('queueObjects').disabled=true;let queue;
   try{
@@ -201,6 +241,7 @@ button:disabled{opacity:.45}
   $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
   paint();
   $('saveCard').disabled=!card;
+  clearObservation();
   $('recycleCard').disabled=!card||!!card.containerId;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
   const preview=$('cardPreview');preview.classList.remove('summon','hover');
