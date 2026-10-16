@@ -1,4 +1,4 @@
-/* Shared flat card face. No object creation, IDs, numbering or executable content. */
+/* Shared flat card face. No object creation, IDs, automatic numbering or executable content. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.LivingCompendiumCard=api;})(typeof self!=='undefined'?self:globalThis,function(){
  'use strict';
  const paints=new WeakMap();
@@ -8,7 +8,7 @@
   x.fillStyle='#35494c';x.fillRect(0,0,560,780);x.fillStyle='#f3ead2';x.fillRect(15,15,530,750);
   x.strokeStyle='#ac8750';x.lineWidth=2;x.strokeRect(23,23,514,734);
   const text=(value,size,px,py,width=466)=>{x.fillStyle='#000000';x.font=size+'px sans-serif';x.fillText(String(value),px,py,width)};
-  text('Nº —',29,46,66,170);text('圖鑑卡',23,411,66,103);
+  text('Nº '+(record.cardNumber||'—'),29,46,66,170);text('圖鑑卡',23,411,66,103);
   x.strokeStyle='#35494c';x.beginPath();x.moveTo(44,82);x.lineTo(516,82);x.stroke();
   text(record.title||'未命名',38,44,130);
   x.fillStyle='#e6dcc1';x.fillRect(44,154,472,376);x.strokeRect(44,154,472,376);

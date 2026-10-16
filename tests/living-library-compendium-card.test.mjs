@@ -8,7 +8,7 @@ const rng={randomUUID:()=> 'compendium-fixture'};
 const picture={dataUrl:'data:image/jpeg;base64,/9j/2Q==',scale:1.5,x:25,y:75};
 test('blank V2 has no image, type, numbering or ability; card edits retain location and ID',async()=>{
  const db=store(),a=C.createBlankCard(db,rng);
- assert.equal(a.image,null);assert.equal(a.cardType,'');assert.equal(a.linkedCardId,null);assert.equal(a.ability,null);assert.equal(a.collectionNumber,undefined);
+ assert.equal(a.image,null);assert.equal(a.cardType,'');assert.equal(a.linkedCardId,null);assert.equal(a.ability,null);assert.equal(a.collectionNumber,undefined);assert.equal(a.cardNumber,'');
  C.placeCard(db,a.id,'local.atlas.collection',3);
  const b=C.editCard(db,a.id,{title:'我的圖鑑卡',description:'手動輸入',cardType:'自訂',image:picture,linkedCardId:'public.gpt.skills'});
  const c=C.listCards(db)[0];assert.equal(c.id,a.id);assert.equal(c.containerId,'local.atlas.collection');assert.equal(c.slotIndex,3);assert.deepEqual(c.image,picture);assert.equal(c.cardType,'自訂');assert.deepEqual(c.permissions,[]);assert.equal(c.ability,null);assert.equal(c.revision,b.revision);
@@ -36,4 +36,19 @@ test('creator and live entry load the shared card face and their inline scripts 
   const text=readFileSync(new URL('../living-library/live/'+name,import.meta.url),'utf8');assert.match(text,/compendium-card\.js/);
   for(const m of text.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g))assert.doesNotThrow(()=>new Function(m[1].includes('module')?'return async function(){'+m[2]+'}':m[2]));
  }
+});
+
+test('manual card number preserves leading zeros, identity, slot and backup across edits',async()=>{
+ const db=store(),a=C.createBlankCard(db,rng);
+ C.placeCard(db,a.id,'local.atlas.collection',3);
+ C.editCard(db,a.id,{cardNumber:'001'});
+ let card=C.listCards(db)[0];assert.equal(card.cardNumber,'001');assert.equal(card.id,a.id);assert.equal(card.slotIndex,3);assert.equal(card.containerId,'local.atlas.collection');
+ C.editCard(db,a.id,{title:'改名'});assert.equal(C.listCards(db)[0].cardNumber,'001');
+ const backup=await Backup.inspectBackup(await Backup.exportBackup(db));assert.equal(JSON.parse(backup.source_text).objects[0].cardNumber,'001');
+ const before=db.getItem(C.KEY);for(const cardNumber of [1,null,'1'.repeat(21)]){assert.throws(()=>C.editCard(db,a.id,{cardNumber}));assert.equal(db.getItem(C.KEY),before)}
+ C.editCard(db,a.id,{cardNumber:'1000'});assert.equal(C.listCards(db)[0].cardNumber,'1000');
+ C.editCard(db,a.id,{cardNumber:''});assert.equal(C.listCards(db)[0].cardNumber,'');
+ const texts=[],ctx=new Proxy({fillText:v=>texts.push(v)},{get:(x,k)=>k in x?x[k]:()=>{}});
+ Face.draw({getContext:()=>ctx},{cardNumber:'001'});assert.ok(texts.includes('Nº 001'));
+ Face.draw({getContext:()=>ctx},{});assert.ok(texts.includes('Nº —'));
 });
