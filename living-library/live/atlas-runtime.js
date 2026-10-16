@@ -122,10 +122,10 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
     else if(!reader){toast('先將卡片放入右側讀卡區')}
     else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
       screenMode=screenMode==='card'?'observe':'card';
-      atlas.screen(reader.record,screenMode);invalidate();
+      atlas.screen(reader.record,screenMode,true);invalidate();
     }else if(key==='UP'||key==='DOWN'){
       screenMode=key==='UP'?'card':'observe';
-      atlas.screen(reader.record,screenMode);invalidate();
+      atlas.screen(reader.record,screenMode,true);invalidate();
     }else if(key==='A'){
       if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
       else openCard(reader.id);
@@ -212,7 +212,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    entry.group.visible=!!target&&m.group.visible&&m.open>.03;
    if(entry.group.visible){target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);target.node.getWorldQuaternion(entry.group.quaternion);entry.group.scale.setScalar(m.group.scale.x*1.3*tuning.atlasCardSize)}
   }
-  atlas.screen([...cards.values()].find(c=>State.readerActive(c.record))?.record||null,screenMode);
+  atlas.screen([...cards.values()].find(c=>State.readerActive(c.record))?.record||null,screenMode,!!focus?.gba);
   updateCamera(now);stageData();
  }
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
