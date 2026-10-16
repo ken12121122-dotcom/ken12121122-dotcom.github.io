@@ -267,7 +267,7 @@ button:disabled{opacity:.45}
  $('removePhoto').onclick=()=>{photoEpoch++;photoBusy=false;draftImage=null;$('cropControls').hidden=true;$('removePhoto').disabled=true;paint();status('圖片已從草稿移除；按 ✓ 才會儲存。')};
  $('photoFile').addEventListener('change',async()=>{
   const file=$('photoFile').files[0];$('photoFile').value='';if(!file||!currentId)return;
-  const epoch=++photoEpoch;
+  const epoch=++photoEpoch;photoBusy=false;
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){status('請選擇 10 MB 以內的 JPEG、PNG 或 WebP 圖片。',true);return}
   photoBusy=true;const url=URL.createObjectURL(file);
   try{
@@ -282,7 +282,7 @@ button:disabled{opacity:.45}
    }while(dataUrl.length>70000&&edge>=96);
    if(dataUrl.length>70000)throw Error('圖片壓縮後仍太大，請選擇較小圖片。');
    draftImage={dataUrl,scale:1,x:50,y:50};$('photoScale').value=1;$('photoX').value=50;$('photoY').value=50;
-   $('cropControls').hidden=false;$('removePhoto').disabled=false;back=false;paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
+   $('cropControls').hidden=false;$('removePhoto').disabled=false;back=false;$('flipCard').setAttribute('aria-pressed','false');$('flipCard').setAttribute('aria-label','翻到卡片紀錄');paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
   }catch(e){if(epoch===photoEpoch)status(e.message||'無法讀取圖片，原卡片未改動。',true)}
   finally{URL.revokeObjectURL(url);if(epoch===photoEpoch)photoBusy=false}
  });
