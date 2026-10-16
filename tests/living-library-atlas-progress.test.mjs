@@ -24,7 +24,7 @@ test('atlas progress ledger has unique source-evidenced candidate gaps and revie
   assert.ok(issue.title&&issue.problem&&issue.next_action);
   assert.ok(statuses.has(issue.status),issue.id);
   assert.ok(impl.has(issue.implementation_state),issue.id);
-  assert.equal(issue.revision,1);
+  assert.ok(Number.isInteger(issue.revision)&&issue.revision>=1,'revision must be positive');
   assert.ok(issue.sources.length,issue.id);
   for(const source of issue.sources){
    assert.equal(source.repository,'ken12121122-dotcom/ken12121122-dotcom.github.io');
