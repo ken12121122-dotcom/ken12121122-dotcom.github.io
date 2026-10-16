@@ -1,24 +1,22 @@
 {
   "format": "amin-native-release-manifest",
   "manifestVersion": 1,
-  "channel": "release",
+  "channel": "candidate",
   "enabled": true,
   "packageId": "com.amin.pocketgba",
-  "latestVersionName": "0.11.24-rc2-bridge108",
-  "latestVersionCode": 204,
+  "latestVersionName": "0.11.25-rc1-bridge109",
+  "latestVersionCode": 205,
   "minimumSupportedVersionCode": 107,
   "minimumAndroidSdk": 26,
-  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.24-rc2-bridge108.apk",
-  "apkSha256": "1032b8b351d5a817930fe865240792c10bb3fa40ca2e354415b2c0f0a5a767ef",
+  "apkUrl": "https://ken12121122-dotcom.github.io/amin-vault/releases/Amin-Pocket-GBA-v0.11.25-rc1-bridge109.apk",
+  "apkSha256": "bea75e105700953a86e2a618bc1229f3842014fb13fe64685265cc34e91db28b",
   "signerCertificateSha256": "3b9a3125b2cd19389c284e834c4ff9eb67caeecb647fe41897d923169f4152c7",
-  "sizeBytes": 9475861,
-  "publishedAt": "2026-10-15T15:17:54Z",
+  "sizeBytes": 9492246,
+  "publishedAt": "2026-10-16T06:28:21Z",
   "mandatory": false,
   "releaseNotes": [
-    "新增圖書館前景語音文字通道：網頁可啟動／停止 APP 辨識並接收文字，Book 與未來口令由網頁定義。",
-    "語音限定可信圖書館主頁及主框架；離開頁面、切換 APP 或銷毀時停止。沿用已有麥克風權限，不新增語音球或語音跳轉頁。",
-    "保留原有 GBA、存檔、手把、安卓之書與離線書庫。一般書卡及動畫更新仍由網頁提供。",
-    "萬物圖鑑及卡片之書的網頁整合另提供預覽，未併入正式網頁；本次先更新 APP 連接能力。",
-    "實際手機語音辨識、權限首次授予及長時間搖桿操作需裝置驗收，不表示已完成麥克風實測。"
+    "圖書館選圖修補候選版：接上 Android 系統單張圖片選擇器與返回回呼，處理取消選圖、離開頁面及重試。",
+    "保留現有卡片按鈕、照片處理、卡片資料、書本位置及原有權限；未增加儲存權限。",
+    "請在手機驗收：開啟圖鑑卡插圖、選擇 JPEG／PNG／WebP、確認預覽，儲存並重開；取消後可重新選圖。手機照片解碼與保存需實機確認。"
   ]
 }
