@@ -3,7 +3,7 @@
   "project_id": "NW-ATLAS",
   "card_id": "public.gaming.atlas",
   "source_page": "living-library/live/atlas-rulebook-review.html",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "review_status": "generated",
   "updated_at": "2026-10-16",
   "scope": "GitHub 程式唯讀審查後形成的候選進度基準；實作狀態與人工核准嚴格區分。",
@@ -56,18 +56,26 @@
       "title": "唯一圖鑑本體正式 ID",
       "problem": "ATLAS-0001 僅是提議格式，未正式配發，也未確立圖鑑本體唯一登記。",
       "implementation_state": "decision_pending",
-      "status": "blocked",
+      "status": "in_progress",
       "priority": "高",
-      "next_action": "由 OWNER 決定編號命名與發放規則，再建立不可重用身分。",
+      "next_action": "OWNER 確認 ID 命名規格、不可重用身份的唯一權威來源及配發權限；核准前只允許唯讀格式驗證，禁止真實配號。",
       "sources": [
         {
           "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
           "path": "living-library/live/atlas-rulebook-review.html"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "living-library/live/atlas-identity-contract.js"
+        },
+        {
+          "repository": "ken12121122-dotcom/ken12121122-dotcom.github.io",
+          "path": "tests/living-library-atlas-identity-contract.test.mjs"
         }
       ],
       "human_approval_required": true,
-      "revision": 1,
-      "note": "",
+      "revision": 2,
+      "note": "P1 第一步：已在候選分支新增 atlas-identity-contract.js 的 fail-closed 格式校驗、網頁輸入範例與測試。尚未核准命名規則，亦無跨裝置權威登錄或 ID 配發。",
       "last_updated": "2026-10-16"
     },
     {
@@ -380,6 +388,15 @@
       "review_status": "generated",
       "source": "GitHub main PR #247 + 程式檢查",
       "note": "建立開發落差基準；未變更任何正式圖鑑規則、L2 身分、卡片或主場景。"
+    },
+    {
+      "record_id": "ATLAS-LOG-002",
+      "date": "2026-10-16",
+      "actor": "AI",
+      "action": "p1_identity_candidate_validator",
+      "review_status": "generated",
+      "source": "living-library/live/atlas-identity-contract.js",
+      "note": "ATLAS-002 已開始候選格式與禁止正式配號的程式基礎，需求決策和正式發布未核准。其他十四項狀態不變。"
     }
   ]
 }
