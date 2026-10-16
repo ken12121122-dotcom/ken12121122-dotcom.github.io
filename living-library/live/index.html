@@ -319,7 +319,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1671,10 +1671,101 @@ function findNearestRuneCard(){
  });
  return RuneContract.findNearestEligibleCard(runeWorldAnchor(),entries);
 }
+// RUNE-02: no new save keys, no binding, no new card mesh.
+const RuneHold=window.LivingRuneHold;
+if(!RuneHold)throw Error('Rune hold gesture module unavailable');
+const RUNE_TICKS=48,runeTickMaterial=new THREE.MeshBasicMaterial({
+ color:0xf2d4a0,transparent:true,opacity:.95,depthWrite:false});
+const runeProgress=new THREE.InstancedMesh(new THREE.BoxGeometry(.11,.026,.07),
+ runeTickMaterial,RUNE_TICKS);
+const runeDummy=new THREE.Object3D();
+for(let i=0;i<RUNE_TICKS;i++){
+ const angle=i*Math.PI*2/RUNE_TICKS;
+ runeDummy.position.set(Math.cos(angle)*2.52,.475,Math.sin(angle)*2.52);
+ runeDummy.rotation.set(0,-angle,0);runeDummy.updateMatrix();
+ runeProgress.setMatrixAt(i,runeDummy.matrix);
+}
+runeProgress.instanceMatrix.needsUpdate=true;runeProgress.count=0;runeProgress.visible=false;
+runeGroup.add(runeProgress);
+const runeSelectionMat=new THREE.MeshBasicMaterial({
+ color:0xa8e7cf,transparent:true,opacity:.6,depthWrite:false});
+const runeSelectionRing=new THREE.Mesh(new THREE.TorusGeometry(2.48,.035,6,96),runeSelectionMat);
+runeSelectionRing.position.y=.49;runeSelectionRing.rotation.x=Math.PI/2;
+runeSelectionRing.visible=false;runeGroup.add(runeSelectionRing);
+const runeGlyphs=new THREE.Group();runeGroup.add(runeGlyphs);
+const runeGlyphMat=new THREE.MeshBasicMaterial({
+ color:0xe8c88e,transparent:true,opacity:.8,depthWrite:false});
+const runeGlyphShape=new THREE.BoxGeometry(.19,.022,.05);
+for(let i=0;i<12;i++){
+ const a=i*Math.PI/6;
+ const glyph=new THREE.Mesh(runeGlyphShape,runeGlyphMat);
+ glyph.position.set(Math.sin(a)*1.83,.485,Math.cos(a)*1.83);
+ glyph.rotation.y=a;
+ runeGlyphs.add(glyph);
+}
+runeGlyphs.visible=false;
+const runeBeamMaterial=new THREE.LineBasicMaterial({
+ color:0xb7e5d2,transparent:true,opacity:.68,depthWrite:false});
+const runeBeamGeometry=new THREE.BufferGeometry();
+runeBeamGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+const runeCandidateBeam=new THREE.Line(runeBeamGeometry,runeBeamMaterial);
+runeCandidateBeam.visible=false;scene.add(runeCandidateBeam);
+let runeNearest=null;
+function updateRuneVisual(now){
+ const info=runeGesture.inspect(now);
+ const show=info.phase==='holding'||info.phase==='selected';
+ runeProgress.visible=show;
+ runeProgress.count=info.phase==='selected'?RUNE_TICKS:Math.max(0,Math.floor(RUNE_TICKS*info.progress));
+ runeSelectionRing.visible=info.phase==='selected';
+ runeGlyphs.visible=show&&!preferReduced;
+ runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
+ runeSelectionMat.opacity=info.phase==='selected'?Math.max(.32,.63+.21*Math.sin(now*.007)):.0;
+ runeCandidateBeam.visible=false;
+ if(info.phase==='selected'&&runeNearest?.status==='selected'){
+  const card=floatingCardMeshes.get(runeNearest.cardId);
+  if(card&&card.group.visible&&!card.record.containerId){
+   card.group.updateWorldMatrix(true,false);
+   const target=card.group.getWorldPosition(new THREE.Vector3()),anchor=runeWorldAnchor();
+   const points=runeBeamGeometry.attributes.position;
+   points.setXYZ(0,anchor.x,.68,anchor.z);
+   points.setXYZ(1,target.x,target.y,target.z);
+   points.needsUpdate=true;
+   runeCandidateBeam.visible=true;
+  }
+ }
+}
+function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
+ !atlasRuntime?.inFocus&&!placingJoystick}
+function canStartRunePress(e){
+ if(!runeAllowed()||touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
+ const runeHits=runeHitRay.intersectObject(runeGroup,true)
+  .filter(h=>h.object.userData.runeId===RuneContract.RUNE_ID);
+ if(!runeHits.length)return false;
+ const dist=runeHits[0].distance;
+ // Preserve taps on avatar/cards/books if those meshes are IN FRONT of the floor.
+ const blockers=[...runeHitRay.intersectObject(keeper,true),
+  ...[...floatingCardMeshes.values()].filter(c=>c.group.visible)
+    .flatMap(c=>runeHitRay.intersectObject(c.group,true))];
+ for(const b of bookEntities)if(b.group.visible)
+  blockers.push(...runeHitRay.intersectObject(b.group,true));
+ if(blockers.some(h=>h.distance<dist-.025))return false;
+ return true;
+}
+const runeGesture=RuneHold.create({
+ isAllowed:runeAllowed,
+ onChange:()=>syncRender(),
+ onSelected:()=>{
+  runeNearest=findNearestRuneCard(); // Read-only: RUNE-03 will establish the binding.
+  toast(runeNearest.status==='selected'?'✦ 法陣已選取 · 候選卡已定位（尚未綁定）':
+   '✦ 法陣已選取 · 附近沒有唯一可綁定的卡片');
+ }
+});
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
- hitTest:runeHitTest,findNearestCard:findNearestRuneCard
+ hitTest:runeHitTest,findNearestCard:findNearestRuneCard,
+ inspectHold:()=>Object.freeze({...runeGesture.inspect(),nearest:runeNearest}),
+ cancelHold:()=>runeGesture.cancelAll()
 });
 function pick(e){
  const rect=renderer.domElement.getBoundingClientRect();
@@ -1709,8 +1800,14 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ runeGesture.foreignDown(e.pointerId); // A second finger cancels the first hold.
  if(focusedCard)return;
  if(!insideJoystick(e)&&atlasRuntime.pointerDown(e)){syncRender();return}
+ if(!insideJoystick(e)&&canStartRunePress(e)&&runeGesture.pointerDown(e,RuneContract.RUNE_ID)){
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+  syncRender();return;
+ }
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1731,6 +1828,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(runeGesture.pointerMove(e)){syncRender();return}
  if(focusedCard)return;
  if(e.pointerId!==joystickPointer&&atlasRuntime.pointerMove(e)){syncRender();return}
  if(!touchPoints.has(e.pointerId))return;
@@ -1766,6 +1864,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(runeGesture.pointerUp(e)){syncRender();return}
  if(focusedCard)return;
  if(e.pointerId!==joystickPointer&&atlasRuntime.pointerUp(e)){syncRender();return}
  if(placingJoystick){
@@ -1787,12 +1886,14 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(runeGesture.pointerCancel(e)){syncRender();return}
  atlasRuntime.cancelPointer(e.pointerId);
  if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(runeGesture.pointerCancel(e)){syncRender();return}
  atlasRuntime.cancelPointer(e.pointerId);
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
@@ -1846,6 +1947,7 @@ function paint(now){
  stepAvatar(dt);
  updateOrbit(elapsed,now);
  updateFloatingCards(now);
+ runeGesture.tick();updateRuneVisual(now);
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
@@ -1873,11 +1975,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active())syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active()||runeGesture.active())&&!reduced)||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -1888,9 +1990,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+window.addEventListener('blur',()=>{runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',stopRenderLoop);
+window.addEventListener('pagehide',()=>{runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
