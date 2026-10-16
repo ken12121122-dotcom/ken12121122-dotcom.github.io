@@ -222,6 +222,7 @@ async function main(){
   await rulesFrame.locator('#progressReload').click();
   await rulesFrame.locator('#progressRows tr').first().waitFor();
   assert.equal(await rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'}).locator('select').inputValue(),'in_progress');
+  await rulesFrame.waitForFunction(()=>document.querySelector('#progressNotice')?.textContent.includes('只存本機'),{timeout:15000});
   assert.match(await rulesFrame.locator('#progressNotice').innerText(),/只存本機/);
   report.checks.push({id:'atlas_progress_candidate_local_persistence',result:'PASS',
    scope:'Evidence ledger loads 15 rows; local-only status and note persist through refetch; source records and formal approvals remain unchanged.'});
