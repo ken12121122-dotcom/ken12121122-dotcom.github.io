@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111929">
-<title>卡片創造術｜念動世界・3D 召喚</title>
+<title>卡片創造術｜空白圖鑑卡第二版</title>
 <style>
 :root{color-scheme:dark;--bg:#101a2a;--panel:#1a2a3e;--ink:#f6f0df;--line:#8c7963;--gold:#e9c996;--soft:#bec6d2}
 *{box-sizing:border-box}
@@ -49,25 +49,49 @@ summary{color:#c5b795;cursor:pointer}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
 @media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
+
+/* Compendium card V2: existing 142×203 preview and existing world geometry. */
+:root{color-scheme:light;--ink:#000;--soft:#000;--gold:#000}
+body{background:#eee7d6;color:#000}
+header strong,small,p,h1,label,summary,footer,#status,#backupStatus,.mini,.recycleItem{color:#000!important}
+.circle{background:#ddd4bf}.controls,.recycleItem{background:#f4eddb}
+.paper{padding:0;border:0;overflow:hidden;background:#f3ead2;color:#000}
+#cardFace{display:block;width:142px;height:203px}
+input,textarea,select{color:#000!important;background:#fffaf0;border:1px solid #948774;font:16px/1.5 system-ui;max-width:100%}
+select{display:block;width:100%;padding:10px;border-radius:8px;margin-top:5px}
+button,#recycleCard,#recycleDialog button,.backupActions button{color:#000!important;background:#e6d5b6!important;min-height:44px;min-width:44px}
+#recycleDialog{background:#f4eddb;color:#000}
+input[type=range]{padding:0;accent-color:#35494c}
+input::placeholder,textarea::placeholder{color:#000;opacity:1}
+button:disabled{opacity:.45}
+.photoActions{display:flex;gap:8px;flex-wrap:wrap}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <main>
-<header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
+<header><strong>✦ 卡片創造術</strong><small>圖鑑卡 / V0.2</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
 <p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入人物與漂浮書本之間的專屬內圈軌道，尚未放入任何書。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
-  <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
+  <div id="cardPreview" class="paper"><canvas id="cardFace" width="560" height="780" aria-label="空白圖鑑卡卡面預覽"></canvas><b id="cardTitle" hidden>空白卡片</b><small id="cardMark" hidden>尚未召喚</small></div>
   <button id="createCard" type="button" aria-label="施放卡片創造術" title="施放卡片創造術">✦</button>
   <small style="margin-top:8px">✦ 創造空白卡</small>
  </section>
  <section class="controls" aria-label="空白卡片資訊">
-  <strong>卡片屬性</strong>
-  <p>卡片建立後可以命名、留下用途描述。未來由 AI 協助設計功能，再經測試與授權啟用。</p>
+  <strong>空白圖鑑卡</strong>
+  <p>創造空白卡後，自行放入圖片、修改文字，再連結既有公開內容。圖片與說明本身不會產生施法能力。</p>
   <form id="editForm">
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
-   <label>預期用途（純文字草稿）<textarea id="editDescription" maxlength="500" placeholder="例如：我希望這張卡能讓書本合上"></textarea></label>
+   <label>卡片說明<textarea id="editDescription" maxlength="500" placeholder="自行填寫，亦可留空"></textarea></label>
+   <label>內容類型<input id="editType" maxlength="20" autocomplete="off" placeholder="自行填寫，亦可留空"></label>
+   <div class="photoActions"><button id="choosePhoto" type="button" disabled aria-label="選擇卡面圖片" title="選擇圖片">▧</button><button id="removePhoto" type="button" disabled aria-label="移除卡面圖片" title="移除圖片">×</button><button id="flipCard" type="button" aria-label="翻到卡片紀錄" aria-pressed="false" title="翻面">⇄</button></div>
+   <input id="photoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+   <div id="cropControls" hidden><label>圖片縮放<input id="photoScale" type="range" min="1" max="3" step="0.05" value="1"></label><label>左右位置<input id="photoX" type="range" min="0" max="100" value="50"></label><label>上下位置<input id="photoY" type="range" min="0" max="100" value="50"></label></div>
+   <label>連結既有公開內容<select id="editLink"><option value="">未連結</option></select></label>
+   <p id="linkNote">先儲存，再按 ↗ 開啟連結。未收錄的遊戲物件暫不可連結。</p>
+   <button id="openLink" type="button" disabled aria-label="開啟已儲存的內容連結" title="開啟連結">↗</button>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
@@ -95,7 +119,9 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
 <button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
-<script src="./object-craft.js"></script>
+<script src="./compendium-card.js?v=compendium-v2-20261016"></script>
+<script src="./public-catalog.js?v=compendium-v2-20261016"></script>
+<script src="./object-craft.js?v=compendium-v2-20261016"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -104,7 +130,21 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  const Craft=window.LivingObjectCraft;
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
- let currentId=null;
+ let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false;
+ const catalog=window.LivingLibraryCatalog.buildCatalog();
+ const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
+ for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
+ const selected=()=>cards().find(c=>c.id===currentId);
+ function draft(){return {title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,image:draftImage,linkedCardId:$('editLink').value||null}}
+ function paint(){
+  const canvas=$('cardFace'),record=draft();
+  if(!back){window.LivingCompendiumCard.draw(canvas,record);return}
+  window.LivingCompendiumCard.draw(canvas,{title:'卡片紀錄',description:'',cardType:record.cardType});
+  const x=canvas.getContext('2d');x.fillStyle='#f3ead2';x.fillRect(42,151,476,564);x.fillStyle='#000000';x.font='25px sans-serif';
+  const actual=selected(),target=linkTargets.find(c=>c.id===record.linkedCardId);
+  ['收藏號：未登錄','版本：'+(actual?.revision||'—'),'來源：自行編輯','連結：'+(target?.title||'未連結'),'卡片身分：',actual?.id?.slice(-16)||'尚未創造'].forEach((line,i)=>x.fillText(line,45,206+i*65,470));
+ }
+ function syncCrop(){if(draftImage){draftImage={...draftImage,scale:Number($('photoScale').value),x:Number($('photoX').value),y:Number($('photoY').value)}}}
  const cards=()=>Craft.listCards(localStorage);
  const Backup=window.LivingObjectBackup;
  $('queueObjects').addEventListener('click',async()=>{
@@ -146,11 +186,18 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
   },location.origin);
  }
  function show(card,animate=false){
-  currentId=card?.id||null;
+  photoEpoch++;photoBusy=false;currentId=card?.id||null;draftImage=card?.image?{...card.image}:null;
   $('cardTitle').textContent=card?.title||'空白卡片';
   $('cardMark').textContent=card?'# '+card.id.slice(-8):'尚未召喚';
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
+  $('editType').value=card?.cardType||'';
+  $('editLink').value=card?.linkedCardId||'';
+  $('choosePhoto').disabled=!card;$('removePhoto').disabled=!card||!draftImage;
+  $('openLink').disabled=!card?.linkedCardId||!linkTargets.some(c=>c.id===card.linkedCardId)||window.parent===window;
+  $('cropControls').hidden=!draftImage;
+  $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
+  paint();
   $('saveCard').disabled=!card;
   $('recycleCard').disabled=!card||!!card.containerId;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
@@ -208,10 +255,38 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  $('editForm').addEventListener('submit',event=>{
   event.preventDefault();if(!currentId)return;
   try{
-   const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
+   if(photoBusy){status('圖片處理中，請稍候再儲存。');return}
+   const card=Craft.editCard(localStorage,currentId,draft());
    show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存卡片草稿，保留目前的軌道或書內位置。');
-  }catch(e){status(e.message||'儲存失敗',true)}
+  }catch(e){status(e.name==='QuotaExceededError'?'儲存空間不足；原卡片未改動，請縮小圖片或移除本次圖片後再試。':e.message||'儲存失敗',true)}
  });
+ ['editName','editDescription','editType','editLink'].forEach(id=>$(id).addEventListener('input',paint));
+ ['photoScale','photoX','photoY'].forEach(id=>$(id).addEventListener('input',()=>{syncCrop();paint()}));
+ $('flipCard').onclick=()=>{back=!back;$('flipCard').setAttribute('aria-pressed',String(back));$('flipCard').setAttribute('aria-label',back?'翻回卡片正面':'翻到卡片紀錄');paint()};
+ $('choosePhoto').onclick=()=>$('photoFile').click();
+ $('removePhoto').onclick=()=>{photoEpoch++;photoBusy=false;draftImage=null;$('cropControls').hidden=true;$('removePhoto').disabled=true;paint();status('圖片已從草稿移除；按 ✓ 才會儲存。')};
+ $('photoFile').addEventListener('change',async()=>{
+  const file=$('photoFile').files[0];$('photoFile').value='';if(!file||!currentId)return;
+  const epoch=++photoEpoch;
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){status('請選擇 10 MB 以內的 JPEG、PNG 或 WebP 圖片。',true);return}
+  photoBusy=true;const url=URL.createObjectURL(file);
+  try{
+   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+   if(epoch!==photoEpoch)return;
+   if(img.naturalWidth*img.naturalHeight>24000000)throw Error('圖片尺寸過大，請先縮小再選擇。');
+   const c=document.createElement('canvas');let edge=480,dataUrl;
+   do{
+    const ratio=Math.min(1,edge/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.max(1,Math.round(img.naturalWidth*ratio));c.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+    const ctx=c.getContext('2d');ctx.fillStyle='#f3ead2';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);
+    dataUrl=c.toDataURL('image/jpeg',.78);edge=Math.floor(edge*.8);
+   }while(dataUrl.length>70000&&edge>=96);
+   if(dataUrl.length>70000)throw Error('圖片壓縮後仍太大，請選擇較小圖片。');
+   draftImage={dataUrl,scale:1,x:50,y:50};$('photoScale').value=1;$('photoX').value=50;$('photoY').value=50;
+   $('cropControls').hidden=false;$('removePhoto').disabled=false;back=false;paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
+  }catch(e){if(epoch===photoEpoch)status(e.message||'無法讀取圖片，原卡片未改動。',true)}
+  finally{URL.revokeObjectURL(url);if(epoch===photoEpoch)photoBusy=false}
+ });
+ $('openLink').onclick=()=>{const c=selected();if(c?.linkedCardId&&linkTargets.some(t=>t.id===c.linkedCardId))notify('open-card-link',c.id)};
  try{
   const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');

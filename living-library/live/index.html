@@ -292,7 +292,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -429,6 +429,13 @@ window.addEventListener('message',event=>{
  if(event.data?.kind!=='living-library-local-objects-updated')return;
  if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
     !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
+ if(event.data.action==='open-card-link'){
+  const local=ObjectCraft.listCards(localStorage).find(c=>c.id===event.data.cardId);
+  if(readerCard?.id?.startsWith('local.card.')&&readerCard.id!==local?.id)return;
+  const target=local?.linkedCardId&&CARDS[local.linkedCardId];
+  if(target?.sourceLayer==='public'&&isLocalFunctionPage(target.url))openCardReader(target);
+  return;
+ }
  if(!syncPlayerObjects())return;
  updateUI();window.LivingScene?.rebuild?.();
  // Recycle is staged before the 3D mesh is removed. Both the in-book UI and
