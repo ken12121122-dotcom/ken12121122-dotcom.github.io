@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>萬物圖鑑｜唯一性規則・獨立審查網頁 v0.2</title>
+<title>萬物圖鑑｜唯一性規則・獨立審查網頁 v0.3</title>
 <style>
 :root{--ink:#242725;--ink2:#55594f;--cream:#f8f5ee;--paper:#fffdf7;--gold:#967846;--edge:#d8c7aa;--teal:#347b6f;--brown:#604e37;--line:#e6dfd0;--coral:#9a5a4d;--soft:#eae2d3}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:linear-gradient(140deg,#e8e7df 0%,#f6f2e9 45%,#e9e4da 100%);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
@@ -49,10 +49,18 @@ button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus
 .progress-fallback{width:100%;min-height:145px;resize:vertical;font:12px/1.6 ui-monospace,Consolas,monospace;background:#fffdf8;border:1px solid #a39072;border-radius:9px;padding:12px}
 @media(max-width:680px){.progress-wrap{overflow:visible;border:0;background:transparent}.progress-table{min-width:0;display:block}.progress-table thead{display:none}.progress-table tbody{display:grid;gap:12px}.progress-table tr{display:block;background:#fffdf7;border:1px solid #d8cbb2;border-radius:12px;padding:6px 10px}.progress-table td{display:block;border:0;padding:8px 4px;min-width:0!important}.progress-table td+td{border-top:1px solid #eee6d8}.progress-table td:before{display:block;content:attr(data-label);font-size:10px;font-weight:900;letter-spacing:.08em;color:#857150;margin:0 0 5px}.progress-table textarea{min-height:62px}}
 
+
+.identity-lab{margin:12px 0 20px;background:#fffdf8;border:1px solid #d9c9a9;border-radius:13px;padding:18px}
+.identity-lab p{font-size:13px;color:#595245}
+.identity-lab .identity-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.identity-lab input{font:inherit;min-width:180px;max-width:100%;flex:1;min-height:43px;border:1px solid #ac956d;border-radius:8px;padding:9px;background:white;color:#2a2a27}
+.identity-lab button{min-height:43px;border:1px solid #9a845f;background:#ece0c7;border-radius:8px;padding:8px 13px;font-weight:800;color:#332f26}
+.identity-result{font:12px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f0e5;border:1px solid #d4c5ab;border-radius:9px;padding:10px;margin:12px 0 0}
+
 </style>
 </head>
 <body>
-<header class="topbar"><div class="wide"><div class="toprow"><div class="brand">◈ 萬物圖鑑 <span style="font-weight:500;color:#837255;font-size:11px">/ 唯一實體規則</span></div><span class="badge">獨立審查版 v0.2 · 進度追蹤</span></div><nav class="tabs" role="tablist" aria-label="內容切換"><button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-book" data-tab="book">📖 互動預覽</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-rules" data-tab="rules">⚖ 規則草案</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-review" data-tab="review">☑ 審核清單</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-progress" data-tab="progress">▤ 問題與進度</button></nav></div></header>
+<header class="topbar"><div class="wide"><div class="toprow"><div class="brand">◈ 萬物圖鑑 <span style="font-weight:500;color:#837255;font-size:11px">/ 唯一實體規則</span></div><span class="badge">獨立審查版 v0.3 · P1 身分候選</span></div><nav class="tabs" role="tablist" aria-label="內容切換"><button class="tab" type="button" role="tab" aria-selected="true" aria-controls="tab-book" data-tab="book">📖 互動預覽</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-rules" data-tab="rules">⚖ 規則草案</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-review" data-tab="review">☑ 審核清單</button><button class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-progress" data-tab="progress">▤ 問題與進度</button></nav></div></header>
 <main class="wide"><div class="hero"><div class="eyebrow">UNIQUE ENTITY ATLAS · PROPOSAL 001</div><h1>一本圖鑑，一個存在。</h1><p class="subtitle">把我們已討論的「永久編號、0 號暫存格、GBA、翻頁定位、卡片升級、物件互斥、受控修改」整理成可操作的獨立規則網頁。先審核邏輯，再決定要收錄於遊戲之書或系統之書。</p><div class="notice" role="note"><strong>⚠ 審核示意</strong><div>本網頁<strong>不會</strong>修改目前遊戲、卡片、GitHub 或正式知識庫。畫面上的卡片與狀態皆為示例；《初代法陣》現有卡片 <strong>001 尚未正式完成唯一認證與物件綁定</strong>。圖鑑 ID <strong>ATLAS-0001</strong> 為建議格式、未正式配發。</div></div></div>
 <section id="tab-book" class="panel active" role="tabpanel"><div class="section-head"><h2>圖鑑運作預覽</h2><span class="meta">九格／頁 · GBA 首頁 · 雙頁十八格 · 0 號暫存格</span></div><div class="demo-layout"><div class="book-wrap"><div class="book-label"><span>✦ ATLAS-0001 <span style="opacity:.68;font-weight:500">（編號示意）</span></span><span id="bookRange">GBA 首頁　001–009</span></div><button class="home-bookmark" id="bookmark" title="任何頁快速返回 GBA 首頁" aria-label="快速回 GBA 首頁" hidden>⌂ GBA</button><div class="book" id="book" aria-label="圖鑑雙頁展示"><article class="leaf left"><h3 class="leaf-title" id="leftTitle">永久登錄 · 001–009</h3><div class="nine" id="leftSlots"></div></article><article class="leaf right"><h3 class="leaf-title" id="rightTitle">控制核心 · GBA／0 號</h3><div id="rightContent"><div class="gba"><h3>ATLAS ◈ GBA</h3><div class="gba-display" id="gbaScreen"><div class="lcd-head"><span>永久卡片簿</span><span>目錄</span></div><div class="lcd-row">讀取中</div></div><div class="gba-keys"><div class="dpad" aria-label="GBA 十字方向鍵"><button class="control up" data-control="UP" aria-label="目錄上一個">▲</button><button class="control leftkey" data-control="LEFT" aria-label="左鍵（未於預覽配置）">◀</button><span class="control center" aria-hidden="true"></span><button class="control rightkey" data-control="RIGHT" aria-label="右鍵（未於預覽配置）">▶</button><button class="control down" data-control="DOWN" aria-label="目錄下一個">▼</button></div><div class="ab"><button class="control round b" data-control="B" title="原遊戲返回上一層專注">B</button><button class="control round a" data-control="A" title="選擇目錄頁面">A</button></div></div><div class="gba-bottom"><button class="control tiny" data-control="SELECT">SELECT</button><button class="control tiny" data-control="START">START</button></div></div><div class="zero-well"><div class="zero-number">0</div><div class="zero-info"><strong>唯一暫存格</strong><br>初代法陣 · 普通卡（示例）</div><button id="zeroDetails">查看</button></div></div><div class="nine" id="rightSlots" hidden></div></article></div><div class="book-actions"><button class="flat-btn" id="prev">‹ 上一展開</button><div class="page-num" id="pageCounter">首頁 · GBA</div><button class="flat-btn" id="next">下一展開 ›</button></div></div><aside class="notes"><div class="info-card"><h3>◉ 永久地址，不等於目前形態</h3><div class="state-line"><span>圖鑑 ID</span><strong>ATLAS-0001（待核准）</strong></div><div class="state-line"><span>0 號格容量</span><strong>1 張（任意類型）</strong></div><div class="state-line"><span>首頁左頁</span><strong>001–009</strong></div><div class="state-line"><span>後續每一展開</span><strong>左右各 9 格，共 18 格</strong></div><div class="state-line"><span>正式卡片</span><strong>升級後不可降級</strong></div><div class="state-line"><span>身份與位置</span><strong>永久鎖定／不回收編號</strong></div></div><div class="info-card"><h3>操作示意</h3><ul class="info-list"><li>首頁 GBA 的 <span class="key">▲</span> <span class="key">▼</span> 移動頁面游標，<span class="key">A</span> 自動翻至該展開。</li><li>後續頁面可按右側 <span class="key">⌂ GBA</span> 書籤瞬間返回控制首頁。</li><li>點任何永久位置，可查詢它的身分與形態；<strong>搜尋不會改變登錄資料</strong>。</li><li>GBA 按鍵在這個獨立規則頁中僅示意導覽，<strong>未更動正式遊戲現有按鈕</strong>；此頁沒有 GitHub 上傳。</li></ul><button class="soft-btn" id="goRules">閱讀完整規則 →</button></div></aside></div><p class="meta" style="padding:12px 0 0">本頁刻意保留空格：尚未登錄時不生成假的實體卡片；顯示「實體化」的編號也不會同時顯示實體卡片。</p>
 <div class="section-head" style="margin-top:34px"><h2>3 秒形態轉換｜獨立模擬</h2><span class="meta">純互動示意 · 不影響真實法陣</span></div><div class="info-card trans"><div class="trans-meta"><h3>唯一形態互斥</h3><p>短按世界物件：開啟它的卡片資料；長按 3 秒：顯示圓形進度，完成後卡片化。實體化時回到記錄的原始場景與座標；卡片與世界物件不得同時可見。</p><p id="formStatus" style="font-weight:900;color:#286a59">目前形態：世界實體（模擬）</p><div style="font-size:12px;margin-bottom:10px">卡片永久身分／登錄位置仍保留於資料簿</div><button class="soft-btn" id="materialize" disabled>模擬：從卡片回原位實體化 ↗</button></div><div class="trans-space"><button id="transform" class="transform-btn" aria-label="按住三秒將法陣卡片化"><span class="trans-inner"><span class="trans-art" id="formIcon">◉</span><strong id="formLabel" style="font-size:12px">長按 3 秒</strong><span class="trans-count" id="formCount">0%</span></span></button><div class="anchor">固定錨點：示例座標，未連結實際物件</div></div></div>
@@ -76,15 +84,27 @@ button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus
  <div class="progress-intro"><strong>這是候選技術進度表，不是正式驗收。</strong><br>
    項目及來源由同目錄的版本化 <code>atlas-development-progress.json</code> 載入；AI 可在未來透過 GitHub PR 更新它。
    你在此選擇狀態、填寫備註後，僅儲存於<strong>本裝置瀏覽器</strong>。需要跨裝置或由 AI 正式記錄時，請按「複製交接 JSON」貼回聊天；未經核准不會覆寫 GitHub 正式紀錄，也不會修改任何卡片或世界實體。</div>
- <div class="progress-summary"><strong id="progressCount">載入中…</strong><div class="progress-meter" role="progressbar" id="progressMeter" aria-label="來源確認的項目比例" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div><small id="progressVersion">待讀取來源</small></div>
+ 
+<div class="identity-lab" id="atlasIdentityLab">
+ <div class="kicker" style="margin-top:0">P1 · STEP 01 / ATLAS-002</div>
+ <h3>唯一圖鑑 ID｜候選格式校驗（非正式配號）</h3>
+ <p>目前正式卡片 ID 是 <code>public.gaming.atlas</code>；3D 容器 ID 是 <code>local.atlas.compendium</code>。兩者不是未來圖鑑本體的唯一登錄 ID。<strong>ATLAS-0001 只是尚未核准的格式示例。</strong>這裡只檢查候選格式，沒有權威資料庫，不可能完成唯一認證、核准或配發。</p>
+ <div class="identity-form"><label for="atlasCandidateId">候選圖鑑 ID</label><input id="atlasCandidateId" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="例如 ATLAS-0001（未核准）">
+ <button type="button" id="atlasCheckCandidate">檢查格式</button></div>
+ <output id="atlasCandidateSummary" role="status" aria-live="polite">尚未檢查；輸入格式後可取得可交接的校驗結果。</output>
+ <details><summary>查看結構化校驗結果</summary><pre class="identity-result" id="atlasCandidateJson">尚無檢查結果</pre></details>
+ <p style="margin-top:10px">人工核准點：命名格式、誰有正式配號權、唯一資料庫與世界錨點。即使顯示「符合建議格式」，仍必須保留 <code>identity_issued: false</code>、<code>may_register: false</code>。</p>
+</div>
+<div class="progress-summary"><strong id="progressCount">載入中…</strong><div class="progress-meter" role="progressbar" id="progressMeter" aria-label="來源確認的項目比例" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div><small id="progressVersion">待讀取來源</small></div>
  <div id="progressNotice" class="progress-status" role="status" aria-live="polite">正在讀取 GitHub 版本化進度資料…</div>
  <div class="progress-tools"><button type="button" id="progressCopy">複製交接 JSON</button><button type="button" id="progressReload">重新讀取來源</button><small>已驗證＝原始碼證據確認；不代表已完工或經 OWNER 核准。</small></div>
  <div class="progress-wrap"><table class="progress-table"><thead><tr><th scope="col">階段／項目</th><th scope="col">目前問題／落差</th><th scope="col">來源與證據</th><th scope="col">下一步／人工核准</th><th scope="col">本機進度／備註</th></tr></thead><tbody id="progressRows"></tbody></table></div>
  <div class="kicker">交接與稽核邊界</div><div class="info-card"><p>正式卡片：<code>public.gaming.atlas</code>；本頁：規則審查與進度查看。正式圖鑑 ID、L2 認證、0 號格資料遷移、交易／權限修改都尚未因填寫本表而生效。</p><p>GitHub JSON 是候選基準，可保留來源、版本與修改歷程；裝置上的狀態與備註是<strong>未提交草稿</strong>。來源版本變動時停止套用舊版草稿，先複製交接後重新核對，避免靜默覆寫。</p><div id="progressCopyFallback" hidden><p>自動複製失敗，請自行複製下方內容：</p><textarea class="progress-fallback" id="progressFallbackText" readonly aria-label="交接 JSON 文字"></textarea></div></div>
 </section>
 
-<footer class="bottom"><div>◈ 萬物圖鑑｜唯一性規則 · review v0.2</div><div>獨立原型，不接入正式遊戲；所有模擬資料均不持久化。</div></footer></main>
+<footer class="bottom"><div>◈ 萬物圖鑑｜唯一性規則 · review v0.3</div><div>獨立原型，不接入正式遊戲；所有模擬資料均不持久化。</div></footer></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div><div class="overlay" id="overlay" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-label" id="modalNo"></div><h3 id="modalTitle"></h3><p id="modalBody"></p><div class="state-line"><span>資料身分</span><strong id="modalIdentity"></strong></div><div class="state-line"><span>卡槽／位置</span><strong id="modalPlace"></strong></div><div class="state-line"><span>世界實體</span><strong id="modalWorld"></strong></div><footer><button id="modalClose">關閉 ×</button></footer></div></div>
+<script src="./atlas-identity-contract.js"></script>
 <script>
 (()=>{'use strict';
 let page=0,selectedPage=0,mode='directory',highlight=null,toastTimer=null,form='world',holding=false,holdStart=0,raf=0;
@@ -125,6 +145,21 @@ const transform=$('transform');const materialize=$('materialize');function reset
 function animateHold(){if(!holding)return;const t=Math.min(1,(performance.now()-holdStart)/3000);transform.style.setProperty('--hold',(t*360)+'deg');$('formCount').textContent=Math.round(t*100)+'%';if(t>=1){resetHold();form='card';renderForm();notify('模擬卡片化完成。原座標已保留。');return}raf=requestAnimationFrame(animateHold)}
 function renderForm(){const isWorld=form==='world';$('formIcon').textContent=isWorld?'◉':'▣';$('formLabel').textContent=isWorld?'長按 3 秒':'唯一卡片';$('formStatus').textContent=isWorld?'目前形態：世界實體（模擬）':'目前形態：實體卡片（模擬）';materialize.disabled=isWorld;transform.disabled=!isWorld}
 transform.addEventListener('pointerdown',e=>{if(form!=='world'||holding)return;if(e.button!==0&&e.pointerType==='mouse')return;e.preventDefault();holding=true;holdStart=performance.now();try{transform.setPointerCapture(e.pointerId)}catch(_){}animateHold()});['pointerup','pointercancel','lostpointercapture','pointerleave'].forEach(ev=>transform.addEventListener(ev,()=>{if(holding)resetHold()}));window.addEventListener('blur',resetHold);document.addEventListener('visibilitychange',()=>{if(document.hidden)resetHold()});transform.addEventListener('contextmenu',e=>e.preventDefault());transform.addEventListener('click',()=>{if(form==='world')notify('短按：僅開啟資料介面示意。長按滿 3 秒才卡片化。')});materialize.addEventListener('click',()=>{form='world';renderForm();notify('已模擬原位實體化，卡片外觀隨之消失。')});
+
+
+/* Candidate validation is deliberately independent from P1 identity issuance. */
+$('atlasCheckCandidate').addEventListener('click',()=>{
+ const api=window.LivingAtlasIdentity;
+ if(!api||typeof api.checkCandidate!=='function'){
+  $('atlasCandidateSummary').textContent='身份檢查元件無法載入；已停止操作。';
+  return;
+ }
+ const result=api.checkCandidate({candidateId:$('atlasCandidateId').value});
+ $('atlasCandidateJson').textContent=JSON.stringify(result,null,2);
+ $('atlasCandidateSummary').textContent=result.format_status==='matches_proposed_format'
+  ?'符合尚未核准的建議格式；無權威重複檢查、未配號、不得登錄。'
+  :'未符合建議格式；不可進行正式配號。';
+});
 
 /* Versioned project ledger in GitHub; browser edits are an explicit local draft. */
 const PROGRESS_KEY='nw-atlas-progress-local-v1',PROGRESS_URL='./atlas-development-progress.json';
