@@ -58,6 +58,13 @@
       "url": "/living-library/ui-map.html",
       "book": "system",
       "description": "公開唯讀 UI 定位及 14 本書責任對照；不是正式 GEN2 Skill"
+    },
+    {
+      "id": "public.system.music.player",
+      "name": "音樂播放術",
+      "url": "/living-library/live/music-player.html",
+      "book": "system",
+      "description": "使用者選取的本機音訊，書頁收起仍可播放；網頁版，非 Android 原生背景播放服務"
     }
   ],
   "requiredWithoutGen2": [
