@@ -12,6 +12,12 @@ public final class LivingLibraryFileChooserPolicyTest {
         assertArrayEquals(new String[]{"application/json"},
                 LivingLibraryFileChooserPolicy.mimeTypes(new String[]{".json,application/json"}));
     }
+    @Test public void pickerCannotReturnAppPrivateFiles() {
+        assertTrue(LivingLibraryFileChooserPolicy.allowedResult("content", "com.android.providers.media.documents", "com.amin.pocketgba"));
+        assertFalse(LivingLibraryFileChooserPolicy.allowedResult("content", "com.amin.pocketgba.fileprovider", "com.amin.pocketgba"));
+        assertFalse(LivingLibraryFileChooserPolicy.allowedResult("file", "", "com.amin.pocketgba"));
+        assertFalse(LivingLibraryFileChooserPolicy.allowedResult("content", null, "com.amin.pocketgba"));
+    }
     @Test public void broadExecutableAndMixedTypesAreRejected() {
         for (String accept : new String[]{"*/*", "", "text/html", "image/svg+xml", "image/png,application/json", "image/png,", "application/octet-stream"})
             assertEquals(accept, 0, LivingLibraryFileChooserPolicy.mimeTypes(new String[]{accept}).length);

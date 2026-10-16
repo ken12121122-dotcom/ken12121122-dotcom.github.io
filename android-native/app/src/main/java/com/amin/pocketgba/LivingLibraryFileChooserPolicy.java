@@ -10,6 +10,10 @@ final class LivingLibraryFileChooserPolicy {
         return committed != null && current != null && committed.equals(current)
                 && LivingLibraryPolicy.isHome(committed);
     }
+    static boolean allowedResult(String scheme, String authority, String packageName) {
+        return "content".equals(scheme) && authority != null && !authority.isEmpty()
+                && !authority.equals(packageName + ".fileprovider");
+    }
     static String[] mimeTypes(String[] accept) {
         if (accept == null || accept.length == 0) return new String[0];
         Set<String> result = new LinkedHashSet<>();

@@ -74,7 +74,7 @@ public final class LivingLibraryActivity extends Activity {
         String page = fileRequestPage; fileCallback = null; fileRequestPage = "";
         Uri[] selected = result == RESULT_OK ? WebChromeClient.FileChooserParams.parseResult(result, data) : null;
         if (web == null || !page.equals(committedUrl) || !LivingLibraryFileChooserPolicy.allowedPage(committedUrl, web.getUrl())
-                || selected == null || selected.length != 1 || selected[0] == null || !"content".equals(selected[0].getScheme())) selected = null;
+                || selected == null || selected.length != 1 || selected[0] == null || !LivingLibraryFileChooserPolicy.allowedResult(selected[0].getScheme(), selected[0].getAuthority(), getPackageName())) selected = null;
         callback.onReceiveValue(selected);
     }
     private boolean fallbackStarted;

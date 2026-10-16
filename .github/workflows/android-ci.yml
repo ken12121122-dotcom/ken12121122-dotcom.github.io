@@ -355,7 +355,7 @@ jobs:
             -e class com.amin.pocketgba.LivingLibraryActivityTest,com.amin.pocketgba.LivingLibraryFileChooserTest \
             com.amin.pocketgba.test/androidx.test.runner.AndroidJUnitRunner \
             | tee "$RUNNER_TEMP/living-library-instrumentation.txt"
-          grep -Eq 'OK \(4 tests\)' "$RUNNER_TEMP/living-library-instrumentation.txt"
+          grep -Eq 'OK \(6 tests\)' "$RUNNER_TEMP/living-library-instrumentation.txt"
 
       - name: Run GitHub Work, Step 11, and Focus Chain mobile acceptance tests
         shell: bash
