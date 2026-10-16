@@ -1729,26 +1729,42 @@ for(let i=0;i<12;i++){
 }
 runeGlyphs.visible=false;
 const runeBeamMaterial=new THREE.LineBasicMaterial({
- color:0xb7e5d2,transparent:true,opacity:.68,depthWrite:false});
+ color:0xb7e5d2,transparent:true,opacity:.98,depthWrite:false});
 const runeBeamGeometry=new THREE.BufferGeometry();
 runeBeamGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
 const runeCandidateBeam=new THREE.Line(runeBeamGeometry,runeBeamMaterial);
 runeCandidateBeam.visible=false;scene.add(runeCandidateBeam);
-let runeNearest=null;
+let runeNearest=null,runeBindingPulseUntil=0,runeBindingCardId=null,runePromptTimer=null;
+let runeBound=null;
+try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
+const runeBindDialog=document.getElementById('runeBindDialog'),
+ runeBindCardName=document.getElementById('runeBindCardName');
+const runeGlowMaterial=new THREE.MeshBasicMaterial({color:0xafffe4,transparent:true,
+ opacity:.38,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+const runeGlow=new THREE.Mesh(new THREE.RingGeometry(1.25,2.42,96),runeGlowMaterial);
+runeGlow.rotation.x=-Math.PI/2;runeGlow.position.y=.477;
+runeGlow.visible=false;runeGroup.add(runeGlow);
 function updateRuneVisual(now){
  const info=runeGesture.inspect(now);
  const show=info.phase==='holding'||info.phase==='selected';
+ const bindingFlash=now<runeBindingPulseUntil;
+ const illuminated=show||bindingFlash||runeBindDialog.open;
+ runeGlow.visible=illuminated||!!runeBound;
+ runeGlowMaterial.opacity=illuminated?(.25+.12*Math.sin(now*.014)+.19*info.progress):.065;
+ runeSelectionRing.visible=illuminated||!!runeBound;
+ runeSelectionMat.opacity=illuminated?.92:.22;
  runeTrack.visible=show;
  runeProgress.visible=show;
  // RingGeometry has six triangle indices per theta segment.
  runeArcGeometry.setDrawRange(0,Math.floor(RUNE_ARC_SEGMENTS*info.progress)*6);
- runeSelectionRing.visible=info.phase==='selected';
- runeGlyphs.visible=show&&!preferReduced;
+ runeGlyphs.visible=(show||bindingFlash)&&!preferReduced;
  runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
- runeSelectionMat.opacity=info.phase==='selected'?Math.max(.32,.63+.21*Math.sin(now*.007)):.0;
+ runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
  runeCandidateBeam.visible=false;
- if(info.phase==='selected'&&runeNearest?.status==='selected'){
-  const card=floatingCardMeshes.get(runeNearest.cardId);
+ const linkCardId=info.phase==='selected'&&runeNearest?.status==='selected'
+  ?runeNearest.cardId:bindingFlash?runeBindingCardId:null;
+ if(linkCardId){
+  const card=floatingCardMeshes.get(linkCardId);
   if(card&&card.group.visible&&!card.record.containerId){
    card.group.updateWorldMatrix(true,false);
    const target=card.group.getWorldPosition(new THREE.Vector3()),anchor=runeWorldAnchor();
@@ -1757,6 +1773,7 @@ function updateRuneVisual(now){
    points.setXYZ(1,target.x,target.y,target.z);
    points.needsUpdate=true;
    runeCandidateBeam.visible=true;
+   runeBeamMaterial.opacity=preferReduced?.88:.83+.15*Math.sin(now*.014);
   }
  }
 }
@@ -1777,13 +1794,61 @@ function canStartRunePress(e){
  if(blockers.some(h=>h.distance<dist-.025))return false;
  return true;
 }
+function closeRunePrompt(){
+ if(runePromptTimer!==null){clearTimeout(runePromptTimer);runePromptTimer=null}
+ if(runeBindDialog.open)runeBindDialog.close();
+}
+function confirmRuneBinding(){
+ const selected=runeNearest;
+ if(!selected||selected.status!=='selected')return;
+ try{
+  const latest=findNearestRuneCard();
+  if(latest.status!=='selected'||latest.cardId!==selected.cardId)
+   throw Error('卡片位置或狀態已改變，請重新長按法陣');
+  const record=floatingCardMeshes.get(selected.cardId)?.record;
+  if(!record)throw Error('候選卡片已不存在');
+  const bound=window.LivingObjectCraft.bindRuneCard(localStorage,RuneContract.RUNE_ID,
+   record.id,record.revision);
+  runeBound=bound;runeBindingCardId=bound.id;
+  runeBindingPulseUntil=performance.now()+2800;
+  closeRunePrompt();
+  refreshFloatingCards(); // Recreate the same card with its visible crest.
+  toast('✦ 連結成功 · 卡片上已生成法陣印記');
+  syncRender();
+ }catch(error){
+  closeRunePrompt();toast('無法連結：'+String(error?.message||error));syncRender();
+ }
+}
+document.getElementById('runeBindConfirm').addEventListener('click',confirmRuneBinding);
+document.getElementById('runeBindCancel').addEventListener('click',()=>{
+ closeRunePrompt();runeNearest=null;toast('已取消連結');syncRender();
+});
+runeBindDialog.addEventListener('cancel',()=>{runeNearest=null;syncRender()});
+runeBindDialog.addEventListener('close',()=>syncRender());
 const runeGesture=RuneHold.create({
  isAllowed:runeAllowed,
  onChange:()=>syncRender(),
  onSelected:()=>{
-  runeNearest=findNearestRuneCard(); // Read-only: RUNE-03 will establish the binding.
-  toast(runeNearest.status==='selected'?'✦ 法陣已選取 · 候選卡已定位（尚未綁定）':
-   '✦ 法陣已選取 · 附近沒有唯一可綁定的卡片');
+  if(runeBound){
+   runeBindingCardId=runeBound.id;runeBindingPulseUntil=performance.now()+2400;
+   toast('✦ 此法陣已連結「'+runeBound.title+'」· 封印儀式尚未開放');
+   return;
+  }
+  runeNearest=findNearestRuneCard();
+  if(runeNearest.status!=='selected'){
+   toast('✦ 法陣已選取 · 附近沒有唯一可連結的普通卡');return;
+  }
+  const record=floatingCardMeshes.get(runeNearest.cardId)?.record;
+  if(!record)return;
+  runeBindCardName.textContent=record.title;
+  // Let users SEE the luminous selection and animated beam before the modal.
+  if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+  runePromptTimer=setTimeout(()=>{
+   runePromptTimer=null;
+   if(!document.hidden&&!runeBindDialog.open&&runeNearest?.cardId===record.id)
+    runeBindDialog.showModal();
+  },700);
+  toast('✦ 法陣選取成功 · 已定位附近卡片');
  }
 });
 const runeInspection=Object.freeze({
@@ -2001,11 +2066,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -2016,10 +2081,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){closeRunePrompt();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
 window.addEventListener('blur',()=>{runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',()=>{runeGesture.cancelAll();stopRenderLoop()});
+window.addEventListener('pagehide',()=>{closeRunePrompt();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
