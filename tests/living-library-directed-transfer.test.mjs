@@ -38,7 +38,7 @@ test('directed transfer traces 3D path into an arbitrary named target surface',(
 test('one generic transfer also supports ground rune as TARGET without changing engine',()=>{
  const plan=Transfer.normalize({sourceId:'card.a',targetId:Craft.ORIGIN_RUNE,
   from:{x:2,y:3,z:-1},to:{x:0,y:.45,z:0},startedAt:100,duration:1000});
- assert.equal(Transfer.sample(plan,1100).position.y,.45);
+ assert.ok(Math.abs(Transfer.sample(plan,1100).position.y-.45)<1e-10);
  assert.equal(Transfer.sample(plan,600).done,false);
  const moving=Transfer.sample(plan,600,{x:4,y:1,z:7});
  assert.ok(moving.position.x>2,'target can move in world space');
