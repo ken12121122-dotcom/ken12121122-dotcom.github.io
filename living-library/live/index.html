@@ -2444,6 +2444,126 @@ function updateRuneReturnVisual(now){
  returnTrack.quaternion.copy(camera.quaternion);returnArc.quaternion.copy(camera.quaternion);
  returnArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*progress.progress)*6);
 }
+// PERM-BUILD-001 | The transparent hologram is a preview ONLY, never a
+// second authoritative world rune. Both entry paths share the same placement.
+const Build=rootBuild(),Registry=window.LivingPermanentCards;
+function rootBuild(){return window.LivingPermanentBuild}
+const buildToggle=document.getElementById('permanentBuildToggle'),
+ buildTools=document.getElementById('permanentBuildTools'),
+ buildSnap=document.getElementById('permanentBuildSnap');
+let buildState=null,buildPointer=null;
+const holoGroup=new THREE.Group(),holoMats=[];
+for(const radius of [1.45,2.03,2.5]){
+ const mat=new THREE.MeshBasicMaterial({color:0x8cffe0,transparent:true,opacity:.46,
+  depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+ const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.055,6,70),mat);
+ hoop.rotation.x=Math.PI/2;hoop.position.y=.46;holoGroup.add(hoop);holoMats.push(mat);
+}
+for(let i=0;i<12;i++){
+ const a=i*Math.PI*2/12,mat=new THREE.MeshBasicMaterial({color:0x8cffe0,
+  transparent:true,opacity:.65,depthWrite:false});
+ const mark=new THREE.Mesh(new THREE.BoxGeometry(.17,.045,.35),mat);
+ mark.position.set(Math.sin(a)*1.82,.46,Math.cos(a)*1.82);
+ mark.rotation.y=a;holoGroup.add(mark);holoMats.push(mat);
+}
+holoGroup.visible=false;scene.add(holoGroup);
+function locatePermanentWorldCard(){
+ try{return window.LivingObjectCraft.getRuneBoundCard(localStorage)}
+ catch{return null}
+}
+function syncBuildControls(){
+ const card=locatePermanentWorldCard(),registered=Registry?.isRegistered(card);
+ buildToggle.hidden=!registered||!!buildState;
+ buildTools.hidden=!buildState;
+ buildSnap.dataset.on=buildState?.grid?'true':'false';
+}
+function updateHologram(now){
+ if(!buildState){holoGroup.visible=false;return}
+ const {position,rotationY}=buildState;
+ const outcome=Build.place(position,{grid:buildState.grid});
+ buildState.valid=outcome.valid;
+ holoGroup.visible=true;
+ holoGroup.position.set(outcome.position.x,0,outcome.position.z);
+ holoGroup.rotation.y=rotationY;
+ for(const mat of holoMats){mat.color.set(outcome.valid?'#8cffe0':'#ff7272');
+  mat.opacity=preferReduced?.48:.38+.10*Math.sin(now*.006)}
+}
+function beginPermanentBuild(mode,card){
+ if(buildState||!Build||!Registry?.isRegistered(card))return false;
+ if(mode==='card'&&!(card.runeBinding?.state==='cardified'&&card.placement==='hover'&&!card.containerId))
+  throw Error('請先將永久原卡從 BOOK 經 GBA 調出，才能投影物件');
+ if(mode==='world'&&!(card.runeBinding?.state==='sealed'&&card.placement==='contained'))
+  throw Error('世界建造只能選擇目前已實體化的永久物件');
+ const anchor=card.permanentRegistry.anchor||{position:{x:0,y:0,z:0},rotationY:0};
+ buildState={mode,cardId:card.id,revision:card.revision,
+  position:Build.place(anchor.position).position,rotationY:anchor.rotationY||0,
+  grid:false,valid:true};
+ resetJoystick(false);syncBuildControls();updateHologram(performance.now());
+ toast('✦ 虛擬投影已啟動：觸碰地面定位、搖桿微調、⊞ 吸附網格');
+ syncRender();return true;
+}
+function cancelPermanentBuild(){
+ if(!buildState)return;
+ buildState=null;buildPointer=null;holoGroup.visible=false;
+ resetJoystick(false);syncBuildControls();syncRender();
+}
+function confirmPermanentBuild(){
+ const chosen=buildState;if(!chosen)return;
+ const snap=Build.place(chosen.position,{grid:chosen.grid});
+ if(!snap.valid){toast('紅色投影無法放置，請移回合法地面');return}
+ const original=locatePermanentWorldCard();
+ if(!original||original.id!==chosen.cardId||original.revision!==chosen.revision){
+  toast('原卡資料已變動；建造已取消');cancelPermanentBuild();return;
+ }
+ try{
+  if(chosen.mode==='world'){
+   const moved=Registry.movableAnchor(localStorage,original.id,original.revision,
+    snap.position,chosen.rotationY);
+   runeGroup.position.set(snap.position.x,snap.position.y,snap.position.z);
+   runeGroup.rotation.y=chosen.rotationY;
+   runeBound=moved;refreshFloatingCards();
+   toast('✦ 永久法陣已移至指定位置，編號與契約保持不變');
+  }else{
+   startRuneTransfer('return',original,
+    {position:snap.position,rotationY:chosen.rotationY});
+   toast('✦ 投影定位完成，原卡開始具現化成原世界物件');
+  }
+  cancelPermanentBuild();
+ }catch(e){toast('建造未完成：'+e.message)}
+}
+function pickBuildGround(e){
+ if(!buildState||!e||!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY))return;
+ const bounds=renderer.domElement.getBoundingClientRect();
+ if(!bounds.width||!bounds.height)return;
+ const loc=new THREE.Vector2((e.clientX-bounds.left)/bounds.width*2-1,
+  -(e.clientY-bounds.top)/bounds.height*2+1);
+ const cast=new THREE.Raycaster();cast.setFromCamera(loc,camera);
+ const hit=cast.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),
+  new THREE.Vector3());
+ if(hit){const next=Build.place(hit,{grid:buildState.grid});buildState.position=next.position;
+  buildState.valid=next.valid;updateHologram(performance.now());syncRender()}
+}
+buildToggle.addEventListener('click',()=>{
+ const card=locatePermanentWorldCard();
+ if(!card||!Registry?.isRegistered(card)){toast('目前沒有可建造的永久卡');return}
+ try{beginPermanentBuild('world',card)}
+ catch(e){toast(e.message)}
+});
+buildSnap.addEventListener('click',()=>{
+ if(!buildState)return;
+ buildState.grid=!buildState.grid;
+ buildState.position=Build.place(buildState.position,{grid:buildState.grid}).position;
+ syncBuildControls();updateHologram(performance.now());syncRender();
+});
+document.getElementById('permanentBuildRotate').addEventListener('click',()=>{
+ if(!buildState)return;buildState.rotationY=Build.rotate(buildState.rotationY);syncRender();
+});
+document.getElementById('permanentBuildApply').addEventListener('click',confirmPermanentBuild);
+document.getElementById('permanentBuildCancel').addEventListener('click',cancelPermanentBuild);
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&buildState){e.preventDefault();cancelPermanentBuild()}
+});
+syncBuildControls();
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
