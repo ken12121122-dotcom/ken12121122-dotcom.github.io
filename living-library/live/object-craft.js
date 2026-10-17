@@ -233,7 +233,7 @@
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
- // GBA-COPY-001: a physical blank medium in the right GBA well receives
+ // EXPERIMENTAL CARD-COPY (ON HOLD): a physical blank medium in the right GBA well receives
  // only appearance/content. It never duplicates identity, authority or a rune.
  const ATLAS_ID='local.atlas.compendium';
  function isBlankCopyMedium(c){
@@ -285,6 +285,50 @@
     copiedAt:time},revision:blank.revision+1,updatedAt:time};
   const updated=[...objects];updated[blankIndex]=next;
   write(storage,updated);return {...next};
+ }
+ // GBA-FORGE-001: an inventory-independent index of designs the player
+ // already created. The left 9 display wells are NOT involved in this process.
+ // A stored/consumed spell's visual template may be downloaded, but this does
+ // not retrieve, recharge, or change the original stored object.
+ function canDownloadTemplate(c){
+  return isPlayerCard(c)&&c.status==='draft'&&
+   typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
+   !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
+   !c.l2Certified&&!c.upgradeRequest&&!c.certification&&
+   c.isUnique!==true&&c.unique!==true&&!c.uniqueness&&
+   c.copyPolicy!=='forbidden'&&c.reusePolicy!=='unique'&&
+   c.cardType!=='唯一'&&c.cardType!=='獨一無二'&&
+   (!c.containment||c.containment.kind==='consumed_spell');
+ }
+ function listDownloadableTemplates(storage){
+  return listCards(storage).filter(canDownloadTemplate)
+   .sort((a,b)=>String(a.title).localeCompare(String(b.title),'zh-Hant')||
+    a.id.localeCompare(b.id));
+ }
+ function forgeBlankFromTemplate(storage,{blankId,blankRevision,sourceId,sourceRevision},
+  clock=()=>new Date().toISOString()){
+  if(typeof blankId!=='string'||typeof sourceId!=='string'||blankId===sourceId)
+   throw Error('空白卡與卡片範本不得為同一物件');
+  const state=read(storage),objects=state.objects;
+  const blankIndex=objects.findIndex(x=>x.id===blankId&&isPlayerCard(x)&&x.status!=='recycled');
+  const sourceIndex=objects.findIndex(x=>x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(blankIndex<0||sourceIndex<0)throw Error('空白卡或已建立的範本不存在');
+  const blank=objects[blankIndex],source=objects[sourceIndex];
+  if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
+    !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
+   throw Error('卡片已變動，請重新選擇');
+  if(!isBlankCopyMedium(blank))throw Error('右側 GBA 讀卡格需要一張全新的空白卡');
+  if(!canDownloadTemplate(source))throw Error('此已建立卡片不允許作為下載範本');
+  const when=clock();
+  const next={...blank,title:source.title,description:source.description||'',
+   cardType:source.cardType||'',image:source.image?{...source.image}:null,
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   copyInfo:{kind:'gba-template-download',sourceId:source.id,
+    sourceRevision:source.revision,copiedAt:when},
+   revision:blank.revision+1,updatedAt:when};
+  const updated=[...objects];updated[blankIndex]=next;write(storage,updated);
+  return {...next};
  }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
@@ -351,6 +395,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard};
 });
