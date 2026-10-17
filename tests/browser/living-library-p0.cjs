@@ -76,27 +76,31 @@ async function main(){
   await p.getByRole('button',{name:'展開書頁',exact:true}).click();
   await p.getByRole('button',{name:'關閉書頁',exact:true}).click();
   report.checks.push({id:'icon_first_controls',result:'PASS',scope:'Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved.'});
-  assert.equal(await p.locator('.brand').innerText(),'✧');
-  const cleanToggle=p.locator('#cleanViewToggle');
+  assert.equal(await p.locator('.brand').count(),0);
+  const cleanToggle=p.locator('#cleanViewToggle'),cleanAction=p.locator('#cleanViewAction');
   await p.evaluate(()=>localStorage.setItem('nw-clean-save-sentinel','preserve'));
   await cleanToggle.click();
+  assert.equal(await cleanToggle.getAttribute('aria-expanded'),'true');
+  await cleanAction.click();
   assert.equal(await p.locator('#catalog').isVisible(),false);
   assert.equal(await p.locator('.bottom').isVisible(),false);
-  assert.equal(await cleanToggle.getAttribute('aria-label'),'顯示操作介面');
+  assert.equal(await cleanAction.getAttribute('aria-label'),'顯示操作介面');
   assert.equal(await p.locator('#fallbackOpen').isVisible(),true);
   await p.reload({waitUntil:'domcontentloaded'});
   await p.waitForFunction(()=>document.body.classList.contains('clean-view'));
   await p.locator('#fallback.show').waitFor();
   await dismissUpdate(p);
-  // Restore remains available on a phone, without relying on a keyboard.
+  // Restore remains available through the icon-only top-right menu.
   await p.locator('#cleanViewToggle').click();
+  await p.locator('#cleanViewAction').click();
   assert.equal(await p.locator('#catalog').isVisible(),true);
   assert.equal(await p.locator('.bottom').isVisible(),true);
   assert.equal(await p.evaluate(()=>localStorage.getItem('nw-clean-save-sentinel')),'preserve');
   await p.locator('#cleanViewToggle').click();
   await p.keyboard.press('Escape');
-  assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-pressed'),'false');
-  report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance.'});
+  assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-expanded'),'false');
+  assert.equal(await p.locator('#cleanViewAction').getAttribute('aria-pressed'),'false');
+  report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Unused top-left star removed; top-right menu toggles/reloads/restores clean view and closes via Escape; fallback/storage preserved. No 3D/device acceptance.'});
   assert.equal(await p.locator('#bookList button').count(),15);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
   report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:15,joystick_hidden:true});
