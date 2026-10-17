@@ -278,6 +278,13 @@
   const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
+  // Permanent BOOK addresses remain occupied by their registered ID even
+  // while the sole physical original is outside the book or in GBA reader 0.
+  if(containerId==='local.atlas.compendium'&&slotIndex!==9&&
+   state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&
+    x.permanentRegistry?.state==='registered'&&x.permanentRegistry.bookId===containerId&&
+    x.permanentRegistry.slotIndex===slotIndex))
+   throw Error('此 BOOK 位置已由其他永久編號卡永久保留');
   const old=state.objects[at];
   if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
   if(!canStoreBoundCard(old,containerId,slotIndex))
