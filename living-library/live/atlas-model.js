@@ -116,7 +116,7 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
    base();ctx.drawImage(face,20,18,265,371);
    ctx.fillStyle='#b59c68';ctx.fillRect(295,18,317,371);
    ctx.fillStyle='#f4ecda';ctx.fillRect(300,23,307,361);
-   txt('Nº '+(card.cardNumber||'—'),318,69,29);
+   txt('Nº '+(card.permanentRegistry?.state==='registered'?card.permanentNumber:(card.cardNumber||'—')),318,69,29);
    txt(card.title||'空白卡片',318,116,28);
    if(!interactive){
     txt('圖鑑雙頁模式',318,170,28);
