@@ -325,7 +325,11 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
     }
   }
   finishDownload(now);
-   if(permanentGba?.active){permanentGba.tick(now);if(!permanentGba.active)screenMode='permanent'}
+   if(permanentGba?.active){
+    screenMode='upgrading';
+    permanentGba.tick(now);
+    if(!permanentGba.active)screenMode='permanent';
+   }
   const reader=[...cards.values()].find(c=>State.readerActive(c.record));
   if(uploadCardId!==reader?.id){uploadCardId=reader?.id||null;uploadStatus={state:'idle',code:''}}
   paintGba(reader);
