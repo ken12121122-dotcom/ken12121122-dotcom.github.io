@@ -239,6 +239,14 @@ async function main(){
   await p.locator('#readerBack').click();
   assert.equal(await p.locator('#drawerTitle').textContent(),'遊戲之書');
   report.checks.push({id:'game_atlas_card_opens_rules_preview',result:'PASS',scope:'Existing gaming card embeds draft page and returns; created card book still accesses its 18-slot 2D reader.'});
+  await p.locator('[data-card-id="public.gaming.spell.history"]').dispatchEvent('click');
+  const spellHistory=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await spellHistory.waitForURL(url=>url.pathname.endsWith('/living-library/live/spell-history.html'));
+  assert.equal(await spellHistory.locator('header strong').textContent(),'法術使用紀錄');
+  assert.match(await spellHistory.locator('#historyCount').textContent(),/紀錄 \d+ 筆/);
+  assert.equal(await spellHistory.locator('button,form').count(),0,'history is view-only');
+  await p.locator('#readerBack').click();
+  report.checks.push({id:'spell_history_game_book_readonly',result:'PASS',scope:'Standalone Game Book card loads original local consumed spell history without write controls.'});
   await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
   const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
   await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
