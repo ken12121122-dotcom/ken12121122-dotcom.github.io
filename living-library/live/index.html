@@ -2092,6 +2092,7 @@ for(const part of [runeReleaseOrb,runeReleaseBeam,runeReleaseSource,runeReleaseL
 }
 const runeReleaseAxis=new THREE.Vector3(0,1,0),runeReleaseDelta=new THREE.Vector3();
 function endRuneReleaseEffect(){
+ if(!runeReleaseEffect)return; // Do not reveal a cardified rune on unrelated blur/hide.
  // Data already committed by unbindAndAbsorbSpell; never mutate persistent
  // state from this purely visual return, even on tab hide or reduced motion.
  runeReleaseEffect=null;runeGroup.visible=true;runeGroup.scale.setScalar(1);
