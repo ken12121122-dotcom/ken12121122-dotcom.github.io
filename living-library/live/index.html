@@ -1919,17 +1919,19 @@ const spellArc=new THREE.Mesh(spellArcGeometry,new THREE.MeshBasicMaterial({
  color:0xf5d698,transparent:true,opacity:.98,side:THREE.DoubleSide,depthWrite:false}));
 spellArcGeometry.setDrawRange(0,0);spellArc.visible=false;scene.add(spellArc);
 const spellBeamMat=new THREE.MeshBasicMaterial({
- color:0xb9edff,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
+ color:0xb7e5d2,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
 const spellBeam=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1,8),spellBeamMat);
 spellBeam.visible=false;scene.add(spellBeam);
 const spellRingMat=new THREE.MeshBasicMaterial({
- color:0xe8c8a7,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false});
+ color:0xa8e7cf,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false});
 const spellRing=new THREE.Mesh(new THREE.TorusGeometry(.31,.026,5,48),spellRingMat);
 spellRing.visible=false;scene.add(spellRing);
 const spellSparkMat=new THREE.MeshBasicMaterial({
  color:0xe7fff6,transparent:true,opacity:.92,depthWrite:false});
 const spellSpark=new THREE.Mesh(new THREE.SphereGeometry(.07,9,7),spellSparkMat);
 spellSpark.visible=false;scene.add(spellSpark);
+const spellSpark2=new THREE.Mesh(new THREE.SphereGeometry(.059,10,8),spellSparkMat);
+spellSpark2.visible=false;scene.add(spellSpark2);
 const spellAxis=new THREE.Vector3(0,1,0),spellDelta=new THREE.Vector3();
 function localFloatEntry(entry){
  entry.group.updateWorldMatrix(true,false);
@@ -2037,7 +2039,7 @@ function cancelSpellUnbind(){
  spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
  unbindEffect=null;unbindProgress.style.display='none';
  spellTrack.visible=false;spellArc.visible=false;
- spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
 }
 function updateSpellEffect(now){
  const info=spellHold.inspect(now);
@@ -2055,7 +2057,7 @@ function updateSpellEffect(now){
   spellArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*info.progress)*6);
  }
  unbindProgress.style.display='none'; // No duplicate flat overlay.
- spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
  const active=unbindEffect;
  const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
  if(!pair)return;
@@ -2084,8 +2086,10 @@ function updateSpellEffect(now){
   spellBeam.quaternion.setFromUnitVectors(spellAxis,spellDelta.clone().normalize());
   spellBeam.scale.set(1,dist,1);
   spellBeamMat.opacity=active?.8*(1-progress*.65):.55;
-  spellSpark.visible=!preferReduced;
-  spellSpark.position.copy(a).addScaledVector(spellDelta,active?progress:(now*.00075)%1);
+  spellSpark.visible=!preferReduced;spellSpark2.visible=!preferReduced;
+  const travel=active?progress:(now*.00075)%1;
+  spellSpark.position.copy(a).addScaledVector(spellDelta,travel);
+  spellSpark2.position.copy(a).addScaledVector(spellDelta,(travel+.5)%1);
  }
  spellRing.visible=true;spellRing.position.copy(b);spellRing.quaternion.copy(camera.quaternion);
  spellRing.scale.setScalar(active?1+progress*.8:1);
@@ -2105,7 +2109,7 @@ function updateSpellEffect(now){
    caster.group.scale.setScalar(controlPrefs.cardSize);
    toast('解除未完成，原始卡片仍保留：'+String(error?.message||error));
   }
-  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
   syncRender();
  }
 }
