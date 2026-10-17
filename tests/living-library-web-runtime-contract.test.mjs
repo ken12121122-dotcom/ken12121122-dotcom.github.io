@@ -10,7 +10,7 @@ const fetchFile=x=>readFile(new URL(x,root),'utf8');
 test('remote Living Library provides 14 real public books, protected native entries and the visible new card',()=>{
  const v=c.buildCatalog();
  assert.equal(v.books.length,15);
- assert.deepEqual(v.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas']);
+ assert.deepEqual(v.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.spell.history','public.gaming.atlas']);
  assert.equal(v.cards['public.gba.runtime'].nativeRoute,'gba');
  assert.equal(v.bookCards.android.length,16);
  assert.equal(v.cards['KW-GAME-MEMORY-PALACE-20261014'].kind,'external_reference');
