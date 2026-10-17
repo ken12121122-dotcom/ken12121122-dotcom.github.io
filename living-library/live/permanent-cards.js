@@ -53,7 +53,7 @@ function register(storage,{cardId,expectedRevision,number,ownerConfirmed},clock=
  return transaction(storage,cardId,expectedRevision,()=>{
   const e=inspect(storage,cardId);
   if(!e.eligible||e.proposedNumber!==number)throw Error('卡片、契約或永久格不符，請重新進行 GBA 核驗');
- },(old,now)=>({...old,permanentCard:true,l2Certified:true,permanentNumber:String(number).padStart(3,'0'),
+ },(old,now)=>({...old,permanentCard:true,permanentNumber:String(number).padStart(3,'0'),
   permanentRegistry:{state:'registered',scope:'local-only',number,bookId:BOOK,
    slotIndex:number-1,cardId:old.id,registeredAt:now,
    anchor:{sceneId:'living-library',position:{x:0,y:0,z:0},rotationY:0,scale:1}},
