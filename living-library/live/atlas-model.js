@@ -72,8 +72,9 @@ box(binding,.15,3.7,.35,0,0,-.1,leather);
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
  screen(card,mode='card',interactive=false,upload={state:'idle',code:''},download={items:[],index:0,menuIndex:0,progress:null}){
   if(!screen)return;
-  const menuKey=['menu','download','downloading'].includes(mode)?
+  const menuKey=['menu','download','downloading','permanent','upgrading'].includes(mode)?
     (download.items||[]).map(c=>c.id+':'+c.revision).join(',')+':'+download.index+':'+download.menuIndex+
+    ':'+(download.permanentIndex||0)+':'+(download.permanents||[]).map(c=>c.id+':'+c.revision).join(',')+
     ':'+(download.progress===null?'':Math.floor(download.progress/10)):'';
    const key=(card?card.id+':'+card.revision:'empty')+':'+mode+':'+(interactive?'GBA':'BOOK')+
     ':'+upload.state+':'+upload.code+':'+menuKey;
@@ -94,8 +95,15 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
   if(!card){
    base();txt('萬物圖鑑',35,80,45);
    txt(mode==='menu'?'GBA 系統選單':'右側讀卡格尚未放卡',35,150,29);
-   if(mode==='menu'){
-    const items=['卡片檢視','AI 觀察','卡片下載','商店（未開放）'];
+   if(mode==='permanent'){
+    const items=Array.isArray(download.permanents)?download.permanents:[];
+    txt('BOOK 永久卡簿',35,85,34);
+    txt('登錄：'+items.length+' 張｜本機',35,146,25);
+    const chosen=items[Math.min(items.length-1,Math.max(0,download.permanentIndex||0))];
+    txt(chosen?'Nº '+chosen.permanentNumber+' '+chosen.title:'暫無已認證卡片',35,215,27);
+    txt(chosen?'A 調出原卡至 0 號':'插入已綁定原卡',35,300,22);
+   }else if(mode==='menu'){
+    const items=['卡片檢視','AI 觀察','卡片下載','永久卡管理','商店（未開放）'];
     for(let i=0;i<items.length;i++)
      txt((download.menuIndex===i?'▶ ':'  ')+items[i],35,202+i*40,23);
     txt('下載請先插入空白卡',343,328,19);
@@ -116,10 +124,34 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
     txt('近距離專注',318,283,26);
     txt('按鍵於下階段啟用',318,342,19);
    }else if(mode==='menu'){
-     const options=['卡片檢視','AI 觀察','卡片下載','商店（未開放）'];
+     const options=['卡片檢視','AI 觀察','卡片下載','永久卡管理','商店（未開放）'];
      txt('GBA 系統選單',318,156,25);
      for(let i=0;i<options.length;i++)
       txt((download.menuIndex===i?'▶ ':'  ')+options[i],318,202+i*43,20);
+   }else if(mode==='permanent'){
+     const items=Array.isArray(download.permanents)?download.permanents:[];
+     const i=Math.min(items.length-1,Math.max(0,download.permanentIndex||0));
+     const selected=items[i];
+     txt('BOOK 永久管理',318,157,24);
+     if(card?.permanentRegistry?.state==='registered'){
+      txt('Nº '+card.permanentNumber,318,207,27);
+      txt('A 歸回專屬格',318,263,20);
+      txt('B 返回',318,330,19);
+     }else if(card){
+      txt('一般契約卡',318,207,24);
+      txt('A 申請永久認證',318,263,19);
+      txt('不可逆｜本機試行',318,330,16);
+     }else{
+      txt(selected?.title||'暫無永久卡',318,219,22);
+      txt('A 調出原卡',318,285,20);
+     }
+   }else if(mode==='upgrading'){
+     const amount=Math.min(100,Math.max(0,download.progress||0));
+     txt('永久契約進化',318,165,24);
+     txt(String(Math.floor(amount))+' %',318,223,31);
+     ctx.fillStyle='#c9af79';ctx.fillRect(318,259,270,24);
+     ctx.fillStyle='#d9b659';ctx.fillRect(318,259,Math.round(2.7*amount),24);
+     txt('確認後配發永久號',318,329,19);
    }else if(mode==='download'){
      txt('卡片範本庫',318,157,26);
      const items=Array.isArray(download.items)?download.items:[];
