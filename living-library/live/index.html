@@ -239,6 +239,15 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #atlasGithubDialog :is(h2,p,strong,small,label,output){color:#000}
 #atlasGithubDialog input{width:100%;min-height:48px;padding:9px;margin:8px 0 16px;color:#000;background:#fff;border:1px solid #7d6a53;border-radius:8px;font:16px system-ui}
 #atlasGithubDialog button{min-width:56px;min-height:48px;margin:5px 7px 3px 0;background:#e4d3b1;color:#000;border:1px solid #ad8c62;border-radius:8px;font:700 18px system-ui}
+
+/* Compact permanent build controls: icon-only, touch target at least 44px. */
+#permanentBuildToggle[hidden],#permanentBuildTools[hidden]{display:none!important}
+#permanentBuildToggle{position:fixed;right:calc(16px + env(safe-area-inset-right));bottom:calc(92px + env(safe-area-inset-bottom));z-index:17;width:50px;height:50px;
+ border:1px solid #dfbe80;border-radius:50%;background:#142b3de9;color:#f7dbaa;font-size:23px}
+#permanentBuildTools{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:18;
+ display:flex;gap:10px;padding:7px;border:1px solid #caa76f;border-radius:25px;background:#14263be9}
+#permanentBuildTools button{min-height:48px;min-width:48px;border:1px solid #a9b0ae;border-radius:50%;font-size:24px;color:#e9dcbb;background:#354959;touch-action:manipulation}
+#permanentBuildTools button[data-on="true"]{border-color:#8eefd1;color:#8eefd1}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -249,6 +258,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <button id="atlasCollectionShelf" type="button" aria-label="卡片之書回到書架" title="回到書架">⇥</button>
 <button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
 <button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
+<button id="permanentBuildToggle" type="button" hidden aria-label="開啟永久物件建造模式" title="建造模式">⚒</button>
+<div id="permanentBuildTools" role="toolbar" hidden aria-label="永久物件擺放工具">
+ <button id="permanentBuildSnap" type="button" aria-label="切換地面網格吸附" title="網格吸附">⊞</button>
+ <button id="permanentBuildRotate" type="button" aria-label="旋轉投影十五度" title="旋轉">↻</button>
+ <button id="permanentBuildApply" type="button" aria-label="確認投影位置" title="確認放置">✓</button>
+ <button id="permanentBuildCancel" type="button" aria-label="取消本次擺放" title="取消擺放">×</button>
+</div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
 <dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
  <h2>發送到私人 GitHub</h2>
@@ -386,7 +402,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-gba.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
