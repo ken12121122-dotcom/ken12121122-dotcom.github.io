@@ -320,6 +320,15 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="runeUnbindProgress" class="rune-unbind-progress" aria-hidden="true"></div>
+<dialog id="atlasCopyDialog" class="rune-bind-dialog" aria-labelledby="atlasCopyTitle">
+ <h2 id="atlasCopyTitle">✧ GBA｜複製卡面</h2>
+ <p>將左頁「<strong id="atlasCopySource"></strong>」的圖片及文字，複製到右側這張空白卡？</p>
+ <small>只複製外觀與一般說明，不複製原始卡片 ID、編號、能力、授權、法陣契約或 L2 身分。原卡不變；複製後空白卡保留自己的 ID。</small>
+ <div class="rune-bind-actions">
+  <button id="atlasCopyCancel" type="button" aria-label="取消複製" title="取消">×</button>
+  <button id="atlasCopyConfirm" type="button" class="primary" aria-label="確認將卡面複製到空白卡" title="確認">✓</button>
+ </div>
+</dialog>
 <dialog id="runeUnbindDialog" class="rune-bind-dialog" aria-labelledby="runeUnbindTitle">
  <h2 id="runeUnbindTitle">✧ 解除綁定術</h2>
  <p>是否取消「<strong id="runeUnbindTargetName"></strong>」與初始法陣的連結？</p>
