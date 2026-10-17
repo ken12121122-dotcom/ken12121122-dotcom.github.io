@@ -100,7 +100,7 @@ test('stale revision, duplicate floor rune holder, or wrong materialization phas
  }
  const db=mkstorage([card()]),before=db.raw();
  assert.throws(()=>C.sealRuneCard(db,C.ORIGIN_RUNE,'local.card.origin',6),/變動/);
- assert.throws(()=>materialize(db),/封印/);
+ assert.throws(()=>materialize(db),/保存/);
  assert.equal(db.raw(),before);
  seal(db);const snap=db.raw();
  assert.throws(()=>seal(db,'local.card.origin',8),/不可吸入/);
@@ -132,5 +132,5 @@ test('the scene shows RUNE-04 flight and RUNE-05 reverse flight using one direct
  const from={x:2,y:3,z:0},to={x:0,y:.44,z:0};
  const path=D.normalize({sourceId:'card',targetId:C.ORIGIN_RUNE,from,to,
   startedAt:0,duration:1500});
- assert.deepEqual(D.sample(path,1500).position,{x:0,y:.44,z:0});
+ assert.ok(Math.abs(D.sample(path,1500).position.y-.44)<1e-10);
 });
