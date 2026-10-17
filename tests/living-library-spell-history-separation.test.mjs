@@ -77,6 +77,8 @@ test('Game Book includes an independent, readonly, script-safe history destinati
  const creator=await readFile(new URL('../living-library/live/card-creation.html',import.meta.url),'utf8');
  assert.match(creator,/const cards=\(\)=>Craft\.listCreatorCards\(localStorage\)/);
  assert.doesNotMatch(creator,/Craft\.listSpellHistory/);
+ const scene=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ assert.match(scene,/new URL\('\.\/spell-history\.html',current\)\.pathname/);
  const history=await readFile(new URL('../living-library/live/spell-history.html',import.meta.url),'utf8');
  assert.match(history,/Craft|craft\.listSpellHistory\(localStorage\)/);
  assert.match(history,/\.textContent=/);
