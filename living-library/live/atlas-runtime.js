@@ -29,7 +29,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   if(screenMode==='copy'&&!blank)screenMode='card';
   atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus,
    {items:blank?copySourcesCached():[],index:copyIndex});
-  invalidate();
  }
  function cancelCopyConfirmation(){copyConfirmSelection=null;if(copyDialog?.open)copyDialog.close()}
  function presentCopyConfirmation(reader){
@@ -279,7 +278,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   if(!reader||reader.id!==cardId)return false;
   if(!['idle','auth','sending','ok','error'].includes(state))return false;
   uploadCardId=cardId;uploadStatus={state,code:String(code||'').slice(0,45)};
-  paintGba(reader);return true;
+  paintGba(reader);invalidate();return true;
  }
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
