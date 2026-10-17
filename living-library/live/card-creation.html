@@ -138,7 +138,7 @@ button:disabled{opacity:.45}
  const selected=()=>cards().find(c=>c.id===currentId);
  function draft(){return {cardNumber:$('editNumber').value,title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,image:draftImage,linkedCardId:$('editLink').value||null}}
  function paint(){
-  const canvas=$('cardFace'),record=draft();
+  const canvas=$('cardFace'),record={...draft(),permanentRegistry:selected()?.permanentRegistry};
   if(!back){window.LivingCompendiumCard.draw(canvas,record);return}
   window.LivingCompendiumCard.draw(canvas,{title:'卡片紀錄',description:'',cardNumber:record.cardNumber,cardType:record.cardType});
   const x=canvas.getContext('2d');x.fillStyle='#f3ead2';x.fillRect(42,151,476,564);x.fillStyle='#000000';x.font='25px sans-serif';
@@ -195,15 +195,20 @@ button:disabled{opacity:.45}
   $('editDescription').value=card?.description||'';
   $('editType').value=card?.cardType||'';
   $('editLink').value=card?.linkedCardId||'';
-  $('choosePhoto').disabled=!card;$('removePhoto').disabled=!card||!draftImage;
+  const immutable=card?.permanentRegistry?.state==='registered'||card?.permanentCard===true;
+   for(const id of ['editNumber','editName','editDescription','editType','editLink',
+    'photoScale','photoX','photoY'])$(id).disabled=!!immutable;
+   $('choosePhoto').disabled=!card||immutable;
+   $('removePhoto').disabled=!card||!draftImage||immutable;
   $('openLink').disabled=!card?.linkedCardId||!linkTargets.some(c=>c.id===card.linkedCardId)||window.parent===window;
   $('cropControls').hidden=!draftImage;
   $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
   paint();
-  $('saveCard').disabled=!card;
-  $('recycleCard').disabled=!card||!!card.containerId;
+  $('saveCard').disabled=!card||immutable;
+  $('recycleCard').disabled=!card||!!card.containerId||immutable;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
-  const preview=$('cardPreview');preview.classList.remove('summon','hover');
+  if(immutable)status('永久卡為唯讀：要修改需由 GBA 提出正式申請（尚未開放），不能直接改圖或回收。');
+   const preview=$('cardPreview');preview.classList.remove('summon','hover');
   if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
   else if(card)preview.classList.add('hover');
  }
