@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-card-3d.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1397,8 +1397,10 @@ function removeCardSmoke(puffs){
 }
 function newFloatingCard(record){
  const texture=window.LivingAtlasModel.cardTexture(THREE,record);
- const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
- const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
+ const relic=window.LivingPermanentCard3D?.registered(record)?
+  window.LivingPermanentCard3D.mount(THREE,record,texture):null;
+ const faceMat=relic?null:new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
+ const frameMat=relic?null:new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
  const group=new THREE.Group(),bindingMaterials=[];
  if(record.runeBinding?.runeId===window.LivingRuneContract?.RUNE_ID){
   const sealMat=new THREE.MeshBasicMaterial({color:0xdac18a,side:THREE.DoubleSide,transparent:true,opacity:.95,depthTest:false});
@@ -1408,11 +1410,18 @@ function newFloatingCard(record){
   const icon=new THREE.Mesh(new THREE.OctahedronGeometry(.026,0),iconMat);
   icon.position.set(.15,-.235,.039);group.add(icon);bindingMaterials.push(iconMat);
  }
- const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
- const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
- back.userData.localCardId=record.id;face.userData.localCardId=record.id;
- group.add(back,face);scene.add(group);
- return {id:record.id,record,group,texture,faceMat,frameMat,bindingMaterials,born:performance.now(),
+ if(relic){
+  // One original card root, not a second floating object.
+  // Flatten into its established raycast and GBA drag targets.
+  while(relic.group.children.length)group.add(relic.group.children[0]);
+ }else{
+  const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
+  back.userData.localCardId=record.id;face.userData.localCardId=record.id;
+  group.add(back,face);
+ }
+ scene.add(group);
+ return {id:record.id,record,group,texture,faceMat,frameMat,relic,bindingMaterials,born:performance.now(),
   summon:null,recycle:null};
 }
 function disposeFloatingCard(entry){
@@ -1420,8 +1429,12 @@ function disposeFloatingCard(entry){
  if(entry.summon)removeCardSmoke(entry.summon.puffs);
  if(entry.recycle?.puffs)removeCardSmoke(entry.recycle.puffs);
  scene.remove(entry.group);
- for(const mesh of entry.group.children)mesh.geometry.dispose();
- entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+ if(entry.relic)entry.relic.dispose();
+ else{
+  for(const mesh of entry.group.children)mesh.geometry.dispose();
+  entry.faceMat.dispose();entry.frameMat.dispose();
+ }
+ entry.texture.dispose();
  for(const material of entry.bindingMaterials||[])material.dispose();
 }
 function refreshFloatingCards(){

@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const C=require('../living-library/live/object-craft.js');
+const O=require('../living-library/live/card-observer.js');
+const P=require('../living-library/live/permanent-cards.js');
+const G=require('../living-library/live/card-github-inbox.js');
+test('card message carries actual rune contract and certification, not typed number',()=>{
+ let raw=null;const st={getItem:k=>k===C.KEY?raw:null,setItem:(k,v)=>{raw=v}};
+ let card=C.createBlankCard(st,{randomUUID:()=> 'sample'});
+ card=C.editCard(st,card.id,{title:'初代法陣',cardNumber:'001'});
+ card=C.sealRuneCard(st,C.ORIGIN_RUNE,card.id,card.revision);
+ card=C.materializeRuneCard(st,C.ORIGIN_RUNE,card.id,card.revision);
+ card=C.placeCard(st,card.id,'local.atlas.compendium',9);
+ const before=raw;
+ const initial=G.buildPacket({storage:st,craft:C,observer:O,cardId:card.id}).packet;
+ assert.equal(initial.card.rune_binding.state,'cardified');
+ assert.equal(initial.card.permanent_registration,null);
+ assert.equal(raw,before);
+ card=P.register(st,{cardId:card.id,expectedRevision:card.revision,number:1,ownerConfirmed:true});
+ card=P.toReader(st,card.id,card.revision);
+ const upgraded=G.buildPacket({storage:st,craft:C,observer:O,cardId:card.id}).packet;
+ assert.equal(upgraded.card.permanent_registration.number,1);
+ assert.equal(upgraded.card.permanent_card,true);
+ assert.equal(upgraded.card.rune_binding.state,'cardified');
+ assert.equal(upgraded.card.card_id,card.id);
+});
