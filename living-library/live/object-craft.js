@@ -286,7 +286,7 @@
   if(typeof c.title!=='string'||!c.title.trim()||c.title==='空白卡片')return false;
   if(c.ability||(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)||
     c.runeBinding||c.runeContract||c.boundRuneId||c.containment||
-    c.l2Certified||c.upgradeRequest||c.certification||c.isUnique===true||
+    isPermanentRuneCard(c)||c.l2Certified||c.upgradeRequest||c.certification||c.isUnique===true||
     c.unique===true||c.uniqueness||c.copyPolicy==='forbidden'||
     c.reusePolicy==='unique'||c.cardType==='唯一'||c.cardType==='獨一無二')return false;
   // Never represent a copy of a protected ID, binding or actual capability.
@@ -330,7 +330,7 @@
    typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
    !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
    !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
-   !c.l2Certified&&!c.upgradeRequest&&!c.certification&&
+   !isPermanentRuneCard(c)&&!c.l2Certified&&!c.upgradeRequest&&!c.certification&&
    c.isUnique!==true&&c.unique!==true&&!c.uniqueness&&
    c.copyPolicy!=='forbidden'&&c.reusePolicy!=='unique'&&
    c.cardType!=='唯一'&&c.cardType!=='獨一無二'&&
