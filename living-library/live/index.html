@@ -1895,6 +1895,170 @@ const runeGesture=RuneHold.create({
   toast('✦ 法陣選取成功 · 已定位附近卡片');
  }
 });
+// RUNE-UNBIND-001: long-press a PLAYER card explicitly named "解除綁定" (or
+// "解除綁定術" / "解除契約"), not the bound target. No auto-created spell card.
+const UnbindSpell=window.LivingRuneUnbindSpell;
+if(!UnbindSpell)throw Error('Rune unbinding spell module unavailable');
+const unbindDialog=document.getElementById('runeUnbindDialog'),
+ unbindName=document.getElementById('runeUnbindTargetName'),
+ unbindProgress=document.getElementById('runeUnbindProgress');
+let spellPointerId=null,spellActivatedPointerId=null,spellOriginPoint=null,
+ spellSelection=null,spellPromptTimer=null,unbindEffect=null;
+const spellRay=new THREE.Raycaster(),spellPointer=new THREE.Vector2();
+const spellBeamMat=new THREE.MeshBasicMaterial({
+ color:0xb9edff,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
+const spellBeam=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1,8),spellBeamMat);
+spellBeam.visible=false;scene.add(spellBeam);
+const spellRingMat=new THREE.MeshBasicMaterial({
+ color:0xe8c8a7,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false});
+const spellRing=new THREE.Mesh(new THREE.TorusGeometry(.31,.026,5,48),spellRingMat);
+spellRing.visible=false;scene.add(spellRing);
+const spellSparkMat=new THREE.MeshBasicMaterial({
+ color:0xe7fff6,transparent:true,opacity:.92,depthWrite:false});
+const spellSpark=new THREE.Mesh(new THREE.SphereGeometry(.07,9,7),spellSparkMat);
+spellSpark.visible=false;scene.add(spellSpark);
+const spellAxis=new THREE.Vector3(0,1,0),spellDelta=new THREE.Vector3();
+function localFloatEntry(entry){
+ entry.group.updateWorldMatrix(true,false);
+ const p=entry.group.getWorldPosition(new THREE.Vector3());
+ return {id:entry.id,record:entry.record,position:{x:p.x,y:p.y,z:p.z},
+  visible:entry.group.visible&&!atlasRuntime?.inFocus,
+  isDragging:!!atlasRuntime?.isDraggingCard(entry.id),
+  isSummoning:!!entry.summon||reservedCardSummons.has(entry.id),
+  isRecycling:!!entry.recycle,isFocused:focusedCard?.id===entry.id};
+}
+function inspectSpellNearest(spellId){
+ const source=floatingCardMeshes.get(spellId);
+ if(!source)return {status:'unavailable',reason:'no_spell'};
+ const entries=[...floatingCardMeshes.values()].map(localFloatEntry);
+ return UnbindSpell.findNearestBoundCard(spellId,entries.find(x=>x.id===spellId),entries);
+}
+function spellCardAt(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!rect.width||!rect.height)return null;
+ spellPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ spellRay.setFromCamera(spellPointer,camera);
+ // Match AtlasRuntime's nearest-card priority: do not pick a spell through another card.
+ const meshes=[...floatingCardMeshes.values()].filter(x=>x.group.visible&&!x.recycle&&!x.summon&&
+  !x.record.containerId).flatMap(x=>x.group.children.filter(m=>m.isMesh&&m.userData.localCardId));
+ const hit=spellRay.intersectObjects(meshes,false)[0];
+ if(!hit)return null;
+ const bookBlock=[...bookEntities.filter(b=>b.group.visible).flatMap(b=>spellRay.intersectObject(b.group,true))][0];
+ if(bookBlock&&bookBlock.distance+.06<hit.distance)return null;
+ const avatarBlock=spellRay.intersectObject(keeper,true)[0];
+ if(avatarBlock&&avatarBlock.distance+.06<hit.distance)return null;
+ const entry=floatingCardMeshes.get(hit.object.userData.localCardId);
+ return UnbindSpell.isSpellCard(entry?.record)?entry:null;
+}
+function closeSpellPrompt(){
+ if(spellPromptTimer!==null){clearTimeout(spellPromptTimer);spellPromptTimer=null}
+ if(unbindDialog.open)unbindDialog.close();
+}
+function spellAllowed(){return runeAllowed()&&!unbindDialog.open&&!unbindEffect}
+const spellHold=RuneHold.create({
+ isAllowed:spellAllowed,
+ onChange:()=>syncRender(),
+ onSelected:spellId=>{
+  spellActivatedPointerId=spellPointerId;
+  if(spellPointerId!==null)atlasRuntime?.cancelPointer(spellPointerId);
+  try{
+   const target=inspectSpellNearest(spellId);
+   if(target.status!=='selected'){
+    spellSelection=null;
+    toast('✧ 解除綁定術：附近沒有可解除的已連結卡片');
+    return;
+   }
+   const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   if(!bound||bound.id!==target.cardId||bound.runeBinding?.state!=='bound'){
+    spellSelection=null;toast('契約狀態已變更，請重新選取');return;
+   }
+   spellSelection={casterId:spellId,targetId:bound.id,expectedRevision:bound.revision};
+   unbindName.textContent=bound.title;
+   spellPromptTimer=setTimeout(()=>{
+    spellPromptTimer=null;
+    if(!document.hidden&&!unbindDialog.open&&spellSelection?.targetId===bound.id&&
+      !focusedCard&&!atlasRuntime?.inFocus)unbindDialog.showModal();
+   },550);
+   toast('✧ 已偵測到「'+bound.title+'」的法陣契約');
+  }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
+ }
+});
+function confirmSpellUnbind(){
+ if(!spellSelection||unbindEffect)return;
+ const selection=spellSelection;
+ try{
+  const latest=inspectSpellNearest(selection.casterId);
+  const current=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  if(latest.status!=='selected'||latest.cardId!==selection.targetId||
+    !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision)
+   throw Error('目標位置或資料已有變動，請重新長按魔法卡');
+  closeSpellPrompt();
+  unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300};
+  syncRender(); // Storage changes only AFTER visual effect completes.
+ }catch(error){closeSpellPrompt();spellSelection=null;toast('無法解除：'+String(error?.message||error))}
+}
+document.getElementById('runeUnbindConfirm').addEventListener('click',confirmSpellUnbind);
+document.getElementById('runeUnbindCancel').addEventListener('click',()=>{
+ closeSpellPrompt();spellSelection=null;toast('已保留原契約');syncRender();
+});
+unbindDialog.addEventListener('cancel',()=>{spellSelection=null;syncRender()});
+unbindDialog.addEventListener('close',syncRender);
+function cancelSpellUnbind(){
+ closeSpellPrompt();spellSelection=null;
+ spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
+ unbindEffect=null;unbindProgress.style.display='none';
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+}
+function updateSpellEffect(now){
+ const info=spellHold.inspect(now);
+ const showing=info.phase==='holding'&&spellOriginPoint;
+ unbindProgress.style.display=showing?'block':'none';
+ if(showing){
+  unbindProgress.style.left=spellOriginPoint.x+'px';
+  unbindProgress.style.top=spellOriginPoint.y+'px';
+  const angle=Math.round(info.progress*360);
+  unbindProgress.style.background='conic-gradient(#e9d09d 0deg '+angle+
+   'deg,rgba(92,143,142,.36) '+angle+'deg 360deg)';
+ }
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+ const active=unbindEffect;
+ const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
+ if(!pair)return;
+ const caster=floatingCardMeshes.get(pair.casterId),target=floatingCardMeshes.get(pair.targetId);
+ if(!caster||!target||!caster.group.visible||!target.group.visible)return;
+ caster.group.updateWorldMatrix(true,false);target.group.updateWorldMatrix(true,false);
+ const a=caster.group.getWorldPosition(new THREE.Vector3());
+ const b=target.group.getWorldPosition(new THREE.Vector3());
+ const progress=active?Math.min(1,(now-active.start)/active.duration):0;
+ a.y+=.1;b.y+=.1;
+ spellDelta.copy(b).sub(a);const dist=spellDelta.length();
+ if(dist>.02){
+  spellBeam.visible=true;spellBeam.position.copy(a).addScaledVector(spellDelta,.5);
+  spellBeam.quaternion.setFromUnitVectors(spellAxis,spellDelta.clone().normalize());
+  spellBeam.scale.set(1,dist,1);
+  spellBeamMat.opacity=active?.8*(1-progress*.5):.55;
+  spellSpark.visible=!preferReduced;
+  spellSpark.position.copy(a).addScaledVector(spellDelta,active?progress:(now*.00075)%1);
+ }
+ spellRing.visible=true;spellRing.position.copy(b);
+ spellRing.quaternion.copy(camera.quaternion);
+ spellRing.scale.setScalar(active?.8+progress*.75:1);
+ spellRingMat.opacity=active?.85*(1-progress):.62;
+ if(active&&progress>=1){
+  // One guarded, atomic original-card write after visible animation.
+  unbindEffect=null;spellSelection=null;
+  try{
+   const restored=window.LivingObjectCraft.restoreUncommittedRuneCard(
+    localStorage,RuneContract.RUNE_ID,()=>new Date().toISOString(),
+    active.targetId,active.expectedRevision);
+   runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
+   refreshFloatingCards(); // The original target loses its small 3D crest.
+   toast('✧ 已解除「'+restored.title+'」的法陣契約，可重新締結');
+  }catch(error){toast('解除未完成：'+String(error?.message||error))}
+  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
+  syncRender();
+ }
+}
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
