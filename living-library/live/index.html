@@ -348,7 +348,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1410,7 +1410,9 @@ function updateFloatingCards(now){
  for(let i=0;i<items.length;i++){
   const entry=items[i];
   if(atlasRuntime?.isDraggingCard(entry.id))continue;
-  if(entry.record.containerId){entry.group.visible=false;continue}
+  if(entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+    entry.group.visible=false;continue
+   }
   if(entry.recycle){
    const fx=entry.recycle;
    // First show the original small card in the normal world orbit, unzoomed.
@@ -1897,14 +1899,25 @@ const runeGesture=RuneHold.create({
 });
 // RUNE-UNBIND-001: long-press a PLAYER card explicitly named "解除綁定" (or
 // "解除綁定術" / "解除契約"), not the bound target. No auto-created spell card.
-const UnbindSpell=window.LivingRuneUnbindSpell;
-if(!UnbindSpell)throw Error('Rune unbinding spell module unavailable');
+const UnbindSpell=window.LivingRuneUnbindSpell,DirectedTransfer=window.LivingDirectedTransfer;
+if(!UnbindSpell||!DirectedTransfer)throw Error('Directed rune transfer modules unavailable');
 const unbindDialog=document.getElementById('runeUnbindDialog'),
  unbindName=document.getElementById('runeUnbindTargetName'),
  unbindProgress=document.getElementById('runeUnbindProgress');
 let spellPointerId=null,spellActivatedPointerId=null,spellOriginPoint=null,
  spellSelection=null,spellPromptTimer=null,unbindEffect=null;
 const spellRay=new THREE.Raycaster(),spellPointer=new THREE.Vector2();
+// Exactly the same continuous 192-segment circular hold language as the floor rune,
+// rendered in actual 3D around the selected floating spell card.
+const spellProgressSegments=RUNE_ARC_SEGMENTS;
+const spellTrack=new THREE.Mesh(new THREE.RingGeometry(.43,.47,spellProgressSegments),
+ new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,
+ side:THREE.DoubleSide,depthWrite:false}));
+spellTrack.visible=false;scene.add(spellTrack);
+const spellArcGeometry=new THREE.RingGeometry(.43,.47,spellProgressSegments,1,-Math.PI/2,Math.PI*2);
+const spellArc=new THREE.Mesh(spellArcGeometry,new THREE.MeshBasicMaterial({
+ color:0xf5d698,transparent:true,opacity:.98,side:THREE.DoubleSide,depthWrite:false}));
+spellArcGeometry.setDrawRange(0,0);spellArc.visible=false;scene.add(spellArc);
 const spellBeamMat=new THREE.MeshBasicMaterial({
  color:0xb9edff,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
 const spellBeam=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1,8),spellBeamMat);
@@ -1972,7 +1985,10 @@ const spellHold=RuneHold.create({
    if(!bound||bound.id!==target.cardId||bound.runeBinding?.state!=='bound'){
     spellSelection=null;toast('契約狀態已變更，請重新選取');return;
    }
-   spellSelection={casterId:spellId,targetId:bound.id,expectedRevision:bound.revision};
+   const caster=floatingCardMeshes.get(spellId);
+   if(!caster||!UnbindSpell.isSpellCard(caster.record))throw Error('施法卡已改變');
+   spellSelection={casterId:spellId,targetId:bound.id,expectedRevision:bound.revision,
+    spellRevision:caster.record.revision};
    unbindName.textContent=bound.title;
    spellPromptTimer=setTimeout(()=>{
     spellPromptTimer=null;
@@ -1990,10 +2006,23 @@ function confirmSpellUnbind(){
   const latest=inspectSpellNearest(selection.casterId);
   const current=window.LivingObjectCraft.getRuneBoundCard(localStorage);
   if(latest.status!=='selected'||latest.cardId!==selection.targetId||
-    !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision)
+    !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision||
+    floatingCardMeshes.get(selection.casterId)?.record.revision!==selection.spellRevision)
    throw Error('目標位置或資料已有變動，請重新長按魔法卡');
   closeSpellPrompt();
-  unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300};
+  const caster=floatingCardMeshes.get(selection.casterId);
+  const target=floatingCardMeshes.get(selection.targetId);
+  if(!caster||!target||!caster.group.visible||!target.group.visible)
+   throw Error('目標卡片暫時無法施法');
+  caster.group.updateWorldMatrix(true,false);target.group.updateWorldMatrix(true,false);
+  const origin=caster.group.getWorldPosition(new THREE.Vector3());
+  const endpoint=target.group.getWorldPosition(new THREE.Vector3());
+  unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300,
+   plan:DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
+    from:{x:origin.x,y:origin.y,z:origin.z},
+    to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
+    startedAt:performance.now(),duration:preferReduced?380:1300,
+    initialScale:caster.group.scale.x})};
   syncRender(); // Storage changes only AFTER visual effect completes.
  }catch(error){closeSpellPrompt();spellSelection=null;toast('無法解除：'+String(error?.message||error))}
 }
@@ -2007,54 +2036,75 @@ function cancelSpellUnbind(){
  closeSpellPrompt();spellSelection=null;
  spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
  unbindEffect=null;unbindProgress.style.display='none';
+ spellTrack.visible=false;spellArc.visible=false;
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
 }
 function updateSpellEffect(now){
  const info=spellHold.inspect(now);
- const showing=info.phase==='holding'&&spellOriginPoint;
- unbindProgress.style.display=showing?'block':'none';
- if(showing){
-  unbindProgress.style.left=spellOriginPoint.x+'px';
-  unbindProgress.style.top=spellOriginPoint.y+'px';
-  const angle=Math.round(info.progress*360);
-  unbindProgress.style.background='conic-gradient(#e9d09d 0deg '+angle+
-   'deg,rgba(92,143,142,.36) '+angle+'deg 360deg)';
+ // Reuse the floor rune's 192-segment circular progress in world space.
+ const holding=info.phase==='holding'&&spellPointerId!==null;
+ const casterHold=holding?[...floatingCardMeshes.values()].find(c=>
+  UnbindSpell.isSpellCard(c.record)&&c.id===spellHold.inspect().runeId):null;
+ spellTrack.visible=!!casterHold;spellArc.visible=!!casterHold;
+ if(casterHold){
+  casterHold.group.updateWorldMatrix(true,false);
+  const position=casterHold.group.getWorldPosition(new THREE.Vector3());
+  spellTrack.position.copy(position);spellArc.position.copy(position);
+  spellTrack.quaternion.copy(camera.quaternion);spellArc.quaternion.copy(camera.quaternion);
+  spellTrack.position.y+=.02;spellArc.position.y+=.02;
+  spellArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*info.progress)*6);
  }
+ unbindProgress.style.display='none'; // No duplicate flat overlay.
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
  const active=unbindEffect;
  const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
  if(!pair)return;
  const caster=floatingCardMeshes.get(pair.casterId),target=floatingCardMeshes.get(pair.targetId);
- if(!caster||!target||!caster.group.visible||!target.group.visible)return;
+ if(!caster||!target||!caster.group.visible||!target.group.visible){
+  if(active){unbindEffect=null;spellSelection=null;toast('卡片已移動，未執行解除契約')}
+  return;
+ }
  caster.group.updateWorldMatrix(true,false);target.group.updateWorldMatrix(true,false);
  const a=caster.group.getWorldPosition(new THREE.Vector3());
  const b=target.group.getWorldPosition(new THREE.Vector3());
- const progress=active?Math.min(1,(now-active.start)/active.duration):0;
- a.y+=.1;b.y+=.1;
+ let progress=0,scale=null;
+ if(active){
+  const frame=DirectedTransfer.sample(active.plan,now,{x:b.x,y:b.y,z:b.z});
+  progress=frame.progress;
+  a.set(frame.position.x,frame.position.y,frame.position.z);
+  scale=frame.scale;
+  caster.group.position.copy(a);
+  caster.group.scale.setScalar(scale);
+  caster.group.quaternion.copy(camera.quaternion);
+ }
+ a.y+=.12;b.y+=.12;
  spellDelta.copy(b).sub(a);const dist=spellDelta.length();
  if(dist>.02){
   spellBeam.visible=true;spellBeam.position.copy(a).addScaledVector(spellDelta,.5);
   spellBeam.quaternion.setFromUnitVectors(spellAxis,spellDelta.clone().normalize());
   spellBeam.scale.set(1,dist,1);
-  spellBeamMat.opacity=active?.8*(1-progress*.5):.55;
+  spellBeamMat.opacity=active?.8*(1-progress*.65):.55;
   spellSpark.visible=!preferReduced;
   spellSpark.position.copy(a).addScaledVector(spellDelta,active?progress:(now*.00075)%1);
  }
- spellRing.visible=true;spellRing.position.copy(b);
- spellRing.quaternion.copy(camera.quaternion);
- spellRing.scale.setScalar(active?.8+progress*.75:1);
+ spellRing.visible=true;spellRing.position.copy(b);spellRing.quaternion.copy(camera.quaternion);
+ spellRing.scale.setScalar(active?1+progress*.8:1);
  spellRingMat.opacity=active?.85*(1-progress):.62;
  if(active&&progress>=1){
-  // One guarded, atomic original-card write after visible animation.
+  // One atomic write after source enters the TARGET CARD, never the floor rune.
   unbindEffect=null;spellSelection=null;
   try{
-   const restored=window.LivingObjectCraft.restoreUncommittedRuneCard(
-    localStorage,RuneContract.RUNE_ID,()=>new Date().toISOString(),
-    active.targetId,active.expectedRevision);
+   const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
+    runeId:RuneContract.RUNE_ID,targetId:active.targetId,
+    targetRevision:active.expectedRevision,spellId:active.casterId,
+    spellRevision:active.spellRevision});
    runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
-   refreshFloatingCards(); // The original target loses its small 3D crest.
-   toast('✧ 已解除「'+restored.title+'」的法陣契約，可重新締結');
-  }catch(error){toast('解除未完成：'+String(error?.message||error))}
+   refreshFloatingCards();
+   toast('✧ 契約已解除 · 「'+result.spell.title+'」已沒入目標卡片');
+  }catch(error){
+   caster.group.scale.setScalar(controlPrefs.cardSize);
+   toast('解除未完成，原始卡片仍保留：'+String(error?.message||error));
+  }
   spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;
   syncRender();
  }
