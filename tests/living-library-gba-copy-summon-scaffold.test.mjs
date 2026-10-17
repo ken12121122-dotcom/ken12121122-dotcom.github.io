@@ -132,7 +132,7 @@ test('retro GBA menu selects downloadable formats without requiring left 9 wells
  assert.match(scene,/id="atlasDownloadDialog"/);
  assert.match(scene,/id="atlasDownloadConfirm"/);
  assert.match(scene,/id="atlasDownloadCancel"/);
- assert.match(runtime,/craft\.listDownloadableTemplates\(storage\)/);
+ assert.match(runtime,/craft\.listDownloadableTemplates\?\.\(storage\)/);
  assert.match(runtime,/screenMode=screenMode==='menu'\?'card':'menu'/);
  assert.match(runtime,/menuIndex===2/);
  assert.match(runtime,/presentDownloadConfirmation\(reader\)/);
