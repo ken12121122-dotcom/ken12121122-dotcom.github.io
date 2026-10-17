@@ -48,7 +48,7 @@ test('online Game Book is reached through book catalog or direct link, without a
  assert.match(html, /select\('gaming'\);openBook\(\)/);
  const model=c.buildCatalog();
  const ids=model.bookCards.gaming;
- assert.equal(ids.length,6);
+ assert.equal(ids.length,7);
  assert.equal(ids[2],'KW-GAME-MEMORY-PALACE-20261014');
  assert.equal(model.cards[ids[2]].title,'知識城堡｜遊戲設計');
 });
