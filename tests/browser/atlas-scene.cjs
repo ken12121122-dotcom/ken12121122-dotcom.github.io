@@ -57,7 +57,9 @@ assert.ok(nearMid.distanceTo(nearStart)>.01,'near focus visibly animates from bo
 assert.ok(nearMid.distanceTo(nearEnd)>.01,'near focus does not teleport directly to final state');
 assert.ok(nearEnd.distanceTo(twoPageCamera)>.3,'right GBA zoom actually moves closer');
 tapControl('A');assert.deepEqual(opened,[card.id],'GBA A works in SECOND focus only');
-tapControl('SELECT');assert.equal(runtime.inspect().screenMode,'observe');
+tapControl('SELECT');assert.equal(runtime.inspect().screenMode,'menu');
+tapControl('DOWN');assert.equal(runtime.inspect().menuIndex,1,'old-GBA menu arrow selects AI observation');
+tapControl('A');assert.equal(runtime.inspect().screenMode,'observe');
 tapControl('A');assert.deepEqual(observed,[card.id]);assert.equal(storage.getItem(craft.KEY),beforeObservation,'AI read must not change source');
 tapControl('DOWN');assert.equal(runtime.inspect().screenMode,'observe');
 tapControl('UP');assert.equal(runtime.inspect().screenMode,'card');

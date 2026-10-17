@@ -119,7 +119,8 @@ test('continuous circular progress bar has no time numeral or segmented ticks',a
  assert.match(html,/runeGesture\.pointerUp\(e\)/);
  assert.match(html,/runeGesture\.pointerCancel\(e\)/);
  assert.match(html,/!runeGesture\.active\(\)/);
- assert.match(html,/\|\|runeGesture\.active\(\)\|\|performance\.now\(\)<runeBindingPulseUntil\|\|hasWalkInput\(\)/);
+ assert.match(html,/\|\|runeGesture\.active\(\)\|\|!!runeTransfer\|\|spellHold\.active\(\)\|\|returnCardHold\.active\(\)\|\|!!unbindEffect\|\|/);
+ assert.match(html,/performance\.now\(\)<runeBindingPulseUntil\|\|hasWalkInput\(\)/);
  assert.match(html,/runeNearest=findNearestRuneCard\(\)/);
  assert.match(html,/rune:runeInspection/);
  assert.doesNotMatch(html,/runeBinding\s*=/);

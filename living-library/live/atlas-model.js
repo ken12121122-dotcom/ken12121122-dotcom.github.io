@@ -70,9 +70,13 @@ for(const [side,sign] of [[left,-1],[right,1]]){
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
- screen(card,mode='card',interactive=false,upload={state:'idle',code:''}){
+ screen(card,mode='card',interactive=false,upload={state:'idle',code:''},download={items:[],index:0,menuIndex:0,progress:null}){
   if(!screen)return;
-  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK')+':'+upload.state+':'+upload.code:'empty';
+  const menuKey=['menu','download','downloading'].includes(mode)?
+    (download.items||[]).map(c=>c.id+':'+c.revision).join(',')+':'+download.index+':'+download.menuIndex+
+    ':'+(download.progress===null?'':Math.floor(download.progress/10)):'';
+   const key=(card?card.id+':'+card.revision:'empty')+':'+mode+':'+(interactive?'GBA':'BOOK')+
+    ':'+upload.state+':'+upload.code+':'+menuKey;
   if(key===screenKey)return;
   screenCancel();screenCancel=()=>{};screenKey=key;
   const map=screen.material.map,ctx=map.image.getContext('2d');
@@ -88,8 +92,15 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
    ctx.fillStyle='#000000';
   };
   if(!card){
-   base();txt('萬物圖鑑',35,80,45);txt('右側讀卡格尚未放卡',35,150,29);
-   txt('放入一張卡片即可顯示',35,200,24);map.needsUpdate=true;return;
+   base();txt('萬物圖鑑',35,80,45);
+   txt(mode==='menu'?'GBA 系統選單':'右側讀卡格尚未放卡',35,150,29);
+   if(mode==='menu'){
+    const items=['卡片檢視','AI 觀察','卡片下載','商店（未開放）'];
+    for(let i=0;i<items.length;i++)
+     txt((download.menuIndex===i?'▶ ':'  ')+items[i],35,202+i*40,23);
+    txt('下載請先插入空白卡',343,328,19);
+   }else txt('放入一張卡片即可顯示',35,200,23);
+   map.needsUpdate=true;return;
   }
   const face=document.createElement('canvas');face.width=560;face.height=780;
   const redraw=()=>{
@@ -104,7 +115,32 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
     txt('點右側 GBA 進入',318,233,21);
     txt('近距離專注',318,283,26);
     txt('按鍵於下階段啟用',318,342,19);
-   }else if(mode==='observe'){
+   }else if(mode==='menu'){
+     const options=['卡片檢視','AI 觀察','卡片下載','商店（未開放）'];
+     txt('GBA 系統選單',318,156,25);
+     for(let i=0;i<options.length;i++)
+      txt((download.menuIndex===i?'▶ ':'  ')+options[i],318,202+i*43,20);
+   }else if(mode==='download'){
+     txt('卡片範本庫',318,157,26);
+     const items=Array.isArray(download.items)?download.items:[];
+     if(!items.length){
+      txt('沒有可用的卡片範本',318,225,21);
+      txt('可建立普通卡片',318,268,19);
+     }else{
+      const i=Math.min(items.length-1,Math.max(0,download.index||0));
+      txt((i+1)+' / '+items.length,318,199,22);
+      txt(items[i]?.title||'未命名卡片',318,244,23);
+      txt('↑↓ 選擇 / A 下載',318,292,19);
+     }
+     txt('B 返回',318,345,21);
+   }else if(mode==='downloading'){
+     const amount=Math.min(100,Math.max(0,download.progress||0));
+     txt('下載卡片格式',318,168,24);
+     txt(String(Math.floor(amount))+' %',318,221,32);
+     ctx.fillStyle='#d4c4a1';ctx.fillRect(318,257,270,26);
+     ctx.fillStyle='#508b7a';ctx.fillRect(318,257,Math.round(2.7*amount),26);
+     txt('寫入空白卡中',318,330,21);
+    }else if(mode==='observe'){
     txt('AI → GITHUB',318,174,26);
     if(upload.state==='sending'){
      txt('傳送中…',318,225,29);txt('請稍候',318,288,21);
@@ -121,18 +157,19 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
      txt('請在視窗確認',318,291,20);
     }else{
      txt('等待發送卡片',318,228,25);
-     txt('SELECT 模式切換',318,285,19);
+     txt('SELECT 開啟選單',318,285,19);
      txt('A 發送私人 GitHub',318,334,20);
     }
    }else{
     txt(card.cardType||'未分類',318,172,24);
     txt(card.image?'圖片已載入':'尚未放入圖片',318,223,21);
-    txt('SELECT 切換 AI',318,278,19);
+    txt('SELECT 系統選單',318,278,19);
     txt('A 開啟卡片',318,326,23);
    }
    map.needsUpdate=true;root.LivingScene?.invalidate?.();
   };
-  screenCancel=root.LivingCompendiumCard.draw(face,card,redraw)||(()=>{});
+  const preview=mode==='download'&&(download.items||[])[download.index]||card;
+   screenCancel=root.LivingCompendiumCard.draw(face,preview,redraw)||(()=>{});
   redraw();
  },
  dispose(){screenCancel();const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};

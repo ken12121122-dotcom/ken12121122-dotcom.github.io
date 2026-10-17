@@ -131,10 +131,11 @@ test('UI renders a visible selection glow, beam, consent question and real card 
  assert.match(html,/id="runeBindCancel"/);
  assert.match(html,/runeGlow\.visible=illuminated\|\|!!runeBound/);
  assert.match(html,/runeCandidateBeam\.visible=true/);
- assert.match(html,/runeBindingPulseUntil=performance\.now\(\)\+2800/);
+ assert.match(html,/craft\.sealRuneCard\(localStorage/);
+ assert.match(html,/craft\.materializeRuneCard\(localStorage/);
+ assert.match(html,/tickRuneTransfer\(now\)/);
+ assert.match(html,/runeTransfer\?\.cardId/);
  assert.match(html,/new THREE\.TorusGeometry\(\.058,\.009,5,36\)/);
- assert.match(html,/LivingObjectCraft\.bindRuneCard\(localStorage/);
- assert.match(html,/refreshFloatingCards\(\); \/\/ Recreate the same card/);
  assert.match(html,/RUNE_ARC_SEGMENTS=192/);
  assert.doesNotMatch(html,/id="runeBind.*>3秒/);
 });

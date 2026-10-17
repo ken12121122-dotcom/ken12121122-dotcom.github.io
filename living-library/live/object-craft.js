@@ -23,6 +23,16 @@
  function getRuneBoundCard(storage,runeId=ORIGIN_RUNE){
   return listCards(storage).find(x=>x.runeBinding?.runeId===runeId)||null;
  }
+ // A future authorized permanent registry is independent of editable cardNumber.
+ // An upgraded permanent rune bond is irreversible by normal/unbinding spells.
+ function isPermanentRuneCard(card){
+  if(!card||typeof card!=='object')return false;
+  return card.l2Certified===true||card.permanentCard===true||
+   card.permanentRegistration?.state==='registered'||
+   card.permanentRegistry?.state==='registered'||
+   card.certification?.level==='L2'||card.certification?.level==='permanent'||
+   (card.permanentNumber!==null&&card.permanentNumber!==undefined&&String(card.permanentNumber).trim()!=='');
+ }
  function bindRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
   if(runeId!==ORIGIN_RUNE)throw Error('目前只支援初始法陣');
   if(typeof cardId!=='string'||!cardId.startsWith('local.card.'))throw Error('無效卡片識別碼');
@@ -45,13 +55,84 @@
   const objects=[...state.objects];objects[at]=next;
   write(storage,objects);return {...next};
  }
- function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString()){
+ // RUNE-04: finish the directed card → floor-rune absorption in ONE atomic write.
+ // Accepts both a fresh unbound card and a legacy temporarily bound card.
+ function sealRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('目前只支援初始法陣');
+  const state=read(storage),index=state.objects.findIndex(x=>
+   x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('法陣契約原卡不存在');
+  const old=state.objects[index];
+  if(!Number.isInteger(expectedRevision)||old.revision!==expectedRevision)
+   throw Error('卡片資料已變動，請重新選取');
+  if(state.objects.some(x=>x.id!==cardId&&isPlayerCard(x)&&x.status!=='recycled'&&
+     x.runeBinding?.runeId===runeId))throw Error('法陣已與其他卡片締結契約');
+  if(old.status!=='draft'||old.placement!=='hover'||old.containerId||old.ownerBookId||
+     old.containment||old.runeBinding?.state==='cardified'||old.runeBinding?.state==='sealed'||
+     old.l2Certified===true||old.upgradeRequest?.state==='requested'||
+     !old.title||old.title.trim()==='空白卡片')throw Error('此卡片不可吸入法陣');
+  if(old.runeBinding&&(old.runeBinding.runeId!==runeId||old.runeBinding.state!=='bound'))
+   throw Error('卡片已有不相容的法陣契約');
+  const now=clock(),binding=old.runeBinding||{runeId,boundAt:now};
+  const next={...old,runeBinding:{...binding,runeId,state:'sealed',sealedAt:now},
+   placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
+   containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',
+    state:'stored',absorbedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
+ // RUNE-05: the ONE original card is materialized from the floor rune;
+ // cardification is a change of state, NOT creation of a second card ID.
+ function materializeRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知法陣');
+  const state=read(storage),index=state.objects.findIndex(x=>
+   x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('封印卡片不存在');
+  const old=state.objects[index];
+  if(old.revision!==expectedRevision)throw Error('卡片版本已變更');
+  if(old.status!=='draft'||old.runeBinding?.runeId!==runeId||
+     old.runeBinding.state!=='sealed'||old.placement!=='contained'||
+     old.containment?.kind!=='rune_contract'||old.containment.holderId!==runeId)
+   throw Error('此法陣並未保存可轉換的原卡');
+  const now=clock(),{containment,...withoutContainer}=old;
+  const next={...withoutContainer,placement:'hover',containerId:null,
+   ownerBookId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'cardified',cardifiedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
+ // Restore the SAME materialized card to the floor rune, with its original
+ // contract and ID intact; counterpart of RUNE-05 and safe for future permanent
+ // cards (permanence locks unbinding, not changing form).
+ function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知初始法陣');
+  const state=read(storage);
+  const index=state.objects.findIndex(x=>x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('找不到可歸還法陣的卡');
+  const old=state.objects[index];
+  if(!Number.isInteger(expectedRevision)||old.revision!==expectedRevision)
+   throw Error('卡片資料已變動，請重新選取');
+  const matches=state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled'&&
+   x.runeBinding?.runeId===runeId);
+  if(matches.length!==1||matches[0].id!==cardId)throw Error('法陣已有其他契約');
+  if(old.status!=='draft'||old.placement!=='hover'||old.ownerBookId||old.containerId||
+   old.containment||old.runeBinding?.state!=='cardified')
+   throw Error('卡片尚未具現化或目前不在世界中');
+  const now=clock(),next={...old,placement:'contained',ownerBookId:null,
+   containerId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'sealed',resealedAt:now},
+   containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',state:'stored',absorbedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
+ function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString(),expectedCardId=null,expectedRevision=null){
   if(runeId!==ORIGIN_RUNE)throw Error('目前僅支援初始法陣');
   const state=read(storage);
   const matches=state.objects.map((item,index)=>({item,index})).filter(x=>
    isPlayerCard(x.item)&&x.item.runeBinding?.runeId===runeId&&x.item.status!=='recycled');
   if(matches.length!==1)throw Error('找不到唯一的待還原契約卡');
   const {item:old,index}=matches[0];
+  if((expectedCardId!==null&&old.id!==expectedCardId)||(expectedRevision!==null&&old.revision!==expectedRevision))
+   throw Error('契約卡在施法期間已有變動，為保護資料已停止解除');
+  if(isPermanentRuneCard(old))throw Error('已升級為永久編號卡，禁止解除契約');
   if(old.runeBinding.state!=='bound')throw Error('封印後的契約不可直接還原');
   if(old.status!=='draft'||!['hover','book'].includes(old.placement)||
      (old.containerId&&(old.containerId!=='local.atlas.compendium'||old.slotIndex!==9)))
@@ -63,6 +144,43 @@
   const objects=[...state.objects];objects[index]=result;
   write(storage,objects);return {...result};
  }
+
+ // Directed card absorption is containment, never deletion. One write commits
+ // both the restored target and the consumed spell, preserving both stable IDs.
+ function unbindAndAbsorbSpell(storage,{runeId=ORIGIN_RUNE,targetId,targetRevision,spellId,spellRevision},
+   clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知法陣');
+  if(!targetId||!spellId||targetId===spellId)throw Error('施法卡與目標不得相同');
+  const state=read(storage),cards=state.objects;
+  const targetIndex=cards.findIndex(x=>x.id===targetId&&isPlayerCard(x)&&x.status!=='recycled');
+  const spellIndex=cards.findIndex(x=>x.id===spellId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(targetIndex<0||spellIndex<0)throw Error('施法卡或目標卡已不存在');
+  const target=cards[targetIndex],spell=cards[spellIndex];
+  const targets=cards.filter(x=>isPlayerCard(x)&&x.status!=='recycled'&&x.runeBinding?.runeId===runeId);
+  if(targets.length!==1||targets[0].id!==targetId)throw Error('法陣契約目標已改變');
+  if(target.revision!==targetRevision||spell.revision!==spellRevision)
+   throw Error('施法期間卡片資料已變動');
+  if(isPermanentRuneCard(target))throw Error('此法陣已升級為永久編號卡，不可解除契約');
+  if(!['bound','cardified'].includes(target.runeBinding?.state)||target.status!=='draft'||target.placement!=='hover'||
+     target.containerId||target.ownerBookId||target.upgradeRequest?.state==='requested')
+   throw Error('此契約尚不可解除');
+  if(spell.status!=='draft'||spell.placement!=='hover'||spell.containerId||spell.ownerBookId||
+     spell.runeBinding||spell.consumedBy||spell.containment)
+   throw Error('施法卡目前不可消耗');
+  const title=typeof spell.title==='string'?spell.title.trim().replace(/\s+/g,''):'';
+  if(!/^(解除綁定|解除契約|契約解除)(術|卡|魔法|卡片)?$/.test(title))
+   throw Error('此卡不是解除綁定術卡');
+  // Never create a second ID, overwrite another object, or use the recycle bin.
+  const when=clock(),{runeBinding,...targetData}=target;
+  const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
+  const updatedSpell={...spell,placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
+   containment:{kind:'consumed_spell',holderId:targetId,holderType:'card',
+    state:'stored',absorbedAt:when},consumedBy:targetId,
+   revision:spell.revision+1,updatedAt:when};
+  const objects=[...cards];objects[targetIndex]=updatedTarget;objects[spellIndex]=updatedSpell;
+  write(storage,objects);
+  return {target:{...updatedTarget},spell:{...updatedSpell}};
+ }
  function listCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
  }
@@ -71,11 +189,11 @@
  }
  function getStats(storage){
   const cards=listCards(storage),recycled=listRecycledCards(storage),books=listBooks(storage);
-  return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId).length,
+  return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId&&!x.containment).length,
    inBooks:cards.filter(x=>!!x.containerId).length,recycledCards:recycled.length,createdBooks:books.length};
  }
  // Cards stay unassigned and floating until the future book-forge placement is implemented.
- function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId)}
+ function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId&&!x.containment)}
  function listBooks(storage){return read(storage).objects.filter(x=>x.objectType==='book'&&x.templateId==='blank-book-v1'&&x.id.startsWith('local.book.')).map(x=>({...x}))}
  function token(random){
   if(random&&typeof random.randomUUID==='function')return random.randomUUID();
@@ -143,11 +261,109 @@
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
   const old=state.objects[at];
+  if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
   if(!canStoreBoundCard(old,containerId,slotIndex))
    throw Error('已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
+ }
+ // EXPERIMENTAL CARD-COPY (ON HOLD): a physical blank medium in the right GBA well receives
+ // only appearance/content. It never duplicates identity, authority or a rune.
+ const ATLAS_ID='local.atlas.compendium';
+ function isBlankCopyMedium(c){
+  return isPlayerCard(c)&&c.status==='draft'&&c.placement==='book'&&
+   c.containerId===ATLAS_ID&&c.slotIndex===9&&c.ownerBookId===ATLAS_ID&&
+   c.title==='空白卡片'&&!c.description&&!c.cardNumber&&!c.cardType&&!c.image&&
+   !c.linkedCardId&&!c.ability&&(!c.permissions||c.permissions.length===0)&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.containment&&!c.copyInfo&&
+   !c.l2Certified&&!c.upgradeRequest&&!c.certification;
+ }
+ function canCopyAppearance(c){
+  if(!isPlayerCard(c)||c.status!=='draft'||c.placement!=='book'||
+    c.containerId!==ATLAS_ID||!Number.isInteger(c.slotIndex)||
+    c.slotIndex<0||c.slotIndex>8)return false;
+  if(typeof c.title!=='string'||!c.title.trim()||c.title==='空白卡片')return false;
+  if(c.ability||(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)||
+    c.runeBinding||c.runeContract||c.boundRuneId||c.containment||
+    isPermanentRuneCard(c)||c.l2Certified||c.upgradeRequest||c.certification||c.isUnique===true||
+    c.unique===true||c.uniqueness||c.copyPolicy==='forbidden'||
+    c.reusePolicy==='unique'||c.cardType==='唯一'||c.cardType==='獨一無二')return false;
+  // Never represent a copy of a protected ID, binding or actual capability.
+  return true;
+ }
+ function copySources(storage){
+  return listCards(storage).filter(canCopyAppearance)
+   .sort((a,b)=>a.slotIndex-b.slotIndex||a.id.localeCompare(b.id));
+ }
+ function copyIntoBlankCard(storage,{blankId,blankRevision,sourceId,sourceRevision},
+   clock=()=>new Date().toISOString()){
+  if(typeof blankId!=='string'||typeof sourceId!=='string'||blankId===sourceId)
+   throw Error('空白卡與來源卡必須為不同的原卡');
+  const state=read(storage),objects=state.objects;
+  const blankIndex=objects.findIndex(x=>x.id===blankId&&isPlayerCard(x)&&x.status!=='recycled');
+  const sourceIndex=objects.findIndex(x=>x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(blankIndex<0||sourceIndex<0)throw Error('讀卡來源或空白卡已不存在');
+  const blank=objects[blankIndex],source=objects[sourceIndex];
+  if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
+    !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
+   throw Error('卡片已被修改，請重新選擇複製');
+  if(!isBlankCopyMedium(blank))throw Error('GBA 右側讀卡格必須放入未使用的空白卡');
+  if(!canCopyAppearance(source))throw Error('來源卡不在左頁展示格或不允許複製');
+  const time=clock();
+  // Copy only user-editable presentation fields, not public action links, rune
+  // contracts, skill certification, authorizations, uniqueness or card number.
+  const next={...blank,title:source.title,description:source.description||'',
+   cardType:source.cardType||'',image:source.image?{...source.image}:null,
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   copyInfo:{kind:'appearance',sourceId:source.id,sourceRevision:source.revision,
+    copiedAt:time},revision:blank.revision+1,updatedAt:time};
+  const updated=[...objects];updated[blankIndex]=next;
+  write(storage,updated);return {...next};
+ }
+ // GBA-FORGE-001: an inventory-independent index of designs the player
+ // already created. The left 9 display wells are NOT involved in this process.
+ // A stored/consumed spell's visual template may be downloaded, but this does
+ // not retrieve, recharge, or change the original stored object.
+ function canDownloadTemplate(c){
+  return isPlayerCard(c)&&c.status==='draft'&&
+   typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
+   !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
+   !isPermanentRuneCard(c)&&!c.l2Certified&&!c.upgradeRequest&&!c.certification&&
+   c.isUnique!==true&&c.unique!==true&&!c.uniqueness&&
+   c.copyPolicy!=='forbidden'&&c.reusePolicy!=='unique'&&
+   c.cardType!=='唯一'&&c.cardType!=='獨一無二'&&
+   (!c.containment||c.containment.kind==='consumed_spell');
+ }
+ function listDownloadableTemplates(storage){
+  return listCards(storage).filter(canDownloadTemplate)
+   .sort((a,b)=>String(a.title).localeCompare(String(b.title),'zh-Hant')||
+    a.id.localeCompare(b.id));
+ }
+ function forgeBlankFromTemplate(storage,{blankId,blankRevision,sourceId,sourceRevision},
+  clock=()=>new Date().toISOString()){
+  if(typeof blankId!=='string'||typeof sourceId!=='string'||blankId===sourceId)
+   throw Error('空白卡與卡片範本不得為同一物件');
+  const state=read(storage),objects=state.objects;
+  const blankIndex=objects.findIndex(x=>x.id===blankId&&isPlayerCard(x)&&x.status!=='recycled');
+  const sourceIndex=objects.findIndex(x=>x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(blankIndex<0||sourceIndex<0)throw Error('空白卡或已建立的範本不存在');
+  const blank=objects[blankIndex],source=objects[sourceIndex];
+  if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
+    !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
+   throw Error('卡片已變動，請重新選擇');
+  if(!isBlankCopyMedium(blank))throw Error('右側 GBA 讀卡格需要一張全新的空白卡');
+  if(!canDownloadTemplate(source))throw Error('此已建立卡片不允許作為下載範本');
+  const when=clock();
+  const next={...blank,title:source.title,description:source.description||'',
+   cardType:source.cardType||'',image:source.image?{...source.image}:null,
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   copyInfo:{kind:'gba-template-download',sourceId:source.id,
+    sourceRevision:source.revision,copiedAt:when},
+   revision:blank.revision+1,updatedAt:when};
+  const updated=[...objects];updated[blankIndex]=next;write(storage,updated);
+  return {...next};
  }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
@@ -155,6 +371,7 @@
   if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
+  if(card.placement==='contained'||card.containment)throw Error('已吸收的卡片需先召喚才能編輯');
   if(Object.hasOwn(patch,'title')){
    if(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>40)
     throw Error('卡片名稱必須是 1～40 字');
@@ -193,6 +410,7 @@
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
   const old=state.objects[at];
+  if(old.placement==='contained'||old.containment)throw Error('已收納的法術卡不可直接回收');
   if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
   if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
@@ -212,6 +430,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard};
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });

@@ -11,6 +11,72 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  for(const [id,m] of models)prepareModel(id,m);collection.view=saved;
  let focus=null,returning=null,pointer=null,slotHighlight=null,audio=null,disposed=false,lastFocusId=null,screenMode='card';
  let uploadCardId=null,uploadStatus={state:'idle',code:''};
+ // GBA-FORGE-001: retro menu reads approved player-made templates by stable ID.
+ // The former left-page cloning proposal remains a DIFFERENT, unapproved mechanic.
+ let templateIndex=0,menuIndex=0,templateCache=[],templateStamp=null;
+ let downloadConfirmation=null,downloadEffect=null;
+ const downloadDialog=document.getElementById('atlasDownloadDialog'),
+  downloadSourceName=document.getElementById('atlasDownloadSource');
+ function templatesCached(){
+  const stamp=storage.getItem(craft.KEY);
+  if(stamp!==templateStamp){
+   templateStamp=stamp;
+   try{templateCache=craft.listDownloadableTemplates?.(storage)||[]}
+   catch(error){templateCache=[];toast('範本資料庫讀取失敗：'+error.message)}
+   templateIndex=Math.max(0,Math.min(templateIndex,Math.max(0,templateCache.length-1)));
+  }
+  return templateCache;
+ }
+ function paintGba(reader,now=performance.now()){
+  if(screenMode==='download'&&!craft.isBlankCopyMedium?.(reader?.record))screenMode='menu';
+  const progress=downloadEffect?Math.min(100,Math.max(0,
+   100*(now-downloadEffect.started)/downloadEffect.duration)):null;
+  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus,
+   {items:templatesCached(),index:templateIndex,menuIndex,progress});
+ }
+ function cancelDownloadConfirmation(){
+  downloadConfirmation=null;if(downloadDialog?.open)downloadDialog.close();
+ }
+ function presentDownloadConfirmation(reader){
+  if(!reader||!craft.isBlankCopyMedium?.(reader.record))
+   return toast('請先將未使用的空白卡放進 GBA 讀卡格');
+  const source=templatesCached()[templateIndex];
+  if(!source)return toast('尚無可下載的卡片範本，請先建立一張普通卡');
+  if(downloadDialog.open||downloadEffect)return;
+  downloadConfirmation={blankId:reader.id,blankRevision:reader.record.revision,
+   sourceId:source.id,sourceRevision:source.revision};
+  downloadSourceName.textContent=source.title;
+  downloadDialog.showModal();
+ }
+ downloadDialog?.addEventListener('cancel',()=>{downloadConfirmation=null});
+ document.getElementById('atlasDownloadCancel')?.addEventListener('click',cancelDownloadConfirmation);
+ document.getElementById('atlasDownloadConfirm')?.addEventListener('click',()=>{
+  const selection=downloadConfirmation;if(!selection||downloadEffect)return;
+  cancelDownloadConfirmation();
+  downloadEffect={...selection,started:performance.now(),duration:reduced?280:1050};
+  screenMode='downloading';invalidate();
+ });
+ function onDownloadVisibility(){if(document.hidden){stopDownload();cancelDownloadConfirmation()}}
+ document.addEventListener?.('visibilitychange',onDownloadVisibility);
+ function stopDownload(){
+  if(!downloadEffect)return;
+  downloadEffect=null;screenMode='menu';invalidate();
+ }
+ function finishDownload(now){
+  if(!downloadEffect)return;
+  if(document.hidden||!focus?.gba){stopDownload();return}
+  if(now-downloadEffect.started<downloadEffect.duration)return;
+  const selection=downloadEffect;downloadEffect=null;
+  try{
+   const made=craft.forgeBlankFromTemplate(storage,selection);
+   screenMode='card';templateIndex=0;templateStamp=null;
+   refresh();
+   toast('✦ 格式下載完成，空白卡已具現化：'+made.title);
+  }catch(error){
+   screenMode='download';toast('卡片下載未完成，原空白卡保留：'+String(error?.message||error));
+  }
+  invalidate();
+ }
  const ray=new THREE.Raycaster(),uv=new THREE.Vector2();
  const toolbar=document.getElementById('atlasActions'),exit=document.getElementById('atlasFocusExit'),close=document.getElementById('atlasCollectionClose'),shelf=document.getElementById('atlasCollectionShelf'),switcher=document.getElementById('atlasFocusSwitch');
  function innerCollections(){return [...models.values()].filter(m=>m!==atlas&&m.view.collection==='inner')}
@@ -122,17 +188,38 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    else if(p.kind==='control'&&!p.moved&&!cancel){
     const key=p.control;
     const reader=[...cards.values()].find(c=>State.readerActive(c.record));
-    if(key==='START'||key==='B'){focusGba()}
-    else if(!reader){toast('先將卡片放入右側讀卡區')}
-    else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
-      screenMode=screenMode==='card'?'observe':'card';
-      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
+    if(downloadEffect){
+     if(key==='B'||key==='START'){stopDownload();if(key==='START')focusGba()}
+    }else if(key==='START')focusGba();
+    else if(key==='B'){
+     if(screenMode==='download'||screenMode==='observe')screenMode='menu';
+     else if(screenMode==='menu')screenMode='card';
+     else focusGba();
+    }else if(key==='SELECT'){
+     screenMode=screenMode==='menu'?'card':'menu';paintGba(reader);
     }else if(key==='UP'||key==='DOWN'){
-      screenMode=key==='UP'?'card':'observe';
-      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
+     if(screenMode==='menu')menuIndex=(menuIndex+(key==='DOWN'?1:3))%4;
+     else if(screenMode==='download'){
+      const length=templatesCached().length;
+      if(length)templateIndex=(templateIndex+(key==='DOWN'?1:length-1))%length;
+     }else screenMode=key==='UP'?'card':'observe';
+     paintGba(reader);
+    }else if(key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
+     screenMode=screenMode==='card'?'observe':'card';paintGba(reader);
     }else if(key==='A'){
-      if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
-      else openCard(reader.id);
+     if(screenMode==='menu'){
+      if(menuIndex===0)screenMode='card';
+      else if(menuIndex===1)screenMode='observe';
+      else if(menuIndex===2){
+       if(!craft.isBlankCopyMedium?.(reader?.record))
+        toast('卡片下載需要將一張全新的空白卡放進右側 GBA');
+       else {screenMode='download';templateIndex=0}
+      }else toast('商店尚未開放，未執行購買');
+      paintGba(reader);
+     }else if(screenMode==='download')presentDownloadConfirmation(reader);
+     else if(!reader)toast('先將卡片放入右側讀卡格');
+     else if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
+     else openCard(reader.id);
     }
    }
   else if(p.kind==='book'){
@@ -214,11 +301,20 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    const record=entry.record;if(pointer?.entry?.id===entry.id&&pointer.moved)continue;
    if(!record.containerId)continue;const m=models.get(record.containerId),target=m?.targets.find(t=>t.index===record.slotIndex);
    entry.group.visible=!!target&&m.group.visible&&m.open>.03;
-   if(entry.group.visible){target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);target.node.getWorldQuaternion(entry.group.quaternion);entry.group.scale.setScalar(m.group.scale.x*1.3*tuning.atlasCardSize)}
+   if(entry.group.visible){
+     target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);
+     target.node.getWorldQuaternion(entry.group.quaternion);
+     entry.group.scale.setScalar(m.group.scale.x*1.3*tuning.atlasCardSize);
+     if(downloadEffect?.blankId===entry.id){
+      const u=Math.min(1,Math.max(0,(now-downloadEffect.started)/downloadEffect.duration));
+      entry.group.scale.multiplyScalar(1+(reduced?0:.14*Math.sin(Math.PI*u*3)));
+     }
+    }
   }
+  finishDownload(now);
   const reader=[...cards.values()].find(c=>State.readerActive(c.record));
   if(uploadCardId!==reader?.id){uploadCardId=reader?.id||null;uploadStatus={state:'idle',code:''}}
-  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus);
+  paintGba(reader);
   updateCamera(now);stageData();
  }
  // Called only from the explicitly authorized per-card sender. Nothing is persisted.
@@ -227,12 +323,12 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   if(!reader||reader.id!==cardId)return false;
   if(!['idle','auth','sending','ok','error'].includes(state))return false;
   uploadCardId=cardId;uploadStatus={state,code:String(code||'').slice(0,45)};
-  atlas.screen(reader.record,screenMode,!!focus?.gba,uploadStatus);invalidate();return true;
+  paintGba(reader);invalidate();return true;
  }
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
  function showReaderReturn(){restoreFocusCamera();invalidate()}
- function dispose(){disposed=true;cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
+ function dispose(){disposed=true;document.removeEventListener?.('visibilitychange',onDownloadVisibility);cancelDownloadConfirmation();stopDownload();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
  if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
  if(saved.collection==='shelf')setCollectionActive(false,State.COLLECTION);
  syncCollections();
@@ -241,6 +337,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,reportGithubUpload,
-  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,downloadMode:screenMode==='download',menuIndex,templateIndex,templateCount:templateCache.length,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);
