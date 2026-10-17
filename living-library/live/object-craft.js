@@ -45,6 +45,51 @@
   const objects=[...state.objects];objects[at]=next;
   write(storage,objects);return {...next};
  }
+ // RUNE-04: finish the directed card → floor-rune absorption in ONE atomic write.
+ // Accepts both a fresh unbound card and a legacy temporarily bound card.
+ function sealRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('目前只支援初始法陣');
+  const state=read(storage),index=state.objects.findIndex(x=>
+   x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('法陣契約原卡不存在');
+  const old=state.objects[index];
+  if(!Number.isInteger(expectedRevision)||old.revision!==expectedRevision)
+   throw Error('卡片資料已變動，請重新選取');
+  if(state.objects.some(x=>x.id!==cardId&&isPlayerCard(x)&&x.status!=='recycled'&&
+     x.runeBinding?.runeId===runeId))throw Error('法陣已與其他卡片締結契約');
+  if(old.status!=='draft'||old.placement!=='hover'||old.containerId||old.ownerBookId||
+     old.containment||old.runeBinding?.state==='cardified'||old.runeBinding?.state==='sealed'||
+     old.l2Certified===true||old.upgradeRequest?.state==='requested'||
+     !old.title||old.title.trim()==='空白卡片')throw Error('此卡片不可吸入法陣');
+  if(old.runeBinding&&(old.runeBinding.runeId!==runeId||old.runeBinding.state!=='bound'))
+   throw Error('卡片已有不相容的法陣契約');
+  const now=clock(),binding=old.runeBinding||{runeId,boundAt:now};
+  const next={...old,runeBinding:{...binding,runeId,state:'sealed',sealedAt:now},
+   placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
+   containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',
+    state:'stored',absorbedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
+ // RUNE-05: the ONE original card is materialized from the floor rune;
+ // cardification is a change of state, NOT creation of a second card ID.
+ function materializeRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知法陣');
+  const state=read(storage),index=state.objects.findIndex(x=>
+   x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('封印卡片不存在');
+  const old=state.objects[index];
+  if(old.revision!==expectedRevision)throw Error('卡片版本已變更');
+  if(old.status!=='draft'||old.runeBinding?.runeId!==runeId||
+     old.runeBinding.state!=='sealed'||old.placement!=='contained'||
+     old.containment?.kind!=='rune_contract'||old.containment.holderId!==runeId)
+   throw Error('此法陣並未保存可轉換的原卡');
+  const now=clock(),{containment,...withoutContainer}=old;
+  const next={...withoutContainer,placement:'hover',containerId:null,
+   ownerBookId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'cardified',cardifiedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
  function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString(),expectedCardId=null,expectedRevision=null){
   if(runeId!==ORIGIN_RUNE)throw Error('目前僅支援初始法陣');
   const state=read(storage);
@@ -81,7 +126,7 @@
   if(targets.length!==1||targets[0].id!==targetId)throw Error('法陣契約目標已改變');
   if(target.revision!==targetRevision||spell.revision!==spellRevision)
    throw Error('施法期間卡片資料已變動');
-  if(target.runeBinding?.state!=='bound'||target.status!=='draft'||target.placement!=='hover'||
+  if(!['bound','cardified'].includes(target.runeBinding?.state)||target.status!=='draft'||target.placement!=='hover'||
      target.containerId||target.ownerBookId||target.upgradeRequest?.state==='requested')
    throw Error('此契約尚不可解除');
   if(spell.status!=='draft'||spell.placement!=='hover'||spell.containerId||spell.ownerBookId||
@@ -254,5 +299,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard};
 });
