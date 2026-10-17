@@ -2085,7 +2085,7 @@ function inspectSpellNearest(spellId){
  const entries=[...floatingCardMeshes.values()].map(localFloatEntry);
  return UnbindSpell.findNearestBoundCard(spellId,entries.find(x=>x.id===spellId),entries);
 }
-function spellCardAt(e){
+function interactableCardAt(e){
  const rect=renderer.domElement.getBoundingClientRect();
  if(!rect.width||!rect.height)return null;
  spellPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
@@ -2100,7 +2100,17 @@ function spellCardAt(e){
  const avatarBlock=spellRay.intersectObject(keeper,true)[0];
  if(avatarBlock&&avatarBlock.distance+.06<hit.distance)return null;
  const entry=floatingCardMeshes.get(hit.object.userData.localCardId);
+ return entry||null;
+}
+function spellCardAt(e){
+ const entry=interactableCardAt(e);
  return UnbindSpell.isSpellCard(entry?.record)?entry:null;
+}
+function runeCardAt(e){
+ const entry=interactableCardAt(e),card=entry?.record;
+ return card?.runeBinding?.runeId===RuneContract.RUNE_ID&&
+  card.runeBinding.state==='cardified'&&card.placement==='hover'&&
+  !card.containerId&&!entry.summon&&!entry.recycle?entry:null;
 }
 function closeSpellPrompt(){
  if(spellPromptTimer!==null){clearTimeout(spellPromptTimer);spellPromptTimer=null}
