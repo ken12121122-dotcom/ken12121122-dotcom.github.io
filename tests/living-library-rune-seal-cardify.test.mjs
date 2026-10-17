@@ -100,7 +100,7 @@ test('stale revision, duplicate floor rune holder, or wrong materialization phas
  }
  const db=mkstorage([card()]),before=db.raw();
  assert.throws(()=>C.sealRuneCard(db,C.ORIGIN_RUNE,'local.card.origin',6),/變動/);
- assert.throws(()=>materialize(db),/保存/);
+ assert.throws(()=>materialize(db),/版本/);
  assert.equal(db.raw(),before);
  seal(db);const snap=db.raw();
  assert.throws(()=>seal(db,'local.card.origin',8),/不可吸入/);
