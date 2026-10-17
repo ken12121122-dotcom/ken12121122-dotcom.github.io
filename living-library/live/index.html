@@ -352,6 +352,15 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
   <button id="runeCardifyConfirm" type="button" class="primary" aria-label="將法陣轉換回原卡" title="確認">✓</button>
  </div>
 </dialog>
+<dialog id="runeReturnDialog" class="rune-bind-dialog" aria-labelledby="runeReturnTitle">
+ <h2 id="runeReturnTitle">✧ 法陣歸還</h2>
+ <p>要讓「<strong id="runeReturnCardName"></strong>」從卡片形態重新還原為地面的初始法陣嗎？</p>
+ <small>同一張原卡會飛回地面法陣。契約、原始 ID、圖片均保留；未解除契約，也不影響未來正式升級。</small>
+ <div class="rune-bind-actions">
+  <button id="runeReturnCancel" type="button" aria-label="取消還原法陣" title="取消">×</button>
+  <button id="runeReturnConfirm" type="button" class="primary" aria-label="確認還原地面初始法陣" title="確認">✓</button>
+ </div>
+</dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
@@ -1875,9 +1884,11 @@ function startRuneTransfer(kind,record){
  if(runeTransfer||!record)throw Error('另一個法陣儀式正在進行');
  const entry=floatingCardMeshes.get(record.id);
  if(!entry)throw Error('原始卡片模型不存在');
- const anchor=runeWorldAnchor(),isSeal=kind==='seal';
+ const anchor=runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
  if(isSeal&&(!entry.group.visible||entry.record.placement!=='hover'||entry.record.containerId))
   throw Error('請先將原卡移回漂浮狀態再締結契約');
+ if(kind==='return'&&record.runeBinding?.state!=='cardified')
+  throw Error('只能讓已具現化的原卡還原成法陣');
  if(!isSeal&&(record.placement!=='contained'||record.runeBinding?.state!=='sealed'))
   throw Error('法陣內沒有等待具現化的卡片');
  entry.group.updateWorldMatrix(true,false);
@@ -1915,12 +1926,15 @@ function tickRuneTransfer(now){
   const craft=window.LivingObjectCraft;
   const changed=cardify?
    craft.materializeRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
-   craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
+   active.kind==='return'?
+    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
+    craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
   runeBound=changed;runeNearest=null;runeBindingCardId=changed.id;
   runeGroup.visible=!cardify; // After cardification, floor rune withdraws into original card.
   runeBindingPulseUntil=performance.now()+(cardify?800:2200);
   refreshFloatingCards();
-  toast(cardify?'✦ 初始法陣已具現化成原卡，可使用解除綁定術':
+  toast(cardify?'✦ 初始法陣已具現化成原卡，可使用解除契約術':
+   active.kind==='return'?'✦ 原卡已還原為地面法陣，契約仍然保留':
    '✦ 原始卡片已沒入初始法陣，契約封印完成');
  }catch(error){
   // Guarded write failed: world model will return to persisted position next paint.
@@ -2107,7 +2121,9 @@ const spellHold=RuneHold.create({
     return;
    }
    const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage);
-   if(!bound||bound.id!==target.cardId||bound.runeBinding?.state!=='bound'){
+   if(!bound||bound.id!==target.cardId||
+       !['bound','cardified'].includes(bound.runeBinding?.state)||
+       window.LivingObjectCraft.isPermanentRuneCard(bound)){
     spellSelection=null;toast('契約狀態已變更，請重新選取');return;
    }
    const caster=floatingCardMeshes.get(spellId);
@@ -2132,6 +2148,7 @@ function confirmSpellUnbind(){
   const current=window.LivingObjectCraft.getRuneBoundCard(localStorage);
   if(latest.status!=='selected'||latest.cardId!==selection.targetId||
     !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision||
+    window.LivingObjectCraft.isPermanentRuneCard(current)||
     floatingCardMeshes.get(selection.casterId)?.record.revision!==selection.spellRevision)
    throw Error('目標位置或資料已有變動，請重新長按魔法卡');
   closeSpellPrompt();
