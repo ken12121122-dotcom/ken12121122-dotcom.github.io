@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ede2cd">
+<title>法術使用紀錄｜念動圖書館</title>
+<style>
+:root{color-scheme:light;--bg:#ede2cd;--paper:#f9f3e7;--ink:#211b15;--gold:#8a7248;--line:#c6b28c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans TC",system-ui,sans-serif}
+main{max-width:860px;padding:clamp(18px,5vw,36px);margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--line);padding-bottom:14px}
+header strong{font-size:clamp(24px,5vw,32px);font-weight:700}
+header small{font-size:12px;color:#5d5140}
+h1{font-size:clamp(22px,5vw,28px);margin:24px 0 6px}
+p{margin:8px 0 16px}
+.note{font-size:13px;color:#4c4032;line-height:1.8}
+#historyCount{display:inline-block;margin:4px 0 12px;font-size:15px;font-weight:700}
+#historyRows{display:grid;gap:12px}
+.record{padding:16px;border:1px solid var(--line);background:var(--paper);border-radius:12px;box-shadow:0 2px 8px #3c2c1614;overflow-wrap:anywhere}
+.record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.record h2{font-size:19px;margin:0 0 8px}
+.tag{flex:none;background:#dfcfac;color:#43321c;padding:3px 9px;border-radius:30px;font-size:12px}
+.record dl{display:grid;grid-template-columns:minmax(95px,140px) minmax(0,1fr);gap:5px 10px;margin:0}
+.record dt{font-weight:600;color:#66553f}
+.record dd{margin:0;overflow-wrap:anywhere}
+#historyStatus{border:1px dashed var(--line);border-radius:9px;padding:14px;background:#f8f0e0}
+[hidden]{display:none!important}
+footer{font-size:12px;color:#5d5140;margin:26px 0 10px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<main>
+<header><strong>法術使用紀錄</strong><small>遊戲之書 · 唯讀</small></header>
+<h1>已消耗法術</h1>
+<p class="note">法術已被使用並收納，不再是可操作的卡片。這裡只讀取原本的本機存檔，不建立新卡、不復原消耗、不改寫任何契約或資料。</p>
+<output id="historyCount" aria-live="polite"></output>
+<div id="historyRows" role="list" aria-label="已消耗法術紀錄"></div>
+<p id="historyStatus" role="status" aria-live="polite" hidden></p>
+<footer>歷史紀錄保留原始卡片 ID、使用時間及吸收對象。資料仍儲存在這個瀏覽器／WebView，並非雲端備份；GBA 的卡片格式下載機制與本頁互不影響。</footer>
+</main>
+<script src="./object-craft.js?v=spell-history-20261017"></script>
+<script>
+(()=>{
+ 'use strict';
+ const host=document.getElementById('historyRows'),
+  count=document.getElementById('historyCount'),
+  status=document.getElementById('historyStatus');
+ const line=(term,value,dl)=>{
+  const dt=document.createElement('dt'),dd=document.createElement('dd');
+  dt.textContent=term;dd.textContent=value;dl.append(dt,dd);
+ };
+ try{
+  const craft=window.LivingObjectCraft;
+  if(!craft?.listSpellHistory)throw Error('紀錄查詢模組未載入，請重新開啟書頁。');
+  const history=craft.listSpellHistory(localStorage);
+  const otherCards=new Map(craft.listCards(localStorage).map(c=>[c.id,c]));
+  count.textContent='紀錄 '+history.length+' 筆';
+  for(const spell of history){
+   const item=document.createElement('article');item.className='record';item.setAttribute('role','listitem');
+   const heading=document.createElement('div');heading.className='record-head';
+   const h2=document.createElement('h2');h2.textContent=spell.title||'未命名法術';
+   const badge=document.createElement('span');badge.className='tag';badge.textContent='已消耗';
+   heading.append(h2,badge);
+   const details=document.createElement('dl');
+   const stamp=spell.containment?.absorbedAt;
+   const timestamp=typeof stamp==='string'&&Number.isFinite(Date.parse(stamp))?
+    new Date(stamp).toLocaleString('zh-TW',{hour12:false}):'未記錄';
+   const targetId=spell.consumedBy||spell.containment?.holderId||'';
+   const target=otherCards.get(targetId);
+   line('使用時間',timestamp,details);
+   line('原卡 ID',spell.id,details);
+   line('吸收對象',target?(target.title+'（'+target.id+'）'):(targetId||'未記錄'),details);
+   item.append(heading,details);host.append(item);
+  }
+  if(history.length===0){status.hidden=false;status.textContent='目前沒有已消耗法術紀錄。';}
+ }catch(error){
+  count.textContent='紀錄尚無法讀取';
+  status.hidden=false;status.textContent=error?.message||'本機資料無法讀取，未修改原始紀錄。';
+ }
+})();
+</script>
+</body>
+</html>
