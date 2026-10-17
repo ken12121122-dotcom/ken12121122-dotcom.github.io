@@ -1860,57 +1860,157 @@ function closeRunePrompt(){
  if(runeBindDialog.open)runeBindDialog.close();
  if(runeCardifyDialog.open)runeCardifyDialog.close();
 }
+// Reuse NW-TRANSFER-001 for card → floor-rune absorption and inverse cardification.
+// During the visual transition the persistent snapshot remains unchanged.
+// Completion is a single guarded write; interruption leaves original card data intact.
+function startRuneTransfer(kind,record){
+ if(runeTransfer||!record)throw Error('另一個法陣儀式正在進行');
+ const entry=floatingCardMeshes.get(record.id);
+ if(!entry)throw Error('原始卡片模型不存在');
+ const anchor=runeWorldAnchor(),isSeal=kind==='seal';
+ if(isSeal&&(!entry.group.visible||entry.record.placement!=='hover'||entry.record.containerId))
+  throw Error('請先將原卡移回漂浮狀態再締結契約');
+ if(!isSeal&&(record.placement!=='contained'||record.runeBinding?.state!=='sealed'))
+  throw Error('法陣內沒有等待具現化的卡片');
+ entry.group.updateWorldMatrix(true,false);
+ const from=isSeal?entry.group.getWorldPosition(new THREE.Vector3()):
+  new THREE.Vector3(anchor.x,.58,anchor.z);
+ const positionIndex=[...floatingCardMeshes.keys()].indexOf(record.id);
+ const orbit=CardPlacement.orbitPosition(positionIndex,currentOrbitTime,controlPrefs);
+ const target=isSeal?new THREE.Vector3(anchor.x,.44,anchor.z):
+  new THREE.Vector3(keeper.position.x+orbit.x,orbit.y,keeper.position.z+orbit.z);
+ const start=performance.now(),duration=preferReduced?400:1500;
+ runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,
+  plan:DirectedTransfer.normalize({sourceId:isSeal?record.id:RuneContract.RUNE_ID,
+   targetId:isSeal?RuneContract.RUNE_ID:record.id,
+   from:{x:from.x,y:from.y,z:from.z},to:{x:target.x,y:target.y,z:target.z},
+   startedAt:start,duration,initialScale:isSeal?entry.group.scale.x:.001})};
+ runeBindingCardId=record.id;runeBindingPulseUntil=start+duration+450;
+ runeGlow.visible=true;
+ syncRender();
+}
+function tickRuneTransfer(now){
+ const active=runeTransfer;
+ if(!active)return;
+ const entry=floatingCardMeshes.get(active.cardId);
+ if(!entry){runeTransfer=null;toast('法陣儀式中斷，沒有修改原卡資料');return}
+ const cardify=active.kind==='cardify';
+ const frame=DirectedTransfer.sample(active.plan,now);
+ entry.group.visible=true;
+ entry.group.position.set(frame.position.x,frame.position.y,frame.position.z);
+ entry.group.quaternion.copy(camera.quaternion);
+ // Inverse materialization grows the SAME card outward from its tiny rune point.
+ entry.group.scale.setScalar(cardify?Math.max(.001,controlPrefs.cardSize*frame.progress):frame.scale);
+ if(!frame.done)return;
+ runeTransfer=null;
+ try{
+  const craft=window.LivingObjectCraft;
+  const changed=cardify?
+   craft.materializeRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
+   craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
+  runeBound=changed;runeNearest=null;runeBindingCardId=changed.id;
+  runeGroup.visible=!cardify; // After cardification, floor rune withdraws into original card.
+  runeBindingPulseUntil=performance.now()+(cardify?800:2200);
+  refreshFloatingCards();
+  toast(cardify?'✦ 初始法陣已具現化成原卡，可使用解除綁定術':
+   '✦ 原始卡片已沒入初始法陣，契約封印完成');
+ }catch(error){
+  // Guarded write failed: world model will return to persisted position next paint.
+  runeBindingPulseUntil=0;
+  toast('儀式未完成，卡片資料保持原狀：'+String(error?.message||error));
+ }
+ syncRender();
+}
 function confirmRuneBinding(){
  const selected=runeNearest;
  if(!selected||selected.status!=='selected')return;
  try{
-  const latest=findNearestRuneCard();
-  if(latest.status!=='selected'||latest.cardId!==selected.cardId)
-   throw Error('卡片位置或狀態已改變，請重新長按法陣');
+  const legacy=runeLegacySeal;
   const record=floatingCardMeshes.get(selected.cardId)?.record;
   if(!record)throw Error('候選卡片已不存在');
-  const bound=window.LivingObjectCraft.bindRuneCard(localStorage,RuneContract.RUNE_ID,
-   record.id,record.revision);
-  runeBound=bound;runeBindingCardId=bound.id;
-  runeBindingPulseUntil=performance.now()+2800;
-  closeRunePrompt();
-  refreshFloatingCards(); // Recreate the same card with its visible crest.
-  toast('✦ 連結成功 · 卡片上已生成法陣印記');
-  syncRender();
+  if(legacy){
+   const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   if(!bound||bound.id!==record.id||bound.revision!==record.revision||
+      bound.runeBinding?.state!=='bound')throw Error('既有契約已變動');
+  }else{
+   const latest=findNearestRuneCard();
+   if(latest.status!=='selected'||latest.cardId!==selected.cardId)
+    throw Error('卡片位置或狀態已改變，請重新長按法陣');
+  }
+  closeRunePrompt();runeLegacySeal=false;
+  startRuneTransfer('seal',record);
  }catch(error){
-  closeRunePrompt();toast('無法連結：'+String(error?.message||error));syncRender();
+  closeRunePrompt();runeLegacySeal=false;
+  toast('無法締結：'+String(error?.message||error));syncRender();
  }
+}
+function confirmRuneCardify(){
+ try{
+  const latest=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  if(!latest||latest.runeBinding?.state!=='sealed'||runeTransfer)
+   throw Error('法陣封印狀態已變動');
+  closeRunePrompt();
+  startRuneTransfer('cardify',latest);
+ }catch(error){closeRunePrompt();toast('無法卡片化：'+String(error?.message||error))}
 }
 document.getElementById('runeBindConfirm').addEventListener('click',confirmRuneBinding);
 document.getElementById('runeBindCancel').addEventListener('click',()=>{
- closeRunePrompt();runeNearest=null;toast('已取消連結');syncRender();
+ closeRunePrompt();runeNearest=null;runeLegacySeal=false;toast('已取消連結');syncRender();
 });
-runeBindDialog.addEventListener('cancel',()=>{runeNearest=null;syncRender()});
+document.getElementById('runeCardifyConfirm').addEventListener('click',confirmRuneCardify);
+document.getElementById('runeCardifyCancel').addEventListener('click',()=>{
+ closeRunePrompt();toast('已保留法陣封印');syncRender();
+});
+runeBindDialog.addEventListener('cancel',()=>{runeNearest=null;runeLegacySeal=false;syncRender()});
 runeBindDialog.addEventListener('close',()=>syncRender());
+runeCardifyDialog.addEventListener('close',()=>syncRender());
 const runeGesture=RuneHold.create({
  isAllowed:runeAllowed,
  onChange:()=>syncRender(),
  onSelected:()=>{
-  if(runeBound){
-   runeBindingCardId=runeBound.id;runeBindingPulseUntil=performance.now()+2400;
-   toast('✦ 此法陣已連結「'+runeBound.title+'」· 封印儀式尚未開放');
+  if(runeBound?.runeBinding?.state==='sealed'){
+   runeBindingPulseUntil=performance.now()+2400;
+   if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+   runePromptTimer=setTimeout(()=>{
+    runePromptTimer=null;
+    if(!document.hidden&&!runeCardifyDialog.open&&!runeTransfer)
+     runeCardifyDialog.showModal();
+   },650);
+   toast('✦ 已選取封印法陣 · 可將原卡重新具現化');
    return;
   }
-  runeNearest=findNearestRuneCard();
-  if(runeNearest.status!=='selected'){
-   toast('✦ 法陣已選取 · 附近沒有唯一可連結的普通卡');return;
+  if(runeBound?.runeBinding?.state==='cardified'){
+   toast('✦ 法陣已具現化為卡片，可使用解除綁定術');return;
   }
-  const record=floatingCardMeshes.get(runeNearest.cardId)?.record;
-  if(!record)return;
-  runeBindCardName.textContent=record.title;
-  // Let users SEE the luminous selection and animated beam before the modal.
+  if(runeBound?.runeBinding?.state==='bound'){
+   const record=floatingCardMeshes.get(runeBound.id)?.record;
+   if(!record||record.placement!=='hover'||record.containerId){
+    toast('✦ 請先把已締結契約的原卡從 GBA 移出，再完成封印');return;
+   }
+   runeLegacySeal=true;
+   runeNearest={status:'selected',cardId:record.id};
+   runeBindCardName.textContent=record.title;
+   runeBindDescription.innerHTML='是否完成「<strong id="runeBindCardName">此卡</strong>」的法陣封印？';
+   runeBindCardName.textContent=record.title;
+  }else{
+   runeLegacySeal=false;
+   runeNearest=findNearestRuneCard();
+   if(runeNearest.status!=='selected'){
+    toast('✦ 法陣已選取 · 附近沒有唯一可連結的普通卡');return;
+   }
+   const record=floatingCardMeshes.get(runeNearest.cardId)?.record;
+   if(!record)return;
+   runeBindDescription.innerHTML='是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？';
+   document.getElementById('runeBindCardName').textContent=record.title;
+  }
   if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+  const picked=runeNearest.cardId;
   runePromptTimer=setTimeout(()=>{
    runePromptTimer=null;
-   if(!document.hidden&&!runeBindDialog.open&&runeNearest?.cardId===record.id)
+   if(!document.hidden&&!runeBindDialog.open&&runeNearest?.cardId===picked&&!runeTransfer)
     runeBindDialog.showModal();
   },700);
-  toast('✦ 法陣選取成功 · 已定位附近卡片');
+  toast('✦ 法陣選取成功 · 已定位契約卡');
  }
 });
 // RUNE-UNBIND-001: long-press a PLAYER card explicitly named "解除綁定" (or
