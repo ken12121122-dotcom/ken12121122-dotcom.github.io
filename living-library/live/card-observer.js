@@ -35,6 +35,33 @@
    x:Number.isFinite(img.x)?img.x:null,
    y:Number.isFinite(img.y)?img.y:null
   }:{present:false};
+  // Non-executable, explicitly allowlisted contract/upgrade evidence.
+  // These fields let a receiving assistant distinguish a bound original rune
+  // from a manually typed card number without leaking arbitrary card metadata.
+  const binding=item.runeBinding&&typeof item.runeBinding==='object'?{
+   rune_id:typeof item.runeBinding.runeId==='string'?item.runeBinding.runeId:null,
+   state:['bound','sealed','cardified'].includes(item.runeBinding.state)?item.runeBinding.state:'unknown',
+   bound_at:typeof item.runeBinding.boundAt==='string'?item.runeBinding.boundAt:null,
+   sealed_at:typeof item.runeBinding.sealedAt==='string'?item.runeBinding.sealedAt:null,
+   cardified_at:typeof item.runeBinding.cardifiedAt==='string'?item.runeBinding.cardifiedAt:null
+  }:null;
+  const registry=item.permanentRegistry&&typeof item.permanentRegistry==='object'?{
+   state:item.permanentRegistry.state==='registered'?'registered':'unverified',
+   scope:item.permanentRegistry.scope==='local-only'?'local-only':'unverified',
+   number:Number.isSafeInteger(item.permanentRegistry.number)?item.permanentRegistry.number:null,
+   book_id:typeof item.permanentRegistry.bookId==='string'?item.permanentRegistry.bookId:null,
+   slot_index:Number.isInteger(item.permanentRegistry.slotIndex)?item.permanentRegistry.slotIndex:null,
+   card_id:typeof item.permanentRegistry.cardId==='string'?item.permanentRegistry.cardId:null,
+   registered_at:typeof item.permanentRegistry.registeredAt==='string'?item.permanentRegistry.registeredAt:null
+  }:null;
+  const origin=item.permanentRegistry?.anchor?.position;
+  const worldAnchor=registry?.state==='registered'&&origin&&
+   ['x','y','z'].every(k=>Number.isFinite(origin[k]))?{
+    scene_id:item.permanentRegistry.anchor.sceneId==='living-library'?'living-library':null,
+    position:{x:origin.x,y:origin.y,z:origin.z},
+    rotation_y:Number.isFinite(item.permanentRegistry.anchor.rotationY)?
+     item.permanentRegistry.anchor.rotationY:null
+  }:null;
   return Object.freeze({
    schema:SCHEMA,
    review_status:'generated',
@@ -56,6 +83,10 @@
     placement:typeof item.placement==='string'?item.placement:null,
     status:typeof item.status==='string'?item.status:null,
     updated_at:typeof item.updatedAt==='string'?item.updatedAt:null,
+    rune_binding:binding,
+    permanent_registration:registry,
+    permanent_card:registry?.state==='registered'&&registry.card_id===item.id,
+    world_anchor:worldAnchor,
     image:photo
    },
    source_records:[{source_type:'device_local_storage',source_key:SOURCE_KEY,
