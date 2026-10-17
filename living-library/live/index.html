@@ -1124,6 +1124,13 @@ for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let
 const RuneContract=window.LivingRuneContract;
 if(!RuneContract)throw Error('Rune identity contract unavailable');
 const runeGroup=new THREE.Group();runeGroup.name='OriginRune';runeGroup.userData.runeId=RuneContract.RUNE_ID;scene.add(runeGroup);
+try{
+ const saved=window.LivingObjectCraft?.getRuneBoundCard(localStorage)?.permanentRegistry?.anchor;
+ if(saved?.sceneId==='living-library'&&['x','y','z'].every(k=>Number.isFinite(saved.position?.[k]))){
+  runeGroup.position.set(saved.position.x,saved.position.y,saved.position.z);
+  if(Number.isFinite(saved.rotationY))runeGroup.rotation.y=saved.rotationY;
+ }
+}catch(err){console.warn('Stored permanent rune placement invalid',err)}
 cyl(3.02,3.35,.36,0,-.13,0,stone2,runeGroup);cyl(2.85,2.96,.22,0,.16,0,blackstone,runeGroup);
 cyl(2.4,2.5,.055,0,.30,0,gold,runeGroup);cyl(2.38,2.39,.055,0,.35,0,stone,runeGroup);
 for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,runeGroup,Math.PI/2);
@@ -1907,11 +1914,11 @@ function closeRunePrompt(){
 // Reuse NW-TRANSFER-001 for card → floor-rune absorption and inverse cardification.
 // During the visual transition the persistent snapshot remains unchanged.
 // Completion is a single guarded write; interruption leaves original card data intact.
-function startRuneTransfer(kind,record){
+function startRuneTransfer(kind,record,placement=null){
  if(runeTransfer||!record)throw Error('另一個法陣儀式正在進行');
  const entry=floatingCardMeshes.get(record.id);
  if(!entry)throw Error('原始卡片模型不存在');
- const anchor=runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
+ const anchor=kind==='return'&&placement?placement.position:runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
  if(isSeal&&(!entry.group.visible||entry.record.placement!=='hover'||entry.record.containerId))
   throw Error('請先將原卡移回漂浮狀態再締結契約');
  if(kind==='return'&&record.runeBinding?.state!=='cardified')
@@ -1926,7 +1933,7 @@ function startRuneTransfer(kind,record){
  const target=isSeal?new THREE.Vector3(anchor.x,.44,anchor.z):
   new THREE.Vector3(keeper.position.x+orbit.x,orbit.y,keeper.position.z+orbit.z);
  const start=performance.now(),duration=preferReduced?400:1500;
- runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,
+ runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,placement,
   plan:DirectedTransfer.normalize({sourceId:isSeal?record.id:RuneContract.RUNE_ID,
    targetId:isSeal?RuneContract.RUNE_ID:record.id,
    from:{x:from.x,y:from.y,z:from.z},to:{x:target.x,y:target.y,z:target.z},
@@ -1954,9 +1961,14 @@ function tickRuneTransfer(now){
   const changed=cardify?
    craft.materializeRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
    active.kind==='return'?
-    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
+    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision,undefined,active.placement):
     craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
   runeBound=changed;runeNearest=null;runeBindingCardId=changed.id;
+  if(changed.permanentRegistry?.anchor&&active.kind==='return'){
+   const pos=changed.permanentRegistry.anchor.position;
+   runeGroup.position.set(pos.x,pos.y,pos.z);
+   runeGroup.rotation.y=changed.permanentRegistry.anchor.rotationY||0;
+  }
   runeGroup.visible=!cardify; // After cardification, floor rune withdraws into original card.
   runeBindingPulseUntil=performance.now()+(cardify?800:2200);
   refreshFloatingCards();
