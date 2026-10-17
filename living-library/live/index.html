@@ -1271,8 +1271,9 @@ function stepAvatar(dt){
   const input=exploreInput();
   if(Math.hypot(input.x,input.y)<.025)return false;
   const moveSpan=Math.min(.16,dt*2.2);
-  buildState.position=Build.place({x:buildState.position.x+input.x*moveSpan,
-   z:buildState.position.z-input.y*moveSpan},{grid:buildState.grid}).position;
+  const raw=buildState.precise||buildState.position;
+  buildState.precise={x:raw.x+input.x*moveSpan,y:0,z:raw.z-input.y*moveSpan};
+  buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
   updateHologram(performance.now());return true;
  }
  if(!hasWalkInput()){keeper.position.y=.46;return false}
@@ -2485,7 +2486,7 @@ function locatePermanentWorldCard(){
 }
 function syncBuildControls(){
  const card=locatePermanentWorldCard(),registered=Registry?.isRegistered(card);
- buildToggle.hidden=!registered||!!buildState;
+ buildToggle.hidden=!registered||!!buildState||!!atlasRuntime?.inFocus;
  buildTools.hidden=!buildState;
  buildSnap.dataset.on=buildState?.grid?'true':'false';
 }
@@ -2508,7 +2509,8 @@ function beginPermanentBuild(mode,card){
   throw Error('世界建造只能選擇目前已實體化的永久物件');
  const anchor=card.permanentRegistry.anchor||{position:{x:0,y:0,z:0},rotationY:0};
  buildState={mode,cardId:card.id,revision:card.revision,
-  position:Build.place(anchor.position).position,rotationY:anchor.rotationY||0,
+  position:Build.place(anchor.position).position,precise:Build.place(anchor.position).position,
+  rotationY:anchor.rotationY||0,
   grid:false,valid:true};
  resetJoystick(false);syncBuildControls();updateHologram(performance.now());
  toast('✦ 虛擬投影已啟動：觸碰地面定位、搖桿微調、⊞ 吸附網格');
@@ -2516,7 +2518,7 @@ function beginPermanentBuild(mode,card){
 }
 function cancelPermanentBuild(){
  if(!buildState)return;
- buildState=null;buildPointer=null;holoGroup.visible=false;
+ buildState=null;buildPointer=null;buildCameraPan=null;holoGroup.visible=false;
  resetJoystick(false);syncBuildControls();syncRender();
 }
 function confirmPermanentBuild(){
@@ -2552,7 +2554,8 @@ function pickBuildGround(e){
  const cast=new THREE.Raycaster();cast.setFromCamera(loc,camera);
  const hit=cast.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),
   new THREE.Vector3());
- if(hit){const next=Build.place(hit,{grid:buildState.grid});buildState.position=next.position;
+ if(hit){const next=Build.place(hit,{grid:buildState.grid});
+  buildState.precise={x:hit.x,y:0,z:hit.z};buildState.position=next.position;
   buildState.valid=next.valid;updateHologram(performance.now());syncRender()}
 }
 buildToggle.addEventListener('click',()=>{
@@ -2565,6 +2568,7 @@ buildSnap.addEventListener('click',()=>{
  if(!buildState)return;
  buildState.grid=!buildState.grid;
  buildState.position=Build.place(buildState.position,{grid:buildState.grid}).position;
+ buildState.precise={...buildState.position};
  syncBuildControls();updateHologram(performance.now());syncRender();
 });
 document.getElementById('permanentBuildRotate').addEventListener('click',()=>{
@@ -2618,6 +2622,7 @@ function contactPair(){
 renderer.domElement.addEventListener('pointerdown',e=>{
  if(buildState&&!insideJoystick(e)){
   buildPointer=e.pointerId;
+  buildCameraPan={startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};
   if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
   e.preventDefault();return;
  }
@@ -2664,7 +2669,19 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
- if(buildState&&buildPointer===e.pointerId)return;
+ if(buildState&&buildPointer===e.pointerId){
+  if(buildCameraPan){
+   const pan=buildCameraPan,dx=e.clientX-pan.lastX,dy=e.clientY-pan.lastY;
+   pan.lastX=e.clientX;pan.lastY=e.clientY;
+   // Right-half drag keeps the existing free camera during building.
+   if(pan.startX>window.innerWidth*.5&&
+      (pan.moved||Math.hypot(e.clientX-pan.startX,e.clientY-pan.startY)>7)){
+    pan.moved=true;theta-=dx*.005;
+    phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate();
+   }
+  }
+  syncRender();return;
+ }
  if(runeGesture.pointerMove(e)){syncRender();return}
  if(spellHold.pointerMove(e)){
   if(spellActivatedPointerId===e.pointerId){syncRender();return}
@@ -2710,7 +2727,10 @@ renderer.domElement.addEventListener('pointermove',e=>{
 });
 renderer.domElement.addEventListener('pointerup',e=>{
  if(buildState&&buildPointer===e.pointerId){
-  buildPointer=null;pickBuildGround(e);syncRender();return;
+  const wasCameraDrag=!!buildCameraPan?.moved;
+  buildPointer=null;buildCameraPan=null;
+  if(!wasCameraDrag)pickBuildGround(e);
+  syncRender();return;
  }
  if(runeGesture.pointerUp(e)){syncRender();return}
  spellHold.pointerUp(e);
