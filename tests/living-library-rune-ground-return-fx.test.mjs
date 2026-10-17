@@ -66,7 +66,7 @@ test('visual return only begins AFTER atomic contract-unbind success; animation 
  assert.match(html,/runeReleaseLanding\.position\.copy\(fx\.to\)/);
  assert.match(html,/function endRuneReleaseEffect\(\)\{\s*if\(!runeReleaseEffect\)return;/);
  assert.match(html,/if\(frame\.done\)\{\s*endRuneReleaseEffect\(\)/);
- assert.match(html,/runeReleaseEffect\|\|hasWalkInput/);
+ assert.match(html,/!!runeReleaseEffect\|\|\s*performance\.now\(\)<runeBindingPulseUntil/);
  assert.match(html,/!runeReleaseEffect&&now>=runeBindingPulseUntil/);
  assert.match(html,/if\(document\.hidden\)\{runeTransfer=null;endRuneReleaseEffect\(\)/);
  assert.match(html,/window\.addEventListener\('pagehide',\(\)=>\{runeTransfer=null;endRuneReleaseEffect\(\)/);
