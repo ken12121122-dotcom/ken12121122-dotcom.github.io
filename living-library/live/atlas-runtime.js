@@ -34,7 +34,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   const progress=permanentGba?.active?permanentGba.progress(now):
    downloadEffect?Math.min(100,Math.max(0,
    100*(now-downloadEffect.started)/downloadEffect.duration)):null;
-  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus,
+  atlas.screen(reader?.record||null,permanentGba?.active?'upgrading':screenMode,!!focus?.gba,uploadStatus,
    {items:templatesCached(),index:templateIndex,menuIndex,progress,
     ...(permanentGba?.data()||{})});
  }
