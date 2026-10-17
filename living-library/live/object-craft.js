@@ -45,13 +45,15 @@
   const objects=[...state.objects];objects[at]=next;
   write(storage,objects);return {...next};
  }
- function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString()){
+ function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString(),expectedCardId=null,expectedRevision=null){
   if(runeId!==ORIGIN_RUNE)throw Error('目前僅支援初始法陣');
   const state=read(storage);
   const matches=state.objects.map((item,index)=>({item,index})).filter(x=>
    isPlayerCard(x.item)&&x.item.runeBinding?.runeId===runeId&&x.item.status!=='recycled');
   if(matches.length!==1)throw Error('找不到唯一的待還原契約卡');
   const {item:old,index}=matches[0];
+  if((expectedCardId!==null&&old.id!==expectedCardId)||(expectedRevision!==null&&old.revision!==expectedRevision))
+   throw Error('契約卡在施法期間已有變動，為保護資料已停止解除');
   if(old.runeBinding.state!=='bound')throw Error('封印後的契約不可直接還原');
   if(old.status!=='draft'||!['hover','book'].includes(old.placement)||
      (old.containerId&&(old.containerId!=='local.atlas.compendium'||old.slotIndex!==9)))
