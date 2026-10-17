@@ -76,6 +76,15 @@
 - 真正刪除歷史 GitHub 分支／合併尚未通過的 PR 是另一個需經 OWNER 明確批准的受控行為；本頁不提供此類寫入功能。
 - 更新方法：改動目錄／UI 名稱先更新 canonical `book_id`／`card_id`，測試 Live 與 Dev 是否一致；版本發布後 UI 只會顯示其當下已部署的公開資料，不能以 PR 的候選頁聲稱主站已更新。
 
+### 分支生命週期與創作發布分級（2026-10-17 候選）
+
+- 權威程序參考：根目錄 `AGENTS.md` 與 `docs/governance/NW-BRANCH-LIFECYCLE-001_分支生命週期與分級創作發布_v1.0.md`；此 UI Registry **不取代** GitHub 真實分支、PR、測試和部署紀錄。
+- 「分支」是程式開發的隔離單位，與網站數、卡片數及書本數互不對應；新分支前先查是否已有對應 PR，優先延續相同範圍。
+- 改動分類為 **C0 純創作資料／C1 靜態內容與公開目錄／C2 遊戲核心／C3 原生與權限**；C0 不需開分支，但若新增卡片時必須改 `public-catalog.js` 或同源 reader，仍屬 C1、目前須 PR。
+- 本文件既有 **L0～L3 指 UI 定位／確認深度**，不是 C0～C3 發布風險級別。沒有建立額外常駐自動任務或刪除權限。
+- 分支生命週期以 `ACTIVE / DRAFT PR / REVIEW / MERGED / BLOCKED / ABANDONED` 記錄；舊分支先盤點，清理只提候選清單。**刪除 Git 分支、關閉未驗收 PR、正式合併仍需 OWNER 對具體目標核准**。
+- 暫行「同 Agent 超過 3 條未結案分支／repo 超過 20 條活躍開發分支」僅用於提醒進行盤點，非 GitHub 平台上限。
+
 ## 8. 3D 遊戲參數的既有卡片歸屬（2026-10-15 候選版）
 
 **避免誤認兩張 UI 卡**：`public.system.ui.map`（《系統之書》→「UI 名詞與書籍分工」）是**UI／卡片路由與管理索引**，不是即時編輯器；玩家真正能調整操作偏好的既有卡是 `public.system.controls`（《系統之書》→「連線與版本」，`living-library/live/system-controls.html`）。
