@@ -1267,6 +1267,14 @@ document.addEventListener('keyup',e=>{
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
+ if(buildState){
+  const input=exploreInput();
+  if(Math.hypot(input.x,input.y)<.025)return false;
+  const distance=Math.min(.16,dt*2.2);
+  buildState.position=Build.place({x:buildState.position.x+input.x*distance,
+   z:buildState.position.z-input.y*distance},{grid:buildState.grid}).position;
+  updateHologram(performance.now());return true;
+ }
  if(!hasWalkInput()){keeper.position.y=.46;return false}
  const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
  const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
@@ -2410,6 +2418,10 @@ const returnCardHold=RuneHold.create({
    if(!card||card.id!==id||card.runeBinding?.state!=='cardified'||
       floatingCardMeshes.get(id)?.record.revision!==card.revision||
       card.placement!=='hover'||card.containerId)throw Error('法陣原卡狀態已變動');
+   if(window.LivingPermanentCards?.isRegistered(card)){
+    beginPermanentBuild('card',card);
+    return;
+   }
    returnCardSelection={id,revision:card.revision};returnName.textContent=card.title;
    returnPromptTimer=setTimeout(()=>{
     returnPromptTimer=null;
@@ -2604,6 +2616,11 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ if(buildState&&!insideJoystick(e)){
+  buildPointer=e.pointerId;
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  e.preventDefault();return;
+ }
  runeGesture.foreignDown(e.pointerId); // A second finger cancels the first hold.
  spellHold.foreignDown(e.pointerId);
  returnCardHold.foreignDown(e.pointerId);
@@ -2647,6 +2664,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(buildState&&buildPointer===e.pointerId)return;
  if(runeGesture.pointerMove(e)){syncRender();return}
  if(spellHold.pointerMove(e)){
   if(spellActivatedPointerId===e.pointerId){syncRender();return}
@@ -2691,6 +2709,9 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(buildState&&buildPointer===e.pointerId){
+  buildPointer=null;pickBuildGround(e);syncRender();return;
+ }
  if(runeGesture.pointerUp(e)){syncRender();return}
  spellHold.pointerUp(e);
  returnCardHold.pointerUp(e);
@@ -2723,6 +2744,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(buildPointer===e.pointerId){buildPointer=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
@@ -2736,6 +2758,7 @@ renderer.domElement.addEventListener('pointercancel',e=>{
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(buildPointer===e.pointerId){buildPointer=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
@@ -2789,7 +2812,7 @@ function stopRenderLoop(){
  running=false;
  renderer.setAnimationLoop(null);
 }
-let proofPaintAt=0;
+let proofPaintAt=0,buildSyncLast=0;
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
@@ -2801,6 +2824,8 @@ function paint(now){
  spellHold.tick();updateSpellEffect(now);
  updateRuneReleaseEffect(now);
  returnCardHold.tick();updateRuneReturnVisual(now);
+ updateHologram(now);
+ if(now-buildSyncLast>650){buildSyncLast=now;syncBuildControls()}
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
@@ -2828,11 +2853,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
   performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
@@ -2844,10 +2869,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardSelection=null;returnCardHold.cancelAll();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
-window.addEventListener('blur',()=>{endRuneReleaseEffect();spellHold.cancelAll();returnCardHold.cancelAll();runeGesture.cancelAll();syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardSelection=null;returnCardHold.cancelAll();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+window.addEventListener('blur',()=>{cancelPermanentBuild();endRuneReleaseEffect();spellHold.cancelAll();returnCardHold.cancelAll();runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',()=>{runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardHold.cancelAll();runeGesture.cancelAll();stopRenderLoop()});
+window.addEventListener('pagehide',()=>{cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardHold.cancelAll();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
