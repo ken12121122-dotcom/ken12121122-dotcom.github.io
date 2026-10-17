@@ -11,6 +11,50 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  for(const [id,m] of models)prepareModel(id,m);collection.view=saved;
  let focus=null,returning=null,pointer=null,slotHighlight=null,audio=null,disposed=false,lastFocusId=null,screenMode='card';
  let uploadCardId=null,uploadStatus={state:'idle',code:''};
+ let copyIndex=0,copySourceCache=[],copyStamp=null,copyConfirmSelection=null;
+ const copyDialog=document.getElementById('atlasCopyDialog'),
+  copySourceName=document.getElementById('atlasCopySource');
+ function copySourcesCached(){
+  const stamp=storage.getItem(craft.KEY);
+  if(stamp!==copyStamp){
+   copyStamp=stamp;
+   try{copySourceCache=craft.copySources?.(storage)||[]}
+   catch(error){copySourceCache=[];toast('讀取複製來源失敗：'+error.message)}
+   copyIndex=Math.max(0,Math.min(copyIndex,Math.max(0,copySourceCache.length-1)));
+  }
+  return copySourceCache;
+ }
+ function paintGba(reader){
+  const blank=!!reader&&craft.isBlankCopyMedium?.(reader.record);
+  if(screenMode==='copy'&&!blank)screenMode='card';
+  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus,
+   {items:blank?copySourcesCached():[],index:copyIndex});
+  invalidate();
+ }
+ function cancelCopyConfirmation(){copyConfirmSelection=null;if(copyDialog?.open)copyDialog.close()}
+ function presentCopyConfirmation(reader){
+  if(!reader||!craft.isBlankCopyMedium?.(reader.record))return toast('讀卡格需要未使用的空白卡');
+  const source=copySourcesCached()[copyIndex];
+  if(!source)return toast('請先將可複製的普通卡片放進左頁九格');
+  if(copyDialog.open)return;
+  copyConfirmSelection={blankId:reader.id,blankRevision:reader.record.revision,
+   sourceId:source.id,sourceRevision:source.revision};
+  copySourceName.textContent=source.title;
+  copyDialog.showModal();
+ }
+ copyDialog?.addEventListener('cancel',()=>{copyConfirmSelection=null});
+ document.getElementById('atlasCopyCancel')?.addEventListener('click',cancelCopyConfirmation);
+ document.getElementById('atlasCopyConfirm')?.addEventListener('click',()=>{
+  const selection=copyConfirmSelection;if(!selection)return;
+  cancelCopyConfirmation();
+  try{
+   const result=craft.copyIntoBlankCard(storage,selection);
+   screenMode='card';copyIndex=0;copyStamp=null;
+   refresh();
+   toast('✧ 複製完成：'+result.title+'（保留空白卡原有 ID）');
+  }catch(error){toast('複製未完成：'+String(error?.message||error))}
+  invalidate();
+ });
  const ray=new THREE.Raycaster(),uv=new THREE.Vector2();
  const toolbar=document.getElementById('atlasActions'),exit=document.getElementById('atlasFocusExit'),close=document.getElementById('atlasCollectionClose'),shelf=document.getElementById('atlasCollectionShelf'),switcher=document.getElementById('atlasFocusSwitch');
  function innerCollections(){return [...models.values()].filter(m=>m!==atlas&&m.view.collection==='inner')}
@@ -124,15 +168,23 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
     const reader=[...cards.values()].find(c=>State.readerActive(c.record));
     if(key==='START'||key==='B'){focusGba()}
     else if(!reader){toast('先將卡片放入右側讀卡區')}
-    else if(key==='SELECT'||key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
-      screenMode=screenMode==='card'?'observe':'card';
-      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
+    else if(key==='SELECT'){
+     const modes=craft.isBlankCopyMedium?.(reader.record)?['card','observe','copy']:['card','observe'];
+     screenMode=modes[(modes.indexOf(screenMode)+1)%modes.length];
+     paintGba(reader);
+    }else if(key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
+     screenMode=screenMode==='card'?'observe':'card';
+     paintGba(reader);
     }else if(key==='UP'||key==='DOWN'){
-      screenMode=key==='UP'?'card':'observe';
-      atlas.screen(reader.record,screenMode,true,uploadStatus);invalidate();
+     if(screenMode==='copy'){
+      const length=copySourcesCached().length;
+      if(length)copyIndex=(copyIndex+(key==='DOWN'?1:length-1))%length;
+     }else screenMode=key==='UP'?'card':'observe';
+     paintGba(reader);
     }else if(key==='A'){
-      if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
-      else openCard(reader.id);
+     if(screenMode==='copy')presentCopyConfirmation(reader);
+     else if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
+     else openCard(reader.id);
     }
    }
   else if(p.kind==='book'){
@@ -218,7 +270,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   }
   const reader=[...cards.values()].find(c=>State.readerActive(c.record));
   if(uploadCardId!==reader?.id){uploadCardId=reader?.id||null;uploadStatus={state:'idle',code:''}}
-  atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus);
+  paintGba(reader);
   updateCamera(now);stageData();
  }
  // Called only from the explicitly authorized per-card sender. Nothing is persisted.
@@ -227,12 +279,12 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   if(!reader||reader.id!==cardId)return false;
   if(!['idle','auth','sending','ok','error'].includes(state))return false;
   uploadCardId=cardId;uploadStatus={state,code:String(code||'').slice(0,45)};
-  atlas.screen(reader.record,screenMode,!!focus?.gba,uploadStatus);invalidate();return true;
+  paintGba(reader);return true;
  }
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
  function showReaderReturn(){restoreFocusCamera();invalidate()}
- function dispose(){disposed=true;cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
+ function dispose(){disposed=true;cancelCopyConfirmation();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
  if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
  if(saved.collection==='shelf')setCollectionActive(false,State.COLLECTION);
  syncCollections();
@@ -241,6 +293,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,reportGithubUpload,
-  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,copyMode:screenMode==='copy',copyIndex,copyOptions:copySourceCache.length,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);
