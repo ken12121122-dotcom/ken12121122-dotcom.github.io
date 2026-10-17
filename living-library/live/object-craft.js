@@ -65,6 +65,42 @@
   const objects=[...state.objects];objects[index]=result;
   write(storage,objects);return {...result};
  }
+
+ // Directed card absorption is containment, never deletion. One write commits
+ // both the restored target and the consumed spell, preserving both stable IDs.
+ function unbindAndAbsorbSpell(storage,{runeId=ORIGIN_RUNE,targetId,targetRevision,spellId,spellRevision},
+   clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知法陣');
+  if(!targetId||!spellId||targetId===spellId)throw Error('施法卡與目標不得相同');
+  const state=read(storage),cards=state.objects;
+  const targetIndex=cards.findIndex(x=>x.id===targetId&&isPlayerCard(x)&&x.status!=='recycled');
+  const spellIndex=cards.findIndex(x=>x.id===spellId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(targetIndex<0||spellIndex<0)throw Error('施法卡或目標卡已不存在');
+  const target=cards[targetIndex],spell=cards[spellIndex];
+  const targets=cards.filter(x=>isPlayerCard(x)&&x.status!=='recycled'&&x.runeBinding?.runeId===runeId);
+  if(targets.length!==1||targets[0].id!==targetId)throw Error('法陣契約目標已改變');
+  if(target.revision!==targetRevision||spell.revision!==spellRevision)
+   throw Error('施法期間卡片資料已變動');
+  if(target.runeBinding?.state!=='bound'||target.status!=='draft'||target.placement!=='hover'||
+     target.containerId||target.ownerBookId||target.upgradeRequest?.state==='requested')
+   throw Error('此契約尚不可解除');
+  if(spell.status!=='draft'||spell.placement!=='hover'||spell.containerId||spell.ownerBookId||
+     spell.runeBinding||spell.consumedBy||spell.containment)
+   throw Error('施法卡目前不可消耗');
+  const title=typeof spell.title==='string'?spell.title.trim().replace(/\s+/g,''):'';
+  if(!/^(解除綁定|解除契約|契約解除)(術|卡|魔法|卡片)?$/.test(title))
+   throw Error('此卡不是解除綁定術卡');
+  // Never create a second ID, overwrite another object, or use the recycle bin.
+  const when=clock(),{runeBinding,...targetData}=target;
+  const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
+  const updatedSpell={...spell,placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
+   containment:{kind:'consumed_spell',holderId:targetId,holderType:'card',
+    state:'stored',absorbedAt:when},consumedBy:targetId,
+   revision:spell.revision+1,updatedAt:when};
+  const objects=[...cards];objects[targetIndex]=updatedTarget;objects[spellIndex]=updatedSpell;
+  write(storage,objects);
+  return {target:{...updatedTarget},spell:{...updatedSpell}};
+ }
  function listCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
  }
@@ -73,11 +109,11 @@
  }
  function getStats(storage){
   const cards=listCards(storage),recycled=listRecycledCards(storage),books=listBooks(storage);
-  return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId).length,
+  return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId&&!x.containment).length,
    inBooks:cards.filter(x=>!!x.containerId).length,recycledCards:recycled.length,createdBooks:books.length};
  }
  // Cards stay unassigned and floating until the future book-forge placement is implemented.
- function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId)}
+ function floatingCards(storage){return listCards(storage).filter(x=>x.placement==='hover'&&!x.containerId&&!x.containment)}
  function listBooks(storage){return read(storage).objects.filter(x=>x.objectType==='book'&&x.templateId==='blank-book-v1'&&x.id.startsWith('local.book.')).map(x=>({...x}))}
  function token(random){
   if(random&&typeof random.randomUUID==='function')return random.randomUUID();
@@ -145,6 +181,7 @@
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
   const old=state.objects[at];
+  if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
   if(!canStoreBoundCard(old,containerId,slotIndex))
    throw Error('已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
@@ -157,6 +194,7 @@
   if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
+  if(card.placement==='contained'||card.containment)throw Error('已吸收的卡片需先召喚才能編輯');
   if(Object.hasOwn(patch,'title')){
    if(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>40)
     throw Error('卡片名稱必須是 1～40 字');
@@ -195,6 +233,7 @@
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
   const old=state.objects[at];
+  if(old.placement==='contained'||old.containment)throw Error('已收納的法術卡不可直接回收');
   if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
   if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
@@ -215,5 +254,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell};
 });
