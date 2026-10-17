@@ -103,7 +103,7 @@
  // Restore the SAME materialized card to the floor rune, with its original
  // contract and ID intact; counterpart of RUNE-05 and safe for future permanent
  // cards (permanence locks unbinding, not changing form).
- function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+ function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString(),placement=null){
   if(runeId!==ORIGIN_RUNE)throw Error('未知初始法陣');
   const state=read(storage);
   const index=state.objects.findIndex(x=>x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
@@ -117,7 +117,20 @@
   if(old.status!=='draft'||old.placement!=='hover'||old.ownerBookId||old.containerId||
    old.containment||old.runeBinding?.state!=='cardified')
    throw Error('卡片尚未具現化或目前不在世界中');
-  const now=clock(),next={...old,placement:'contained',ownerBookId:null,
+  // One atomic transaction: a permanent card's last approved hologram
+  // position becomes the current world object anchor at card→rune conversion.
+  if(placement){
+   if(old.permanentRegistry?.state!=='registered'||!placement.position||
+    !['x','y','z'].every(k=>Number.isFinite(placement.position[k]))||
+    Math.abs(placement.position.x)>8||Math.abs(placement.position.z)>8||
+    Math.abs(placement.position.y)>1||Math.hypot(placement.position.x,placement.position.z)>9.5||
+    !Number.isFinite(placement.rotationY)||Math.abs(placement.rotationY)>Math.PI*2)
+    throw Error('投影位置不合法；永久原卡不變');
+  }
+  const when=clock(),permanentRegistry=placement?{...old.permanentRegistry,
+   anchor:{...old.permanentRegistry.anchor,position:{...placement.position},
+    rotationY:placement.rotationY,scale:1}}:old.permanentRegistry;
+  const now=when,next={...old,permanentRegistry,placement:'contained',ownerBookId:null,
    containerId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'sealed',resealedAt:now},
    containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',state:'stored',absorbedAt:now},
    revision:old.revision+1,updatedAt:now};
