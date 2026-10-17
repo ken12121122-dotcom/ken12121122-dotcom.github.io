@@ -29,6 +29,7 @@
   function add(mesh,visualOnly=true){
    group.add(mesh);resources.push(mesh);
    if(visualOnly)mesh.raycast=()=>{}; // Decorative metal cannot steal clicks.
+   else mesh.userData.localCardId=record.id;
    return mesh;
   }
   const frameGeo=new THREE.ExtrudeGeometry(roundedShape(THREE,.462,.675,.026),{
