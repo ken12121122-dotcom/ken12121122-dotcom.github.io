@@ -20,6 +20,8 @@
  function write(storage,objects){storage.setItem(KEY,JSON.stringify({version:VERSION,objects}))}
  function isPlayerCard(x){return x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.')}
  // Return the same original card; a rune bond never creates a second card ID.
+ function isConsumedSpell(card){return !!card&&card.placement==='contained'&&card.containment?.kind==='consumed_spell'}
+ function isAvailableCard(card){return isPlayerCard(card)&&card.status!=='recycled'&&!isConsumedSpell(card)}
  function getRuneBoundCard(storage,runeId=ORIGIN_RUNE){
   return listCards(storage).find(x=>x.runeBinding?.runeId===runeId)||null;
  }
@@ -200,8 +202,16 @@
  function listRecycledCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').map(x=>({...x}));
  }
+ // The creator hides consumed spell records; their original local records
+ // remain intact for read-only history and GBA appearance-template lookup.
+ function listCreatorCards(storage){return listCards(storage).filter(x=>!isConsumedSpell(x))}
+ function listSpellHistory(storage){
+  return listCards(storage).filter(isConsumedSpell).sort((a,b)=>
+   String(b.containment.absorbedAt||'').localeCompare(String(a.containment.absorbedAt||''))||
+   String(b.id).localeCompare(String(a.id)));
+ }
  function getStats(storage){
-  const cards=listCards(storage),recycled=listRecycledCards(storage),books=listBooks(storage);
+  const cards=listCreatorCards(storage),recycled=listRecycledCards(storage),books=listBooks(storage);
   return {totalCards:cards.length,floatingCards:cards.filter(x=>x.placement==='hover'&&!x.containerId&&!x.containment).length,
    inBooks:cards.filter(x=>!!x.containerId).length,recycledCards:recycled.length,createdBooks:books.length};
  }
@@ -217,7 +227,7 @@
   throw Error('無法安全產生卡片識別碼');
  }
  function createBlankCard(storage,random,clock=()=>new Date().toISOString()){
-  const state=read(storage);if(state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').length>=MAX_CARDS)
+  const state=read(storage);if(state.objects.filter(isAvailableCard).length>=MAX_CARDS)
    throw Error('試作上限 64 張；沒有覆蓋既有卡片');
   const used=new Set(state.objects.map(x=>x.id));let id;
   for(let i=0;i<5;i++){id='local.card.'+token(random);if(!used.has(id))break}
@@ -451,14 +461,14 @@
  function restoreCard(storage,id,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status==='recycled');
   if(at<0)throw Error('找不到可還原的卡片');
-  if(state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').length>=MAX_CARDS)
-   throw Error('目前有 64 張有效卡片，無法還原；原卡仍留在回收站');
+  if(state.objects.filter(isAvailableCard).length>=MAX_CARDS)
+   throw Error('目前有 64 張可用卡片，無法還原；原卡仍留在回收站');
   const old=state.objects[at],when=clock();
   const next={...old,status:'draft',placement:old.restorePlacement==='hover'?'hover':'hover',
    recycledAt:null,restorePlacement:null,revision:old.revision+1,updatedAt:when};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
- return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
+ return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listCreatorCards,listSpellHistory,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
