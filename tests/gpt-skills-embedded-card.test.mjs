@@ -17,7 +17,7 @@ test('GPT Book adds a real embeddable webpage card, preserving all 14 books and 
  const a=Catalog.buildCatalog();
  assert.equal(a.books.length,15);
  assert.equal(a.bookCards.android.length,16);
- assert.equal(a.bookCards.gaming.length,6);
+ assert.equal(a.bookCards.gaming.length,7);
  assert.deepEqual(a.bookCards.gpt,['public.gpt.bridge','public.gpt.skills']);
  const card=a.cards['public.gpt.skills'];
  assert.equal(card.kind,'public_function');
