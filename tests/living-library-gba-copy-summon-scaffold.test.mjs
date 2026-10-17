@@ -6,6 +6,7 @@ const require=createRequire(import.meta.url);
 const Craft=require('../living-library/live/object-craft.js');
 const Atlas=require('../living-library/live/atlas-state.js');
 const Summon=require('../living-library/live/summon-plan.js');
+const RuneSpell=require('../living-library/live/rune-unbind-spell.js');
 const mk=(id,title,slot,over={})=>({
  id,objectType:'card',templateId:'blank-card-v1',title,description:'',
  image:null,cardNumber:'',cardType:'',linkedCardId:null,ability:null,
@@ -93,6 +94,20 @@ test('stale source/blank revisions and same object never partially modify the ca
  const fail={getItem:db.getItem,setItem:()=>{throw Error('quota')}};
  assert.throws(()=>Craft.copyIntoBlankCard(fail,args[0]),Error);
  assert.equal(db.raw(),before);
+});
+test('copy a repeatable unbinding spell template into blank media and cast the copy later',()=>{
+ const source=mk('local.card.spell-master','解除綁定術',1);
+ const blank=mk('local.card.blank','空白卡片',9);
+ const db=storage([source,blank]);
+ const copied=copy(db,blank,source);
+ assert.equal(copied.title,'解除綁定術');
+ assert.equal(Craft.isBlankCopyMedium(copied),false);
+ assert.equal(RuneSpell.isSpellCard(copied),false,'GBA card is not a floating castable spell');
+ const released=Craft.placeCard(db,blank.id,null);
+ assert.equal(released.id,blank.id);
+ assert.equal(RuneSpell.isSpellCard(released),true,'approved name-based local ritual remains castable');
+ assert.equal(Craft.listCards(db).length,2);
+ assert.equal(Craft.copySources(db).length,1,'the original template remains in left display slot');
 });
 test('consumed spell can be DISCOVERED for future summon but not respawned yet',()=>{
  const owner=mk('local.card.origin','初代法陣卡',null,{placement:'hover',containerId:null,ownerBookId:null});
