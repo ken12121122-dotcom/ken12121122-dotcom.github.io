@@ -331,9 +331,18 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 </dialog>
 <dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
 <h2 id="runeBindTitle">✧ 法陣已選取</h2><p id="runeBindDescription">是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？</p>
-<small>確認後產生契約印記。卡片暫不會被吸收；封印儀式稍後開放。</small>
+<small>確認後原卡會沿光線飛入地面法陣，完成封印。原始卡片 ID、圖片與資料完整保留。</small>
 <div class="rune-bind-actions"><button id="runeBindCancel" type="button" aria-label="取消法陣連結" title="取消">×</button>
 <button id="runeBindConfirm" class="primary" type="button" aria-label="確認連結法陣與卡片" title="確認連結">✓</button></div></dialog>
+<dialog id="runeCardifyDialog" class="rune-bind-dialog" aria-labelledby="runeCardifyTitle">
+ <h2 id="runeCardifyTitle">✧ 法陣具現化</h2>
+ <p>是否要將「初始法陣」變成卡片，讓原本被封印的同一張卡回到世界？</p>
+ <small>卡片將由法陣飛出；原卡圖片、身分與契約記錄不變。可以再用解除綁定術對卡片施法。</small>
+ <div class="rune-bind-actions">
+  <button id="runeCardifyCancel" type="button" aria-label="維持地面法陣封印" title="取消">×</button>
+  <button id="runeCardifyConfirm" type="button" class="primary" aria-label="將法陣轉換回原卡" title="確認">✓</button>
+ </div>
+</dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
@@ -1766,10 +1775,14 @@ const runeGlints=[0,1].map(()=>{
 const tetherAxis=new THREE.Vector3(0,1,0),tetherVector=new THREE.Vector3();
 const tetherStart=new THREE.Vector3(),tetherEnd=new THREE.Vector3();
 let runeNearest=null,runeBindingPulseUntil=0,runeBindingCardId=null,runePromptTimer=null;
+let runeTransfer=null,runeLegacySeal=false;
 let runeBound=null;
 try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
+runeGroup.visible=runeBound?.runeBinding?.state!=='cardified';
 const runeBindDialog=document.getElementById('runeBindDialog'),
- runeBindCardName=document.getElementById('runeBindCardName');
+ runeBindCardName=document.getElementById('runeBindCardName'),
+ runeBindDescription=document.getElementById('runeBindDescription'),
+ runeCardifyDialog=document.getElementById('runeCardifyDialog');
 const runeGlowMaterial=new THREE.MeshBasicMaterial({color:0xafffe4,transparent:true,
  opacity:.38,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
 const runeGlow=new THREE.Mesh(new THREE.RingGeometry(1.25,2.42,96),runeGlowMaterial);
@@ -1778,8 +1791,8 @@ runeGlow.visible=false;runeGroup.add(runeGlow);
 function updateRuneVisual(now){
  const info=runeGesture.inspect(now);
  const show=info.phase==='holding'||info.phase==='selected';
- const bindingFlash=now<runeBindingPulseUntil;
- const illuminated=show||bindingFlash||runeBindDialog.open;
+ const bindingFlash=now<runeBindingPulseUntil||!!runeTransfer;
+ const illuminated=show||bindingFlash||runeBindDialog.open||runeCardifyDialog.open;
  runeGlow.visible=illuminated||!!runeBound;
  runeGlowMaterial.opacity=illuminated?(.25+.12*Math.sin(now*.014)+.19*info.progress):.065;
  runeSelectionRing.visible=illuminated||!!runeBound;
@@ -1793,8 +1806,9 @@ function updateRuneVisual(now){
  runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
  runeCandidateBeam.visible=false;runeTether.visible=false;
  for(const glint of runeGlints)glint.visible=false;
- const linkCardId=info.phase==='selected'&&runeNearest?.status==='selected'
-  ?runeNearest.cardId:bindingFlash?runeBindingCardId:null;
+ const linkCardId=runeTransfer?.cardId||
+  (info.phase==='selected'&&runeNearest?.status==='selected'
+   ?runeNearest.cardId:bindingFlash?runeBindingCardId:null);
  if(linkCardId){
   const card=floatingCardMeshes.get(linkCardId);
   if(card&&card.group.visible&&!card.record.containerId){
@@ -1824,9 +1838,10 @@ function updateRuneVisual(now){
  }
 }
 function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
- !atlasRuntime?.inFocus&&!placingJoystick}
+ !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer}
 function canStartRunePress(e){
- if(!runeAllowed()||touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
+ if(!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
+ touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
  const runeHits=runeHitRay.intersectObject(runeGroup,true)
   .filter(h=>h.object.userData.runeId===RuneContract.RUNE_ID);
  if(!runeHits.length)return false;
@@ -1843,6 +1858,7 @@ function canStartRunePress(e){
 function closeRunePrompt(){
  if(runePromptTimer!==null){clearTimeout(runePromptTimer);runePromptTimer=null}
  if(runeBindDialog.open)runeBindDialog.close();
+ if(runeCardifyDialog.open)runeCardifyDialog.close();
 }
 function confirmRuneBinding(){
  const selected=runeNearest;
