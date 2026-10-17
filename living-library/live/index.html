@@ -2464,7 +2464,7 @@ function rootBuild(){return window.LivingPermanentBuild}
 const buildToggle=document.getElementById('permanentBuildToggle'),
  buildTools=document.getElementById('permanentBuildTools'),
  buildSnap=document.getElementById('permanentBuildSnap');
-let buildState=null,buildPointer=null;
+let buildState=null,buildPointer=null,buildCameraPan=null;
 const holoGroup=new THREE.Group(),holoMats=[];
 for(const radius of [1.45,2.03,2.5]){
  const mat=new THREE.MeshBasicMaterial({color:0x8cffe0,transparent:true,opacity:.46,
@@ -2764,7 +2764,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
- if(buildPointer===e.pointerId){buildPointer=null;return}
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
@@ -2778,7 +2778,7 @@ renderer.domElement.addEventListener('pointercancel',e=>{
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
- if(buildPointer===e.pointerId){buildPointer=null;return}
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
