@@ -68,9 +68,12 @@ function toReader(storage,id,revision,clock=()=>new Date().toISOString()){
  },old=>({...old,placement:'book',containerId:BOOK,ownerBookId:BOOK,slotIndex:READER_SLOT}),clock);
 }
 function archive(storage,id,revision,clock=()=>new Date().toISOString()){
- return transaction(storage,id,revision,card=>{
+ return transaction(storage,id,revision,(card,records)=>{
   if(!isRegistered(card)||card.containerId!==BOOK||card.slotIndex!==READER_SLOT)
    throw Error('只有放入 GBA 0 號格的原卡能歸檔');
+  if(records.some(x=>x.id!==id&&candidateObject(x)&&x.containerId===BOOK&&
+      x.slotIndex===card.permanentRegistry.number-1))
+   throw Error('永久 BOOK 專屬格發生佔位衝突，未歸檔');
  },old=>({...old,placement:'book',containerId:BOOK,ownerBookId:BOOK,
   slotIndex:old.permanentRegistry.number-1}),clock);
 }
