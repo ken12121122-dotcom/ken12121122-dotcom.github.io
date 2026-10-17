@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node atlas-scene.cjs && node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs && node atlas-fallback.cjs && node compendium-card.cjs"
+    "test": "node atlas-scene.cjs && node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs && node atlas-fallback.cjs && node compendium-card.cjs && node media-library.cjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",
