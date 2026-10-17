@@ -1780,7 +1780,6 @@ let runeBound=null;
 try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
 runeGroup.visible=runeBound?.runeBinding?.state!=='cardified';
 const runeBindDialog=document.getElementById('runeBindDialog'),
- runeBindCardName=document.getElementById('runeBindCardName'),
  runeBindDescription=document.getElementById('runeBindDescription'),
  runeCardifyDialog=document.getElementById('runeCardifyDialog');
 const runeGlowMaterial=new THREE.MeshBasicMaterial({color:0xafffe4,transparent:true,
@@ -1989,9 +1988,8 @@ const runeGesture=RuneHold.create({
    }
    runeLegacySeal=true;
    runeNearest={status:'selected',cardId:record.id};
-   runeBindCardName.textContent=record.title;
    runeBindDescription.innerHTML='是否完成「<strong id="runeBindCardName">此卡</strong>」的法陣封印？';
-   runeBindCardName.textContent=record.title;
+   document.getElementById('runeBindCardName').textContent=record.title;
   }else{
    runeLegacySeal=false;
    runeNearest=findNearestRuneCard();
@@ -2219,6 +2217,7 @@ function updateSpellEffect(now){
     targetRevision:active.expectedRevision,spellId:active.casterId,
     spellRevision:active.spellRevision});
    runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
+   runeGroup.visible=true;
    refreshFloatingCards();
    toast('✧ 契約已解除 · 「'+result.spell.title+'」已沒入目標卡片');
   }catch(error){
@@ -2439,6 +2438,7 @@ function paint(now){
  stepAvatar(dt);
  updateOrbit(elapsed,now);
  updateFloatingCards(now);
+ tickRuneTransfer(now);
  runeGesture.tick();updateRuneVisual(now);
  spellHold.tick();updateSpellEffect(now);
  atlasRuntime?.tick(now);
@@ -2468,11 +2468,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!spellHold.active()&&!unbindEffect&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!unbindEffect&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||spellHold.active()||!!unbindEffect||
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||!!unbindEffect||
   performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
@@ -2484,10 +2484,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelSpellUnbind();closeRunePrompt();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){runeTransfer=null;cancelSpellUnbind();closeRunePrompt();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
 window.addEventListener('blur',()=>{spellHold.cancelAll();runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',()=>{cancelSpellUnbind();closeRunePrompt();runeGesture.cancelAll();stopRenderLoop()});
+window.addEventListener('pagehide',()=>{runeTransfer=null;cancelSpellUnbind();closeRunePrompt();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
