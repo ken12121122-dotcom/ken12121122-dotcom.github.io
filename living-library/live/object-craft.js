@@ -249,7 +249,8 @@
     c.containerId!==ATLAS_ID||!Number.isInteger(c.slotIndex)||
     c.slotIndex<0||c.slotIndex>8)return false;
   if(typeof c.title!=='string'||!c.title.trim()||c.title==='空白卡片')return false;
-  if(c.ability||c.runeBinding||c.runeContract||c.boundRuneId||c.containment||
+  if(c.ability||(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)||
+    c.runeBinding||c.runeContract||c.boundRuneId||c.containment||
     c.l2Certified||c.upgradeRequest||c.certification||c.isUnique===true||
     c.unique===true||c.uniqueness||c.copyPolicy==='forbidden'||
     c.reusePolicy==='unique'||c.cardType==='唯一'||c.cardType==='獨一無二')return false;
