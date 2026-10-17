@@ -320,13 +320,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="runeUnbindProgress" class="rune-unbind-progress" aria-hidden="true"></div>
-<dialog id="atlasCopyDialog" class="rune-bind-dialog" aria-labelledby="atlasCopyTitle">
- <h2 id="atlasCopyTitle">✧ GBA｜複製卡面</h2>
- <p>將左頁「<strong id="atlasCopySource"></strong>」的圖片及文字，複製到右側這張空白卡？</p>
- <small>複製圖片、名稱與一般說明；不複製原始 ID、編號、正式技能、權限、法陣契約或 L2。像解除綁定術這類名稱型魔法，複本仍可施放；獨特能力不可複製。</small>
+<dialog id="atlasDownloadDialog" class="rune-bind-dialog" aria-labelledby="atlasDownloadTitle">
+ <h2 id="atlasDownloadTitle">✧ GBA｜卡片下載</h2>
+ <p>將已建立的「<strong id="atlasDownloadSource"></strong>」卡片格式下載到右側這張空白卡？</p>
+ <small>直接從已建立的卡片範本庫選取，與左頁九格無關。下載名稱、圖片與一般說明，不複製原始卡 ID、唯一編號、正式技能、L2 或契約。將播放短暫寫入動畫；失敗保留空白卡。</small>
  <div class="rune-bind-actions">
-  <button id="atlasCopyCancel" type="button" aria-label="取消複製" title="取消">×</button>
-  <button id="atlasCopyConfirm" type="button" class="primary" aria-label="確認將卡面複製到空白卡" title="確認">✓</button>
+  <button id="atlasDownloadCancel" type="button" aria-label="取消卡片格式下載" title="取消">×</button>
+  <button id="atlasDownloadConfirm" type="button" class="primary" aria-label="確認下載格式到空白卡" title="確認">✓</button>
  </div>
 </dialog>
 <dialog id="runeUnbindDialog" class="rune-bind-dialog" aria-labelledby="runeUnbindTitle">
