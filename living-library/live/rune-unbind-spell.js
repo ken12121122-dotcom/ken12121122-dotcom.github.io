@@ -32,7 +32,7 @@
    const c=candidate.record;
    if(c.objectType!=='card'||c.templateId!=='blank-card-v1'||c.status!=='draft'||
       c.placement!=='hover'||c.containerId||c.ownerBookId||
-      c.runeBinding?.runeId!=='local.rune.origin'||c.runeBinding.state!=='bound')continue;
+      c.runeBinding?.runeId!=='local.rune.origin'||!['bound','cardified'].includes(c.runeBinding.state))continue;
    const d=Math.hypot(candidate.position.x-source.position.x,candidate.position.z-source.position.z);
    if(d<=radius)eligible.push({id:candidate.id,distance:d});
   }
