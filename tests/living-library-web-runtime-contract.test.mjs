@@ -10,7 +10,7 @@ const fetchFile=x=>readFile(new URL(x,root),'utf8');
 test('remote Living Library provides 14 real public books, protected native entries and the visible new card',()=>{
  const v=c.buildCatalog();
  assert.equal(v.books.length,15);
- assert.deepEqual(v.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas']);
+ assert.deepEqual(v.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas','public.gaming.creation.sandbox']);
  assert.equal(v.cards['public.gba.runtime'].nativeRoute,'gba');
  assert.equal(v.bookCards.android.length,16);
  assert.equal(v.cards['KW-GAME-MEMORY-PALACE-20261014'].kind,'external_reference');
@@ -48,7 +48,10 @@ test('online Game Book is reached through book catalog or direct link, without a
  assert.match(html, /select\('gaming'\);openBook\(\)/);
  const model=c.buildCatalog();
  const ids=model.bookCards.gaming;
- assert.equal(ids.length,6);
+ assert.equal(ids.length,7);
+ assert.equal(ids[6],'public.gaming.creation.sandbox');
+ assert.equal(model.cards[ids[6]].kind,'public_function');
+ assert.equal(model.cards[ids[6]].url,'./creation-sandbox-architecture.html');
  assert.equal(ids[2],'KW-GAME-MEMORY-PALACE-20261014');
  assert.equal(model.cards[ids[2]].title,'知識城堡｜遊戲設計');
 });

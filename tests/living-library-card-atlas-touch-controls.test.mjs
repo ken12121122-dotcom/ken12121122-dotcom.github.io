@@ -15,7 +15,7 @@ const catalog=Catalog.buildCatalog();
 
 test('keep 14 books, GBA route, game atlas and native Android routes; relocate only approved actions',()=>{
  assert.equal(catalog.books.length,15);
- assert.equal(catalog.bookCards.gaming.length,6);
+ assert.equal(catalog.bookCards.gaming.length,7);
  assert.equal(catalog.bookCards.android.length,16);
  assert.equal(catalog.cards['public.gba.runtime'].nativeRoute,'gba');
  assert.equal(catalog.cards['public.knowledge.search'].url,'./knowledge-search.html');
