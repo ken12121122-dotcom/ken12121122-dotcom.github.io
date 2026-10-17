@@ -120,9 +120,9 @@ button:disabled{opacity:.45}
 <button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
-<script src="./compendium-card.js?v=compendium-number-20261016"></script>
-<script src="./public-catalog.js?v=compendium-number-20261016"></script>
-<script src="./object-craft.js?v=compendium-number-20261016"></script>
+<script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
+<script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
+<script src="./object-craft.js?v=card-create-menu-fix-20261017"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -256,7 +256,10 @@ button:disabled{opacity:.45}
   catch(e){status(e.message||'回收失敗',true)}
  });
  $('createCard').onclick=()=>{
-  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);
+    // A new card is always an independent, untouched draft; no GBA template may be applied here.
+    if(card.title!=='空白卡片'||card.copyInfo||card.runeBinding)throw Error('新卡狀態異常，請先保留本機存檔');
+    show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
  $('editForm').addEventListener('submit',event=>{
@@ -295,7 +298,9 @@ button:disabled{opacity:.45}
  });
  $('openLink').onclick=()=>{const c=selected();if(c?.linkedCardId&&linkTargets.some(t=>t.id===c.linkedCardId))notify('open-card-link',c.id)};
  try{
-  const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
+  // Opening the creation spell without ?card must show a blank preview, never
+   // silently reopen the most recent spell card (e.g. 解除契約卡).
+   const all=cards();show(query?all.find(c=>c.id===query)||null:null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
  }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
