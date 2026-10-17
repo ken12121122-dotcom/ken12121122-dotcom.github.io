@@ -233,6 +233,58 @@
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
+ // GBA-COPY-001: a physical blank medium in the right GBA well receives
+ // only appearance/content. It never duplicates identity, authority or a rune.
+ const ATLAS_ID='local.atlas.compendium';
+ function isBlankCopyMedium(c){
+  return isPlayerCard(c)&&c.status==='draft'&&c.placement==='book'&&
+   c.containerId===ATLAS_ID&&c.slotIndex===9&&c.ownerBookId===ATLAS_ID&&
+   c.title==='空白卡片'&&!c.description&&!c.cardNumber&&!c.cardType&&!c.image&&
+   !c.linkedCardId&&!c.ability&&(!c.permissions||c.permissions.length===0)&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.containment&&!c.copyInfo&&
+   !c.l2Certified&&!c.upgradeRequest&&!c.certification;
+ }
+ function canCopyAppearance(c){
+  if(!isPlayerCard(c)||c.status!=='draft'||c.placement!=='book'||
+    c.containerId!==ATLAS_ID||!Number.isInteger(c.slotIndex)||
+    c.slotIndex<0||c.slotIndex>8)return false;
+  if(typeof c.title!=='string'||!c.title.trim()||c.title==='空白卡片')return false;
+  if(c.ability||c.runeBinding||c.runeContract||c.boundRuneId||c.containment||
+    c.l2Certified||c.upgradeRequest||c.certification||c.isUnique===true||
+    c.unique===true||c.uniqueness||c.copyPolicy==='forbidden'||
+    c.reusePolicy==='unique'||c.cardType==='唯一'||c.cardType==='獨一無二')return false;
+  // Never represent a copy of a protected ID, binding or actual capability.
+  return true;
+ }
+ function copySources(storage){
+  return listCards(storage).filter(canCopyAppearance)
+   .sort((a,b)=>a.slotIndex-b.slotIndex||a.id.localeCompare(b.id));
+ }
+ function copyIntoBlankCard(storage,{blankId,blankRevision,sourceId,sourceRevision},
+   clock=()=>new Date().toISOString()){
+  if(typeof blankId!=='string'||typeof sourceId!=='string'||blankId===sourceId)
+   throw Error('空白卡與來源卡必須為不同的原卡');
+  const state=read(storage),objects=state.objects;
+  const blankIndex=objects.findIndex(x=>x.id===blankId&&isPlayerCard(x)&&x.status!=='recycled');
+  const sourceIndex=objects.findIndex(x=>x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(blankIndex<0||sourceIndex<0)throw Error('讀卡來源或空白卡已不存在');
+  const blank=objects[blankIndex],source=objects[sourceIndex];
+  if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
+    !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
+   throw Error('卡片已被修改，請重新選擇複製');
+  if(!isBlankCopyMedium(blank))throw Error('GBA 右側讀卡格必須放入未使用的空白卡');
+  if(!canCopyAppearance(source))throw Error('來源卡不在左頁展示格或不允許複製');
+  const time=clock();
+  // Copy only user-editable presentation fields, not public action links, rune
+  // contracts, skill certification, authorizations, uniqueness or card number.
+  const next={...blank,title:source.title,description:source.description||'',
+   cardType:source.cardType||'',image:source.image?{...source.image}:null,
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   copyInfo:{kind:'appearance',sourceId:source.id,sourceRevision:source.revision,
+    copiedAt:time},revision:blank.revision+1,updatedAt:time};
+  const updated=[...objects];updated[blankIndex]=next;
+  write(storage,updated);return {...next};
+ }
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
@@ -298,6 +350,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard};
 });
