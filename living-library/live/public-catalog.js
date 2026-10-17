@@ -38,6 +38,7 @@ uiMap:{id:'uiMap',seal:'⚙',number:'10',title:'UI 名詞與書籍分工',guild:
 knowledgeSearch:{id:'knowledgeSearch',seal:'⌕',number:'11',title:'正式 MD 搜尋',guild:'知識世界 · 檢索',desc:'從知識世界圖鑑呼叫已授權 GEN2 正式 MD 搜尋；未連線先授權。',url:'./knowledge-search.html'},
 bookCreation:{id:'bookCreation',seal:'▣',number:'14',title:'書本創造術',guild:'遊戲之書 · 本機創作',desc:'創造一本空白魔法書，以獨立 3D 書本身分進入現有圖書館；未賦予特殊能力。',url:'./book-creation.html'},
 cardCreation:{id:'cardCreation',seal:'◇',number:'13',title:'卡片創造術',guild:'遊戲之書 · 本機創作',desc:'施放卡片創造術，建立並保存一張懸浮空白卡；尚未放入任何書，也沒有執行權限。',url:'./card-creation.html'},
+spellHistory:{id:'spellHistory',seal:'▧',number:'16',title:'法術使用紀錄',guild:'遊戲之書 · 歷史紀錄',desc:'唯讀查閱已消耗法術的原始卡片 ID、消耗時間與吸收對象；不復原法術，也不修改本機資料。',url:'./spell-history.html'},
 systemControls:{id:'systemControls',seal:'⚙',number:'12',title:'連線與版本',guild:'系統之書 · 設定',desc:'統一管理 GEN2 來源授權與手動重新連結、更新公告；平時自動檢查版本。',url:'./system-controls.html'}
 });
 const PUBLIC_BOOK_CARDS=Object.freeze({
@@ -58,7 +59,7 @@ gpt:['gptBridge','gptSkills']
 });
 
 // Canonical public IDs follow public-capabilities.json; legacy IDs are aliases only.
-const PUBLIC_IDS={atlas:'public.gaming.atlas',research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation'};
+const PUBLIC_IDS={atlas:'public.gaming.atlas',research:'public.research.navigation',canvas:'public.canvas.workbench',startup:'public.startup.tasks',calendar:'public.calendar',world:'public.knowledge.world',gba:'public.gba.runtime',vault:'public.vault.web',gptBridge:'public.gpt.bridge',gptSkills:'public.gpt.skills',uiMap:'public.system.ui.map',knowledgeSearch:'public.knowledge.search',systemControls:'public.system.controls',cardCreation:'public.gaming.card.creation',bookCreation:'public.gaming.book.creation',spellHistory:'public.gaming.spell.history'};
 const canonicalPublicId=id=>PUBLIC_IDS[id]||id;
 // Native navigation only. These cards open existing screens; they execute no
 // commands and are never GEN2 Skill definitions or permission grants.
@@ -98,7 +99,7 @@ function buildCatalog(projection=null){
  }
  cards['public.gba.runtime'].nativeRoute='gba';
  bookCards.startup.push(RESEARCH_ID);
- bookCards.gaming.push(GAME_DESIGN_ID,canonicalPublicId('cardCreation'),canonicalPublicId('bookCreation'),canonicalPublicId('atlas'));
+ bookCards.gaming.push(GAME_DESIGN_ID,canonicalPublicId('cardCreation'),canonicalPublicId('bookCreation'),canonicalPublicId('spellHistory'),canonicalPublicId('atlas'));
  for(const [id,c] of Object.entries(projection?.cards||{}))cards[id]={...c,sourceLayer:'gen2',seal:c.kind==='skill'?'✦':'◎',number:String(Object.keys(projection.cards).indexOf(id)+1).padStart(2,'0'),guild:c.kind==='skill'?'Skill':'Workflow',desc:c.status,sourceUrl:'https://github.com/ken12121122-dotcom/gen2-knowledge/blob/'+projection.source.commit+'/kb/'+c.sourcePath};
  for(const [i,b] of (projection?.books||[]).entries()){
   // This is a navigation alias, never an alternative kb_id or source registry.
