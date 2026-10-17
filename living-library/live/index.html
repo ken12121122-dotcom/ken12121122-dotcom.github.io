@@ -99,6 +99,11 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
 .blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
 .fallback{pointer-events:none;display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}#fallbackOpen,#retry3d{pointer-events:auto;touch-action:manipulation}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.rune-unbind-progress{position:fixed;z-index:9;left:0;top:0;display:none;width:74px;height:74px;
+ border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);
+ box-shadow:0 0 22px #a9f9d6aa,inset 0 0 15px #162e3ccc}
+.rune-unbind-progress::after{content:"";position:absolute;inset:9px;border-radius:50%;
+ background:#0a1a2dbb;border:1px solid #b9ead5aa}
 .rune-bind-dialog{position:fixed;z-index:30;width:min(91vw,400px);max-width:400px;border:2px solid #c6a779;border-radius:18px;padding:22px 24px 19px;background:linear-gradient(160deg,#fdf4e3,#e9d7b5);color:#1d2b30;box-shadow:0 24px 85px #030812db,inset 0 0 0 4px #f7edda}
 .rune-bind-dialog::backdrop{background:#00091590;backdrop-filter:blur(3px)}
 .rune-bind-dialog h2{font-size:20px;font-weight:750;color:#1a2a30;margin:0 0 10px}
@@ -314,6 +319,16 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button" aria-label="返回圖書館" title="返回圖書館">←</button></dialog>
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="runeUnbindProgress" class="rune-unbind-progress" aria-hidden="true"></div>
+<dialog id="runeUnbindDialog" class="rune-bind-dialog" aria-labelledby="runeUnbindTitle">
+ <h2 id="runeUnbindTitle">✧ 解除綁定術</h2>
+ <p>是否取消「<strong id="runeUnbindTargetName"></strong>」與初始法陣的連結？</p>
+ <small>確認後會播放解除動畫，再移除契約印記。卡片圖片、名稱、編號和身分不變。</small>
+ <div class="rune-bind-actions">
+  <button id="runeUnbindCancel" type="button" aria-label="保留目前契約" title="取消">×</button>
+  <button id="runeUnbindConfirm" class="primary" type="button" aria-label="確認解除契約" title="確認">✓</button>
+ </div>
+</dialog>
 <dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
 <h2 id="runeBindTitle">✧ 法陣已選取</h2><p id="runeBindDescription">是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？</p>
 <small>確認後產生契約印記。卡片暫不會被吸收；封印儀式稍後開放。</small>
@@ -333,7 +348,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
