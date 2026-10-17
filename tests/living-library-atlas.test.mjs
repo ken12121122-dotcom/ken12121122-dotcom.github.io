@@ -45,7 +45,7 @@ test('native transport uses session-scoped text; late native replies are ignored
  native.onmessage({data:JSON.stringify({v:1,session:next,status:'off'})});assert.equal(v.wanted,false);
 });
 test('new scene modules compile and preserve shared public/native entries',async()=>{
- const Cat=require('../living-library/live/public-catalog.js'),c=Cat.buildCatalog();assert.equal(c.books.length,15);assert.equal(c.bookCards.gaming.length,6);
+ const Cat=require('../living-library/live/public-catalog.js'),c=Cat.buildCatalog();assert.equal(c.books.length,15);assert.equal(c.bookCards.gaming.length,7);
  for(const id of ['public.gba.runtime','public.vault.web','public.gaming.card.creation','public.gaming.book.creation'])assert.ok(c.bookCards.gaming.includes(id));
  assert.equal(c.cards['public.gba.runtime'].nativeRoute,'gba');assert.equal(c.bookCards.android.length,16);
  for(const name of ['atlas-runtime.js','atlas-model.js','atlas-voice.js'])assert.doesNotThrow(()=>new Function(require('node:fs').readFileSync(new URL('../living-library/live/'+name,import.meta.url),'utf8')));

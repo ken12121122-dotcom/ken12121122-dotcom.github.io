@@ -60,9 +60,9 @@ test('original Game Book destinations remain and both independent creation spell
  assert.equal(c.books.length,15);
  assert.deepEqual(c.bookCards.gaming,[
   'public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014',
-  'public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas'
+  'public.gaming.card.creation','public.gaming.book.creation','public.gaming.spell.history','public.gaming.atlas'
  ]);
- for(const [id,url] of [['public.gaming.card.creation','./card-creation.html'],['public.gaming.book.creation','./book-creation.html']]){
+ for(const [id,url] of [['public.gaming.card.creation','./card-creation.html'],['public.gaming.book.creation','./book-creation.html'],['public.gaming.spell.history','./spell-history.html']]){
   assert.equal(c.cards[id].kind,'public_function');
   assert.equal(c.cards[id].url,url);
   await read('living-library/live/'+url.replace('./',''));
