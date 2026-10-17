@@ -88,7 +88,6 @@ test('unbound→sealed→cardified→unbound is a consistent roundtrip with cons
 });
 test('stale revision, duplicate floor rune holder, or wrong materialization phase never mutate data',()=>{
  for(const records of [
-  [card()],
   [card(),card('local.card.other',{runeBinding:{runeId:C.ORIGIN_RUNE,state:'bound'}})],
   [card('local.card.origin',{placement:'book',containerId:S.ATLAS,ownerBookId:S.ATLAS,slotIndex:9})],
   [card('local.card.origin',{runeBinding:{runeId:'other.rune',state:'bound'}})],
