@@ -46,7 +46,8 @@ test('energy path returns from visible target to exact original floor anchor, wi
  assert.equal(first.done,false);
  assert.equal(half.done,false);
  assert.ok(Math.hypot(half.position.x,half.position.z)>0);
- assert.deepEqual(last.position,to);
+ assert.ok(Math.hypot(last.position.x-to.x,last.position.y-to.y,last.position.z-to.z)<1e-9,
+  'floating-point interpolation must end within a nanometer-scale world-space tolerance');
  assert.equal(last.done,true);
  assert.equal(plan.targetId,Craft.ORIGIN_RUNE);
 });
