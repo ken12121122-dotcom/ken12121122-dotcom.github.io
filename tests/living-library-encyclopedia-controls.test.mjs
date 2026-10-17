@@ -24,7 +24,7 @@ test('necessary GEN2 search, authorization and manual reconnect stay in book car
  assert.ok(catalog.bookCards.system.includes('public.system.controls'));
  assert.equal(catalog.cards['public.knowledge.search'].url,'./knowledge-search.html');
  assert.equal(catalog.cards['public.system.controls'].url,'./system-controls.html');
- assert.deepEqual(catalog.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas']);
+ assert.deepEqual(catalog.bookCards.gaming,['public.gba.runtime','public.vault.web','KW-GAME-MEMORY-PALACE-20261014','public.gaming.card.creation','public.gaming.book.creation','public.gaming.atlas','public.gaming.creation.sandbox']);
  assert.equal(catalog.bookCards.android.length,16);
  for(const file of ['knowledge-search.html','system-controls.html']) await access(new URL('living-library/live/'+file,root));
  assert.match(live,/event.origin!==window.location.origin/);
