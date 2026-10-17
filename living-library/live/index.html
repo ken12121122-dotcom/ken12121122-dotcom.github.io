@@ -1897,7 +1897,7 @@ function updateRuneVisual(now){
  }
 }
 function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
- !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect}
+ !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect&&!buildState}
 function canStartRunePress(e){
  if(!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
  touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
