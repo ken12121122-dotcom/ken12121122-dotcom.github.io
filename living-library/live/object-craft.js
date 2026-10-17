@@ -23,6 +23,16 @@
  function getRuneBoundCard(storage,runeId=ORIGIN_RUNE){
   return listCards(storage).find(x=>x.runeBinding?.runeId===runeId)||null;
  }
+ // A future authorized permanent registry is independent of editable cardNumber.
+ // An upgraded permanent rune bond is irreversible by normal/unbinding spells.
+ function isPermanentRuneCard(card){
+  if(!card||typeof card!=='object')return false;
+  return card.l2Certified===true||card.permanentCard===true||
+   card.permanentRegistration?.state==='registered'||
+   card.permanentRegistry?.state==='registered'||
+   card.certification?.level==='L2'||card.certification?.level==='permanent'||
+   (card.permanentNumber!==null&&card.permanentNumber!==undefined&&String(card.permanentNumber).trim()!=='');
+ }
  function bindRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
   if(runeId!==ORIGIN_RUNE)throw Error('目前只支援初始法陣');
   if(typeof cardId!=='string'||!cardId.startsWith('local.card.'))throw Error('無效卡片識別碼');
@@ -90,6 +100,29 @@
    revision:old.revision+1,updatedAt:now};
   const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
  }
+ // Restore the SAME materialized card to the floor rune, with its original
+ // contract and ID intact; counterpart of RUNE-05 and safe for future permanent
+ // cards (permanence locks unbinding, not changing form).
+ function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+  if(runeId!==ORIGIN_RUNE)throw Error('未知初始法陣');
+  const state=read(storage);
+  const index=state.objects.findIndex(x=>x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(index<0)throw Error('找不到可歸還法陣的卡');
+  const old=state.objects[index];
+  if(!Number.isInteger(expectedRevision)||old.revision!==expectedRevision)
+   throw Error('卡片資料已變動，請重新選取');
+  const matches=state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled'&&
+   x.runeBinding?.runeId===runeId);
+  if(matches.length!==1||matches[0].id!==cardId)throw Error('法陣已有其他契約');
+  if(old.status!=='draft'||old.placement!=='hover'||old.ownerBookId||old.containerId||
+   old.containment||old.runeBinding?.state!=='cardified')
+   throw Error('卡片尚未具現化或目前不在世界中');
+  const now=clock(),next={...old,placement:'contained',ownerBookId:null,
+   containerId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'sealed',resealedAt:now},
+   containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',state:'stored',absorbedAt:now},
+   revision:old.revision+1,updatedAt:now};
+  const objects=[...state.objects];objects[index]=next;write(storage,objects);return {...next};
+ }
  function restoreUncommittedRuneCard(storage,runeId=ORIGIN_RUNE,clock=()=>new Date().toISOString(),expectedCardId=null,expectedRevision=null){
   if(runeId!==ORIGIN_RUNE)throw Error('目前僅支援初始法陣');
   const state=read(storage);
@@ -99,6 +132,7 @@
   const {item:old,index}=matches[0];
   if((expectedCardId!==null&&old.id!==expectedCardId)||(expectedRevision!==null&&old.revision!==expectedRevision))
    throw Error('契約卡在施法期間已有變動，為保護資料已停止解除');
+  if(isPermanentRuneCard(old))throw Error('已升級為永久編號卡，禁止解除契約');
   if(old.runeBinding.state!=='bound')throw Error('封印後的契約不可直接還原');
   if(old.status!=='draft'||!['hover','book'].includes(old.placement)||
      (old.containerId&&(old.containerId!=='local.atlas.compendium'||old.slotIndex!==9)))
@@ -126,6 +160,7 @@
   if(targets.length!==1||targets[0].id!==targetId)throw Error('法陣契約目標已改變');
   if(target.revision!==targetRevision||spell.revision!==spellRevision)
    throw Error('施法期間卡片資料已變動');
+  if(isPermanentRuneCard(target))throw Error('此法陣已升級為永久編號卡，不可解除契約');
   if(!['bound','cardified'].includes(target.runeBinding?.state)||target.status!=='draft'||target.placement!=='hover'||
      target.containerId||target.ownerBookId||target.upgradeRequest?.state==='requested')
    throw Error('此契約尚不可解除');
@@ -396,5 +431,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
