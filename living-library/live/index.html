@@ -2264,6 +2264,63 @@ function updateSpellEffect(now){
   syncRender();
  }
 }
+// RUNE-06: the manifested original card can transform back into the floor rune.
+const returnDialog=document.getElementById('runeReturnDialog'),returnName=document.getElementById('runeReturnCardName');
+let returnCardPointerId=null,returnCardActivatedPointerId=null,returnCardSelection=null,returnPromptTimer=null;
+const returnTrack=new THREE.Mesh(new THREE.RingGeometry(.43,.47,spellProgressSegments),
+ new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false}));
+const returnArcGeometry=new THREE.RingGeometry(.43,.47,spellProgressSegments,1,-Math.PI/2,Math.PI*2);
+const returnArc=new THREE.Mesh(returnArcGeometry,new THREE.MeshBasicMaterial({color:0xf0d397,transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false}));
+returnTrack.visible=false;returnArc.visible=false;scene.add(returnTrack,returnArc);
+function closeReturnPrompt(){
+ if(returnPromptTimer!==null){clearTimeout(returnPromptTimer);returnPromptTimer=null}
+ if(returnDialog.open)returnDialog.close();
+}
+const returnCardHold=RuneHold.create({
+ isAllowed:()=>runeAllowed()&&!unbindEffect&&!returnDialog.open,
+ onChange:()=>syncRender(),
+ onSelected:id=>{
+  returnCardActivatedPointerId=returnCardPointerId;
+  if(returnCardPointerId!==null)atlasRuntime?.cancelPointer(returnCardPointerId);
+  try{
+   const card=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   if(!card||card.id!==id||card.runeBinding?.state!=='cardified'||
+      floatingCardMeshes.get(id)?.record.revision!==card.revision||
+      card.placement!=='hover'||card.containerId)throw Error('法陣原卡狀態已變動');
+   returnCardSelection={id,revision:card.revision};returnName.textContent=card.title;
+   returnPromptTimer=setTimeout(()=>{
+    returnPromptTimer=null;
+    if(!document.hidden&&!returnDialog.open&&!runeTransfer&&
+      returnCardSelection?.id===id&&!focusedCard&&!atlasRuntime?.inFocus)returnDialog.showModal();
+   },550);
+   toast('✦ 長按成功：已選擇將原卡還原成地面法陣');
+  }catch(error){returnCardSelection=null;toast('法陣還原未啟動：'+error.message)}
+ }
+});
+document.getElementById('runeReturnConfirm').addEventListener('click',()=>{
+ const selected=returnCardSelection;if(!selected||runeTransfer)return;
+ try{
+  const card=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  if(!card||card.id!==selected.id||card.revision!==selected.revision||
+    card.runeBinding?.state!=='cardified'||card.placement!=='hover'||card.containerId)
+    throw Error('原卡已改變，請重新長按');
+  closeReturnPrompt();returnCardSelection=null;startRuneTransfer('return',card);
+ }catch(e){closeReturnPrompt();returnCardSelection=null;toast('還原未完成：'+e.message)}
+});
+document.getElementById('runeReturnCancel').addEventListener('click',()=>{closeReturnPrompt();returnCardSelection=null;syncRender()});
+returnDialog.addEventListener('cancel',()=>{returnCardSelection=null;syncRender()});
+returnDialog.addEventListener('close',syncRender);
+function updateRuneReturnVisual(now){
+ const progress=returnCardHold.inspect(now);
+ const entry=progress.phase==='holding'&&returnCardPointerId!==null?
+  floatingCardMeshes.get(progress.runeId):null;
+ returnTrack.visible=returnArc.visible=!!entry?.group.visible;
+ if(!entry?.group.visible)return;
+ const pos=entry.group.getWorldPosition(new THREE.Vector3());
+ returnTrack.position.copy(pos);returnArc.position.copy(pos);
+ returnTrack.quaternion.copy(camera.quaternion);returnArc.quaternion.copy(camera.quaternion);
+ returnArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*progress.progress)*6);
+}
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
