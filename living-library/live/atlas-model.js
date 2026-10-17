@@ -94,8 +94,12 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
   if(!card){
    base();txt('萬物圖鑑',35,80,45);
    txt(mode==='menu'?'GBA 系統選單':'右側讀卡格尚未放卡',35,150,29);
-   txt(mode==='menu'?'卡片檢視 / AI / 下載':'放入一張卡片即可顯示',35,200,23);
-   if(mode==='menu'){txt('插入空白卡可進行下載',35,252,22);txt('B 返回',35,320,22)}
+   if(mode==='menu'){
+    const items=['卡片檢視','AI 觀察','卡片下載','商店（未開放）'];
+    for(let i=0;i<items.length;i++)
+     txt((download.menuIndex===i?'▶ ':'  ')+items[i],35,202+i*40,23);
+    txt('下載請先插入空白卡',343,328,19);
+   }else txt('放入一張卡片即可顯示',35,200,23);
    map.needsUpdate=true;return;
   }
   const face=document.createElement('canvas');face.width=560;face.height=780;
