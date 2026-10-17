@@ -15,6 +15,8 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  // The former left-page cloning proposal remains a DIFFERENT, unapproved mechanic.
  let templateIndex=0,menuIndex=0,templateCache=[],templateStamp=null;
  let downloadConfirmation=null,downloadEffect=null;
+ const permanentGba=root.LivingPermanentGba?.create({storage,toast,refresh:()=>refresh(),
+  invalidate,allowed:()=>!document.hidden&&!!focus?.gba,reduced});
  const downloadDialog=document.getElementById('atlasDownloadDialog'),
   downloadSourceName=document.getElementById('atlasDownloadSource');
  function templatesCached(){
@@ -29,10 +31,12 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  }
  function paintGba(reader,now=performance.now()){
   if(screenMode==='download'&&!craft.isBlankCopyMedium?.(reader?.record))screenMode='menu';
-  const progress=downloadEffect?Math.min(100,Math.max(0,
+  const progress=permanentGba?.active?permanentGba.progress(now):
+   downloadEffect?Math.min(100,Math.max(0,
    100*(now-downloadEffect.started)/downloadEffect.duration)):null;
   atlas.screen(reader?.record||null,screenMode,!!focus?.gba,uploadStatus,
-   {items:templatesCached(),index:templateIndex,menuIndex,progress});
+   {items:templatesCached(),index:templateIndex,menuIndex,progress,
+    ...(permanentGba?.data()||{})});
  }
  function cancelDownloadConfirmation(){
   downloadConfirmation=null;if(downloadDialog?.open)downloadDialog.close();
@@ -56,7 +60,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   downloadEffect={...selection,started:performance.now(),duration:reduced?280:1050};
   screenMode='downloading';invalidate();
  });
- function onDownloadVisibility(){if(document.hidden){stopDownload();cancelDownloadConfirmation()}}
+ function onDownloadVisibility(){if(document.hidden){stopDownload();cancelDownloadConfirmation();permanentGba?.cancel()}}
  document.addEventListener?.('visibilitychange',onDownloadVisibility);
  function stopDownload(){
   if(!downloadEffect)return;
@@ -188,21 +192,24 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
    else if(p.kind==='control'&&!p.moved&&!cancel){
     const key=p.control;
     const reader=[...cards.values()].find(c=>State.readerActive(c.record));
-    if(downloadEffect){
+    if(permanentGba?.active){
+     if(key==='B'||key==='START'){permanentGba.cancel();screenMode='permanent';if(key==='START')focusGba()}
+    }else if(downloadEffect){
      if(key==='B'||key==='START'){stopDownload();if(key==='START')focusGba()}
     }else if(key==='START')focusGba();
     else if(key==='B'){
-     if(screenMode==='download'||screenMode==='observe')screenMode='menu';
+     if(['download','observe','permanent','upgrading'].includes(screenMode))screenMode='menu';
      else if(screenMode==='menu')screenMode='card';
      else focusGba();
     }else if(key==='SELECT'){
      screenMode=screenMode==='menu'?'card':'menu';paintGba(reader);
     }else if(key==='UP'||key==='DOWN'){
-     if(screenMode==='menu')menuIndex=(menuIndex+(key==='DOWN'?1:3))%4;
+     if(screenMode==='menu')menuIndex=(menuIndex+(key==='DOWN'?1:4))%5;
      else if(screenMode==='download'){
       const length=templatesCached().length;
       if(length)templateIndex=(templateIndex+(key==='DOWN'?1:length-1))%length;
-     }else screenMode=key==='UP'?'card':'observe';
+     }else if(screenMode==='permanent')permanentGba?.choose(key==='DOWN'?1:-1);
+      else screenMode=key==='UP'?'card':'observe';
      paintGba(reader);
     }else if(key==='LEFT'||key==='RIGHT'||key==='L'||key==='R'){
      screenMode=screenMode==='card'?'observe':'card';paintGba(reader);
@@ -214,9 +221,11 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
        if(!craft.isBlankCopyMedium?.(reader?.record))
         toast('卡片下載需要將一張全新的空白卡放進右側 GBA');
        else {screenMode='download';templateIndex=0}
-      }else toast('商店尚未開放，未執行購買');
+      }else if(menuIndex===3)screenMode='permanent';
+       else toast('商店尚未開放，未執行購買');
       paintGba(reader);
      }else if(screenMode==='download')presentDownloadConfirmation(reader);
+      else if(screenMode==='permanent')screenMode=permanentGba?.activate(reader)||'permanent';
      else if(!reader)toast('先將卡片放入右側讀卡格');
      else if(screenMode==='observe'&&typeof observeCard==='function')observeCard(reader.id);
      else openCard(reader.id);
@@ -305,13 +314,18 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
      target.node.updateWorldMatrix(true,false);target.node.getWorldPosition(entry.group.position);
      target.node.getWorldQuaternion(entry.group.quaternion);
      entry.group.scale.setScalar(m.group.scale.x*1.3*tuning.atlasCardSize);
-     if(downloadEffect?.blankId===entry.id){
+     if(permanentGba?.active&&entry.record.containerId===State.ATLAS){
+       const v=(permanentGba.progress(now)||0)/100;
+       entry.group.scale.multiplyScalar(reduced?1:1+.22*Math.abs(Math.sin(v*Math.PI*9)));
+      }
+      if(downloadEffect?.blankId===entry.id){
       const u=Math.min(1,Math.max(0,(now-downloadEffect.started)/downloadEffect.duration));
       entry.group.scale.multiplyScalar(1+(reduced?0:.14*Math.sin(Math.PI*u*3)));
      }
     }
   }
   finishDownload(now);
+   if(permanentGba?.active){permanentGba.tick(now);if(!permanentGba.active)screenMode='permanent'}
   const reader=[...cards.values()].find(c=>State.readerActive(c.record));
   if(uploadCardId!==reader?.id){uploadCardId=reader?.id||null;uploadStatus={state:'idle',code:''}}
   paintGba(reader);
@@ -328,7 +342,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
  function showReaderReturn(){restoreFocusCamera();invalidate()}
- function dispose(){disposed=true;document.removeEventListener?.('visibilitychange',onDownloadVisibility);cancelDownloadConfirmation();stopDownload();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
+ function dispose(){disposed=true;document.removeEventListener?.('visibilitychange',onDownloadVisibility);cancelDownloadConfirmation();permanentGba?.cancel();stopDownload();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
  if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
  if(saved.collection==='shelf')setCollectionActive(false,State.COLLECTION);
  syncCollections();
@@ -337,6 +351,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,reportGithubUpload,
-  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,downloadMode:screenMode==='download',menuIndex,templateIndex,templateCount:templateCache.length,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
+  inspect(){return {focusBooks:focus?(root.innerWidth>root.innerHeight?focusMembers().map(m=>m.id):[focus.id]):[],collections:[...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id,mode:m.view.collection,open:m.open,visible:m.group.visible,position:m.group.position.toArray()})),tuning:{...tuning},atlasPosition:atlas.group.position.toArray(),atlasScale:atlas.group.scale.x,atlasVisible:atlas.group.visible,atlasDesired:atlas.desired,atlasOpen:atlas.open,screenMode,gbaFocus:!!focus?.gba,uploadState:uploadStatus.state,downloadMode:screenMode==='download',
+    permanentMode:screenMode==='permanent',upgrading:!!permanentGba?.active,menuIndex,templateIndex,templateCount:templateCache.length,atlasFacingKeeper:new THREE.Vector3(0,0,1).applyQuaternion(atlas.group.quaternion).dot(keeper.position.clone().sub(atlas.center).setY(0).normalize()),collectionMode:saved.collection,collectionOpen:collection.open,focus:focus?.id||null,animation:!!atlas.animation||!!collection.animation}},dispose};
 }};
 })(typeof self!=='undefined'?self:this);
