@@ -168,7 +168,8 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
    }
    map.needsUpdate=true;root.LivingScene?.invalidate?.();
   };
-  screenCancel=root.LivingCompendiumCard.draw(face,card,redraw)||(()=>{});
+  const preview=mode==='download'&&(download.items||[])[download.index]||card;
+   screenCancel=root.LivingCompendiumCard.draw(face,preview,redraw)||(()=>{});
   redraw();
  },
  dispose(){screenCancel();const geo=new Set(),mat=new Set(),maps=new Set();group.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m){mat.add(m);if(m.map)maps.add(m.map)}});geo.forEach(g=>g.dispose());maps.forEach(t=>t.dispose());mat.forEach(m=>m.dispose())}};
