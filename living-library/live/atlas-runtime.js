@@ -21,7 +21,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   const stamp=storage.getItem(craft.KEY);
   if(stamp!==templateStamp){
    templateStamp=stamp;
-   try{templateCache=craft.listDownloadableTemplates(storage)}
+   try{templateCache=craft.listDownloadableTemplates?.(storage)||[]}
    catch(error){templateCache=[];toast('範本資料庫讀取失敗：'+error.message)}
    templateIndex=Math.max(0,Math.min(templateIndex,Math.max(0,templateCache.length-1)));
   }
