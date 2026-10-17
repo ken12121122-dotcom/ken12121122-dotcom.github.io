@@ -69,8 +69,8 @@ test('visual return only begins AFTER atomic contract-unbind success; animation 
  assert.match(html,/if\(frame\.done\)\{\s*endRuneReleaseEffect\(\)/);
  assert.match(html,/!!runeReleaseEffect\|\|!!buildState\|\|\s*performance\.now\(\)<runeBindingPulseUntil/);
  assert.match(html,/!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil/);
- assert.match(html,/if\(document\.hidden\)\{runeTransfer=null;endRuneReleaseEffect\(\)/);
- assert.match(html,/window\.addEventListener\('pagehide',\(\)=>\{runeTransfer=null;endRuneReleaseEffect\(\)/);
+ assert.match(html,/if\(document\.hidden\)\{cancelPermanentBuild\(\);runeTransfer=null;endRuneReleaseEffect\(\)/);
+ assert.match(html,/window\.addEventListener\('pagehide',\(\)=>\{cancelPermanentBuild\(\);runeTransfer=null;endRuneReleaseEffect\(\)/);
  assert.doesNotMatch(html,/runeGroup\.add\(runeReleaseOrb\)/,
   'return spark travels as world-space effect, original rune remains single stable model');
 });
