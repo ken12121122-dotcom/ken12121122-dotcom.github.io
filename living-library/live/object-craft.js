@@ -103,7 +103,7 @@
  // Restore the SAME materialized card to the floor rune, with its original
  // contract and ID intact; counterpart of RUNE-05 and safe for future permanent
  // cards (permanence locks unbinding, not changing form).
- function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString()){
+ function returnRuneCard(storage,runeId,cardId,expectedRevision,clock=()=>new Date().toISOString(),placement=null){
   if(runeId!==ORIGIN_RUNE)throw Error('未知初始法陣');
   const state=read(storage);
   const index=state.objects.findIndex(x=>x.id===cardId&&isPlayerCard(x)&&x.status!=='recycled');
@@ -117,7 +117,20 @@
   if(old.status!=='draft'||old.placement!=='hover'||old.ownerBookId||old.containerId||
    old.containment||old.runeBinding?.state!=='cardified')
    throw Error('卡片尚未具現化或目前不在世界中');
-  const now=clock(),next={...old,placement:'contained',ownerBookId:null,
+  // One atomic transaction: a permanent card's last approved hologram
+  // position becomes the current world object anchor at card→rune conversion.
+  if(placement){
+   if(old.permanentRegistry?.state!=='registered'||!placement.position||
+    !['x','y','z'].every(k=>Number.isFinite(placement.position[k]))||
+    Math.abs(placement.position.x)>8||Math.abs(placement.position.z)>8||
+    Math.abs(placement.position.y)>1||Math.hypot(placement.position.x,placement.position.z)>9.5||
+    !Number.isFinite(placement.rotationY)||Math.abs(placement.rotationY)>Math.PI*2)
+    throw Error('投影位置不合法；永久原卡不變');
+  }
+  const when=clock(),permanentRegistry=placement?{...old.permanentRegistry,
+   anchor:{...old.permanentRegistry.anchor,position:{...placement.position},
+    rotationY:placement.rotationY,scale:1}}:old.permanentRegistry;
+  const now=when,next={...old,permanentRegistry,placement:'contained',ownerBookId:null,
    containerId:null,slotIndex:null,runeBinding:{...old.runeBinding,state:'sealed',resealedAt:now},
    containment:{kind:'rune_contract',holderId:runeId,holderType:'rune',state:'stored',absorbedAt:now},
    revision:old.revision+1,updatedAt:now};
@@ -250,6 +263,11 @@
  // The 9 left display wells and all other book pages are intentionally locked.
  // Returning a card to the floating orbit never clears its rune contract.
  function canStoreBoundCard(card,containerId,slotIndex){
+  if(card?.permanentRegistry?.state==='registered'){
+   const n=card.permanentRegistry.number;
+   return containerId===null||(containerId==='local.atlas.compendium'&&
+    (slotIndex===9||(Number.isInteger(n)&&n>=1&&n<=9&&slotIndex===n-1)));
+  }
   if(!card?.runeBinding?.runeId)return true;
   return containerId===null||(containerId==='local.atlas.compendium'&&slotIndex===9);
  }
@@ -260,10 +278,19 @@
   const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到卡片');
   if(containerId&&state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containerId===containerId&&x.slotIndex===slotIndex))throw Error('這個卡槽已有卡片');
+  // Permanent BOOK addresses remain occupied by their registered ID even
+  // while the sole physical original is outside the book or in GBA reader 0.
+  if(containerId==='local.atlas.compendium'&&slotIndex!==9&&
+   state.objects.some(x=>x.id!==id&&isPlayerCard(x)&&x.status!=='recycled'&&
+    x.permanentRegistry?.state==='registered'&&x.permanentRegistry.bookId===containerId&&
+    x.permanentRegistry.slotIndex===slotIndex))
+   throw Error('此 BOOK 位置已由其他永久編號卡永久保留');
   const old=state.objects[at];
   if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
   if(!canStoreBoundCard(old,containerId,slotIndex))
-   throw Error('已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
+   throw Error(isPermanentRuneCard(old)?
+    '永久卡只能放在唯一 BOOK 的自身永久格或 GBA 0 號格':
+    '已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
@@ -371,6 +398,7 @@
   if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
+  if(isPermanentRuneCard(card))throw Error('永久卡已鎖定，修改需經 GBA 正式變更程序');
   if(card.placement==='contained'||card.containment)throw Error('已吸收的卡片需先召喚才能編輯');
   if(Object.hasOwn(patch,'title')){
    if(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>40)
@@ -410,6 +438,7 @@
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
   const old=state.objects[at];
+  if(isPermanentRuneCard(old))throw Error('永久編號卡禁止回收');
   if(old.placement==='contained'||old.containment)throw Error('已收納的法術卡不可直接回收');
   if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');

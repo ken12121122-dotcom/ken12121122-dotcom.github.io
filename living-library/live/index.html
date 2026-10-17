@@ -239,6 +239,15 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #atlasGithubDialog :is(h2,p,strong,small,label,output){color:#000}
 #atlasGithubDialog input{width:100%;min-height:48px;padding:9px;margin:8px 0 16px;color:#000;background:#fff;border:1px solid #7d6a53;border-radius:8px;font:16px system-ui}
 #atlasGithubDialog button{min-width:56px;min-height:48px;margin:5px 7px 3px 0;background:#e4d3b1;color:#000;border:1px solid #ad8c62;border-radius:8px;font:700 18px system-ui}
+
+/* Compact permanent build controls: icon-only, touch target at least 44px. */
+#permanentBuildToggle[hidden],#permanentBuildTools[hidden]{display:none!important}
+#permanentBuildToggle{position:fixed;right:calc(16px + env(safe-area-inset-right));bottom:calc(92px + env(safe-area-inset-bottom));z-index:17;width:50px;height:50px;
+ border:1px solid #dfbe80;border-radius:50%;background:#142b3de9;color:#f7dbaa;font-size:23px}
+#permanentBuildTools{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:18;
+ display:flex;gap:10px;padding:7px;border:1px solid #caa76f;border-radius:25px;background:#14263be9}
+#permanentBuildTools button{min-height:48px;min-width:48px;border:1px solid #a9b0ae;border-radius:50%;font-size:24px;color:#e9dcbb;background:#354959;touch-action:manipulation}
+#permanentBuildTools button[data-on="true"]{border-color:#8eefd1;color:#8eefd1}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -249,6 +258,13 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <button id="atlasCollectionShelf" type="button" aria-label="卡片之書回到書架" title="回到書架">⇥</button>
 <button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
 <button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
+<button id="permanentBuildToggle" type="button" hidden aria-label="開啟永久物件建造模式" title="建造模式">⚒</button>
+<div id="permanentBuildTools" role="toolbar" hidden aria-label="永久物件擺放工具">
+ <button id="permanentBuildSnap" type="button" aria-label="切換地面網格吸附" title="網格吸附">⊞</button>
+ <button id="permanentBuildRotate" type="button" aria-label="旋轉投影十五度" title="旋轉">↻</button>
+ <button id="permanentBuildApply" type="button" aria-label="確認投影位置" title="確認放置">✓</button>
+ <button id="permanentBuildCancel" type="button" aria-label="取消本次擺放" title="取消擺放">×</button>
+</div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
 <dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
  <h2>發送到私人 GitHub</h2>
@@ -320,6 +336,17 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="runeUnbindProgress" class="rune-unbind-progress" aria-hidden="true"></div>
+<dialog id="atlasPermanentDialog" class="rune-bind-dialog" aria-labelledby="atlasPermanentTitle">
+ <h2 id="atlasPermanentTitle">✦ BOOK｜永久卡登錄</h2>
+ <p>登錄原卡：<strong id="atlasPermanentName"></strong></p>
+ <p id="atlasPermanentChecks" role="status"></p>
+ <small>本機唯一認證試行：不代表 AI 已完成審核或跨裝置權威同步。認證成功後原卡 ID 保留、契約不可解除、不能複製永久身分或用一般編輯器修改／回收；只能存入唯一 BOOK 的專屬編號格。</small>
+ <div class="rune-bind-actions">
+  <button id="atlasPermanentCancel" type="button" aria-label="取消永久認證" title="取消">×</button>
+  <button id="atlasPermanentHold" type="button" class="primary" aria-label="長按三秒確認不可逆永久登錄" title="長按三秒確認永久登錄">✦</button>
+ </div>
+ <small id="atlasPermanentHoldStatus" role="status">長按 ✦ 三秒完成正式確認，放開即取消。</small>
+</dialog>
 <dialog id="atlasDownloadDialog" class="rune-bind-dialog" aria-labelledby="atlasDownloadTitle">
  <h2 id="atlasDownloadTitle">✧ GBA｜卡片下載</h2>
  <p>將已建立的「<strong id="atlasDownloadSource"></strong>」卡片格式下載到右側這張空白卡？</p>
@@ -375,7 +402,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1097,6 +1124,13 @@ for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let
 const RuneContract=window.LivingRuneContract;
 if(!RuneContract)throw Error('Rune identity contract unavailable');
 const runeGroup=new THREE.Group();runeGroup.name='OriginRune';runeGroup.userData.runeId=RuneContract.RUNE_ID;scene.add(runeGroup);
+try{
+ const saved=window.LivingObjectCraft?.getRuneBoundCard(localStorage)?.permanentRegistry?.anchor;
+ if(saved?.sceneId==='living-library'&&['x','y','z'].every(k=>Number.isFinite(saved.position?.[k]))){
+  runeGroup.position.set(saved.position.x,saved.position.y,saved.position.z);
+  if(Number.isFinite(saved.rotationY))runeGroup.rotation.y=saved.rotationY;
+ }
+}catch(err){console.warn('Stored permanent rune placement invalid',err)}
 cyl(3.02,3.35,.36,0,-.13,0,stone2,runeGroup);cyl(2.85,2.96,.22,0,.16,0,blackstone,runeGroup);
 cyl(2.4,2.5,.055,0,.30,0,gold,runeGroup);cyl(2.38,2.39,.055,0,.35,0,stone,runeGroup);
 for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,runeGroup,Math.PI/2);
@@ -1233,6 +1267,15 @@ document.addEventListener('keyup',e=>{
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
+ if(buildState){
+  const input=exploreInput();
+  if(Math.hypot(input.x,input.y)<.025)return false;
+  const moveSpan=Math.min(.16,dt*2.2);
+  const raw=buildState.precise||buildState.position;
+  buildState.precise={x:raw.x+input.x*moveSpan,y:0,z:raw.z-input.y*moveSpan};
+  buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
+  updateHologram(performance.now());return true;
+ }
  if(!hasWalkInput()){keeper.position.y=.46;return false}
  const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
  const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
@@ -1855,7 +1898,7 @@ function updateRuneVisual(now){
  }
 }
 function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
- !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect}
+ !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect&&!buildState}
 function canStartRunePress(e){
  if(!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
  touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
@@ -1880,11 +1923,11 @@ function closeRunePrompt(){
 // Reuse NW-TRANSFER-001 for card → floor-rune absorption and inverse cardification.
 // During the visual transition the persistent snapshot remains unchanged.
 // Completion is a single guarded write; interruption leaves original card data intact.
-function startRuneTransfer(kind,record){
+function startRuneTransfer(kind,record,placement=null){
  if(runeTransfer||!record)throw Error('另一個法陣儀式正在進行');
  const entry=floatingCardMeshes.get(record.id);
  if(!entry)throw Error('原始卡片模型不存在');
- const anchor=runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
+ const anchor=kind==='return'&&placement?placement.position:runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
  if(isSeal&&(!entry.group.visible||entry.record.placement!=='hover'||entry.record.containerId))
   throw Error('請先將原卡移回漂浮狀態再締結契約');
  if(kind==='return'&&record.runeBinding?.state!=='cardified')
@@ -1899,7 +1942,7 @@ function startRuneTransfer(kind,record){
  const target=isSeal?new THREE.Vector3(anchor.x,.44,anchor.z):
   new THREE.Vector3(keeper.position.x+orbit.x,orbit.y,keeper.position.z+orbit.z);
  const start=performance.now(),duration=preferReduced?400:1500;
- runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,
+ runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,placement,
   plan:DirectedTransfer.normalize({sourceId:isSeal?record.id:RuneContract.RUNE_ID,
    targetId:isSeal?RuneContract.RUNE_ID:record.id,
    from:{x:from.x,y:from.y,z:from.z},to:{x:target.x,y:target.y,z:target.z},
@@ -1927,9 +1970,14 @@ function tickRuneTransfer(now){
   const changed=cardify?
    craft.materializeRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
    active.kind==='return'?
-    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
+    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision,undefined,active.placement):
     craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
   runeBound=changed;runeNearest=null;runeBindingCardId=changed.id;
+  if(changed.permanentRegistry?.anchor&&active.kind==='return'){
+   const pos=changed.permanentRegistry.anchor.position;
+   runeGroup.position.set(pos.x,pos.y,pos.z);
+   runeGroup.rotation.y=changed.permanentRegistry.anchor.rotationY||0;
+  }
   runeGroup.visible=!cardify; // After cardification, floor rune withdraws into original card.
   runeBindingPulseUntil=performance.now()+(cardify?800:2200);
   refreshFloatingCards();
@@ -2371,6 +2419,10 @@ const returnCardHold=RuneHold.create({
    if(!card||card.id!==id||card.runeBinding?.state!=='cardified'||
       floatingCardMeshes.get(id)?.record.revision!==card.revision||
       card.placement!=='hover'||card.containerId)throw Error('法陣原卡狀態已變動');
+   if(window.LivingPermanentCards?.isRegistered(card)){
+    beginPermanentBuild('card',card);
+    return;
+   }
    returnCardSelection={id,revision:card.revision};returnName.textContent=card.title;
    returnPromptTimer=setTimeout(()=>{
     returnPromptTimer=null;
@@ -2405,6 +2457,129 @@ function updateRuneReturnVisual(now){
  returnTrack.quaternion.copy(camera.quaternion);returnArc.quaternion.copy(camera.quaternion);
  returnArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*progress.progress)*6);
 }
+// PERM-BUILD-001 | The transparent hologram is a preview ONLY, never a
+// second authoritative world rune. Both entry paths share the same placement.
+const Build=rootBuild(),Registry=window.LivingPermanentCards;
+function rootBuild(){return window.LivingPermanentBuild}
+const buildToggle=document.getElementById('permanentBuildToggle'),
+ buildTools=document.getElementById('permanentBuildTools'),
+ buildSnap=document.getElementById('permanentBuildSnap');
+let buildState=null,buildPointer=null,buildCameraPan=null;
+const holoGroup=new THREE.Group(),holoMats=[];
+for(const radius of [1.45,2.03,2.5]){
+ const mat=new THREE.MeshBasicMaterial({color:0x8cffe0,transparent:true,opacity:.46,
+  depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+ const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.055,6,70),mat);
+ hoop.rotation.x=Math.PI/2;hoop.position.y=.46;holoGroup.add(hoop);holoMats.push(mat);
+}
+for(let i=0;i<12;i++){
+ const a=i*Math.PI*2/12,mat=new THREE.MeshBasicMaterial({color:0x8cffe0,
+  transparent:true,opacity:.65,depthWrite:false});
+ const mark=new THREE.Mesh(new THREE.BoxGeometry(.17,.045,.35),mat);
+ mark.position.set(Math.sin(a)*1.82,.46,Math.cos(a)*1.82);
+ mark.rotation.y=a;holoGroup.add(mark);holoMats.push(mat);
+}
+holoGroup.visible=false;scene.add(holoGroup);
+function locatePermanentWorldCard(){
+ try{return window.LivingObjectCraft.getRuneBoundCard(localStorage)}
+ catch{return null}
+}
+function syncBuildControls(){
+ const card=locatePermanentWorldCard(),registered=Registry?.isRegistered(card);
+ buildToggle.hidden=!registered||!!buildState||!!atlasRuntime?.inFocus;
+ buildTools.hidden=!buildState;
+ buildSnap.dataset.on=buildState?.grid?'true':'false';
+}
+function updateHologram(now){
+ if(!buildState){holoGroup.visible=false;return}
+ const {position,rotationY}=buildState;
+ const outcome=Build.place(position,{grid:buildState.grid});
+ buildState.valid=outcome.valid;
+ holoGroup.visible=true;
+ holoGroup.position.set(outcome.position.x,0,outcome.position.z);
+ holoGroup.rotation.y=rotationY;
+ for(const mat of holoMats){mat.color.set(outcome.valid?'#8cffe0':'#ff7272');
+  mat.opacity=preferReduced?.48:.38+.10*Math.sin(now*.006)}
+}
+function beginPermanentBuild(mode,card){
+ if(buildState||!Build||!Registry?.isRegistered(card))return false;
+ if(mode==='card'&&!(card.runeBinding?.state==='cardified'&&card.placement==='hover'&&!card.containerId))
+  throw Error('請先將永久原卡從 BOOK 經 GBA 調出，才能投影物件');
+ if(mode==='world'&&!(card.runeBinding?.state==='sealed'&&card.placement==='contained'))
+  throw Error('世界建造只能選擇目前已實體化的永久物件');
+ const anchor=card.permanentRegistry.anchor||{position:{x:0,y:0,z:0},rotationY:0};
+ buildState={mode,cardId:card.id,revision:card.revision,
+  position:Build.place(anchor.position).position,precise:Build.place(anchor.position).position,
+  rotationY:anchor.rotationY||0,
+  grid:false,valid:true};
+ resetJoystick(false);syncBuildControls();updateHologram(performance.now());
+ toast('✦ 虛擬投影已啟動：觸碰地面定位、搖桿微調、⊞ 吸附網格');
+ syncRender();return true;
+}
+function cancelPermanentBuild(){
+ if(!buildState)return;
+ buildState=null;buildPointer=null;buildCameraPan=null;holoGroup.visible=false;
+ resetJoystick(false);syncBuildControls();syncRender();
+}
+function confirmPermanentBuild(){
+ const chosen=buildState;if(!chosen)return;
+ const snap=Build.place(chosen.position,{grid:chosen.grid});
+ if(!snap.valid){toast('紅色投影無法放置，請移回合法地面');return}
+ const original=locatePermanentWorldCard();
+ if(!original||original.id!==chosen.cardId||original.revision!==chosen.revision){
+  toast('原卡資料已變動；建造已取消');cancelPermanentBuild();return;
+ }
+ try{
+  if(chosen.mode==='world'){
+   const moved=Registry.movableAnchor(localStorage,original.id,original.revision,
+    snap.position,chosen.rotationY);
+   runeGroup.position.set(snap.position.x,snap.position.y,snap.position.z);
+   runeGroup.rotation.y=chosen.rotationY;
+   runeBound=moved;refreshFloatingCards();
+   toast('✦ 永久法陣已移至指定位置，編號與契約保持不變');
+  }else{
+   startRuneTransfer('return',original,
+    {position:snap.position,rotationY:chosen.rotationY});
+   toast('✦ 投影定位完成，原卡開始具現化成原世界物件');
+  }
+  cancelPermanentBuild();
+ }catch(e){toast('建造未完成：'+e.message)}
+}
+function pickBuildGround(e){
+ if(!buildState||!e||!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY))return;
+ const bounds=renderer.domElement.getBoundingClientRect();
+ if(!bounds.width||!bounds.height)return;
+ const loc=new THREE.Vector2((e.clientX-bounds.left)/bounds.width*2-1,
+  -(e.clientY-bounds.top)/bounds.height*2+1);
+ const cast=new THREE.Raycaster();cast.setFromCamera(loc,camera);
+ const hit=cast.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),
+  new THREE.Vector3());
+ if(hit){const next=Build.place(hit,{grid:buildState.grid});
+  buildState.precise={x:hit.x,y:0,z:hit.z};buildState.position=next.position;
+  buildState.valid=next.valid;updateHologram(performance.now());syncRender()}
+}
+buildToggle.addEventListener('click',()=>{
+ const card=locatePermanentWorldCard();
+ if(!card||!Registry?.isRegistered(card)){toast('目前沒有可建造的永久卡');return}
+ try{beginPermanentBuild('world',card)}
+ catch(e){toast(e.message)}
+});
+buildSnap.addEventListener('click',()=>{
+ if(!buildState)return;
+ buildState.grid=!buildState.grid;
+ buildState.position=Build.place(buildState.position,{grid:buildState.grid}).position;
+ buildState.precise={...buildState.position};
+ syncBuildControls();updateHologram(performance.now());syncRender();
+});
+document.getElementById('permanentBuildRotate').addEventListener('click',()=>{
+ if(!buildState)return;buildState.rotationY=Build.rotate(buildState.rotationY);syncRender();
+});
+document.getElementById('permanentBuildApply').addEventListener('click',confirmPermanentBuild);
+document.getElementById('permanentBuildCancel').addEventListener('click',cancelPermanentBuild);
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&buildState){e.preventDefault();cancelPermanentBuild()}
+});
+syncBuildControls();
 const runeInspection=Object.freeze({
  id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
  anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
@@ -2445,6 +2620,12 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ if(buildState&&!insideJoystick(e)){
+  buildPointer=e.pointerId;
+  buildCameraPan={startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  e.preventDefault();return;
+ }
  runeGesture.foreignDown(e.pointerId); // A second finger cancels the first hold.
  spellHold.foreignDown(e.pointerId);
  returnCardHold.foreignDown(e.pointerId);
@@ -2488,6 +2669,19 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(buildState&&buildPointer===e.pointerId){
+  if(buildCameraPan){
+   const pan=buildCameraPan,dx=e.clientX-pan.lastX,dy=e.clientY-pan.lastY;
+   pan.lastX=e.clientX;pan.lastY=e.clientY;
+   // Right-half drag keeps the existing free camera during building.
+   if(pan.startX>window.innerWidth*.5&&
+      (pan.moved||Math.hypot(e.clientX-pan.startX,e.clientY-pan.startY)>7)){
+    pan.moved=true;theta-=dx*.005;
+    phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate();
+   }
+  }
+  syncRender();return;
+ }
  if(runeGesture.pointerMove(e)){syncRender();return}
  if(spellHold.pointerMove(e)){
   if(spellActivatedPointerId===e.pointerId){syncRender();return}
@@ -2532,6 +2726,12 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(buildState&&buildPointer===e.pointerId){
+  const wasCameraDrag=!!buildCameraPan?.moved;
+  buildPointer=null;buildCameraPan=null;
+  if(!wasCameraDrag)pickBuildGround(e);
+  syncRender();return;
+ }
  if(runeGesture.pointerUp(e)){syncRender();return}
  spellHold.pointerUp(e);
  returnCardHold.pointerUp(e);
@@ -2564,6 +2764,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
@@ -2577,6 +2778,7 @@ renderer.domElement.addEventListener('pointercancel',e=>{
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
  returnCardHold.pointerCancel(e);
@@ -2630,7 +2832,7 @@ function stopRenderLoop(){
  running=false;
  renderer.setAnimationLoop(null);
 }
-let proofPaintAt=0;
+let proofPaintAt=0,buildSyncLast=0;
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
@@ -2642,6 +2844,8 @@ function paint(now){
  spellHold.tick();updateSpellEffect(now);
  updateRuneReleaseEffect(now);
  returnCardHold.tick();updateRuneReturnVisual(now);
+ updateHologram(now);
+ if(now-buildSyncLast>650){buildSyncLast=now;syncBuildControls()}
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
@@ -2669,11 +2873,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
   performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
@@ -2685,10 +2889,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardSelection=null;returnCardHold.cancelAll();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
-window.addEventListener('blur',()=>{endRuneReleaseEffect();spellHold.cancelAll();returnCardHold.cancelAll();runeGesture.cancelAll();syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardSelection=null;returnCardHold.cancelAll();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+window.addEventListener('blur',()=>{cancelPermanentBuild();endRuneReleaseEffect();spellHold.cancelAll();returnCardHold.cancelAll();runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',()=>{runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardHold.cancelAll();runeGesture.cancelAll();stopRenderLoop()});
+window.addEventListener('pagehide',()=>{cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardHold.cancelAll();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
