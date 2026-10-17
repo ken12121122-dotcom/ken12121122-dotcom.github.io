@@ -57,7 +57,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   screenMode='downloading';invalidate();
  });
  function onDownloadVisibility(){if(document.hidden){stopDownload();cancelDownloadConfirmation()}}
- document.addEventListener('visibilitychange',onDownloadVisibility);
+ document.addEventListener?.('visibilitychange',onDownloadVisibility);
  function stopDownload(){
   if(!downloadEffect)return;
   downloadEffect=null;screenMode='menu';invalidate();
@@ -328,7 +328,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function active(){return !!focus||!!returning||!!pointer||[...models.values()].some(m=>!!m.animation)}
  function restoreFocusCamera(){if(focus){focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.started=performance.now()}}
  function showReaderReturn(){restoreFocusCamera();invalidate()}
- function dispose(){disposed=true;document.removeEventListener('visibilitychange',onDownloadVisibility);cancelDownloadConfirmation();stopDownload();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
+ function dispose(){disposed=true;document.removeEventListener?.('visibilitychange',onDownloadVisibility);cancelDownloadConfirmation();stopDownload();cancelPointer();for(const m of models.values()){if(m.puffs)smoke.remove(m.puffs);m.dispose();scene.remove(m.group)}audio?.close().catch(()=>{})}
  if(saved.collection==='inner'){collection.desired=saved.collectionOpen!==false;setInnerPose(collection);collection.group.visible=true;collection.open=collection.desired?1:0;collection.setOpen(collection.open)}
  if(saved.collection==='shelf')setCollectionActive(false,State.COLLECTION);
  syncCollections();
