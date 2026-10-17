@@ -250,6 +250,11 @@
  // The 9 left display wells and all other book pages are intentionally locked.
  // Returning a card to the floating orbit never clears its rune contract.
  function canStoreBoundCard(card,containerId,slotIndex){
+  if(card?.permanentRegistry?.state==='registered'){
+   const n=card.permanentRegistry.number;
+   return containerId===null||(containerId==='local.atlas.compendium'&&
+    (slotIndex===9||(Number.isInteger(n)&&n>=1&&n<=9&&slotIndex===n-1)));
+  }
   if(!card?.runeBinding?.runeId)return true;
   return containerId===null||(containerId==='local.atlas.compendium'&&slotIndex===9);
  }
@@ -263,7 +268,9 @@
   const old=state.objects[at];
   if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
   if(!canStoreBoundCard(old,containerId,slotIndex))
-   throw Error('已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
+   throw Error(isPermanentRuneCard(old)?
+    '永久卡只能放在唯一 BOOK 的自身永久格或 GBA 0 號格':
+    '已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
@@ -371,6 +378,7 @@
   if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
+  if(isPermanentRuneCard(card))throw Error('永久卡已鎖定，修改需經 GBA 正式變更程序');
   if(card.placement==='contained'||card.containment)throw Error('已吸收的卡片需先召喚才能編輯');
   if(Object.hasOwn(patch,'title')){
    if(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>40)
@@ -410,6 +418,7 @@
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
   const old=state.objects[at];
+  if(isPermanentRuneCard(old))throw Error('永久編號卡禁止回收');
   if(old.placement==='contained'||old.containment)throw Error('已收納的法術卡不可直接回收');
   if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
