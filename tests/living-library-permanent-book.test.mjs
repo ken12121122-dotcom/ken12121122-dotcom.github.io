@@ -63,6 +63,26 @@ test('GBA exclusively moves the SAME permanent original between its BOOK well an
  assert.equal(archived.slotIndex,0);
  assert.equal(storage.objects().length,1,'does not create a second physical original card');
 });
+test('permanent slot belongs to the original ID even while card is in GBA, hover, or world; archive fails closed on conflict',()=>{
+ const {storage,reader}=staged();
+ let original=Permanent.register(storage,{cardId:reader.id,expectedRevision:reader.revision,number:1,ownerConfirmed:true});
+ const second={...card({id:'local.card.another',title:'一般卡'}),runeBinding:null};
+ const state={version:Craft.VERSION,objects:[...storage.objects(),second]};
+ storage.setItem(KEY,JSON.stringify(state));
+ original=Permanent.toReader(storage,original.id,original.revision);
+ const snap=storage.raw;
+ assert.throws(()=>Craft.placeCard(storage,second.id,ATLAS,0),/永久保留/);
+ assert.equal(storage.raw,snap);
+ original=Permanent.archive(storage,original.id,original.revision);
+ original=Permanent.toReader(storage,original.id,original.revision);
+ const corrupted=storage.objects();
+ const at=corrupted.findIndex(x=>x.id===second.id);
+ corrupted[at]={...corrupted[at],placement:'book',containerId:ATLAS,ownerBookId:ATLAS,slotIndex:0};
+ storage.setItem(KEY,JSON.stringify({version:Craft.VERSION,objects:corrupted}));
+ const before=storage.raw;
+ assert.throws(()=>Permanent.archive(storage,original.id,original.revision),/佔位衝突/);
+ assert.equal(storage.raw,before);
+});
 test('world object anchor can only move after SAME permanent card transforms into sealed rune',()=>{
  const {storage,reader}=staged();
  let reg=Permanent.register(storage,{cardId:reader.id,expectedRevision:reader.revision,number:1,ownerConfirmed:true});
