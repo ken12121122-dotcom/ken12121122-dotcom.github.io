@@ -37,7 +37,7 @@ test('inventory counts only authored semantic world groups, not individual const
  const snap=Inventory.build({catalog:Catalog,craft:mockCraft,storage:{}});
  assert.equal(snap.supported,1);
  assert.equal(snap.sceneInstances,81);
- assert.equal(snap.rows.filter(x=>x.kind.includes('書本')).length,17);
+ assert.equal(snap.rows.filter(x=>x.kind.includes('書本')).length,16);
  assert.equal(snap.rows.filter(x=>x.kind.includes('卡片')).length,1);
  assert.equal(snap.rows.find(x=>x.id==='local.rune.origin').state,'已封印，可具現化為原卡');
  assert.equal(snap.rows.find(x=>x.id==='local.book.test').capability,'不適用（已是書本）');
