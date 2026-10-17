@@ -70,9 +70,10 @@ for(const [side,sign] of [[left,-1],[right,1]]){
 }
 box(binding,.15,3.7,.35,0,0,-.1,leather);
 return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount);binding.position.x=-1.31*(1-amount)},
- screen(card,mode='card',interactive=false,upload={state:'idle',code:''}){
+ screen(card,mode='card',interactive=false,upload={state:'idle',code:''},copy={items:[],index:0,status:''}){
   if(!screen)return;
-  const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK')+':'+upload.state+':'+upload.code:'empty';
+  const copyKey=mode==='copy'?(copy.items||[]).map(c=>c.id+':'+c.revision).join(',')+':'+copy.index+':'+(copy.status||''):'';
+   const key=card?card.id+':'+card.revision+':'+mode+':'+(interactive?'GBA':'BOOK')+':'+upload.state+':'+upload.code+':'+copyKey:'empty';
   if(key===screenKey)return;
   screenCancel();screenCancel=()=>{};screenKey=key;
   const map=screen.material.map,ctx=map.image.getContext('2d');
@@ -104,7 +105,20 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
     txt('點右側 GBA 進入',318,233,21);
     txt('近距離專注',318,283,26);
     txt('按鍵於下階段啟用',318,342,19);
-   }else if(mode==='observe'){
+   }else if(mode==='copy'){
+     txt('複製卡面',318,160,27);
+     const candidates=Array.isArray(copy.items)?copy.items:[];
+     if(!candidates.length){
+      txt('左頁無可複製卡',318,220,23);
+      txt('先放入普通卡片',318,265,19);
+     }else{
+      const selected=candidates[Math.max(0,Math.min(candidates.length-1,copy.index||0))];
+      txt((1+(copy.index||0))+' / '+candidates.length,318,197,23);
+      txt(selected?.title||'未命名卡片',318,240,24);
+      txt('↑↓ 選卡 A 複製',318,286,19);
+     }
+     txt('SELECT 切換模式',318,342,19);
+    }else if(mode==='observe'){
     txt('AI → GITHUB',318,174,26);
     if(upload.state==='sending'){
      txt('傳送中…',318,225,29);txt('請稍候',318,288,21);
