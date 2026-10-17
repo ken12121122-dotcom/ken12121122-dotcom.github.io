@@ -1270,9 +1270,9 @@ function stepAvatar(dt){
  if(buildState){
   const input=exploreInput();
   if(Math.hypot(input.x,input.y)<.025)return false;
-  const distance=Math.min(.16,dt*2.2);
-  buildState.position=Build.place({x:buildState.position.x+input.x*distance,
-   z:buildState.position.z-input.y*distance},{grid:buildState.grid}).position;
+  const moveSpan=Math.min(.16,dt*2.2);
+  buildState.position=Build.place({x:buildState.position.x+input.x*moveSpan,
+   z:buildState.position.z-input.y*moveSpan},{grid:buildState.grid}).position;
   updateHologram(performance.now());return true;
  }
  if(!hasWalkInput()){keeper.position.y=.46;return false}
