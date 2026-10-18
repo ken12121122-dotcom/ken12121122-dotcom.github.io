@@ -1748,7 +1748,8 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  invalidate:()=>window.LivingScene?.syncRender?.(),
  controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
  setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
- openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.sendLocalCardToGithub(id),focusCard});
+ openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.sendLocalCardToGithub(id),
+ focusCard:id=>{if(!truthEye.cardTap(id))focusCard(id)}});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
   el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
