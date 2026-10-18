@@ -263,6 +263,10 @@
  // The 9 left display wells and all other book pages are intentionally locked.
  // Returning a card to the floating orbit never clears its rune contract.
  function canStoreBoundCard(card,containerId,slotIndex){
+  // Truth Eye is an ordinary artifact card, not the unique origin rune.
+  // Only its card form may be stored in the normal BOOK slots.
+  if(card?.runeBinding?.runeId==='artifact.truth-eye')
+   return card.truthEyeContract?.artifactId==='artifact.truth-eye'&&card.truthEyeContract?.form==='card';
   if(card?.permanentRegistry?.state==='registered'){
    const n=card.permanentRegistry.number;
    return containerId===null||(containerId==='local.atlas.compendium'&&
