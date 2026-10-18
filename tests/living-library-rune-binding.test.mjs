@@ -136,7 +136,7 @@ test('UI renders a visible selection glow, beam, consent question and real card 
  assert.match(html,/tickRuneTransfer\(now\)/);
  assert.match(html,/runeTransfer\?\.cardId/);
  assert.match(html,/new THREE\.TorusGeometry\(\.058,\.009,5,36\)/);
- assert.match(html,/RUNE_ARC_SEGMENTS=192/);
+ assert.match(html,/runeHexagram=ContractHexagram\.create/);
  assert.doesNotMatch(html,/id="runeBind.*>3秒/);
 });
 

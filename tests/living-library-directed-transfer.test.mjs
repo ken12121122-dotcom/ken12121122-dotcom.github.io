@@ -114,9 +114,9 @@ test('failed browser storage write leaves both linked target and casting card un
 });
 test('3D absorption and persistent hiding use SAME original world/card models',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
- assert.match(html,/spellProgressSegments=RUNE_ARC_SEGMENTS/);
- assert.match(html,/spellArcGeometry\.setDrawRange/);
- assert.match(html,/spellArc\.quaternion\.copy\(camera\.quaternion\)/);
+ assert.match(html,/spellHexagram=ContractHexagram\.create/);
+ assert.match(html,/spellHexagram\.update\(info\.progress,now\)/);
+ assert.match(html,/spellHexagram\.group\.quaternion\.copy\(camera\.quaternion\)/);
  assert.match(html,/DirectedTransfer\.sample\(active\.plan,now/);
  assert.match(html,/caster\.group\.position\.copy\(a\)/);
  assert.match(html,/entry\.record\.placement==='contained'\|\|entry\.record\.containment/);

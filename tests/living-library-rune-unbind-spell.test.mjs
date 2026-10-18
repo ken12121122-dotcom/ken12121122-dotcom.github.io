@@ -89,7 +89,7 @@ test('spell cancellation leaves linked card completely untouched until confirmat
  for(const t of timers.values())if(t.due<=now)t.cb();
  assert.equal(selected.length,0);assert.equal(s.raw(),before);
 });
-test('world UI uses existing card pick, a circular 3s progress and confirmation dialog',async()=>{
+test('world UI uses existing card pick, six-pointed 3s progress and confirmation dialog',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  assert.match(html,/rune-unbind-spell\.js/);
  assert.match(html,/id="runeUnbindProgress"/);
@@ -102,9 +102,9 @@ test('world UI uses existing card pick, a circular 3s progress and confirmation 
  assert.match(html,/spellHold\.pointerMove\(e\)/);
  assert.match(html,/spellHold\.pointerUp\(e\)/);
  assert.match(html,/spellHold\.tick\(\);updateSpellEffect\(now\)/);
- assert.match(html,/spellArcGeometry\.setDrawRange\(0,Math\.floor\(spellProgressSegments\*info\.progress\)\*6\)/);
- assert.match(html,/spellTrack\.quaternion\.copy\(camera\.quaternion\)/);
- assert.match(html,/spellProgressSegments=RUNE_ARC_SEGMENTS/);
+ assert.match(html,/spellHexagram\.update\(info\.progress,now\)/);
+ assert.match(html,/spellHexagram\.group\.quaternion\.copy\(camera\.quaternion\)/);
+ assert.match(html,/spellHexagram=ContractHexagram\.create/);
  assert.match(html,/spellPromptTimer=setTimeout/);
  assert.match(html,/unbindEffect=\{\.\.\.selection,start:performance\.now\(\)/);
  assert.match(html,/unbindAndAbsorbSpell\(/);
