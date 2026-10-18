@@ -2266,7 +2266,9 @@ const spellHold=RuneHold.create({
    const target=inspectSpellNearest(spellId);
    if(target.status!=='selected'){
     spellSelection=null;
-    toast('✧ 解除綁定術：附近沒有可解除的已連結卡片');
+    toast(target.reason==='ambiguous_nearest'?'✧ 找到兩個距離相近的契約目標；請讓解除卡靠近想解除的那一個':
+     target.reason==='invalid_spell'?'✧ 施法卡目前無法使用，請先放回玩家軌道':
+     '✧ 解除綁定術：3.6 公尺內沒有可解除的已連結卡片／神器');
     return;
    }
    const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage,target.runeId);
