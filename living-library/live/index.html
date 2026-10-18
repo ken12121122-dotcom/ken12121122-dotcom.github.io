@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-17.card-create-menu-fix.1">
+<meta name="living-library-release" content="2026-10-18.truth-eye-world-beta.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1483,7 +1483,7 @@ function updateFloatingCards(now){
  for(let i=0;i<items.length;i++){
   const entry=items[i];
   if(atlasRuntime?.isDraggingCard(entry.id))continue;
-  if(entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+  if(entry.record.truthEyeContract?.form==='world'||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
     entry.group.visible=false;continue
    }
   if(entry.recycle){
@@ -1757,6 +1757,14 @@ atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlas
 window.addEventListener('pagehide',()=>atlasVoice.stop());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
 
+// TRUTH-EYE-BETA: additive in-world artifact. Existing rune binding is untouched.
+const truthEye=window.LivingTruthEyeWorld.create({
+ THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
+ storage:localStorage,craft:window.LivingObjectCraft,
+ refreshCards:refreshFloatingCards,
+ invalidate:()=>window.LivingScene?.syncRender?.(),
+ toast,reducedMotion:preferReduced
+});
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 // RUNE-01 read-only hit-test. Pointer hold & binding belong to RUNE-02/03.
 const runeHitRay=new THREE.Raycaster(),runeHitPointer=new THREE.Vector2();
@@ -2591,6 +2599,7 @@ const runeInspection=Object.freeze({
  cancelHold:()=>runeGesture.cancelAll()
 });
 function pick(e){
+ if(truthEye.pick(e))return 'truth-eye';
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
@@ -2623,6 +2632,10 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
+ if(!buildState&&!focusedCard&&!atlasRuntime?.inFocus&&truthEye.pointerDown(e)){
+  renderer.domElement.setPointerCapture?.(e.pointerId);
+  e.preventDefault();syncRender();return;
+ }
  if(buildState&&!insideJoystick(e)){
   buildPointer=e.pointerId;
   buildCameraPan={startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};
@@ -2672,6 +2685,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(truthEye.pointerMove(e)){syncRender();return}
  if(buildState&&buildPointer===e.pointerId){
   if(buildCameraPan){
    const pan=buildCameraPan,dx=e.clientX-pan.lastX,dy=e.clientY-pan.lastY;
@@ -2729,6 +2743,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
  if(buildState&&buildPointer===e.pointerId){
   const wasCameraDrag=!!buildCameraPan?.moved;
   buildPointer=null;buildCameraPan=null;
@@ -2767,6 +2782,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
  if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
@@ -2781,6 +2797,7 @@ renderer.domElement.addEventListener('pointercancel',e=>{
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
  if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
  if(runeGesture.pointerCancel(e)){syncRender();return}
  spellHold.pointerCancel(e);
@@ -2848,6 +2865,7 @@ function paint(now){
  updateRuneReleaseEffect(now);
  returnCardHold.tick();updateRuneReturnVisual(now);
  updateHologram(now);
+ truthEye.tick(now);
  if(now-buildSyncLast>650){buildSyncLast=now;syncBuildControls()}
  atlasRuntime?.tick(now);
  // Other physical books keep their state/position but cannot occlude close-up pages.
@@ -2876,11 +2894,11 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||truthEye.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
   performance.now()<runeBindingPulseUntil||hasWalkInput()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
@@ -2905,6 +2923,7 @@ notifyReady({
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
  atlas:atlasRuntime,
+ truthEye:truthEye,
  rune:runeInspection,
  unbindSpell:Object.freeze({inspect:()=>Object.freeze({...spellHold.inspect(),selection:spellSelection}),
   findNearest:inspectSpellNearest,cancel:cancelSpellUnbind}),
