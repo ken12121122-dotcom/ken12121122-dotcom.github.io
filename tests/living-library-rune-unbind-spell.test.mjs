@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
 const require=createRequire(import.meta.url);
 const Spell=require('../living-library/live/rune-unbind-spell.js');
 const Craft=require('../living-library/live/object-craft.js');
@@ -102,6 +103,17 @@ test('recycled, mutated, upgraded and unrelated Eye targets fail closed without 
     spellId:cast.id,spellRevision:cast.revision}));
    assert.equal(db.raw(),before);
  }
+});
+test('standalone card/book editors still boot without the world-only contract policy',async()=>{
+ const source=await readFile(new URL('../living-library/live/object-craft.js',import.meta.url),'utf8');
+ const global={};const scope=vm.createContext({globalThis:global});
+ assert.doesNotThrow(()=>vm.runInContext(source,scope,{timeout:1500}));
+ const standalone=global.LivingObjectCraft;
+ assert.equal(typeof standalone.createBlankBook,'function');
+ const s=mem([]);
+ const book=standalone.createBlankBook(s,{randomUUID:()=> 'standalone1'},'測試書本');
+ assert.equal(book.title,'測試書本');
+ assert.equal(standalone.listBooks(s).length,1);
 });
 test('future brand-new object IDs are detected automatically without unbind source changes',()=>{
  const spell=entry(source(),0,0);
