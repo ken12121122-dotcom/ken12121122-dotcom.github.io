@@ -42,7 +42,7 @@ for(let i=0;i<10;i++){
  moveTo(State.ATLAS,i,entry);
  const current=craft.listCards(storage)[0];
  if(i<9){
-  assert.equal(current.slotIndex,null,'ordinary card cannot occupy permanent showcase well '+i);
+  assert.equal(current.slotIndex??null,null,'ordinary card cannot occupy permanent showcase well '+i);
   assert.equal(current.containerId,null,'illegal placement must leave card on orbit');
   assert.match(messages.at(-1),/永久登錄/,'drop must be rejected by the data authority');
  }else{
