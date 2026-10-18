@@ -270,17 +270,56 @@
  // The 9 left display wells and all other book pages are intentionally locked.
  // Returning a card to the floating orbit never clears its rune contract.
  function canStoreBoundCard(card,containerId,slotIndex){
-  // Truth Eye is an ordinary artifact card, not the unique origin rune.
-  // Only its card form may be stored in the normal BOOK slots.
-  if(card?.runeBinding?.runeId==='artifact.truth-eye')
-   return card.truthEyeContract?.artifactId==='artifact.truth-eye'&&card.truthEyeContract?.form==='card';
-  if(card?.permanentRegistry?.state==='registered'){
-   const n=card.permanentRegistry.number;
-   return containerId===null||(containerId==='local.atlas.compendium'&&
-    (slotIndex===9||(Number.isInteger(n)&&n>=1&&n<=9&&slotIndex===n-1)));
+  if(!card||typeof card!=='object')return false;
+  const uniqueBook='local.atlas.compendium';
+  const reg=card.permanentRegistry;
+  const registered=reg?.state==='registered';
+  // Universal UNIQUE BOOK rule: the nine display wells require the
+  // irreversible registered original card at its own permanent-number slot.
+  // The GBA reader (well 9) is intentionally NOT a permanent display well:
+  // it must still accept ordinary/blank media for inspection and upgrading.
+  // No tests against specific rune, spell or artifact IDs.
+  if(containerId===uniqueBook&&Number.isInteger(slotIndex)&&slotIndex>=0&&slotIndex<9){
+   const number=reg?.number;
+   return registered&&Number.isInteger(number)&&number>=1&&number<=9&&
+    slotIndex===number-1&&reg.bookId===uniqueBook&&
+    (!reg.cardId||reg.cardId===card.id);
   }
-  if(!card?.runeBinding?.runeId)return true;
-  return containerId===null||(containerId==='local.atlas.compendium'&&slotIndex===9);
+  // Registered originals may leave their own well for the GBA (or orbit),
+  // but cannot be permanently displayed in other ordinary card books.
+  if(registered){
+   return containerId===null||(containerId===uniqueBook&&slotIndex===9);
+  }
+  // A card that represents a physically manifested or sealed world object
+  // is not a draggable card until its normal card form is restored.
+  const metadata=Object.entries(card).filter(([key,value])=>
+   /Contract$/.test(key)&&value&&typeof value==='object'&&!Array.isArray(value)&&
+   (value.artifactId===card.runeBinding?.runeId||value.runeId===card.runeBinding?.runeId));
+  if(metadata.some(([,value])=>['world','sealed'].includes(value.form)))return false;
+  if(!card.runeBinding?.runeId)return true;
+  // Unupgraded bound ordinary cards remain allowed in the GBA reader.
+  // An artifact already cardified may additionally use normal user-made books,
+  // without getting access to unique/permanent showcase wells.
+  if(metadata.some(([,value])=>value.form==='card'))return true;
+  return containerId===null||(containerId===uniqueBook&&slotIndex===9);
+ }
+ // One-time non-destructive correction of previously permitted illegal unique
+ // BOOK placements. The SAME original card returns to the player's orbit.
+ // Never migrate or modify an already registered permanent original.
+ function restoreUnregisteredUniqueWells(storage,clock=()=>new Date().toISOString()){
+  const state=read(storage),book='local.atlas.compendium';
+  const offenders=state.objects.filter(c=>isPlayerCard(c)&&c.status==='draft'&&
+   c.placement==='book'&&c.containerId===book&&c.ownerBookId===book&&
+   Number.isInteger(c.slotIndex)&&c.slotIndex>=0&&c.slotIndex<9&&
+   c.permanentRegistry?.state!=='registered'&&!c.containment);
+  if(!offenders.length)return [];
+  const ids=new Set(offenders.map(c=>c.id));
+  const when=clock();
+  const updated=state.objects.map(c=>ids.has(c.id)?{
+   ...c,placement:'hover',containerId:null,ownerBookId:null,slotIndex:null,
+   revision:(Number.isInteger(c.revision)?c.revision:0)+1,updatedAt:when
+  }:c);
+  write(storage,updated);return [...ids];
  }
  function placeCard(storage,id,containerId,slotIndex=null,clock=()=>new Date().toISOString()){
   const state=read(storage),sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
@@ -298,10 +337,13 @@
    throw Error('此 BOOK 位置已由其他永久編號卡永久保留');
   const old=state.objects[at];
   if(old.placement==='contained'||old.containment)throw Error('卡片已收納，請使用專用召喚術取回');
-  if(!canStoreBoundCard(old,containerId,slotIndex))
+  if(!canStoreBoundCard(old,containerId,slotIndex)){
+   if(containerId==='local.atlas.compendium'&&slotIndex>=0&&slotIndex<9)
+    throw Error('唯一圖鑑左側九格僅接受已永久登錄、且編號對應該格的原卡；請先在右側 GBA 完成永久登錄');
    throw Error(isPermanentRuneCard(old)?
     '永久卡只能放在唯一 BOOK 的自身永久格或 GBA 0 號格':
-    '已連結法陣的卡片只能放入萬物圖鑑右側 GBA 讀卡格；左側展示格仍鎖定');
+    '目前卡片狀態不允許放入此格；未升級契約卡只能使用右側 GBA 讀卡格');
+  }
   const next={...old,containerId,ownerBookId:containerId,slotIndex:containerId?slotIndex:null,
    placement:containerId?'book':'hover',revision:(old.revision||0)+1,updatedAt:clock()};
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
@@ -471,5 +513,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });

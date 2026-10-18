@@ -21,7 +21,7 @@ test('invalid slots, unknown containers, recycled cards and storage errors never
  for(const [book,slot] of [[S.ATLAS,10],[S.COLLECTION,18],[S.ATLAS,-1],['other',0],[S.ATLAS,1.5]])assert.throws(()=>C.placeCard(st,a.id,book,slot));
  assert.equal(st.getItem(C.KEY),before);C.recycleCard(st,a.id);assert.throws(()=>C.placeCard(st,a.id,S.ATLAS,0));
  const broken={getItem:()=>'{invalid',setItem:()=>assert.fail('must not overwrite')};assert.throws(()=>C.placeCard(broken,a.id,S.ATLAS,0));
- const blocked={getItem:()=>before,setItem:()=>{throw Error('quota')}};assert.throws(()=>C.placeCard(blocked,a.id,S.ATLAS,0),/quota/);
+ const blocked={getItem:()=>before,setItem:()=>{throw Error('quota')}};assert.throws(()=>C.placeCard(blocked,a.id,S.ATLAS,9),/quota/);
 });
 function webVoice(){let now=2000,called=0,instance;const timers=[];class Recognition{constructor(){instance=this}start(){this.onstart?.()}abort(){this.aborted=true}}
  const host={SpeechRecognition:Recognition,setTimeout:fn=>{timers.push(fn);return timers.length},clearTimeout:i=>{timers[i-1]=null}};

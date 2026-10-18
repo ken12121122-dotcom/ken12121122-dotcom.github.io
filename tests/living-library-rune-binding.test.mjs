@@ -86,7 +86,7 @@ test('linked card is locked out of nine left atlas cells and any other book, but
  ]){
   const before=db.raw();
   assert.equal(Craft.canStoreBoundCard(Craft.listCards(db)[0],container,slot),false);
-  assert.throws(()=>Craft.placeCard(db,'local.card.sample',container,slot),/右側 GBA 讀卡格/);
+  assert.throws(()=>Craft.placeCard(db,'local.card.sample',container,slot),/唯一圖鑑左側|右側 GBA/);
   assert.equal(db.raw(),before,'failed drop must never change user card data');
  }
  const bound=Craft.listCards(db)[0];
@@ -109,12 +109,16 @@ test('right GBA slot remains exclusive and respects quota failure atomically',()
  assert.throws(()=>Craft.placeCard(blocked,'local.card.sample',null),/quota/);
  assert.equal(db.raw(),before);
 });
-test('ordinary unbound cards retain all normal slot and book destinations',()=>{
- const db=storage(card());
- assert.equal(Craft.canStoreBoundCard(Craft.listCards(db)[0],'local.atlas.compendium',0),true);
- let placed=Craft.placeCard(db,'local.card.sample','local.atlas.compendium',0);
- assert.equal(placed.slotIndex,0);
- placed=Craft.placeCard(db,'local.card.sample','local.atlas.collection',17);
+test('ordinary unbound cards can use GBA and normal card books but NOT the nine permanent wells',()=>{
+ const db=storage(card()),original=Craft.listCards(db)[0];
+ for(let well=0;well<9;well++){
+  assert.equal(Craft.canStoreBoundCard(original,'local.atlas.compendium',well),false);
+  const before=db.raw();assert.throws(()=>Craft.placeCard(db,original.id,'local.atlas.compendium',well),/永久登錄/);
+  assert.equal(db.raw(),before);
+ }
+ let placed=Craft.placeCard(db,original.id,'local.atlas.compendium',9);
+ assert.equal(placed.slotIndex,9);
+ placed=Craft.placeCard(db,original.id,'local.atlas.collection',17);
  assert.equal(placed.slotIndex,17);
  assert.equal(Craft.read(db).objects.length,1);
 });
