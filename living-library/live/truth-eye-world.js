@@ -394,9 +394,22 @@ function create(opts){
   prompt('materialize',card.id,card.revision,card.title);
   return true;
  }
+ function getBoundWorldAnchor(){
+  if(!card||!['sealed','world'].includes(card.truthEyeContract?.form)||
+    !eye.visible||transfer||hold||pending)return null;
+  eye.updateWorldMatrix(true,false);
+  const p=eye.getWorldPosition(new T.Vector3());
+  return {cardId:card.id,revision:card.revision,position:{x:p.x,y:p.y,z:p.z}};
+ }
+ function refreshAfterUnbind(){
+  const before=card?.id;
+  state();
+  if(before&&!card){selected.clear();stop();cancelPrompt();}
+  invalidate();
+ }
  function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||performance.now()<selectedUntil}
  apply();state();
- return Object.freeze({tick,active,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
+ return Object.freeze({tick,active,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
