@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.permanent-showcase-only.1">
+<meta name="living-library-release" content="2026-10-18.truth-eye-manifestation-fix.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -1491,6 +1491,10 @@ function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
   const entry=items[i];
+  // The artifact's original-card absorption / manifestation must exclusively
+  // own its position, visibility and scale until the final state is committed.
+  // Otherwise the ordinary orbit updater resets the flight on every frame.
+  if(truthEye.ownsTransferCard(entry.id))continue;
   if(atlasRuntime?.isDraggingCard(entry.id))continue;
   if(['world','sealed'].includes(entry.record.truthEyeContract?.form)||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
     // Keep the hidden ORIGINAL card's world orbit anchor current. Its 3D mesh
@@ -1764,7 +1768,8 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
  setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
  openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.sendLocalCardToGithub(id),
- focusCard:id=>{if(!truthEye.cardTap(id))focusCard(id)}});
+ focusCard:id=>{if(!truthEye.cardTap(id))focusCard(id)},
+ onStoredCardTap:id=>truthEye.cardTap(id)});
 atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
   el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
