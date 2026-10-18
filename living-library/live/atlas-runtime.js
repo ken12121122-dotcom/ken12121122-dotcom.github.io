@@ -1,6 +1,6 @@
 /* Main-scene integration. Uses the existing renderer, card IDs, smoke and reader. */
 (function(root){'use strict';
-root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke,toast,invalidate,openCard,observeCard,focusCard,collectionEntity,setCollectionActive,controls={},reduced=false}){
+root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,storage,smoke,toast,invalidate,openCard,observeCard,focusCard,onStoredCardTap,collectionEntity,setCollectionActive,controls={},reduced=false}){
  const State=root.LivingAtlasState,KEY='living-library-atlas-view-v1';
  let tuning=State.normalizeSettings(controls),BASE=.36*tuning.atlasSize;
  let saved={collection:'outer',collectionOpen:true};try{const raw=storage.getItem(KEY);if(raw){const parsed=JSON.parse(raw);if(parsed?.version!==1||!['outer','inner','shelf'].includes(parsed.collection))throw Error('卡冊位置資料版本不相容');saved=parsed}}catch(e){toast(e.message);saved={collection:'outer',readonly:true}}
@@ -186,7 +186,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  function pointerUp(e,cancel=false){if(!pointer)return !!focus;if(e.pointerId!==pointer.id)return true;const p=pointer;pointer=null;highlight(null);
   if(p.kind==='card'){
    if(p.moved&&!cancel){const slot=hoveredSlot(e);try{craft.placeCard(storage,p.entry.id,slot?slot.id:null,slot?.slot??null);refresh()}catch(err){toast(err.message)}}
-   else if(!cancel){if(p.entry.record.containerId){toast('拖曳可移動卡片；右側 ● 開啟讀卡內頁')}else focusCard(p.entry.id)}
+   else if(!cancel){if(p.entry.record.containerId){if(!onStoredCardTap?.(p.entry.id))toast('拖曳可移動卡片；右側 ● 開啟讀卡內頁')}else focusCard(p.entry.id)}
    p.entry.group.position.copy(p.position);p.entry.group.quaternion.copy(p.quaternion);p.entry.group.scale.setScalar(p.scale);
    }else if(p.kind==='gba-entry'&&!p.moved&&!cancel){focusGba()}
    else if(p.kind==='control'&&!p.moved&&!cancel){
