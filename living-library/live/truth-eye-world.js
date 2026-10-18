@@ -201,6 +201,9 @@ function create(opts){
  function complete(token){
   if(!hold||hold.token!==token)return;
   const type=hold.type;stop();
+  // Contract/movement state can change when a card enters or leaves the
+  // compendium. Never act on a cached original revision.
+  state();
   selectedUntil=performance.now()+1800;
   if(type==='books'){
    toast('🔯 已展示 '+selected.size+' 件的原版六芒星 · 正式多物件封裝尚未開放');
@@ -225,13 +228,18 @@ function create(opts){
   const request=pending;
   if(!request||transfer)return;
   pending=null;
+  state();
   if(dialog.open)dialog.close();
   try{
    const record=craft.listCards(storage).find(o=>o.id===request.cardId);
    if(!record||record.revision!==request.cardRevision)throw Error('契約卡已變更，請重新長按');
    const existing=floatingCards.get(record.id);
-   if(!existing||existing.summon||existing.recycle||!existing.group.visible&&request.kind==='seal')
+   if(!existing||existing.summon||existing.recycle)
     throw Error('契約卡暫時無法操作，請先讓它回到軌道');
+   if(record.placement!=='hover'||record.containerId||record.ownerBookId)
+    throw Error('原卡目前在書本／GBA 裡；請先將同一張卡拖回玩家軌道，再實體化');
+   if(!existing.group.visible&&request.kind!=='cardify'&&request.kind!=='return')
+    throw Error('原卡暫時不可見，請先將原卡召回玩家軌道');
    if(request.kind==='seal'){
     if(!C.isEligible(record)||C.boundCard(storage))throw Error('空白卡不符合契約資格');
     const candidate=chooseCard();
@@ -392,10 +400,27 @@ function create(opts){
   }
  }
  function cardTap(id){
+  // The compendium can move the same original card several times. Each move
+  // increments its persisted revision without notifying this 3D artifact.
+  // Read current data BEFORE presenting a confirmation; never use the
+  // revision cached when the Eye was originally constructed.
+  state();
   if(!card||card.id!==id||card.truthEyeContract?.form!=='card')return false;
   const entry=floatingCards.get(id);
-  if(!entry||entry.summon||entry.recycle||!entry.group.visible)return false;
-  prompt('materialize',card.id,card.revision,card.title);
+  if(!entry||entry.summon||entry.recycle){
+   toast('真實之眼原卡正在移動，請完成操作後再實體化');
+   return true;
+  }
+  if(card.placement!=='hover'||card.containerId||card.ownerBookId){
+   toast('真實之眼原卡仍在圖鑑／GBA 中；請把原卡拖回玩家軌道，再點擊實體化');
+   return true;
+  }
+  if(!entry.group.visible){
+   toast('真實之眼原卡尚未回到玩家軌道，請先取出或完成卡片召喚');
+   return true;
+  }
+  if(!prompt('materialize',card.id,card.revision,card.title))
+   toast('請先完成上一個契約操作');
   return true;
  }
  function getBoundWorldAnchor(){
@@ -416,9 +441,10 @@ function create(opts){
  scene.addEventListener('living-contract-unbound',e=>{
   if(e.cardId===card?.id)refreshAfterUnbind();
  });
+ function ownsTransferCard(id){return !!transfer&&transfer.cardId===id}
  function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||performance.now()<selectedUntil}
  apply();state();
- return Object.freeze({tick,active,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
+ return Object.freeze({tick,active,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
