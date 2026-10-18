@@ -103,7 +103,7 @@ test('world UI uses existing card pick, six-pointed 3s progress and confirmation
  assert.match(html,/spellHold\.pointerUp\(e\)/);
  assert.match(html,/spellHold\.tick\(\);updateSpellEffect\(now\)/);
  assert.match(html,/spellHexagram\.update\(info\.progress,now\)/);
- assert.match(html,/spellTrack\.quaternion\.copy\(camera\.quaternion\)/);
+ assert.match(html,/spellHexagram\.group\.quaternion\.copy\(camera\.quaternion\)/);
  assert.match(html,/spellHexagram=ContractHexagram\.create/);
  assert.match(html,/spellPromptTimer=setTimeout/);
  assert.match(html,/unbindEffect=\{\.\.\.selection,start:performance\.now\(\)/);
