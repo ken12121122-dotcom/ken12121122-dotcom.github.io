@@ -57,7 +57,7 @@ test('single existing unbind spell detects Truth Eye card OR real 3D world artif
  assert.equal(choose(spell,[entry({...sealed,truthEyeContract:{...sealed.truthEyeContract,form:'world'}},1,0,
   {visible:true,artifactWorldAnchor:true})]).cardId,sealed.id);
  assert.equal(choose(spell,[entry({...sealed,truthEyeContract:{...sealed.truthEyeContract,form:'card'}},1,0,
-  {visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
+  {visible:true,artifactWorldAnchor:true})]).cardId,sealed.id);
  assert.equal(choose(spell,[entry({...sealed,runeBinding:{runeId:'artifact.truth-eye',state:'bound'},
   truthEyeContract:{artifactId:'unrelated.artifact',form:'world'}},1,0,
   {visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
@@ -93,7 +93,7 @@ test('recycled, mutated, upgraded and unrelated Eye targets fail closed without 
   truthEyeContract:{artifactId:'artifact.truth-eye',form:'sealed'}});
  for(const patch of [{truthEyeContract:{artifactId:'wrong',form:'world'}},
   {runeBinding:{runeId:'artifact.truth-eye',state:'broken'}},
-  {truthEyeContract:{artifactId:'artifact.truth-eye',form:'invalid'}},
+  {runeBinding:{runeId:'artifact.truth-eye',state:'pending'}},
   {permanentRegistry:{state:'registered'}},
   {containerId:'local.atlas.collection',placement:'book'}]){
    const target={...base,...patch},cast=source(),db=mem([target,cast]),before=db.raw();
@@ -101,6 +101,48 @@ test('recycled, mutated, upgraded and unrelated Eye targets fail closed without 
     runeId:'artifact.truth-eye',targetId:target.id,targetRevision:target.revision,
     spellId:cast.id,spellRevision:cast.revision}));
    assert.equal(db.raw(),before);
+ }
+});
+test('future brand-new object IDs are detected automatically without unbind source changes',()=>{
+ const spell=entry(source(),0,0);
+ for(const identity of ['gadget.compass.v42','world.portal.ABC','local.spell.weather-2032']){
+  const target=card('local.card.future','自製神器',{
+   runeBinding:{runeId:identity,state:'manifested',boundAt:'past'},
+   customContract:{artifactId:identity,form:'in_world'},
+   description:'保留我的原圖和說明',
+   image:{url:'library.asset'},cardNumber:'X-55'});
+  const found=choose(spell,[entry(target,.9)]);
+  assert.equal(found.status,'selected');
+  assert.equal(found.runeId,identity);
+  const state=mem([target,source()]);
+  const out=Craft.unbindAndAbsorbSpell(state,{runeId:identity,targetId:target.id,
+   targetRevision:target.revision,spellId:'local.card.spell',spellRevision:2});
+  assert.equal(out.target.runeBinding,undefined);
+  assert.equal(out.target.customContract,undefined);
+  assert.equal(out.target.description,target.description);
+  assert.deepEqual(out.target.image,target.image);
+  assert.equal(out.target.cardNumber,target.cardNumber);
+  assert.equal(out.target.id,target.id);
+  assert.equal(out.spell.consumedBy,target.id);
+  assert.equal(state.snapshot().objects.length,2);
+ }
+});
+test('common target rules reject pending upgrades, permanent and malformed contracts',()=>{
+ const spell=entry(source(),0,0);
+ for(const patch of [{l2Certified:true},{upgradeRequest:{state:'requested'}},
+   {certification:{level:'L2'}},{permanentRegistry:{state:'registered'}},
+   {permanentNumber:7},{runeBinding:{runeId:'artifact.random',state:'pending'}},
+   {runeBinding:{runeId:'artifact.random',state:'broken'}},
+   {customContract:{artifactId:'a-different-artifact'}}]){
+  const card0=card('local.card.test','任意已契約',{
+   runeBinding:{runeId:'artifact.random',state:'bound'},
+   customContract:{artifactId:'artifact.random'},...patch});
+  const db=mem([card0,source()]),before=db.raw();
+  assert.equal(choose(spell,[entry(card0,1)]).status,'unavailable');
+  assert.throws(()=>Craft.unbindAndAbsorbSpell(db,{
+   runeId:'artifact.random',targetId:card0.id,targetRevision:card0.revision,
+   spellId:'local.card.spell',spellRevision:2}));
+  assert.equal(db.raw(),before,'rejected contracts must never consume spell');
  }
 });
 test('no matching bound target or target too far must fail closed',()=>{
@@ -114,7 +156,7 @@ test('no matching bound target or target too far must fail closed',()=>{
 test('seal/hidden/dragged/book-held/transition targets are rejected',()=>{
  const spell=entry(source());
  for(const target of [
-  entry(bound('local.card.target',{runeBinding:{runeId:Craft.ORIGIN_RUNE,state:'sealed'}}),1),
+  entry(bound('local.card.target',{runeBinding:{runeId:Craft.ORIGIN_RUNE,state:'sealed'},placement:'contained',containment:{kind:'rune_contract'}}),1),
   entry(bound('local.card.target',{placement:'book',containerId:'local.atlas.compendium'}),1),
   entry(bound(),1,0,{visible:false}),
   entry(bound(),1,0,{isDragging:true}),
@@ -156,12 +198,12 @@ test('spell cancellation leaves linked card completely untouched until confirmat
 test('world UI uses existing card pick, six-pointed 3s progress and confirmation dialog',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  assert.match(html,/rune-unbind-spell\.js/);
- assert.match(html,/truthEye\.getBoundWorldAnchor\(\)/);
- assert.match(html,/original\.artifactWorldAnchor=true/);
+ assert.match(html,/function boundObjectInScene\(cardId\)/);
+ assert.match(html,/record\.worldContractTarget=true/);
  assert.match(html,/getRuneBoundCard\(localStorage,target\.runeId\)/);
  assert.match(html,/getRuneBoundCard\(localStorage,selection\.runeId\)/);
  assert.match(html,/runeId:active\.runeId,targetId:active\.targetId/);
- assert.match(html,/truthEye\.refreshAfterUnbind\(\)/);
+ assert.match(html,/scene\.dispatchEvent\(\{type:'living-contract-unbound'/);
  assert.match(html,/id="runeUnbindProgress"/);
  assert.match(html,/id="runeUnbindDialog"/);
  assert.match(html,/id="runeUnbindConfirm"/);
