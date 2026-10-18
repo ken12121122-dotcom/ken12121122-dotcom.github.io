@@ -53,7 +53,7 @@ function create(opts){
  let cfg={radius:8,aperture:360,direction:0,mode:'both',enabled:true};
  try{const s=JSON.parse(storage.getItem('living-truth-eye-scan-v1')||'null');
   if(s){cfg.radius=clamp(Number(s.radius)||8,2,20);cfg.aperture=clamp(Number(s.aperture)||360,15,360);
-   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}}
+   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}
  }catch(_){}
  let card=null;try{card=C.boundCard(storage)}catch(e){toast('讀卡失敗：'+e.message)}
  const field=new T.Group();scene.add(field);
