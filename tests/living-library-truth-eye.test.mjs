@@ -87,6 +87,7 @@ test('main world mounts the native artifact and retains original floor rune beha
  assert.match(html,/truthEye\.tick\(now\)/);
  assert.match(html,/truthEye\.pointerDown\(e\)/);
  assert.match(html,/truthEye\.cardTap\(hit\.object\.userData\.localCardId\)/);
+ assert.match(html,/focusCard:id=>\{if\(!truthEye\.cardTap\(id\)\)focusCard\(id\)\}/);
  assert.match(html,/runeHexagram=ContractHexagram\.create/);
  assert.match(world,/new T\.ExtrudeGeometry\(outline/);
  assert.match(world,/new T\.SphereGeometry/);
