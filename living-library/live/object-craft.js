@@ -10,7 +10,8 @@
  const ORIGIN_RUNE='local.rune.origin';
  const ContractPolicy=typeof module==='object'&&module.exports?
    require('./contract-policy.js'):root.LivingContractPolicy;
- if(!ContractPolicy)throw Error('Contract policy unavailable');
+ // Standalone card/book editors load this module without the world contract runtime.
+ // Only the unbind transaction requires the shared policy.
  function read(storage){
   const raw=storage.getItem(KEY);
   if(raw===null)return {version:VERSION,objects:[]};
@@ -165,6 +166,7 @@
  // both the restored target and the consumed spell, preserving both stable IDs.
  function unbindAndAbsorbSpell(storage,{runeId=ORIGIN_RUNE,targetId,targetRevision,spellId,spellRevision},
    clock=()=>new Date().toISOString()){
+  if(!ContractPolicy)throw Error('解除契約所需的共用規則尚未載入');
   if(typeof runeId!=='string'||!runeId.trim())throw Error('無效契約身分');
   if(!targetId||!spellId||targetId===spellId)throw Error('施法卡與目標不得相同');
   const state=read(storage),cards=state.objects;
