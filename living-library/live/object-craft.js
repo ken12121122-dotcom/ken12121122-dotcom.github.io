@@ -297,9 +297,29 @@
    (value.artifactId===card.runeBinding?.runeId||value.runeId===card.runeBinding?.runeId));
   if(metadata.some(([,value])=>['world','sealed'].includes(value.form)))return false;
   if(!card.runeBinding?.runeId)return true;
-  // Unupgraded bound ordinary cards remain allowed in the GBA reader;
-  // they never gain access to a unique display well by virtue of binding.
+  // Unupgraded bound ordinary cards remain allowed in the GBA reader.
+  // An artifact already cardified may additionally use normal user-made books,
+  // without getting access to unique/permanent showcase wells.
+  if(metadata.some(([,value])=>value.form==='card'))return true;
   return containerId===null||(containerId===uniqueBook&&slotIndex===9);
+ }
+ // One-time non-destructive correction of previously permitted illegal unique
+ // BOOK placements. The SAME original card returns to the player's orbit.
+ // Never migrate or modify an already registered permanent original.
+ function restoreUnregisteredUniqueWells(storage,clock=()=>new Date().toISOString()){
+  const state=read(storage),book='local.atlas.compendium';
+  const offenders=state.objects.filter(c=>isPlayerCard(c)&&c.status==='draft'&&
+   c.placement==='book'&&c.containerId===book&&c.ownerBookId===book&&
+   Number.isInteger(c.slotIndex)&&c.slotIndex>=0&&c.slotIndex<9&&
+   c.permanentRegistry?.state!=='registered'&&!c.containment);
+  if(!offenders.length)return [];
+  const ids=new Set(offenders.map(c=>c.id));
+  const when=clock();
+  const updated=state.objects.map(c=>ids.has(c.id)?{
+   ...c,placement:'hover',containerId:null,ownerBookId:null,slotIndex:null,
+   revision:(Number.isInteger(c.revision)?c.revision:0)+1,updatedAt:when
+  }:c);
+  write(storage,updated);return [...ids];
  }
  function placeCard(storage,id,containerId,slotIndex=null,clock=()=>new Date().toISOString()){
   const state=read(storage),sizes={'local.atlas.compendium':10,'local.atlas.collection':18};
@@ -493,5 +513,5 @@
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
   createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
-  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
+  ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
