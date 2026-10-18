@@ -72,7 +72,7 @@ test('3D scanner gesture has a wider invisible picking volume, locked target and
  assert.doesNotMatch(world,/flip\(\)/);
  assert.match(world,/hex\.update\(p,now\)/);
  assert.match(world,/cardTap\(id\)/);
- assert.match(world,/const target=type==='eye'\?chooseCard\(\):null/);
+ assert.match(world,/if\(type==='eye'\)\{\s*const target=chooseCard\(\)/);
  assert.match(world,/cardRevision/);
  assert.match(world,/contextmenu/);
 });
