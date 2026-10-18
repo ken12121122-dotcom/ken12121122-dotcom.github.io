@@ -39,6 +39,70 @@ test('search targets only nearby already bound ORIGINAL ordinary card using X/Z'
  const other=entry(card('local.card.other','普通卡'),1.1,0);
  assert.equal(choose(spell,[other,t]).cardId,t.id);
 });
+test('single existing unbind spell detects Truth Eye card OR real 3D world artifact',()=>{
+ const spell=entry(source(),.8,0);
+ const truth=id=>card(id,'真實之眼',{
+  runeBinding:{runeId:'artifact.truth-eye',state:'bound'},
+  truthEyeContract:{artifactId:'artifact.truth-eye',form:'card',version:2}});
+ const target=truth('local.card.eye');
+ const cardForm=entry(target,2,0);
+ assert.equal(choose(spell,[cardForm]).cardId,target.id);
+ assert.equal(choose(spell,[cardForm]).runeId,'artifact.truth-eye');
+ const sealed={...target,truthEyeContract:{...target.truthEyeContract,form:'sealed'}};
+ const hidden=entry(sealed,2,0,{visible:false});
+ assert.equal(choose(spell,[hidden]).reason,'no_linked_card');
+ const worldEntry=entry(sealed,1.0,0,{visible:true,artifactWorldAnchor:true});
+ assert.equal(choose(spell,[worldEntry]).cardId,sealed.id);
+ assert.equal(choose(spell,[worldEntry]).runeId,'artifact.truth-eye');
+ assert.equal(choose(spell,[entry({...sealed,truthEyeContract:{...sealed.truthEyeContract,form:'world'}},1,0,
+  {visible:true,artifactWorldAnchor:true})]).cardId,sealed.id);
+ assert.equal(choose(spell,[entry({...sealed,truthEyeContract:{...sealed.truthEyeContract,form:'card'}},1,0,
+  {visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
+ assert.equal(choose(spell,[entry({...sealed,runeBinding:{runeId:'artifact.truth-eye',state:'bound'},
+  truthEyeContract:{artifactId:'unrelated.artifact',form:'world'}},1,0,
+  {visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
+ assert.equal(choose(spell,[entry(sealed,4.5,0,{visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
+});
+test('unbinding Truth Eye is atomic, consumes spell into same original card, and does not unbind origin',()=>{
+ const eye=card('local.card.eye','真實之眼',{
+  runeBinding:{runeId:'artifact.truth-eye',state:'bound',boundAt:'past'},
+  truthEyeContract:{artifactId:'artifact.truth-eye',form:'world',version:2},
+  cardNumber:'EYE-1',description:'使用者畫的眼睛',revision:3});
+ const origin=bound('local.card.origin');
+ const cast=source(),db=mem([eye,origin,cast]),before=db.raw();
+ assert.throws(()=>Craft.unbindAndAbsorbSpell(db,{
+  runeId:'artifact.truth-eye',targetId:eye.id,targetRevision:2,spellId:cast.id,spellRevision:2}),/變動/);
+ assert.equal(db.raw(),before,'failing revision cannot consume spell or clear card');
+ const result=Craft.unbindAndAbsorbSpell(db,{
+  runeId:'artifact.truth-eye',targetId:eye.id,targetRevision:3,spellId:cast.id,spellRevision:2});
+ assert.equal(result.target.id,eye.id);
+ assert.equal(result.target.revision,4);
+ assert.equal(result.target.runeBinding,undefined);
+ assert.equal(result.target.truthEyeContract,undefined);
+ assert.equal(result.target.cardNumber,'EYE-1');
+ assert.equal(result.target.description,'使用者畫的眼睛');
+ assert.equal(result.spell.containment.holderId,eye.id);
+ assert.equal(result.spell.consumedBy,eye.id);
+ assert.equal(db.snapshot().objects.length,3,'never mint new IDs');
+ assert.deepEqual(db.snapshot().objects.find(x=>x.id===origin.id),origin,
+  'the separate origin rune contract is untouched');
+});
+test('recycled, mutated, upgraded and unrelated Eye targets fail closed without consuming spell',()=>{
+ const base=card('local.card.eye','真實之眼',{
+  runeBinding:{runeId:'artifact.truth-eye',state:'bound'},
+  truthEyeContract:{artifactId:'artifact.truth-eye',form:'sealed'}});
+ for(const patch of [{truthEyeContract:{artifactId:'wrong',form:'world'}},
+  {runeBinding:{runeId:'artifact.truth-eye',state:'broken'}},
+  {truthEyeContract:{artifactId:'artifact.truth-eye',form:'invalid'}},
+  {permanentRegistry:{state:'registered'}},
+  {containerId:'local.atlas.collection',placement:'book'}]){
+   const target={...base,...patch},cast=source(),db=mem([target,cast]),before=db.raw();
+   assert.throws(()=>Craft.unbindAndAbsorbSpell(db,{
+    runeId:'artifact.truth-eye',targetId:target.id,targetRevision:target.revision,
+    spellId:cast.id,spellRevision:cast.revision}));
+   assert.equal(db.raw(),before);
+ }
+});
 test('no matching bound target or target too far must fail closed',()=>{
  const spell=entry(source());
  assert.equal(choose(spell,[]).reason,'no_linked_card');
@@ -92,6 +156,12 @@ test('spell cancellation leaves linked card completely untouched until confirmat
 test('world UI uses existing card pick, six-pointed 3s progress and confirmation dialog',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  assert.match(html,/rune-unbind-spell\.js/);
+ assert.match(html,/truthEye\.getBoundWorldAnchor\(\)/);
+ assert.match(html,/original\.artifactWorldAnchor=true/);
+ assert.match(html,/getRuneBoundCard\(localStorage,target\.runeId\)/);
+ assert.match(html,/getRuneBoundCard\(localStorage,selection\.runeId\)/);
+ assert.match(html,/runeId:active\.runeId,targetId:active\.targetId/);
+ assert.match(html,/truthEye\.refreshAfterUnbind\(\)/);
  assert.match(html,/id="runeUnbindProgress"/);
  assert.match(html,/id="runeUnbindDialog"/);
  assert.match(html,/id="runeUnbindConfirm"/);

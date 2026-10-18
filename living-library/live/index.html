@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.original-hex-ritual-transfer.1">
+<meta name="living-library-release" content="2026-10-18.unbind-artifact-scan.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -2211,6 +2211,17 @@ function inspectSpellNearest(spellId){
  const source=floatingCardMeshes.get(spellId);
  if(!source)return {status:'unavailable',reason:'no_spell'};
  const entries=[...floatingCardMeshes.values()].map(localFloatEntry);
+ // When Truth Eye is sealed or materialized, its authoritative card is hidden.
+ // The *real* 3D artifact is nevertheless a spell target, using the SAME card ID.
+ // Never create a second/phantom entry and never treat other invisible cards as visible.
+ const anchor=truthEye.getBoundWorldAnchor();
+ if(anchor&&!atlasRuntime?.inFocus){
+  const original=entries.find(e=>e.id===anchor.cardId);
+  if(original&&original.record.revision===anchor.revision){
+   original.position=anchor.position;original.visible=true;
+   original.artifactWorldAnchor=true;
+  }
+ }
  return UnbindSpell.findNearestBoundCard(spellId,entries.find(x=>x.id===spellId),entries);
 }
 function interactableCardAt(e){
@@ -2255,26 +2266,32 @@ const spellHold=RuneHold.create({
    const target=inspectSpellNearest(spellId);
    if(target.status!=='selected'){
     spellSelection=null;
-    toast('✧ 解除綁定術：附近沒有可解除的已連結卡片');
+    toast(target.reason==='ambiguous_nearest'?'✧ 找到兩個距離相近的契約目標；請讓解除卡靠近想解除的那一個':
+     target.reason==='invalid_spell'?'✧ 施法卡目前無法使用，請先放回玩家軌道':
+     '✧ 解除綁定術：3.6 公尺內沒有可解除的已連結卡片／神器');
     return;
    }
-   const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage,target.runeId);
+   const eyeBound=target.runeId===window.LivingTruthEyeContract.ID;
    if(!bound||bound.id!==target.cardId||
-       !['bound','cardified'].includes(bound.runeBinding?.state)||
+       (eyeBound?!(bound.runeBinding?.state==='bound'&&
+         bound.truthEyeContract?.artifactId===target.runeId&&
+         ['sealed','card','world'].includes(bound.truthEyeContract.form)):
+        !['bound','cardified'].includes(bound.runeBinding?.state))||
        window.LivingObjectCraft.isPermanentRuneCard(bound)){
     spellSelection=null;toast('契約狀態已變更，請重新選取');return;
    }
    const caster=floatingCardMeshes.get(spellId);
    if(!caster||!UnbindSpell.isSpellCard(caster.record))throw Error('施法卡已改變');
-   spellSelection={casterId:spellId,targetId:bound.id,expectedRevision:bound.revision,
-    spellRevision:caster.record.revision};
+   spellSelection={casterId:spellId,targetId:bound.id,runeId:target.runeId,
+    expectedRevision:bound.revision,spellRevision:caster.record.revision};
    unbindName.textContent=bound.title;
    spellPromptTimer=setTimeout(()=>{
     spellPromptTimer=null;
     if(!document.hidden&&!unbindDialog.open&&spellSelection?.targetId===bound.id&&
       !focusedCard&&!atlasRuntime?.inFocus)unbindDialog.showModal();
    },550);
-   toast('✧ 已偵測到「'+bound.title+'」的法陣契約');
+   toast('✧ 已偵測到「'+bound.title+'」的'+(eyeBound?'真實之眼神器':'初始法陣')+'契約');
   }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
  }
 });
@@ -2283,8 +2300,9 @@ function confirmSpellUnbind(){
  const selection=spellSelection;
  try{
   const latest=inspectSpellNearest(selection.casterId);
-  const current=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  const current=window.LivingObjectCraft.getRuneBoundCard(localStorage,selection.runeId);
   if(latest.status!=='selected'||latest.cardId!==selection.targetId||
+    latest.runeId!==selection.runeId||
     !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision||
     window.LivingObjectCraft.isPermanentRuneCard(current)||
     floatingCardMeshes.get(selection.casterId)?.record.revision!==selection.spellRevision)
@@ -2292,11 +2310,15 @@ function confirmSpellUnbind(){
   closeSpellPrompt();
   const caster=floatingCardMeshes.get(selection.casterId);
   const target=floatingCardMeshes.get(selection.targetId);
-  if(!caster||!target||!caster.group.visible||!target.group.visible)
-   throw Error('目標卡片暫時無法施法');
-  caster.group.updateWorldMatrix(true,false);target.group.updateWorldMatrix(true,false);
+  const eyeAnchor=selection.runeId===window.LivingTruthEyeContract.ID?
+    truthEye.getBoundWorldAnchor():null;
+  if(!caster||!target||!caster.group.visible||
+    (!target.group.visible&&!eyeAnchor))
+   throw Error('目標卡片／神器暫時無法施法');
+  caster.group.updateWorldMatrix(true,false);
   const origin=caster.group.getWorldPosition(new THREE.Vector3());
-  const endpoint=target.group.getWorldPosition(new THREE.Vector3());
+  const endpoint=eyeAnchor?new THREE.Vector3(eyeAnchor.position.x,eyeAnchor.position.y,eyeAnchor.position.z):
+    target.group.getWorldPosition(new THREE.Vector3());
   unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300,
    plan:DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
     from:{x:origin.x,y:origin.y,z:origin.z},
@@ -2337,13 +2359,16 @@ function updateSpellEffect(now){
  const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
  if(!pair)return;
  const caster=floatingCardMeshes.get(pair.casterId),target=floatingCardMeshes.get(pair.targetId);
- if(!caster||!target||!caster.group.visible||!target.group.visible){
-  if(active){unbindEffect=null;spellSelection=null;toast('卡片已移動，未執行解除契約')}
+ const eyeAnchor=pair.runeId===window.LivingTruthEyeContract.ID?
+  truthEye.getBoundWorldAnchor():null;
+ if(!caster||!target||!caster.group.visible||(!target.group.visible&&!eyeAnchor)){
+  if(active){unbindEffect=null;spellSelection=null;toast('契約目標離開掃描範圍，未執行解除')}
   return;
  }
- caster.group.updateWorldMatrix(true,false);target.group.updateWorldMatrix(true,false);
+ caster.group.updateWorldMatrix(true,false);
  const a=caster.group.getWorldPosition(new THREE.Vector3());
- const b=target.group.getWorldPosition(new THREE.Vector3());
+ const b=eyeAnchor?new THREE.Vector3(eyeAnchor.position.x,eyeAnchor.position.y,eyeAnchor.position.z):
+  target.group.getWorldPosition(new THREE.Vector3());
  let progress=0,scale=null;
  if(active){
   const frame=DirectedTransfer.sample(active.plan,now,{x:b.x,y:b.y,z:b.z});
@@ -2374,16 +2399,19 @@ function updateSpellEffect(now){
   unbindEffect=null;spellSelection=null;
   try{
    const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
-    runeId:RuneContract.RUNE_ID,targetId:active.targetId,
+    runeId:active.runeId,targetId:active.targetId,
     targetRevision:active.expectedRevision,spellId:active.casterId,
     spellRevision:active.spellRevision});
-   runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
-   // SOURCE spell is gone (contained in original target). Original TARGET
-   // stays in the orbit and emits a separate return-energy effect afterward.
-   const returningFrom=target.group.getWorldPosition(new THREE.Vector3());
+   const wasEye=active.runeId===window.LivingTruthEyeContract.ID;
+   if(!wasEye){runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0}
+   // Spell is contained in the SAME ORIGINAL target card. Origin rune energy
+   // only returns to the ground for the origin rune, never for the Truth Eye.
+   const returningFrom=b.clone();
    refreshFloatingCards();
-   startRuneReleaseEffect(result.target.id,returningFrom,now);
-   toast('✧ 「'+result.spell.title+'」已沒入初代法陣卡 · 法陣能量正在回歸');
+   if(wasEye)truthEye.refreshAfterUnbind();
+   else startRuneReleaseEffect(result.target.id,returningFrom,now);
+   toast(wasEye?'✧ 真實之眼契約已解除；原卡 ID 保留，神器恢復未綁定狀態':
+    '✧ 「'+result.spell.title+'」已沒入初代法陣卡 · 法陣能量正在回歸');
 
   }catch(error){
    caster.group.scale.setScalar(controlPrefs.cardSize);
