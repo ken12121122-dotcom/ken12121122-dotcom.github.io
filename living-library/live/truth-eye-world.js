@@ -104,6 +104,10 @@ function create(opts){
  function state(){try{card=C.boundCard(storage)}catch(e){toast(e.message);card=null}
   const form=card?.truthEyeContract?.form;
   eye.visible=!card||form==='world'||form==='sealed';eyeLight.visible=eye.visible;
+  // Every world artifact exposes its binding through ONE standard scene marker.
+  // Unbinding never needs to know this object's type, name or artifact ID.
+  if(card&&['world','sealed'].includes(form))eye.userData.boundCardId=card.id;
+  else delete eye.userData.boundCardId;
   field.visible=form==='world'&&cfg.enabled;marks.visible=field.visible;control.hidden=form!=='world';
   host.hidden=form!=='world';
   el('Toggle').hidden=form!=='world';
@@ -407,6 +411,11 @@ function create(opts){
   if(before&&!card){selected.clear();stop();cancelPrompt();}
   invalidate();
  }
+ // Generic contract release event: refresh this artifact only when its
+ // ORIGINAL card was released. Other artifacts can subscribe independently.
+ scene.addEventListener('living-contract-unbound',e=>{
+  if(e.cardId===card?.id)refreshAfterUnbind();
+ });
  function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||performance.now()<selectedUntil}
  apply();state();
  return Object.freeze({tick,active,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
