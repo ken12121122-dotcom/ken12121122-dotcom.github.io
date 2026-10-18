@@ -55,7 +55,10 @@ test('3D scanner gesture has a wider invisible picking volume, locked target and
  const world=await readFile(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
  assert.match(world,/truth-eye-gesture-hit-target/);
  assert.match(world,/heldPointers\.add\(e\.pointerId\)/);
- assert.match(world,/showHoldProgress/);
+ assert.doesNotMatch(world,/showHoldProgress|conic-gradient|id="eyeAction"/);
+ assert.match(world,/Hexagram\.create\(/);
+ assert.match(world,/hex\.update\(p,now\)/);
+ assert.match(world,/cardTap\(id\)/);
  assert.match(world,/const target=type==='eye'\?chooseCard\(\):null/);
  assert.match(world,/cardRevision/);
  assert.match(world,/contextmenu/);
@@ -83,7 +86,8 @@ test('main world mounts the native artifact and retains original floor rune beha
  assert.match(html,/truth-eye-world\.js/);
  assert.match(html,/truthEye\.tick\(now\)/);
  assert.match(html,/truthEye\.pointerDown\(e\)/);
- assert.match(html,/new THREE\.RingGeometry\(2\.51,2\.64,RUNE_ARC_SEGMENTS/);
+ assert.match(html,/truthEye\.cardTap\(hit\.object\.userData\.localCardId\)/);
+ assert.match(html,/runeHexagram=ContractHexagram\.create/);
  assert.match(world,/new T\.ExtrudeGeometry\(outline/);
  assert.match(world,/new T\.SphereGeometry/);
  assert.match(world,/new T\.LineLoop/);
