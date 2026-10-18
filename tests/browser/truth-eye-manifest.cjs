@@ -28,7 +28,7 @@ function el(type){
 }
 const doc={head:{append(){}},body:{append(){}},createElement:el,addEventListener(){}};
 let clock=0;
-const host={document:doc,console,performance:{now:()=>clock},addEventListener(){}};
+const host={document:doc,console,performance:{now:()=>clock},setTimeout,clearTimeout,addEventListener(){}};
 host.self=host;host.LivingTruthEyeContract=Contract;host.LivingDirectedTransfer=Directed;
 host.LivingContractHexagram=Hex;
 vm.runInNewContext(fs.readFileSync(root+'/living-library/live/truth-eye-world.js','utf8'),host);
