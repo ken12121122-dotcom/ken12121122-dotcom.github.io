@@ -8,7 +8,8 @@
   c.placement==='hover'&&!c.containerId&&!c.ownerBookId&&!c.containment&&
   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.truthEyeContract&&
   !c.l2Certified&&!c.permanentCard&&!c.permanentRegistry&&!c.permanentRegistration&&
-  c.title==='空白卡片'&&!c.description&&!c.image&&!c.cardNumber&&!c.cardType&&!c.linkedCardId&&!c.ability&&
+  (c.title==='空白卡片'||c.title==='真實之眼')&&!c.linkedCardId&&!c.ability&&
+  (c.title==='真實之眼'||(!c.description&&!c.image&&!c.cardNumber&&!c.cardType))&&
   (!c.permissions||c.permissions.length===0)&&!c.copyInfo&&
   !c.upgradeRequest?.state&&!c.certification?.level;
  function read(storage){
@@ -50,7 +51,7 @@
   return change(storage,cardId,expectedRevision,old=>{
    if(!isEligible(old))throw Error('這張卡不是可使用的普通空白卡');
    const now=new Date().toISOString();
-   return {...old,title:'真實之眼',cardType:'神器',description:'獨一物件 · 真實之眼 3D 掃描神器',runeBinding:{runeId:ID,state:'bound',boundAt:now},
+   return {...old,title:'真實之眼',cardType:old.cardType||'神器',description:old.description||'獨一物件 · 真實之眼 3D 掃描神器',runeBinding:{runeId:ID,state:'bound',boundAt:now},
     truthEyeContract:{artifactId:ID,form:'card',version:1,contractedAt:now}};
   });
  }
