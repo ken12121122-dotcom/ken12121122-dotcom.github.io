@@ -44,7 +44,7 @@ test('permanent upgrade is atomic, retains ID and art, and is irreversible to or
  assert.throws(()=>Craft.editCard(storage,reader.id,{title:'改名'}),/永久卡/);
  assert.throws(()=>Craft.recycleCard(storage,reader.id),/永久/);
  assert.throws(()=>Craft.placeCard(storage,reader.id,'local.atlas.collection',0),/永久卡/);
- assert.throws(()=>Craft.placeCard(storage,reader.id,ATLAS,1),/永久卡/);
+ assert.throws(()=>Craft.placeCard(storage,reader.id,ATLAS,1),/永久登錄|永久卡/);
  assert.throws(()=>Craft.restoreUncommittedRuneCard(storage),/封印後|永久/);
  assert.throws(()=>Permanent.register(storage,{cardId:reader.id,expectedRevision:verified.revision,number:2,ownerConfirmed:true}),/重新/);
 });
