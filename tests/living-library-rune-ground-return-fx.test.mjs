@@ -57,8 +57,10 @@ test('visual return only begins AFTER atomic contract-unbind success; animation 
  assert.ok(update.length>2000);
  const commit=update.indexOf('unbindAndAbsorbSpell(localStorage');
  const refresh=update.indexOf('refreshFloatingCards();',commit);
- const animate=update.indexOf('startRuneReleaseEffect(result.target.id,returningFrom,now)',refresh);
- assert.ok(commit>=0&&refresh>commit&&animate>refresh,'do not play return unless the contract already committed');
+ const animate=update.indexOf("scene.dispatchEvent({type:'living-contract-unbound'",refresh);
+ assert.ok(commit>=0&&refresh>commit&&animate>refresh,'unbinding event must only fire after the original data commit');
+ assert.match(html,/scene\.addEventListener\('living-contract-unbound',e=>\{/);
+ assert.match(html,/startRuneReleaseEffect\(e\.cardId,e\.from,e\.now\)/);
  assert.ok(update.indexOf('runeGroup.visible=true;',commit)<0,'floor rune cannot pop back before energy flight');
  assert.match(html,/function startRuneReleaseEffect\(targetCardId,targetPosition,now\)/);
  assert.match(html,/sourceId:targetCardId,targetId:RuneContract\.RUNE_ID/);

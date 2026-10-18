@@ -133,7 +133,7 @@ test('world scene has both 3-second transitions and irreversible-upgrade checks'
   /returnCardHold\.pointerDown\(e,manifestation\.id\)/,
   /returnCardHold\.tick\(\);updateRuneReturnVisual\(now\)/,
   /isPermanentRuneCard\(current\)/,
-  /\['bound','cardified'\]\.includes\(bound\.runeBinding\?\.state\)/,
+  /ContractPolicy\.canUnbind\(bound\)/,
   /unbindAndAbsorbSpell\(localStorage/
  ])assert.match(html,pattern);
  assert.match(html,/runeGroup\.visible=!cardify/);

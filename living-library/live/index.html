@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.unbind-artifact-scan.1">
+<meta name="living-library-release" content="2026-10-18.data-driven-unbind.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -2093,7 +2093,9 @@ const runeGesture=RuneHold.create({
 });
 // RUNE-UNBIND-001: long-press a PLAYER card explicitly named "解除綁定" (or
 // "解除綁定術" / "解除契約"), not the bound target. No auto-created spell card.
-const UnbindSpell=window.LivingRuneUnbindSpell,DirectedTransfer=window.LivingDirectedTransfer;
+const UnbindSpell=window.LivingRuneUnbindSpell,DirectedTransfer=window.LivingDirectedTransfer,
+ ContractPolicy=window.LivingContractPolicy;
+if(!ContractPolicy)throw Error('Generic contract policy unavailable');
 if(!UnbindSpell||!DirectedTransfer)throw Error('Directed rune transfer modules unavailable');
 const unbindDialog=document.getElementById('runeUnbindDialog'),
  unbindName=document.getElementById('runeUnbindTargetName'),
@@ -2198,6 +2200,13 @@ function updateRuneReleaseEffect(now){
   syncRender();
  }
 }
+// Existing origin-rune appearance is just an event subscriber, not
+// a rule hard-coded in the unbind spell. Future objects can subscribe too.
+scene.addEventListener('living-contract-unbound',e=>{
+ if(e.bindingId!==RuneContract.RUNE_ID)return;
+ runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
+ startRuneReleaseEffect(e.cardId,e.from,e.now);
+});
 function localFloatEntry(entry){
  entry.group.updateWorldMatrix(true,false);
  const p=entry.group.getWorldPosition(new THREE.Vector3());
@@ -2207,19 +2216,44 @@ function localFloatEntry(entry){
   isSummoning:!!entry.summon||reservedCardSummons.has(entry.id),
   isRecycling:!!entry.recycle,isFocused:focusedCard?.id===entry.id};
 }
+// A reusable marker contract: every manifested world object with a bound
+// original card sets group.userData.boundCardId = that ORIGINAL card's id.
+// The spell knows only card bindings and this marker, never artifact types.
+function boundObjectInScene(cardId){
+ let found=null,duplicates=false;
+ scene.traverse(node=>{
+  if(node.userData?.boundCardId!==cardId)return;
+  for(let a=node;a;a=a.parent)if(!a.visible)return;
+  node.updateWorldMatrix(true,false);
+  const p=node.getWorldPosition(new THREE.Vector3());
+  if(found){duplicates=true;return}
+  found={node,position:{x:p.x,y:p.y,z:p.z}};
+ });
+ return duplicates?null:found;
+}
 function inspectSpellNearest(spellId){
  const source=floatingCardMeshes.get(spellId);
  if(!source)return {status:'unavailable',reason:'no_spell'};
  const entries=[...floatingCardMeshes.values()].map(localFloatEntry);
- // When Truth Eye is sealed or materialized, its authoritative card is hidden.
- // The *real* 3D artifact is nevertheless a spell target, using the SAME card ID.
- // Never create a second/phantom entry and never treat other invisible cards as visible.
- const anchor=truthEye.getBoundWorldAnchor();
- if(anchor&&!atlasRuntime?.inFocus){
-  const original=entries.find(e=>e.id===anchor.cardId);
-  if(original&&original.record.revision===anchor.revision){
-   original.position=anchor.position;original.visible=true;
-   original.artifactWorldAnchor=true;
+ if(!atlasRuntime?.inFocus){
+  const originalById=new Map(entries.map(x=>[x.id,x]));
+  const seen=new Set(),duplicates=new Set();
+  scene.traverse(node=>{
+   const id=node.userData?.boundCardId;
+   if(typeof id!=='string'||!id)return;
+   for(let p=node;p;p=p.parent)if(!p.visible)return;
+   if(seen.has(id)){duplicates.add(id);return}
+   seen.add(id);
+   const record=originalById.get(id);
+   if(!record||record.visible||!ContractPolicy.canUnbind(record.record))return;
+   node.updateWorldMatrix(true,false);
+   const p=node.getWorldPosition(new THREE.Vector3());
+   record.position={x:p.x,y:p.y,z:p.z};
+   record.visible=true;
+   record.worldContractTarget=true;
+  });
+  for(const id of duplicates){
+   const entry=originalById.get(id);if(entry){entry.visible=false;entry.worldContractTarget=false}
   }
  }
  return UnbindSpell.findNearestBoundCard(spellId,entries.find(x=>x.id===spellId),entries);
@@ -2272,13 +2306,8 @@ const spellHold=RuneHold.create({
     return;
    }
    const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage,target.runeId);
-   const eyeBound=target.runeId===window.LivingTruthEyeContract.ID;
-   if(!bound||bound.id!==target.cardId||
-       (eyeBound?!(bound.runeBinding?.state==='bound'&&
-         bound.truthEyeContract?.artifactId===target.runeId&&
-         ['sealed','card','world'].includes(bound.truthEyeContract.form)):
-        !['bound','cardified'].includes(bound.runeBinding?.state))||
-       window.LivingObjectCraft.isPermanentRuneCard(bound)){
+   if(!bound||bound.id!==target.cardId||!ContractPolicy.canUnbind(bound)||
+      bound.runeBinding.runeId!==target.runeId){
     spellSelection=null;toast('契約狀態已變更，請重新選取');return;
    }
    const caster=floatingCardMeshes.get(spellId);
@@ -2291,7 +2320,7 @@ const spellHold=RuneHold.create({
     if(!document.hidden&&!unbindDialog.open&&spellSelection?.targetId===bound.id&&
       !focusedCard&&!atlasRuntime?.inFocus)unbindDialog.showModal();
    },550);
-   toast('✧ 已偵測到「'+bound.title+'」的'+(eyeBound?'真實之眼神器':'初始法陣')+'契約');
+   toast('✧ 已偵測到「'+bound.title+'」的有效契約，可解除綁定');
   }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
  }
 });
@@ -2310,14 +2339,13 @@ function confirmSpellUnbind(){
   closeSpellPrompt();
   const caster=floatingCardMeshes.get(selection.casterId);
   const target=floatingCardMeshes.get(selection.targetId);
-  const eyeAnchor=selection.runeId===window.LivingTruthEyeContract.ID?
-    truthEye.getBoundWorldAnchor():null;
+  const worldTarget=!target?.group.visible?boundObjectInScene(selection.targetId):null;
   if(!caster||!target||!caster.group.visible||
-    (!target.group.visible&&!eyeAnchor))
-   throw Error('目標卡片／神器暫時無法施法');
+    (!target.group.visible&&!worldTarget))
+   throw Error('目標原卡／世界物件暫時無法施法');
   caster.group.updateWorldMatrix(true,false);
   const origin=caster.group.getWorldPosition(new THREE.Vector3());
-  const endpoint=eyeAnchor?new THREE.Vector3(eyeAnchor.position.x,eyeAnchor.position.y,eyeAnchor.position.z):
+  const endpoint=worldTarget?new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
     target.group.getWorldPosition(new THREE.Vector3());
   unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300,
    plan:DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
@@ -2359,15 +2387,14 @@ function updateSpellEffect(now){
  const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
  if(!pair)return;
  const caster=floatingCardMeshes.get(pair.casterId),target=floatingCardMeshes.get(pair.targetId);
- const eyeAnchor=pair.runeId===window.LivingTruthEyeContract.ID?
-  truthEye.getBoundWorldAnchor():null;
- if(!caster||!target||!caster.group.visible||(!target.group.visible&&!eyeAnchor)){
-  if(active){unbindEffect=null;spellSelection=null;toast('契約目標離開掃描範圍，未執行解除')}
+ const worldTarget=!target?.group.visible?boundObjectInScene(pair.targetId):null;
+ if(!caster||!target||!caster.group.visible||(!target.group.visible&&!worldTarget)){
+  if(active){unbindEffect=null;spellSelection=null;toast('契約物件已離開世界，未執行解除')}
   return;
  }
  caster.group.updateWorldMatrix(true,false);
  const a=caster.group.getWorldPosition(new THREE.Vector3());
- const b=eyeAnchor?new THREE.Vector3(eyeAnchor.position.x,eyeAnchor.position.y,eyeAnchor.position.z):
+ const b=worldTarget?new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
   target.group.getWorldPosition(new THREE.Vector3());
  let progress=0,scale=null;
  if(active){
@@ -2402,16 +2429,13 @@ function updateSpellEffect(now){
     runeId:active.runeId,targetId:active.targetId,
     targetRevision:active.expectedRevision,spellId:active.casterId,
     spellRevision:active.spellRevision});
-   const wasEye=active.runeId===window.LivingTruthEyeContract.ID;
-   if(!wasEye){runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0}
-   // Spell is contained in the SAME ORIGINAL target card. Origin rune energy
-   // only returns to the ground for the origin rune, never for the Truth Eye.
+   // Unbinding is generic. World objects subscribe to this event to restore
+   // their own visual state; no special artifact ID is checked by the spell.
    const returningFrom=b.clone();
    refreshFloatingCards();
-   if(wasEye)truthEye.refreshAfterUnbind();
-   else startRuneReleaseEffect(result.target.id,returningFrom,now);
-   toast(wasEye?'✧ 真實之眼契約已解除；原卡 ID 保留，神器恢復未綁定狀態':
-    '✧ 「'+result.spell.title+'」已沒入初代法陣卡 · 法陣能量正在回歸');
+   scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
+    bindingId:active.runeId,from:returningFrom,now});
+   toast('✧ 「'+result.target.title+'」的契約已解除；原卡保留，施法卡已收納');
 
   }catch(error){
    caster.group.scale.setScalar(controlPrefs.cardSize);

@@ -95,7 +95,7 @@ test('unknown target, stale revisions, altered spell, and blocked upgrades fail 
   [linked(),card('local.card.spell','一般說明'),{}],
   [linked(),card('local.card.spell','解除綁定',{placement:'book'}),{}],
   [card('local.card.target','初代法陣卡'),spell(),{}],
-  [card('local.card.target','初代法陣卡',{runeBinding:{runeId:Craft.ORIGIN_RUNE,state:'sealed'}}),spell(),{}],
+  [card('local.card.target','初代法陣卡',{runeBinding:{runeId:Craft.ORIGIN_RUNE,state:'sealed'},placement:'contained',containment:{kind:'rune_contract'}}),spell(),{}],
   [card('local.card.target','初代法陣卡',{runeBinding:{runeId:Craft.ORIGIN_RUNE,state:'bound'},upgradeRequest:{state:'requested'}}),spell(),{}]
  ];
  for(const [target,caster,override] of scenarios){

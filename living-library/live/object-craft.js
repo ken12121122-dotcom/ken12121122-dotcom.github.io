@@ -2,12 +2,16 @@
  * Does not grant skills, execute actions, write GitHub or read GEN2.
  * Persisted separately from the library display/reconnect preferences. */
 (function(root,factory){
- const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;
+ const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;
  else root.LivingObjectCraft=api;
-})(typeof self!=='undefined'?self:this,function(){
+})(typeof self!=='undefined'?self:globalThis,function(root){
  'use strict';
  const KEY='living-library-player-objects-v1',VERSION=1,MAX_CARDS=64,MAX_BOOKS=12,MAX_RECYCLED=128;
- const ORIGIN_RUNE='local.rune.origin',TRUTH_EYE_RUNE='artifact.truth-eye';
+ const ORIGIN_RUNE='local.rune.origin';
+ const ContractPolicy=typeof module==='object'&&module.exports?
+   require('./contract-policy.js'):root.LivingContractPolicy;
+ // Standalone card/book editors load this module without the world contract runtime.
+ // Only the unbind transaction requires the shared policy.
  function read(storage){
   const raw=storage.getItem(KEY);
   if(raw===null)return {version:VERSION,objects:[]};
@@ -162,7 +166,8 @@
  // both the restored target and the consumed spell, preserving both stable IDs.
  function unbindAndAbsorbSpell(storage,{runeId=ORIGIN_RUNE,targetId,targetRevision,spellId,spellRevision},
    clock=()=>new Date().toISOString()){
-  if(![ORIGIN_RUNE,TRUTH_EYE_RUNE].includes(runeId))throw Error('未知法陣');
+  if(!ContractPolicy)throw Error('解除契約所需的共用規則尚未載入');
+  if(typeof runeId!=='string'||!runeId.trim())throw Error('無效契約身分');
   if(!targetId||!spellId||targetId===spellId)throw Error('施法卡與目標不得相同');
   const state=read(storage),cards=state.objects;
   const targetIndex=cards.findIndex(x=>x.id===targetId&&isPlayerCard(x)&&x.status!=='recycled');
@@ -174,13 +179,9 @@
   if(target.revision!==targetRevision||spell.revision!==spellRevision)
    throw Error('施法期間卡片資料已變動');
   if(isPermanentRuneCard(target))throw Error('此法陣已升級為永久編號卡，不可解除契約');
-  const validBinding=runeId===ORIGIN_RUNE?
-    ['bound','cardified'].includes(target.runeBinding?.state):
-    target.runeBinding?.state==='bound'&&target.truthEyeContract?.artifactId===TRUTH_EYE_RUNE&&
-    ['sealed','card','world'].includes(target.truthEyeContract.form);
-  if(!validBinding||target.status!=='draft'||target.placement!=='hover'||
-     target.containerId||target.ownerBookId||target.containment||target.upgradeRequest?.state==='requested')
-   throw Error('此契約尚不可解除');
+  if(!ContractPolicy.canUnbind(target)||target.runeBinding.runeId!==runeId)
+   throw Error('此原卡的契約狀態或升級資格不允許解除');
+
   if(spell.status!=='draft'||spell.placement!=='hover'||spell.containerId||spell.ownerBookId||
      spell.runeBinding||spell.consumedBy||spell.containment)
    throw Error('施法卡目前不可消耗');
@@ -188,11 +189,9 @@
   if(!/^(解除綁定|解除契約|契約解除)(術|卡|魔法|卡片)?$/.test(title))
    throw Error('此卡不是解除綁定術卡');
   // Never create a second ID, overwrite another object, or use the recycle bin.
-  const when=clock(),{runeBinding,truthEyeContract,...remaining}=target;
-  // Origin rune keeps its old behavior. The Eye additionally releases its
-  // identity pointer so the scanner returns to an unbound world artifact.
-  const targetData=runeId===TRUTH_EYE_RUNE?remaining:
-    {...remaining,...(truthEyeContract?{truthEyeContract}:{})};
+  // A single atomic transaction releases any contract's canonical binding;
+  // only matching contract-owned metadata is cleared, never card artwork.
+  const when=clock(),targetData=ContractPolicy.removeBinding(target);
   const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
   const updatedSpell={...spell,placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
    containment:{kind:'consumed_spell',holderId:targetId,holderType:'card',
