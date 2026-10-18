@@ -16,13 +16,16 @@ test('uses the original blank card ID, does not create a card or mutate other re
  const made=Contract.bind(db,a.id,1);
  assert.equal(made.id,a.id);assert.equal(made.revision,2);
  assert.equal(made.runeBinding.runeId,Contract.ID);
- assert.equal(made.truthEyeContract.form,'card');
+ assert.equal(made.truthEyeContract.form,'sealed');
  assert.equal(Craft.listCards(db).length,2);
  assert.deepEqual(Craft.listCards(db).find(x=>x.id===b.id),b);
  assert.throws(()=>Contract.bind(db,b.id,1),/已經有原卡/);
- const world=Contract.setForm(db,a.id,made.revision,'world');
+ assert.throws(()=>Contract.setForm(db,a.id,made.revision,'world'),/轉換順序/);
+ const cardified=Contract.setForm(db,a.id,made.revision,'card');
+ assert.equal(cardified.truthEyeContract.form,'card');
+ const world=Contract.setForm(db,a.id,cardified.revision,'world');
  assert.equal(world.truthEyeContract.form,'world');
- assert.throws(()=>Contract.setForm(db,a.id,made.revision,'card'),/已變更/);
+ assert.throws(()=>Contract.setForm(db,a.id,cardified.revision,'card'),/已變更/);
  const returned=Contract.setForm(db,a.id,world.revision,'card');
  assert.equal(returned.truthEyeContract.form,'card');
  assert.equal(Craft.canStoreBoundCard(returned,'local.atlas.collection',0),true);
@@ -39,7 +42,7 @@ test('named 真實之眼 card with prepared artwork can bind while preserving cu
  assert.deepEqual(after.image,existing.image);
  assert.equal(after.cardNumber,existing.cardNumber);
  assert.equal(after.cardType,existing.cardType);
- assert.equal(after.truthEyeContract.form,'card');
+ assert.equal(after.truthEyeContract.form,'sealed');
  assert.equal(Craft.listCards(db).length,1);
 });
 test('existing named spell or unrelated ordinary design cannot be silently claimed by scanner',()=>{
@@ -57,6 +60,16 @@ test('3D scanner gesture has a wider invisible picking volume, locked target and
  assert.match(world,/heldPointers\.add\(e\.pointerId\)/);
  assert.doesNotMatch(world,/showHoldProgress|conic-gradient|id="eyeAction"/);
  assert.match(world,/Hexagram\.create\(/);
+ assert.match(world,/dialog\.showModal\(\)/);
+ assert.match(world,/Directed\.normalize\(/);
+ assert.match(world,/Directed\.sample\(/);
+ assert.match(world,/function finishTransfer\(\)/);
+ assert.match(world,/if\(sample\.done\)finishTransfer\(\)/);
+ assert.match(world,/prompt\('seal'/);
+ assert.match(world,/prompt\('cardify'/);
+ assert.match(world,/prompt\('return'/);
+ assert.match(world,/prompt\('materialize'/);
+ assert.doesNotMatch(world,/flip\(\)/);
  assert.match(world,/hex\.update\(p,now\)/);
  assert.match(world,/cardTap\(id\)/);
  assert.match(world,/const target=type==='eye'\?chooseCard\(\):null/);
