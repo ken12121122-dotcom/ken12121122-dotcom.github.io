@@ -33,9 +33,22 @@ runtime.toggle();tick(180);runtime.toggle();tick(1200);assert.equal(runtime.insp
 runtime.toggle();tick(300);assert.ok(runtime.inspect().atlasOpen<1);assert.equal(runtime.inspect().atlasVisible,true);tick(1400);assert.equal(runtime.inspect().atlasVisible,false);runtime.toggle();tick(1900);
 runtime.focus(State.ATLAS);tick(900);runtime.exitFocus();tick(900);
 const card=craft.createBlankCard(storage,{randomUUID:()=> 'scene-card'});refresh();
+// All ten wells are raycastable, but only the right GBA well accepts
+// an ordinary card. The other nine are reserved for registered permanents.
 for(let i=0;i<10;i++){
- if(i)craft.placeCard(storage,card.id,null);refresh();const entry=cards.get(card.id);entry.group.visible=true;entry.group.position.set(0,2,4);entry.group.quaternion.copy(camera.quaternion);
- moveTo(State.ATLAS,i,entry);assert.equal(craft.listCards(storage)[0].slotIndex,i,'raycast/drop into slot '+i);assert.equal(craft.listCards(storage)[0].containerId,State.ATLAS);
+ if(i)craft.placeCard(storage,card.id,null);
+ refresh();const entry=cards.get(card.id);entry.group.visible=true;
+ entry.group.position.set(0,2,4);entry.group.quaternion.copy(camera.quaternion);
+ moveTo(State.ATLAS,i,entry);
+ const current=craft.listCards(storage)[0];
+ if(i<9){
+  assert.equal(current.slotIndex,null,'ordinary card cannot occupy permanent showcase well '+i);
+  assert.equal(current.containerId,null,'illegal placement must leave card on orbit');
+  assert.match(messages.at(-1),/永久登錄/,'drop must be rejected by the data authority');
+ }else{
+  assert.equal(current.slotIndex,9,'right GBA must accept any ordinary card');
+  assert.equal(current.containerId,State.ATLAS);
+ }
 }
 // Two animated focus levels: book overview first; right GBA only becomes interactive on second.
 runtime.focus(State.ATLAS);tick(900);
@@ -99,7 +112,7 @@ const recordBefore=JSON.stringify(craft.listCards(storage));
 runtime.focus(State.ATLAS);tick(900);const focusBefore=camera.position.clone();
 Object.assign(controls,{atlasDistance:.8,atlasHeight:3.1,atlasSize:1.2,atlasSeparation:1.4,atlasFocusDistance:.8,atlasCardSize:.7});tick(1);tick(900);
 const changed=runtime.inspect();assert.equal(changed.atlasScale,.36*1.2);assert.equal(changed.atlasPosition[1],3.1);assert.ok(Math.abs(Math.hypot(changed.atlasPosition[0]-keeper.position.x,changed.atlasPosition[2]-keeper.position.z)-Math.hypot(.8,1.4))<1e-8);assert.ok(camera.position.distanceTo(focusBefore)>.1);
-craft.placeCard(storage,card.id,State.ATLAS,0);refresh();tick(1);assert.ok(Math.abs(cards.get(card.id).group.scale.x-.36*1.2*1.3*.7)<1e-9);
+craft.placeCard(storage,card.id,State.ATLAS,9);refresh();tick(1);assert.ok(Math.abs(cards.get(card.id).group.scale.x-.36*1.2*1.3*.7)<1e-9);
 craft.placeCard(storage,card.id,null);refresh();assert.equal(JSON.stringify(craft.listCards(storage).map(({revision,updatedAt,...r})=>r)),JSON.stringify(JSON.parse(recordBefore).map(({revision,updatedAt,...r})=>r)),'tuning retains card contents and identity');
 // Books forged with the atlas template are separate physical 18-slot containers.
 host.innerWidth=915;host.innerHeight=412;camera.aspect=915/412;camera.updateProjectionMatrix();
@@ -125,7 +138,7 @@ host.innerWidth=360;host.innerHeight=800;camera.aspect=360/800;camera.updateProj
 host.innerWidth=900;host.innerHeight=360;camera.aspect=900/360;camera.updateProjectionMatrix();tick(900);assert.equal(runtime.inspect().focusBooks.length,2);
 runtime.exitFocus();tick(400);assert.equal(bodyClasses.has('atlas-focused'),true);tick(500);assert.equal(bodyClasses.has('atlas-focused'),false);for(const [id,pos] of originalPoses)assert.ok(group(id).position.distanceTo(pos)<1e-7,'exit restores original book position');assert.equal(storage.getItem(craft.KEY),objectBytes);assert.equal(storage.getItem('living-library-atlas-view-v1'),viewBytes);
 runtime.focus(forgedB.id);tick(900);doc.getElementById('atlasCollectionShelf').click();tick(1900);
-runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 10 atlas slots, all 18 collection slots and cross-book transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');
+runtime.dispose();assert.equal(smokes,removed);console.log('PASS: real Three.js raycasts for 9 locked permanent wells + 1 universal GBA, all 18 collection slots and cross-book transfer, reader, smoke, close/save and smooth focus return. No renderer/device assertion.');
 
 // Rebuild the runtime from the same saved records, then reopen the same book/card.
 const restored=host.LivingAtlasRuntime.create(runtimeOptions);clock+=1900;restored.tick(clock);assert.equal(scene.children.find(x=>x.userData.atlasId===forgedA.id).visible,true);assert.equal(scene.children.find(x=>x.userData.atlasId===forgedB.id).visible,false);restored.placeCollection(forgedB.id);clock+=1900;restored.tick(clock);assert.equal(cards.get(card.id).group.visible,true);assert.equal(craft.listCards(storage)[0].containerId,forgedB.id);assert.equal(craft.listCards(storage)[0].slotIndex,8);restored.dispose();assert.equal(smokes,removed);
