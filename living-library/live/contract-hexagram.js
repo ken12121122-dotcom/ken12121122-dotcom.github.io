@@ -141,8 +141,6 @@
    sparkle.userData.distance=r;sparkle.userData.phase=i*.743;
    dust.push(sparkle);
   }
-  const rimCharge=arc(1.012,.10,-Math.PI/2,-Math.PI/2+TAU,cream,.018);
-  rimCharge.geometry.dispose();
   const chargeLine=new T.Mesh(new T.TorusGeometry(1.012,.018,5,120,TAU),cream.clone());
   chargeLine.position.z=.105;flat.add(chargeLine);chargeLine.visible=false;
   // Charged burst is distinct from the progress arc, physically expands outward.
@@ -193,11 +191,9 @@
     mote.position.set(r*Math.cos(a),r*Math.sin(a),.03+.2*(.5+.5*Math.sin(tick*.4+mote.userData.phase)));
     mote.scale.setScalar(.7+q*.5);
    }
-   const shown=Math.max(.0001,q)*TAU;
    chargeLine.visible=q>.001;
    if(chargeLine.visible){
-    chargeLine.geometry.dispose();
-    chargeLine.geometry=new T.TorusGeometry(1.012,.019,5,Math.max(5,Math.floor(120*q)),shown);
+    chargeLine.geometry.setDrawRange(0,Math.max(0,Math.min(120,Math.floor(120*q)))*5*6);
     chargeLine.rotation.z=-Math.PI/2;
    }
    if(q>=1&&burstStart<0)burstStart=s;
