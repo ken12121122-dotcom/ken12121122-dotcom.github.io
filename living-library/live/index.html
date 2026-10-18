@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.truth-eye-touch-fix.2">
+<meta name="living-library-release" content="2026-10-18.hexagram-contract.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1610,6 +1610,7 @@ function pickFloatingCard(ray){
   .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
+ if(truthEye.cardTap(hit.object.userData.localCardId))return true;
  focusCard(hit.object.userData.localCardId);return true;
 }
 
@@ -1795,20 +1796,12 @@ function findNearestRuneCard(){
 // RUNE-02: no new save keys, no binding, no new card mesh.
 const RuneHold=window.LivingRuneHold;
 if(!RuneHold)throw Error('Rune hold gesture module unavailable');
-// Continuous circular countdown: a faint full-circle track and a bright arc
-// sweep through the full circumference over the 3000 ms hold. No time numerals.
-const RUNE_ARC_SEGMENTS=192;
-const runeTrack=new THREE.Mesh(new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS),
- new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,
-  side:THREE.DoubleSide,depthWrite:false}));
-runeTrack.position.y=.495;runeTrack.rotation.x=-Math.PI/2;
-runeTrack.visible=false;runeGroup.add(runeTrack);
-const runeArcGeometry=new THREE.RingGeometry(2.51,2.64,RUNE_ARC_SEGMENTS,1,-Math.PI/2,Math.PI*2);
-const runeProgress=new THREE.Mesh(runeArcGeometry,new THREE.MeshBasicMaterial({
- color:0xf5d698,transparent:true,opacity:.98,
- side:THREE.DoubleSide,depthWrite:false}));
-runeProgress.position.y=.498;runeProgress.rotation.x=-Math.PI/2;
-runeArcGeometry.setDrawRange(0,0);runeProgress.visible=false;runeGroup.add(runeProgress);
+// Every existing 3-second contract uses a native 3D six-pointed star.
+ // Existing contract storage, gesture duration and validations remain unchanged.
+const ContractHexagram=window.LivingContractHexagram;
+if(!ContractHexagram)throw Error('六芒星契約動畫模組未載入');
+const runeHexagram=ContractHexagram.create({THREE,parent:runeGroup,plane:'xz',radius:2.48});
+runeHexagram.group.position.y=.51;
 const runeSelectionMat=new THREE.MeshBasicMaterial({
  color:0xa8e7cf,transparent:true,opacity:.6,depthWrite:false});
 const runeSelectionRing=new THREE.Mesh(new THREE.TorusGeometry(2.48,.035,6,96),runeSelectionMat);
@@ -1866,12 +1859,10 @@ function updateRuneVisual(now){
  const illuminated=show||bindingFlash||runeBindDialog.open||runeCardifyDialog.open;
  runeGlow.visible=illuminated||!!runeBound;
  runeGlowMaterial.opacity=illuminated?(.25+.12*Math.sin(now*.014)+.19*info.progress):.065;
- runeSelectionRing.visible=illuminated||!!runeBound;
+ runeSelectionRing.visible=!show&&(illuminated||!!runeBound);
  runeSelectionMat.opacity=illuminated?.92:.22;
- runeTrack.visible=show;
- runeProgress.visible=show;
- // RingGeometry has six triangle indices per theta segment.
- runeArcGeometry.setDrawRange(0,Math.floor(RUNE_ARC_SEGMENTS*info.progress)*6);
+ if(show)runeHexagram.update(info.progress,now);
+ else runeHexagram.clear();
  runeGlyphs.visible=(show||bindingFlash)&&!preferReduced;
  runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
  runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
@@ -2103,17 +2094,8 @@ const unbindDialog=document.getElementById('runeUnbindDialog'),
 let spellPointerId=null,spellActivatedPointerId=null,spellOriginPoint=null,
  spellSelection=null,spellPromptTimer=null,unbindEffect=null;
 const spellRay=new THREE.Raycaster(),spellPointer=new THREE.Vector2();
-// Exactly the same continuous 192-segment circular hold language as the floor rune,
-// rendered in actual 3D around the selected floating spell card.
-const spellProgressSegments=RUNE_ARC_SEGMENTS;
-const spellTrack=new THREE.Mesh(new THREE.RingGeometry(.43,.47,spellProgressSegments),
- new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,
- side:THREE.DoubleSide,depthWrite:false}));
-spellTrack.visible=false;scene.add(spellTrack);
-const spellArcGeometry=new THREE.RingGeometry(.43,.47,spellProgressSegments,1,-Math.PI/2,Math.PI*2);
-const spellArc=new THREE.Mesh(spellArcGeometry,new THREE.MeshBasicMaterial({
- color:0xf5d698,transparent:true,opacity:.98,side:THREE.DoubleSide,depthWrite:false}));
-spellArcGeometry.setDrawRange(0,0);spellArc.visible=false;scene.add(spellArc);
+// Spell-card hold also uses the exact same hexagram visual language.
+const spellHexagram=ContractHexagram.create({THREE,parent:scene,plane:'xy',radius:.45});
 const spellBeamMat=new THREE.MeshBasicMaterial({
  color:0xb7e5d2,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
 const spellBeam=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1,8),spellBeamMat);
@@ -2327,24 +2309,21 @@ function cancelSpellUnbind(){
  closeSpellPrompt();spellSelection=null;
  spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
  unbindEffect=null;unbindProgress.style.display='none';
- spellTrack.visible=false;spellArc.visible=false;
+ spellHexagram.clear();
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
 }
 function updateSpellEffect(now){
  const info=spellHold.inspect(now);
- // Reuse the floor rune's 192-segment circular progress in world space.
+ // Shared six-pointed hold progress in world space.
  const holding=info.phase==='holding'&&spellPointerId!==null;
  const casterHold=holding?[...floatingCardMeshes.values()].find(c=>
   UnbindSpell.isSpellCard(c.record)&&c.id===spellHold.inspect().runeId):null;
- spellTrack.visible=!!casterHold;spellArc.visible=!!casterHold;
  if(casterHold){
   casterHold.group.updateWorldMatrix(true,false);
-  const position=casterHold.group.getWorldPosition(new THREE.Vector3());
-  spellTrack.position.copy(position);spellArc.position.copy(position);
-  spellTrack.quaternion.copy(camera.quaternion);spellArc.quaternion.copy(camera.quaternion);
-  spellTrack.position.y+=.02;spellArc.position.y+=.02;
-  spellArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*info.progress)*6);
- }
+  spellHexagram.group.position.copy(casterHold.group.getWorldPosition(new THREE.Vector3()));
+  spellHexagram.group.quaternion.copy(camera.quaternion);
+  spellHexagram.update(info.progress,now);
+ }else spellHexagram.clear();
  unbindProgress.style.display='none'; // No duplicate flat overlay.
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
  const active=unbindEffect;
@@ -2410,11 +2389,7 @@ function updateSpellEffect(now){
 // RUNE-06: the manifested original card can transform back into the floor rune.
 const returnDialog=document.getElementById('runeReturnDialog'),returnName=document.getElementById('runeReturnCardName');
 let returnCardPointerId=null,returnCardActivatedPointerId=null,returnCardSelection=null,returnPromptTimer=null;
-const returnTrack=new THREE.Mesh(new THREE.RingGeometry(.43,.47,spellProgressSegments),
- new THREE.MeshBasicMaterial({color:0x659c95,transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false}));
-const returnArcGeometry=new THREE.RingGeometry(.43,.47,spellProgressSegments,1,-Math.PI/2,Math.PI*2);
-const returnArc=new THREE.Mesh(returnArcGeometry,new THREE.MeshBasicMaterial({color:0xf0d397,transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false}));
-returnTrack.visible=false;returnArc.visible=false;scene.add(returnTrack,returnArc);
+const returnHexagram=ContractHexagram.create({THREE,parent:scene,plane:'xy',radius:.45});
 function closeReturnPrompt(){
  if(returnPromptTimer!==null){clearTimeout(returnPromptTimer);returnPromptTimer=null}
  if(returnDialog.open)returnDialog.close();
@@ -2461,12 +2436,11 @@ function updateRuneReturnVisual(now){
  const progress=returnCardHold.inspect(now);
  const entry=progress.phase==='holding'&&returnCardPointerId!==null?
   floatingCardMeshes.get(progress.runeId):null;
- returnTrack.visible=returnArc.visible=!!entry?.group.visible;
- if(!entry?.group.visible)return;
+ if(!entry?.group.visible){returnHexagram.clear();return}
  const pos=entry.group.getWorldPosition(new THREE.Vector3());
- returnTrack.position.copy(pos);returnArc.position.copy(pos);
- returnTrack.quaternion.copy(camera.quaternion);returnArc.quaternion.copy(camera.quaternion);
- returnArcGeometry.setDrawRange(0,Math.floor(spellProgressSegments*progress.progress)*6);
+ returnHexagram.group.position.copy(pos);
+ returnHexagram.group.quaternion.copy(camera.quaternion);
+ returnHexagram.update(progress.progress,now);
 }
 // PERM-BUILD-001 | The transparent hologram is a preview ONLY, never a
 // second authoritative world rune. Both entry paths share the same placement.
@@ -2632,7 +2606,7 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
- if(!buildState&&!focusedCard&&!atlasRuntime?.inFocus&&truthEye.pointerDown(e)){
+ if(!buildState&&!focusedCard&&!atlasRuntime?.inFocus&&!insideJoystick(e)&&truthEye.pointerDown(e)){
   renderer.domElement.setPointerCapture?.(e.pointerId);
   e.preventDefault();syncRender();return;
  }
