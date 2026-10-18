@@ -52,15 +52,19 @@
    if(!isEligible(old))throw Error('這張卡不是可使用的普通空白卡');
    const now=new Date().toISOString();
    return {...old,title:'真實之眼',cardType:old.cardType||'神器',description:old.description||'獨一物件 · 真實之眼 3D 掃描神器',runeBinding:{runeId:ID,state:'bound',boundAt:now},
-    truthEyeContract:{artifactId:ID,form:'card',version:1,contractedAt:now}};
+    truthEyeContract:{artifactId:ID,form:'sealed',version:2,contractedAt:now}};
   });
  }
  function setForm(storage,cardId,expectedRevision,form){
-  if(!['world','card'].includes(form))throw Error('神器形態錯誤');
+  if(!['world','card','sealed'].includes(form))throw Error('神器形態錯誤');
   return change(storage,cardId,expectedRevision,old=>{
    if(old.truthEyeContract?.artifactId!==ID||old.runeBinding?.runeId!==ID||
     old.status!=='draft'||old.placement!=='hover'||old.containerId||old.ownerBookId)
     throw Error('請先將真實之眼原卡從書內召回玩家軌道');
+   const from=old.truthEyeContract.form;
+   const valid=(from==='sealed'&&form==='card')||
+    (from==='card'&&form==='world')||(from==='world'&&form==='card');
+   if(!valid)throw Error('神器轉換順序錯誤，必須先完成原始封印、再卡片化');
    return {...old,truthEyeContract:{...old.truthEyeContract,form}};
   });
  }
