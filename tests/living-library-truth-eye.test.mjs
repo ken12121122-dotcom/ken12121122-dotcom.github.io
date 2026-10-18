@@ -28,6 +28,38 @@ test('uses the original blank card ID, does not create a card or mutate other re
  assert.equal(Craft.canStoreBoundCard(returned,'local.atlas.collection',0),true);
  assert.equal(Craft.canStoreBoundCard({...returned,truthEyeContract:{...returned.truthEyeContract,form:'world'}},'local.atlas.collection',0),false);
 });
+test('named 真實之眼 card with prepared artwork can bind while preserving custom content',()=>{
+ const existing={...blank('local.card.prepared'),title:'真實之眼',description:'自訂神器說明',
+  image:{dataUrl:'image/jpg data'},cardNumber:'E-01',cardType:'自訂類型'};
+ const db=storage([existing]);
+ assert.equal(Contract.isEligible(existing),true);
+ const after=Contract.bind(db,existing.id,1);
+ assert.equal(after.id,existing.id);
+ assert.equal(after.description,existing.description);
+ assert.deepEqual(after.image,existing.image);
+ assert.equal(after.cardNumber,existing.cardNumber);
+ assert.equal(after.cardType,existing.cardType);
+ assert.equal(after.truthEyeContract.form,'card');
+ assert.equal(Craft.listCards(db).length,1);
+});
+test('existing named spell or unrelated ordinary design cannot be silently claimed by scanner',()=>{
+ for(const title of ['解除契約','我的遊戲卡','其他神器']){
+  const existing={...blank('local.card.still-mine'),title};
+  const db=storage([existing]);
+  assert.equal(Contract.isEligible(existing),false);
+  assert.throws(()=>Contract.bind(db,existing.id,1));
+  assert.deepEqual(Craft.listCards(db),[existing]);
+ }
+});
+test('3D scanner gesture has a wider invisible picking volume, locked target and explicit progress',async()=>{
+ const world=await readFile(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
+ assert.match(world,/truth-eye-gesture-hit-target/);
+ assert.match(world,/heldPointers\.add\(e\.pointerId\)/);
+ assert.match(world,/showHoldProgress/);
+ assert.match(world,/const target=type==='eye'\?chooseCard\(\):null/);
+ assert.match(world,/cardRevision/);
+ assert.match(world,/contextmenu/);
+});
 test('rejects edited or previously bound cards, never destroys custom content',()=>{
  const c=blank('local.card.safe');
  for(const patch of [{title:'我的作品'},{image:{dataUrl:'image'}},{description:'有內容'},{runeBinding:{runeId:'local.rune.origin'}},{containerId:'local.book.x'},{l2Certified:true}]){
