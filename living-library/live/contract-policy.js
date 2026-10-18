@@ -4,7 +4,7 @@
  */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.LivingContractPolicy=api})(typeof self!=='undefined'?self:globalThis,function(){
  'use strict';
- const deniedStates=new Set(['pending','unbound','released','revoked','cancelled','failed','inactive','draft']);
+ const deniedStates=new Set(['pending','unbound','released','revoked','cancelled','failed','inactive','draft','broken','invalid','error']);
  const isPlayerCard=c=>!!c&&typeof c==='object'&&c.objectType==='card'&&
   c.templateId==='blank-card-v1'&&typeof c.id==='string'&&c.id.startsWith('local.card.');
  function isUpgraded(c){
@@ -21,6 +21,14 @@
   if(!b||typeof b.runeId!=='string'||!b.runeId.trim()||
    typeof b.state!=='string'||!b.state.trim()||deniedStates.has(b.state.trim().toLowerCase())||
    b.unbindable===false||b.allowUnbind===false)return null;
+  // A record whose contract-owner metadata explicitly contradicts the
+  // canonical binding is corrupted/ambiguous: NEVER remove only half of it.
+  for(const [key,value] of Object.entries(c)){
+   if(!/Contract$/.test(key)||!value||typeof value!=='object'||Array.isArray(value))continue;
+   for(const idKey of ['artifactId','runeId','contractId']){
+    if(Object.hasOwn(value,idKey)&&value[idKey]!==b.runeId)return null;
+   }
+  }
   return b;
  }
  function canUnbind(c){
