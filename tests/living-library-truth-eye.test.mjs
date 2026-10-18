@@ -90,6 +90,6 @@ test('main world mounts the native artifact and retains original floor rune beha
  assert.match(html,/runeHexagram=ContractHexagram\.create/);
  assert.match(world,/new T\.ExtrudeGeometry\(outline/);
  assert.match(world,/new T\.SphereGeometry/);
- assert.match(world,/new T\.LineLoop/);
+ assert.match(world,/Hexagram\.create/);
  assert.doesNotMatch(world,/data:image|<img|PlaneGeometry/);
 });
