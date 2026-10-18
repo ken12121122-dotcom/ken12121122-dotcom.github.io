@@ -60,7 +60,7 @@ assert.equal(moved.revision,6);
 // While cardified, the hidden 3D Eye no longer follows the moving player.
 keeper.position.set(11,.46,-8);clock=50;world.tick(clock);
 assert.equal(world.cardTap(cardId),true);
-const dialogs=[...buttons.values()].filter(e=>e.id.startsWith('created-dialog'));
+const dialogs=[...buttons.values()].filter(e=>e.id==='truthEyeContractConfirm');
 assert.equal(dialogs.length,1);
 assert.equal(dialogs[0].open,true,'fresh contract opens confirmation even after card moved');
 ui('#truthEyeApprove').listeners.click();
