@@ -8,6 +8,8 @@
   c.placement==='hover'&&!c.containerId&&!c.ownerBookId&&!c.containment&&
   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.truthEyeContract&&
   !c.l2Certified&&!c.permanentCard&&!c.permanentRegistry&&!c.permanentRegistration&&
+  c.title==='空白卡片'&&!c.description&&!c.image&&!c.cardNumber&&!c.cardType&&!c.linkedCardId&&!c.ability&&
+  (!c.permissions||c.permissions.length===0)&&!c.copyInfo&&
   !c.upgradeRequest?.state&&!c.certification?.level;
  function read(storage){
   const raw=storage.getItem(KEY);if(raw===null)return {version:1,objects:[]};
