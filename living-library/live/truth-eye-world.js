@@ -37,6 +37,12 @@ function model(T){
   orbits.push({pivot,rx,ry,rz,speed});
  }
  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;add(group,new T.OctahedronGeometry(.14),i%2?blue:bright,2.55*Math.cos(a),1.76*Math.sin(a),0)}
+ // Invisible, broad 3D interaction volume: tapping gold filigree should not
+ // require hitting a thin triangle or precisely tracking the orbit animation.
+ const hitTarget=new T.Mesh(new T.SphereGeometry(2.07,18,12),
+  new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));
+ hitTarget.name='truth-eye-gesture-hit-target';hitTarget.position.z=.08;
+ group.add(hitTarget);
  group.scale.setScalar(.46);
  function tick(t,reduced){
   body.position.y=reduced?0:Math.sin(t)*.055;body.rotation.y=reduced?0:Math.sin(t*.38)*.08;
@@ -76,6 +82,8 @@ function create(opts){
  const progGeo=new T.RingGeometry(1.05,1.11,96,1,-Math.PI/2,Math.PI*2);
  const progress=new T.Mesh(progGeo,new T.MeshBasicMaterial({color:0xffedbb,transparent:true,opacity:.96,depthWrite:false,side:T.DoubleSide}));progress.rotation.x=-Math.PI/2;progress.position.y=.025;ritual.add(progress);
  let hold=null,serial=0,lastScan=0;
+ // A consumed pointer remains consumed even after the 3-second timer completes.
+ const heldPointers=new Set();
  const style=document.createElement('style');
  style.textContent='.truthEyeHud{position:fixed;z-index:9;right:250px;top:clamp(105px,19vh,170px);width:195px;max-width:45vw;color:#ffde9c;text-shadow:0 1px 7px #020711;font:11px system-ui;pointer-events:auto}.truthEyeHud button{cursor:pointer;color:#fff0c8;background:#142333b8;border:1px solid #bda1718c;border-radius:50%;width:39px;height:39px;font-size:22px;touch-action:none}.truthEyeHud header{display:flex;justify-content:flex-end;align-items:center;gap:6px}.truthEyeHud small{font-size:10px}.truthEyeHud main{padding-top:7px;display:grid;gap:8px;background:none!important}.truthEyeHud main[hidden]{display:none}.truthEyeHud label{display:grid;grid-template-columns:25px 1fr 33px;gap:5px;align-items:center}.truthEyeHud input{width:100%;accent-color:#e6c381;touch-action:pan-y}.truthEyeHud select{justify-self:end;border:1px solid #a98b5b;color:#fce8bf;background:#1c2b38d9;border-radius:4px}@media(min-width:651px) and (max-width:920px){.truthEyeHud{right:205px}}@media(max-width:650px){.truthEyeHud{right:6px;top:105px;width:165px}.truthEyeHud label{grid-template-columns:25px 1fr 27px;gap:2px}}';
  document.head.append(style);
@@ -88,8 +96,8 @@ function create(opts){
   const form=card?.truthEyeContract?.form;
   eye.visible=!card||form==='world';eyeLight.visible=eye.visible;
   field.visible=form==='world'&&cfg.enabled;marks.visible=field.visible;control.hidden=form!=='world';
-  el('Toggle').hidden=form!=='world';status.textContent=!card?'長按3秒':form==='card'?'點眼具現':'掃描中';
-  action.title=!card?'長按三秒與既有空白卡締約':form==='card'?'具現化真實之眼':'將真實之眼收回原卡';
+  el('Toggle').hidden=form!=='world';status.textContent=!card?'按住3秒':form==='card'?'點眼具現':'掃描中';
+  action.title=!card?'按住真實之眼三秒與附近空白卡締約':form==='card'?'具現化真實之眼':'將真實之眼收回原卡';
  }
  function apply(){for(const key of ['Radius','Aperture','Direction']){const name=key.toLowerCase(),number=cfg[name];
   el(key).value=String(number);el(key+'Val').textContent=number+(name==='radius'?'m':'°');
@@ -133,39 +141,101 @@ function create(opts){
   }
   for(const id of [...selected])if(!set.has(id))selected.delete(id);
  }
- function stop(){if(hold){clearTimeout(hold.timer);hold=null}ritual.visible=false;invalidate()}
+ function showHoldProgress(now=performance.now()){
+  const elapsed=hold?clamp((now-hold.started)/3000,0,1):0;
+  if(hold){
+   action.style.background='conic-gradient(#f7dfaa '+(elapsed*360)+'deg, #18334c '+(elapsed*360)+'deg)';
+   action.style.boxShadow='0 0 17px #f5c980aa';
+   status.textContent='契約 '+Math.floor(elapsed*100)+'%';
+  }else{
+   action.style.background='';action.style.boxShadow='';
+  }
+ }
+ function stop(){
+  if(hold){clearTimeout(hold.timer);hold=null}
+  ritual.visible=false;showHoldProgress();invalidate();
+ }
+ function cardEntries(){
+  return [...floatingCards.values()].map(e=>{
+   e.group.updateWorldMatrix(true,false);
+   const p=e.group.getWorldPosition(new T.Vector3());
+   return {id:e.id,record:e.record,position:{x:p.x,z:p.z},
+    visible:e.group.visible,isDragging:!!e.drag,isFocused:!!e.focused,
+    isSummoning:!!e.summon,isRecycling:!!e.recycle};
+  });
+ }
+ function chooseCard(){
+  const result=C.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries());
+  if(result.status!=='selected'){
+   status.textContent='無法契約';
+   toast('👁 '+result.reason+'；請把未使用的空白卡移到身旁軌道（已命名「真實之眼」的普通卡也可以）');
+   return null;
+  }
+  const target=craft.listCards(storage).find(x=>x.id===result.cardId);
+  if(!target){toast('👁 找不到原始空白卡，請重新進入世界');return null}
+  return {cardId:target.id,cardRevision:target.revision};
+ }
  function complete(token){if(!hold||hold.token!==token)return;
-  const type=hold.type;stop();
+  const {type,cardId,cardRevision}=hold;stop();
   if(type==='eye'){try{
-   const candidates=[...floatingCards.values()].map(e=>{const p=e.group.getWorldPosition(new T.Vector3());return {id:e.id,record:e.record,position:{x:p.x,z:p.z},visible:e.group.visible,isDragging:!!e.drag,isFocused:false,isSummoning:!!e.summon,isRecycling:!!e.recycle}});
-   const near=C.nearest({x:keeper.position.x,z:keeper.position.z},candidates);
-   if(near.status!=='selected')throw Error(near.reason);
-   const original=craft.listCards(storage).find(x=>x.id===near.cardId);
-   if(!original)throw Error('原卡不存在');
+   // Lock the one original card at pointerDown: moving orbits cannot silently
+   // switch targets to another card during a long press.
+   const original=craft.listCards(storage).find(x=>x.id===cardId);
+   const current=floatingCards.get(cardId);
+   if(!original||original.revision!==cardRevision||!C.isEligible(original))
+    throw Error('空白卡狀態已改變，請重新締約');
+   if(!current||!current.group.visible||current.summon||current.recycle)
+    throw Error('契約卡已離開世界，請先把卡片召回軌道');
+   current.group.updateWorldMatrix(true,false);
+   const pos=current.group.getWorldPosition(new T.Vector3());
+   if(Math.hypot(pos.x-keeper.position.x,pos.z-keeper.position.z)>3)
+    throw Error('原卡超過三公尺，請先靠近卡片');
    C.bind(storage,original.id,original.revision);refreshCards();state();
-   toast('✦ 已與原有空白卡締結契約 · 點眼圖示具現化');
-  }catch(e){toast('契約未完成：'+e.message)}
+   toast('✦ 真實之眼已與原有卡片締結契約 · 點 👁 即可具現化');
+  }catch(e){status.textContent='契約失敗';toast('契約未完成：'+e.message)}
   }else{toast('🔯 已顯示 '+selected.size+' 件六芒星契約效果；封裝資料尚未寫入')}
  }
- function start(type,id,x,y){if(hold)return false;
+ function start(type,id,x,y){
+  if(hold)return false;
+  // Validate and identify the card BEFORE a long press starts; if there is no
+  // valid medium, report why immediately instead of showing a dead animation.
+  const target=type==='eye'?chooseCard():null;
+  if(type==='eye'&&!target)return false;
   const box=new T.Box3().makeEmpty();
   if(type==='books')for(const o of bookEntities)if(selected.has(o.id))box.expandByObject(o.group);
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
   const size=box.isEmpty()?new T.Vector3(2,0,2):box.getSize(new T.Vector3());
   const radius=type==='eye'?1.65:Math.max(1.2,Math.hypot(size.x,size.z)*.62);
   ritual.position.set(center.x,.29,center.z);ritual.scale.setScalar(radius);ritual.visible=true;progGeo.setDrawRange(0,0);
-  const token=++serial;hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
-  invalidate();return true;
+  const token=++serial;hold={token,type,id,x,y,...target,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
+  showHoldProgress();invalidate();return true;
  }
- function pointerDown(e){if(e.button!==0||!e.isPrimary||hold)return false;
-  if(!card&&eye.visible&&hit(e,[eye]))return start('eye',e.pointerId,e.clientX,e.clientY);
-  const id=at(e);if(id&&selected.has(id))return start('books',e.pointerId,e.clientX,e.clientY);
+ function pointerDown(e){
+  if(e.button!==0||e.isPrimary===false||hold)return false;
+  if(!card&&eye.visible&&hit(e,[eye])){
+   heldPointers.add(e.pointerId);
+   start('eye',e.pointerId,e.clientX,e.clientY);
+   return true;
+  }
+  const id=at(e);
+  if(id&&selected.has(id)){
+   heldPointers.add(e.pointerId);
+   start('books',e.pointerId,e.clientX,e.clientY);
+   return true;
+  }
   return false;
  }
- function pointerMove(e){if(!hold||hold.id!==e.pointerId)return false;
-  if(Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>12)stop();return true;
+ function pointerMove(e){
+  if(!heldPointers.has(e.pointerId)&&hold?.id!==e.pointerId)return false;
+  if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
+    (e.pointerType==='touch'||e.pointerType==='pen'?26:15))stop();
+  return true;
  }
- function pointerEnd(e){if(!hold||hold.id!==e.pointerId)return false;stop();return true}
+ function pointerEnd(e){
+  const used=heldPointers.delete(e.pointerId);
+  if(hold?.id===e.pointerId){stop();return true}
+  return used;
+ }
  function flip(){if(!card)return;try{
   const form=card.truthEyeContract.form==='card'?'world':'card';
   C.setForm(storage,card.id,card.revision,form);refreshCards();state();
@@ -180,6 +250,10 @@ function create(opts){
  for(const name of ['pointerup','pointercancel','lostpointercapture'])action.addEventListener(name,e=>{if(e.pointerId===guiPointer){guiPointer=null;pointerEnd(e)}});
  action.addEventListener('pointermove',e=>{if(e.pointerId===guiPointer)pointerMove(e)});
  action.addEventListener('click',e=>e.preventDefault());
+ action.addEventListener('contextmenu',e=>e.preventDefault());
+ renderer.domElement.addEventListener('contextmenu',e=>{
+  if(!card&&eye.visible&&hit(e,[eye]))e.preventDefault();
+ });
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
  root.addEventListener('blur',stop);
  function tick(now){const t=now/1000;
@@ -198,6 +272,7 @@ function create(opts){
    if(now-lastScan>320){lastScan=now;updateMarks()}
   }
   if(hold){const p=clamp((now-hold.started)/3000,0,1);
+   showHoldProgress(now);
    progGeo.setDrawRange(0,Math.floor(p*96)*6);ritual.rotation.y=t*.07;
    if(p>=1)complete(hold.token);
   }
