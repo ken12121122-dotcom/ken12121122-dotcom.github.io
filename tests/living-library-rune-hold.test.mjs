@@ -106,14 +106,20 @@ test('invalid pointer and canceled gesture never trigger an application',()=>{
  assert.equal(f.hold.pointerDown(press(),''),false);
  f.advance(10000);assert.equal(f.selected.length,0);
 });
-test('continuous circular progress bar has no time numeral or segmented ticks',async()=>{
+test('all world and card long-press animations use the shared 3D hexagram, not circle progress',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
- assert.match(html,/RUNE_ARC_SEGMENTS=192/);
- assert.match(html,/new THREE\.RingGeometry\(2\.51,2\.64,RUNE_ARC_SEGMENTS,1,-Math\.PI\/2,Math\.PI\*2\)/);
- assert.match(html,/runeArcGeometry\.setDrawRange\(0,Math\.floor\(RUNE_ARC_SEGMENTS\*info\.progress\)\*6\)/);
- assert.match(html,/runeTrack\.visible=show/);
- assert.doesNotMatch(html,/RUNE_TICKS/);
- assert.doesNotMatch(html,/顯示.*3秒|倒數.*3秒|3 秒倒數/);
+ const hex=await readFile(new URL('../living-library/live/contract-hexagram.js',import.meta.url),'utf8');
+ assert.match(html,/contract-hexagram\.js/);
+ assert.match(html,/runeHexagram=ContractHexagram\.create/);
+ assert.match(html,/runeHexagram\.update\(info\.progress,now\)/);
+ assert.match(html,/spellHexagram=ContractHexagram\.create/);
+ assert.match(html,/returnHexagram=ContractHexagram\.create/);
+ assert.match(html,/spellHexagram\.update\(info\.progress,now\)/);
+ assert.match(html,/returnHexagram\.update\(progress\.progress,now\)/);
+ assert.match(hex,/EDGE_COUNT=6/);
+ assert.match(hex,/new T\.CylinderGeometry/);
+ assert.doesNotMatch(html,/RUNE_ARC_SEGMENTS|runeArcGeometry|runeTrack\.visible/);
+ assert.doesNotMatch(html,/spellArcGeometry|returnArcGeometry/);
  assert.match(html,/runeGesture\.foreignDown\(e\.pointerId\)/);
  assert.match(html,/runeGesture\.pointerMove\(e\)/);
  assert.match(html,/runeGesture\.pointerUp\(e\)/);
