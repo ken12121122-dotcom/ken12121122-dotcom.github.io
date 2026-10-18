@@ -48,28 +48,39 @@ const world=host.LivingTruthEyeWorld.create({
 });
 assert.equal(world.inspect().form,'card');
 assert.equal(world.ownsTransferCard(cardId),false);
+const originalHexes=scene.children.filter(x=>x.name==='原始六芒星契約儀式');
+assert.equal(originalHexes.length,2,'Eye and orbit card share approved original artwork');
+const cardHex=originalHexes[1];
+assert.equal(cardHex.visible,false);
 // Reproduce the exact regression: the player's original card was moved through
 // the UNIQUE compendium reader and back, increasing its revision twice.
 Craft.placeCard(storage,cardId,'local.atlas.compendium',9);refreshCards();
 assert.equal(world.cardTap(cardId),true);
 assert.ok(errors.at(-1).includes('GBA'));
 assert.equal(world.ownsTransferCard(cardId),false);
+assert.equal(cardHex.visible,false,'the reader does not open the star');
 Craft.placeCard(storage,cardId,null);refreshCards();
 const moved=Craft.listCards(storage)[0];
 assert.equal(moved.revision,6);
 // While cardified, the hidden 3D Eye no longer follows the moving player.
 keeper.position.set(11,.46,-8);clock=50;world.tick(clock);
 assert.equal(world.cardTap(cardId),true);
+assert.equal(cardHex.visible,true,'pressing the original card immediately reveals the six-pointed ritual');
+assert.ok(cardHex.position.distanceTo(cardGroup.position)<.01,'the star surrounds the card, not the UI');
+assert.ok(cardHex.children.length>0);
 const dialogs=[...buttons.values()].filter(e=>e.id==='truthEyeContractConfirm');
 assert.equal(dialogs.length,1);
 assert.equal(dialogs[0].open,true,'fresh contract opens confirmation even after card moved');
 ui('#truthEyeApprove').listeners.click();
 assert.equal(world.ownsTransferCard(cardId),true,'flight starts from same original card ID');
+assert.equal(cardHex.visible,true,'six-pointed ritual persists after confirming');
 const before=cardGroup.position.clone(),first=cardGroup.scale.x;
 clock=750;world.tick(clock);
 assert.equal(world.ownsTransferCard(cardId),true);
 assert.ok(cardGroup.visible);
 assert.ok(cardGroup.position.distanceTo(before)>.05,'card is physically travelling through real 3D space');
+assert.equal(cardHex.visible,true,'ritual remains on while the actual card is flying');
+assert.ok(cardHex.position.distanceTo(cardGroup.position)<.01,'the star follows the moving card');
 assert.ok(cardGroup.scale.x<first,'the original card shrinks during absorption');
 clock=1650;world.tick(clock);
 const now=Craft.listCards(storage)[0];
@@ -81,14 +92,19 @@ assert.equal(now.cardNumber,'EYE-7');
 assert.equal(Craft.listCards(storage).length,1,'no extra contract card minted');
 assert.equal(world.ownsTransferCard(cardId),false);
 assert.equal(world.inspect().form,'world');
+assert.equal(cardHex.visible,true,'ritual finishes on the restored world Eye');
 assert.ok(errors.some(m=>m.includes('掃描控制已啟動')));
+clock=4100;world.tick(clock);
+assert.equal(cardHex.visible,false,'the completed rite clears after the original 2.35s burst');
 // A future return to card form also survives placement revision churn.
 const returned=Contract.setForm(storage,cardId,now.revision,'card');refreshCards();
 assert.equal(returned.truthEyeContract.form,'card');
 assert.equal(world.cardTap(cardId),true);
 assert.equal(dialogs[0].open,true);
+assert.equal(cardHex.visible,true,'card click should invoke the symbol before approval');
 ui('#truthEyeCancel').listeners.click();
 assert.equal(dialogs[0].open,false);
+assert.equal(cardHex.visible,false,'cancel immediately clears the ritual');
 assert.equal(Craft.listCards(storage)[0].truthEyeContract.form,'card',
  'cancel never changes the saved contract');
 const index=fs.readFileSync(root+'/living-library/live/index.html','utf8');
@@ -97,4 +113,4 @@ assert.match(index,/if\(truthEye\.ownsTransferCard\(entry\.id\)\)continue;/,
  'normal orbit renderer cannot reset a live contract flight each frame');
 assert.match(index,/onStoredCardTap:id=>truthEye\.cardTap\(id\)/);
 assert.match(atlas,/onStoredCardTap\?\.\(p\.entry\.id\)/);
-console.log('PASS: original Eye card moved through GBA, correct revision, visible 3D flight, same ID, cancelled prompt is safe.');
+console.log('PASS: approved hexagram appears around tapped original card, follows Three.js flight, bursts and clears, cancellation safe, original ID unchanged.');

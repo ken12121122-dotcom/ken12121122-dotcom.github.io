@@ -77,6 +77,11 @@ function create(opts){
  if(!Hexagram)throw Error('缺少六芒星動畫模組');
  const hex=Hexagram.create({THREE:T,parent:scene,plane:'xy',radius:1.65});
  const ritual=hex.group;
+ // The original ritual geometry is reused around the ORIGINAL orbit card
+ // during card -> world manifestation. This is independent of the 3-second
+ // hold ritual on the 3D Eye, so both transitions keep the approved artwork.
+ const cardHex=Hexagram.create({THREE:T,parent:scene,plane:'xy',radius:.80});
+ let cardCeremony=null;
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
  const Directed=root.LivingDirectedTransfer;
  if(!Directed?.normalize||!Directed?.sample)throw Error('缺少既有卡片定向吸收動畫');
@@ -94,7 +99,7 @@ function create(opts){
  dialog.setAttribute('aria-label','真實之眼契約確認');
  dialog.innerHTML='<div class="truth-eye-confirm"><h2>六芒星締結契約</h2><p id="truthEyeConfirmText"></p><div class="truth-eye-dialog-actions"><button type="button" id="truthEyeCancel">取消</button><button type="button" id="truthEyeApprove">確認</button></div></div>';
  const dialogStyle=document.createElement('style');
- dialogStyle.textContent='#truthEyeContractConfirm{max-width:min(390px,91vw);color:#fff0cd;background:#132232;border:1px solid #a68c62;border-radius:12px;padding:25px;box-shadow:0 12px 80px #02050bbd;font:14px/1.7 system-ui,sans-serif}#truthEyeContractConfirm::backdrop{background:#03080dc6}#truthEyeContractConfirm h2{font-size:19px;font-weight:500;color:#f6d69f;margin:0 0 12px}#truthEyeContractConfirm p{margin:0 0 22px;white-space:pre-wrap}#truthEyeContractConfirm .truth-eye-dialog-actions{display:flex;justify-content:flex-end;gap:10px}#truthEyeContractConfirm button{border:1px solid #c9a870;border-radius:7px;padding:8px 17px;background:#263549;color:#fae5bb;cursor:pointer}';
+ dialogStyle.textContent='#truthEyeContractConfirm{max-width:min(390px,91vw);color:#fff0cd;background:#132232;border:1px solid #a68c62;border-radius:12px;padding:25px;box-shadow:0 12px 80px #02050bbd;font:14px/1.7 system-ui,sans-serif}#truthEyeContractConfirm::backdrop{background:#03080d66}#truthEyeContractConfirm h2{font-size:19px;font-weight:500;color:#f6d69f;margin:0 0 12px}#truthEyeContractConfirm p{margin:0 0 22px;white-space:pre-wrap}#truthEyeContractConfirm .truth-eye-dialog-actions{display:flex;justify-content:flex-end;gap:10px}#truthEyeContractConfirm button{border:1px solid #c9a870;border-radius:7px;padding:8px 17px;background:#263549;color:#fae5bb;cursor:pointer}';
  document.head.append(dialogStyle);document.body.append(dialog);
  const confirmLabel=dialog.querySelector('#truthEyeConfirmText');
  const cancelBtn=dialog.querySelector('#truthEyeCancel');
@@ -159,9 +164,65 @@ function create(opts){
   if(hold){clearTimeout(hold.timer);hold=null}
   hex.clear();invalidate();
  }
+ function clearCardCeremony(){
+  cardCeremony=null;
+  cardHex.clear();
+ }
+ function startCardCeremony(id){
+  const entry=floatingCards.get(id);
+  if(!entry||!entry.group.visible)return false;
+  entry.group.updateWorldMatrix(true,false);
+  const dimensions=new T.Box3().setFromObject(entry.group).getSize(new T.Vector3());
+  // Scale is derived from the actual 3D card bounding box; no special-ID
+  // dimensions, no detached HUD and no new circular completion graphics.
+  const radius=Math.max(.58,Math.min(1.45,Math.hypot(dimensions.x,dimensions.y)*.72));
+  cardHex.setRadius(radius);
+  cardCeremony={cardId:id,phase:'selected',startedAt:performance.now(),
+   radius,anchor:entry.group.getWorldPosition(new T.Vector3())};
+  cardHex.group.position.copy(cardCeremony.anchor);
+  cardHex.group.quaternion.copy(camera.quaternion);
+  cardHex.update(0,performance.now());
+  invalidate();
+  return true;
+ }
+ function updateCardCeremony(now){
+  if(!cardCeremony)return;
+  const state=cardCeremony;
+  if(state.phase==='selected'){
+   if(!pending||pending.kind!=='materialize'||pending.cardId!==state.cardId){
+    clearCardCeremony();return;
+   }
+   const entry=floatingCards.get(state.cardId);
+   if(!entry||!entry.group.visible){clearCardCeremony();return}
+   entry.group.updateWorldMatrix(true,false);
+   state.anchor.copy(entry.group.getWorldPosition(new T.Vector3()));
+   // Tapping visibly invokes the ORIGINAL six-seal star. Confirmation does
+   // not simulate a second 3-second press; seals begin charging on approval.
+   cardHex.setRadius(state.radius);
+   cardHex.update(.06,now);
+  }else if(state.phase==='flight'){
+   const tx=transfer;
+   if(!tx||tx.cardId!==state.cardId){clearCardCeremony();return}
+   const entry=floatingCards.get(state.cardId);
+   if(!entry){clearCardCeremony();return}
+   entry.group.updateWorldMatrix(true,false);
+   state.anchor.copy(entry.group.getWorldPosition(new T.Vector3()));
+   const fraction=Math.max(0,Math.min(1,(now-tx.plan.startedAt)/tx.plan.duration));
+   cardHex.setRadius(state.radius*(1+fraction*.40));
+   cardHex.update(.10+.90*fraction,now);
+  }else if(state.phase==='release'){
+   if(now-state.releaseAt>=2350){clearCardCeremony();return}
+   cardHex.setRadius(state.radius*1.40);
+   cardHex.update(1,now);
+  }else{clearCardCeremony();return}
+  cardHex.group.position.copy(state.anchor);
+  cardHex.group.quaternion.copy(camera.quaternion);
+ }
  function cancelPrompt(){
+  const wasMaterialize=pending?.kind==='materialize';
   pending=null;
   if(dialog.open)dialog.close();
+  if(wasMaterialize)clearCardCeremony();
   invalidate();
  }
  function prompt(kind,cardId,cardRevision,cardTitle=''){
@@ -177,8 +238,14 @@ function create(opts){
   dialog.showModal();invalidate();return true;
  }
  cancelBtn.addEventListener('click',cancelPrompt);
- dialog.addEventListener('cancel',()=>{pending=null;invalidate()});
- dialog.addEventListener('close',()=>{if(pending)pending=null;invalidate()});
+ dialog.addEventListener('cancel',()=>{
+  if(pending?.kind==='materialize')clearCardCeremony();
+  pending=null;invalidate();
+ });
+ dialog.addEventListener('close',()=>{
+  if(pending?.kind==='materialize')clearCardCeremony();
+  if(pending)pending=null;invalidate();
+ });
  function cardEntries(){
   return [...floatingCards.values()].map(e=>{
    e.group.updateWorldMatrix(true,false);
@@ -267,9 +334,15 @@ function create(opts){
      from:{x:from.x,y:from.y,z:from.z},to:{x:to.x,y:to.y,z:to.z},
      startedAt:performance.now(),duration:reducedMotion?400:1500,
      initialScale:existing.group.scale.x||1})};
+   if(request.kind==='materialize'&&cardCeremony?.cardId===record.id)
+    cardCeremony.phase='flight';
    toast('✦ 原版契約：卡片定向吸收動畫啟動');
    invalidate();
-  }catch(e){transfer=null;toast('無法啟動契約：'+String(e.message||e));invalidate()}
+  }catch(e){
+   transfer=null;
+   if(request?.kind==='materialize')clearCardCeremony();
+   toast('無法啟動契約：'+String(e.message||e));invalidate();
+  }
  }
  approveBtn.addEventListener('click',beginTransfer);
  function finishTransfer(){
@@ -285,12 +358,18 @@ function create(opts){
     const next=current.kind==='cardify'?'card':current.kind==='materialize'?'world':'card';
     C.setForm(storage,actual.id,actual.revision,next);
    }
+   if(current.kind==='materialize'&&cardCeremony?.cardId===current.cardId){
+    cardCeremony.phase='release';
+    cardCeremony.releaseAt=performance.now();
+    cardCeremony.anchor.copy(current.eyeX);
+   }
    refreshCards();state();
    toast({seal:'✦ 已締結契約，原卡已封入真實之眼 · 長按眼睛可卡片化',
     cardify:'✦ 真實之眼已回到原卡 · 點選軌道卡片可實體化',
     materialize:'✦ 原卡已轉為世界 3D 真實之眼 · 掃描控制已啟動',
     return:'✦ 真實之眼已回到原卡，契約保持不變'}[current.kind]);
   }catch(error){
+   if(current.kind==='materialize')clearCardCeremony();
    state();
    toast('契約未寫入，原卡資料保持不變：'+String(error?.message||error));
   }
@@ -298,6 +377,7 @@ function create(opts){
  }
  function start(type,id,x,y){
   if(hold||pending||transfer||dialog.open)return false;
+  if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
   if(type==='books')for(const o of bookEntities)if(selected.has(o.id))box.expandByObject(o.group);
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
@@ -403,6 +483,7 @@ function create(opts){
    }
    if(sample.done)finishTransfer();
   }
+  updateCardCeremony(now);
  }
  function cardTap(id){
   // The compendium can move the same original card several times. Each move
@@ -424,8 +505,14 @@ function create(opts){
    toast('真實之眼原卡尚未回到玩家軌道，請先取出或完成卡片召喚');
    return true;
   }
-  if(!prompt('materialize',card.id,card.revision,card.title))
+  if(!startCardCeremony(id)){
+   toast('契約卡的 3D 六芒星尚未準備好，請重新點擊');
+   return true;
+  }
+  if(!prompt('materialize',card.id,card.revision,card.title)){
+   clearCardCeremony();
    toast('請先完成上一個契約操作');
+  }
   return true;
  }
  function getBoundWorldAnchor(){
@@ -447,7 +534,7 @@ function create(opts){
   if(e.cardId===card?.id)refreshAfterUnbind();
  });
  function ownsTransferCard(id){return !!transfer&&transfer.cardId===id}
- function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||performance.now()<selectedUntil}
+ function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||!!cardCeremony||performance.now()<selectedUntil}
  apply();state();
  return Object.freeze({tick,active,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
 }
