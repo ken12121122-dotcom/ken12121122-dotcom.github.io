@@ -77,7 +77,9 @@ function create(opts){
  if(!Hexagram)throw Error('缺少六芒星動畫模組');
  const hex=Hexagram.create({THREE:T,parent:scene,plane:'xy',radius:1.65});
  const ritual=hex.group;
- let hold=null,serial=0,lastScan=0;
+ let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
+ const Directed=root.LivingDirectedTransfer;
+ if(!Directed?.normalize||!Directed?.sample)throw Error('缺少既有卡片定向吸收動畫');
  // A consumed pointer remains consumed even after the 3-second timer completes.
  const heldPointers=new Set();
  const style=document.createElement('style');
@@ -86,11 +88,22 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
+ // Same confirmation gate as the ORIGINAL ground-rune flow; no direct card write.
+ const dialog=document.createElement('dialog');
+ dialog.id='truthEyeContractConfirm';
+ dialog.setAttribute('aria-label','真實之眼契約確認');
+ dialog.innerHTML='<div class="truth-eye-confirm"><h2>六芒星締結契約</h2><p id="truthEyeConfirmText"></p><div class="truth-eye-dialog-actions"><button type="button" id="truthEyeCancel">取消</button><button type="button" id="truthEyeApprove">確認</button></div></div>';
+ const dialogStyle=document.createElement('style');
+ dialogStyle.textContent='#truthEyeContractConfirm{max-width:min(390px,91vw);color:#fff0cd;background:#132232;border:1px solid #a68c62;border-radius:12px;padding:25px;box-shadow:0 12px 80px #02050bbd;font:14px/1.7 system-ui,sans-serif}#truthEyeContractConfirm::backdrop{background:#03080dc6}#truthEyeContractConfirm h2{font-size:19px;font-weight:500;color:#f6d69f;margin:0 0 12px}#truthEyeContractConfirm p{margin:0 0 22px;white-space:pre-wrap}#truthEyeContractConfirm .truth-eye-dialog-actions{display:flex;justify-content:flex-end;gap:10px}#truthEyeContractConfirm button{border:1px solid #c9a870;border-radius:7px;padding:8px 17px;background:#263549;color:#fae5bb;cursor:pointer}';
+ document.head.append(dialogStyle);document.body.append(dialog);
+ const confirmLabel=dialog.querySelector('#truthEyeConfirmText');
+ const cancelBtn=dialog.querySelector('#truthEyeCancel');
+ const approveBtn=dialog.querySelector('#truthEyeApprove');
  const el=name=>host.querySelector('#eye'+name),control=el('Controls');
  const status=el('Status');
  function state(){try{card=C.boundCard(storage)}catch(e){toast(e.message);card=null}
   const form=card?.truthEyeContract?.form;
-  eye.visible=!card||form==='world';eyeLight.visible=eye.visible;
+  eye.visible=!card||form==='world'||form==='sealed';eyeLight.visible=eye.visible;
   field.visible=form==='world'&&cfg.enabled;marks.visible=field.visible;control.hidden=form!=='world';
   host.hidden=form!=='world';
   el('Toggle').hidden=form!=='world';
@@ -142,6 +155,26 @@ function create(opts){
   if(hold){clearTimeout(hold.timer);hold=null}
   hex.clear();invalidate();
  }
+ function cancelPrompt(){
+  pending=null;
+  if(dialog.open)dialog.close();
+  invalidate();
+ }
+ function prompt(kind,cardId,cardRevision,cardTitle=''){
+  if(pending||transfer)return false;
+  pending={kind,cardId,cardRevision};
+  const description={
+   seal:'是否將「'+cardTitle+'」與真實之眼建立契約？\n確認後原卡將飛入神器，動畫完成才封印。',
+   cardify:'是否將已封印的真實之眼具現化為原本的契約卡？',
+   materialize:'是否將「真實之眼」契約卡實體化為世界中的 3D 神器？',
+   return:'是否將世界中的真實之眼收回原本的契約卡？'
+  };
+  confirmLabel.textContent=description[kind]||'確認此契約操作？';
+  dialog.showModal();invalidate();return true;
+ }
+ cancelBtn.addEventListener('click',cancelPrompt);
+ dialog.addEventListener('cancel',()=>{pending=null;invalidate()});
+ dialog.addEventListener('close',()=>{if(pending)pending=null;invalidate()});
  function cardEntries(){
   return [...floatingCards.values()].map(e=>{
    e.group.updateWorldMatrix(true,false);
@@ -161,31 +194,93 @@ function create(opts){
   if(!target){toast('👁 找不到原始空白卡，請重新進入世界');return null}
   return {cardId:target.id,cardRevision:target.revision};
  }
- function complete(token){if(!hold||hold.token!==token)return;
-  const {type,cardId,cardRevision}=hold;stop();
-  if(type==='eye-return'){flip();return}
-  if(type==='eye'){try{
-   // Lock the one original card at pointerDown: moving orbits cannot silently
-   // switch targets to another card during a long press.
-   const original=craft.listCards(storage).find(x=>x.id===cardId);
-   const current=floatingCards.get(cardId);
-   if(!original||original.revision!==cardRevision||!C.isEligible(original))
-    throw Error('空白卡狀態已改變，請重新締約');
-   if(!current||!current.group.visible||current.summon||current.recycle)
-    throw Error('契約卡已離開世界，請先把卡片召回軌道');
-   current.group.updateWorldMatrix(true,false);
-   const pos=current.group.getWorldPosition(new T.Vector3());
-   if(Math.hypot(pos.x-keeper.position.x,pos.z-keeper.position.z)>3)
-    throw Error('原卡超過三公尺，請先靠近卡片');
-   C.bind(storage,original.id,original.revision);refreshCards();state();
-   toast('✦ 真實之眼締約成功 · 點擊軌道上的真實之眼原卡即可具現化');
-  }catch(e){toast('契約未完成：'+e.message)}
-  }else{toast('🔯 已顯示 '+selected.size+' 件六芒星契約效果；封裝資料尚未寫入')}
+ function complete(token){
+  if(!hold||hold.token!==token)return;
+  const type=hold.type;stop();
+  selectedUntil=performance.now()+1800;
+  if(type==='books'){
+   toast('🔯 已展示 '+selected.size+' 件的原版六芒星 · 正式多物件封裝尚未開放');
+   return;
+  }
+  if(type==='eye'){
+   const target=chooseCard();
+   if(!target)return;
+   const record=craft.listCards(storage).find(c=>c.id===target.cardId);
+   if(record)prompt('seal',record.id,record.revision,record.title);
+   return;
+  }
+  if(!card)return;
+  if(type==='eye-cardify'&&card.truthEyeContract?.form==='sealed'){
+   prompt('cardify',card.id,card.revision,card.title);return;
+  }
+  if(type==='eye-return'&&card.truthEyeContract?.form==='world'){
+   prompt('return',card.id,card.revision,card.title);return;
+  }
+ }
+ function beginTransfer(){
+  const request=pending;
+  if(!request||transfer)return;
+  pending=null;
+  if(dialog.open)dialog.close();
+  try{
+   const record=craft.listCards(storage).find(o=>o.id===request.cardId);
+   if(!record||record.revision!==request.cardRevision)throw Error('契約卡已變更，請重新長按');
+   const existing=floatingCards.get(record.id);
+   if(!existing||existing.summon||existing.recycle||!existing.group.visible&&request.kind==='seal')
+    throw Error('契約卡暫時無法操作，請先讓它回到軌道');
+   if(request.kind==='seal'){
+    if(!C.isEligible(record)||C.boundCard(storage))throw Error('空白卡不符合契約資格');
+    const candidate=chooseCard();
+    if(!candidate||candidate.cardId!==record.id)throw Error('最近卡片已改變，請重新選取');
+   }else{
+    if(record.truthEyeContract?.artifactId!==C.ID)throw Error('找不到原契約');
+    const expected={cardify:'sealed',materialize:'card',return:'world'}[request.kind];
+    if(record.truthEyeContract?.form!==expected)throw Error('原契約形態已變更');
+   }
+   // Reuse the exact original directed 3D absorption trajectory.
+   existing.group.updateWorldMatrix(true,false);
+   eye.updateWorldMatrix(true,false);
+   const p=existing.group.getWorldPosition(new T.Vector3()),
+    eyePos=eye.getWorldPosition(new T.Vector3());
+   const fromCard=request.kind==='seal'||request.kind==='materialize';
+   const from=fromCard?p:eyePos,to=fromCard?eyePos:p;
+   transfer={...request,fromCard,
+    cardX:p.clone(),eyeX:eyePos.clone(),
+    plan:Directed.normalize({sourceId:fromCard?record.id:C.ID,targetId:fromCard?C.ID:record.id,
+     from:{x:from.x,y:from.y,z:from.z},to:{x:to.x,y:to.y,z:to.z},
+     startedAt:performance.now(),duration:reducedMotion?400:1500,
+     initialScale:existing.group.scale.x||1})};
+   toast('✦ 原版契約：卡片定向吸收動畫啟動');
+   invalidate();
+  }catch(e){transfer=null;toast('無法啟動契約：'+String(e.message||e));invalidate()}
+ }
+ approveBtn.addEventListener('click',beginTransfer);
+ function finishTransfer(){
+  if(!transfer)return;
+  const current=transfer;transfer=null;
+  try{
+   const actual=craft.listCards(storage).find(o=>o.id===current.cardId);
+   if(!actual||actual.revision!==current.cardRevision)
+    throw Error('卡片資料在動畫期間發生變更');
+   if(current.kind==='seal'){
+    C.bind(storage,actual.id,actual.revision);
+   }else{
+    const next=current.kind==='cardify'?'card':current.kind==='materialize'?'world':'card';
+    C.setForm(storage,actual.id,actual.revision,next);
+   }
+   refreshCards();state();
+   toast({seal:'✦ 已締結契約，原卡已封入真實之眼 · 長按眼睛可卡片化',
+    cardify:'✦ 真實之眼已回到原卡 · 點選軌道卡片可實體化',
+    materialize:'✦ 原卡已轉為世界 3D 真實之眼 · 掃描控制已啟動',
+    return:'✦ 真實之眼已回到原卡，契約保持不變'}[current.kind]);
+  }catch(error){
+   state();
+   toast('契約未寫入，原卡資料保持不變：'+String(error?.message||error));
+  }
+  invalidate();
  }
  function start(type,id,x,y){
-  if(hold)return false;
-  const target=type==='eye'?chooseCard():null;
-  if(type==='eye'&&!target)return false;
+  if(hold||pending||transfer||dialog.open)return false;
   const box=new T.Box3().makeEmpty();
   if(type==='books')for(const o of bookEntities)if(selected.has(o.id))box.expandByObject(o.group);
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
@@ -202,14 +297,14 @@ function create(opts){
   }
   hex.update(0,performance.now());
   const token=++serial;
-  hold={token,type,id,x,y,...target,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
+  hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
   invalidate();return true;
  }
  function pointerDown(e){
-  if(e.button!==0||e.isPrimary===false||hold)return false;
+  if(e.button!==0||e.isPrimary===false||hold||transfer||pending||dialog.open)return false;
   if(eye.visible&&hit(e,[eye])){
    heldPointers.add(e.pointerId);
-   start(card?'eye-return':'eye',e.pointerId,e.clientX,e.clientY);
+   start(!card?'eye':card.truthEyeContract?.form==='sealed'?'eye-cardify':'eye-return',e.pointerId,e.clientX,e.clientY);
    return true;
   }
   const id=at(e);
@@ -231,21 +326,17 @@ function create(opts){
   if(hold?.id===e.pointerId){stop();return true}
   return used;
  }
- function flip(){if(!card)return;try{
-  const form=card.truthEyeContract.form==='card'?'world':'card';
-  C.setForm(storage,card.id,card.revision,form);refreshCards();state();
-  toast(form==='world'?'✦ 真實之眼已具現化':'✦ 真實之眼已回到原卡');
- }catch(e){toast(e.message)}invalidate();
- }
  // No floating contract button. Contract on 3D eye; manifestation from orbit card.
  renderer.domElement.addEventListener('contextmenu',e=>{
   if(eye.visible&&hit(e,[eye]))e.preventDefault();
  });
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();cancelPrompt()} });
  root.addEventListener('blur',stop);
  function tick(now){const t=now/1000;
-  if(eye.visible){
-   eye.position.set(keeper.position.x,keeper.position.y+3.50+(reducedMotion?0:.10*Math.sin(t*1.2)),keeper.position.z);
+  const originalEye=new T.Vector3(keeper.position.x,keeper.position.y+3.50+(reducedMotion?0:.10*Math.sin(t*1.2)),keeper.position.z);
+  if(eye.visible||transfer){
+   eye.position.copy(originalEye);
+   eye.scale.setScalar(.46);eye.visible=true;eyeLight.visible=true;
    eye.rotation.y=keeper.rotation.y+(reducedMotion?0:Math.sin(t*.42)*.13);
    eyeLight.position.copy(eye.position);built.tick(t,reducedMotion);
   }
@@ -266,15 +357,44 @@ function create(opts){
    }
    hex.update(p,now);
    if(p>=1)complete(hold.token);
+  }else if(now<selectedUntil){
+   // Original selection retains the seal briefly before opening confirmation.
+   // We leave the art on its final lit stage only until the confirm appears.
+   if(!dialog.open)hex.update(1,now);
+   else hex.clear();
+  }else if(ritual.visible)hex.clear();
+  if(transfer){
+   const current=transfer,sample=Directed.sample(current.plan,now);
+   const entry=floatingCards.get(current.cardId);
+   if(entry){
+    entry.group.visible=true;entry.group.quaternion.copy(camera.quaternion);
+    if(current.fromCard){
+     entry.group.position.set(sample.position.x,sample.position.y,sample.position.z);
+     entry.group.scale.setScalar(Math.max(.001,sample.scale));
+    }else{
+     entry.group.position.copy(current.cardX);
+     entry.group.scale.setScalar(Math.max(.001,sample.progress*current.plan.initialScale));
+    }
+   }
+   if(current.kind==='cardify'||current.kind==='return'){
+    eye.visible=true;
+    eye.position.set(sample.position.x,sample.position.y,sample.position.z);
+    eye.scale.setScalar(Math.max(.001,.46*(1-sample.progress)));
+   }else if(current.kind==='materialize'){
+    eye.visible=true;eye.position.copy(current.eyeX);
+    eye.scale.setScalar(Math.max(.001,.46*sample.progress));
+   }
+   if(sample.done)finishTransfer();
   }
  }
  function cardTap(id){
   if(!card||card.id!==id||card.truthEyeContract?.form!=='card')return false;
   const entry=floatingCards.get(id);
   if(!entry||entry.summon||entry.recycle||!entry.group.visible)return false;
-  flip();return true;
+  prompt('materialize',card.id,card.revision,card.title);
+  return true;
  }
- function active(){return eye.visible||field.visible||!!hold}
+ function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||performance.now()<selectedUntil}
  apply();state();
  return Object.freeze({tick,active,pick,cardTap,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
 }

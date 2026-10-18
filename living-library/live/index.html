@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.hexagram-contract.1">
+<meta name="living-library-release" content="2026-10-18.original-hex-ritual-transfer.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -1483,7 +1483,13 @@ function updateFloatingCards(now){
  for(let i=0;i<items.length;i++){
   const entry=items[i];
   if(atlasRuntime?.isDraggingCard(entry.id))continue;
-  if(entry.record.truthEyeContract?.form==='world'||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+  if(['world','sealed'].includes(entry.record.truthEyeContract?.form)||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+    // Keep the hidden ORIGINAL card's world orbit anchor current. Its 3D mesh
+    // is reused for the inverse seal -> card animation, never cloned.
+    const p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
+    entry.group.position.set(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
+    entry.group.quaternion.copy(camera.quaternion);
+    entry.group.scale.setScalar(controlPrefs.cardSize);
     entry.group.visible=false;continue
    }
   if(entry.recycle){
