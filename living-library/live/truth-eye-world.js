@@ -251,6 +251,11 @@ function create(opts){
    }
    // Reuse the exact original directed 3D absorption trajectory.
    existing.group.updateWorldMatrix(true,false);
+   // Card-form artifacts are intentionally invisible. Their mesh was therefore
+   // NOT following the moving player while stored as a card. Re-anchor to the
+   // player's CURRENT head before calculating the exact flight endpoint.
+   if(request.kind==='materialize')
+    eye.position.set(keeper.position.x,keeper.position.y+3.5,keeper.position.z);
    eye.updateWorldMatrix(true,false);
    const p=existing.group.getWorldPosition(new T.Vector3()),
     eyePos=eye.getWorldPosition(new T.Vector3());
