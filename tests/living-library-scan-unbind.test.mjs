@@ -23,9 +23,9 @@ test('generic unbind atomically restores scan-contract original to reusable empt
  assert.equal(after.target.id,bound.id);
  assert.equal(after.target.title,'空白卡片');assert.equal(after.target.description,'');assert.equal(after.target.cardType,'');
  assert.equal(after.target.scanContract,undefined);assert.equal(after.target.runeBinding,undefined);
- assert.ok(Bundle.blank(after.target));assert.equal(storage.snapshot().objects.length,2);
+ assert.ok(Bundle.blank(after.target));assert.equal(storage.snapshot().objects.length,1);
  assert.deepEqual([...Bundle.claims(storage)],[],'no original card ownership memory remains');
- assert.equal(after.spell.containment.kind,'consumed_spell');
+ assert.equal(after.spellId,'local.card.spell');assert.equal(after.consumed,true);
  const usedAgain=Bundle.bind(storage,{cardId:bound.id,revision:after.target.revision,members:[ref]},[ref]);
  assert.equal(usedAgain.id,bound.id,'same blank card can bind a brand new contract to the old geometry');
 });
