@@ -90,8 +90,9 @@ test('Card Creation Spell exposes confirmed destroy, recycle-bin destroy, offlin
  const outbox=await readFile(new URL('../living-library/live/object-outbox.js',import.meta.url),'utf8');
  assert.match(html,/id="destroyCard"/);
  assert.match(html,/id="destroyInput"/);
- assert.match(html,/outbox\.forget\(\[plan\.id,\.\.\.plan\.affectedCopyIds\]\)/);
- assert.match(html,/Craft[.]destroyCard[(]localStorage/);
+ assert.match(html,/LivingCardDestruction[.]destroy[(]localStorage/);
+ assert.match(html,/LivingCardDestruction[.]reconcile[(]localStorage/);
+ assert.match(html,/card-destruction[.]js/);
  assert.match(html,/erase[.]addEventListener[(]'click'/);
  assert.match(outbox,/forget[(]ids[)]/);
  assert.match(outbox,/objectStore[(]'pending'[)][.]delete/);
@@ -137,4 +138,48 @@ test('orphan scan contract must not be moved to a book or silently recycled',()=
  assert.throws(()=>C.placeCard(s,card.id,book.id,0),/契約|不允許/);
  assert.throws(()=>C.recycleCard(s,card.id),/契約/);
  assert.equal(snap(s),before);
+});
+
+test('journal records source removal and pending IndexedDB purge in ONE storage write',()=>{
+ const s=memory(),a=C.createBlankCard(s,rand),copy=C.createBlankCard(s,rand);
+ const state=C.read(s);
+ state.objects.find(x=>x.id===copy.id).copyInfo={sourceId:a.id,kind:'appearance'};
+ s.setItem(C.KEY,JSON.stringify(state));
+ const first=snap(s),calls=[];
+ const proxy={getItem:k=>s.getItem(k),setItem:(k,v)=>{calls.push(k);s.setItem(k,v)}};
+ const result=C.destroyCard(proxy,{id:a.id,expectedRevision:a.revision,
+  confirmation:'銷毀',expectedSnapshot:first,queueCleanup:true});
+ assert.equal(result.deleted,true);assert.equal(result.cleanupPending,true);
+ assert.deepEqual(calls,[C.KEY],'one atomic storage write');
+ assert.deepEqual(C.pendingCardOutboxPurges(s),[{id:a.id,ids:[a.id,copy.id]}]);
+ assert.equal(C.read(s).objects.some(x=>x.id===a.id),false);
+ assert.equal(C.read(s).objects.find(x=>x.id===copy.id).copyInfo,undefined);
+ assert.equal(C.completeCardOutboxPurge(s,a.id),true);
+ assert.deepEqual(C.pendingCardOutboxPurges(s),[]);
+ assert.equal(C.read(s).pendingCardOutboxPurges,undefined,'no lasting tombstone');
+ assert.equal(C.completeCardOutboxPurge(s,a.id),false,'idempotent finish');
+});
+test('journal preserves original on write failure and stays recoverable on cleanup failure',()=>{
+ const s=memory(),a=C.createBlankCard(s,rand),before=snap(s);
+ const broken={getItem:k=>s.getItem(k),setItem:()=>{throw Error('QUOTA')}}
+ assert.throws(()=>C.destroyCard(broken,{id:a.id,expectedRevision:a.revision,
+  confirmation:'銷毀',expectedSnapshot:before,queueCleanup:true}),/QUOTA/);
+ assert.equal(snap(s),before);
+ C.destroyCard(s,{id:a.id,expectedRevision:a.revision,
+  confirmation:'銷毀',expectedSnapshot:before,queueCleanup:true});
+ assert.deepEqual(C.pendingCardOutboxPurges(s)[0].ids,[a.id]);
+ assert.equal(C.read(s).objects.some(x=>x.id===a.id),false);
+});
+test('cleanup refuses malformed journal and a reappearing original instead of purging wrong IDs',()=>{
+ const s=memory(),a=C.createBlankCard(s,rand),before=snap(s);
+ C.destroyCard(s,{id:a.id,expectedRevision:a.revision,confirmation:'銷毀',
+  expectedSnapshot:before,queueCleanup:true});
+ let state=C.read(s);state.pendingCardOutboxPurges[0].ids.push('local.card.bad');
+ state.pendingCardOutboxPurges[0].ids.push('local.card.bad');
+ s.setItem(C.KEY,JSON.stringify(state));
+ assert.throws(()=>C.pendingCardOutboxPurges(s),/損毀|不一致/);
+ assert.throws(()=>C.completeCardOutboxPurge(s,a.id),/損毀|不一致/);
+ state.pendingCardOutboxPurges[0].ids=[a.id];state.objects.push(a);
+ s.setItem(C.KEY,JSON.stringify(state));
+ assert.throws(()=>C.pendingCardOutboxPurges(s),/損毀|不一致/);
 });
