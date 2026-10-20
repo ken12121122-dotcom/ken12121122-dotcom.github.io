@@ -16,8 +16,8 @@ let raw=JSON.stringify({version:1,objects:[initial]});
 const storage={getItem:k=>k===Craft.KEY?raw:null,setItem(k,v){if(k===Craft.KEY)raw=v}};
 const buttons=new Map();
 function ui(id){
- if(!buttons.has(id))buttons.set(id,{id,hidden:false,style:{},listeners:{},addEventListener(type,cb){this.listeners[type]=cb;},
-  setAttribute(){},setPointerCapture(){},value:'',textContent:'',open:false,showModal(){this.open=true},
+ if(!buttons.has(id))buttons.set(id,{id,hidden:false,style:{},dataset:{},listeners:{},addEventListener(type,cb){this.listeners[type]=cb;},
+  append(){},prepend(){},removeAttribute(){},setAttribute(){},setPointerCapture(){},value:'',textContent:'',open:false,showModal(){this.open=true},
   close(){this.open=false;this.listeners.close?.({type:'close'})}});
  return buttons.get(id);
 }
@@ -30,6 +30,7 @@ const doc={head:{append(){}},body:{append(){}},createElement:el,addEventListener
 let clock=0;
 const host={document:doc,console,performance:{now:()=>clock},setTimeout,clearTimeout,addEventListener(){}};
 host.self=host;host.LivingTruthEyeContract=Contract;host.LivingDirectedTransfer=Directed;
+host.LivingScanBundle=require('../../living-library/live/scan-bundle.js');
 host.LivingContractHexagram=Hex;
 vm.runInNewContext(fs.readFileSync(root+'/living-library/live/truth-eye-world.js','utf8'),host);
 const scene=new T.Scene(),keeper=new T.Group();scene.add(keeper);
@@ -136,3 +137,4 @@ assert.match(atlas,/onCardPressStart\?\.\(e,entry\.id\)/);
 assert.match(atlas,/onCardPressMove\?\.\(e,p\.entry\.id,p\.moved\)/);
 assert.match(atlas,/onCardPressEnd\?\.\(e,p\.entry\.id,cancel,p\.moved\)/);
 console.log('PASS: approved hexagram charges during 3-second card hold BEFORE confirmation; separate flight remains intact; cancel and early release preserve original ID.');
+

@@ -118,6 +118,13 @@
 
 OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打開；沿用 `public.gaming.book.creation` 既有 reader iframe 的同源來源驗證，`summon-collection` 只接受這張卡。設定卡只放參數，不放新書入口。
 
+## 真實之眼掃描收納（2026-10-20 候選）
+
+- surface：`living-library/live/index.html#stage`、既有 `.truthEyeHud`；確認深度 L2、程式風險 C2。新增 `#eyeScope`（書本／場景／兩者）、`#eyeSummon`（⇧ 離架召喚）、`#eyeSelectAll`（⊙ 範圍全選）、`#eyeCollect`（🔯 長按三秒收納），沿用原距離／角度／方向與確認框。
+- 沒有新增 book_id、公開 card_id 或 reader 來源；共享影響為已登記公開／本機書本和場景模型。私有 GEN2 書不持久化為收納成員，已獨立締約的法陣保留原契約。
+- `scan-bundle.js` 保存原空白卡 ID 與成員引用，`scanContract.form` 切換 card/world；長按同卡實體化／再卡片化。原「解除契約」法術沿用共用規則；移除契約後還原場景可見性，不新增卡、不配永久號。
+- 來源基線 `df41a9715b5a5bf0d10fdc7b828e832693235450`。經驗與驗證邊界見 `reviews/EXP-TRUTH-EYE-001_掃描收納契約驗證.md`；本機證據見 `test-evidence/scan-bundle-browser.json`。候選修改、CI、正式 Pages 及 OWNER 手機分別記錄，不能由瀏覽器測試推定已發布。
+
 ## 書本創造術型別選擇（OWNER 2026-10-16 00:09 更正）
 
 以此段取代上文「第二本從固定現成書入口開啟」的解讀。`public.gaming.book.creation` 內選擇空白魔法書（legacy）／卡片之書（atlas），再創造具有獨立 `local.book.*` ID 的實體書。`ObjectCraft` 保留既有 blank-book-v1 封套，atlas 型別由 openingMode 區別，十八格容器就是自己的 Book ID；不能把卡片放進 legacy 書或不存在的 ID。
@@ -136,3 +143,4 @@ OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打�
 ## 手動卡片編號（OWNER 2026-10-16 補充要求，候選）
 
 `public.gaming.card.creation` 新增「卡片編號」文字欄位，存入同一張本機卡的 `cardNumber`；可留空、可保留 `001` 前導零，最多 20 字。卡面與背面使用同一份數值，沿用原本儲存按鈕；不自動配號、不改 ID、卡槽或收錄資格。舊卡沒有欄位時顯示「—」，可直接編輯，不做遷移。既有圖片、連結及按鈕保留。自動唯一編號、圖鑑容量與固定位置規則仍未實作。
+

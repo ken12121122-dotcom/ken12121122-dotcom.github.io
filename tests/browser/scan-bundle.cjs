@@ -1,0 +1,124 @@
+/* Real browser + actual live application + original Three.js geometries.
+ * Isolated synthetic save. Software GPU policy is bypassed ONLY in intercepted
+ * test response, to exercise functionality; this is not phone/GPU acceptance. */
+const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+ const root=path.resolve(__dirname,'../..'),out=process.env.NW_BROWSER_OUTPUT||path.join(root,'test-evidence');
+const mime={'.js':'text/javascript','.html':'text/html','.json':'application/json','.css':'text/css'};
+const blank=id=>({id:'local.card.'+id,objectType:'card',templateId:'blank-card-v1',status:'draft',placement:'hover',title:'空白卡片',revision:1,description:'',image:null,cardNumber:'',cardType:'',containerId:null,ownerBookId:null});
+const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.truth-eye',state:'bound'},truthEyeContract:{artifactId:'artifact.truth-eye',version:2,form:'world'}};
+(async()=>{
+ await fs.mkdir(out,{recursive:true});
+ const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost'),name=path.resolve(root,'.'+decodeURIComponent(u.pathname));if(!name.startsWith(root+path.sep))throw Error('path');const data=await fs.readFile(name);res.writeHead(200,{'Content-Type':mime[path.extname(name)]||'application/octet-stream'});res.end(data)}catch{res.writeHead(404);res.end('missing')}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const edge='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+ const executablePath=process.env.NW_BROWSER_EXE||(process.platform==='win32'?edge:undefined);
+ const browser=await chromium.launch({executablePath,headless:true});
+ let page;
+ const report={software_gpu_functional_test:true,test_renderer_throttle_ms:350,phone:'NOT_TESTED',checks:[],errors:[]};
+ try{
+  const context=await browser.newContext({viewport:{width:600,height:760},deviceScaleFactor:1,reducedMotion:'reduce'});
+  await context.route(/https:\/\/(cdn.jsdelivr.net|unpkg.com)\/.*/,async route=>{
+   const name=route.request().url().includes('three.core')?'three.core.min.js':'three.module.min.js';
+   let vendor=path.join(__dirname,'vendor');try{await fs.access(path.join(vendor,name))}catch{vendor=path.dirname(require.resolve('three'))}
+   let code=await fs.readFile(path.join(vendor,name),'utf8');
+   if(name==='three.module.min.js'){
+    const cls=code.match(/(\w+) as WebGLRenderer/)[1];
+    code+=';const testOriginalRender='+cls+'.prototype.render;'+cls+'.prototype.render=function(s,c){s.updateMatrixWorld(true);c.updateMatrixWorld(true);const now=performance.now();if(!this.testPaintAt||now-this.testPaintAt>350){this.testPaintAt=now;return testOriginalRender.call(this,s,c)}};';
+   }
+   await route.fulfill({contentType:'text/javascript',body:code});
+  });
+  await context.route('**/render-capability.js?*',route=>route.fulfill({contentType:'text/javascript',body:'window.LivingRenderCapability={isSoftwareRenderer:()=>false};'}));
+  page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
+  await page.addInitScript(({eye,blank,spell})=>{if(!localStorage.getItem('scan-browser-test-seeded')){localStorage.setItem('living-library-player-objects-v1',JSON.stringify({version:1,objects:[eye,blank,spell]}));localStorage.setItem('scan-browser-test-seeded','1')}},{eye,blank:blank('medium'),spell:{...blank('spell'),title:'解除契約'}});
+  const url='http://127.0.0.1:'+server.address().port+'/living-library/live/index.html';
+  await page.goto(url);await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
+  console.log('3D scene ready');
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
+  const inspect=()=>page.evaluate(()=>LivingScene.truthEye.inspect());
+  await page.locator('#eyeSummon').click();
+  await page.locator('#eyeRadius').fill('20');await page.locator('#eyeRadius').dispatchEvent('input');
+  await page.waitForTimeout(1600);
+  console.log('summoned');
+  const count=await page.evaluate(()=>LivingLibrary.books.filter(b=>['public','local'].includes(b.sourceLayer)).length);
+  const snap=await inspect();assert.equal(snap.scanned.length,count,'all real books become scanner candidates');
+  report.checks.push('shelf books summoned into original orbit and all scanned: '+count);
+  await page.locator('#eyeSelectAll').click();assert.equal((await inspect()).selected.length,count);
+  const hold=async selector=>{const b=await page.locator(selector).boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
+  // Early release cancels without touching the blank.
+  let b=await page.locator('#eyeCollect').boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForTimeout(200);await page.mouse.up();assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),false);
+  await hold('#eyeCollect');assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
+  await page.locator('#truthEyeCancel').click();assert.equal((await inspect()).packed.length,0);
+  report.checks.push('early release and confirmation cancellation preserve originals');
+  console.log('cancel verified');
+  await hold('#eyeCollect');await page.locator('#truthEyeApprove').click();
+  await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-library-player-objects-v1')));
+  const packed=saved.objects.find(c=>c.scanContract);assert.equal(packed.id,'local.card.medium');assert.equal(packed.scanContract.members.length,count);assert.equal(saved.objects.length,3);
+  assert.equal((await inspect()).packed.length,count);assert.equal((await inspect()).scanned.length,0);
+  assert.equal((await inspect()).objects.filter(o=>o.kind==='book'&&o.visible).length,0);
+  report.checks.push('actual 3-second hold, confirm, collection animation, original medium and all member IDs persisted');
+  console.log('packed');
+  await page.screenshot({path:path.join(out,'books-packed.png')});
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(800);
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
+  assert.equal((await inspect()).packed.length,count);assert.equal((await inspect()).scanned.length,0);
+  report.checks.push('reload retains packed objects without creating cards or books');
+  // Actual canvas pointer at original-card projected center, via the existing
+  // atlas/card handler (not a direct call to a binder or long-press function).
+  const holdCard=async id=>{const p=(await inspect()).cards.find(c=>c.id===id);assert.ok(p,'original card is visible');await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open||document.querySelector('#runeUnbindDialog').open,null,{timeout:15000});await page.mouse.up()};
+  await holdCard('local.card.medium');
+  assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true,'original card canvas hold opens restoration');
+  await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(500);
+  assert.equal((await inspect()).packed.length,0);assert.equal((await inspect()).scanned.length,count);
+  report.checks.push('actual canvas hold on same original card restores every original book');
+  await page.screenshot({path:path.join(out,'books-restored.png')});
+  await holdCard('local.card.medium');
+  assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
+  await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  assert.equal((await inspect()).packed.length,count);
+  report.checks.push('same original card completes world -> card again, with no duplicated member IDs');console.log('repacked');
+  await holdCard('local.card.spell');await page.waitForTimeout(700);
+  assert.equal(await page.locator('#runeUnbindDialog').evaluate(e=>e.open),true,'existing解除契約 card selects collection');
+  assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),'local.card.medium');
+  await page.locator('#runeUnbindConfirm').click();
+  await page.waitForFunction(()=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id==='local.card.medium').scanContract);await page.waitForTimeout(350);
+  assert.equal((await inspect()).packed.length,0);assert.equal((await inspect()).scanned.length,count);
+  const spellState=await page.evaluate(()=>LivingObjectCraft.listCards(localStorage).find(c=>c.id==='local.card.spell'));
+  assert.equal(spellState.containment.kind,'consumed_spell');
+  report.checks.push('existing解除契約 spell restores all books, preserves original medium, consumes original spell and removes ownership');console.log('unbound');
+  // Second stage: create a fresh synthetic blank using the existing card engine.
+  const worldCard=await page.evaluate(()=>{const c=LivingObjectCraft.createBlankCard(localStorage,crypto);LivingScene.refreshFloatingCards();return c.id});
+  await page.locator('#eyeScope').selectOption('all');await page.waitForTimeout(500);
+  const worldSnapshot=await inspect(),worldCount=worldSnapshot.scanned.length;
+  assert.ok(worldCount>count);assert.ok(worldSnapshot.scanned.some(o=>o.id==='scene.floor'));assert.ok(worldSnapshot.scanned.some(o=>o.id==='scene.keeper'));assert.equal(worldSnapshot.scanned.filter(o=>o.kind==='scene').length,worldSnapshot.objects.filter(o=>o.kind==='scene').length);
+  await page.locator('#eyeSelectAll').click();await hold('#eyeCollect');
+  assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
+  await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  let now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible).length,0);
+  report.checks.push('scanner all-scope collects entire authored library plus books into one original blank: '+worldCount);console.log('world packed');
+  await page.screenshot({path:path.join(out,'world-packed.png')});
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
+  now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible).length,0);
+  await holdCard(worldCard);assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
+  await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
+  report.checks.push('entire-library card retains every original after reload and restores scene, lights, keeper and books');
+  await page.screenshot({path:path.join(out,'world-restored.png')});
+  await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  assert.equal((await inspect()).packed.length,worldCount);
+  const worldSpell=await page.evaluate(()=>{let c=LivingObjectCraft.createBlankCard(localStorage,crypto);c=LivingObjectCraft.editCard(localStorage,c.id,{title:'解除契約'});LivingScene.refreshFloatingCards();return c.id});
+  await page.waitForTimeout(500); // Let the new original card enter its actual orbit before projecting the pointer.
+  // Adjacent orbit slots can overlap in the front camera. Use the real free
+  // camera gesture to expose the spell instead of clicking through the card in front.
+  await page.mouse.move(120,510);await page.mouse.down();await page.mouse.move(330,510,{steps:12});await page.mouse.up();await page.waitForTimeout(400);
+  await holdCard(worldSpell);
+  assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),worldCard);
+  await page.locator('#runeUnbindConfirm').click();
+  await page.waitForFunction(id=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id===id).scanContract,worldCard);await page.waitForTimeout(350);
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
+  report.checks.push('entire-library contract repacks into same card; existing解除契約 spell then restores all originals and removes contract');
+  assert.deepEqual(report.errors,[]);report.status='PASS';
+ }catch(e){report.status='FAIL';report.failure=e.stack;if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});throw e}
+ finally{await fs.writeFile(path.join(out,'scan-bundle-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
+})().catch(e=>{console.error(e);process.exitCode=1});

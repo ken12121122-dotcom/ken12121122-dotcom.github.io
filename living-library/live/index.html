@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1128,9 +1128,19 @@ const unit=new THREE.BoxGeometry(1,1,1);
 function box(w,h,d,x,y,z,mat,parent=scene){const m=new THREE.Mesh(unit,mat);m.scale.set(w,h,d);m.position.set(x,y,z);parent.add(m);return m}
 function cyl(radTop,radBottom,height,x,y,z,mat,parent=scene,segments=48){const m=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,height,segments),mat);m.position.set(x,y,z);parent.add(m);return m}
 function torus(R,r,x,y,z,mat,parent=scene,rx=0){const m=new THREE.Mesh(new THREE.TorusGeometry(R,r,7,96),mat);m.position.set(x,y,z);m.rotation.x=rx;parent.add(m);return m}
-const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);
-for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2}
-for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let z=-24;z<=24;z+=3.9){box(50,.018,.018,0,-.24,z,stone2)}
+const worldScanEntries=[];
+function registerScene(id,groups){
+ const bounds=new THREE.Box3().makeEmpty();groups.forEach(g=>{g.updateWorldMatrix(true,true);bounds.expandByObject(g)});
+ const anchor=bounds.isEmpty()?groups[0].getWorldPosition(new THREE.Vector3()):bounds.getCenter(new THREE.Vector3());
+ worldScanEntries.push({id,kind:'scene',group:groups[0],groups,anchor});
+}
+const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);registerScene('scene.floor',[floor]);
+const floorRings=[];
+for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2;floorRings.push(ring)}
+registerScene('scene.floor.rings',floorRings);
+const floorGrid=[];
+for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2);floorGrid.push(line)}for(let z=-24;z<=24;z+=3.9){floorGrid.push(box(50,.018,.018,0,-.24,z,stone2))}
+registerScene('scene.floor.grid',floorGrid);
 // RUNE-01: real origin-ground sigil becomes one tagged scene entity.
 // No new geometry, visual changes, touch consumption or save mutations.
 const RuneContract=window.LivingRuneContract;
@@ -1149,6 +1159,7 @@ for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,runeGroup,Math.PI/2
 const runes=[];
 for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold,runeGroup);rune.rotation.y=-a;runes.push(rune)}
 runeGroup.traverse(mesh=>{if(mesh.isMesh)mesh.userData.runeId=RuneContract.RUNE_ID});
+registerScene('scene.rune.origin',[runeGroup]);
 // Seven real, empty 5×5 bookcases occupy only the front arc of the world.
 // No decorative/fake book meshes: only registered public or authorized GEN2 books occupy a slot.
 const shelves=[];
@@ -1166,18 +1177,22 @@ for(let row=0;row<5;row++){
   box(1.08,.018,.22,-2.68+col*1.34,y+.09,.57,shelfSlotPlate,group);
  }
 }
-shelves.push(group)}
+registerScene('scene.shelf.'+shelves.length,[group]);shelves.push(group)}
 for(const a of [-1.40,-.90,-.42,.05,.52,.99,1.44])makeShelf(a);
 // Pillars and vaulted arches behind shelves.
+let pillarIndex=0;
 for(const a of [-1.67,-1.10,-.55,0,.55,1.10,1.67]){const r=13.3,x=Math.sin(a)*r,z=-Math.cos(a)*r;
-cyl(.48,.53,10.7,x,5.1,z,stone2);cyl(.62,.62,.40,x,10.65,z,gold);cyl(.60,.68,.45,x,.04,z,stone2);
+registerScene('scene.pillar.'+pillarIndex++,[cyl(.48,.53,10.7,x,5.1,z,stone2),cyl(.62,.62,.40,x,10.65,z,gold),cyl(.60,.68,.45,x,.04,z,stone2)]);
 }
+let lampIndex=0;
 for(const a of [-1.3,-.7,0,.7,1.3]){const r=11.85,x=Math.sin(a)*r,z=-Math.cos(a)*r;
 const lamp=new THREE.Group();scene.add(lamp);lamp.position.set(x,8.4,z);const orb=new THREE.Mesh(new THREE.SphereGeometry(.17,12,12),new THREE.MeshBasicMaterial({color:0xffd599}));lamp.add(orb);
-const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light)}
+const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light);registerScene('scene.lamp.'+lampIndex++,[lamp,light])}
 // A luminous ceiling oculus
-torus(11.2,.12,0,12,0,gold,scene,Math.PI/2);torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2);
-for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a}
+registerScene('scene.oculus.rings',[torus(11.2,.12,0,12,0,gold,scene,Math.PI/2),torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2)]);
+const oculusSpokes=[];
+for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a;oculusSpokes.push(m)}
+registerScene('scene.oculus.spokes',oculusSpokes);
 const skylight=new THREE.PointLight(0xb6becf,12,26,2);skylight.position.set(0,12,0);scene.add(skylight);
 // Neutral keeper silhouette on the dais.
 const keeper=new THREE.Group();scene.add(keeper);keeper.position.set(0,.46,0);
@@ -1191,7 +1206,8 @@ const hood=new THREE.Mesh(new THREE.ConeGeometry(.44,.62,12),simple(0x1b2e43));h
 box(.48,.095,.26,0,1.39,.30,gold,keeper);
 for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
 const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
-const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
+const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);registerScene('scene.keeper',[...keeper.children,aura]);
+registerScene('scene.lighting',[ambient,warm,cold,moon,skylight]);
 // Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
 // Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
 // Direct-touch input: the finger-down point becomes the temporary joystick.
@@ -1307,7 +1323,7 @@ function stepAvatar(dt){
 // Dust motes
 const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
 for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
-const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
+const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);registerScene('scene.dust',[dust]);
 const labelCache=new Map();
 // High-contrast, large-type printed COVER. No title floating above a book.
 function coverTex(b){
@@ -1787,6 +1803,21 @@ const truthEye=window.LivingTruthEyeWorld.create({
  THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
+ summonShelfBooks(){for(const o of bookEntities)if(!o.b.active&&['public','local'].includes(o.b.sourceLayer))window.LivingLibrary.summonBook(o.id)},
+ getScanEntries(){return [...worldScanEntries.filter(e=>e.id!=='scene.rune.origin'||!window.LivingObjectCraft.getRuneBoundCard(localStorage)),...bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>{
+  const alternate=atlasRuntime.scanEntries?.().find(e=>e.id===o.id);
+  return {...o,kind:'book',group:alternate?.group.visible?alternate.group:o.group,groups:alternate?[o.group,alternate.group]:[o.group]};
+ })]},
+ applyPacked(packed){
+  for(const o of worldScanEntries)for(const group of o.groups){
+   const hidden=packed.has('scene:'+o.id);
+   if(hidden){if(!group.userData.scanHidden)group.userData.scanPreviousVisible=group.visible;group.userData.scanHidden=true;group.visible=false}
+   else if(group.userData.scanHidden){group.visible=group.userData.scanPreviousVisible!==false;delete group.userData.scanHidden;delete group.userData.scanPreviousVisible}
+  }
+  for(const entry of floatingCardMeshes.values()){
+  const container=entry.record.containerId==='local.atlas.collection'?'cardCollection':entry.record.containerId;
+  if(container&&packed.has('book:'+container))entry.group.visible=false;
+ }},
  invalidate:()=>window.LivingScene?.syncRender?.(),
  toast,reducedMotion:preferReduced
 });
@@ -1925,8 +1956,12 @@ function updateRuneVisual(now){
 }
 function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
  !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect&&!buildState}
+function sceneRuneClaimed(){
+ try{return window.LivingScanBundle.claims(localStorage).has('scene:scene.rune.origin')}
+ catch(_){return true}
+}
 function canStartRunePress(e){
- if(!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
+ if(sceneRuneClaimed()||!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
  touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
  const runeHits=runeHitRay.intersectObject(runeGroup,true)
   .filter(h=>h.object.userData.runeId===RuneContract.RUNE_ID);
@@ -2021,6 +2056,7 @@ function confirmRuneBinding(){
  const selected=runeNearest;
  if(!selected||selected.status!=='selected')return;
  try{
+  if(sceneRuneClaimed())throw Error('初始法陣已有收納契約，請先使用解除契約術');
   const legacy=runeLegacySeal;
   const record=floatingCardMeshes.get(selected.cardId)?.record;
   if(!record)throw Error('候選卡片已不存在');
@@ -2921,6 +2957,7 @@ function paint(now){
  // Other physical books keep their state/position but cannot occlude close-up pages.
  for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
  keeper.visible=!atlasRuntime?.inFocus;
+ truthEye.applyPacked();
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
@@ -3002,3 +3039,4 @@ syncRender();
 </script>
 <script src="./clean-view.js?v=20261015-1"></script>
 </body></html>
+
