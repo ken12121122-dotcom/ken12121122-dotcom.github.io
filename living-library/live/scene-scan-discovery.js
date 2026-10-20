@@ -24,9 +24,10 @@
  }
  function sceneRoot(node,scene){while(node&&node.parent&&node.parent!==scene)node=node.parent;return node?.parent===scene?node:null}
  function physical(node){
-  if(node?.userData?.scanProtected===true)return false;
-  if(node?.isMesh&&node.material?.colorWrite!==false)return true;
-  for(const child of node?.children||[])if(physical(child))return true;
+  if(!node||node.visible===false||node.userData?.scanProtected===true)return false;
+  // Invisible templates and helper geometries are not physical scan targets.
+  if(node.isMesh&&node.material?.visible!==false&&node.material?.colorWrite!==false)return true;
+  for(const child of node.children||[])if(physical(child))return true;
   return false;
  }
  function discover({scene,keeper,legacyScenes=[],books=[],atlasEntries=[],floatingCards=[],protectedRoots=[]}={}){
