@@ -120,6 +120,8 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form card stays absent after reload');
   await holdMember();await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.equal((await inspect()).packed.length,worldCount);
+  await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form original is hidden before解除契約');
   const worldSpell=await page.evaluate(()=>{let c=LivingObjectCraft.createBlankCard(localStorage,crypto);c=LivingObjectCraft.editCard(localStorage,c.id,{title:'解除契約'});LivingScene.refreshFloatingCards();return c.id});
   await page.waitForTimeout(500); // Let the new original card enter its actual orbit before projecting the pointer.
   // Adjacent orbit slots can overlap in the front camera. Use the real free
@@ -130,7 +132,8 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.locator('#runeUnbindConfirm').click();
   await page.waitForFunction(id=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id===id).scanContract,worldCard);await page.waitForTimeout(350);
   now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
-  report.checks.push('world-form card remains absent after reload; actual member hold repacks whole library into same card; existing解除契約 restores every original');
+  assert.ok(now.cards.some(c=>c.id===worldCard),'解除契約 restores the original blank card from hidden world form');
+  report.checks.push('world-form card remains absent after reload; actual member hold repacks whole library into same card; existing解除契約 targets hidden original through its unique world anchor and restores every original');
   assert.deepEqual(report.errors,[]);report.status='PASS';
  }catch(e){report.status='FAIL';report.failure=e.stack;if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});throw e}
  finally{await fs.writeFile(path.join(out,'scan-bundle-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
