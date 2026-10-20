@@ -35,6 +35,12 @@
    if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
    else delete next.recipeArtwork;
   }else if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
+  if(options.unboundCarrier){
+   const c=options.unboundCarrier;
+   // Previous carrier retained only as recovery metadata, not as inventory.
+   next.unboundCarrierBackups={...(prior.unboundCarrierBackups||{}),
+    [c.id]:{revision:c.revision,card:{...c}}};
+  }
   storage.setItem(KEY,JSON.stringify(next));
  }
  function isUnbindSpellTitle(title){
@@ -219,13 +225,19 @@
    if(!ScanBundle?.resetAfterUnbind)throw Error('掃描契約解除規則尚未載入，原卡保持不變');
    targetData=ScanBundle.resetAfterUnbind(target,targetData);
   }
-  const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
+  // All ordinary contract carriers return to the SAME genuine blank schema,
+  // independent of what their contract held. Never reset unknown live contracts.
+  if(Object.entries(targetData).some(([key,value])=>/Contract$/.test(key)&&!!value)||
+    targetData.runeBinding||targetData.boundRuneId)
+   throw Error('原卡仍有未確認的契約欄位，保留資料而不強制重置');
+  const updatedTarget=blankCardRecord(target.id,target.createdAt||when,when,target.revision+1);
   // Only the original target survives. No hidden spent-spell card remains.
   const objects=cards.map((item,index)=>index===targetIndex?updatedTarget:item)
    .filter(item=>item.id!==spellId);
   // If the original spell had a player's photo, keep only its artwork format,
   // without retaining or restoring the consumed physical card.
-  write(storage,objects,{recipeArtwork:spell.image||state.recipeArtwork||null});
+  write(storage,objects,{recipeArtwork:spell.image||state.recipeArtwork||null,
+   unboundCarrier:target});
   return {target:{...updatedTarget},spellId,consumed:true};
  }
  function listCards(storage){
