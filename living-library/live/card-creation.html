@@ -68,6 +68,10 @@ input[type=range]{padding:0;accent-color:#35494c}
 input::placeholder,textarea::placeholder{color:#000;opacity:1}
 button:disabled{opacity:.45}
 .photoActions{display:flex;gap:8px;flex-wrap:wrap}
+#formatCardDialog{border:1px solid #a58655;border-radius:13px;max-width:min(94vw,460px);padding:20px;background:#f5ecd9;color:#000}
+#formatCardDialog::backdrop{background:#060d19bc}
+#formatCardDialog h2,#formatCardDialog p,#formatCardDialog small{color:#000}
+#formatCardDialog button{min-width:84px;min-height:46px;margin:8px;border:1px solid #987b54;border-radius:8px;background:#e6d5b6;color:#000;font:700 16px system-ui}
 #cardAudit{margin-top:16px;border:1px solid #aa9882;border-radius:10px;padding:12px;background:#fffaf0;color:#000}
 #cardAudit summary,#cardAudit p,#cardAudit strong{color:#000}
 #cardAuditStats{font-weight:700;white-space:pre-wrap}
@@ -97,7 +101,8 @@ button:disabled{opacity:.45}
    <label>內容類型<input id="editType" maxlength="20" autocomplete="off" placeholder="自行填寫，亦可留空"></label>
    <label class="downloadOptIn"><input id="editDownloadable" type="checkbox"> 可複製卡（顯示在 GBA 卡片下載）</label>
    <small class="downloadOptInHelp">預設不顯示。只有勾選並儲存的普通卡會列入下載；取消勾選即從清單移除。只複製卡面格式，不複製 ID、唯一編號、法陣或能力。</small>
-   <div class="photoActions"><button id="choosePhoto" type="button" disabled aria-label="選擇卡面圖片" title="選擇圖片">▧</button><button id="removePhoto" type="button" disabled aria-label="移除卡面圖片" title="移除圖片">×</button><button id="flipCard" type="button" aria-label="翻到卡片紀錄" aria-pressed="false" title="翻面">⇄</button></div>
+   <div class="photoActions"><button id="choosePhoto" type="button" disabled aria-label="選擇卡面圖片" title="選擇圖片">▧</button><button id="removePhotoOnly" type="button" disabled aria-label="只移除卡面圖片" title="僅移除圖片">⊟</button><button id="removePhoto" type="button" disabled aria-label="將整張卡片格式化為真正空白卡" title="完整格式化卡片（11 項有值欄位）">×</button><button id="flipCard" type="button" aria-label="翻到卡片紀錄" aria-pressed="false" title="翻面">⇄</button></div>
+   <small>× = 完整格式化整張卡片（不是只刪除圖片）；⊟ = 僅移除圖片。格式化須確認，有效契約／永久卡禁止直接清除。</small>
    <input id="photoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
    <div id="cropControls" hidden><label>圖片縮放<input id="photoScale" type="range" min="1" max="3" step="0.05" value="1"></label><label>左右位置<input id="photoX" type="range" min="0" max="100" value="50"></label><label>上下位置<input id="photoY" type="range" min="0" max="100" value="50"></label></div>
    <label>連結既有公開內容<select id="editLink"><option value="">未連結</option></select></label>
@@ -131,6 +136,13 @@ button:disabled{opacity:.45}
 <p>⇧ 將目前本機卡片、書本與回收狀態放入待同步佇列，不改動原存檔。此功能尚未連接私人遠端，稍後的修改需再次準備；待同步不代表雲端備份。</p>
 <input id="backupFile" type="file" accept=".json,application/json" hidden>
 <output id="backupStatus" role="status" aria-live="polite"></output></details>
+<dialog id="formatCardDialog" aria-labelledby="formatCardTitle">
+ <h2 id="formatCardTitle">確認格式化為真正空白卡</h2>
+ <p id="formatCardPrompt"></p>
+ <p>會清除卡面文字、圖片、編號、複製來源、可複製分類及殘留的已終止資料；同一張卡保留原始 ID 與建立時間、更新版本，回到漂浮軌道。完成後有值欄位應為 <strong>11</strong>。</p>
+ <small>這是清除卡片資料的操作，不是解除有效契約。若仍在綁定，必須先使用「解除契約卡」。清除前可使用下方「↓」下載本機備份；格式化後無復原鍵。</small>
+ <div><button id="cancelFormatCard" type="button">取消</button><button id="confirmFormatCard" type="button">✓ 確認格式化</button></div>
+</dialog>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
 <div><button id="cancelRecycle" type="button" aria-label="取消回收" title="取消">×</button>
@@ -139,7 +151,7 @@ button:disabled{opacity:.45}
 </main>
 <script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
 <script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
-<script src="./object-craft.js?v=card-inspector-and-spell-artwork-20261020"></script>
+<script src="./object-craft.js?v=card-format-11-20261020"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -148,7 +160,7 @@ button:disabled{opacity:.45}
  const Craft=window.LivingObjectCraft;
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
- let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false;
+ let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null;
  const catalog=window.LivingLibraryCatalog.buildCatalog();
  const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
  for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
@@ -234,7 +246,8 @@ button:disabled{opacity:.45}
    for(const id of ['editNumber','editName','editDescription','editType','editLink','editDownloadable',
     'photoScale','photoX','photoY'])$(id).disabled=!!immutable;
    $('choosePhoto').disabled=!card||immutable;
-   $('removePhoto').disabled=!card||!draftImage||immutable;
+   $('removePhoto').disabled=!card||immutable;
+   $('removePhotoOnly').disabled=!card||!draftImage||immutable;
   $('openLink').disabled=!card?.linkedCardId||!linkTargets.some(c=>c.id===card.linkedCardId)||window.parent===window;
   $('cropControls').hidden=!draftImage;
   $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
@@ -309,7 +322,37 @@ button:disabled{opacity:.45}
  ['photoScale','photoX','photoY'].forEach(id=>$(id).addEventListener('input',()=>{syncCrop();paint()}));
  $('flipCard').onclick=()=>{back=!back;$('flipCard').setAttribute('aria-pressed',String(back));$('flipCard').setAttribute('aria-label',back?'翻回卡片正面':'翻到卡片紀錄');paint()};
  $('choosePhoto').onclick=()=>$('photoFile').click();
- $('removePhoto').onclick=()=>{photoEpoch++;photoBusy=false;draftImage=null;$('cropControls').hidden=true;$('removePhoto').disabled=true;paint();status('圖片已從草稿移除；按 ✓ 才會儲存。')};
+ $('removePhotoOnly').onclick=()=>{photoEpoch++;photoBusy=false;draftImage=null;$('cropControls').hidden=true;$('removePhotoOnly').disabled=true;paint();status('僅從草稿移除圖片；按 ✓ 才會儲存。')};
+ const formatDialog=$('formatCardDialog');
+ $('removePhoto').onclick=()=>{
+  const card=selected();if(!card)return;
+  if(photoBusy){status('圖片處理中，請先完成圖片處理',true);return}
+  const reason=Craft.formatCardBlockReason(card);
+  if(reason){status('禁止格式化：「'+card.title+'」'+reason,true);return}
+  try{
+   const audit=Craft.inspectCard(localStorage,card.id);
+   formatSelection={id:card.id,revision:card.revision};
+   $('formatCardPrompt').textContent='卡片「'+card.title+'」\nID：'+card.id+
+    '\n目前有值 '+audit.stats.filled+' 項 → 格式化後 11 項。\n此卡會從書本／GBA 移回漂浮軌道。未儲存的草稿內容也會放棄。';
+   formatDialog.showModal();
+  }catch(e){formatSelection=null;status('格式化檢查失敗：'+e.message,true)}
+ };
+ $('cancelFormatCard').onclick=()=>{formatSelection=null;formatDialog.close();status('已取消格式化，原卡完全保留。')};
+ formatDialog.addEventListener('cancel',()=>{formatSelection=null});
+ formatDialog.addEventListener('close',()=>{formatSelection=null});
+ $('confirmFormatCard').onclick=()=>{
+  const selectedFormat=formatSelection;
+  if(!selectedFormat||!formatDialog.open)return;
+  formatSelection=null;formatDialog.close();
+  try{
+   const card=Craft.formatCardToBlank(localStorage,selectedFormat.id,selectedFormat.revision);
+   const count=Craft.inspectCard(localStorage,card.id).stats.filled;
+   if(count!==11)throw Error('格式化欄位數異常：'+count);
+   show(card);refresh();notify('card-formatted',card.id);
+   status('✓ 格式化完成：原卡 ID 保留；有值 '+count+' 項。卡片已回漂浮軌道，可再次放入 GBA 下載。');
+  }catch(e){try{const latest=cards().find(x=>x.id===selectedFormat.id);if(latest)show(latest);refresh()}catch(_){}
+   status('格式化未完成：'+String(e?.message||e),true)}
+ };
  $('photoFile').addEventListener('change',async()=>{
   const file=$('photoFile').files[0];$('photoFile').value='';if(!file||!currentId)return;
   const epoch=++photoEpoch;photoBusy=false;
@@ -327,7 +370,7 @@ button:disabled{opacity:.45}
    }while(dataUrl.length>70000&&edge>=96);
    if(dataUrl.length>70000)throw Error('圖片壓縮後仍太大，請選擇較小圖片。');
    draftImage={dataUrl,scale:1,x:50,y:50};$('photoScale').value=1;$('photoX').value=50;$('photoY').value=50;
-   $('cropControls').hidden=false;$('removePhoto').disabled=false;back=false;$('flipCard').setAttribute('aria-pressed','false');$('flipCard').setAttribute('aria-label','翻到卡片紀錄');paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
+   $('cropControls').hidden=false;$('removePhotoOnly').disabled=false;back=false;$('flipCard').setAttribute('aria-pressed','false');$('flipCard').setAttribute('aria-label','翻到卡片紀錄');paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
   }catch(e){if(epoch===photoEpoch)status(e.message||'無法讀取圖片，原卡片未改動。',true)}
   finally{URL.revokeObjectURL(url);if(epoch===photoEpoch)photoBusy=false}
  });
