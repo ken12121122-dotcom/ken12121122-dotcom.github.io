@@ -102,9 +102,19 @@ function create(opts){
  document.body.append(host);
  // Players choose objects by tapping actual 3D geometry; a hold on any
  // selected object starts the single contract for the whole chosen set.
- const countLabel=document.createElement('small');
- countLabel.id='eyeCount';countLabel.setAttribute('role','status');
- host.querySelector('#eyeControls').append(countLabel);
+ // Transparent text readout, not an interactive scan button.
+ const readout=document.createElement('aside');
+ readout.id='eyeScanReadout';readout.className='truthEyeScanReadout';
+ readout.setAttribute('aria-label','掃描到的物件數量與名稱');
+ const countLabel=document.createElement('div');countLabel.id='eyeCount';
+ countLabel.setAttribute('role','status');countLabel.className='truthEyeScanCount';
+ const scanNames=document.createElement('ol');scanNames.id='eyeScanNames';
+ scanNames.setAttribute('aria-label','掃描物件名稱');
+ readout.append(countLabel,scanNames);host.append(readout);
+ const readoutStyle=document.createElement('style');
+ readoutStyle.textContent='.truthEyeScanReadout{margin-top:12px;text-align:right;color:#f1e1b9;background:none!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 5px #040710,0 1px 10px #040710;font:12px/1.55 system-ui,sans-serif}.truthEyeScanCount{font-weight:700}.truthEyeScanReadout ol{list-style:none;margin:4px 0 0;padding:0;max-height:min(42vh,420px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;touch-action:pan-y}.truthEyeScanReadout li{padding:1px 0;overflow-wrap:anywhere}.truthEyeScanReadout li[data-selected="true"]{color:#91f1dc;font-weight:700}.truthEyeScanReadout li[data-selected="true"]::before{content:"✓  "}.truthEyeScanReadout li[data-selected="false"]::before{content:"·  "}.truthEyeScanReadout ol:empty::after{content:"尚未偵測到物件";opacity:.72}@media(max-width:650px){.truthEyeScanReadout{font-size:11px}.truthEyeScanReadout ol{max-height:35vh}}';
+ document.head.append(readoutStyle);
+ let previousScanDisplay='';
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
  function entries(){return (opts.getScanEntries?.({excludeRoots:[eye,eyeLight,field,marks,ritual,cardHex.group,...bundleAnchors.values()]})||[])}
 
@@ -224,7 +234,7 @@ function create(opts){
   el(name).addEventListener('input',e=>{if(busy()){apply();return}cfg[k]=Number(e.target.value);apply();updateMarks()});
  }
  el('Mode').addEventListener('change',e=>{if(busy()){apply();return}cfg.mode=e.target.value;apply()});
- el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();invalidate()});
+ el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();updateMarks();invalidate()});
  function hit(e,meshes){const rect=renderer.domElement.getBoundingClientRect();if(!rect.width||!rect.height)return null;
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   caster.setFromCamera(mouse,camera);return caster.intersectObjects(meshes,true)[0]||null;
@@ -241,11 +251,40 @@ function create(opts){
  }
  function pick(e){const id=at(e);if(!id)return false;
   if(selected.has(id))selected.delete(id);else selected.add(id);
+   updateMarks();
   toast(selected.size?'👁 已選取 '+selected.size+' 件；長按任一已選取物件三秒開始契約':'👁 已取消選取');invalidate();return true;
+ }
+ // Names are descriptions of live discoveries, never scan allowlist rules.
+ function scanName(o){
+  if(o.kind==='book')return String(o.b?.name||o.b?.title||o.id).slice(0,80);
+  const provided=o.group?.userData?.scanName||o.group?.userData?.displayName;
+  if(typeof provided==='string'&&provided.trim())return provided.trim().slice(0,80);
+  const id=o.id||'',m=/^scene\.(shelf|pillar|lamp)\.(\d+)$/.exec(id);
+  if(m)return ({shelf:'書架',pillar:'石柱',lamp:'吊燈'}[m[1]])+' '+(Number(m[2])+(m[1]==='shelf'?0:1));
+  const names={'scene.floor':'地板','scene.floor.rings':'地面光環','scene.floor.grid':'地面格線',
+   'scene.rune.origin':'初始法陣','scene.oculus.rings':'天頂圓環',
+   'scene.oculus.spokes':'天頂光芒','scene.dust':'空氣微粒','scene.lighting':'環境燈光'};
+  if(names[id])return names[id];
+  const native=o.group?.name;
+  if(typeof native==='string'&&native.trim())return native.trim().slice(0,80);
+  const type=o.group?.isMesh?(o.group?.geometry?.type||'3D 網格'):'3D 物件';
+  return type+' · '+String(id).replace(/^scene\./,'').slice(0,26);
+ }
+ function renderScanNames(objects){
+  const display=objects.map(o=>[o.id,scanName(o),selected.has(o.id)]),key=JSON.stringify(display);
+  if(key===previousScanDisplay)return;
+  previousScanDisplay=key;
+  countLabel.textContent='掃描 '+objects.length+' 件｜已選 '+selected.size+' 件';
+  const fragment=document.createDocumentFragment();
+  for(let i=0;i<objects.length;i++){
+   const li=document.createElement('li');
+   li.textContent=display[i][1];li.dataset.scanId=objects[i].id;
+   li.dataset.selected=String(display[i][2]);fragment.append(li);
+  }
+  scanNames.replaceChildren(fragment);
  }
  function updateMarks(){
   const t=targets(),set=new Set(t.map(o=>o.id));
-   countLabel.textContent='掃描 '+t.length+' 件 · 選取 '+selected.size+' 件';
   for(const [id,g] of markMap)g.visible=set.has(id);
   for(const o of t){let m=markMap.get(o.id);
    if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);const volume=new T.Mesh(new T.SphereGeometry(.45,10,8),new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));m.add(volume);
@@ -254,6 +293,7 @@ function create(opts){
    m.scale.setScalar(selected.has(o.id)?1.65:1);
   }
   for(const id of [...selected])if(!set.has(id))selected.delete(id);
+  renderScanNames(t);
  }
  function clearBundleHighlights(){
   for(const helper of bundleHighlights){scene.remove(helper);helper.geometry.dispose();helper.material.dispose()}
