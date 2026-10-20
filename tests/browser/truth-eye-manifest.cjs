@@ -17,7 +17,7 @@ const storage={getItem:k=>k===Craft.KEY?raw:null,setItem(k,v){if(k===Craft.KEY)r
 const buttons=new Map();
 function ui(id){
  if(!buttons.has(id))buttons.set(id,{id,hidden:false,style:{},dataset:{},listeners:{},addEventListener(type,cb){this.listeners[type]=cb;},
-  append(){},prepend(){},removeAttribute(){},setAttribute(){},setPointerCapture(){},value:'',textContent:'',open:false,showModal(){this.open=true},
+  append(){},prepend(){},replaceChildren(){},removeAttribute(){},setAttribute(){},setPointerCapture(){},value:'',textContent:'',open:false,showModal(){this.open=true},
   close(){this.open=false;this.listeners.close?.({type:'close'})}});
  return buttons.get(id);
 }
@@ -26,7 +26,7 @@ function el(type){
  e.innerHTML='';e.querySelector=sel=>ui(sel);
  return e;
 }
-const doc={head:{append(){}},body:{append(){}},createElement:el,addEventListener(){}};
+const doc={head:{append(){}},body:{append(){}},createElement:el,createDocumentFragment(){return {append(){}}},addEventListener(){}};
 let clock=0;
 const host={document:doc,console,performance:{now:()=>clock},setTimeout,clearTimeout,addEventListener(){}};
 host.self=host;host.LivingTruthEyeContract=Contract;host.LivingDirectedTransfer=Directed;
