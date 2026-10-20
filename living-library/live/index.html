@@ -424,6 +424,15 @@ const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
 const ObjectCraft=window.LivingObjectCraft;
+// Repair only scanner-generated orphan data from earlier "解除綁定" spells.
+// One-time versioned backup precedes any modification. Never touch active
+// contracts, custom card content, other spell/rune cards or player book data.
+if(window.LivingScanBundle?.recoverLegacyUnbound){
+ try{
+  const repaired=window.LivingScanBundle.recoverLegacyUnbound(localStorage);
+  if(repaired.length)console.info('真實之眼已恢復解除綁定的原空白卡：',repaired);
+ }catch(error){console.warn('掃描存檔相容復原已保留原始資料：',error)}
+}
 // Repair ONLY old ordinary/unupgraded cards that earlier versions incorrectly
 // accepted in the nine permanent-only showcase cells. Preserve original IDs,
 // titles, artwork, binding data and all other card/book placements.
@@ -2504,6 +2513,8 @@ function updateSpellEffect(now){
   // One atomic write after source enters the TARGET CARD, never the floor rune.
   unbindEffect=null;spellSelection=null;
   try{
+   const originalScanMembers=window.LivingObjectCraft.listCards(localStorage)
+    .find(c=>c.id===active.targetId)?.scanContract?.members||[];
    const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
     runeId:active.runeId,targetId:active.targetId,
     targetRevision:active.expectedRevision,spellId:active.casterId,
@@ -2513,7 +2524,7 @@ function updateSpellEffect(now){
    const returningFrom=b.clone();
    refreshFloatingCards();
    scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
-    bindingId:active.runeId,from:returningFrom,now});
+    bindingId:active.runeId,scanMembers:originalScanMembers,from:returningFrom,now});
    toast('✧ 「'+result.target.title+'」的契約已解除；原卡保留，施法卡已收納');
 
   }catch(error){
