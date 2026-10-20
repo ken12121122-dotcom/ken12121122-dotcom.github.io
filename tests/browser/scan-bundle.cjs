@@ -282,7 +282,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
    spellStillPresent:LivingObjectCraft.listCards(localStorage).some(c=>c.id==='local.card.spell27')
   }),historical.owner);
   assert.ok(cancelled.stillBound&&cancelled.spellStillPresent);
-  assert.equal(cancelled.claims,27,'cancel does not mutate the user's contract');
+  assert.equal(cancelled.claims,27,'cancelling preserves original contract');
   await cast();
   await page.locator('#runeUnbindTargetPicker').selectOption(historical.owner);
   assert.equal(await page.locator('#runeUnbindTargetId').innerText(),historical.owner);
