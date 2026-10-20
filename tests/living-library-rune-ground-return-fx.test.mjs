@@ -16,7 +16,7 @@ function card(id,title){
   containerId:null,ownerBookId:null,revision:1,cardNumber:'可編輯展示號',
   title,description:'既有卡',image:null};
 }
-test('contract unbinding stores consumed spell inside original card, leaving same target independent of origin rune',()=>{
+test('contract unbinding permanently consumes spell, leaving same original target independent of origin rune',()=>{
  const target=card('local.card.origin','初代法陣卡');
  const spell=card('local.card.spell','解除契約卡');
  const db=memory([target,spell]);
@@ -28,11 +28,9 @@ test('contract unbinding stores consumed spell inside original card, leaving sam
  assert.equal(result.target.id,target.id);
  assert.equal(result.target.placement,'hover');
  assert.equal(result.target.runeBinding,undefined);
- assert.equal(result.spell.id,spell.id);
- assert.equal(result.spell.placement,'contained');
- assert.equal(result.spell.containment.holderId,target.id);
- assert.notEqual(result.spell.containment.holderId,Craft.ORIGIN_RUNE);
- assert.equal(db.objects().length,2,'no phantom floor rune or duplicate card record');
+ assert.equal(result.spellId,spell.id);
+ assert.equal(result.consumed,true);
+ assert.equal(db.objects().length,1,'no spent spell, phantom rune, or duplicate card');
  assert.equal(Craft.floatingCards(db).some(x=>x.id===spell.id),false);
  assert.equal(Craft.floatingCards(db).some(x=>x.id===target.id),true);
 });
@@ -55,10 +53,12 @@ test('visual return only begins AFTER atomic contract-unbind success; animation 
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  const update=html.slice(html.indexOf('function updateSpellEffect(now){'),html.indexOf('// RUNE-06:'));
  assert.ok(update.length>2000);
- const commit=update.indexOf('unbindAndAbsorbSpell(localStorage');
- const refresh=update.indexOf('refreshFloatingCards();',commit);
- const animate=update.indexOf("scene.dispatchEvent({type:'living-contract-unbound'",refresh);
- assert.ok(commit>=0&&refresh>commit&&animate>refresh,'unbinding event must only fire after the original data commit');
+ const cast=html.slice(html.indexOf('function confirmSpellUnbind(){'),html.indexOf("document.getElementById('runeUnbindConfirm')"));
+ const commit=cast.indexOf('unbindAndAbsorbSpell(localStorage');
+ const refresh=cast.indexOf('refreshFloatingCards();',commit);
+ const animate=cast.indexOf("scene.dispatchEvent({type:'living-contract-unbound'",refresh);
+ assert.ok(commit>=0&&refresh>commit&&animate>refresh,'unbinding commits on hold before any post-commit effects');
+ assert.doesNotMatch(update,/unbindAndAbsorbSpell\(localStorage/,'animation must never write or consume another card');
  assert.match(html,/scene\.addEventListener\('living-contract-unbound',e=>\{/);
  assert.match(html,/startRuneReleaseEffect\(e\.cardId,e\.from,e\.now\)/);
  assert.ok(update.indexOf('runeGroup.visible=true;',commit)<0,'floor rune cannot pop back before energy flight');
