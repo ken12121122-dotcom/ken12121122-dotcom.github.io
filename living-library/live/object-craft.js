@@ -240,6 +240,52 @@
   write(storage,state.objects.filter(c=>!ids.has(c.id)));
   return [...ids];
  }
+ // Read-only card audit: persisted links versus known conditional game behaviors.
+ function inspectCard(storage,id){
+  const s=read(storage),c=s.objects.find(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled'&&x.containment?.kind!=='consumed_spell');
+  if(!c)throw Error('這張卡已不存在或已消耗');
+  const links=[],spells=[],animations=[],actions=[];
+  const add=(list,name,detail)=>list.push({name,detail});
+  const link=(kind,id,detail,status='有效')=>links.push({kind,id:String(id),detail,status});
+  if(c.runeBinding?.runeId)link('法陣／物件契約',c.runeBinding.runeId,'狀態 '+(c.runeBinding.state||'未知'));
+  if(c.scanContract){
+   for(const m of c.scanContract.members||[])link('群組成員',m.id,m.kind);
+   add(actions,c.scanContract.form==='world'?'整組收回卡片':'整組物件實體化','長按三秒，切換形態不解除契約');
+   add(animations,'掃描群組形態轉換','依卡／世界形態觸發');
+  }
+  if(c.truthEyeContract){
+   link('真實之眼契約',c.truthEyeContract.artifactId||c.runeBinding?.runeId||'—','神器形態 '+(c.truthEyeContract.form||'未知'));
+   add(actions,'真實之眼形態控制','依神器狀態觸發');add(animations,'神器形態動畫','依場景條件觸發');
+  }
+  if(c.runeBinding?.runeId===ORIGIN_RUNE){
+   add(actions,c.runeBinding.state==='sealed'?'法陣具現化':c.runeBinding.state==='cardified'?'歸還法陣':'封印到初始法陣','依目前契約狀態操作');
+   add(animations,'初始法陣與原卡轉換','具現化／收回動畫（條件式）');
+  }
+  if(isUnbindSpellTitle(c.title)&&c.placement==='hover'&&!c.runeBinding&&!c.containment&&!c.containerId){
+   add(spells,'解除契約術','長按三秒選取目標，確認頁批准才執行，成功後本卡消耗');
+   add(actions,'確認式解除契約','原卡及關聯物件需先確認');
+   add(animations,'六芒星長按特效','長按期間');
+   add(animations,'指向性吸收特效','解除契約成功後');
+  }
+  if(c.linkedCardId)link('公開內容',c.linkedCardId,'卡片內容連結，非施法');
+  if(c.copyInfo?.sourceId){
+   const live=s.objects.some(x=>x.id===c.copyInfo.sourceId&&x.status!=='recycled'&&x.containment?.kind!=='consumed_spell');
+   link('卡面下載來源',c.copyInfo.sourceId,'來源參考，非綁定',live||c.copyInfo.sourceId===UNBIND_BLUEPRINT_ID?'來源可用':'來源已不存在');
+  }
+  if(c.containment?.holderId)link('收納持有者',c.containment.holderId,c.containment.kind);
+  if(c.containerId)link('目前存放位置',c.containerId,'格位 '+(c.slotIndex??'—'));
+  if(c.ability)link('能力資料','ability','此欄位存在，不代表動作已啟用','僅資料');
+  const json=JSON.stringify(c),data=JSON.parse(json);
+  if(data.image?.dataUrl)data.image.dataUrl='[圖片 Base64 省略；原檔仍完整保存]';
+  const valid=v=>v!==null&&v!==undefined&&v!==''&&!(Array.isArray(v)&&!v.length)&&!(v&&typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length);
+  return {id:c.id,title:c.title||'未命名卡',status:c.status,placement:c.placement,revision:c.revision,
+   stats:{fields:Object.keys(c).length,filled:Object.values(c).filter(valid).length,
+    bytes:typeof TextEncoder==='function'?new TextEncoder().encode(json).length:json.length,
+    photo:!!c.image?.dataUrl,groupMembers:c.scanContract?.members?.length||0,
+    links:links.length,spells:spells.length,animations:animations.length,actions:actions.length},
+   links,spells,animations,actions,data,
+   note:'只讀取現有卡片；數量為已辨識的契約資料與條件式行為，非目前正在執行的動畫或未發現的程式連結。'};
+ }
  function listRecycledCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').map(x=>({...x}));
  }
@@ -444,7 +490,7 @@
  // No extra local.card ID, inventory, save field, or spent-spell record is minted.
  const UNBIND_BLUEPRINT_ID='system.template.unbind-contract-v1';
  const UNBIND_BLUEPRINT=Object.freeze({
-  id:UNBIND_BLUEPRINT_ID,revision:1,title:'解除契約卡',
+  id:UNBIND_BLUEPRINT_ID,inspectCard,revision:1,title:'解除契約卡',
   description:'解除一項有效契約；使用後卡片永久消耗。',
   cardType:'法術',image:null,downloadTemplate:true,sourceKind:'system-copyable-recipe'
  });
