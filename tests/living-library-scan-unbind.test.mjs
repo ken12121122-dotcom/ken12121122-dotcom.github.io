@@ -112,3 +112,50 @@ test('releasing missing books refuses partial release and preserves complete pri
  assert.throws(()=>Bundle.release(storage,{cardId:bound.id,revision:bound.revision,form:'card'},all.slice(0,14)),/未全部載入/);
  assert.equal(storage.raw(),before,'no partial mutation when one of 15 is missing');
 });
+
+
+test('three-second owner lookup requires active bound state, not remembered former card id',()=>{
+ const storage=store([makeCard('original')]);
+ const refs=[{kind:'book',id:'research'}];
+ const active=Bundle.bind(storage,{cardId:'local.card.original',revision:1,members:refs},refs);
+ assert.equal(Bundle.contract(active).form,'card');
+ const dead={...active,runeBinding:{...active.runeBinding,state:'released',releasedAt:'2026-10-20T12:00:00.000Z'}};
+ // Historical rune ID, boundAt and complete contract payload alone cannot
+ // put a member back into an old card's active ownership map.
+ assert.throws(()=>Bundle.contract(dead),/格式錯誤/);
+ storage.setItem(Bundle.KEY,JSON.stringify({version:1,objects:[dead]}));
+ const before=storage.raw();
+ assert.deepEqual(Bundle.recoverLegacyUnbound(storage),[dead.id]);
+ assert.equal(storage.getItem(Bundle.BACKUP_KEY),before);
+ const cleaned=storage.snapshot().objects[0];
+ assert.ok(Bundle.blank(cleaned));
+ assert.equal(cleaned.runeBinding,undefined);
+ assert.equal(cleaned.scanContract,undefined);
+ assert.deepEqual([...Bundle.claims(storage)],[]);
+ const newBind=Bundle.bind(storage,{cardId:cleaned.id,revision:cleaned.revision,members:refs},refs);
+ assert.deepEqual(newBind.scanContract.members,refs);
+});
+test('legacy 15-book released-state bindings are recovered without losing original IDs',()=>{
+ const storage=store([makeCard('all-books')]);
+ const refs=Array.from({length:15},(_,i)=>({kind:'book',id:'book.'+i}));
+ const b=Bundle.bind(storage,{cardId:'local.card.all-books',revision:1,members:refs},refs);
+ const released={...b,runeBinding:{...b.runeBinding,state:'unbound',unboundAt:'2026-10-20T12:00:00.000Z'}};
+ storage.setItem(Bundle.KEY,JSON.stringify({version:1,objects:[released]}));
+ assert.deepEqual(Bundle.recoverLegacyUnbound(storage),[released.id]);
+ assert.equal(Bundle.claims(storage).size,0);
+ const empty=storage.snapshot().objects[0];
+ assert.ok(Bundle.blank(empty));
+ assert.equal(Bundle.bind(storage,{cardId:empty.id,revision:empty.revision,members:refs},refs).scanContract.members.length,15);
+});
+test('active scan contracts and unrelated/mismatched historical bindings remain unchanged',()=>{
+ const activeStorage=store([makeCard('live')]);
+ const refs=[{kind:'book',id:'research'}];
+ const active=Bundle.bind(activeStorage,{cardId:'local.card.live',revision:1,members:refs},refs);
+ const before=activeStorage.raw();
+ assert.deepEqual(Bundle.recoverLegacyUnbound(activeStorage),[]);
+ assert.equal(activeStorage.raw(),before);
+ const fake=scanOrphan('ambiguous',{runeBinding:{state:'released',runeId:'scan.bundle.someone-elses-card'}});
+ const storage=store([fake]);
+ assert.deepEqual(Bundle.recoverLegacyUnbound(storage),[]);
+ assert.equal(storage.getItem(Bundle.BACKUP_KEY),null);
+});
