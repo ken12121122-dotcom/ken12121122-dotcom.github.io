@@ -90,6 +90,28 @@
   if(!blank(next))throw Error('收納卡仍有玩家自訂欄位；為保護資料未自動清除，請備份後確認');
   return next;
  }
+ // Releasing a collection is NOT merely changing its visible form.
+ // Restore the originals AND retire their ownership in one atomic save, so
+ // subsequent scans can bind them to any qualified blank original card.
+ function release(storage,{cardId,revision,form},available){
+  const s=read(storage),at=s.objects.findIndex(c=>c.id===cardId),c=s.objects[at];
+  const b=contract(c);
+  if(!b||c.revision!==revision||b.form!==form||c.status!=='draft'||
+   c.placement!=='hover'||c.containerId||c.ownerBookId||c.containment)
+   throw Error('原收納契約或卡片位置已改變，未解除');
+  const ids=new Set((available||[]).map(o=>o.kind+':'+o.id));
+  if(b.members.some(r=>!ids.has(r.kind+':'+r.id)))
+   throw Error('原物件尚未全部載入；為保護存檔，未解除契約');
+  claims(storage); // Never release only half of a conflicting/duplicated group.
+  const candidate={...c};delete candidate.runeBinding;
+  const cleared=resetScanFields(candidate);
+  const next={...cleared,revision:c.revision+1,updatedAt:new Date().toISOString()};
+  s.objects[at]=next;
+  // No changes to the objects or their book identities: only this ONE
+  // original card is atomically rewritten after all eligibility checks.
+  storage.setItem(KEY,JSON.stringify(s));
+  return {card:next,members:b.members.map(r=>({...r}))};
+ }
  function resetAfterUnbind(original,released){
   // ContractPolicy already proved that this is the matching original binding.
   // Never recycle or duplicate the card and never discard third-party fields.
@@ -133,5 +155,5 @@
   storage.setItem(KEY,JSON.stringify(s));
   return changes;
  }
- return Object.freeze({KEY,inRange,read,blank,nearest,contract,bundles,claims,bind,setForm,resetAfterUnbind,legacyOrphan,recoverLegacyUnbound,BACKUP_KEY});
+ return Object.freeze({KEY,inRange,read,blank,nearest,contract,bundles,claims,bind,setForm,release,resetAfterUnbind,legacyOrphan,recoverLegacyUnbound,BACKUP_KEY});
 });
