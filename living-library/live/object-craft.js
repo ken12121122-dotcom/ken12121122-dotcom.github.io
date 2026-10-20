@@ -191,7 +191,15 @@
   // Never create a second ID, overwrite another object, or use the recycle bin.
   // A single atomic transaction releases any contract's canonical binding;
   // only matching contract-owned metadata is cleared, never card artwork.
-  const when=clock(),targetData=ContractPolicy.removeBinding(target);
+  const when=clock();
+  let targetData=ContractPolicy.removeBinding(target);
+  if(target.scanContract){
+   // Resolve at call time: browser loads scan-bundle.js after object-craft.js.
+   const ScanBundle=typeof module==='object'&&module.exports?
+    require('./scan-bundle.js'):root.LivingScanBundle;
+   if(!ScanBundle?.resetAfterUnbind)throw Error('掃描契約解除規則尚未載入，原卡保持不變');
+   targetData=ScanBundle.resetAfterUnbind(target,targetData);
+  }
   const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
   const updatedSpell={...spell,placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
    containment:{kind:'consumed_spell',holderId:targetId,holderType:'card',
