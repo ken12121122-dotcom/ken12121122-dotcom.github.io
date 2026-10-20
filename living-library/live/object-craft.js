@@ -419,7 +419,7 @@
   return isPlayerCard(c)&&c.status==='draft'&&c.downloadTemplate===true&&
    typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
    !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
-   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.scanContract&&!c.truthEyeContract&&
    !isPermanentRuneCard(c)&&!c.l2Certified&&!c.upgradeRequest&&!c.certification&&
    c.isUnique!==true&&c.unique!==true&&!c.uniqueness&&
    c.copyPolicy!=='forbidden'&&c.reusePolicy!=='unique'&&
