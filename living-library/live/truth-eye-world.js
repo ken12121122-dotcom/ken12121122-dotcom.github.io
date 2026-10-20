@@ -658,6 +658,11 @@ function create(opts){
    start(!card?'eye':card.truthEyeContract?.form==='sealed'?'eye-cardify':'eye-return',e.pointerId,e.clientX,e.clientY);
    return true;
   }
+  // Floating cards have priority over scanned world geometry behind them.
+  // Without this guard a background floor/wall captures the long-press and
+  // makes the ORIGINAL bound-card materialization gesture unreachable.
+  const liveCardGroups=[...floatingCards.values()].filter(c=>c.group?.visible&&!c.summon&&!c.recycle).map(c=>c.group);
+  if(liveCardGroups.length&&hit(e,liveCardGroups))return false;
   const id=at(e);
   // Direct long-press on any live discovered object (no first tap).
   // Previously tapped objects, if any, remain included for a grouped contract.
