@@ -73,8 +73,8 @@ test('scanner has no extra action buttons and names/count render as unframed liv
  assert.match(source,/id='eyeScanNames'/);
  assert.match(source,/background:none!important;border:0!important/);
  assert.match(source,/scanName\(o\)/);
- assert.match(source,/if\(id&&selected\.has\(id\)\)/);
- assert.match(source,/start\('books',e\.pointerId,e\.clientX,e\.clientY\)/);
+ assert.match(source,/if\(id&&start\('books',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/);
+ assert.match(source,/scanIds:scanIds\?\[\.\.\.scanIds\]:null/);
  assert.match(source,/renderScanNames\(t\)/);
 });
 test('no preset book/library selection UI or scope filter survives in v2 source',async()=>{

@@ -55,7 +55,8 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.equal(visual.border,'0px','no panel frame');
   report.checks.push('right-hand frameless overlay lists '+count+' object names and count, without avatar or action buttons');
 
-  // Exercise actual canvas gestures: tap to select, long press same geometry.
+  // Discover the pointer position with a short tap, then CLEAR selection.
+  // The contract must work via a single hold with zero preceding selections.
   const viewport=page.viewportSize();
   const candidates=discovered.scanned.filter(o=>o.x>25&&o.x<viewport.width-195&&o.y>210&&o.y<viewport.height-35).map(o=>({x:o.x,y:o.y}));
   for(let x=70;x<viewport.width-190;x+=90)for(let y=330;y<viewport.height-40;y+=90)candidates.push({x,y});
@@ -67,8 +68,10 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
    if(scan.selected.length>1)throw Error('scanner selected extra item without a player tap');
   }
   assert.ok(chosen,'a real tap on a scanned object selects it');
-  assert.equal((await readNames()).filter(x=>x.selected).length,1,'selected object highlighted in name list');
-  assert.match(await page.locator('#eyeCount').innerText(),/已選 1 件/);
+  assert.equal((await readNames()).filter(x=>x.selected).length,1,'short-tap optional multi-select still works');
+  await page.mouse.click(chosen.x,chosen.y);
+  assert.deepEqual((await inspect()).selected,[],'the object is NOT preselected');
+  assert.match(await page.locator('#eyeCount').innerText(),/已選 0 件/);
   const hold=async ms=>{
    await page.mouse.move(chosen.x,chosen.y);await page.mouse.down();
    if(ms)await page.waitForTimeout(ms);
@@ -77,13 +80,16 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   };
   await hold(180);
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),false,'brief tap cannot contract');
-  assert.deepEqual((await inspect()).selected,[],'short tap deselects current item');
+  assert.deepEqual((await inspect()).selected,[chosenId],'short tap marks object but is not required');
   await page.mouse.click(chosen.x,chosen.y);
-  assert.deepEqual((await inspect()).selected,[chosenId]);
+  assert.deepEqual((await inspect()).selected,[],'selection cleared before direct hold');
   await hold();
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
+  assert.deepEqual((await inspect()).selected,[],'hold-only contract must not silently select objects');
+  assert.match(await page.locator('#truthEyeConfirmText').innerText(),/1 件/);
   await page.locator('#truthEyeCancel').click();
   assert.deepEqual((await inspect()).packed,[],'canceled contract does not mutate originals');
+  assert.deepEqual((await inspect()).selected,[],'cancellation preserves empty selection');
   await hold();await page.locator('#truthEyeApprove').click();
   await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy,null,{timeout:15000});
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-library-player-objects-v1')));
@@ -92,7 +98,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.deepEqual(card.scanContract.members.map(r=>r.id),[chosenId]);
   assert.equal(saved.objects.length,3,'no extra cards created');
   assert.equal((await inspect()).packed.length,1);
-  report.checks.push('actual object tap, early release, cancel and three-second contract preserve original card ID');
+  report.checks.push('hold-only direct 3D object contract with zero prior taps, cancel, confirmation and original card retained');
   await page.screenshot({path:path.join(out,'object-longpress-packed.png')});
 
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});await page.waitForTimeout(700);
