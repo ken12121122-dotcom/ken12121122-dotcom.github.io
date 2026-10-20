@@ -100,17 +100,11 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
- const tools=document.createElement('div');tools.className='truthEyeTools';
- tools.innerHTML='<button type="button" id="eyeSummon" aria-label="召喚全部書櫃書本" title="召喚全部書櫃書本">⇧</button><button type="button" id="eyeSelectAll" aria-label="全選掃描範圍內物件" title="全選掃描範圍內物件">⊙</button><button type="button" id="eyeCollect" aria-label="長按三秒收納選取物件" title="長按三秒收納選取物件">🔯</button><small id="eyeCount" role="status"></small>';
- host.querySelector('#eyeControls').append(tools);
- const extraStyle=document.createElement('style');extraStyle.textContent='.truthEyeTools{display:flex;flex-wrap:wrap;gap:5px}.truthEyeTools button{min-width:44px;min-height:44px}.truthEyeTools small{flex-basis:100%;line-height:1.5}.truthEyeTools button[data-holding="true"]{outline:2px solid #8cf6eb}';document.head.append(extraStyle);
- const countLabel=tools.querySelector('#eyeCount'),collectButton=tools.querySelector('#eyeCollect');
- tools.querySelector('#eyeSummon').addEventListener('click',()=>{if(busy())return;opts.summonShelfBooks?.();invalidate()});
- tools.querySelector('#eyeSelectAll').addEventListener('click',()=>{if(busy())return;selected.clear();targets().forEach(o=>selected.add(o.id));updateMarks();toast('👁 已選取掃描範圍內 '+selected.size+' 件；長按 🔯 三秒收納');invalidate()});
- collectButton.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||!selected.size||!field.visible||busy())return;heldPointers.add(e.pointerId);collectButton.setPointerCapture(e.pointerId);e.preventDefault();start('books',e.pointerId,e.clientX,e.clientY)});
- collectButton.addEventListener('pointermove',pointerMove);
- for(const event of ['pointerup','pointercancel','lostpointercapture'])collectButton.addEventListener(event,pointerEnd);
- collectButton.addEventListener('contextmenu',e=>e.preventDefault());
+ // Players choose objects by tapping actual 3D geometry; a hold on any
+ // selected object starts the single contract for the whole chosen set.
+ const countLabel=document.createElement('small');
+ countLabel.id='eyeCount';countLabel.setAttribute('role','status');
+ host.querySelector('#eyeControls').append(countLabel);
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
  function entries(){return (opts.getScanEntries?.({excludeRoots:[eye,eyeLight,field,marks,ritual,cardHex.group,...bundleAnchors.values()]})||[])}
 
@@ -247,7 +241,7 @@ function create(opts){
  }
  function pick(e){const id=at(e);if(!id)return false;
   if(selected.has(id))selected.delete(id);else selected.add(id);
-  toast('👁 已選取 '+selected.size+' 件，長按選取物件或 🔯 三秒可收進空白卡');invalidate();return true;
+  toast(selected.size?'👁 已選取 '+selected.size+' 件；長按任一已選取物件三秒開始契約':'👁 已取消選取');invalidate();return true;
  }
  function updateMarks(){
   const t=targets(),set=new Set(t.map(o=>o.id));
@@ -300,7 +294,7 @@ function create(opts){
  function stop(){
   clearBundleHighlights();
   if(hold){clearTimeout(hold.timer);hold=null}
-  collectButton?.removeAttribute('data-holding');
+
   hex.clear();invalidate();
  }
  function clearCardCeremony(){
@@ -596,7 +590,7 @@ function create(opts){
   if(type==='bound-bundle'){selectedUntil=0;hex.clear()}else hex.update(0,performance.now());
   const token=++serial;
   hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
-  if(type==='books')collectButton.dataset.holding='true';
+
   if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision}
   invalidate();return true;
  }
@@ -641,8 +635,12 @@ function create(opts){
   if(hold?.id===e.pointerId){
    if(e.type==='pointerup'&&performance.now()-hold.started>=3000)complete(hold.token);
    else{
-    const shortTap=e.type==='pointerup'&&hold.type==='bound-bundle';
-    stop();if(shortTap)opts.onMemberTap?.(e);
+    const tapType=e.type==='pointerup'?hold.type:null;
+    stop();
+    // Short tap on a selected object deselects it instead of contracting.
+    // The 3-second hold remains the only path to confirmation.
+    if(tapType==='books')pick(e);
+    else if(tapType==='bound-bundle')opts.onMemberTap?.(e);
    }
    return true;
   }
