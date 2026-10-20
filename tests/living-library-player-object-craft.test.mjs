@@ -82,3 +82,70 @@ test('original Game Book destinations remain and both independent creation spell
  assert.match(live,/readerFrame/);
  assert.match(live,/event\.origin!==location\.origin/);
 });
+
+test('format X returns edited/downloaded card to exactly the new blank schema (11 populated fields)',()=>{
+ const store=storage();
+ const original=craft.createBlankCard(store,rand,()=> '2026-10-20T01:00:00Z');
+ assert.equal(craft.inspectCard(store,original.id).stats.filled,11,'factory baseline');
+ const image={dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:1,x:50,y:50};
+ const changed=craft.editCard(store,original.id,{title:'舊卡',description:'曾經有內容',
+  image,cardNumber:'E-01',cardType:'普通',downloadTemplate:true});
+ const before=craft.read(store);
+ const formatted=craft.formatCardToBlank(store,changed.id,changed.revision,()=> '2026-10-20T02:00:00Z');
+ assert.equal(formatted.id,original.id);
+ assert.equal(formatted.createdAt,original.createdAt);
+ assert.equal(formatted.revision,changed.revision+1);
+ assert.equal(craft.inspectCard(store,formatted.id).stats.filled,11);
+ assert.deepEqual(Object.keys(formatted).sort(),Object.keys(original).sort(),'exact default shape');
+ assert.equal(formatted.image,null);
+ assert.equal(formatted.description,'');
+ assert.equal(formatted.title,'空白卡片');
+ assert.equal(Object.hasOwn(formatted,'downloadTemplate'),false);
+ assert.deepEqual(before.objects.map(o=>o.id),craft.read(store).objects.map(o=>o.id),'format reuses ID without adding or consuming card');
+ const placed=craft.placeCard(store,formatted.id,'local.atlas.compendium',9);
+ assert.equal(craft.isBlankCopyMedium(placed),true,'GBA recognizes actual blank');
+});
+
+test('format removes stale released metadata but refuses active, orphan, permanent and unknown contracts',()=>{
+ const factory=()=>{
+  const store=storage(),base=craft.createBlankCard(store,rand);
+  const set=(fields)=>{
+   const state=craft.read(store);state.objects[0]={...base,...fields};
+   store.setItem(craft.KEY,JSON.stringify(state));return {store,card:state.objects[0]};
+  };
+  return {set};
+ };
+ const old=factory().set({title:'舊版已解除',copyInfo:{sourceId:'old'},runeBinding:{runeId:'local.rune.origin',state:'released'}});
+ const blank=craft.formatCardToBlank(old.store,old.card.id,old.card.revision);
+ assert.equal(craft.inspectCard(old.store,blank.id).stats.filled,11);
+ for(const fields of [
+  {runeBinding:{runeId:'local.rune.origin',state:'bound'}},
+  {runeBinding:{runeId:'local.rune.origin',state:'sealed'},placement:'contained',containment:{kind:'rune_contract'}},
+  {scanContract:{artifactId:'scan.bundle.local.card.suspicious',members:[]}},
+  {truthEyeContract:{artifactId:'artifact.truth-eye',form:'world'}},
+  {boundRuneId:'local.rune.origin'},
+  {permanentCard:true},
+  {permanentRegistry:{state:'registered'}},
+  {upgradeRequest:{state:'requested'}},
+  {runeBinding:{runeId:'local.rune.origin',state:'unknown'}}
+ ]){
+  const {set}=factory(),{store,card}=set({...fields,title:'被保護的卡'});
+  const saved=store.getItem(craft.KEY);
+  assert.throws(()=>craft.formatCardToBlank(store,card.id,card.revision));
+  assert.equal(store.getItem(craft.KEY),saved,'failed formatting never touches the save');
+ }
+ const {set}=factory(),{store,card}=set({title:'已更名的卡',revision:5});
+ const saved=store.getItem(craft.KEY);
+ assert.throws(()=>craft.formatCardToBlank(store,card.id,4),/版本/);
+ assert.equal(store.getItem(craft.KEY),saved);
+});
+test('format X in card creator opens a confirmation instead of only erasing the photo',async()=>{
+ const editor=await read('living-library/live/card-creation.html');
+ assert.match(editor,/id="removePhoto"[^>]+aria-label="將整張卡片格式化為真正空白卡"/);
+ assert.match(editor,/id="removePhotoOnly"[^>]+aria-label="只移除卡面圖片"/);
+ assert.match(editor,/id="formatCardDialog"/);
+ assert.match(editor,/Craft\.formatCardBlockReason\(card\)/);
+ assert.match(editor,/Craft\.formatCardToBlank\(localStorage,selectedFormat\.id,selectedFormat\.revision\)/);
+ assert.match(editor,/notify\('card-formatted',card\.id\)/);
+ assert.match(editor,/Craft\.inspectCard\(localStorage,card\.id\)\.stats\.filled/);
+});
