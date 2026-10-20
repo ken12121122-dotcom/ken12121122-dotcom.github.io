@@ -280,6 +280,9 @@ function create(opts){
   })}
   scene.updateMatrixWorld(true);
   for(const o of entries())for(const g of o.groups||[o.group])add(g,o.kind+':'+o.id);
+  // Scanner markers also represent non-mesh objects (lights, lines, particles).
+  // Reuse their stable reference so a bound marker acts on its whole contract.
+  for(const o of entries()){const key=o.kind+':'+o.id,marker=markMap.get(o.id);if(owners.has(key)&&marker?.visible)add(marker,key)}
   for(const c of floatingCards.values())add(c.group,null);
   if(eye.visible)add(eye,null);
   const found=hit(e,meshes),key=found&&keys.get(found.object);
