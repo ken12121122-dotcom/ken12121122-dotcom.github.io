@@ -110,3 +110,31 @@ test('permanent destroy control is prominent above editor form and iframe uses f
  assert.match(index,/fresh[.]searchParams[.]set[(]'v','card-destroy-visible-20261020-v2'[)]/);
  assert.match(index,/readerExternal'[)][.]href=fresh[.]toString[(][)]/);
 });
+
+test('unknown top-level save metadata survives normal card edits and recycle',()=>{
+ const s=memory(),card=C.createBlankCard(s,rand);
+ const state=C.read(s);state.futureTop={schema:'nw.future',marker:['keep']};
+ s.setItem(C.KEY,JSON.stringify(state));
+ C.editCard(s,card.id,{description:'修改說明'});
+ assert.deepEqual(C.read(s).futureTop,state.futureTop);
+ C.recycleCard(s,card.id);
+ assert.deepEqual(C.read(s).futureTop,state.futureTop);
+});
+test('incompletely registered permanent identity cannot move to an ordinary book',()=>{
+ const s=memory(),card=C.createBlankCard(s,rand),book=C.createCardBook(s,rand);
+ const state=C.read(s);state.objects.find(x=>x.id===card.id).permanentCard=true;
+ s.setItem(C.KEY,JSON.stringify(state));const before=snap(s);
+ assert.throws(()=>C.placeCard(s,card.id,book.id,0),/永久|不允許/);
+ assert.equal(snap(s),before);
+});
+test('orphan scan contract must not be moved to a book or silently recycled',()=>{
+ const s=memory(),card=C.createBlankCard(s,rand),book=C.createCardBook(s,rand);
+ const state=C.read(s);state.objects.find(x=>x.id===card.id).scanContract={
+  version:1,artifactId:'scan.bundle.'+card.id,form:'world',
+  members:[{kind:'book',id:'gaming'}]
+ };
+ s.setItem(C.KEY,JSON.stringify(state));const before=snap(s);
+ assert.throws(()=>C.placeCard(s,card.id,book.id,0),/契約|不允許/);
+ assert.throws(()=>C.recycleCard(s,card.id),/契約/);
+ assert.equal(snap(s),before);
+});
