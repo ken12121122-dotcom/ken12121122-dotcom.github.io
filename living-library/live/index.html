@@ -359,12 +359,15 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
  </div>
 </dialog>
 <dialog id="runeUnbindDialog" class="rune-bind-dialog" aria-labelledby="runeUnbindTitle">
- <h2 id="runeUnbindTitle">✧ 解除綁定術</h2>
- <p>是否取消「<strong id="runeUnbindTargetName"></strong>」與初始法陣的連結？</p>
- <small>確認後「解除契約卡」會沿著能量光線縮小，沒入初代法陣卡的卡面並從世界消失；原卡契約解除。施法卡不刪除，保存於目標卡內；初代法陣卡的原始 ID、圖片與內容保持不變。</small>
+ <h2 id="runeUnbindTitle">✧ 解除契約確認</h2>
+ <p>即將解除：<strong id="runeUnbindTargetName"></strong></p>
+ <p>原卡 ID：<code id="runeUnbindTargetId"></code></p>
+ <p>目前契約：<strong id="runeUnbindContractType"></strong></p>
+ <p id="runeUnbindMembers" style="white-space:pre-wrap;max-height:26vh;overflow-y:auto"></p>
+ <small>只有按下 ✓「確認解除契約」才會執行。原卡保留、群組解除；本次施法卡永久消耗，不保留卡片歷史。按 × 則全部保留。</small>
  <div class="rune-bind-actions">
-  <button id="runeUnbindCancel" type="button" aria-label="保留目前契約" title="取消">×</button>
-  <button id="runeUnbindConfirm" class="primary" type="button" aria-label="確認解除契約" title="確認">✓</button>
+  <button id="runeUnbindCancel" type="button" aria-label="取消解除，保留目前契約" title="取消">×</button>
+  <button id="runeUnbindConfirm" class="primary" type="button" aria-label="確認解除契約並消耗施法卡" title="確認解除契約">✓</button>
  </div>
 </dialog>
 <dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
@@ -2199,6 +2202,9 @@ if(!ContractPolicy)throw Error('Generic contract policy unavailable');
 if(!UnbindSpell||!DirectedTransfer)throw Error('Directed rune transfer modules unavailable');
 const unbindDialog=document.getElementById('runeUnbindDialog'),
  unbindName=document.getElementById('runeUnbindTargetName'),
+ unbindTargetId=document.getElementById('runeUnbindTargetId'),
+ unbindContractType=document.getElementById('runeUnbindContractType'),
+ unbindMembers=document.getElementById('runeUnbindMembers'),
  unbindProgress=document.getElementById('runeUnbindProgress');
 let spellPointerId=null,spellActivatedPointerId=null,spellOriginPoint=null,
  spellSelection=null,spellPromptTimer=null,unbindEffect=null;
@@ -2415,8 +2421,24 @@ const spellHold=RuneHold.create({
    if(!caster||!UnbindSpell.isSpellCard(caster.record))throw Error('施法卡已改變');
    spellSelection={casterId:spellId,targetId:bound.id,runeId:target.runeId,
     expectedRevision:bound.revision,spellRevision:caster.record.revision};
-   // The 3-second hold is the final confirmation; commit only once.
-   confirmSpellUnbind();
+   // Holding only selects a candidate. The confirmed target must be shown first.
+   unbindName.textContent=bound.title||'未命名契約卡';
+   unbindTargetId.textContent=bound.id;
+   const group=bound.scanContract;
+   const type=group?'掃描收納契約（'+group.form+'）':
+    bound.truthEyeContract?'真實之眼契約':
+    bound.runeBinding.runeId===RuneContract.RUNE_ID?'初始法陣契約':'一般法陣／物件契約';
+   unbindContractType.textContent=type+' · '+target.runeId;
+   if(Array.isArray(group?.members)&&group.members.length){
+    const lines=group.members.slice(0,12).map((m,i)=>{
+     const label=m.kind==='book'?(BOOKS.find(b=>b.id===m.id)?.name||m.id):m.id;
+     return (i+1)+'. '+label+' ['+m.kind+']';
+    });
+    unbindMembers.textContent='將解除 '+group.members.length+' 件物件的共同持有關係：\n'+
+     lines.join('\n')+(group.members.length>12?'\n…其餘 '+(group.members.length-12)+' 件':'');
+   }else unbindMembers.textContent='將解除這張原卡目前唯一有效的契約連結。';
+   unbindDialog.showModal();
+   toast('✧ 請先確認即將解除的原卡與群組；按 × 不會消耗施法卡');
   }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
  }
 });
@@ -2431,7 +2453,8 @@ function disposeSpellVisual(group){
  });
 }
 function confirmSpellUnbind(){
- if(!spellSelection||unbindEffect)return;
+ // A tap of the in-dialog ✓ is required for irreversible deletion.
+ if(!unbindDialog.open||!spellSelection||unbindEffect)return;
  const selection=spellSelection;
  let committed=false,visual=null;
  try{
@@ -2485,7 +2508,7 @@ function confirmSpellUnbind(){
   refreshFloatingCards();
   scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
    bindingId:selection.runeId,scanMembers:originalScanMembers,from:endpoint.clone(),now:started});
-  toast('✧ 契約立即解除，解除契約卡已永久消耗');
+  toast('✧ 已解除「'+(current.title||current.id)+'」的契約；本次施法卡永久消耗');
   syncRender();
  }catch(error){
   spellSelection=null;closeSpellPrompt();
