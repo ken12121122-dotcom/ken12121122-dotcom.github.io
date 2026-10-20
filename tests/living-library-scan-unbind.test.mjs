@@ -62,13 +62,34 @@ test('valid active contract is not migrated, and unrelated custom content is pre
  assert.equal(storage.snapshot().objects[1].cardNumber,'A-5');
  assert.equal(storage.getItem(Bundle.BACKUP_KEY),null);
 });
-test('unbinding a customized scan contract refuses mutation rather than erasing artwork or consuming spell',()=>{
+test('generic unbinding releases customized scan contract without erasing artwork or unrelated fields',()=>{
  const storage=store([makeCard('target'),makeCard('spell','解除契約')]);
  const bound=Bundle.bind(storage,{cardId:'local.card.target',revision:1,members:[ref]},[ref]);
- const state=storage.snapshot();state.objects[0].image={user:'original art'};storage.setItem(Bundle.KEY,JSON.stringify(state));
- const before=storage.raw();
- assert.throws(()=>Craft.unbindAndAbsorbSpell(storage,{runeId:bound.runeBinding.runeId,targetId:bound.id,targetRevision:bound.revision,spellId:'local.card.spell',spellRevision:1}),/自訂欄位/);
- assert.equal(storage.raw(),before);
+ const state=storage.snapshot();state.objects[0].image={user:'original art'};
+ state.objects[0].cardNumber='C-12';
+ storage.setItem(Bundle.KEY,JSON.stringify(state));
+ const result=Craft.unbindAndAbsorbSpell(storage,{runeId:bound.runeBinding.runeId,
+  targetId:bound.id,targetRevision:bound.revision,spellId:'local.card.spell',spellRevision:1});
+ assert.equal(result.target.image.user,'original art');
+ assert.equal(result.target.cardNumber,'C-12');
+ assert.equal(result.target.scanContract,undefined);
+ assert.equal(result.target.runeBinding,undefined);
+ assert.equal(result.target.title,'空白卡片');
+ assert.equal(Bundle.claims(storage).size,0);
+ assert.equal(storage.snapshot().objects.length,1);
+});
+test('customized contract title is preserved on unbind while generic ownership is fully cleared',()=>{
+ const storage=store([makeCard('target'),makeCard('spell','解除契約')]);
+ const bound=Bundle.bind(storage,{cardId:'local.card.target',revision:1,members:[ref]},[ref]);
+ const state=storage.snapshot();state.objects[0].title='我的世界';
+ state.objects[0].description='玩家自行設計';storage.setItem(Bundle.KEY,JSON.stringify(state));
+ const result=Craft.unbindAndAbsorbSpell(storage,{runeId:bound.runeBinding.runeId,
+  targetId:bound.id,targetRevision:bound.revision,spellId:'local.card.spell',spellRevision:1});
+ assert.equal(result.target.title,'我的世界');
+ assert.equal(result.target.description,'玩家自行設計');
+ assert.equal(result.target.scanContract,undefined);
+ assert.equal(result.target.runeBinding,undefined);
+ assert.deepEqual([...Bundle.claims(storage)],[]);
 });
 test('invalid legacy corrupted binding metadata never automatically gets deleted',()=>{
  const storage=store([scanOrphan('odd',{scanContract:{version:1,artifactId:'scan.bundle.other',form:'world',members:[ref]}})]);
