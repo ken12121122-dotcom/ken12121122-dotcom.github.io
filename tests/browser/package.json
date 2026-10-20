@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "node atlas-scene.cjs && node truth-eye-manifest.cjs && node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs && node atlas-fallback.cjs && node compendium-card.cjs && node scan-bundle.cjs"
+    "test": "node atlas-scene.cjs && node truth-eye-manifest.cjs && node living-library-p0.cjs && node object-backup.cjs && node object-outbox.cjs && node atlas-fallback.cjs && node compendium-card.cjs && node scan-bundle.cjs && node card-lifecycle.cjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",
@@ -11,4 +11,3 @@
     "three": "0.185.0"
   }
 }
-
