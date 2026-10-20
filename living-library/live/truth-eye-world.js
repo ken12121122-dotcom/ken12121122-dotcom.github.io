@@ -71,7 +71,7 @@ function create(opts){
  let fan=new T.Mesh(new T.CircleGeometry(1,72),new T.MeshBasicMaterial({color:0x5ddce0,opacity:.085,transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending}));
  fan.rotation.x=-Math.PI/2;fan.position.y=.018;field.add(fan);
  const marks=new T.Group();marks.userData.scanProtected=true;scene.add(marks);
- const markMap=new Map(),selected=new Set(),caster=new T.Raycaster(),mouse=new T.Vector2(),tmp=new T.Vector3();
+ const markMap=new Map(),caster=new T.Raycaster(),mouse=new T.Vector2(),tmp=new T.Vector3();
  // The SAME 3D hexagram animation is reused by the original ground rune.
  // For the Eye it faces the camera and floats around the actual 3D artifact.
  const Hexagram=root.LivingContractHexagram;
@@ -100,8 +100,7 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
- // Every runtime-discovered 3D object is directly holdable. A short tap is
- // optional for assembling a multi-object set, never required to contract.
+ // Every runtime-discovered 3D object is directly holdable. Scanned objects are already selected; no separate tap is ever needed.
  // Transparent text readout, not an interactive scan button.
  const readout=document.createElement('aside');
  readout.id='eyeScanReadout';readout.className='truthEyeScanReadout';
@@ -112,7 +111,7 @@ function create(opts){
  scanNames.setAttribute('aria-label','掃描物件名稱');
  readout.append(countLabel,scanNames);host.append(readout);
  const readoutStyle=document.createElement('style');
- readoutStyle.textContent='.truthEyeScanReadout{margin-top:12px;text-align:right;color:#f1e1b9;background:none!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 5px #040710,0 1px 10px #040710;font:12px/1.55 system-ui,sans-serif}.truthEyeScanCount{font-weight:700}.truthEyeScanReadout ol{list-style:none;margin:4px 0 0;padding:0;max-height:min(42vh,420px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;touch-action:pan-y}.truthEyeScanReadout li{padding:1px 0;overflow-wrap:anywhere}.truthEyeScanReadout li[data-selected="true"]{color:#91f1dc;font-weight:700}.truthEyeScanReadout li[data-selected="true"]::before{content:"✓  "}.truthEyeScanReadout li[data-selected="false"]::before{content:"·  "}.truthEyeScanReadout ol:empty::after{content:"尚未偵測到物件";opacity:.72}@media(max-width:650px){.truthEyeScanReadout{font-size:11px}.truthEyeScanReadout ol{max-height:35vh}}';
+ readoutStyle.textContent='.truthEyeScanReadout{margin-top:12px;text-align:right;color:#f1e1b9;background:none!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 5px #040710,0 1px 10px #040710;font:12px/1.55 system-ui,sans-serif}.truthEyeScanCount{font-weight:700}.truthEyeScanReadout ol{list-style:none;margin:4px 0 0;padding:0;max-height:min(42vh,420px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;touch-action:pan-y}.truthEyeScanReadout li{padding:1px 0;overflow-wrap:anywhere}.truthEyeScanReadout li::before{content:"·  "}.truthEyeScanReadout ol:empty::after{content:"尚未偵測到物件";opacity:.72}@media(max-width:650px){.truthEyeScanReadout{font-size:11px}.truthEyeScanReadout ol{max-height:35vh}}';
  document.head.append(readoutStyle);
  let previousScanDisplay='';
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
@@ -167,7 +166,7 @@ function create(opts){
  function bundlePrompt(kind,record,members){
   if(busy())return false;
   pending={kind,cardId:record.id,cardRevision:record.revision,members};
-  confirmLabel.textContent=kind==='bundle-bind'?'將掃描選取的 '+members.length+' 件物件收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-materialize'?'將這張收納卡的 '+record.scanContract.members.length+' 件物件實體化？\n契約保持有效，以後仍可整組收回。':'將 '+record.scanContract.members.length+' 件世界物件整組收回原卡？\n契約保持有效；只有解除契約卡能真正解除。';
+  confirmLabel.textContent=kind==='bundle-bind'?'將本次掃描到的 '+members.length+' 件物件（書本 '+members.filter(r=>r.kind==='book').length+'、其他物件 '+members.filter(r=>r.kind!=='book').length+'）全數收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-materialize'?'將這張收納卡的 '+record.scanContract.members.length+' 件物件實體化？\n契約保持有效，以後仍可整組收回。':'將 '+record.scanContract.members.length+' 件世界物件整組收回原卡？\n契約保持有效；只有解除契約卡能真正解除。';
   dialog.showModal();invalidate();return true;
  }
  function startBundleTransfer(request){
@@ -210,7 +209,7 @@ function create(opts){
    else if(job.kind==='bundle-materialize')B.setForm(storage,job.cardId,job.cardRevision,'world',available);
    else if(job.kind==='bundle-cardify')B.setForm(storage,job.cardId,job.cardRevision,'card',available);
    else throw Error('未知收納操作，原卡保持不變');
-   selected.clear();refreshCards();toast(job.kind==='bundle-materialize'?'✦ 物件已實體化；契約保持有效':job.kind==='bundle-cardify'?'✦ 整組物件已回原卡；契約保持有效':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
+   refreshCards();toast(job.kind==='bundle-materialize'?'✦ 物件已實體化；契約保持有效':job.kind==='bundle-cardify'?'✦ 整組物件已回原卡；契約保持有效':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
   }catch(e){toast('收納未寫入，原物件保留：'+e.message)}
   for(const snap of job.snapshots){snap.group.position.copy(snap.position);snap.group.scale.copy(snap.scale);snap.group.visible=job.releasing||snap.visible}
   bundleTransfer=null;refreshPacked();applyPacked();invalidate();
@@ -268,11 +267,9 @@ function create(opts){
   for(const o of targets()){for(const g of o.groups||[o.group])g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
  }
- function pick(e){const id=at(e);if(!id)return false;
-  if(selected.has(id))selected.delete(id);else selected.add(id);
-   updateMarks();
-  toast(selected.size?'👁 已標記 '+selected.size+' 件；任一掃描到的物件可直接長按三秒締約':'👁 已取消標記；長按掃描物件即可締約');invalidate();return true;
- }
+ // Scanner does not intercept short taps or require manual selection.
+ function pick(){return false}
+ function scannedTargets(){return hold?.type==='books'?hold.scanTargets:targets()}
  // Names are descriptions of live discoveries, never scan allowlist rules.
  function scanName(o){
   if(o.kind==='book')return String(o.b?.name||o.b?.title||o.id).slice(0,80);
@@ -290,28 +287,28 @@ function create(opts){
   return type+' · '+String(id).replace(/^scene\./,'').slice(0,26);
  }
  function renderScanNames(objects){
-  const display=objects.map(o=>[o.id,scanName(o),selected.has(o.id)]),key=JSON.stringify(display);
+  const display=objects.map(o=>[o.kind,o.id,scanName(o)]),key=JSON.stringify(display);
   if(key===previousScanDisplay)return;
   previousScanDisplay=key;
-  countLabel.textContent='掃描 '+objects.length+' 件｜已選 '+selected.size+' 件';
+  const books=objects.filter(o=>o.kind==='book').length;
+  countLabel.textContent='掃描 '+objects.length+' 件｜書本 '+books+'／其他物件 '+(objects.length-books);
   const fragment=document.createDocumentFragment();
   for(let i=0;i<objects.length;i++){
    const li=document.createElement('li');
-   li.textContent=display[i][1];li.dataset.scanId=objects[i].id;
-   li.dataset.selected=String(display[i][2]);fragment.append(li);
+   li.textContent=display[i][2];li.dataset.scanId=objects[i].id;
+   li.dataset.scanKind=objects[i].kind;fragment.append(li);
   }
   scanNames.replaceChildren(fragment);
  }
  function updateMarks(){
-  const t=targets(),set=new Set(t.map(o=>o.id));
+  const t=scannedTargets(),set=new Set(t.map(o=>o.id));
   for(const [id,g] of markMap)g.visible=set.has(id);
   for(const o of t){let m=markMap.get(o.id);
    if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);const volume=new T.Mesh(new T.SphereGeometry(.45,10,8),new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));m.add(volume);
     const j=new T.Mesh(new T.OctahedronGeometry(.10),amber.clone());j.position.y=.72;m.add(j);marks.add(m);markMap.set(o.id,m);}
    if(o.anchor)tmp.copy(o.anchor);else o.group.getWorldPosition(tmp);m.position.copy(tmp);m.position.y+=.7;
-   m.scale.setScalar(selected.has(o.id)?1.65:1);
+   m.scale.setScalar(1);
   }
-  for(const id of [...selected])if(!set.has(id))selected.delete(id);
   renderScanNames(t);
  }
  function clearBundleHighlights(){
@@ -526,8 +523,11 @@ function create(opts){
    selectedUntil=0;bundlePrompt('bundle-cardify',record);return;
   }
   if(type==='books'){
-   try{const ids=new Set(gesture.scanIds||[]),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
-    if(!members.length||members.length!==ids.size)throw Error('選取物件已離開掃描範圍，請重新掃描');
+   try{const scanned=gesture.scanTargets||[],current=targets();
+    const expected=new Set(scanned.map(o=>o.kind+':'+o.id)),now=new Set(current.map(o=>o.kind+':'+o.id));
+    if(!expected.size||expected.size!==scanned.length||now.size!==expected.size||[...expected].some(k=>!now.has(k)))
+     throw Error('掃描物件或範圍已變動，請重新掃描；不會加入其他物件');
+    const members=scanned.map(o=>({kind:o.kind,id:o.id}));
     const id=B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries());
     const record=craft.listCards(storage).find(c=>c.id===id);bundlePrompt('bundle-bind',record,members);
    }catch(e){toast(e.message)}return;
@@ -632,13 +632,12 @@ function create(opts){
   if(hold||pending||transfer||bundleTransfer||dialog.open)return false;
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
-  // Snapshot the held object AND any optional taps. Never mutate user selection
-  // on pointerdown, and never contract every object just because it was scanned.
-  const scanIds=type==='books'?new Set([...selected,scanObjectId].filter(Boolean)):null;
+  // Scan targets displayed now are the ENTIRE implicit selection.
+  const scanTargets=type==='books'?targets():null;
   if(type==='books'){
-   const found=targets(),ids=new Set(found.map(o=>o.id));
-   if(!scanObjectId||!ids.has(scanObjectId)||[...scanIds].some(id=>!ids.has(id)))return false;
-   for(const o of found)if(scanIds.has(o.id))box.expandByObject(o.group);
+   if(!scanObjectId||!scanTargets.some(o=>o.id===scanObjectId))return false;
+   for(const o of scanTargets)for(const g of o.groups||[o.group])box.expandByObject(g);
+   renderScanNames(scanTargets);
   }
   if(contractRecord)for(const ref of contractRecord.scanContract.members){const o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);if(o)for(const g of o.groups||[o.group])box.expandByObject(g)}
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
@@ -655,7 +654,7 @@ function create(opts){
   }
   if(type==='bound-bundle'){selectedUntil=0;hex.clear()}else hex.update(0,performance.now());
   const token=++serial;
-  hold={token,type,id,x,y,scanIds:scanIds?[...scanIds]:null,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
+  hold={token,type,id,x,y,scanObjectId,scanTargets,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
 
   if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision}
   invalidate();return true;
@@ -686,8 +685,7 @@ function create(opts){
   // floor behind the character. Keep the same generous joystick hit radius.
   if(hit(e,[keeper])||caster.ray.distanceToPoint(new T.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05)return false;
   const id=at(e);
-  // Direct long-press on any live discovered object (no first tap).
-  // Previously tapped objects, if any, remain included for a grouped contract.
+  // Hold any scanned object: all currently scanned objects belong to this one contract.
   if(id&&start('books',e.pointerId,e.clientX,e.clientY,null,id)){
    heldPointers.add(e.pointerId);
    return true;
@@ -714,9 +712,8 @@ function create(opts){
    else{
     const tapType=e.type==='pointerup'?hold.type:null;
     stop();
-    // A short tap is optional multi-select only; a 3s hold starts a contract.
-    if(tapType==='books')pick(e);
-    else if(tapType==='bound-bundle')opts.onMemberTap?.(e);
+    // Short tap never changes scan results.
+    if(tapType==='bound-bundle')opts.onMemberTap?.(e);
    }
    return true;
   }
@@ -830,7 +827,7 @@ function create(opts){
  function refreshAfterUnbind(){
   const before=card?.id;
   state();
-  if(before&&!card){selected.clear();stop();cancelPrompt();}
+  if(before&&!card){stop();cancelPrompt();}
   invalidate();
  }
  // Generic contract release event: refresh this artifact only when its
@@ -839,7 +836,7 @@ function create(opts){
   if(e.bindingId==='scan.bundle.'+e.cardId&&Array.isArray(e.scanMembers)){
    // The old owner no longer exists after the atomic unbind. Remove cached
    // ownership AND world anchors immediately, not on a future scanner tick.
-   selected.clear();stop();cancelPrompt();applyPacked();
+   stop();cancelPrompt();applyPacked();
    // A released contract has NO group ownership: never replay the old group's
    // shelf-return callback after unbinding. Recompute scan targets instead.
    updateMarks();invalidate();
@@ -854,7 +851,7 @@ function create(opts){
  }
  apply();state();
  return Object.freeze({tick,active,applyPacked,isPacked,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
-  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},ritualVisible:ritual.visible,hold:hold?{type:hold.type,phase:hold.ceremonyStarted?'animation':'holding',cardId:hold.cardId,progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visibleGroups:(o.groups||[o.group]).filter(g=>g.visible).length,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
+  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:scannedTargets().map(o=>o.id),config:{...cfg},ritualVisible:ritual.visible,hold:hold?{type:hold.type,phase:hold.ceremonyStarted?'animation':'holding',cardId:hold.cardId,targetId:hold.scanObjectId,scanIds:hold.scanTargets?.map(o=>o.id)||[],progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visibleGroups:(o.groups||[o.group]).filter(g=>g.visible).length,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:scannedTargets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
