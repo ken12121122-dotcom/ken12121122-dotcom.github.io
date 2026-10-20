@@ -5,12 +5,14 @@ on:
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
+      - 'tests/browser/**'
       - '.github/workflows/living-library-ci.yml'
   push:
     branches: [main]
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
+      - 'tests/browser/**'
       - '.github/workflows/living-library-ci.yml'
   workflow_dispatch:
 
