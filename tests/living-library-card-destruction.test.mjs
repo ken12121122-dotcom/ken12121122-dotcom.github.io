@@ -96,3 +96,17 @@ test('Card Creation Spell exposes confirmed destroy, recycle-bin destroy, offlin
  assert.match(outbox,/forget[(]ids[)]/);
  assert.match(outbox,/objectStore[(]'pending'[)][.]delete/);
 });
+
+test('permanent destroy control is prominent above editor form and iframe uses fresh version',async()=>{
+ const html=await readFile(new URL('../living-library/live/card-creation.html',import.meta.url),'utf8');
+ const index=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ const header=html.indexOf('<strong>空白圖鑑卡</strong>');
+ const button=html.indexOf('id="destroyCard"');
+ const form=html.indexOf('<form id="editForm">');
+ assert.ok(header>=0&&button>header&&form>button,'permanent destroy button must appear BEFORE the long editor fields');
+ assert.match(html,/id="destroyHint"/);
+ assert.match(html,/🗑 永久銷毀卡片/);
+ assert.match(html,/erase[.]textContent='🗑 銷毀'/);
+ assert.match(index,/fresh[.]searchParams[.]set[(]'v','card-destroy-visible-20261020-v2'[)]/);
+ assert.match(index,/readerExternal'[)][.]href=fresh[.]toString[(][)]/);
+});
