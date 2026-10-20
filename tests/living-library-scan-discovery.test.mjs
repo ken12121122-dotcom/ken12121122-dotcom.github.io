@@ -73,11 +73,13 @@ test('scanner has no extra action buttons and names/count render as unframed liv
  assert.match(source,/id='eyeScanNames'/);
  assert.match(source,/background:none!important;border:0!important/);
  assert.match(source,/scanName\(o\)/);
- assert.match(source,/if\(id&&start\('books',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/);
- assert.match(source,/const scanTargets=type==='books'\?targets\(\):null/);
+ assert.match(source,/if\(id&&start\('scan',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/);
+ assert.match(source,/const scanTargets=type==='scan'\?targets\(\):null/);
  assert.match(source,/const members=scanned\.map\(o=>\(\{kind:o\.kind,id:o\.id\}\)\)/);
  assert.match(source,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/);
  assert.doesNotMatch(source,/selected=new Set\(|dataset\.selected|已選 |已標記/);
+ assert.match(source,/countLabel\.textContent='掃描 '\+objects\.length\+' 件物件'/);
+ assert.doesNotMatch(source,/書本 '\+books|其他物件|dataset\.scanKind/);
  assert.match(source,/renderScanNames\(t\)/);
 });
 test('no preset book/library selection UI or scope filter survives in v2 source',async()=>{
