@@ -112,9 +112,10 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy,null,{timeout:15000});
   await page.waitForTimeout(550);
   assert.equal((await inspect()).packed.length,0,'card releases same world object');
-  assert.ok((await inspect()).scanned.some(x=>x.id===chosenId));
-  assert.ok((await readNames()).some(x=>x.id===chosenId),'its name returns in scan readout');
-  report.checks.push('reload, original-card materialization and restored object name/count remain correct');
+  assert.ok((await inspect()).objects.some(x=>x.id===chosenId&&x.visible),'materialized object is physically present');
+  assert.ok(!(await inspect()).scanned.some(x=>x.id===chosenId),'still-bound object cannot be claimed for another scan');
+  assert.ok(!(await readNames()).some(x=>x.id===chosenId),'bound world-form object is not an independent scanner target');
+  report.checks.push('reload, materialization restores visible world object while keeping its owner');
 
   // Materialization is a form switch, NEVER a contract release.
   const restoredViaGesture=await page.evaluate(()=>{
