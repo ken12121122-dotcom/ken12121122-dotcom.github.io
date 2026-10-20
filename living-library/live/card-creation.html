@@ -182,13 +182,18 @@ button:disabled{opacity:.45}
 </main>
 <script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
 <script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
-<script src="./object-craft.js?v=card-format-destroy-20261020"></script>
+<script src="./unbind-card-art.js?v=unbind-selected-artwork-20261020"></script>
+<script src="./object-craft.js?v=unbind-selected-artwork-20261020"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js?v=card-destroy-20261020"></script>
 <script>
 (function(){
  'use strict';
  const Craft=window.LivingObjectCraft;
+ // Fill only missing photographs of still-existing 解除契約 cards;
+ // an existing saved photograph always wins over the system default.
+ try{Craft.restoreMissingUnbindImages(localStorage)}
+ catch(error){console.warn('解除契約卡照片未修復，原始存檔保持：',error)}
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
  let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null,pendingDestroy=null,retrieval=null;
