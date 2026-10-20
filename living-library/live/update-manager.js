@@ -8,7 +8,7 @@ const PENDING_KEY='living-library-public-reconnect-pending-v1';
 const VIEW_KEY='living-library-workbench-v1';
 const WATCH_FILES=Object.freeze([
  'index.html','public-catalog.js','book-placement.js','avatar-movement.js',
- 'render-capability.js','gen2-editor.js','truth-eye-world.js','truth-eye-contract.js','contract-hexagram.js','contract-policy.js','rune-unbind-spell.js','gpt-skills.html','gpt-library-bridge.html'
+ 'render-capability.js','gen2-editor.js','truth-eye-world.js','scene-scan-discovery.js','scan-bundle.js','truth-eye-contract.js','contract-hexagram.js','contract-policy.js','rune-unbind-spell.js','gpt-skills.html','gpt-library-bridge.html'
 ]);
 function stableCard(c){return {id:c.id,title:c.title||'',desc:c.desc||'',url:c.url||'',kind:c.kind||'',guild:c.guild||'',number:c.number||''};}
 function buttonSnapshot(buttons){return Array.from(buttons||[]).filter(b=>b.id&&!b.id.startsWith('llUpdate')).map(b=>({id:b.id,text:(b.textContent||'').trim().replace(/\s+/g,' ').slice(0,100)})).sort((a,b)=>a.id.localeCompare(b.id));}
