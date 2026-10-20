@@ -211,7 +211,7 @@ test('world UI uses long hold followed by an explicit irreversible-unbind confir
  assert.match(html,/rune-unbind-spell\.js/);
  assert.match(html,/function boundObjectInScene\(cardId\)/);
  assert.match(html,/record\.worldContractTarget=true/);
- assert.match(html,/getRuneBoundCard\(localStorage,target\.runeId\)/);
+ assert.match(html,/eligibleUnbindContracts\(spellId\)/);\n assert.match(html,/id="runeUnbindTargetPicker"/);\n assert.match(html,/chooseUnbindContract\(\)/);
  assert.match(html,/getRuneBoundCard\(localStorage,selection\.runeId\)/);
  assert.match(html,/runeId:selection\.runeId,targetId:selection\.targetId/);
  assert.match(html,/scene\.dispatchEvent\(\{type:'living-contract-unbound'/);
