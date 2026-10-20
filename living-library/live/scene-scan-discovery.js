@@ -24,7 +24,9 @@
  }
  function sceneRoot(node,scene){while(node&&node.parent&&node.parent!==scene)node=node.parent;return node?.parent===scene?node:null}
  function physical(node){
-  if(!node||node.visible===false||node.userData?.scanProtected===true)return false;
+  // Contracted objects are hidden for presentation, but must remain
+  // resolvable by their original IDs for reversible materialization.
+  if(!node||(node.visible===false&&node.userData?.scanHidden!==true)||node.userData?.scanProtected===true)return false;
   // Invisible templates and helper geometries are not physical scan targets.
   if(node.isMesh&&node.material?.visible!==false&&node.material?.colorWrite!==false)return true;
   for(const child of node.children||[])if(physical(child))return true;
