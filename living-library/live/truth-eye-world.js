@@ -166,7 +166,7 @@ function create(opts){
  function bundlePrompt(kind,record,members){
   if(busy())return false;
   pending={kind,cardId:record.id,cardRevision:record.revision,members};
-  confirmLabel.textContent=kind==='bundle-bind'?'將本次掃描到的 '+members.length+' 件物件（書本 '+members.filter(r=>r.kind==='book').length+'、其他物件 '+members.filter(r=>r.kind!=='book').length+'）全數收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-materialize'?'將這張收納卡的 '+record.scanContract.members.length+' 件物件實體化？\n契約保持有效，以後仍可整組收回。':'將 '+record.scanContract.members.length+' 件世界物件整組收回原卡？\n契約保持有效；只有解除契約卡能真正解除。';
+  confirmLabel.textContent=kind==='bundle-bind'?'將本次掃描到的 '+members.length+' 件物件全數收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-materialize'?'將這張收納卡的 '+record.scanContract.members.length+' 件物件實體化？\n契約保持有效，以後仍可整組收回。':'將 '+record.scanContract.members.length+' 件世界物件整組收回原卡？\n契約保持有效；只有解除契約卡能真正解除。';
   dialog.showModal();invalidate();return true;
  }
  function startBundleTransfer(request){
@@ -280,11 +280,11 @@ function create(opts){
  }
  // Scanner does not intercept short taps or require manual selection.
  function pick(){return false}
- function scannedTargets(){return hold?.type==='books'?hold.scanTargets:targets()}
+ function scannedTargets(){return hold?.type==='scan'?hold.scanTargets:targets()}
  // Names are descriptions of live discoveries, never scan allowlist rules.
  function scanName(o){
-  if(o.kind==='book')return String(o.b?.name||o.b?.title||o.id).slice(0,80);
-  const provided=o.group?.userData?.scanName||o.group?.userData?.displayName;
+  // Names come from any live object, independent of its original authoring system.
+  const provided=o.group?.userData?.scanName||o.group?.userData?.displayName||o.b?.name||o.b?.title;
   if(typeof provided==='string'&&provided.trim())return provided.trim().slice(0,80);
   const id=o.id||'',m=/^scene\.(shelf|pillar|lamp)\.(\d+)$/.exec(id);
   if(m)return ({shelf:'書架',pillar:'石柱',lamp:'吊燈'}[m[1]])+' '+(Number(m[2])+1);
@@ -298,16 +298,14 @@ function create(opts){
   return type+' · '+String(id).replace(/^scene\./,'').slice(0,26);
  }
  function renderScanNames(objects){
-  const display=objects.map(o=>[o.kind,o.id,scanName(o)]),key=JSON.stringify(display);
+  const display=objects.map(o=>[o.id,scanName(o)]),key=JSON.stringify(display);
   if(key===previousScanDisplay)return;
   previousScanDisplay=key;
-  const books=objects.filter(o=>o.kind==='book').length;
-  countLabel.textContent='掃描 '+objects.length+' 件｜書本 '+books+'／其他物件 '+(objects.length-books);
+  countLabel.textContent='掃描 '+objects.length+' 件物件';
   const fragment=document.createDocumentFragment();
   for(let i=0;i<objects.length;i++){
    const li=document.createElement('li');
-   li.textContent=display[i][2];li.dataset.scanId=objects[i].id;
-   li.dataset.scanKind=objects[i].kind;fragment.append(li);
+   li.textContent=display[i][1];li.dataset.scanId=objects[i].id;fragment.append(li);
   }
   scanNames.replaceChildren(fragment);
  }
@@ -533,7 +531,7 @@ function create(opts){
    }
    selectedUntil=0;bundlePrompt('bundle-cardify',record);return;
   }
-  if(type==='books'){
+  if(type==='scan'){
    try{const scanned=gesture.scanTargets||[],current=targets();
     const expected=new Set(scanned.map(o=>o.kind+':'+o.id)),now=new Set(current.map(o=>o.kind+':'+o.id));
     if(!expected.size||expected.size!==scanned.length||now.size!==expected.size||[...expected].some(k=>!now.has(k)))
@@ -644,8 +642,8 @@ function create(opts){
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
   // Scan targets displayed now are the ENTIRE implicit selection.
-  const scanTargets=type==='books'?targets():null;
-  if(type==='books'){
+  const scanTargets=type==='scan'?targets():null;
+  if(type==='scan'){
    if(!scanObjectId||!scanTargets.some(o=>o.id===scanObjectId))return false;
    for(const o of scanTargets)for(const g of o.groups||[o.group])box.expandByObject(g);
    renderScanNames(scanTargets);
@@ -653,9 +651,9 @@ function create(opts){
   if(contractRecord)for(const ref of contractRecord.scanContract.members){const o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);if(o)for(const g of o.groups||[o.group])box.expandByObject(g)}
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
   const size=box.isEmpty()?new T.Vector3(2,0,2):box.getSize(new T.Vector3());
-  const radius=(type==='books'||type==='bound-bundle')?Math.max(1.2,Math.hypot(size.x,size.z)*.62):1.65;
+  const radius=(type==='scan'||type==='bound-bundle')?Math.max(1.2,Math.hypot(size.x,size.z)*.62):1.65;
   hex.setRadius(radius);
-  if(type==='books'||type==='bound-bundle'){
+  if(type==='scan'||type==='bound-bundle'){
    ritual.position.set(center.x,.43,center.z);
    ritual.rotation.set(-Math.PI/2,0,0);
   }else{
@@ -697,7 +695,7 @@ function create(opts){
   if(hit(e,[keeper])||caster.ray.distanceToPoint(new T.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05)return false;
   const id=at(e);
   // Hold any scanned object: all currently scanned objects belong to this one contract.
-  if(id&&start('books',e.pointerId,e.clientX,e.clientY,null,id)){
+  if(id&&start('scan',e.pointerId,e.clientX,e.clientY,null,id)){
    heldPointers.add(e.pointerId);
    return true;
   }
@@ -708,7 +706,7 @@ function create(opts){
   if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
     (e.pointerType==='touch'||e.pointerType==='pen'?26:15)){
    const origin=hold;stop();
-   if(origin.type==='bound-bundle'||origin.type==='books'){
+   if(origin.type==='bound-bundle'||origin.type==='scan'){
     // Yield camera dragging back to the game's normal pointer workflow on
     // movement. A direct scan hold must never trap scene navigation.
     heldPointers.delete(e.pointerId);opts.onMemberDrag?.(e,{x:origin.x,y:origin.y});return false;
@@ -758,7 +756,7 @@ function create(opts){
   }
   if(hold){
    const p=hold.ceremonyStarted?clamp((now-hold.ceremonyStarted)/900,0,1):clamp((now-hold.started)/3000,0,1);
-   if(hold.type!=='books'&&hold.type!=='bound-bundle'){
+   if(hold.type!=='scan'&&hold.type!=='bound-bundle'){
     eye.getWorldPosition(ritual.position);
     ritual.quaternion.copy(camera.quaternion);
    }
