@@ -80,8 +80,10 @@ test('unbound→sealed→cardified→unbound is a consistent roundtrip with cons
  assert.equal(db.objects().length,1,'spent spell is not archived');
  assert.equal(C.getRuneBoundCard(db),null);
  assert.equal(C.floatingCards(db).length,1);
- // After using the consume spell, the original may be bound again.
- const sealedAgain=C.sealRuneCard(db,C.ORIGIN_RUNE,effect.target.id,effect.target.revision);
+ // An unbound original is a genuinely blank carrier; explicitly name it again.
+ assert.equal(effect.target.title,'空白卡片');
+ const named=C.editCard(db,effect.target.id,{title:'再次命名的法陣卡'});
+ const sealedAgain=C.sealRuneCard(db,C.ORIGIN_RUNE,effect.target.id,named.revision);
  assert.equal(sealedAgain.runeBinding.state,'sealed');
 });
 test('stale revision, duplicate floor rune holder, or wrong materialization phase never mutate data',()=>{

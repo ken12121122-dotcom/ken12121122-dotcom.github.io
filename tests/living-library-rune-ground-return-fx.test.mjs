@@ -53,7 +53,8 @@ test('visual return only begins AFTER atomic contract-unbind success; animation 
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  const update=html.slice(html.indexOf('function updateSpellEffect(now){'),html.indexOf('// RUNE-06:'));
  assert.ok(update.length>2000);
- const cast=html.slice(html.indexOf('function confirmSpellUnbind(){'),html.indexOf("document.getElementById('runeUnbindConfirm').addEventListener"));
+ const start=html.indexOf('function confirmSpellUnbind(){');
+ const cast=html.slice(start,html.indexOf("document.getElementById('runeUnbindConfirm').addEventListener",start));
  const commit=cast.indexOf('unbindAndAbsorbSpell(localStorage');
  const refresh=cast.indexOf('refreshFloatingCards();',commit);
  const animate=cast.indexOf("scene.dispatchEvent({type:'living-contract-unbound'",refresh);

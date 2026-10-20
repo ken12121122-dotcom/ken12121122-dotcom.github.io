@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-20.unbind-selected-artwork.1">
+<meta name="living-library-release" content="2026-10-20.generic-unbind-empty-card.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -1864,6 +1864,14 @@ const truthEye=window.LivingTruthEyeWorld.create({
  THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
+ // Presentation adapters only: all scanned objects use the SAME generic
+ // contract. Neither binding nor release summons a book as a side-effect.
+ onBundleStored(members){
+  for(const ref of members)if(ref.kind==='book')atlasRuntime.restoreScannedToShelf(ref.id);
+ },
+ onBundleReleased(members){
+  for(const ref of members)if(ref.kind==='book')atlasRuntime.restoreScannedToShelf(ref.id);
+ },
  onBundleRestored(members,ownerCardId){
    // The materialization callback must not outlive its ACTIVE world-form owner.
    // Historical/released scan groups must NEVER relocate books.
@@ -2548,7 +2556,7 @@ function confirmSpellUnbind(){
    target?.group?.visible?target.group.getWorldPosition(new THREE.Vector3()):
    origin.clone(); // Recovery path for a legacy contract without a visible world anchor.
   const started=performance.now(),duration=preferReduced?380:1300;
-  const plan=DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
+  const plan=DirectedTransfer.normalize({sourceId:caster.id,targetId:target?.id||selection.targetId,
    from:{x:origin.x,y:origin.y,z:origin.z},
    to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
    startedAt:started,duration,initialScale:caster.group.scale.x});

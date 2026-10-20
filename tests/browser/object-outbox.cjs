@@ -49,7 +49,9 @@ async function main(){
   proof.checks.push({case:'pending write failure rolls back version ledger atomically; same revision can retry without source loss',result:'PASS'});
   const changed=await page.evaluate(async()=>{
    const raw=localStorage.getItem(C.KEY);let reads=0,code;
-   try{await queue.capture({getItem:()=>++reads===1?raw:null})}catch(e){code=e.code}
+   // Destruction-guard now reads the source once before exportBackup,
+   // then the snapshot read must see the original until final revalidation.
+   try{await queue.capture({getItem:()=>++reads<=2?raw:null})}catch(e){code=e.code}
    const prior=await queue.pending();const absent=await queue.capture({getItem:()=>null});
    return {code,absent,before:prior,after:await queue.pending()};
   });

@@ -80,8 +80,10 @@ test('unbinding Truth Eye is atomic, deletes the spell, and does not unbind orig
  assert.equal(result.target.revision,4);
  assert.equal(result.target.runeBinding,undefined);
  assert.equal(result.target.truthEyeContract,undefined);
- assert.equal(result.target.cardNumber,'EYE-1');
- assert.equal(result.target.description,'使用者畫的眼睛');
+ assert.equal(result.target.title,'空白卡片');
+ assert.equal(result.target.cardNumber,'');
+ assert.equal(result.target.description,'');
+ assert.deepEqual(db.snapshot().unboundCarrierBackups[eye.id].card,eye);
  assert.equal(result.spellId,cast.id);assert.equal(result.consumed,true);
  assert.equal(db.snapshot().objects.length,2,'spent spell is erased');
  assert.deepEqual(db.snapshot().objects.find(x=>x.id===origin.id),origin,
@@ -130,9 +132,11 @@ test('future brand-new object IDs are detected automatically without unbind sour
    targetRevision:target.revision,spellId:'local.card.spell',spellRevision:2});
   assert.equal(out.target.runeBinding,undefined);
   assert.equal(out.target.customContract,undefined);
-  assert.equal(out.target.description,target.description);
-  assert.deepEqual(out.target.image,target.image);
-  assert.equal(out.target.cardNumber,target.cardNumber);
+  assert.equal(out.target.title,'空白卡片');
+  assert.equal(out.target.description,'');
+  assert.equal(out.target.image,null);
+  assert.equal(out.target.cardNumber,'');
+  assert.deepEqual(state.snapshot().unboundCarrierBackups[target.id].card,target);
   assert.equal(out.target.id,target.id);
   assert.equal(out.spellId,'local.card.spell');
   assert.equal(state.snapshot().objects.length,1);

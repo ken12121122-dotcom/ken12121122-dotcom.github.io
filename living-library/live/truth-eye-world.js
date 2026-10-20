@@ -209,6 +209,8 @@ function create(opts){
    else if(job.kind==='bundle-materialize')B.setForm(storage,job.cardId,job.cardRevision,'world',available);
    else if(job.kind==='bundle-cardify')B.setForm(storage,job.cardId,job.cardRevision,'card',available);
    else throw Error('未知收納操作，原卡保持不變');
+   if(job.kind==='bundle-bind'||job.kind==='bundle-cardify')
+    opts.onBundleStored?.(job.members);
    refreshCards();toast(job.kind==='bundle-materialize'?'✦ 物件已實體化；契約保持有效':job.kind==='bundle-cardify'?'✦ 整組物件已回原卡；契約保持有效':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
   }catch(e){toast('收納未寫入，原物件保留：'+e.message)}
   for(const snap of job.snapshots){snap.group.position.copy(snap.position);snap.group.scale.copy(snap.scale);snap.group.visible=job.releasing||snap.visible}
@@ -853,6 +855,9 @@ function create(opts){
  // ORIGINAL card was released. Other artifacts can subscribe independently.
  scene.addEventListener('living-contract-unbound',e=>{
   if(e.bindingId==='scan.bundle.'+e.cardId&&Array.isArray(e.scanMembers)){
+   // Generic ownership release does NOT mean summon. Any native object with
+   // a dedicated visual adapter may restore its stored non-summoned pose.
+   opts.onBundleReleased?.(e.scanMembers);
    // The old owner no longer exists after the atomic unbind. Remove cached
    // ownership AND world anchors immediately, not on a future scanner tick.
    stop();cancelPrompt();applyPacked();

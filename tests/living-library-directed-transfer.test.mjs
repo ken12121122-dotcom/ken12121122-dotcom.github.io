@@ -60,7 +60,10 @@ test('unbind atomically deletes the spell while preserving both original and unr
  assert.equal(s.state().objects.length,2);
  assert.equal(result.target.id,t.id);
  assert.equal(Object.hasOwn(result.target,'runeBinding'),false);
- assert.deepEqual(result.target.image,t.image);
+ assert.equal(result.target.title,'空白卡片');
+ assert.equal(result.target.cardNumber,'');
+ assert.equal(result.target.image,null);
+ assert.deepEqual(s.state().unboundCarrierBackups[t.id].card,t);
  assert.equal(result.spellId,c.id);assert.equal(result.consumed,true);
  assert.equal(s.state().objects.some(x=>x.id===c.id),false,'spent spell is truly gone');
  assert.equal(Craft.listCards(s).length,2);

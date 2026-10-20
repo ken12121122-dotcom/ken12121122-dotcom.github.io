@@ -62,7 +62,7 @@ test('valid active contract is not migrated, and unrelated custom content is pre
  assert.equal(storage.snapshot().objects[1].cardNumber,'A-5');
  assert.equal(storage.getItem(Bundle.BACKUP_KEY),null);
 });
-test('generic unbinding releases customized scan contract without erasing artwork or unrelated fields',()=>{
+test('generic unbinding clears customized carrier while preserving its artwork and unrelated fields in recovery',()=>{
  const storage=store([makeCard('target'),makeCard('spell','解除契約')]);
  const bound=Bundle.bind(storage,{cardId:'local.card.target',revision:1,members:[ref]},[ref]);
  const state=storage.snapshot();state.objects[0].image={user:'original art'};
@@ -70,23 +70,27 @@ test('generic unbinding releases customized scan contract without erasing artwor
  storage.setItem(Bundle.KEY,JSON.stringify(state));
  const result=Craft.unbindAndAbsorbSpell(storage,{runeId:bound.runeBinding.runeId,
   targetId:bound.id,targetRevision:bound.revision,spellId:'local.card.spell',spellRevision:1});
- assert.equal(result.target.image.user,'original art');
- assert.equal(result.target.cardNumber,'C-12');
+ assert.equal(result.target.image,null);
+ assert.equal(result.target.cardNumber,'');
+ assert.equal(storage.snapshot().unboundCarrierBackups[bound.id].card.image.user,'original art');
+ assert.equal(storage.snapshot().unboundCarrierBackups[bound.id].card.cardNumber,'C-12');
  assert.equal(result.target.scanContract,undefined);
  assert.equal(result.target.runeBinding,undefined);
  assert.equal(result.target.title,'空白卡片');
  assert.equal(Bundle.claims(storage).size,0);
  assert.equal(storage.snapshot().objects.length,1);
 });
-test('customized contract title is preserved on unbind while generic ownership is fully cleared',()=>{
+test('custom carrier becomes true blank while custom title and description remain recoverable',()=>{
  const storage=store([makeCard('target'),makeCard('spell','解除契約')]);
  const bound=Bundle.bind(storage,{cardId:'local.card.target',revision:1,members:[ref]},[ref]);
  const state=storage.snapshot();state.objects[0].title='我的世界';
  state.objects[0].description='玩家自行設計';storage.setItem(Bundle.KEY,JSON.stringify(state));
  const result=Craft.unbindAndAbsorbSpell(storage,{runeId:bound.runeBinding.runeId,
   targetId:bound.id,targetRevision:bound.revision,spellId:'local.card.spell',spellRevision:1});
- assert.equal(result.target.title,'我的世界');
- assert.equal(result.target.description,'玩家自行設計');
+ assert.equal(result.target.title,'空白卡片');
+ assert.equal(result.target.description,'');
+ assert.equal(storage.snapshot().unboundCarrierBackups[bound.id].card.title,'我的世界');
+ assert.equal(storage.snapshot().unboundCarrierBackups[bound.id].card.description,'玩家自行設計');
  assert.equal(result.target.scanContract,undefined);
  assert.equal(result.target.runeBinding,undefined);
  assert.deepEqual([...Bundle.claims(storage)],[]);
@@ -231,4 +235,36 @@ test('old spent spells are removed from persisted records while live and sealed 
  assert.equal(legacy.snapshot().objects.length,2);
  assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===sealed.id),sealed);
  assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===owner.id),owner);
+});
+
+test('unbinding the Card Book collection uses the same generic rule as arbitrary scanned world objects',()=>{
+ const bookRef={kind:'book',id:'cardCollection'},medium=makeCard('universal'),spell=makeCard('spell','解除契約卡');
+ const storage=store([medium,spell]);
+ const bound=Bundle.bind(storage,{cardId:medium.id,revision:1,members:[bookRef]},[bookRef]);
+ assert.deepEqual(bound.scanContract.members,[bookRef]);
+ const snapshot=storage.snapshot();
+ const done=Craft.unbindAndAbsorbSpell(storage,{
+  runeId:bound.runeBinding.runeId,targetId:bound.id,targetRevision:bound.revision,
+  spellId:spell.id,spellRevision:spell.revision});
+ assert.equal(done.target.id,medium.id);
+ assert.equal(done.target.title,'空白卡片');
+ assert.equal(done.target.image,null);
+ assert.ok(Bundle.blank(done.target),'original card can return to a GBA reader as true blank');
+ assert.equal(storage.snapshot().objects.length,1,'spell permanently consumed, no duplicate book or card');
+ assert.deepEqual(storage.snapshot().unboundCarrierBackups[medium.id].card,snapshot.objects[0],
+  'pre-release carrier preserved as metadata, not as an extra world object');
+ assert.deepEqual([...Bundle.claims(storage)],[]);
+ const reused=Bundle.bind(storage,{cardId:medium.id,revision:done.target.revision,members:[{kind:'scene',id:'scene.any-object'}]},[{kind:'scene',id:'scene.any-object'}]);
+ assert.equal(reused.id,medium.id,'no book-specific rebind restriction');
+});
+
+test('generic contract release never invokes a book manifestation on unbind',()=>{
+ const eye=readFileSync(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ assert.match(eye,/job\.kind==='bundle-bind'\|\|job\.kind==='bundle-cardify'/);
+ assert.match(eye,/opts\.onBundleStored\?\.\(job\.members\)/);
+ assert.match(app,/onBundleStored\(members\)/);
+ const unboundHandler=eye.slice(eye.indexOf("scene.addEventListener('living-contract-unbound',e=>{"));
+ assert.doesNotMatch(unboundHandler.slice(0,600),/onBundleStored|onBundleRestored/);
+ assert.match(app,/for\(const ref of members\)if\(ref\.kind==='book'\)atlasRuntime\.restoreScannedToShelf\(ref\.id\)/);
 });
