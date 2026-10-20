@@ -364,7 +364,7 @@
    c.containerId===ATLAS_ID&&c.slotIndex===9&&c.ownerBookId===ATLAS_ID&&
    c.title==='空白卡片'&&!c.description&&!c.cardNumber&&!c.cardType&&!c.image&&
    !c.linkedCardId&&!c.ability&&(!c.permissions||c.permissions.length===0)&&
-   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.containment&&!c.copyInfo&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.containment&&!c.copyInfo&&!c.downloadTemplate&&
    !c.l2Certified&&!c.upgradeRequest&&!c.certification;
  }
  function canCopyAppearance(c){
@@ -414,7 +414,9 @@
  // A stored/consumed spell's visual template may be downloaded, but this does
  // not retrieve, recharge, or change the original stored object.
  function canDownloadTemplate(c){
-  return isPlayerCard(c)&&c.status==='draft'&&
+  // Opt-in only: being a draft card, an old book, or a stored spell is not
+  // permission to publish this card's appearance in the GBA download list.
+  return isPlayerCard(c)&&c.status==='draft'&&c.downloadTemplate===true&&
    typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
    !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
    !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
@@ -446,7 +448,7 @@
   const when=clock();
   const next={...blank,title:source.title,description:source.description||'',
    cardType:source.cardType||'',image:source.image?{...source.image}:null,
-   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],downloadTemplate:false,
    copyInfo:{kind:'gba-template-download',sourceId:source.id,
     sourceRevision:source.revision,copiedAt:when},
    revision:blank.revision+1,updatedAt:when};
@@ -456,7 +458,7 @@
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
-  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
+  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId','downloadTemplate'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
   if(isPermanentRuneCard(card))throw Error('永久卡已鎖定，修改需經 GBA 正式變更程序');
@@ -490,6 +492,12 @@
      !Number.isFinite(v.scale)||v.scale<1||v.scale>3||!Number.isFinite(v.x)||v.x<0||v.x>100||!Number.isFinite(v.y)||v.y<0||v.y>100))
     throw Error('圖片格式或裁切參數無效，未修改卡片');
    card.image=v===null?null:{...v};
+  }
+  if(Object.hasOwn(patch,'downloadTemplate')){
+   if(typeof patch.downloadTemplate!=='boolean')throw Error('可複製卡分類只能啟用或停用');
+   card.downloadTemplate=patch.downloadTemplate;
+   if(card.downloadTemplate&&!canDownloadTemplate(card))
+    throw Error('這張卡片具有契約、唯一身分、能力或其他保護狀態，不可列為可複製卡');
   }
   card.cardLayout='compendium-v2';
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
