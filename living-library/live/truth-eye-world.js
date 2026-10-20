@@ -167,25 +167,22 @@ function create(opts){
  function bundlePrompt(kind,record,members){
   if(busy())return false;
   pending={kind,cardId:record.id,cardRevision:record.revision,members};
-  confirmLabel.textContent=kind==='bundle-bind'?'將掃描選取的 '+members.length+' 件物件收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-release'?'將此卡中的 '+record.scanContract.members.length+' 件物件還原到世界，並真正解除契約？\n原卡會回復空白，可重新掃描與收納。':'解除這 '+record.scanContract.members.length+' 件世界物件與舊卡的契約？\n物件留在原位，原卡回復空白，可重新掃描收納。';
+  confirmLabel.textContent=kind==='bundle-bind'?'將掃描選取的 '+members.length+' 件物件收進這張空白卡？\n原物件 ID 保留，可再次還原。':kind==='bundle-materialize'?'將這張收納卡的 '+record.scanContract.members.length+' 件物件實體化？\n契約保持有效，以後仍可整組收回。':'將 '+record.scanContract.members.length+' 件世界物件整組收回原卡？\n契約保持有效；只有解除契約卡能真正解除。';
   dialog.showModal();invalidate();return true;
  }
  function startBundleTransfer(request){
   try{
    const record=craft.listCards(storage).find(c=>c.id===request.cardId),entry=floatingCards.get(request.cardId);
-   if(bundleError||!record||record.revision!==request.cardRevision||(!entry?.group.visible&&request.kind!=='bundle-unbind-world')||!entry||entry.summon||entry.recycle||entry.drag||entry.focused||record.placement!=='hover'||record.containerId||record.ownerBookId)throw Error('原卡已改變或正在移動，請重新長按');
+   if(bundleError||!record||record.revision!==request.cardRevision||(!entry?.group.visible&&request.kind!=='bundle-cardify')||!entry||entry.summon||entry.recycle||entry.drag||entry.focused||record.placement!=='hover'||record.containerId||record.ownerBookId)throw Error('原卡已改變或正在移動，請重新長按');
    const members=request.members||B.contract(record).members;
    const available=request.kind==='bundle-bind'?targets():entries();
    if(request.kind==='bundle-bind'&&(!B.blank(record)||B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries())!==record.id))throw Error('最近空白卡已改變');
    if(members.some(r=>!available.some(o=>o.id===r.id&&o.kind===r.kind)))throw Error('選取物件已離開掃描範圍或尚未載入');
-   if(request.kind==='bundle-unbind-world'){
-    // Old world-form bundles still own objects even though they look free.
-    B.release(storage,{cardId:record.id,revision:record.revision,form:'world'},available);
-    selected.clear();refreshCards();refreshPacked();applyPacked();updateMarks();
-    toast('✦ 舊契約已解除；物件留在世界，原卡恢復空白並可再次收納');
-    invalidate();return;
-   }
-   const releasing=request.kind==='bundle-release';
+   const contract=B.contract(record);
+   const expectedForm={'bundle-materialize':'card','bundle-cardify':'world'}[request.kind];
+   if(request.kind!=='bundle-bind'&&(!expectedForm||contract?.form!==expectedForm))throw Error('收納形態已變更，請重新長按');
+   // A form change never releases ownership. Only the one-shot spell unbinds.
+   const releasing=request.kind==='bundle-materialize';
    const snapshots=members.flatMap(r=>{const o=entries().find(o=>o.id===r.id&&o.kind===r.kind);return (o.groups||[o.group]).map(group=>({group,position:group.position.clone(),scale:group.scale.clone(),visible:group.visible}))});
    entry.group.updateWorldMatrix(true,false);const dest=entry.group.getWorldPosition(new T.Vector3());
    const anchor={x:keeper.position.x,z:keeper.position.z};
@@ -210,12 +207,13 @@ function create(opts){
    const available=entries();
    if(Math.hypot(keeper.position.x-job.anchor.x,keeper.position.z-job.anchor.z)>.15)throw Error('人物在收納期間移動，請重新掃描');
    if(job.kind==='bundle-bind')B.bind(storage,{cardId:job.cardId,revision:job.cardRevision,members:job.members},available);
-   else if(job.kind==='bundle-release')B.release(storage,{cardId:job.cardId,revision:job.cardRevision,form:'card'},available);
+   else if(job.kind==='bundle-materialize')B.setForm(storage,job.cardId,job.cardRevision,'world',available);
+   else if(job.kind==='bundle-cardify')B.setForm(storage,job.cardId,job.cardRevision,'card',available);
    else throw Error('未知收納操作，原卡保持不變');
-   selected.clear();refreshCards();toast(job.releasing?'✦ 物件已還原世界；契約解除，原卡已回復空白，可再次綁定':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
+   selected.clear();refreshCards();toast(job.kind==='bundle-materialize'?'✦ 物件已實體化；契約保持有效':job.kind==='bundle-cardify'?'✦ 整組物件已回原卡；契約保持有效':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
   }catch(e){toast('收納未寫入，原物件保留：'+e.message)}
   for(const snap of job.snapshots){snap.group.position.copy(snap.position);snap.group.scale.copy(snap.scale);snap.group.visible=job.releasing||snap.visible}
-  bundleTransfer=null;refreshPacked();invalidate();
+  bundleTransfer=null;refreshPacked();applyPacked();invalidate();
  }
  refreshPacked();
  // Same confirmation gate as the ORIGINAL ground-rune flow; no direct card write.
@@ -398,7 +396,7 @@ function create(opts){
   if(!cardCeremony||cardCeremony.cardId!==held.cardId)return false;
   cardCeremony.phase='selected';
   cardHex.update(1,performance.now());
-  if(!(record.scanContract?bundlePrompt(record.scanContract.form==='card'?'bundle-release':'bundle-unbind-world',record):prompt('materialize',record.id,record.revision,record.title))){
+  if(!(record.scanContract?bundlePrompt('bundle-materialize',record):prompt('materialize',record.id,record.revision,record.title))){
    clearCardCeremony();return false;
   }
   return true;
@@ -439,7 +437,7 @@ function create(opts){
   if(st.phase==='holding'){
    if(!cardHold||cardHold.cardId!==st.cardId){clearCardCeremony();return}
   }else if(st.phase==='selected'){
-   if(!pending||!['materialize','bundle-release','bundle-unbind-world'].includes(pending.kind)||pending.cardId!==st.cardId){
+   if(!pending||!['materialize','bundle-materialize'].includes(pending.kind)||pending.cardId!==st.cardId){
     clearCardCeremony();return;
    }
   }else{clearCardCeremony();return}
@@ -525,7 +523,7 @@ function create(opts){
    if(!record||record.revision!==gesture.revision||B.contract(record)?.form!=='world'){
     toast('整組契約已改變，請重新長按');return;
    }
-   selectedUntil=0;bundlePrompt('bundle-unbind-world',record);return;
+   selectedUntil=0;bundlePrompt('bundle-cardify',record);return;
   }
   if(type==='books'){
    try{const ids=new Set(gesture.scanIds||[]),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
@@ -802,7 +800,7 @@ function create(opts){
   // revision cached when the Eye was originally constructed.
   state();
   const collection=craft.listCards(storage).find(c=>c.id===id&&c.scanContract);
-  if(collection){toast('🔯 長按原收納卡三秒，可'+(collection.scanContract.form==='card'?'還原物件並解除契約':'解除舊契約使原卡回空白'));return true}
+  if(collection){toast('🔯 '+(collection.scanContract.form==='card'?'長按三秒可將整組物件實體化；契約仍有效':'長按世界中的群組物件三秒可收回原卡；契約仍有效'));return true}
   if(!card||card.id!==id||card.truthEyeContract?.form!=='card')return false;
   const entry=floatingCards.get(id);
   if(!entry||entry.summon||entry.recycle){
