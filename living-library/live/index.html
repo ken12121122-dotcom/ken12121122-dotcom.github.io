@@ -1812,7 +1812,15 @@ const truthEye=window.LivingTruthEyeWorld.create({
  THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
- onBundleRestored(members){for(const ref of members)if(ref.kind==='book')atlasRuntime.restoreScannedToShelf(ref.id)},
+ onBundleRestored(members,ownerCardId){
+   // The materialization callback must not outlive its ACTIVE world-form owner.
+   // Historical/released scan groups must NEVER relocate books.
+   const original=window.LivingObjectCraft.listCards(localStorage).find(c=>c.id===ownerCardId);
+   const contract=original?.scanContract;
+   if(original?.runeBinding?.state!=='bound'||contract?.artifactId!=='scan.bundle.'+ownerCardId||contract?.form!=='world')return;
+   const owned=new Set(contract.members.map(ref=>ref.kind+':'+ref.id));
+   for(const ref of members)if(ref.kind==='book'&&owned.has(ref.kind+':'+ref.id))atlasRuntime.restoreScannedToShelf(ref.id);
+  },
  onMemberTap(e){if(atlasRuntime.pointerDown(e)){atlasRuntime.pointerUp(e);return}pick(e,true)},
  onMemberDrag(e,origin){
   touchPoints.set(e.pointerId,{x:origin.x,y:origin.y,down:{...origin}});
