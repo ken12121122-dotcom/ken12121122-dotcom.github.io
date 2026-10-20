@@ -313,3 +313,48 @@ test('GBA exposes blueprint browsing before card insertion but requires blank be
  assert.match(model,/else if\(mode==='download'\)\{[\s\S]*?請建立可複製卡/,
   'empty reader shows downloadable template titles');
 });
+
+test('all existing cards expose read-only saved fields, links and traceable animation/action counts',()=>{
+ const spell=mk('local.card.spell-audit','解除契約卡',null,{placement:'hover',
+  containerId:null,ownerBookId:null,image:{dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:1,x:50,y:50}});
+ const bound=mk('local.card.owner-audit','掃描收納卡',null,{placement:'hover',
+  containerId:null,ownerBookId:null,runeBinding:{runeId:'scan.bundle.local.card.owner-audit',state:'bound'},
+  scanContract:{artifactId:'scan.bundle.local.card.owner-audit',form:'world',members:[
+   {kind:'book',id:'book.one'},{kind:'scene',id:'scene.two'}]}});
+ const db=storage([spell,bound]),before=db.raw();
+ const spellInfo=Craft.inspectCard(db,spell.id);
+ const groupInfo=Craft.inspectCard(db,bound.id);
+ assert.equal(spellInfo.stats.spells,1);
+ assert.equal(spellInfo.stats.animations,2);
+ assert.equal(spellInfo.stats.actions,1);
+ assert.equal(spellInfo.stats.photo,true);
+ assert.equal(spellInfo.data.image.dataUrl.startsWith('[圖片 Base64 省略'),true);
+ assert.equal(groupInfo.stats.groupMembers,2);
+ assert.equal(groupInfo.stats.links,3,'active owner rune and two member IDs');
+ assert.equal(groupInfo.stats.spells,0,'being bound does not mean a spell is installed on the card');
+ assert.equal(groupInfo.stats.actions,1);
+ assert.equal(db.raw(),before,'inspection never mutates the original player save');
+ assert.throws(()=>Craft.inspectCard(db,'local.card.not-real'),/不存在|消耗/);
+});
+test('consumed spell photo may survive as recipe art without any physical spent-card history',()=>{
+ const spell=mk('local.card.photo-spell','解除契約卡',null,{placement:'hover',
+  containerId:null,ownerBookId:null,image:null});
+ const db=storage([spell]);
+ const photo={dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:1,x:50,y:50};
+ const saved=Craft.editCard(db,spell.id,{image:photo});
+ assert.deepEqual(saved.image,photo);
+ assert.deepEqual(Craft.listDownloadableTemplates(db)[0].image,photo,'saved spell design visible in GBA');
+ assert.equal(db.objects().length,1,'recipe image does not create phantom historical card');
+});
+test('each card can open an accessible, read-only information overview in the world and creator',async()=>{
+ const world=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ const editor=await readFile(new URL('../living-library/live/card-creation.html',import.meta.url),'utf8');
+ assert.match(world,/id="cardFocusInfo"/);
+ assert.match(world,/id="cardInfoDialog"/);
+ assert.match(world,/LivingObjectCraft\.inspectCard\(localStorage,id\)/);
+ assert.match(editor,/id="cardAudit"/);
+ assert.match(editor,/renderCardAudit\(card\)/);
+ assert.match(editor,/Craft\.inspectCard\(localStorage,card.id\)/);
+ assert.match(world,/unbindDialog\.showModal\(\)/,'irreversible contract release previews target first');
+ assert.match(world,/if\(!unbindDialog\.open\|\|!spellSelection\|\|unbindEffect\)return/);
+});
