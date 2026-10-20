@@ -68,6 +68,11 @@ input[type=range]{padding:0;accent-color:#35494c}
 input::placeholder,textarea::placeholder{color:#000;opacity:1}
 button:disabled{opacity:.45}
 .photoActions{display:flex;gap:8px;flex-wrap:wrap}
+#cardAudit{margin-top:16px;border:1px solid #aa9882;border-radius:10px;padding:12px;background:#fffaf0;color:#000}
+#cardAudit summary,#cardAudit p,#cardAudit strong{color:#000}
+#cardAuditStats{font-weight:700;white-space:pre-wrap}
+#cardAuditDetails{white-space:pre-wrap;overflow-wrap:anywhere}
+#cardAuditRaw{max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#ede6d8;color:#000;padding:10px;font:12px/1.5 ui-monospace,monospace}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -101,6 +106,13 @@ button:disabled{opacity:.45}
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
+  <details id="cardAudit" open><summary>ⓘ 卡片資訊總覽（唯讀）</summary>
+   <p id="cardAuditStats">選擇卡片即可檢視已保存的資訊。</p>
+   <div id="cardAuditDetails"></div>
+   <details><summary>查看卡片屬性（省略圖片 Base64）</summary>
+    <pre id="cardAuditRaw"></pre></details>
+   <small>法術／動畫／動作為目前程式可辨識的條件式規則，不代表已正在執行。此處不修改契約。</small>
+  </details>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
  </section>
@@ -191,6 +203,23 @@ button:disabled{opacity:.45}
    kind:'living-library-local-objects-updated',action,cardId
   },location.origin);
  }
+ function renderCardAudit(card){
+  const label=$('cardAuditStats'),area=$('cardAuditDetails'),raw=$('cardAuditRaw');
+  if(!card){label.textContent='目前尚未選擇卡片';area.textContent='';raw.textContent='';return}
+  try{
+   const x=Craft.inspectCard(localStorage,card.id),n=x.stats;
+   label.textContent='儲存屬性 '+n.fields+'（有值 '+n.filled+'）｜約 '+n.bytes+' bytes｜圖片 '+(n.photo?'有':'無')+
+    '\n契約／位置參照 '+n.links+'｜群組成員 '+n.groupMembers+
+    '\n已辨識法術 '+n.spells+'｜動畫 '+n.animations+'｜動作 '+n.actions;
+   const rows=['卡片 ID：'+x.id,'目前狀態：'+x.placement+'；版本：'+x.revision];
+   for(const [kind,items] of [['關聯',x.links],['法術',x.spells],['動畫',x.animations],['動作',x.actions]]){
+    rows.push(kind+' ('+items.length+')');
+    if(!items.length)rows.push('  無已辨識項目');
+    for(const v of items)rows.push('  • '+(v.kind||v.name)+' → '+(v.id||v.detail||'')+(v.kind?' · '+v.detail:'')+(v.status&&v.status!=='有效'?' ['+v.status+']':''));
+   }
+   rows.push(x.note);area.textContent=rows.join('\n');raw.textContent=JSON.stringify(x.data,null,2);
+  }catch(e){label.textContent='資料檢視失敗：'+e.message;area.textContent='';raw.textContent=''}
+ }
  function show(card,animate=false){
   photoEpoch++;photoBusy=false;currentId=card?.id||null;draftImage=card?.image?{...card.image}:null;
   $('cardTitle').textContent=card?.title||'空白卡片';
@@ -209,7 +238,7 @@ button:disabled{opacity:.45}
   $('openLink').disabled=!card?.linkedCardId||!linkTargets.some(c=>c.id===card.linkedCardId)||window.parent===window;
   $('cropControls').hidden=!draftImage;
   $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
-  paint();
+  paint();renderCardAudit(card);
   $('saveCard').disabled=!card||immutable;
   $('recycleCard').disabled=!card||!!card.containerId||immutable;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
