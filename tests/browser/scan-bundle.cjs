@@ -39,9 +39,15 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.locator('#eyeRadius').fill('20');await page.locator('#eyeRadius').dispatchEvent('input');
   await page.waitForTimeout(1600);
   console.log('summoned');
-  const count=await page.evaluate(()=>LivingLibrary.books.filter(b=>['public','local'].includes(b.sourceLayer)).length);
-  const snap=await inspect();assert.equal(snap.scanned.length,count,'all real books become scanner candidates');
-  report.checks.push('shelf books summoned into original orbit and all scanned: '+count);
+  const bookCount=await page.evaluate(()=>LivingLibrary.books.filter(b=>['public','local'].includes(b.sourceLayer)).length);
+  const snap=await inspect(),count=snap.scanned.length;
+  assert.ok(count>=bookCount,'all visible authored books discoverable alongside world geometry');
+  assert.equal(snap.scanned.filter(o=>o.kind==='book').length,bookCount);
+  assert.ok(snap.scanned.some(o=>o.kind==='scene'),'scanner sees real scene geometry without selecting a category');
+  assert.ok(!snap.scanned.some(o=>o.id==='scene.keeper'),'the player avatar must never be scanned');
+  assert.equal(await page.locator('#eyeScope').count(),0,'no hard-coded book/library category dropdown');
+  assert.equal(snap.selected.length,0,'scanner cannot preselect objects for the player');
+  report.checks.push('live book and scene discovery, no category dropdown, no avatar, no auto-selection: '+count);
   await page.locator('#eyeSelectAll').click();assert.equal((await inspect()).selected.length,count);
   const hold=async selector=>{const b=await page.locator(selector).boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
   // Early release cancels without touching the blank.
@@ -99,22 +105,22 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   report.checks.push('existing解除契約 spell restores all books, preserves original medium, consumes original spell and removes ownership');console.log('unbound');
   // Second stage: create a fresh synthetic blank using the existing card engine.
   const worldCard=await page.evaluate(()=>{const c=LivingObjectCraft.createBlankCard(localStorage,crypto);LivingScene.refreshFloatingCards();return c.id});
-  await page.locator('#eyeScope').selectOption('all');await page.waitForTimeout(500);
+  assert.equal(await page.locator('#eyeScope').count(),0);await page.waitForTimeout(500);
   const worldSnapshot=await inspect(),worldCount=worldSnapshot.scanned.length;
-  assert.ok(worldCount>count);assert.ok(worldSnapshot.scanned.some(o=>o.id==='scene.floor'));assert.ok(worldSnapshot.scanned.some(o=>o.id==='scene.keeper'));assert.equal(worldSnapshot.scanned.filter(o=>o.kind==='scene').length,worldSnapshot.objects.filter(o=>o.kind==='scene').length);
+  assert.ok(worldCount>=bookCount);assert.ok(worldSnapshot.scanned.some(o=>o.id==='scene.floor'));assert.ok(!worldSnapshot.scanned.some(o=>o.id==='scene.keeper'));assert.ok(worldSnapshot.objects.some(o=>o.id==='scene.keeper'));
   await page.locator('#eyeSelectAll').click();await hold('#eyeCollect');
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
-  let now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible).length,0);
-  report.checks.push('scanner all-scope collects entire authored library plus books into one original blank: '+worldCount);console.log('world packed');
+  let now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible&&o.id!=='scene.keeper').length,0);
+  report.checks.push('player explicitly selects world geometry to collect into one original blank: '+worldCount);console.log('world packed');
   await page.screenshot({path:path.join(out,'world-packed.png')});
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
-  now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible).length,0);
+  now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible&&o.id!=='scene.keeper').length,0);
   await holdCard(worldCard);assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
-  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
-  report.checks.push('entire-library card retains every original after reload and restores scene, lights, keeper and books');
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(worldSnapshot.scanned.every(ref=>now.objects.some(o=>o.kind===ref.kind&&o.id===ref.id&&o.visible)),'every actually scanned member restores; hidden unselected system helpers are not forced visible');
+  report.checks.push('world contract restores scene and books; the protected player avatar never enters the contract');
   await page.screenshot({path:path.join(out,'world-restored.png')});
   assert.ok(!now.cards.some(c=>c.id===worldCard),'entire-library original card disappears in world form');
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
@@ -137,7 +143,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),worldCard);
   await page.locator('#runeUnbindConfirm').click();
   await page.waitForFunction(id=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id===id).scanContract,worldCard);await page.waitForTimeout(350);
-  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(worldSnapshot.scanned.every(ref=>now.objects.some(o=>o.kind===ref.kind&&o.id===ref.id&&o.visible)),'every actually scanned member restores; hidden unselected system helpers are not forced visible');
   assert.ok(now.cards.some(c=>c.id===worldCard),'解除契約 restores the original blank card from hidden world form');
   report.checks.push('world-form card remains absent after reload; actual member hold repacks whole library into same card; existing解除契約 targets hidden original through its unique world anchor and restores every original');
   assert.deepEqual(report.errors,[]);report.status='PASS';

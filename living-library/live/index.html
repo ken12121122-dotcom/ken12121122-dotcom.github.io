@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-18.truth-eye-card-hold-hexagram.1">
+<meta name="living-library-release" content="2026-10-20.truth-eye-autonomous-scan.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -404,7 +404,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1810,20 +1810,39 @@ const truthEye=window.LivingTruthEyeWorld.create({
   wasMoving=true;drag={x:origin.x,y:origin.y,lastX:origin.x,lastY:origin.y};
  },
  summonShelfBooks(){for(const o of bookEntities)if(!o.b.active&&['public','local'].includes(o.b.sourceLayer))window.LivingLibrary.summonBook(o.id)},
- getScanEntries(){return [...worldScanEntries.filter(e=>e.id!=='scene.rune.origin'||!window.LivingObjectCraft.getRuneBoundCard(localStorage)),...bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>{
-  const alternate=atlasRuntime.scanEntries?.().find(e=>e.id===o.id);
-  return {...o,kind:'book',group:alternate?.group.visible?alternate.group:o.group,groups:alternate?[o.group,alternate.group]:[o.group]};
- })]},
+ getScanEntries({excludeRoots=[]}={}){
+  // Authoritative discovery traverses live scene geometry; legacy metadata
+  // can preserve identity but cannot restrict which new objects are detected.
+  const books=bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer));
+  const protectedBooks=bookEntities.filter(o=>!['public','local'].includes(o.b.sourceLayer)).map(o=>o.group);
+  const runeBound=!!window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  const found=window.LivingSceneScanDiscovery.discover({
+   scene,keeper,legacyScenes:worldScanEntries,books,atlasEntries:atlasRuntime.scanEntries?.()||[],
+   floatingCards:[...floatingCardMeshes.values()],
+   protectedRoots:[...excludeRoots,...protectedBooks,...(runeBound?[runeGroup]:[])]
+  });
+  const avatar=worldScanEntries.find(o=>o.id==='scene.keeper');
+  return avatar?[...found,{...avatar,protected:true}]:found;
+ },
  applyPacked(packed){
-  for(const o of worldScanEntries)for(const group of o.groups){
+  // A discovered unregistered world mesh is subject to the same reversible
+  // visibility policy as old library assets, while player avatar stays guarded.
+  const books=bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer));
+  const discovered=window.LivingSceneScanDiscovery.discover({
+   scene,keeper,legacyScenes:worldScanEntries,books,atlasEntries:atlasRuntime.scanEntries?.()||[],
+   floatingCards:[...floatingCardMeshes.values()],
+   protectedRoots:bookEntities.filter(o=>!['public','local'].includes(o.b.sourceLayer)).map(o=>o.group)
+  });
+  const avatar=worldScanEntries.find(o=>o.id==='scene.keeper');
+  for(const o of [...discovered.filter(e=>e.kind==='scene'),...(avatar?[avatar]:[])])for(const group of o.groups||[o.group]){
    const hidden=packed.has('scene:'+o.id);
    if(hidden){if(!group.userData.scanHidden)group.userData.scanPreviousVisible=group.visible;group.userData.scanHidden=true;group.visible=false}
    else if(group.userData.scanHidden){group.visible=group.userData.scanPreviousVisible!==false;delete group.userData.scanHidden;delete group.userData.scanPreviousVisible}
   }
   for(const entry of floatingCardMeshes.values()){
-  const container=entry.record.containerId==='local.atlas.collection'?'cardCollection':entry.record.containerId;
-  if(container&&packed.has('book:'+container))entry.group.visible=false;
- }},
+   const container=entry.record.containerId==='local.atlas.collection'?'cardCollection':entry.record.containerId;
+   if(container&&packed.has('book:'+container))entry.group.visible=false;
+  }},
  invalidate:()=>window.LivingScene?.syncRender?.(),
  toast,reducedMotion:preferReduced
 });

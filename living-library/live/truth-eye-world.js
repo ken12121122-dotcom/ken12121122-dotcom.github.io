@@ -55,33 +55,34 @@ function create(opts){
  if(!T||!scene||!keeper||!bookEntities||!floatingCards)throw Error('真實之眼需要既有 3D 場景');
  const B=root.LivingScanBundle;if(!B)throw Error('缺少掃描收納模組');
  const C=root.LivingTruthEyeContract;if(!C)throw Error('真實之眼卡片契約模組不存在');
- const built=model(T),eye=built.group;scene.add(eye);
- const eyeLight=new T.PointLight(0x5cc5eb,4,5);scene.add(eyeLight);
- let cfg={radius:8,aperture:360,direction:0,mode:'both',scope:'book',enabled:true};
+ const built=model(T),eye=built.group;eye.userData.scanProtected=true;scene.add(eye);
+ const eyeLight=new T.PointLight(0x5cc5eb,4,5);eyeLight.userData.scanProtected=true;scene.add(eyeLight);
+ let cfg={radius:8,aperture:360,direction:0,mode:'both',enabled:true};
  try{const s=JSON.parse(storage.getItem('living-truth-eye-scan-v1')||'null');
   if(s){cfg.radius=clamp(Number(s.radius)||8,2,20);cfg.aperture=clamp(Number(s.aperture)||360,15,360);
-   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.scope=['book','scene','all'].includes(s.scope)?s.scope:'book';cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}
+   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}
  }catch(_){}
  let card=null;try{card=C.boundCard(storage)}catch(e){toast('讀卡失敗：'+e.message)}
- const field=new T.Group();scene.add(field);
+ const field=new T.Group();field.userData.scanProtected=true;scene.add(field);
  const cyan=new T.MeshBasicMaterial({color:0x8cf6eb,opacity:.51,transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide});
  const amber=new T.MeshBasicMaterial({color:0xfce0a5,opacity:.42,transparent:true,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide});
  const ring=(parent,mat)=>{const m=new T.Mesh(new T.TorusGeometry(1,.013,5,96),mat);m.rotation.x=Math.PI/2;parent.add(m);return m};
  const border=ring(field,cyan),ripples=[ring(field,amber.clone()),ring(field,cyan.clone()),ring(field,amber.clone())];
  let fan=new T.Mesh(new T.CircleGeometry(1,72),new T.MeshBasicMaterial({color:0x5ddce0,opacity:.085,transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending}));
  fan.rotation.x=-Math.PI/2;fan.position.y=.018;field.add(fan);
- const marks=new T.Group();scene.add(marks);
+ const marks=new T.Group();marks.userData.scanProtected=true;scene.add(marks);
  const markMap=new Map(),selected=new Set(),caster=new T.Raycaster(),mouse=new T.Vector2(),tmp=new T.Vector3();
  // The SAME 3D hexagram animation is reused by the original ground rune.
  // For the Eye it faces the camera and floats around the actual 3D artifact.
  const Hexagram=root.LivingContractHexagram;
  if(!Hexagram)throw Error('缺少六芒星動畫模組');
  const hex=Hexagram.create({THREE:T,parent:scene,plane:'xy',radius:1.65});
- const ritual=hex.group;
+ const ritual=hex.group;ritual.userData.scanProtected=true;
  // The original ritual geometry is reused around the ORIGINAL orbit card
  // during card -> world manifestation. This is independent of the 3-second
  // hold ritual on the 3D Eye, so both transitions keep the approved artwork.
  const cardHex=Hexagram.create({THREE:T,parent:scene,plane:'xy',radius:.80});
+ cardHex.group.userData.scanProtected=true;
  let cardCeremony=null,cardHold=null;
  const cardCaptured=new Set();
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
@@ -103,10 +104,6 @@ function create(opts){
  tools.innerHTML='<button type="button" id="eyeSummon" aria-label="召喚全部書櫃書本" title="召喚全部書櫃書本">⇧</button><button type="button" id="eyeSelectAll" aria-label="全選掃描範圍內物件" title="全選掃描範圍內物件">⊙</button><button type="button" id="eyeCollect" aria-label="長按三秒收納選取物件" title="長按三秒收納選取物件">🔯</button><small id="eyeCount" role="status"></small>';
  host.querySelector('#eyeControls').append(tools);
  const extraStyle=document.createElement('style');extraStyle.textContent='.truthEyeTools{display:flex;flex-wrap:wrap;gap:5px}.truthEyeTools button{min-width:44px;min-height:44px}.truthEyeTools small{flex-basis:100%;line-height:1.5}.truthEyeTools button[data-holding="true"]{outline:2px solid #8cf6eb}';document.head.append(extraStyle);
- const scopeSelect=document.createElement('select');scopeSelect.id='eyeScope';scopeSelect.setAttribute('aria-label','掃描對象');
- scopeSelect.innerHTML='<option value="book">書本</option><option value="scene">圖書館場景</option><option value="all">書本與場景</option>';scopeSelect.value=cfg.scope;
- host.querySelector('#eyeControls').prepend(scopeSelect);
- scopeSelect.addEventListener('change',e=>{if(busy()){scopeSelect.value=cfg.scope;return}cfg.scope=e.target.value;selected.clear();apply();updateMarks()});
  const countLabel=tools.querySelector('#eyeCount'),collectButton=tools.querySelector('#eyeCollect');
  tools.querySelector('#eyeSummon').addEventListener('click',()=>{if(busy())return;opts.summonShelfBooks?.();invalidate()});
  tools.querySelector('#eyeSelectAll').addEventListener('click',()=>{if(busy())return;selected.clear();targets().forEach(o=>selected.add(o.id));updateMarks();toast('👁 已選取掃描範圍內 '+selected.size+' 件；長按 🔯 三秒收納');invalidate()});
@@ -115,7 +112,8 @@ function create(opts){
  for(const event of ['pointerup','pointercancel','lostpointercapture'])collectButton.addEventListener(event,pointerEnd);
  collectButton.addEventListener('contextmenu',e=>e.preventDefault());
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
- function entries(){return (opts.getScanEntries?.()||bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>({...o,kind:'book'})))}
+ function entries(){return (opts.getScanEntries?.({excludeRoots:[eye,eyeLight,field,marks,ritual,cardHex.group,...bundleAnchors.values()]})||[])}
+
  function refreshPacked(){
   try{const raw=storage.getItem(B.KEY);if(raw===packedRaw)return;packed=B.claims(storage,true);worldCards=B.bundles(storage).filter(b=>b.contract.form==='world').map(b=>b.card);bundleError=null;packedRaw=raw}
   catch(e){if(!bundleError)toast(e.message);bundleError=e;packed=new Map()}
@@ -136,7 +134,7 @@ function create(opts){
    if(entry)entry.group.visible=false;
    const members=record.scanContract.members.map(ref=>entries().find(o=>o.kind===ref.kind&&o.id===ref.id));
    let anchor=bundleAnchors.get(record.id);
-   if(!anchor){anchor=new T.Group();anchor.userData.boundCardId=record.id;scene.add(anchor);bundleAnchors.set(record.id,anchor)}
+   if(!anchor){anchor=new T.Group();anchor.userData.boundCardId=record.id;anchor.userData.scanProtected=true;scene.add(anchor);bundleAnchors.set(record.id,anchor)}
    anchor.userData.boundCardTargetPoint=point=>{
     let nearest=null,distance=Infinity;
     for(const o of members.filter(Boolean))for(const g of o.groups||[o.group]){
@@ -242,7 +240,7 @@ function create(opts){
   const direction=(Math.atan2(dx,-dz)/RAD-cfg.direction+540)%360-180;
   return Math.hypot(dx,dz)<=cfg.radius&&(cfg.aperture===360||Math.abs(direction)<=cfg.aperture/2);
  }
- function targets(){return field.visible&&!bundleError?entries().filter(o=>(cfg.scope==='all'||o.kind===cfg.scope)&&!isPacked(o.kind,o.id)&&o.group.visible&&!(o.groups||[o.group]).some(g=>g.userData.boundCardId)&&inRange(o)):[]}
+ function targets(){return field.visible&&!bundleError?entries().filter(o=>!o.protected&&!isPacked(o.kind,o.id)&&o.group.visible&&!(o.groups||[o.group]).some(g=>g.userData.boundCardId)&&inRange(o)):[]}
  function at(e){if(!field.visible)return null;const list=[];
   for(const o of targets()){for(const g of o.groups||[o.group])g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
@@ -273,7 +271,7 @@ function create(opts){
    const o=entries().find(e=>e.kind===ref.kind&&e.id===ref.id);if(!o)continue;
    const box=new T.Box3().makeEmpty();for(const g of o.groups||[o.group])box.expandByObject(g);
    if(box.isEmpty())continue;
-   const helper=new T.Box3Helper(box,0xffdc88);helper.userData.scanHighlight=true;
+   const helper=new T.Box3Helper(box,0xffdc88);helper.userData.scanHighlight=true;helper.userData.scanProtected=true;
    helper.material.transparent=true;helper.material.opacity=.85;helper.material.depthTest=false;
    helper.userData.scanRef=ref;scene.add(helper);bundleHighlights.push(helper);
   }

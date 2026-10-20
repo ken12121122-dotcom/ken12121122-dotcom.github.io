@@ -55,7 +55,9 @@
   if(!Array.isArray(members)||!members.length||members.length>512)throw Error('沒有可收納的掃描物件');
   const refs=members.map(r=>({kind:r.kind,id:r.id}));
   if(!refs.every(validRef)||new Set(refs.map(r=>r.kind+':'+r.id)).size!==refs.length)throw Error('掃描物件身分無效或重複');
-  const available=new Set(allowed.map(r=>r.kind+':'+r.id)),owned=claims(storage);
+  // New bindings cannot include the avatar; old bindings still resolve for recovery.
+  if(refs.some(r=>r.kind==='scene'&&r.id==='scene.keeper'))throw Error('玩家角色不可掃描或封入卡片');
+  const available=new Set(allowed.filter(r=>!r.protected).map(r=>r.kind+':'+r.id)),owned=claims(storage);
   if(refs.some(r=>!available.has(r.kind+':'+r.id)||owned.has(r.kind+':'+r.id)))throw Error('掃描物件已離開範圍、被收納或不可用');
   const id='scan.bundle.'+c.id,now=new Date().toISOString();
   const next={...c,title:'掃描收納卡',description:'真實之眼收納 '+refs.length+' 件物件；原始身分保留。',cardType:'收納契約',
