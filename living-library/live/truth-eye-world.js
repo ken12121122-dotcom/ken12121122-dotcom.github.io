@@ -603,6 +603,7 @@ function create(opts){
   invalidate();return true;
  }
  function pointerDown(e){
+  if(hold?.ceremonyStarted){heldPointers.add(e.pointerId);return true}
   if(hold?.type==='bound-bundle'&&hold.id!==e.pointerId){
    const origin=hold;stop();heldPointers.delete(origin.id);
    opts.onMemberDrag?.({pointerId:origin.id},{x:origin.x,y:origin.y});return false;
