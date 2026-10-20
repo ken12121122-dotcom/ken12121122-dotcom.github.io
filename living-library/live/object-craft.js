@@ -10,6 +10,9 @@
  const ORIGIN_RUNE='local.rune.origin';
  const ContractPolicy=typeof module==='object'&&module.exports?
    require('./contract-policy.js'):root.LivingContractPolicy;
+ const UnbindArt=typeof module==='object'&&module.exports?
+   require('./unbind-card-art.js'):root.LivingUnbindCardArt;
+ const UNBIND_ART_BACKUP_KEY=KEY+'.backup.unbind-artwork-20261020';
  // Standalone card/book editors load this module without the world contract runtime.
  // Only the unbind transaction requires the shared policy.
  function read(storage){
@@ -565,8 +568,30 @@
   const living=state.objects.find(c=>isPlayerCard(c)&&c.status==='draft'&&
    ['hover','book'].includes(c.placement)&&!c.containment&&
    isUnbindSpellTitle(c.title)&&c.image);
-  const art=state.recipeArtwork||living?.image||null;
+  // Use the player's existing photograph first; when missing, the owner's
+  // approved second image is the offline default for the GBA recipe.
+  const art=state.recipeArtwork||living?.image||UnbindArt?.image||null;
   return {...UNBIND_BLUEPRINT,image:art?{...art}:null};
+ }
+ // Safe optional migration of only live unbinding cards without photos.
+ // Preserve custom photographs, unrelated cards, original IDs and contracts.
+ function restoreMissingUnbindImages(storage,clock=()=>new Date().toISOString()){
+  const state=read(storage),art=unbindRecipe(storage).image;
+  if(!art||typeof art.dataUrl!=='string'||!/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(art.dataUrl)||
+     art.dataUrl.length>70000)return [];
+  const targets=state.objects.filter(c=>isPlayerCard(c)&&c.status==='draft'&&
+   ['hover','book'].includes(c.placement)&&!c.containment&&!c.consumedBy&&
+   !c.image&&isUnbindSpellTitle(c.title)&&!isPermanentRuneCard(c)&&
+   !c.runeBinding&&!c.runeContract&&!c.scanContract&&!c.truthEyeContract);
+  if(!targets.length)return [];
+  const ids=new Set(targets.map(c=>c.id)),raw=storage.getItem(KEY);
+  // Backup before the single mutation; storage quota errors leave the
+  // original card untouched. Already-existing backup is never overwritten.
+  if(storage.getItem(UNBIND_ART_BACKUP_KEY)===null)storage.setItem(UNBIND_ART_BACKUP_KEY,raw);
+  const when=clock(),objects=state.objects.map(c=>ids.has(c.id)?
+   {...c,image:{...art},revision:c.revision+1,updatedAt:when}:c);
+  write(storage,objects);
+  return [...ids];
  }
  function canDownloadTemplate(c){
   // Opt-in only: being a draft card, an old book, or a stored spell is not
@@ -756,6 +781,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,planDestroyCard,destroyCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,planDestroyCard,destroyCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,restoreMissingUnbindImages,UNBIND_BLUEPRINT_ID,UNBIND_ART_BACKUP_KEY,inspectCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
