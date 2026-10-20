@@ -1512,7 +1512,7 @@ function updateFloatingCards(now){
   // Otherwise the ordinary orbit updater resets the flight on every frame.
   if(truthEye.ownsTransferCard(entry.id))continue;
   if(atlasRuntime?.isDraggingCard(entry.id))continue;
-  if(['world','sealed'].includes(entry.record.truthEyeContract?.form)||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+  if(entry.record.scanContract?.form==='world'||['world','sealed'].includes(entry.record.truthEyeContract?.form)||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
     // Keep the hidden ORIGINAL card's world orbit anchor current. Its 3D mesh
     // is reused for the inverse seal -> card animation, never cloned.
     const p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
@@ -1803,6 +1803,11 @@ const truthEye=window.LivingTruthEyeWorld.create({
  THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
+ onMemberTap(e){if(atlasRuntime.pointerDown(e)){atlasRuntime.pointerUp(e);return}pick(e,true)},
+ onMemberDrag(e,origin){
+  touchPoints.set(e.pointerId,{x:origin.x,y:origin.y,down:{...origin}});
+  wasMoving=true;drag={x:origin.x,y:origin.y,lastX:origin.x,lastY:origin.y};
+ },
  summonShelfBooks(){for(const o of bookEntities)if(!o.b.active&&['public','local'].includes(o.b.sourceLayer))window.LivingLibrary.summonBook(o.id)},
  getScanEntries(){return [...worldScanEntries.filter(e=>e.id!=='scene.rune.origin'||!window.LivingObjectCraft.getRuneBoundCard(localStorage)),...bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>{
   const alternate=atlasRuntime.scanEntries?.().find(e=>e.id===o.id);
@@ -2300,7 +2305,8 @@ function inspectSpellNearest(spellId){
    const record=originalById.get(id);
    if(!record||record.visible||!ContractPolicy.canUnbind(record.record))return;
    node.updateWorldMatrix(true,false);
-   const p=node.getWorldPosition(new THREE.Vector3());
+   const origin=source.group.getWorldPosition(new THREE.Vector3());
+   const p=node.userData.boundCardTargetPoint?.(origin)||node.getWorldPosition(new THREE.Vector3());
    record.position={x:p.x,y:p.y,z:p.z};
    record.visible=true;
    record.worldContractTarget=true;
@@ -2684,8 +2690,8 @@ const runeInspection=Object.freeze({
  inspectHold:()=>Object.freeze({...runeGesture.inspect(),nearest:runeNearest}),
  cancelHold:()=>runeGesture.cancelAll()
 });
-function pick(e){
- if(truthEye.pick(e))return 'truth-eye';
+function pick(e,skipTruthEye=false){
+ if(!skipTruthEye&&truthEye.pick(e))return 'truth-eye';
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;

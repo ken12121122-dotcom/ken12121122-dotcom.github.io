@@ -85,7 +85,9 @@ function create(opts){
  let cardCeremony=null,cardHold=null;
  const cardCaptured=new Set();
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
- let bundleTransfer=null,packed=new Map(),bundleError=null,packedRaw;
+ let bundleTransfer=null,packed=new Map(),bundleError=null,packedRaw,worldCards=[];
+ const bundleAnchors=new Map();
+ const bundleHighlights=[];
  const Directed=root.LivingDirectedTransfer;
  if(!Directed?.normalize||!Directed?.sample)throw Error('缺少既有卡片定向吸收動畫');
  // A consumed pointer remains consumed even after the 3-second timer completes.
@@ -114,7 +116,7 @@ function create(opts){
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
  function entries(){return (opts.getScanEntries?.()||bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>({...o,kind:'book'})))}
  function refreshPacked(){
-  try{const raw=storage.getItem(B.KEY);if(raw===packedRaw)return;packed=B.claims(storage,true);bundleError=null;packedRaw=raw}
+  try{const raw=storage.getItem(B.KEY);if(raw===packedRaw)return;packed=B.claims(storage,true);worldCards=B.bundles(storage).filter(b=>b.contract.form==='world').map(b=>b.card);bundleError=null;packedRaw=raw}
   catch(e){if(!bundleError)toast(e.message);bundleError=e;packed=new Map()}
  }
  function isPacked(kind,id){return packed.has(kind+':'+id)}
@@ -124,6 +126,25 @@ function create(opts){
   const mask=bundleTransfer?.releasing?new Map([...packed].filter(([,id])=>id!==bundleTransfer.cardId)):packed;
   for(const o of entries())if(o.kind==='book'&&mask.has(o.kind+':'+o.id))for(const g of o.groups||[o.group])g.visible=false;
   opts.applyPacked?.(mask);
+  const liveIds=new Set(worldCards.map(c=>c.id));
+  for(const [id,anchor] of bundleAnchors)if(!liveIds.has(id)){scene.remove(anchor);bundleAnchors.delete(id)}
+  for(const record of worldCards){
+   const entry=floatingCards.get(record.id);
+   if(entry)entry.group.visible=false;
+   const members=record.scanContract.members.map(ref=>entries().find(o=>o.kind===ref.kind&&o.id===ref.id));
+   let anchor=bundleAnchors.get(record.id);
+   if(!anchor){anchor=new T.Group();anchor.userData.boundCardId=record.id;scene.add(anchor);bundleAnchors.set(record.id,anchor)}
+   anchor.userData.boundCardTargetPoint=point=>{
+    let nearest=null,distance=Infinity;
+    for(const o of members.filter(Boolean))for(const g of o.groups||[o.group]){
+     const box=new T.Box3().setFromObject(g),p=box.isEmpty()?g.getWorldPosition(new T.Vector3()):box.clampPoint(point,new T.Vector3());
+     const d=Math.hypot(p.x-point.x,p.z-point.z);if(d<distance){nearest=p;distance=d}
+    }
+    return nearest;
+   };
+   anchor.visible=members.every(Boolean);
+   if(anchor.visible){anchor.position.set(0,0,0);for(const o of members)anchor.position.add(o.group.getWorldPosition(new T.Vector3()));anchor.position.multiplyScalar(1/members.length)}
+  }
  }
  function bundlePrompt(kind,record,members){
   if(busy())return false;
@@ -134,7 +155,7 @@ function create(opts){
  function startBundleTransfer(request){
   try{
    const record=craft.listCards(storage).find(c=>c.id===request.cardId),entry=floatingCards.get(request.cardId);
-   if(bundleError||!record||record.revision!==request.cardRevision||!entry?.group.visible||entry.summon||entry.recycle||entry.drag||entry.focused||record.placement!=='hover'||record.containerId||record.ownerBookId)throw Error('原卡已改變或正在移動，請重新長按');
+   if(bundleError||!record||record.revision!==request.cardRevision||(!entry?.group.visible&&request.kind!=='bundle-repack')||!entry||entry.summon||entry.recycle||entry.drag||entry.focused||record.placement!=='hover'||record.containerId||record.ownerBookId)throw Error('原卡已改變或正在移動，請重新長按');
    const members=request.members||B.contract(record).members;
    const available=request.kind==='bundle-bind'?targets():entries();
    if(request.kind==='bundle-bind'&&(!B.blank(record)||B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries())!==record.id))throw Error('最近空白卡已改變');
@@ -239,7 +260,44 @@ function create(opts){
   }
   for(const id of [...selected])if(!set.has(id))selected.delete(id);
  }
+ function clearBundleHighlights(){
+  for(const helper of bundleHighlights){scene.remove(helper);helper.geometry.dispose();helper.material.dispose()}
+  bundleHighlights.length=0;
+ }
+ function showBundleHighlights(record){
+  clearBundleHighlights();
+  for(const ref of record.scanContract.members){
+   const o=entries().find(e=>e.kind===ref.kind&&e.id===ref.id);if(!o)continue;
+   const box=new T.Box3().makeEmpty();for(const g of o.groups||[o.group])box.expandByObject(g);
+   if(box.isEmpty())continue;
+   const helper=new T.Box3Helper(box,0xffdc88);helper.userData.scanHighlight=true;
+   helper.material.transparent=true;helper.material.opacity=.85;helper.material.depthTest=false;
+   helper.userData.scanRef=ref;scene.add(helper);bundleHighlights.push(helper);
+  }
+ }
+ function boundMemberAt(e){
+  if(bundleError)return null;
+  const owners=new Map();
+  for(const b of B.bundles(storage))if(b.contract.form==='world')for(const ref of b.contract.members)owners.set(ref.kind+':'+ref.id,b.card);
+  if(!owners.size)return null;
+  const meshes=[],keys=new Map();
+  function add(group,key){group.traverse(m=>{
+   if(!m.isMesh||m.material?.colorWrite===false)return;
+   for(let p=m;p;p=p.parent)if(!p.visible)return;
+   meshes.push(m);if(key)keys.set(m,key);
+  })}
+  scene.updateMatrixWorld(true);
+  for(const o of entries())for(const g of o.groups||[o.group])add(g,o.kind+':'+o.id);
+  // Scanner markers also represent non-mesh objects (lights, lines, particles).
+  // Reuse their stable reference so a bound marker acts on its whole contract.
+  for(const o of entries()){const key=o.kind+':'+o.id,marker=markMap.get(o.id);if(owners.has(key)&&marker?.visible)add(marker,key)}
+  for(const c of floatingCards.values())add(c.group,null);
+  if(eye.visible)add(eye,null);
+  const found=hit(e,meshes),key=found&&keys.get(found.object);
+  const record=owners.get(key);return record?{record,key}:null;
+ }
  function stop(){
+  clearBundleHighlights();
   if(hold){clearTimeout(hold.timer);hold=null}
   collectButton?.removeAttribute('data-holding');
   hex.clear();invalidate();
@@ -390,11 +448,18 @@ function create(opts){
  }
  function complete(token){
   if(!hold||hold.token!==token)return;
-  const type=hold.type;stop();
+  const gesture=hold,type=gesture.type;stop();
   // Contract/movement state can change when a card enters or leaves the
   // compendium. Never act on a cached original revision.
   state();
   selectedUntil=performance.now()+1800;
+  if(type==='bound-bundle'){
+   const record=craft.listCards(storage).find(c=>c.id===gesture.cardId);
+   if(!record||record.revision!==gesture.revision||B.contract(record)?.form!=='world'){
+    toast('整組契約已改變，請重新長按');return;
+   }
+   bundlePrompt('bundle-repack',record);return;
+  }
   if(type==='books'){
    try{const ids=new Set(selected),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
     if(!members.length||members.length!==ids.size)throw Error('選取物件已離開掃描範圍，請重新掃描');
@@ -498,16 +563,17 @@ function create(opts){
   }
   invalidate();
  }
- function start(type,id,x,y){
+ function start(type,id,x,y,contractRecord=null){
   if(hold||pending||transfer||bundleTransfer||dialog.open)return false;
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
   if(type==='books')for(const o of entries())if(selected.has(o.id))box.expandByObject(o.group);
+  if(contractRecord)for(const ref of contractRecord.scanContract.members){const o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);if(o)for(const g of o.groups||[o.group])box.expandByObject(g)}
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
   const size=box.isEmpty()?new T.Vector3(2,0,2):box.getSize(new T.Vector3());
-  const radius=type==='books'?Math.max(1.2,Math.hypot(size.x,size.z)*.62):1.65;
+  const radius=(type==='books'||type==='bound-bundle')?Math.max(1.2,Math.hypot(size.x,size.z)*.62):1.65;
   hex.setRadius(radius);
-  if(type==='books'){
+  if(type==='books'||type==='bound-bundle'){
    ritual.position.set(center.x,.43,center.z);
    ritual.rotation.set(-Math.PI/2,0,0);
   }else{
@@ -519,10 +585,20 @@ function create(opts){
   const token=++serial;
   hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
   if(type==='books')collectButton.dataset.holding='true';
+  if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision;showBundleHighlights(contractRecord)}
   invalidate();return true;
  }
  function pointerDown(e){
+  if(hold?.type==='bound-bundle'&&hold.id!==e.pointerId){
+   const origin=hold;stop();heldPointers.delete(origin.id);
+   opts.onMemberDrag?.({pointerId:origin.id},{x:origin.x,y:origin.y});return false;
+  }
   if(e.button!==0||e.isPrimary===false||hold||transfer||bundleTransfer||pending||dialog.open)return false;
+  const member=boundMemberAt(e);
+  if(member){
+   heldPointers.add(e.pointerId);
+   start('bound-bundle',e.pointerId,e.clientX,e.clientY,member.record);return true;
+  }
   if(eye.visible&&hit(e,[eye])){
    heldPointers.add(e.pointerId);
    start(!card?'eye':card.truthEyeContract?.form==='sealed'?'eye-cardify':'eye-return',e.pointerId,e.clientX,e.clientY);
@@ -539,14 +615,22 @@ function create(opts){
  function pointerMove(e){
   if(!heldPointers.has(e.pointerId)&&hold?.id!==e.pointerId)return false;
   if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
-    (e.pointerType==='touch'||e.pointerType==='pen'?26:15))stop();
+    (e.pointerType==='touch'||e.pointerType==='pen'?26:15)){
+   const origin=hold;stop();
+   if(origin.type==='bound-bundle'){
+    heldPointers.delete(e.pointerId);opts.onMemberDrag?.(e,{x:origin.x,y:origin.y});return false;
+   }
+  }
   return true;
  }
  function pointerEnd(e){
   const used=heldPointers.delete(e.pointerId);
   if(hold?.id===e.pointerId){
    if(e.type==='pointerup'&&performance.now()-hold.started>=3000)complete(hold.token);
-   else stop();
+   else{
+    const shortTap=e.type==='pointerup'&&hold.type==='bound-bundle';
+    stop();if(shortTap)opts.onMemberTap?.(e);
+   }
    return true;
   }
   return used;
@@ -579,11 +663,16 @@ function create(opts){
   }
   if(hold){
    const p=clamp((now-hold.started)/3000,0,1);
-   if(hold.type!=='books'){
+   if(hold.type!=='books'&&hold.type!=='bound-bundle'){
     eye.getWorldPosition(ritual.position);
     ritual.quaternion.copy(camera.quaternion);
    }
    hex.update(p,now);
+   for(const helper of bundleHighlights){
+    const ref=helper.userData.scanRef,o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);
+    if(o){helper.box.makeEmpty();for(const g of o.groups||[o.group])helper.box.expandByObject(g);helper.updateMatrixWorld(true)}
+    helper.material.opacity=.55+.4*Math.sin(p*Math.PI*3)**2;
+   }
    if(p>=1)complete(hold.token);
   }else if(now<selectedUntil){
    // Original selection retains the seal briefly before opening confirmation.
@@ -670,7 +759,7 @@ function create(opts){
  }
  apply();state();
  return Object.freeze({tick,active,applyPacked,isPacked,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
-  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},objects:entries().map(o=>({id:o.id,kind:o.kind,visible:(o.groups||[o.group]).some(g=>g.visible)})),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
+  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},hold:hold?{type:hold.type,cardId:hold.cardId,progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);

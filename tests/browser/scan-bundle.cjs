@@ -66,17 +66,26 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   // Actual canvas pointer at original-card projected center, via the existing
   // atlas/card handler (not a direct call to a binder or long-press function).
   const holdCard=async id=>{const p=(await inspect()).cards.find(c=>c.id===id);assert.ok(p,'original card is visible');await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open||document.querySelector('#runeUnbindDialog').open,null,{timeout:15000});await page.mouse.up()};
+  const memberPoint=async(kind='book')=>{const snap=await page.evaluate(()=>LivingScene.truthEye.inspect({pickPoints:true}));const p=snap.objects.find(o=>o.kind===kind&&o.id!=='cardCollection'&&o.memberPickable&&o.x>20&&o.x<420&&o.y>90&&o.y<650);assert.ok(p,'a real unobstructed bound '+kind+' member is visible: '+JSON.stringify(snap.objects.filter(o=>o.kind===kind)));return p};
+  const holdMember=async(kind)=>{const p=await memberPoint(kind);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(250);const h=(await inspect()).hold;assert.equal(h?.type,'bound-bundle');assert.ok(h.highlightCount>1,'all group members highlight');await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
   await holdCard('local.card.medium');
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true,'original card canvas hold opens restoration');
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(500);
   assert.equal((await inspect()).packed.length,0);assert.equal((await inspect()).scanned.length,count);
   report.checks.push('actual canvas hold on same original card restores every original book');
   await page.screenshot({path:path.join(out,'books-restored.png')});
-  await holdCard('local.card.medium');
+  assert.ok(!(await inspect()).cards.some(c=>c.id==='local.card.medium'),'materialized original card disappears');
+  await page.locator('#eyeRadius').fill('2');await page.locator('#eyeRadius').dispatchEvent('input');
+  const tapped=await memberPoint();await page.mouse.click(tapped.x,tapped.y);await page.waitForTimeout(350);
+  assert.ok(await page.locator('#drawerWrap').evaluate(e=>e.classList.contains('open')),'short tap retains normal book function');await page.locator('#closeDrawer').click();
+  await holdMember();await page.locator('#truthEyeCancel').click();assert.ok(!(await inspect()).cards.some(c=>c.id==='local.card.medium'));
+  await holdMember();
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.equal((await inspect()).packed.length,count);
-  report.checks.push('same original card completes world -> card again, with no duplicated member IDs');console.log('repacked');
+  assert.ok((await inspect()).cards.some(c=>c.id==='local.card.medium'),'same original card returns after group cardification');
+  await page.locator('#eyeRadius').fill('20');await page.locator('#eyeRadius').dispatchEvent('input');
+  report.checks.push('materialized card disappears; short tap opens original book; member hold highlights entire group, cancel preserves world; same card returns even with scanner radius reduced');console.log('repacked');
   await holdCard('local.card.spell');await page.waitForTimeout(700);
   assert.equal(await page.locator('#runeUnbindDialog').evaluate(e=>e.open),true,'existing解除契約 card selects collection');
   assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),'local.card.medium');
@@ -105,19 +114,29 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
   report.checks.push('entire-library card retains every original after reload and restores scene, lights, keeper and books');
   await page.screenshot({path:path.join(out,'world-restored.png')});
-  await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  assert.ok(!now.cards.some(c=>c.id===worldCard),'entire-library original card disappears in world form');
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
+  assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form card stays absent after reload');
+  await holdMember('scene');await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.equal((await inspect()).packed.length,worldCount);
+  await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form original is hidden before解除契約');
   const worldSpell=await page.evaluate(()=>{let c=LivingObjectCraft.createBlankCard(localStorage,crypto);c=LivingObjectCraft.editCard(localStorage,c.id,{title:'解除契約'});LivingScene.refreshFloatingCards();return c.id});
   await page.waitForTimeout(500); // Let the new original card enter its actual orbit before projecting the pointer.
   // Adjacent orbit slots can overlap in the front camera. Use the real free
   // camera gesture to expose the spell instead of clicking through the card in front.
+  const beforeDrag=(await inspect()).cards.find(c=>c.id===worldSpell);
   await page.mouse.move(120,510);await page.mouse.down();await page.mouse.move(330,510,{steps:12});await page.mouse.up();await page.waitForTimeout(400);
+  const afterDrag=(await inspect()).cards.find(c=>c.id===worldSpell);
+  assert.ok(Math.hypot(afterDrag.x-beforeDrag.x,afterDrag.y-beforeDrag.y)>1,'dragging a bound floor still rotates the real camera');
   await holdCard(worldSpell);
   assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),worldCard);
   await page.locator('#runeUnbindConfirm').click();
   await page.waitForFunction(id=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id===id).scanContract,worldCard);await page.waitForTimeout(350);
   now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
-  report.checks.push('entire-library contract repacks into same card; existing解除契約 spell then restores all originals and removes contract');
+  assert.ok(now.cards.some(c=>c.id===worldCard),'解除契約 restores the original blank card from hidden world form');
+  report.checks.push('world-form card remains absent after reload; actual member hold repacks whole library into same card; existing解除契約 targets hidden original through its unique world anchor and restores every original');
   assert.deepEqual(report.errors,[]);report.status='PASS';
  }catch(e){report.status='FAIL';report.failure=e.stack;if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});throw e}
  finally{await fs.writeFile(path.join(out,'scan-bundle-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
