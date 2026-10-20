@@ -59,8 +59,13 @@
    });
   }
   close(){if(!this.#closed){this.#closed=true;this.#db.close()}}
-  pending(storage=null){
+  pending(storage=undefined){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   // Browser consumers that call pending() without arguments must NOT read a
+   // card snapshot after its local original was destroyed. Node adapters may
+   // pass the explicit source storage, as before.
+   if(storage===undefined&&typeof globalThis.localStorage!=='undefined')
+    storage=globalThis.localStorage;
    requireNoPendingDestruction(storage);
    return new Promise((resolve,reject)=>{
     const tx=this.#db.transaction('pending','readonly'),request=tx.objectStore('pending').getAll();let rows;
