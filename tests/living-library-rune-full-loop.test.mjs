@@ -20,7 +20,7 @@ function memory(records){
 const originId='local.card.origin',spellId='local.card.unbind',blankId='local.card.blank';
 function make(){
  const target=card(originId);
- const spell=card(spellId,'解除契約卡');
+ const spell=card(spellId,'解除契約卡',1,{downloadTemplate:true});
  const blank=card(blankId,'空白卡片',1,{description:'',image:null,cardNumber:'',cardType:'',
   linkedCardId:null,ability:null,permissions:[],placement:'book',
   containerId:State.ATLAS,ownerBookId:State.ATLAS,slotIndex:9});
