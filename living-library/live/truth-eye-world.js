@@ -275,7 +275,7 @@ function create(opts){
   });
  }
  function at(e){if(!field.visible)return null;const list=[];
-  for(const o of targets()){for(const g of o.groups||[o.group])g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
+  for(const o of targets()){for(const g of o.groups||[o.group])if(!backgroundSurface(g))g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
  }
  // Scanner does not intercept short taps or require manual selection.
@@ -335,6 +335,14 @@ function create(opts){
    helper.userData.scanRef=ref;scene.add(helper);bundleHighlights.push(helper);
   }
  }
+ // Wide flat meshes remain scanable but must not capture touches across the world.
+ // This is based on physical dimensions, never on a particular object's name or ID.
+ function backgroundSurface(group){
+  const box=new T.Box3().setFromObject(group);
+  if(box.isEmpty())return false;
+  const size=box.getSize(new T.Vector3());
+  return Math.max(size.x,size.z)>cfg.radius*1.4&&size.y<1;
+ }
  function boundMemberAt(e){
   if(bundleError)return null;
   const owners=new Map();
@@ -347,7 +355,7 @@ function create(opts){
    meshes.push(m);if(key)keys.set(m,key);
   })}
   scene.updateMatrixWorld(true);
-  for(const o of entries())for(const g of o.groups||[o.group])add(g,o.kind+':'+o.id);
+  for(const o of entries())for(const g of o.groups||[o.group])if(!backgroundSurface(g))add(g,o.kind+':'+o.id);
   // Scanner markers also represent non-mesh objects (lights, lines, particles).
   // Reuse their stable reference so a bound marker acts on its whole contract.
   for(const o of entries()){const key=o.kind+':'+o.id,marker=markMap.get(o.id);if(owners.has(key)&&marker?.visible)add(marker,key)}
@@ -675,6 +683,8 @@ function create(opts){
    opts.onMemberDrag?.({pointerId:origin.id},{x:origin.x,y:origin.y});return false;
   }
   if(e.button!==0||e.isPrimary===false||hold||transfer||bundleTransfer||pending||dialog.open)return false;
+  // Real object interactions outrank scanner long-holds.
+  if(opts.shouldYieldSceneGesture?.(e))return false;
   const member=boundMemberAt(e);
   if(member){
    heldPointers.add(e.pointerId);
@@ -722,7 +732,7 @@ function create(opts){
     const tapType=e.type==='pointerup'?hold.type:null;
     stop();
     // Short tap never changes scan results.
-    if(tapType==='bound-bundle')opts.onMemberTap?.(e);
+    if(tapType==='bound-bundle'||tapType==='scan')opts.onMemberTap?.(e);
    }
    return true;
   }
