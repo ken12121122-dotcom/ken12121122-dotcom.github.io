@@ -119,7 +119,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   now=await inspect();assert.equal(now.packed.length,worldCount);assert.equal(now.objects.filter(o=>o.visible&&o.id!=='scene.keeper').length,0);
   await holdCard(worldCard);assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
-  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(worldSnapshot.scanned.every(ref=>now.objects.some(o=>o.kind===ref.kind&&o.id===ref.id&&o.visible)),'every actually scanned member restores; hidden unselected system helpers are not forced visible');
   report.checks.push('world contract restores scene and books; the protected player avatar never enters the contract');
   await page.screenshot({path:path.join(out,'world-restored.png')});
   assert.ok(!now.cards.some(c=>c.id===worldCard),'entire-library original card disappears in world form');
@@ -143,7 +143,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),worldCard);
   await page.locator('#runeUnbindConfirm').click();
   await page.waitForFunction(id=>!LivingObjectCraft.listCards(localStorage).find(c=>c.id===id).scanContract,worldCard);await page.waitForTimeout(350);
-  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(now.objects.filter(o=>o.kind==='scene').every(o=>o.visible));
+  now=await inspect();assert.equal(now.packed.length,0);assert.equal(now.scanned.length,worldCount);assert.ok(worldSnapshot.scanned.every(ref=>now.objects.some(o=>o.kind===ref.kind&&o.id===ref.id&&o.visible)),'every actually scanned member restores; hidden unselected system helpers are not forced visible');
   assert.ok(now.cards.some(c=>c.id===worldCard),'解除契約 restores the original blank card from hidden world form');
   report.checks.push('world-form card remains absent after reload; actual member hold repacks whole library into same card; existing解除契約 targets hidden original through its unique world anchor and restores every original');
   assert.deepEqual(report.errors,[]);report.status='PASS';
