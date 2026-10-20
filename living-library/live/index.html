@@ -2420,10 +2420,20 @@ const spellHold=RuneHold.create({
   }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
  }
 });
+function disposeSpellVisual(group){
+ if(!group)return;
+ scene.remove(group);
+ group.traverse(node=>{
+  if(!node.isMesh)return;
+  node.geometry?.dispose();
+  const materials=Array.isArray(node.material)?node.material:[node.material];
+  for(const mat of materials){mat?.map?.dispose();mat?.dispose()}
+ });
+}
 function confirmSpellUnbind(){
  if(!spellSelection||unbindEffect)return;
  const selection=spellSelection;
- let committed=false;
+ let committed=false,visual=null;
  try{
   const latest=inspectSpellNearest(selection.casterId);
   const current=window.LivingObjectCraft.getRuneBoundCard(localStorage,selection.runeId);
@@ -2449,7 +2459,19 @@ function confirmSpellUnbind(){
    to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
    startedAt:started,duration,initialScale:caster.group.scale.x});
   // Copy ONLY the 3D appearance before deleting the physical spell record.
-  const visual=caster.group.clone(true);
+  visual=caster.group.clone(true);
+  // Original card renderer disposes its texture/material/mesh on refresh.
+  // Give the visual-only clone independent GPU resources for its final animation.
+  visual.traverse(node=>{
+   if(!node.isMesh)return;
+   node.geometry=node.geometry.clone();
+   const copyMaterial=source=>{
+    const mat=source.clone();
+    if(source.map){mat.map=source.map.clone();mat.map.needsUpdate=true}
+    return mat;
+   };
+   node.material=Array.isArray(node.material)?node.material.map(copyMaterial):copyMaterial(node.material);
+  });
   visual.userData.scanProtected=true;
   const originalScanMembers=window.LivingObjectCraft.listCards(localStorage)
    .find(c=>c.id===selection.targetId)?.scanContract?.members||[];
@@ -2468,10 +2490,10 @@ function confirmSpellUnbind(){
  }catch(error){
   spellSelection=null;closeSpellPrompt();
   // UI failure AFTER a committed save must never be reported as an undo.
-  if(committed){if(unbindEffect?.fxCard)scene.remove(unbindEffect.fxCard);unbindEffect=null;
+  if(committed){disposeSpellVisual(unbindEffect?.fxCard||visual);unbindEffect=null;
    try{refreshFloatingCards()}catch(_){}
    toast('契約已解除，但動畫更新失敗：'+String(error?.message||error))}
-  else toast('無法解除，原始資料保留：'+String(error?.message||error));
+  else {disposeSpellVisual(visual);toast('無法解除，原始資料保留：'+String(error?.message||error))}
  }
 }
 document.getElementById('runeUnbindConfirm').addEventListener('click',confirmSpellUnbind);
@@ -2483,7 +2505,7 @@ unbindDialog.addEventListener('close',syncRender);
 function cancelSpellUnbind(){
  closeSpellPrompt();spellSelection=null;
  spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
- if(unbindEffect?.fxCard)scene.remove(unbindEffect.fxCard);
+ if(unbindEffect?.fxCard)disposeSpellVisual(unbindEffect.fxCard);
  unbindEffect=null;unbindProgress.style.display='none';
  spellHexagram.clear();
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
@@ -2541,7 +2563,7 @@ function updateSpellEffect(now){
  spellRingMat.opacity=active?.85*(1-progress):.62;
  if(active&&progress>=1){
   // World state was committed at the end of the hold, BEFORE this visual effect.
-  scene.remove(active.fxCard);unbindEffect=null;
+  disposeSpellVisual(active.fxCard);unbindEffect=null;
   spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
   syncRender();
  }
