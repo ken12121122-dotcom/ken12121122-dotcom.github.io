@@ -104,6 +104,7 @@ function create(opts){
  tools.innerHTML='<button type="button" id="eyeSummon" aria-label="召喚全部書櫃書本" title="召喚全部書櫃書本">⇧</button><button type="button" id="eyeSelectAll" aria-label="全選掃描範圍內物件" title="全選掃描範圍內物件">⊙</button><button type="button" id="eyeCollect" aria-label="長按三秒收納選取物件" title="長按三秒收納選取物件">🔯</button><small id="eyeCount" role="status"></small>';
  host.querySelector('#eyeControls').append(tools);
  const extraStyle=document.createElement('style');extraStyle.textContent='.truthEyeTools{display:flex;flex-wrap:wrap;gap:5px}.truthEyeTools button{min-width:44px;min-height:44px}.truthEyeTools small{flex-basis:100%;line-height:1.5}.truthEyeTools button[data-holding="true"]{outline:2px solid #8cf6eb}';document.head.append(extraStyle);
+ const countLabel=tools.querySelector('#eyeCount'),collectButton=tools.querySelector('#eyeCollect');
  tools.querySelector('#eyeSummon').addEventListener('click',()=>{if(busy())return;opts.summonShelfBooks?.();invalidate()});
  tools.querySelector('#eyeSelectAll').addEventListener('click',()=>{if(busy())return;selected.clear();targets().forEach(o=>selected.add(o.id));updateMarks();toast('👁 已選取掃描範圍內 '+selected.size+' 件；長按 🔯 三秒收納');invalidate()});
  collectButton.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||!selected.size||!field.visible||busy())return;heldPointers.add(e.pointerId);collectButton.setPointerCapture(e.pointerId);e.preventDefault();start('books',e.pointerId,e.clientX,e.clientY)});
