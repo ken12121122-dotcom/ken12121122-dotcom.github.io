@@ -654,6 +654,66 @@
   write(storage,updated,recipeEdit?{recipeArtwork:card.image||null}:{});
   return {...card};
  }
+
+ // Explicit irreversible deletion: fail closed for contracts, permanent cards,
+ // duplicate identities and references from other live game objects.
+ function hasCardReference(value,id){
+  if(value===id)return true;
+  if(!value||typeof value!=='object')return false;
+  return Object.values(value).some(entry=>hasCardReference(entry,id));
+ }
+ function planDestroyCard(storage,id,expectedRevision){
+  if(typeof id!=='string'||!/^local[.]card[.][a-zA-Z0-9_-]{1,128}$/.test(id))
+   throw Error('只能銷毀玩家建立的本機卡片');
+  const state=read(storage),matches=state.objects.filter(x=>x.id===id&&isPlayerCard(x));
+  if(matches.length!==1)throw Error('卡片不存在或身分重複，已停止銷毀');
+  const card=matches[0];
+  if(!Number.isInteger(expectedRevision)||expectedRevision!==card.revision)
+   throw Error('卡片已變更，請重新選擇後再確認銷毀');
+  if(isPermanentRuneCard(card)||card.isUnique===true||card.unique===true||card.uniqueness||
+     card.copyPolicy==='forbidden'||card.reusePolicy==='unique')
+   throw Error('永久或唯一卡禁止銷毀');
+  if(!['draft','recycled'].includes(card.status)||
+     !['hover','book','recycled'].includes(card.placement))
+   throw Error('卡片不是可銷毀的普通狀態');
+  if(card.runeBinding||card.runeContract||card.scanContract||card.truthEyeContract||
+     card.boundCardId||card.boundRuneId||card.containment||card.consumedBy||
+     card.upgradeRequest||card.certification||card.permanentRegistry||card.permanentRegistration||
+     card.l2Certified||card.ability||
+     (Array.isArray(card.permissions)?card.permissions.length>0:!!card.permissions)||
+     Object.entries(card).some(([key,value])=>/Contract$/.test(key)&&!!value))
+   throw Error('此卡仍有契約、能力、升級或收納關聯，請先解除關聯');
+  if(card.status==='recycled'&&(card.containerId||card.ownerBookId))
+   throw Error('回收卡仍有書本位置，為保護原存檔已停止銷毀');
+  const affectedCopyIds=[];
+  for(const other of state.objects){
+   if(other===card)continue;
+   let probe=other;
+   if(isPlayerCard(other)&&other.copyInfo?.sourceId===id){
+    affectedCopyIds.push(other.id);
+    probe={...other};delete probe.copyInfo;
+   }
+   if(hasCardReference(probe,id))
+    throw Error('其他卡片或書本仍引用這張卡，請先解除有效關聯');
+  }
+  return {id:card.id,title:card.title,revision:card.revision,status:card.status,affectedCopyIds};
+ }
+ // One localStorage setItem, no tombstone, no recycle/history record.
+ function destroyCard(storage,{id,expectedRevision,confirmation,expectedSnapshot},clock=()=>new Date().toISOString()){
+  if(confirmation!=='銷毀')throw Error('必須輸入「銷毀」確認永久刪除');
+  if(typeof expectedSnapshot!=='string'||storage.getItem(KEY)!==expectedSnapshot)
+   throw Error('本機存檔已變動，未刪除任何卡片；請重新操作');
+  const plan=planDestroyCard(storage,id,expectedRevision),state=read(storage),when=clock();
+  const objects=state.objects.filter(item=>item.id!==id).map(item=>{
+   if(!plan.affectedCopyIds.includes(item.id))return item;
+   const updated={...item,revision:item.revision+1,updatedAt:when};
+   delete updated.copyInfo; // a visual copy retains its own ID and artwork
+   return updated;
+  });
+  if(storage.getItem(KEY)!==expectedSnapshot)throw Error('存檔在銷毀期間已變更，已停止刪除');
+  storage.setItem(KEY,JSON.stringify({...state,objects}));
+  return {id,deleted:true,detachedCopies:plan.affectedCopyIds.length};
+ }
  function recycleCard(storage,id,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可回收的本機卡片');
@@ -679,6 +739,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,planDestroyCard,destroyCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
