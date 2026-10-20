@@ -715,7 +715,7 @@ function openCardReader(card){
   else{const p=document.createElement('p');p.textContent='目前為網頁模式。此功能需使用新版念動圖書館 APK。';page.append(p);}
  }
  else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;
-  if(new URL(card.url,location.href).pathname.endsWith('/card-creation.html')){const fresh=new URL(card.url,location.href);fresh.searchParams.set('v','card-location-audit-20261020-v2');$('readerFrame').src=fresh.toString();$('readerExternal').href=fresh.toString()}
+  if(new URL(card.url,location.href).pathname.endsWith('/card-creation.html')){const fresh=new URL(card.url,location.href);fresh.searchParams.set('v','card-destroy-saga-20261021-v1');$('readerFrame').src=fresh.toString();$('readerExternal').href=fresh.toString()}
   else $('readerFrame').src=card.url;}
  else{$('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();const p=document.createElement('p');p.textContent=card.desc+'\n此功能使用原網站登入，於新分頁開啟。';const a=document.createElement('a');a.href=card.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='開啟 '+card.title+' ↗';page.append(p,a);}
 
