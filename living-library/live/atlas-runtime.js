@@ -45,7 +45,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   if(!reader||!craft.isBlankCopyMedium?.(reader.record))
    return toast('請先將未使用的空白卡放進 GBA 讀卡格');
   const source=templatesCached()[templateIndex];
-  if(!source)return toast('尚無可下載的卡片範本，請先建立一張普通卡');
+  if(!source)return toast('尚無可下載卡片；請在「卡片創造術」將想要的卡勾選為「可複製卡」並儲存');
   if(downloadDialog.open||downloadEffect)return;
   downloadConfirmation={blankId:reader.id,blankRevision:reader.record.revision,
    sourceId:source.id,sourceRevision:source.revision};
