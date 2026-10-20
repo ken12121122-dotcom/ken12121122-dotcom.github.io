@@ -51,7 +51,8 @@ test('full cycle: original card is sealed, manifested, returned, and unbound whi
  const used=unbind(db,target,snapshot[1]);
  assert.equal(used.target.runeBinding,undefined);
  assert.equal(used.target.placement,'hover');
- assert.equal(used.target.cardNumber,'editable-num');
+ assert.equal(used.target.title,'空白卡片');
+ assert.equal(used.target.cardNumber,'');
  assert.equal(used.spellId,spellId);assert.equal(used.consumed,true);
  assert.equal(db.all().length,2,'spent spell has no stored record');
  assert.equal(Craft.getRuneBoundCard(db),null);
@@ -73,7 +74,8 @@ test('copyable world spell must be downloaded BEFORE its one-shot consumption; n
  assert.equal(Craft.listDownloadableTemplates(db).some(c=>c.id===spellId),false);
  const newSpell=Craft.placeCard(db,blankId,null);
  assert.equal(Spell.isSpellCard(newSpell),true);
- const reSealed=Craft.sealRuneCard(db,Craft.ORIGIN_RUNE,originId,db.all().find(x=>x.id===originId).revision);
+ const renamed=Craft.editCard(db,originId,{title:'再次命名的法陣卡'});
+ const reSealed=Craft.sealRuneCard(db,Craft.ORIGIN_RUNE,originId,renamed.revision);
  const rematerialized=Craft.materializeRuneCard(db,Craft.ORIGIN_RUNE,originId,reSealed.revision);
  const second=unbind(db,rematerialized,newSpell);
  assert.equal(second.spellId,blankId);
