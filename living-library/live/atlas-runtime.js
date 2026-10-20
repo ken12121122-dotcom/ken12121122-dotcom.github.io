@@ -13,7 +13,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  let uploadCardId=null,uploadStatus={state:'idle',code:''};
  // GBA-FORGE-001: retro menu reads approved player-made templates by stable ID.
  // The former left-page cloning proposal remains a DIFFERENT, unapproved mechanic.
- let templateIndex=0,menuIndex=0,templateCache=[],templateStamp=null;
+ let templateIndex=0,menuIndex=0,templateCache=[],templateStamp=undefined;
  let downloadConfirmation=null,downloadEffect=null;
  const permanentGba=root.LivingPermanentGba?.create({storage,toast,refresh:()=>refresh(),
   invalidate,allowed:()=>!document.hidden&&!!focus?.gba,reduced});
@@ -30,7 +30,6 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   return templateCache;
  }
  function paintGba(reader,now=performance.now()){
-  if(screenMode==='download'&&!craft.isBlankCopyMedium?.(reader?.record))screenMode='menu';
   const progress=permanentGba?.active?permanentGba.progress(now):
    downloadEffect?Math.min(100,Math.max(0,
    100*(now-downloadEffect.started)/downloadEffect.duration)):null;
@@ -231,9 +230,8 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
       if(menuIndex===0)screenMode='card';
       else if(menuIndex===1)screenMode='observe';
       else if(menuIndex===2){
-       if(!craft.isBlankCopyMedium?.(reader?.record))
-        toast('卡片下載需要將一張全新的空白卡放進右側 GBA');
-       else {screenMode='download';templateIndex=0}
+       // Browsing recipes is free; only WRITING needs a physical blank card.
+       screenMode='download';templateIndex=0;
       }else if(menuIndex===3)screenMode='permanent';
        else toast('商店尚未開放，未執行購買');
       paintGba(reader);
