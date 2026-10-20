@@ -106,7 +106,16 @@ return {group,targets,buttons,setOpen(amount){left.rotation.y=Math.PI*(1-amount)
     const items=['卡片檢視','AI 觀察','卡片下載','永久卡管理','商店（未開放）'];
     for(let i=0;i<items.length;i++)
      txt((download.menuIndex===i?'▶ ':'  ')+items[i],35,202+i*40,23);
-    txt('下載請先插入空白卡',343,328,19);
+    txt('可先瀏覽範本，下載需空白卡',320,328,19);
+   }else if(mode==='download'){
+    // Users must be able to SEE the repeatable recipe even with no reader card.
+    const items=Array.isArray(download.items)?download.items:[];
+    const index=Math.min(items.length-1,Math.max(0,download.index||0));
+    txt('卡片範本庫',35,165,32);
+    txt(items.length?(index+1)+' / '+items.length:'沒有可用的範本',35,221,25);
+    txt(items[index]?.title||'請建立可複製卡',35,266,28);
+    txt('↑↓ 瀏覽 / 插入空白卡後按 A',35,318,21);
+    txt('B 返回',35,368,21);
    }else txt('放入一張卡片即可顯示',35,200,23);
    map.needsUpdate=true;return;
   }
