@@ -56,6 +56,6 @@ test('existing解除契約 spell atomically removes collection ownership and con
  assert.equal(result.cardId,medium.id);
  const released=Craft.unbindAndAbsorbSpell(s,{runeId:bound.runeBinding.runeId,targetId:bound.id,targetRevision:2,spellId:spell.id,spellRevision:1});
  assert.equal(released.target.id,medium.id);assert.equal(released.target.scanContract,undefined);assert.equal(released.target.runeBinding,undefined);
- assert.equal(released.spell.id,spell.id);assert.equal(released.spell.containment.kind,'consumed_spell');
- assert.equal(B.claims(s).size,0);assert.equal(B.read(s).objects.length,2);
+ assert.equal(released.spellId,spell.id);assert.equal(released.consumed,true);
+ assert.equal(B.claims(s).size,0);assert.equal(B.read(s).objects.length,1);
 });

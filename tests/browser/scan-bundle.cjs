@@ -112,40 +112,43 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy,null,{timeout:15000});
   await page.waitForTimeout(550);
   assert.equal((await inspect()).packed.length,0,'card releases same world object');
-  assert.ok((await inspect()).scanned.some(x=>x.id===chosenId));
-  assert.ok((await readNames()).some(x=>x.id===chosenId),'its name returns in scan readout');
-  report.checks.push('reload, original-card materialization and restored object name/count remain correct');
+  assert.ok((await inspect()).objects.some(x=>x.id===chosenId&&x.visible),'materialized object is physically present');
+  assert.ok((await inspect()).scanned.some(x=>x.id===chosenId),'scanner still discovers materialized geometry');
+  assert.ok((await readNames()).some(x=>x.id===chosenId),'world-form member remains visible in live scan readout');
+  const owner=await page.evaluate(id=>LivingScanBundle.claims(localStorage).get('scene:'+id),chosenId);
+  assert.equal(owner,'local.card.medium','member remains owned; independent re-binding is forbidden until spell unbind');
+  report.checks.push('materialization restores visible geometry, scanner detects it, and persistent ownership still blocks rebinding');
 
-  // The in-game "return objects" confirmation must now REALLY unbind.
+  // Materialization is a form switch, NEVER a contract release.
   const restoredViaGesture=await page.evaluate(()=>{
    const B=LivingScanBundle,storage=localStorage;
    const card=LivingObjectCraft.listCards(storage).find(c=>c.id==='local.card.medium');
    return {blank:B.blank(card),claims:[...B.claims(storage)],contract:card.scanContract||null};
   });
-  assert.ok(restoredViaGesture.blank,'3-second card release immediately restores the SAME original blank');
-  assert.deepEqual(restoredViaGesture.claims,[],'no old owner memory remains after visible card release');
-  assert.equal(restoredViaGesture.contract,null);
-  report.checks.push('3D card release (not separate unbinding spell) frees all object identities, returns empty original');
+  assert.equal(restoredViaGesture.blank,false,'3-second card materialization keeps original card bound');
+  assert.equal(restoredViaGesture.contract.form,'world');
+  assert.equal(restoredViaGesture.claims.length,1,'physical world object remains owned until spell is cast');
+  report.checks.push('long-hold card switches world form without unbinding');
 
-  // Legacy world-form contracts must still work with the generic spell.
-  const unbound=await page.evaluate(id=>{
+  // Only the one-shot unbinding spell releases the world-form contract.
+  const unbound=await page.evaluate(()=>{
    const B=LivingScanBundle,C=LivingObjectCraft,storage=localStorage;
    const card=C.listCards(storage).find(c=>c.id==='local.card.medium');
-   const ref={kind:'scene',id},bound=B.bind(storage,{cardId:card.id,revision:card.revision,members:[ref]},[ref]);
-   const world=B.setForm(storage,bound.id,bound.revision,'world',[ref]);
    const spell=C.listCards(storage).find(c=>c.id==='local.card.spell');
    const before=B.claims(storage).size;
    const result=C.unbindAndAbsorbSpell(storage,{
-    runeId:world.runeBinding.runeId,targetId:world.id,targetRevision:world.revision,
+    runeId:card.runeBinding.runeId,targetId:card.id,targetRevision:card.revision,
     spellId:spell.id,spellRevision:spell.revision});
-   return {oldCount:before,newCard:result.target,spell:result.spell,remaining:[...B.claims(storage)]};
-  },chosenId);
+   return {oldCount:before,newCard:result.target,spellId:result.spellId,remaining:[...B.claims(storage)],
+    spellStillExists:C.read(storage).objects.some(x=>x.id===spell.id)};
+  });
   assert.equal(unbound.oldCount,1);
   assert.equal(unbound.newCard.title,'空白卡片');
   assert.equal(unbound.newCard.description,'');assert.equal(unbound.newCard.cardType,'');
   assert.equal(unbound.newCard.runeBinding,undefined);assert.equal(unbound.newCard.scanContract,undefined);
   assert.deepEqual(unbound.remaining,[]);
-  assert.equal(unbound.spell.containment.kind,'consumed_spell');
+  assert.equal(unbound.spellId,'local.card.spell');
+  assert.equal(unbound.spellStillExists,false,'spent spell record is permanently erased');
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
   await page.waitForTimeout(650);
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();

@@ -64,7 +64,7 @@ test('single existing unbind spell detects Truth Eye card OR real 3D world artif
   {visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
  assert.equal(choose(spell,[entry(sealed,4.5,0,{visible:true,artifactWorldAnchor:true})]).reason,'no_linked_card');
 });
-test('unbinding Truth Eye is atomic, consumes spell into same original card, and does not unbind origin',()=>{
+test('unbinding Truth Eye is atomic, deletes the spell, and does not unbind origin',()=>{
  const eye=card('local.card.eye','真實之眼',{
   runeBinding:{runeId:'artifact.truth-eye',state:'bound',boundAt:'past'},
   truthEyeContract:{artifactId:'artifact.truth-eye',form:'world',version:2},
@@ -82,9 +82,8 @@ test('unbinding Truth Eye is atomic, consumes spell into same original card, and
  assert.equal(result.target.truthEyeContract,undefined);
  assert.equal(result.target.cardNumber,'EYE-1');
  assert.equal(result.target.description,'使用者畫的眼睛');
- assert.equal(result.spell.containment.holderId,eye.id);
- assert.equal(result.spell.consumedBy,eye.id);
- assert.equal(db.snapshot().objects.length,3,'never mint new IDs');
+ assert.equal(result.spellId,cast.id);assert.equal(result.consumed,true);
+ assert.equal(db.snapshot().objects.length,2,'spent spell is erased');
  assert.deepEqual(db.snapshot().objects.find(x=>x.id===origin.id),origin,
   'the separate origin rune contract is untouched');
 });
@@ -135,8 +134,8 @@ test('future brand-new object IDs are detected automatically without unbind sour
   assert.deepEqual(out.target.image,target.image);
   assert.equal(out.target.cardNumber,target.cardNumber);
   assert.equal(out.target.id,target.id);
-  assert.equal(out.spell.consumedBy,target.id);
-  assert.equal(state.snapshot().objects.length,2);
+  assert.equal(out.spellId,'local.card.spell');
+  assert.equal(state.snapshot().objects.length,1);
  }
 });
 test('common target rules reject pending upgrades, permanent and malformed contracts',()=>{
@@ -207,14 +206,14 @@ test('spell cancellation leaves linked card completely untouched until confirmat
  for(const t of timers.values())if(t.due<=now)t.cb();
  assert.equal(selected.length,0);assert.equal(s.raw(),before);
 });
-test('world UI uses existing card pick, six-pointed 3s progress and confirmation dialog',async()=>{
+test('world UI uses one long hold for immediate atomic unbind and a visual-only effect',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  assert.match(html,/rune-unbind-spell\.js/);
  assert.match(html,/function boundObjectInScene\(cardId\)/);
  assert.match(html,/record\.worldContractTarget=true/);
  assert.match(html,/getRuneBoundCard\(localStorage,target\.runeId\)/);
  assert.match(html,/getRuneBoundCard\(localStorage,selection\.runeId\)/);
- assert.match(html,/runeId:active\.runeId,targetId:active\.targetId/);
+ assert.match(html,/runeId:selection\.runeId,targetId:selection\.targetId/);
  assert.match(html,/scene\.dispatchEvent\(\{type:'living-contract-unbound'/);
  assert.match(html,/id="runeUnbindProgress"/);
  assert.match(html,/id="runeUnbindDialog"/);
@@ -229,12 +228,13 @@ test('world UI uses existing card pick, six-pointed 3s progress and confirmation
  assert.match(html,/spellHexagram\.update\(info\.progress,now\)/);
  assert.match(html,/spellHexagram\.group\.quaternion\.copy\(camera\.quaternion\)/);
  assert.match(html,/spellHexagram=ContractHexagram\.create/);
- assert.match(html,/spellPromptTimer=setTimeout/);
- assert.match(html,/unbindEffect=\{\.\.\.selection,start:performance\.now\(\)/);
+ assert.match(html,/confirmSpellUnbind\(\)/);
+ assert.doesNotMatch(html,/unbindDialog\.showModal\(\)/);
+ assert.match(html,/unbindEffect=\{\.\.\.selection,fxCard:visual/);
  assert.match(html,/unbindAndAbsorbSpell\(/);
  assert.match(html,/DirectedTransfer\.sample\(active\.plan,now/);
- assert.match(html,/targetRevision:active\.expectedRevision,spellId:active\.casterId/);
- assert.match(html,/spellRevision:active\.spellRevision/);
+ assert.match(html,/targetRevision:selection\.expectedRevision,spellId:selection\.casterId/);
+ assert.match(html,/spellRevision:selection\.spellRevision/);
  assert.match(html,/caster\.group\.scale\.setScalar\(scale\)/);
  assert.match(html,/runeBound=null;runeNearest=null/);
  assert.doesNotMatch(html,/>3秒</);

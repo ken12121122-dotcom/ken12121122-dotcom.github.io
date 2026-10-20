@@ -61,6 +61,9 @@ input,textarea,select{color:#000!important;background:#fffaf0;border:1px solid #
 select{display:block;width:100%;padding:10px;border-radius:8px;margin-top:5px}
 button,#recycleCard,#recycleDialog button,.backupActions button{color:#000!important;background:#e6d5b6!important;min-height:44px;min-width:44px}
 #recycleDialog{background:#f4eddb;color:#000}
+.downloadOptIn{display:flex;align-items:center;gap:9px;border:1px solid #948774;padding:10px;border-radius:8px;background:#fffaf0;color:#000}
+.downloadOptIn input{width:20px;height:20px;flex:0 0 20px;accent-color:#275b55}
+.downloadOptInHelp{display:block;margin:0 0 9px}
 input[type=range]{padding:0;accent-color:#35494c}
 input::placeholder,textarea::placeholder{color:#000;opacity:1}
 button:disabled{opacity:.45}
@@ -87,6 +90,8 @@ button:disabled{opacity:.45}
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
    <label>卡片說明<textarea id="editDescription" maxlength="500" placeholder="自行填寫，亦可留空"></textarea></label>
    <label>內容類型<input id="editType" maxlength="20" autocomplete="off" placeholder="自行填寫，亦可留空"></label>
+   <label class="downloadOptIn"><input id="editDownloadable" type="checkbox"> 可複製卡（顯示在 GBA 卡片下載）</label>
+   <small class="downloadOptInHelp">預設不顯示。只有勾選並儲存的普通卡會列入下載；取消勾選即從清單移除。只複製卡面格式，不複製 ID、唯一編號、法陣或能力。</small>
    <div class="photoActions"><button id="choosePhoto" type="button" disabled aria-label="選擇卡面圖片" title="選擇圖片">▧</button><button id="removePhoto" type="button" disabled aria-label="移除卡面圖片" title="移除圖片">×</button><button id="flipCard" type="button" aria-label="翻到卡片紀錄" aria-pressed="false" title="翻面">⇄</button></div>
    <input id="photoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
    <div id="cropControls" hidden><label>圖片縮放<input id="photoScale" type="range" min="1" max="3" step="0.05" value="1"></label><label>左右位置<input id="photoX" type="range" min="0" max="100" value="50"></label><label>上下位置<input id="photoY" type="range" min="0" max="100" value="50"></label></div>
@@ -122,7 +127,7 @@ button:disabled{opacity:.45}
 </main>
 <script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
 <script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
-<script src="./object-craft.js?v=card-create-menu-fix-20261017"></script>
+<script src="./object-craft.js?v=card-copyable-category-20261020"></script>
 <script src="./object-backup.js"></script>
 <script src="./object-outbox.js"></script>
 <script>
@@ -136,7 +141,7 @@ button:disabled{opacity:.45}
  const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
  for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
  const selected=()=>cards().find(c=>c.id===currentId);
- function draft(){return {cardNumber:$('editNumber').value,title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,image:draftImage,linkedCardId:$('editLink').value||null}}
+ function draft(){return {cardNumber:$('editNumber').value,title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,downloadTemplate:$('editDownloadable').checked,image:draftImage,linkedCardId:$('editLink').value||null}}
  function paint(){
   const canvas=$('cardFace'),record={...draft(),permanentRegistry:selected()?.permanentRegistry};
   if(!back){window.LivingCompendiumCard.draw(canvas,record);return}
@@ -194,9 +199,10 @@ button:disabled{opacity:.45}
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
   $('editType').value=card?.cardType||'';
+  $('editDownloadable').checked=card?.downloadTemplate===true;
   $('editLink').value=card?.linkedCardId||'';
   const immutable=card?.permanentRegistry?.state==='registered'||card?.permanentCard===true;
-   for(const id of ['editNumber','editName','editDescription','editType','editLink',
+   for(const id of ['editNumber','editName','editDescription','editType','editLink','editDownloadable',
     'photoScale','photoX','photoY'])$(id).disabled=!!immutable;
    $('choosePhoto').disabled=!card||immutable;
    $('removePhoto').disabled=!card||!draftImage||immutable;
@@ -237,7 +243,7 @@ button:disabled{opacity:.45}
    btn.setAttribute('aria-label','編輯'+card.title);
    const icon=document.createElement('span');icon.textContent='◇';
    const title=document.createElement('strong');title.textContent=card.title;
-   const info=document.createElement('small');info.textContent='# '+card.id.slice(-8);
+   const info=document.createElement('small');info.textContent='# '+card.id.slice(-8)+(card.downloadTemplate===true?' · 可複製卡':'');
    btn.append(icon,title,info);btn.onclick=()=>{show(card);refresh();status('已開啟本機草稿卡')};
    host.append(btn);
   }
@@ -270,7 +276,7 @@ button:disabled{opacity:.45}
    show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存卡片草稿，保留目前的軌道或書內位置。');
   }catch(e){status(e.name==='QuotaExceededError'?'儲存空間不足；原卡片未改動，請縮小圖片或移除本次圖片後再試。':e.message||'儲存失敗',true)}
  });
- ['editNumber','editName','editDescription','editType','editLink'].forEach(id=>$(id).addEventListener('input',paint));
+ ['editNumber','editName','editDescription','editType','editLink','editDownloadable'].forEach(id=>$(id).addEventListener('input',paint));
  ['photoScale','photoX','photoY'].forEach(id=>$(id).addEventListener('input',()=>{syncCrop();paint()}));
  $('flipCard').onclick=()=>{back=!back;$('flipCard').setAttribute('aria-pressed',String(back));$('flipCard').setAttribute('aria-label',back?'翻回卡片正面':'翻到卡片紀錄');paint()};
  $('choosePhoto').onclick=()=>$('photoFile').click();

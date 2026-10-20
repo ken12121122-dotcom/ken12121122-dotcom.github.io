@@ -20,7 +20,7 @@ function memory(records){
 const originId='local.card.origin',spellId='local.card.unbind',blankId='local.card.blank';
 function make(){
  const target=card(originId);
- const spell=card(spellId,'解除契約卡');
+ const spell=card(spellId,'解除契約卡',1,{downloadTemplate:true});
  const blank=card(blankId,'空白卡片',1,{description:'',image:null,cardNumber:'',cardType:'',
   linkedCardId:null,ability:null,permissions:[],placement:'book',
   containerId:State.ATLAS,ownerBookId:State.ATLAS,slotIndex:9});
@@ -31,7 +31,7 @@ function unbind(db,target,spell){
   runeId:Craft.ORIGIN_RUNE,targetId:target.id,targetRevision:target.revision,
   spellId:spell.id,spellRevision:spell.revision},()=> '2026-10-17T15:00:00Z');
 }
-test('full cycle: original card is sealed into FLOOR rune, manifested, returned, manifested again, unbound, consuming spell INTO target card',()=>{
+test('full cycle: original card is sealed, manifested, returned, and unbound while the spent spell disappears',()=>{
  const db=make(),snapshot=db.all();
  let target=Craft.sealRuneCard(db,Craft.ORIGIN_RUNE,originId,1);
  assert.equal(target.runeBinding.state,'sealed');
@@ -52,37 +52,32 @@ test('full cycle: original card is sealed into FLOOR rune, manifested, returned,
  assert.equal(used.target.runeBinding,undefined);
  assert.equal(used.target.placement,'hover');
  assert.equal(used.target.cardNumber,'editable-num');
- assert.equal(used.spell.placement,'contained');
- assert.equal(used.spell.containment.kind,'consumed_spell');
- assert.equal(used.spell.containment.holderId,originId,'spell goes into TARGET CARD, never floor');
- assert.equal(db.all().length,3,'no source duplication');
+ assert.equal(used.spellId,spellId);assert.equal(used.consumed,true);
+ assert.equal(db.all().length,2,'spent spell has no stored record');
  assert.equal(Craft.getRuneBoundCard(db),null);
  assert.equal(Craft.floatingCards(db).some(x=>x.id===spellId),false);
 });
-test('consumed unbinding spell is a downloadable FORMAT: blank slot acquires own ID and can cast again after leaving GBA',()=>{
+test('copyable world spell must be downloaded BEFORE its one-shot consumption; no historic source remains',()=>{
  const db=make();
+ const originalSpell=db.all().find(c=>c.id===spellId);
+ assert.equal(Craft.canDownloadTemplate(originalSpell),true);
+ const generated=Craft.forgeBlankFromTemplate(db,{blankId,blankRevision:1,
+  sourceId:originalSpell.id,sourceRevision:originalSpell.revision});
+ assert.equal(generated.id,blankId);assert.equal(generated.title,'解除契約卡');
+ assert.equal(Spell.isSpellCard(generated),false,'downloaded card is still in the GBA reader');
  let target=Craft.sealRuneCard(db,Craft.ORIGIN_RUNE,originId,1);
  target=Craft.materializeRuneCard(db,Craft.ORIGIN_RUNE,originId,target.revision);
- const consumed=unbind(db,target,db.all()[1]).spell;
- assert.equal(Craft.canDownloadTemplate(consumed),true);
- assert.equal(Craft.listDownloadableTemplates(db).some(c=>c.id===consumed.id),true);
- const generated=Craft.forgeBlankFromTemplate(db,{blankId,blankRevision:1,
-  sourceId:consumed.id,sourceRevision:consumed.revision});
- assert.equal(generated.id,blankId);
- assert.equal(generated.title,'解除契約卡');
- assert.equal(generated.copyInfo.kind,'gba-template-download');
- assert.equal(db.all().find(c=>c.id===spellId).placement,'contained');
- assert.equal(Spell.isSpellCard(generated),false,'GBA slot is not a castable world card');
+ const first=unbind(db,target,originalSpell);
+ assert.equal(first.spellId,spellId);
+ assert.equal(db.all().some(c=>c.id===spellId),false);
+ assert.equal(Craft.listDownloadableTemplates(db).some(c=>c.id===spellId),false);
  const newSpell=Craft.placeCard(db,blankId,null);
  assert.equal(Spell.isSpellCard(newSpell),true);
- assert.equal(db.all().length,3);
  const reSealed=Craft.sealRuneCard(db,Craft.ORIGIN_RUNE,originId,db.all().find(x=>x.id===originId).revision);
  const rematerialized=Craft.materializeRuneCard(db,Craft.ORIGIN_RUNE,originId,reSealed.revision);
  const second=unbind(db,rematerialized,newSpell);
- assert.equal(second.spell.id,blankId);
- assert.equal(second.spell.placement,'contained');
- assert.equal(second.spell.containment.holderId,originId);
- assert.equal(db.all().length,3);
+ assert.equal(second.spellId,blankId);
+ assert.equal(db.all().length,1,'both spent spells permanently deleted');
  assert.equal(Craft.getRuneBoundCard(db),null);
 });
 test('future permanent upgrade locks unbinding WITHOUT treating manually editable cardNumber as permanent ID',()=>{

@@ -162,8 +162,8 @@
   write(storage,objects);return {...result};
  }
 
- // Directed card absorption is containment, never deletion. One write commits
- // both the restored target and the consumed spell, preserving both stable IDs.
+ // A one-use unbinding spell is permanently consumed, never archived.
+ // Its deletion and the target's contract release share ONE atomic write.
  function unbindAndAbsorbSpell(storage,{runeId=ORIGIN_RUNE,targetId,targetRevision,spellId,spellRevision},
    clock=()=>new Date().toISOString()){
   if(!ContractPolicy)throw Error('解除契約所需的共用規則尚未載入');
@@ -201,16 +201,30 @@
    targetData=ScanBundle.resetAfterUnbind(target,targetData);
   }
   const updatedTarget={...targetData,revision:target.revision+1,updatedAt:when};
-  const updatedSpell={...spell,placement:'contained',containerId:null,ownerBookId:null,slotIndex:null,
-   containment:{kind:'consumed_spell',holderId:targetId,holderType:'card',
-    state:'stored',absorbedAt:when},consumedBy:targetId,
-   revision:spell.revision+1,updatedAt:when};
-  const objects=[...cards];objects[targetIndex]=updatedTarget;objects[spellIndex]=updatedSpell;
+  // Only the original target survives. No hidden spent-spell card remains.
+  const objects=cards.map((item,index)=>index===targetIndex?updatedTarget:item)
+   .filter(item=>item.id!==spellId);
   write(storage,objects);
-  return {target:{...updatedTarget},spell:{...updatedSpell}};
+  return {target:{...updatedTarget},spellId,consumed:true};
  }
  function listCards(storage){
-  return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').map(x=>({...x}));
+  // Old spent spells from earlier builds are not live inventory.
+  return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled'&&
+   x.containment?.kind!=='consumed_spell').map(x=>({...x}));
+ }
+ function purgeLegacyConsumedSpells(storage){
+  const state=read(storage);
+  // Strict legacy cleanup: never remove arbitrary contained or permanent cards.
+  const spent=state.objects.filter(c=>isPlayerCard(c)&&c.status==='draft'&&
+   c.placement==='contained'&&c.containment?.kind==='consumed_spell'&&
+   c.containment.holderType==='card'&&c.containment.state==='stored'&&
+   c.consumedBy===c.containment.holderId&&c.consumedBy!==c.id&&
+   !c.runeBinding&&!c.runeContract&&!c.scanContract&&!c.truthEyeContract&&
+   !c.containerId&&!c.ownerBookId&&!isPermanentRuneCard(c));
+  if(!spent.length)return [];
+  const ids=new Set(spent.map(c=>c.id));
+  write(storage,state.objects.filter(c=>!ids.has(c.id)));
+  return [...ids];
  }
  function listRecycledCards(storage){
   return read(storage).objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').map(x=>({...x}));
@@ -364,7 +378,8 @@
    c.containerId===ATLAS_ID&&c.slotIndex===9&&c.ownerBookId===ATLAS_ID&&
    c.title==='空白卡片'&&!c.description&&!c.cardNumber&&!c.cardType&&!c.image&&
    !c.linkedCardId&&!c.ability&&(!c.permissions||c.permissions.length===0)&&
-   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.containment&&!c.copyInfo&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.scanContract&&!c.truthEyeContract&&
+   !c.containment&&!c.consumedBy&&!c.copyInfo&&!c.downloadTemplate&&
    !c.l2Certified&&!c.upgradeRequest&&!c.certification;
  }
  function canCopyAppearance(c){
@@ -414,15 +429,18 @@
  // A stored/consumed spell's visual template may be downloaded, but this does
  // not retrieve, recharge, or change the original stored object.
  function canDownloadTemplate(c){
-  return isPlayerCard(c)&&c.status==='draft'&&
+  // Opt-in only: being a draft card, an old book, or a stored spell is not
+  // permission to publish this card's appearance in the GBA download list.
+  return isPlayerCard(c)&&c.status==='draft'&&c.downloadTemplate===true&&
+   ['hover','book'].includes(c.placement)&&!c.containment&&!c.consumedBy&&
    typeof c.title==='string'&&!!c.title.trim()&&c.title.trim()!=='空白卡片'&&
    !c.ability&&!(Array.isArray(c.permissions)?c.permissions.length>0:!!c.permissions)&&
-   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&
+   !c.runeBinding&&!c.runeContract&&!c.boundRuneId&&!c.scanContract&&!c.truthEyeContract&&
    !isPermanentRuneCard(c)&&!c.l2Certified&&!c.upgradeRequest&&!c.certification&&
    c.isUnique!==true&&c.unique!==true&&!c.uniqueness&&
    c.copyPolicy!=='forbidden'&&c.reusePolicy!=='unique'&&
    c.cardType!=='唯一'&&c.cardType!=='獨一無二'&&
-   (!c.containment||c.containment.kind==='consumed_spell');
+   !c.scanContract&&!c.truthEyeContract;
  }
  function listDownloadableTemplates(storage){
   return listCards(storage).filter(canDownloadTemplate)
@@ -446,7 +464,7 @@
   const when=clock();
   const next={...blank,title:source.title,description:source.description||'',
    cardType:source.cardType||'',image:source.image?{...source.image}:null,
-   cardNumber:'',linkedCardId:null,ability:null,permissions:[],
+   cardNumber:'',linkedCardId:null,ability:null,permissions:[],downloadTemplate:false,
    copyInfo:{kind:'gba-template-download',sourceId:source.id,
     sourceRevision:source.revision,copiedAt:when},
    revision:blank.revision+1,updatedAt:when};
@@ -456,7 +474,7 @@
  function editCard(storage,id,patch,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
   if(at<0)throw Error('找不到可編輯的本機卡片');
-  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId'].includes(x)))
+  if(!patch||Array.isArray(patch)||typeof patch!=='object'||Object.keys(patch).some(x=>!['title','description','cardNumber','cardType','image','linkedCardId','downloadTemplate'].includes(x)))
    throw Error('目前只能設定卡面文字、圖片及公開內容連結');
   const card={...state.objects[at]};
   if(isPermanentRuneCard(card))throw Error('永久卡已鎖定，修改需經 GBA 正式變更程序');
@@ -491,6 +509,12 @@
     throw Error('圖片格式或裁切參數無效，未修改卡片');
    card.image=v===null?null:{...v};
   }
+  if(Object.hasOwn(patch,'downloadTemplate')){
+   if(typeof patch.downloadTemplate!=='boolean')throw Error('可複製卡分類只能啟用或停用');
+   card.downloadTemplate=patch.downloadTemplate;
+   if(card.downloadTemplate&&!canDownloadTemplate(card))
+    throw Error('這張卡片具有契約、唯一身分、能力或其他保護狀態，不可列為可複製卡');
+  }
   card.cardLayout='compendium-v2';
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
   const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
@@ -520,6 +544,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });

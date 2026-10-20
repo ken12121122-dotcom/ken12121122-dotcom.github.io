@@ -52,40 +52,31 @@ test('transfer rejects invalid point/id and never mutates caller data',()=>{
  assert.throws(()=>Transfer.normalize({...raw,to:{x:NaN,y:1,z:1}}),/座標/);
  assert.throws(()=>Transfer.sample(p,NaN),/進度/);
 });
-test('unbind + absorb commits BOTH existing cards atomically without deleting the consumed one',()=>{
+test('unbind atomically deletes the spell while preserving both original and unrelated card',()=>{
  const t=linked(),c=spell(),unrelated=card('local.card.third','普通卡');
  const s=memory([t,c,unrelated]);
  const result=Craft.unbindAndAbsorbSpell(s,{targetId:t.id,targetRevision:4,
   spellId:c.id,spellRevision:4},()=> '2026-10-17T02:00:00Z');
- assert.equal(s.state().objects.length,3);
+ assert.equal(s.state().objects.length,2);
  assert.equal(result.target.id,t.id);
  assert.equal(Object.hasOwn(result.target,'runeBinding'),false);
- assert.equal(result.target.placement,'hover');
  assert.deepEqual(result.target.image,t.image);
- assert.equal(result.spell.id,c.id);
- assert.equal(result.spell.placement,'contained');
- assert.equal(result.spell.consumedBy,t.id);
- assert.deepEqual(result.spell.containment,{kind:'consumed_spell',holderId:t.id,
-  holderType:'card',state:'stored',absorbedAt:'2026-10-17T02:00:00Z'});
- assert.equal(result.spell.image.id,'keep-me');
- assert.equal(result.spell.cardNumber,c.cardNumber);
- assert.equal(result.spell.description,c.description);
- assert.equal(result.spell.createdAt,c.createdAt);
- assert.equal(Craft.listCards(s).length,3,'consumed cards still exist for later summoning');
- assert.equal(Craft.floatingCards(s).length,2,'consumed card no longer orbits');
+ assert.equal(result.spellId,c.id);assert.equal(result.consumed,true);
+ assert.equal(s.state().objects.some(x=>x.id===c.id),false,'spent spell is truly gone');
+ assert.equal(Craft.listCards(s).length,2);
  assert.equal(Craft.getRuneBoundCard(s),null);
- assert.deepEqual(s.state().objects[2],unrelated);
+ assert.deepEqual(s.state().objects.find(x=>x.id===unrelated.id),unrelated);
 });
-test('unbinding cannot be committed twice and consumed cards cannot be moved, edited or recycled',()=>{
+test('unbinding cannot run twice and the spent spell cannot be placed, edited, or recycled',()=>{
  const s=memory([linked(),spell()]);
  const input={targetId:'local.card.target',targetRevision:4,spellId:'local.card.spell',spellRevision:4};
  Craft.unbindAndAbsorbSpell(s,input);
  const before=s.raw();
- assert.throws(()=>Craft.unbindAndAbsorbSpell(s,input),/契約|變動/);
+ assert.throws(()=>Craft.unbindAndAbsorbSpell(s,input),/不存在|契約|變動/);
  assert.equal(s.raw(),before);
- assert.throws(()=>Craft.placeCard(s,'local.card.spell','local.atlas.compendium',9),/收納/);
- assert.throws(()=>Craft.editCard(s,'local.card.spell',{title:'不應修改'}),/召喚/);
- assert.throws(()=>Craft.recycleCard(s,'local.card.spell'),/收納/);
+ assert.throws(()=>Craft.placeCard(s,'local.card.spell','local.atlas.compendium',9),/找不到卡片/);
+ assert.throws(()=>Craft.editCard(s,'local.card.spell',{title:'不應修改'}),/找不到可編輯/);
+ assert.throws(()=>Craft.recycleCard(s,'local.card.spell'),/找不到|不存在/);
  assert.equal(s.raw(),before);
 });
 test('unknown target, stale revisions, altered spell, and blocked upgrades fail with no write',()=>{
