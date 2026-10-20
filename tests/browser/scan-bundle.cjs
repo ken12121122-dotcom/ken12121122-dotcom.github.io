@@ -225,6 +225,89 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
   assert.equal((await inspect()).packed.filter(([id])=>id.startsWith('book:')).length,15);
   report.checks.push('all 15 original books: sealed release, rebind, world-form release, rescan, rebind to same blank card, reload');
+  // Regression: a historical 27-member world contract (including the
+  // formerly scanable avatar) must be explicitly selectable and releasable.
+  // No live user save or hard-coded object release is involved.
+  const historical=await page.evaluate(({medium,spell,permanent})=>{
+   const C=LivingObjectCraft,all=LivingScene.truthEye.inspect().objects;
+   const usable=all.filter(o=>o.id!=='scene.keeper'&&
+    (o.kind==='book'||(o.kind==='scene'&&/^scene\\.[a-z0-9.-]+$/.test(o.id))));
+   const seen=new Set(),refs=[];
+   for(const o of usable){const key=o.kind+':'+o.id;if(seen.has(key))continue;
+    seen.add(key);refs.push({kind:o.kind,id:o.id});if(refs.length===26)break}
+   if(refs.length!==26)throw Error('Need 26 physical members to simulate historical 27');
+   refs.push({kind:'scene',id:'scene.keeper'});
+   const eye=C.listCards(localStorage).find(c=>c.id==='local.card.eye');
+   const legacy={...medium,title:'掃描收納卡',cardType:'收納契約',
+    description:'真實之眼收納 27 件物件；原始身分保留。',
+    runeBinding:{runeId:'scan.bundle.'+medium.id,state:'bound'},
+    scanContract:{version:1,artifactId:'scan.bundle.'+medium.id,form:'world',members:refs}};
+   const locked={...permanent,title:'登錄永久卡',permanentCard:true,
+    runeBinding:{runeId:'generic.another-contract',state:'bound'}};
+   localStorage.setItem('living-library-player-objects-v1',
+    JSON.stringify({version:1,objects:[eye,legacy,spell,locked]}));
+   return {members:refs.length,owner:legacy.id,spell:spell.id,permanent:locked.id};
+  },{medium:blank('legacy27'),spell:{...blank('spell27'),title:'解除契約'},permanent:blank('permanent-proof')});
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
+  await page.waitForTimeout(850);
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
+  const before=await page.evaluate(()=>({
+   owners:[...LivingScanBundle.claims(localStorage)],
+   cards:LivingScene.truthEye.inspect().cards,
+   originals:LivingObjectCraft.listCards(localStorage)
+  }));
+  assert.equal(before.owners.filter(([,owner])=>owner===historical.owner).length,27,
+   'historical avatar-containing contract is still persisted before user confirms unbind');
+  assert.equal(before.originals.find(c=>c.id===historical.permanent).permanentCard,true);
+  const spellMesh=before.cards.find(c=>c.id===historical.spell);
+  assert.ok(spellMesh,'explicit unbinding spell stays visible on player orbit');
+  const cast=async()=>{
+   await page.mouse.move(spellMesh.x,spellMesh.y);await page.mouse.down();
+   await page.waitForFunction(()=>document.querySelector('#runeUnbindDialog').open,null,{timeout:15000});
+   await page.mouse.up();
+  };
+  await cast();
+  assert.equal(await page.locator('#runeUnbindConfirm').isDisabled(),true,
+   'even one matching contract requires explicit user selection');
+  assert.ok(await page.locator('#runeUnbindTargetPicker option[value="'+historical.owner+'"]').count(),
+   'historical 27-object contract is a generic original-card candidate');
+  assert.equal(await page.locator('#runeUnbindTargetPicker option[value="'+historical.permanent+'"]').count(),0,
+   'a permanent original is never eligible for ordinary unbinding');
+  await page.locator('#runeUnbindTargetPicker').selectOption(historical.owner);
+  assert.match(await page.locator('#runeUnbindMembers').innerText(),/27 件物件/);
+  await page.locator('#runeUnbindCancel').click();
+  const cancelled=await page.evaluate(id=>({
+   stillBound:LivingObjectCraft.listCards(localStorage).some(c=>c.id===id&&!!c.scanContract),
+   claims:LivingScanBundle.claims(localStorage).size,
+   spellStillPresent:LivingObjectCraft.listCards(localStorage).some(c=>c.id==='local.card.spell27')
+  }),historical.owner);
+  assert.ok(cancelled.stillBound&&cancelled.spellStillPresent);
+  assert.equal(cancelled.claims,27,'cancel does not mutate the user's contract');
+  await cast();
+  await page.locator('#runeUnbindTargetPicker').selectOption(historical.owner);
+  assert.equal(await page.locator('#runeUnbindTargetId').innerText(),historical.owner);
+  await page.locator('#runeUnbindConfirm').click();
+  const completed=await page.evaluate(({owner,spell,permanent})=>{
+   const C=LivingObjectCraft,B=LivingScanBundle,all=C.listCards(localStorage);
+   return {card:all.find(c=>c.id===owner),spellExists:all.some(c=>c.id===spell),
+    permanent:all.find(c=>c.id===permanent),
+    owned:[...B.claims(localStorage)],avatarVisible:!!LivingScene.truthEye.inspect().objects.find(o=>o.id==='scene.keeper')};
+  },historical);
+  assert.equal(completed.card.scanContract,undefined);
+  assert.equal(completed.card.runeBinding,undefined);
+  assert.equal(completed.card.title,'空白卡片');
+  assert.equal(completed.spellExists,false,'confirmed spell consumed exactly once');
+  assert.deepEqual(completed.owned,[],'27 historical members are fully released');
+  assert.ok(completed.permanent?.permanentCard&&completed.permanent?.runeBinding,
+   'unrelated permanent card remains unchanged');
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
+  const afterReload=await page.evaluate(()=>({
+   owner:LivingObjectCraft.listCards(localStorage).find(c=>c.id==='local.card.legacy27'),
+   claims:[...LivingScanBundle.claims(localStorage)]
+  }));
+  assert.ok(afterReload.owner&&!afterReload.owner.scanContract&&!afterReload.owner.runeBinding);
+  assert.deepEqual(afterReload.claims,[],'unbinding persists through reload');
+  report.checks.push('synthetic legacy 27-member world group including avatar: selectable, cancelled safely, confirmed atomically, and released after reload; permanent card untouched');
   assert.deepEqual(report.errors,[]);report.status='PASS';
  }catch(e){report.status='FAIL';report.failure=e.stack;if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});throw e}
  finally{await fs.writeFile(path.join(out,'scan-bundle-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
