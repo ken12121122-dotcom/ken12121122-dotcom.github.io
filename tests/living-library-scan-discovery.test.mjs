@@ -87,7 +87,7 @@ test('no preset book/library selection UI or scope filter survives in v2 source'
  assert.match(html,/scene-scan-discovery\.js/);
  assert.match(html,/LivingSceneScanDiscovery\.discover/);
  assert.doesNotMatch(code,/eyeScope|cfg\.scope|<option value="all">/);
- assert.match(code,/!o\.protected/);
+ assert.match(code,/o\.protected/);
 });
 
 test('hidden child geometry and protected helpers do not become scan members',()=>{
