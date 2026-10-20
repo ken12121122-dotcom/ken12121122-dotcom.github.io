@@ -109,21 +109,16 @@ test('copy a repeatable unbinding spell template into blank media and cast the c
  assert.equal(Craft.listCards(db).length,2);
  assert.equal(Craft.copySources(db).length,1,'the original template remains in left display slot');
 });
-test('consumed spell can be DISCOVERED for future summon but not respawned yet',()=>{
+test('spent one-shot spells never appear in summon history; sealed rune card still can be inspected',()=>{
  const owner=mk('local.card.origin','初代法陣卡',null,{placement:'hover',containerId:null,ownerBookId:null});
  const consumed=mk('local.card.spell','解除綁定術',null,{placement:'contained',containerId:null,ownerBookId:null,
-  containment:{kind:'consumed_spell',holderId:owner.id,holderType:'card',state:'stored',absorbedAt:'t1'}});
- const other=mk('local.card.other','別的物件內卡',null,{placement:'contained',containerId:null,ownerBookId:null,
-  containment:{kind:'consumed_spell',holderId:'local.card.different',holderType:'card',state:'stored'}});
- const before=structuredClone([owner,consumed,other]);
- assert.deepEqual(Summon.storedCards([owner,consumed,other],owner.id).map(x=>x.cardId),[consumed.id]);
- const preview=Summon.preview([owner,consumed,other],{holderId:owner.id,cardId:consumed.id});
- assert.equal(preview.allowed,true);
- assert.equal(preview.card.requiredAction,'summon-spell');
- const blocked=Summon.preview([owner,consumed,other],{holderId:owner.id,cardId:consumed.id,action:'summon-spell'});
- assert.equal(blocked.allowed,false);
- assert.equal(blocked.reason,'release_not_implemented');
- assert.deepEqual([owner,consumed,other],before,'summon architecture is entirely read-only');
+  consumedBy:owner.id,containment:{kind:'consumed_spell',holderId:owner.id,holderType:'card',state:'stored'}});
+ const sealed=mk('local.card.sealed','初始法陣卡',null,{placement:'contained',containerId:null,ownerBookId:null,
+  containment:{kind:'rune_contract',holderId:'local.rune.origin',holderType:'rune',state:'stored'}});
+ assert.deepEqual(Summon.storedCards([owner,consumed,sealed],owner.id),[]);
+ assert.equal(Summon.preview([owner,consumed,sealed],{holderId:owner.id,cardId:consumed.id}).allowed,false);
+ assert.equal(Summon.preview([owner,consumed,sealed],{holderId:owner.id,cardId:consumed.id,action:'summon-spell'}).reason,'unsupported_action');
+ assert.deepEqual(Summon.storedCards([owner,consumed,sealed],'local.rune.origin').map(c=>c.cardId),[sealed.id]);
 });
 test('retro GBA menu selects downloadable formats without requiring left 9 wells',async()=>{
  const scene=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
