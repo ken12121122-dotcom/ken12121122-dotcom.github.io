@@ -424,6 +424,11 @@ const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
 const ObjectCraft=window.LivingObjectCraft;
+// Remove strictly verified old spent spell records; world cards/books survive.
+if(ObjectCraft?.purgeLegacyConsumedSpells){
+ try{ObjectCraft.purgeLegacyConsumedSpells(localStorage)}
+ catch(error){console.warn('舊版已消耗術卡清理未修改資料：',error)}
+}
 // Repair only scanner-generated orphan data from earlier "解除綁定" spells.
 // One-time versioned backup precedes any modification. Never touch active
 // contracts, custom card content, other spell/rune cards or player book data.
@@ -2410,19 +2415,15 @@ const spellHold=RuneHold.create({
    if(!caster||!UnbindSpell.isSpellCard(caster.record))throw Error('施法卡已改變');
    spellSelection={casterId:spellId,targetId:bound.id,runeId:target.runeId,
     expectedRevision:bound.revision,spellRevision:caster.record.revision};
-   unbindName.textContent=bound.title;
-   spellPromptTimer=setTimeout(()=>{
-    spellPromptTimer=null;
-    if(!document.hidden&&!unbindDialog.open&&spellSelection?.targetId===bound.id&&
-      !focusedCard&&!atlasRuntime?.inFocus)unbindDialog.showModal();
-   },550);
-   toast('✧ 已偵測到「'+bound.title+'」的有效契約，可解除綁定');
+   // The 3-second hold is the final confirmation; commit only once.
+   confirmSpellUnbind();
   }catch(error){spellSelection=null;toast('解除搜尋失敗：'+String(error?.message||error))}
  }
 });
 function confirmSpellUnbind(){
  if(!spellSelection||unbindEffect)return;
  const selection=spellSelection;
+ let committed=false;
  try{
   const latest=inspectSpellNearest(selection.casterId);
   const current=window.LivingObjectCraft.getRuneBoundCard(localStorage,selection.runeId);
@@ -2432,7 +2433,6 @@ function confirmSpellUnbind(){
     window.LivingObjectCraft.isPermanentRuneCard(current)||
     floatingCardMeshes.get(selection.casterId)?.record.revision!==selection.spellRevision)
    throw Error('目標位置或資料已有變動，請重新長按魔法卡');
-  closeSpellPrompt();
   const caster=floatingCardMeshes.get(selection.casterId);
   const target=floatingCardMeshes.get(selection.targetId);
   const worldTarget=!target?.group.visible?boundObjectInScene(selection.targetId):null;
@@ -2442,15 +2442,37 @@ function confirmSpellUnbind(){
   caster.group.updateWorldMatrix(true,false);
   const origin=caster.group.getWorldPosition(new THREE.Vector3());
   const endpoint=worldTarget?new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
-    target.group.getWorldPosition(new THREE.Vector3());
-  unbindEffect={...selection,start:performance.now(),duration:preferReduced?380:1300,
-   plan:DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
-    from:{x:origin.x,y:origin.y,z:origin.z},
-    to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
-    startedAt:performance.now(),duration:preferReduced?380:1300,
-    initialScale:caster.group.scale.x})};
-  syncRender(); // Storage changes only AFTER visual effect completes.
- }catch(error){closeSpellPrompt();spellSelection=null;toast('無法解除：'+String(error?.message||error))}
+   target.group.getWorldPosition(new THREE.Vector3());
+  const started=performance.now(),duration=preferReduced?380:1300;
+  const plan=DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
+   from:{x:origin.x,y:origin.y,z:origin.z},
+   to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
+   startedAt:started,duration,initialScale:caster.group.scale.x});
+  // Copy ONLY the 3D appearance before deleting the physical spell record.
+  const visual=caster.group.clone(true);
+  visual.userData.scanProtected=true;
+  const originalScanMembers=window.LivingObjectCraft.listCards(localStorage)
+   .find(c=>c.id===selection.targetId)?.scanContract?.members||[];
+  const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
+   runeId:selection.runeId,targetId:selection.targetId,
+   targetRevision:selection.expectedRevision,spellId:selection.casterId,
+   spellRevision:selection.spellRevision});
+  committed=true;spellSelection=null;closeSpellPrompt();
+  unbindEffect={...selection,fxCard:visual,from:origin,to:endpoint,start:started,duration,plan};
+  scene.add(visual);
+  refreshFloatingCards();
+  scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
+   bindingId:selection.runeId,scanMembers:originalScanMembers,from:endpoint.clone(),now:started});
+  toast('✧ 契約立即解除，解除契約卡已永久消耗');
+  syncRender();
+ }catch(error){
+  spellSelection=null;closeSpellPrompt();
+  // UI failure AFTER a committed save must never be reported as an undo.
+  if(committed){if(unbindEffect?.fxCard)scene.remove(unbindEffect.fxCard);unbindEffect=null;
+   try{refreshFloatingCards()}catch(_){}
+   toast('契約已解除，但動畫更新失敗：'+String(error?.message||error))}
+  else toast('無法解除，原始資料保留：'+String(error?.message||error));
+ }
 }
 document.getElementById('runeUnbindConfirm').addEventListener('click',confirmSpellUnbind);
 document.getElementById('runeUnbindCancel').addEventListener('click',()=>{
@@ -2461,6 +2483,7 @@ unbindDialog.addEventListener('close',syncRender);
 function cancelSpellUnbind(){
  closeSpellPrompt();spellSelection=null;
  spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
+ if(unbindEffect?.fxCard)scene.remove(unbindEffect.fxCard);
  unbindEffect=null;unbindProgress.style.display='none';
  spellHexagram.clear();
  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
@@ -2482,16 +2505,15 @@ function updateSpellEffect(now){
  const active=unbindEffect;
  const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
  if(!pair)return;
- const caster=floatingCardMeshes.get(pair.casterId),target=floatingCardMeshes.get(pair.targetId);
- const worldTarget=!target?.group.visible?boundObjectInScene(pair.targetId):null;
- if(!caster||!target||!caster.group.visible||(!target.group.visible&&!worldTarget)){
-  if(active){unbindEffect=null;spellSelection=null;toast('契約物件已離開世界，未執行解除')}
-  return;
- }
+ const caster=active?{group:active.fxCard}:floatingCardMeshes.get(pair.casterId),
+  target=floatingCardMeshes.get(pair.targetId);
+ const worldTarget=active?null:(!target?.group.visible?boundObjectInScene(pair.targetId):null);
+ if(!caster||(!active&&(!target||!caster.group.visible||(!target.group.visible&&!worldTarget))))return;
  caster.group.updateWorldMatrix(true,false);
- const a=caster.group.getWorldPosition(new THREE.Vector3());
- const b=worldTarget?new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
-  target.group.getWorldPosition(new THREE.Vector3());
+ const a=active?active.from.clone():caster.group.getWorldPosition(new THREE.Vector3());
+ const b=active?active.to.clone():(worldTarget?
+  new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
+  target.group.getWorldPosition(new THREE.Vector3()));
  let progress=0,scale=null;
  if(active){
   const frame=DirectedTransfer.sample(active.plan,now,{x:b.x,y:b.y,z:b.z});
@@ -2518,27 +2540,8 @@ function updateSpellEffect(now){
  spellRing.scale.setScalar(active?1+progress*.8:1);
  spellRingMat.opacity=active?.85*(1-progress):.62;
  if(active&&progress>=1){
-  // One atomic write after source enters the TARGET CARD, never the floor rune.
-  unbindEffect=null;spellSelection=null;
-  try{
-   const originalScanMembers=window.LivingObjectCraft.listCards(localStorage)
-    .find(c=>c.id===active.targetId)?.scanContract?.members||[];
-   const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
-    runeId:active.runeId,targetId:active.targetId,
-    targetRevision:active.expectedRevision,spellId:active.casterId,
-    spellRevision:active.spellRevision});
-   // Unbinding is generic. World objects subscribe to this event to restore
-   // their own visual state; no special artifact ID is checked by the spell.
-   const returningFrom=b.clone();
-   refreshFloatingCards();
-   scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
-    bindingId:active.runeId,scanMembers:originalScanMembers,from:returningFrom,now});
-   toast('✧ 「'+result.target.title+'」的契約已解除；原卡保留，施法卡已收納');
-
-  }catch(error){
-   caster.group.scale.setScalar(controlPrefs.cardSize);
-   toast('解除未完成，原始卡片仍保留：'+String(error?.message||error));
-  }
+  // World state was committed at the end of the hold, BEFORE this visual effect.
+  scene.remove(active.fxCard);unbindEffect=null;
   spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
   syncRender();
  }
