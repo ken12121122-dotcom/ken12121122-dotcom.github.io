@@ -41,9 +41,12 @@ summary{color:#c5b795;cursor:pointer}
 #recycleList{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px;padding-top:10px}
 .recycleItem{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:10px;border:1px dashed #96856c;border-radius:9px;background:#17263a}
 .recycleItem span{overflow-wrap:anywhere;min-width:0}
-.recycleItem button,#recycleCard{min-width:46px;min-height:46px;border-radius:8px;border:1px solid #b9a37f;background:#574a3e;color:#fff0d7;font-size:22px;cursor:pointer}
+.recycleItem button,#recycleCard,#destroyCard{min-width:46px;min-height:46px;border-radius:8px;border:1px solid #b9a37f;background:#574a3e;color:#fff0d7;font-size:22px;cursor:pointer}
 #recycleDialog{border:1px solid #b49a72;border-radius:15px;background:#192b3d;color:#f4e6d1;max-width:min(92%,420px);padding:21px}
-#recycleDialog::backdrop{background:#03080fc7}
+#recycleDialog::backdrop,#destroyDialog::backdrop{background:#03080fc7}
+#destroyDialog{border:1px solid #8f423b;border-radius:15px;background:#f4eddb;color:#000;max-width:min(92%,460px);padding:20px}
+#destroyDialog button{min-width:56px;min-height:46px;border:1px solid #8f423b;border-radius:8px;background:#e6d5b6;color:#000;font-size:22px;margin:4px}
+#destroyPrompt{color:#000;white-space:pre-wrap}
 #recycleDialog button{min-width:56px;min-height:46px;border:1px solid #b69d76;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 .backupActions button{min-width:46px;min-height:46px;border:1px solid #b9a37f;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
@@ -59,7 +62,7 @@ header strong,small,p,h1,label,summary,footer,#status,#backupStatus,.mini,.recyc
 #cardFace{display:block;width:142px;height:203px}
 input,textarea,select{color:#000!important;background:#fffaf0;border:1px solid #948774;font:16px/1.5 system-ui;max-width:100%}
 select{display:block;width:100%;padding:10px;border-radius:8px;margin-top:5px}
-button,#recycleCard,#recycleDialog button,.backupActions button{color:#000!important;background:#e6d5b6!important;min-height:44px;min-width:44px}
+button,#recycleCard,#destroyCard,#recycleDialog button,#destroyDialog button,.backupActions button{color:#000!important;background:#e6d5b6!important;min-height:44px;min-width:44px}
 #recycleDialog{background:#f4eddb;color:#000}
 .downloadOptIn{display:flex;align-items:center;gap:9px;border:1px solid #948774;padding:10px;border-radius:8px;background:#fffaf0;color:#000}
 .downloadOptIn input{width:20px;height:20px;flex:0 0 20px;accent-color:#275b55}
@@ -110,6 +113,7 @@ button:disabled{opacity:.45}
    <button id="openLink" type="button" disabled aria-label="開啟已儲存的內容連結" title="開啟連結">↗</button>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
+   <button id="destroyCard" type="button" disabled aria-label="永久銷毀所選卡片" title="永久銷毀（不可還原）">🗑</button>
   </form>
   <details id="cardAudit" open><summary>ⓘ 卡片資訊總覽（唯讀）</summary>
    <p id="cardAuditStats">選擇卡片即可檢視已保存的資訊。</p>
@@ -126,7 +130,7 @@ button:disabled{opacity:.45}
 <p id="objectStats" aria-live="polite"></p>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
-<p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
+<p>回收站仍保留卡片，按 ♻ 可以還原；按 🗑 並輸入確認文字後才會永久銷毀。</p>
 <div id="recycleList"></div></details>
 <details id="localBackup"><summary>本機備份與救援檢查</summary>
 <p>↓ 下載目前瀏覽器的全部自製卡片、書本及回收站；⌕ 檢查備份完整性與數量，不還原、不覆寫、不轉換成法術、不送出雲端。備份含私人創作，請保留在自己的裝置，不要貼到公開 PR。校驗碼僅檢查資料損毀，不保證來源可信；檢查通過不代表已還原。</p>
@@ -147,20 +151,26 @@ button:disabled{opacity:.45}
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
 <div><button id="cancelRecycle" type="button" aria-label="取消回收" title="取消">×</button>
 <button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
+<dialog id="destroyDialog" aria-label="確認永久銷毀卡片">
+<p id="destroyPrompt"></p>
+<label>請輸入「銷毀」才能執行<input id="destroyInput" type="text" autocomplete="off" spellcheck="false" placeholder="銷毀"></label>
+<small>只刪除目前瀏覽器的遊戲卡片及其未送出的同步快照；另外下載的備份、其他裝置或獨立系統範本不會受影響。</small>
+<div><button id="cancelDestroy" type="button" aria-label="取消銷毀" title="取消">×</button>
+<button id="confirmDestroy" type="button" aria-label="確認永久銷毀" title="確認永久銷毀">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
 <script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
 <script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
-<script src="./object-craft.js?v=card-format-11-20261020"></script>
+<script src="./object-craft.js?v=card-format-destroy-20261020"></script>
 <script src="./object-backup.js"></script>
-<script src="./object-outbox.js"></script>
+<script src="./object-outbox.js?v=card-destroy-20261020"></script>
 <script>
 (function(){
  'use strict';
  const Craft=window.LivingObjectCraft;
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
- let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null;
+ let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null,pendingDestroy=null;
  const catalog=window.LivingLibraryCatalog.buildCatalog();
  const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
  for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
@@ -254,6 +264,7 @@ button:disabled{opacity:.45}
   paint();renderCardAudit(card);
   $('saveCard').disabled=!card||immutable;
   $('recycleCard').disabled=!card||!!card.containerId||immutable;
+  $('destroyCard').disabled=!card||immutable;
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
   if(immutable)status('永久卡為唯讀：要修改需由 GBA 提出正式申請（尚未開放），不能直接改圖或回收。');
    const preview=$('cardPreview');preview.classList.remove('summon','hover');
@@ -276,7 +287,10 @@ button:disabled{opacity:.45}
     try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('卡片已還原，將退出書頁並從 3D 煙霧中重新誕生。')}
     catch(e){status(e.message,true)}
    });
-   row.append(label,restore);bin.append(row);
+   const erase=document.createElement('button');erase.type='button';erase.textContent='🗑';
+    erase.setAttribute('aria-label','永久銷毀 '+card.title);erase.title='永久銷毀（不可還原）';
+    erase.addEventListener('click',()=>requestDestroy(card));
+    row.append(label,restore,erase);bin.append(row);
   }
   $('createCard').disabled=items.length>=Craft.MAX_CARDS;
   const host=$('cardList');host.replaceChildren();
@@ -302,6 +316,47 @@ button:disabled{opacity:.45}
   try{Craft.recycleCard(localStorage,id);const remain=cards();show(remain.at(-1)||null);refresh();
    notify('card-recycled',id);status('卡片已進入回收站，可從下方還原。');}
   catch(e){status(e.message||'回收失敗',true)}
+ });
+
+ function requestDestroy(card){
+  if(!card)return;
+  try{
+   const plan=Craft.planDestroyCard(localStorage,card.id,card.revision);
+   pendingDestroy={...plan,expectedSnapshot:localStorage.getItem(Craft.KEY)};
+   $('destroyInput').value='';
+   $('destroyPrompt').textContent='永久銷毀「'+plan.title+'」？\n卡片 ID：'+plan.id+
+    '\n將從遊戲世界、卡冊或回收站及本機存檔移除，無法還原。'+
+    (plan.affectedCopyIds.length?'\n另外 '+plan.affectedCopyIds.length+' 張複製卡會保留卡面及身分，但清除來源關聯。':'');
+   $('destroyDialog').showModal();
+  }catch(e){status(e.message||'無法銷毀',true)}
+ }
+ $('destroyCard').addEventListener('click',()=>requestDestroy(selected()));
+ $('cancelDestroy').addEventListener('click',()=>{$('destroyDialog').close();pendingDestroy=null});
+ $('destroyDialog').addEventListener('close',()=>{pendingDestroy=null});
+ $('confirmDestroy').addEventListener('click',async()=>{
+  const plan=pendingDestroy;if(!plan)return;
+  if($('destroyInput').value.trim()!=='銷毀'){status('必須輸入「銷毀」才能永久刪除',true);return}
+  $('confirmDestroy').disabled=true;let outbox;
+  try{
+   const check=Craft.planDestroyCard(localStorage,plan.id,plan.revision);
+   if(localStorage.getItem(Craft.KEY)!==plan.expectedSnapshot||
+      JSON.stringify(check.affectedCopyIds)!==JSON.stringify(plan.affectedCopyIds))
+    throw Error('存檔在確認期間已變更，請重新操作');
+   outbox=await window.LivingObjectOutbox.ObjectOutbox.open();
+   await outbox.forget([plan.id,...plan.affectedCopyIds]);
+   const result=Craft.destroyCard(localStorage,{
+    id:plan.id,expectedRevision:plan.revision,
+    confirmation:'銷毀',expectedSnapshot:plan.expectedSnapshot
+   });
+   $('destroyDialog').close();
+   if(currentId===plan.id)show(null);
+   refresh();notify('card-destroyed',plan.id);
+   status('🗑 已永久銷毀「'+plan.title+'」，本機有效卡、回收站及待同步佇列不再保留此卡。'+
+    (result.detachedCopies?'另已清除 '+result.detachedCopies+' 張複製卡的來源關聯。':''));
+  }catch(e){
+   $('destroyDialog').close();
+   status('永久銷毀未完成：'+(e.message||'儲存或佇列不可用')+'；請檢查原卡後再試。',true);
+  }finally{outbox?.close();$('confirmDestroy').disabled=false}
  });
  $('createCard').onclick=()=>{
   try{const card=Craft.createBlankCard(localStorage,window.crypto);
@@ -380,7 +435,7 @@ button:disabled{opacity:.45}
    // silently reopen the most recent spell card (e.g. 解除契約卡).
    const all=cards();show(query?all.find(c=>c.id===query)||null:null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
- }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;status(e.message||'本機讀取失敗',true)}
+ }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;$('destroyCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
 </script>
 </body></html>
