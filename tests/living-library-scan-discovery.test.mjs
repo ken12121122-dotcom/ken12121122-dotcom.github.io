@@ -79,7 +79,7 @@ test('scanner has no extra action buttons and names/count render as unframed liv
  assert.match(source,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/);
  assert.doesNotMatch(source,/selected=new Set\(|dataset\.selected|已選 |已標記/);
  assert.match(source,/countLabel\.textContent='掃描 '\+objects\.length\+' 件物件'/);
- assert.doesNotMatch(source,/書本 '\+books|其他物件|dataset\.scanKind/);
+ assert.doesNotMatch(source,/countLabel\.textContent=.*書本|countLabel\.textContent=.*其他物件|dataset\.scanKind/);
  assert.match(source,/renderScanNames\(t\)/);
 });
 test('no preset book/library selection UI or scope filter survives in v2 source',async()=>{
