@@ -71,6 +71,10 @@ input[type=range]{padding:0;accent-color:#35494c}
 input::placeholder,textarea::placeholder{color:#000;opacity:1}
 button:disabled{opacity:.45}
 .photoActions{display:flex;gap:8px;flex-wrap:wrap}
+.destroyShortcut{margin:12px 0 16px;padding:13px;border:2px solid #a3493c;border-radius:12px;background:#fff4ed}
+.controls .destroyShortcut button{width:100%;min-height:54px;background:#8e3029!important;color:#fff!important;border:2px solid #61251e;font-size:17px;font-weight:800;justify-content:center}
+.controls .destroyShortcut button:disabled{background:#d9c8c1!important;color:#302a28!important;border-color:#927b77;opacity:1}
+#destroyHint{display:block;font-size:12px;line-height:1.6;margin-top:7px;color:#4d342f!important}
 #formatCardDialog{border:1px solid #a58655;border-radius:13px;max-width:min(94vw,460px);padding:20px;background:#f5ecd9;color:#000}
 #formatCardDialog::backdrop{background:#060d19bc}
 #formatCardDialog h2,#formatCardDialog p,#formatCardDialog small{color:#000}
@@ -96,6 +100,10 @@ button:disabled{opacity:.45}
  </section>
  <section class="controls" aria-label="空白卡片資訊">
   <strong>空白圖鑑卡</strong>
+  <div class="destroyShortcut">
+   <button id="destroyCard" type="button" disabled aria-label="永久銷毀目前選取的卡片" title="永久刪除整張卡（不可還原）">🗑 永久銷毀卡片</button>
+   <small id="destroyHint">先從下方「已創造的卡片」選取一張卡；回收站的卡可在回收站內直接銷毀。</small>
+  </div>
   <p>創造空白卡後，自行放入圖片、修改文字，再連結既有公開內容。圖片與說明本身不會產生施法能力。</p>
   <form id="editForm">
    <label>卡片編號<input id="editNumber" type="text" maxlength="20" autocomplete="off" placeholder="例如 001，可留空"></label>
@@ -113,7 +121,6 @@ button:disabled{opacity:.45}
    <button id="openLink" type="button" disabled aria-label="開啟已儲存的內容連結" title="開啟連結">↗</button>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
-   <button id="destroyCard" type="button" disabled aria-label="永久銷毀所選卡片" title="永久銷毀（不可還原）">🗑</button>
   </form>
   <details id="cardAudit" open><summary>ⓘ 卡片資訊總覽（唯讀）</summary>
    <p id="cardAuditStats">選擇卡片即可檢視已保存的資訊。</p>
@@ -264,7 +271,15 @@ button:disabled{opacity:.45}
   paint();renderCardAudit(card);
   $('saveCard').disabled=!card||immutable;
   $('recycleCard').disabled=!card||!!card.containerId||immutable;
-  $('destroyCard').disabled=!card||immutable;
+  const destroyButton=$('destroyCard'),destroyHint=$('destroyHint');
+  destroyButton.disabled=!card||immutable;
+  if(!card)destroyHint.textContent='先從下方「已創造的卡片」選取一張卡片，才可按永久銷毀；回收站也有銷毀入口。';
+  else if(immutable)destroyHint.textContent='永久／唯一卡受保護，禁止直接銷毀。';
+  else{
+   try{Craft.planDestroyCard(localStorage,card.id,card.revision);
+    destroyHint.textContent='目前選取：'+card.title+'（ID '+card.id.slice(-8)+'）。按上方按鈕後，仍須輸入「銷毀」確認。';
+   }catch(e){destroyButton.disabled=true;destroyHint.textContent='目前選取：'+card.title+'；無法直接銷毀：'+e.message}
+  }
   $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
   if(immutable)status('永久卡為唯讀：要修改需由 GBA 提出正式申請（尚未開放），不能直接改圖或回收。');
    const preview=$('cardPreview');preview.classList.remove('summon','hover');
@@ -289,6 +304,7 @@ button:disabled{opacity:.45}
    });
    const erase=document.createElement('button');erase.type='button';erase.textContent='🗑';
     erase.setAttribute('aria-label','永久銷毀 '+card.title);erase.title='永久銷毀（不可還原）';
+    erase.textContent='🗑 銷毀';erase.style.fontSize='13px';erase.style.whiteSpace='nowrap';
     erase.addEventListener('click',()=>requestDestroy(card));
     row.append(label,restore,erase);bin.append(row);
   }
