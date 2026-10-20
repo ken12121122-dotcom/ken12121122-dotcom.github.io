@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
@@ -158,4 +159,21 @@ test('active scan contracts and unrelated/mismatched historical bindings remain 
  const storage=store([fake]);
  assert.deepEqual(Bundle.recoverLegacyUnbound(storage),[]);
  assert.equal(storage.getItem(Bundle.BACKUP_KEY),null);
+});
+
+
+test('released scene event cannot resurrect historical group shelf placement',()=>{
+ const eye=readFileSync(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ const trigger="scene.addEventListener('living-contract-unbound',e=>{";
+ const idx=eye.indexOf(trigger);
+ assert.ok(idx>=0,'unbinding event must still refresh world state');
+ const handler=eye.slice(idx,eye.indexOf('\n });',idx));
+ assert.match(handler,/applyPacked\(\)/,'remove old world anchors and ownership cache');
+ assert.match(handler,/updateMarks\(\)/,'recompute scan eligibility after release');
+ assert.doesNotMatch(handler,/onBundleRestored/,'never put released book groups back on a shelf');
+ assert.match(eye,/onBundleRestored\?\.\(record\.scanContract\.members,record\.id\)/,'world materialization provides current owner identity');
+ assert.match(app,/onBundleRestored\(members,ownerCardId\)/,'materialization callback receives owner ID');
+ assert.match(app,/original\?\.runeBinding\?\.state!=='bound'/,'late callback refuses previously unbound owner');
+ assert.match(app,/contract\?\.form!=='world'/,'late callback refuses card-form owner');
 });
