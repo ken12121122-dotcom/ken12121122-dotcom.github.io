@@ -54,6 +54,27 @@
     tx.onabort=()=>reject(error('OBJECT_OUTBOX_READ_FAILED'));
    });
   }
+
+  // An explicit irreversible deletion may purge unsent card snapshots.
+  // Regular capture still NEVER infers deletion from a missing source ID.
+  forget(ids){
+   if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   if(!Array.isArray(ids)||!ids.length||ids.some(id=>
+     typeof id!=='string'||!/^local[.]card[.][a-zA-Z0-9_-]{1,128}$/.test(id)))
+    fail('OBJECT_OUTBOX_INVALID_CARD_ID');
+   const unique=[...new Set(ids)];
+   return new Promise((resolve,reject)=>{
+    const tx=this.#db.transaction(['versions','pending'],'readwrite');
+    tx.onabort=()=>reject(error('OBJECT_OUTBOX_FORGET_FAILED'));
+    tx.oncomplete=()=>resolve(Object.freeze({result:'LOCAL_CARD_SNAPSHOTS_ERASED',count:unique.length}));
+    try{
+     for(const id of unique){
+      tx.objectStore('pending').delete(id);
+      tx.objectStore('versions').delete(id);
+     }
+    }catch(_){tx.abort()}
+   });
+  }
   async capture(storage){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
    const capture=await snapshot(storage);if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
