@@ -66,8 +66,8 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   // Actual canvas pointer at original-card projected center, via the existing
   // atlas/card handler (not a direct call to a binder or long-press function).
   const holdCard=async id=>{const p=(await inspect()).cards.find(c=>c.id===id);assert.ok(p,'original card is visible');await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open||document.querySelector('#runeUnbindDialog').open,null,{timeout:15000});await page.mouse.up()};
-  const memberPoint=async()=>{const snap=await page.evaluate(()=>LivingScene.truthEye.inspect({pickPoints:true}));const p=snap.objects.find(o=>o.kind==='book'&&o.id!=='cardCollection'&&o.memberPickable&&o.x>20&&o.x<420&&o.y>90&&o.y<650);assert.ok(p,'a real unobstructed bound member is visible');return p};
-  const holdMember=async()=>{const p=await memberPoint();await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(250);const h=(await inspect()).hold;assert.equal(h?.type,'bound-bundle');assert.ok(h.highlightCount>1,'all group members highlight');await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
+  const memberPoint=async(kind='book')=>{const snap=await page.evaluate(()=>LivingScene.truthEye.inspect({pickPoints:true}));const p=snap.objects.find(o=>o.kind===kind&&o.id!=='cardCollection'&&o.memberPickable&&o.x>20&&o.x<420&&o.y>90&&o.y<650);assert.ok(p,'a real unobstructed bound '+kind+' member is visible: '+JSON.stringify(snap.objects.filter(o=>o.kind===kind)));return p};
+  const holdMember=async(kind)=>{const p=await memberPoint(kind);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(250);const h=(await inspect()).hold;assert.equal(h?.type,'bound-bundle');assert.ok(h.highlightCount>1,'all group members highlight');await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
   await holdCard('local.card.medium');
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true,'original card canvas hold opens restoration');
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(500);
@@ -118,7 +118,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
   assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form card stays absent after reload');
-  await holdMember();await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
+  await holdMember('scene');await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.equal((await inspect()).packed.length,worldCount);
   await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form original is hidden before解除契約');
