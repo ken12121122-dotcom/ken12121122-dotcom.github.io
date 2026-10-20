@@ -260,7 +260,7 @@ function create(opts){
   const provided=o.group?.userData?.scanName||o.group?.userData?.displayName;
   if(typeof provided==='string'&&provided.trim())return provided.trim().slice(0,80);
   const id=o.id||'',m=/^scene\.(shelf|pillar|lamp)\.(\d+)$/.exec(id);
-  if(m)return ({shelf:'書架',pillar:'石柱',lamp:'吊燈'}[m[1]])+' '+(Number(m[2])+(m[1]==='shelf'?0:1));
+  if(m)return ({shelf:'書架',pillar:'石柱',lamp:'吊燈'}[m[1]])+' '+(Number(m[2])+1);
   const names={'scene.floor':'地板','scene.floor.rings':'地面光環','scene.floor.grid':'地面格線',
    'scene.rune.origin':'初始法陣','scene.oculus.rings':'天頂圓環',
    'scene.oculus.spokes':'天頂光芒','scene.dust':'空氣微粒','scene.lighting':'環境燈光'};
