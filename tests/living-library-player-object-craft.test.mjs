@@ -149,3 +149,27 @@ test('format X in card creator opens a confirmation instead of only erasing the 
  assert.match(editor,/notify\('card-formatted',card\.id\)/);
  assert.match(editor,/Craft\.inspectCard\(localStorage,card\.id\)\.stats\.filled/);
 });
+
+test('regression: visibly blank former card may have 14 filled values until X formats back to 11',()=>{
+ const store=storage(),blank=craft.createBlankCard(store,rand,()=> '2026-10-20T00:00:00Z');
+ const raw=craft.read(store),old={...blank,title:'空白卡片',
+  cardNumber:'舊編號',copyInfo:{sourceId:'舊格式'},runeBinding:{runeId:'local.rune.origin',state:'released'}};
+ raw.objects[0]=old;store.setItem(craft.KEY,JSON.stringify(raw));
+ assert.equal(craft.inspectCard(store,blank.id).stats.filled,14);
+ const cleaned=craft.formatCardToBlank(store,blank.id,old.revision,()=> '2026-10-20T02:00:00Z');
+ assert.equal(craft.inspectCard(store,blank.id).stats.filled,11);
+ assert.equal(cleaned.id,blank.id);
+ assert.equal(craft.listCards(store).length,1);
+});
+test('formatting a formerly downloaded card in GBA returns the same 11-value blank to orbit',()=>{
+ const store=storage(),blank=craft.createBlankCard(store,rand);
+ const reader=craft.placeCard(store,blank.id,'local.atlas.compendium',9);
+ const fromGba=craft.formatCardToBlank(store,reader.id,reader.revision);
+ assert.equal(fromGba.placement,'hover');
+ assert.equal(fromGba.containerId,null);
+ assert.equal(fromGba.ownerBookId,null);
+ assert.equal(craft.inspectCard(store,blank.id).stats.filled,11);
+ assert.equal(craft.listCards(store).length,1);
+ const reinserted=craft.placeCard(store,blank.id,'local.atlas.compendium',9);
+ assert.equal(craft.isBlankCopyMedium(reinserted),true);
+});
