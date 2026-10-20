@@ -1,0 +1,47 @@
+name: New branch lifecycle guard
+
+# Legacy branches from the frozen snapshot are SKIPPED by the checker.
+# This is read-only. It never merges, deletes refs, or changes Android releases.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  future-branch-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted default branch rules
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: policy-main
+          persist-credentials: false
+
+      - name: Checkout candidate for bootstrap and policy unit tests
+        uses: actions/checkout@v4
+        with:
+          path: policy-candidate
+          persist-credentials: false
+
+      - name: Check future-only branch policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f policy-main/.github/scripts/check-future-branch-pr.cjs ]]; then
+            node policy-main/.github/scripts/check-future-branch-pr.cjs
+          else
+            # The policy-introducing PR only: main has not acquired this file yet.
+            node policy-candidate/.github/scripts/check-future-branch-pr.cjs
+          fi
+
+      - name: Verify candidate policy tests when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f policy-candidate/tests/branch-lifecycle-future-only.test.mjs ]]; then
+            cd policy-candidate
+            node --test tests/branch-lifecycle-future-only.test.mjs
+          fi
