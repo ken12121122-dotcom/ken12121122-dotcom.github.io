@@ -65,6 +65,18 @@ test('new scan contracts fail closed when avatar or protected objects are submit
  const good={kind:'scene',id:'scene.auto.future'};
  assert.equal(binding([good]).scanContract.members[0].id,good.id);
 });
+test('scanner has no extra action buttons and names/count render as unframed live text',async()=>{
+ const fs=await import('node:fs/promises');
+ const source=await fs.readFile(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/eyeSummon|eyeSelectAll|eyeCollect|collectButton/);
+ assert.match(source,/id='eyeScanReadout'/);
+ assert.match(source,/id='eyeScanNames'/);
+ assert.match(source,/background:none!important;border:0!important/);
+ assert.match(source,/scanName\(o\)/);
+ assert.match(source,/if\(id&&selected\.has\(id\)\)/);
+ assert.match(source,/start\('books',e\.pointerId,e\.clientX,e\.clientY\)/);
+ assert.match(source,/renderScanNames\(t\)/);
+});
 test('no preset book/library selection UI or scope filter survives in v2 source',async()=>{
  const fs=await import('node:fs/promises');
  const html=await fs.readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');

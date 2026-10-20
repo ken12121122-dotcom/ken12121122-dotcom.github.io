@@ -100,17 +100,21 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
- const tools=document.createElement('div');tools.className='truthEyeTools';
- tools.innerHTML='<button type="button" id="eyeSummon" aria-label="召喚全部書櫃書本" title="召喚全部書櫃書本">⇧</button><button type="button" id="eyeSelectAll" aria-label="全選掃描範圍內物件" title="全選掃描範圍內物件">⊙</button><button type="button" id="eyeCollect" aria-label="長按三秒收納選取物件" title="長按三秒收納選取物件">🔯</button><small id="eyeCount" role="status"></small>';
- host.querySelector('#eyeControls').append(tools);
- const extraStyle=document.createElement('style');extraStyle.textContent='.truthEyeTools{display:flex;flex-wrap:wrap;gap:5px}.truthEyeTools button{min-width:44px;min-height:44px}.truthEyeTools small{flex-basis:100%;line-height:1.5}.truthEyeTools button[data-holding="true"]{outline:2px solid #8cf6eb}';document.head.append(extraStyle);
- const countLabel=tools.querySelector('#eyeCount'),collectButton=tools.querySelector('#eyeCollect');
- tools.querySelector('#eyeSummon').addEventListener('click',()=>{if(busy())return;opts.summonShelfBooks?.();invalidate()});
- tools.querySelector('#eyeSelectAll').addEventListener('click',()=>{if(busy())return;selected.clear();targets().forEach(o=>selected.add(o.id));updateMarks();toast('👁 已選取掃描範圍內 '+selected.size+' 件；長按 🔯 三秒收納');invalidate()});
- collectButton.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||!selected.size||!field.visible||busy())return;heldPointers.add(e.pointerId);collectButton.setPointerCapture(e.pointerId);e.preventDefault();start('books',e.pointerId,e.clientX,e.clientY)});
- collectButton.addEventListener('pointermove',pointerMove);
- for(const event of ['pointerup','pointercancel','lostpointercapture'])collectButton.addEventListener(event,pointerEnd);
- collectButton.addEventListener('contextmenu',e=>e.preventDefault());
+ // Players choose objects by tapping actual 3D geometry; a hold on any
+ // selected object starts the single contract for the whole chosen set.
+ // Transparent text readout, not an interactive scan button.
+ const readout=document.createElement('aside');
+ readout.id='eyeScanReadout';readout.className='truthEyeScanReadout';
+ readout.setAttribute('aria-label','掃描到的物件數量與名稱');
+ const countLabel=document.createElement('div');countLabel.id='eyeCount';
+ countLabel.setAttribute('role','status');countLabel.className='truthEyeScanCount';
+ const scanNames=document.createElement('ol');scanNames.id='eyeScanNames';
+ scanNames.setAttribute('aria-label','掃描物件名稱');
+ readout.append(countLabel,scanNames);host.append(readout);
+ const readoutStyle=document.createElement('style');
+ readoutStyle.textContent='.truthEyeScanReadout{margin-top:12px;text-align:right;color:#f1e1b9;background:none!important;border:0!important;box-shadow:none!important;text-shadow:0 1px 5px #040710,0 1px 10px #040710;font:12px/1.55 system-ui,sans-serif}.truthEyeScanCount{font-weight:700}.truthEyeScanReadout ol{list-style:none;margin:4px 0 0;padding:0;max-height:min(42vh,420px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;touch-action:pan-y}.truthEyeScanReadout li{padding:1px 0;overflow-wrap:anywhere}.truthEyeScanReadout li[data-selected="true"]{color:#91f1dc;font-weight:700}.truthEyeScanReadout li[data-selected="true"]::before{content:"✓  "}.truthEyeScanReadout li[data-selected="false"]::before{content:"·  "}.truthEyeScanReadout ol:empty::after{content:"尚未偵測到物件";opacity:.72}@media(max-width:650px){.truthEyeScanReadout{font-size:11px}.truthEyeScanReadout ol{max-height:35vh}}';
+ document.head.append(readoutStyle);
+ let previousScanDisplay='';
  function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
  function entries(){return (opts.getScanEntries?.({excludeRoots:[eye,eyeLight,field,marks,ritual,cardHex.group,...bundleAnchors.values()]})||[])}
 
@@ -230,7 +234,7 @@ function create(opts){
   el(name).addEventListener('input',e=>{if(busy()){apply();return}cfg[k]=Number(e.target.value);apply();updateMarks()});
  }
  el('Mode').addEventListener('change',e=>{if(busy()){apply();return}cfg.mode=e.target.value;apply()});
- el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();invalidate()});
+ el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();updateMarks();invalidate()});
  function hit(e,meshes){const rect=renderer.domElement.getBoundingClientRect();if(!rect.width||!rect.height)return null;
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   caster.setFromCamera(mouse,camera);return caster.intersectObjects(meshes,true)[0]||null;
@@ -247,11 +251,40 @@ function create(opts){
  }
  function pick(e){const id=at(e);if(!id)return false;
   if(selected.has(id))selected.delete(id);else selected.add(id);
-  toast('👁 已選取 '+selected.size+' 件，長按選取物件或 🔯 三秒可收進空白卡');invalidate();return true;
+   updateMarks();
+  toast(selected.size?'👁 已選取 '+selected.size+' 件；長按任一已選取物件三秒開始契約':'👁 已取消選取');invalidate();return true;
+ }
+ // Names are descriptions of live discoveries, never scan allowlist rules.
+ function scanName(o){
+  if(o.kind==='book')return String(o.b?.name||o.b?.title||o.id).slice(0,80);
+  const provided=o.group?.userData?.scanName||o.group?.userData?.displayName;
+  if(typeof provided==='string'&&provided.trim())return provided.trim().slice(0,80);
+  const id=o.id||'',m=/^scene\.(shelf|pillar|lamp)\.(\d+)$/.exec(id);
+  if(m)return ({shelf:'書架',pillar:'石柱',lamp:'吊燈'}[m[1]])+' '+(Number(m[2])+1);
+  const names={'scene.floor':'地板','scene.floor.rings':'地面光環','scene.floor.grid':'地面格線',
+   'scene.rune.origin':'初始法陣','scene.oculus.rings':'天頂圓環',
+   'scene.oculus.spokes':'天頂光芒','scene.dust':'空氣微粒','scene.lighting':'環境燈光'};
+  if(names[id])return names[id];
+  const native=o.group?.name;
+  if(typeof native==='string'&&native.trim())return native.trim().slice(0,80);
+  const type=o.group?.isMesh?(o.group?.geometry?.type||'3D 網格'):'3D 物件';
+  return type+' · '+String(id).replace(/^scene\./,'').slice(0,26);
+ }
+ function renderScanNames(objects){
+  const display=objects.map(o=>[o.id,scanName(o),selected.has(o.id)]),key=JSON.stringify(display);
+  if(key===previousScanDisplay)return;
+  previousScanDisplay=key;
+  countLabel.textContent='掃描 '+objects.length+' 件｜已選 '+selected.size+' 件';
+  const fragment=document.createDocumentFragment();
+  for(let i=0;i<objects.length;i++){
+   const li=document.createElement('li');
+   li.textContent=display[i][1];li.dataset.scanId=objects[i].id;
+   li.dataset.selected=String(display[i][2]);fragment.append(li);
+  }
+  scanNames.replaceChildren(fragment);
  }
  function updateMarks(){
   const t=targets(),set=new Set(t.map(o=>o.id));
-   countLabel.textContent='掃描 '+t.length+' 件 · 選取 '+selected.size+' 件';
   for(const [id,g] of markMap)g.visible=set.has(id);
   for(const o of t){let m=markMap.get(o.id);
    if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);const volume=new T.Mesh(new T.SphereGeometry(.45,10,8),new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));m.add(volume);
@@ -260,6 +293,7 @@ function create(opts){
    m.scale.setScalar(selected.has(o.id)?1.65:1);
   }
   for(const id of [...selected])if(!set.has(id))selected.delete(id);
+  renderScanNames(t);
  }
  function clearBundleHighlights(){
   for(const helper of bundleHighlights){scene.remove(helper);helper.geometry.dispose();helper.material.dispose()}
@@ -300,7 +334,7 @@ function create(opts){
  function stop(){
   clearBundleHighlights();
   if(hold){clearTimeout(hold.timer);hold=null}
-  collectButton?.removeAttribute('data-holding');
+
   hex.clear();invalidate();
  }
  function clearCardCeremony(){
@@ -596,7 +630,7 @@ function create(opts){
   if(type==='bound-bundle'){selectedUntil=0;hex.clear()}else hex.update(0,performance.now());
   const token=++serial;
   hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
-  if(type==='books')collectButton.dataset.holding='true';
+
   if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision}
   invalidate();return true;
  }
@@ -641,8 +675,12 @@ function create(opts){
   if(hold?.id===e.pointerId){
    if(e.type==='pointerup'&&performance.now()-hold.started>=3000)complete(hold.token);
    else{
-    const shortTap=e.type==='pointerup'&&hold.type==='bound-bundle';
-    stop();if(shortTap)opts.onMemberTap?.(e);
+    const tapType=e.type==='pointerup'?hold.type:null;
+    stop();
+    // Short tap on a selected object deselects it instead of contracting.
+    // The 3-second hold remains the only path to confirmation.
+    if(tapType==='books')pick(e);
+    else if(tapType==='bound-bundle')opts.onMemberTap?.(e);
    }
    return true;
   }
