@@ -739,7 +739,40 @@
   return {id:card.id,title:card.title,revision:card.revision,status:card.status,affectedCopyIds};
  }
  // One localStorage setItem, no tombstone, no recycle/history record.
- function destroyCard(storage,{id,expectedRevision,confirmation,expectedSnapshot},clock=()=>new Date().toISOString()){
+ // Short-lived cleanup journal: the SAME localStorage transaction removes the
+ // card and records the unsent IndexedDB rows that must be purged. A browser
+ // crash cannot strand an untracked old upload intent. This is NOT a card
+ // history record; once cleanup succeeds the journal entry is removed.
+ const PURGE_FIELD='pendingCardOutboxPurges';
+ function pendingCardOutboxPurges(storage){
+  const state=read(storage),items=state[PURGE_FIELD]||[];
+  if(!Array.isArray(items))throw Error('銷毀佇列紀錄損毀，已停止清理');
+  const ids=new Set();
+  return items.map(entry=>{
+   if(!entry||typeof entry.id!=='string'||!/^local[.]card[.][a-zA-Z0-9_-]{1,128}$/.test(entry.id)||
+      ids.has(entry.id)||!Array.isArray(entry.ids)||entry.ids[0]!==entry.id||
+      !entry.ids.length||entry.ids.some(id=>typeof id!=='string'||
+       !/^local[.]card[.][a-zA-Z0-9_-]{1,128}$/.test(id))||
+      new Set(entry.ids).size!==entry.ids.length||
+      state.objects.some(x=>x.id===entry.id))
+    throw Error('銷毀清理紀錄與現存卡片不一致，已停止清理');
+   ids.add(entry.id);
+   return {id:entry.id,ids:[...entry.ids]};
+  });
+ }
+ function completeCardOutboxPurge(storage,id){
+  const jobs=pendingCardOutboxPurges(storage),job=jobs.find(x=>x.id===id);
+  if(!job)return false; // repeated recovery is idempotent
+  const raw=storage.getItem(KEY),state=read(storage);
+  if(state.objects.some(x=>x.id===id))throw Error('原卡重新出現，未清除銷毀紀錄');
+  const next={...state};const remaining=jobs.filter(x=>x.id!==id);
+  if(remaining.length)next[PURGE_FIELD]=remaining;
+  else delete next[PURGE_FIELD];
+  if(storage.getItem(KEY)!==raw)throw Error('銷毀清理時存檔已變更');
+  storage.setItem(KEY,JSON.stringify(next));
+  return true;
+ }
+ function destroyCard(storage,{id,expectedRevision,confirmation,expectedSnapshot,queueCleanup=false},clock=()=>new Date().toISOString()){
   if(confirmation!=='銷毀')throw Error('必須輸入「銷毀」確認永久刪除');
   if(typeof expectedSnapshot!=='string'||storage.getItem(KEY)!==expectedSnapshot)
    throw Error('本機存檔已變動，未刪除任何卡片；請重新操作');
@@ -750,9 +783,18 @@
    delete updated.copyInfo; // a visual copy retains its own ID and artwork
    return updated;
   });
+  if(queueCleanup!==false&&queueCleanup!==true)throw Error('銷毀佇列選項無效');
+  const next={...state,objects};
+  if(queueCleanup){
+   const jobs=pendingCardOutboxPurges(storage);
+   if(jobs.some(x=>x.id===id))throw Error('同一卡片仍在銷毀清理程序中');
+   next[PURGE_FIELD]=[...jobs,{id,ids:[id,...plan.affectedCopyIds]}];
+  }
   if(storage.getItem(KEY)!==expectedSnapshot)throw Error('存檔在銷毀期間已變更，已停止刪除');
-  storage.setItem(KEY,JSON.stringify({...state,objects}));
-  return {id,deleted:true,detachedCopies:plan.affectedCopyIds.length};
+  // One atomic write contains the card removal AND the recovery instruction.
+  storage.setItem(KEY,JSON.stringify(next));
+  return {id,deleted:true,detachedCopies:plan.affectedCopyIds.length,
+   cleanupPending:queueCleanup};
  }
  function recycleCard(storage,id,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
@@ -781,6 +823,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,planDestroyCard,destroyCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,restoreMissingUnbindImages,UNBIND_BLUEPRINT_ID,UNBIND_ART_BACKUP_KEY,inspectCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,planDestroyCard,destroyCard,pendingCardOutboxPurges,completeCardOutboxPurge,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,restoreMissingUnbindImages,UNBIND_BLUEPRINT_ID,UNBIND_ART_BACKUP_KEY,inspectCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
