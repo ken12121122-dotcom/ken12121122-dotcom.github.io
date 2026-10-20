@@ -56,3 +56,33 @@
 - `.github/workflows/living-library-ci.yml`
 
 **本報告為候選稽核記錄，非正式全站驗收或玩家存檔保證。**
+
+
+## 2026-10-21｜P1 銷毀跨儲存區修復（實作更新）
+
+**新增元件**
+- `living-library/live/card-destruction.js`：協調永久銷毀、待同步佇列刪除、啟動時補償清理。
+- `ObjectCraft.destroyCard(..., { queueCleanup: true })`：在同一次 localStorage `setItem` 中原子化移除原卡、解除外觀複製來源關聯、寫入暫時性 `pendingCardOutboxPurges` 清理指令。
+- `ObjectOutbox`：禁止在未完成清理時再次準備同步快照，避免重送已銷毀卡片的舊狀態。
+- `card-creation.html`：載入新的協調器，銷毀失敗前後採用不同狀態訊息；已刪卡但離線佇列待補償時不會誤稱「原卡保留」。下次開啟會重播清理。
+- 更新遊戲內嵌讀卡頁版本參數，避免舊版快取阻擋新機制。
+
+**崩潰安全性質**
+1. IndexedDB 一開始不可開啟：不動原卡。
+2. 寫入 localStorage 失敗：原卡和待同步佇列維持原狀。
+3. 本機卡片刪除成功後 IndexedDB 刪除失敗／中斷：原卡已刪；原子儲存的清理指令仍在；下一次開啟重試。
+4. IndexedDB 清理成功但移除清理指令失敗：重試是冪等操作，允許再次刪除不存在的離線快照。
+5. 清理紀錄格式異常或原卡意外重現：停止清理，不擅自刪除其他原卡。
+6. 正常結束：刪除後的存檔不留卡片墓碑／清理欄位。
+
+**驗證**
+- `tests/living-library-card-destruction.test.mjs` 現增加 3 個合成事故測試；本次 V8 重播 **14/14 通過**。
+- 隔離 mock outbox 協調器驗證 6 項（打開失敗、刪除後 IDB 失敗、保留記錄、重播恢復、冪等性、成功無墓碑）均通過。
+- 新增 `tests/browser/card-lifecycle.cjs`，透過真實 Chromium 及 IndexedDB 進行建立→編輯→下載範本→原卡銷毀→注入離線清理失敗→重新整理恢復→格式化→群組掃描解除→回收站銷毀之合成端到端測試。
+- 已將 browser 測試接入 `tests/browser/package.json` 和 `.github/workflows/living-library-ci.yml`，於 GitHub Actions 執行 **完整 Node + Chromium** 測試；本次尚未取得通過的 Actions 執行報告，不得宣稱真實瀏覽器測試已通過。
+- 既有 `atlas-scene.cjs` 與 `truth-eye-manifest.cjs` 涵蓋 Three.js 幾何與視覺邏輯；**安卓實機 WebGL/觸控/煙霧特效仍未驗收**。
+
+**剩餘風險**
+- 真實資料不同裝置、離線站點存取權限、手動匯出備份以及未實作遠端同步不會因本機銷毀而被跨裝置刪除。
+- 清理指令是處於異常恢復中的暫時 metadata，等待成功補償後才刪除。
+- Chromium CI 成功與否以 GitHub Actions 實際結果為準；不得將隔離模擬 PASS 與實機 PASS 混用。
