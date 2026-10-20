@@ -177,3 +177,37 @@ test('released scene event cannot resurrect historical group shelf placement',()
  assert.match(app,/original\?\.runeBinding\?\.state!=='bound'/,'late callback refuses previously unbound owner');
  assert.match(app,/contract\?\.form!=='world'/,'late callback refuses card-form owner');
 });
+
+
+test('released scan owner is a real GBA-download blank, not a cosmetic blank',()=>{
+ const book=makeCard('medium'),spell=makeCard('spell','解除契約'),
+  source={...makeCard('source','風之紋'),downloadTemplate:true};
+ const storage=store([book,spell,source]);
+ const owner=Bundle.bind(storage,{cardId:book.id,revision:1,members:[ref]},[ref]);
+ const done=Craft.unbindAndAbsorbSpell(storage,{runeId:owner.runeBinding.runeId,
+  targetId:owner.id,targetRevision:owner.revision,spellId:spell.id,spellRevision:1});
+ assert.ok(Bundle.blank(done.target));
+ assert.equal(storage.snapshot().objects.some(c=>c.id===spell.id),false);
+ const reader=Craft.placeCard(storage,owner.id,'local.atlas.compendium',9);
+ assert.equal(Craft.isBlankCopyMedium(reader),true,'same original medium must be usable in right GBA reader');
+ const made=Craft.forgeBlankFromTemplate(storage,{blankId:reader.id,blankRevision:reader.revision,
+  sourceId:source.id,sourceRevision:source.revision});
+ assert.equal(made.id,owner.id);
+ assert.equal(made.title,'風之紋');
+ assert.equal(storage.snapshot().objects.length,2,'no new blank, hidden spell or duplicate IDs');
+});
+test('old spent spells are removed from persisted records while live and sealed cards stay untouched',()=>{
+ const owner=makeCard('owner','原卡'),spell={...makeCard('old','解除契約'),
+  placement:'contained',consumedBy:owner.id,containerId:null,ownerBookId:null,
+  containment:{kind:'consumed_spell',holderId:owner.id,holderType:'card',state:'stored'}};
+ const sealed={...makeCard('sealed','保留法陣卡'),placement:'contained',
+  runeBinding:{runeId:'local.rune.origin',state:'sealed'},
+  containment:{kind:'rune_contract',holderId:'local.rune.origin',holderType:'rune',state:'stored'}};
+ const legacy=store([owner,spell,sealed]);
+ assert.equal(Craft.listCards(legacy).some(c=>c.id===spell.id),false,'legacy history hidden even before cleanup');
+ assert.deepEqual(Craft.purgeLegacyConsumedSpells(legacy),[spell.id]);
+ assert.deepEqual(Craft.purgeLegacyConsumedSpells(legacy),[],'repeat cleanup is idempotent');
+ assert.equal(legacy.snapshot().objects.length,2);
+ assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===sealed.id),sealed);
+ assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===owner.id),owner);
+});
