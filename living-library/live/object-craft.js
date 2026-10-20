@@ -26,8 +26,12 @@
  function write(storage,objects,options={}){
   const prior=read(storage);
   const recipeArtwork=Object.hasOwn(options,'recipeArtwork')?options.recipeArtwork:prior.recipeArtwork;
-  const next={version:VERSION,objects};
-  if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
+  // Preserve unknown top-level metadata across ordinary card transactions.
+  const next={...prior,version:VERSION,objects};
+  if(Object.hasOwn(options,'recipeArtwork')){
+   if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
+   else delete next.recipeArtwork;
+  }else if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
   storage.setItem(KEY,JSON.stringify(next));
  }
  function isUnbindSpellTitle(title){
@@ -416,6 +420,17 @@
   if(registered){
    return containerId===null||(containerId===uniqueBook&&slotIndex===9);
   }
+  // An incompletely migrated permanent original is never an ordinary card.
+  if(isPermanentRuneCard(card))
+   return containerId===null||(containerId===uniqueBook&&slotIndex===9);
+  // Contract metadata without a matching canonical binding is an
+  // inconsistent save, not evidence that the card is freely draggable.
+  for(const [key,value] of Object.entries(card)){
+   if(!/Contract$/.test(key)||!value||typeof value!=='object'||Array.isArray(value))continue;
+   if(!card.runeBinding?.runeId||
+      ['artifactId','runeId','contractId'].some(field=>
+       Object.hasOwn(value,field)&&value[field]!==card.runeBinding.runeId))return false;
+  }
   // A card that represents a physically manifested or sealed world object
   // is not a draggable card until its normal card form is restored.
   const metadata=Object.entries(card).filter(([key,value])=>
@@ -721,6 +736,8 @@
   if(isPermanentRuneCard(old))throw Error('永久編號卡禁止回收');
   if(old.placement==='contained'||old.containment)throw Error('已收納的法術卡不可直接回收');
   if(old.runeBinding?.runeId)throw Error('已連結法陣的卡片不可直接回收');
+  if(Object.entries(old).some(([key,value])=>/Contract$/.test(key)&&!!value))
+   throw Error('卡片仍有契約或歷史殘留，請先解除或修復契約');
   if(old.containerId||old.ownerBookId)throw Error('書內卡片需先移出書本才可回收');
   if(state.objects.filter(x=>isPlayerCard(x)&&x.status==='recycled').length>=MAX_RECYCLED)
    throw Error('回收站已滿，未修改卡片');
