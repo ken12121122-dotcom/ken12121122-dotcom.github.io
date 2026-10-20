@@ -183,9 +183,10 @@ button:disabled{opacity:.45}
 <script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
 <script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
 <script src="./unbind-card-art.js?v=unbind-selected-artwork-20261020"></script>
-<script src="./object-craft.js?v=unbind-selected-artwork-20261020"></script>
+<script src="./object-craft.js?v=card-destroy-saga-20261021"></script>
 <script src="./object-backup.js"></script>
-<script src="./object-outbox.js?v=card-destroy-20261020"></script>
+<script src="./object-outbox.js?v=card-destroy-saga-20261021"></script>
+<script src="./card-destruction.js?v=card-destroy-saga-20261021"></script>
 <script>
 (function(){
  'use strict';
@@ -216,8 +217,9 @@ button:disabled{opacity:.45}
  $('queueObjects').addEventListener('click',async()=>{
   $('queueObjects').disabled=true;let queue;
   try{
+   await window.LivingCardDestruction.reconcile(localStorage);
    queue=await window.LivingObjectOutbox.ObjectOutbox.open();
-   const result=await queue.capture(localStorage),count=(await queue.pending()).length;
+   const result=await queue.capture(localStorage),count=(await queue.pending(localStorage)).length;
    $('backupStatus').textContent='本機待同步 '+count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更，後續修改需再次準備。';
   }catch(_){$('backupStatus').textContent='無法準備待同步佇列：資料可能已更新或儲存不可用。原存檔未變更，未上傳雲端；可重新操作或先下載備份。'}
   finally{queue?.close();$('queueObjects').disabled=false}
@@ -447,27 +449,25 @@ button:disabled{opacity:.45}
  $('confirmDestroy').addEventListener('click',async()=>{
   const plan=pendingDestroy;if(!plan)return;
   if($('destroyInput').value.trim()!=='銷毀'){status('必須輸入「銷毀」才能永久刪除',true);return}
-  $('confirmDestroy').disabled=true;let outbox;
+  $('confirmDestroy').disabled=true;
   try{
-   const check=Craft.planDestroyCard(localStorage,plan.id,plan.revision);
-   if(localStorage.getItem(Craft.KEY)!==plan.expectedSnapshot||
-      JSON.stringify(check.affectedCopyIds)!==JSON.stringify(plan.affectedCopyIds))
-    throw Error('存檔在確認期間已變更，請重新操作');
-   outbox=await window.LivingObjectOutbox.ObjectOutbox.open();
-   await outbox.forget([plan.id,...plan.affectedCopyIds]);
-   const result=Craft.destroyCard(localStorage,{
-    id:plan.id,expectedRevision:plan.revision,
-    confirmation:'銷毀',expectedSnapshot:plan.expectedSnapshot
+   const result=await window.LivingCardDestruction.destroy(localStorage,{
+    id:plan.id,revision:plan.revision,confirmation:'銷毀',
+    expectedSnapshot:plan.expectedSnapshot,expectedCopyIds:plan.affectedCopyIds
    });
    $('destroyDialog').close();
    if(currentId===plan.id)show(null);
    refresh();notify('card-destroyed',plan.id);
-   status('🗑 已永久銷毀「'+plan.title+'」，本機有效卡、回收站及待同步佇列不再保留此卡。'+
-    (result.detachedCopies?'另已清除 '+result.detachedCopies+' 張複製卡的來源關聯。':''));
+   if(result.cleanup==='complete'){
+    status('🗑 已永久銷毀「'+plan.title+'」，本機卡片及待同步佇列均已清除。'+
+     (result.detachedCopies?'另有 '+result.detachedCopies+' 張複製卡保留，已解除來源關聯。':''));
+   }else{
+    status('🗑「'+plan.title+'」已從本機卡片資料永久移除；離線佇列清理尚未完成，系統會在下次開啟時重試。不要清除網站資料。',true);
+   }
   }catch(e){
    $('destroyDialog').close();
-   status('永久銷毀未完成：'+(e.message||'儲存或佇列不可用')+'；請檢查原卡後再試。',true);
-  }finally{outbox?.close();$('confirmDestroy').disabled=false}
+   status('未銷毀任何卡片：'+(e.message||'儲存或佇列不可用')+'。原卡保留，請確認後重試。',true);
+  }finally{$('confirmDestroy').disabled=false}
  });
  $('createCard').onclick=()=>{
   try{const card=Craft.createBlankCard(localStorage,window.crypto);
@@ -546,6 +546,14 @@ button:disabled{opacity:.45}
    // silently reopen the most recent spell card (e.g. 解除契約卡).
    const all=cards();show(query?all.find(c=>c.id===query)||null:null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
+  // Recovery happens only for a card already deleted in the same atomic
+  // localStorage write as its journal; it cannot destroy a new/different card.
+  if(Craft.pendingCardOutboxPurges(localStorage).length)
+   void window.LivingCardDestruction.reconcile(localStorage).then(({cleaned})=>{
+    if(cleaned)$('backupStatus').textContent='已恢復完成 '+cleaned+' 筆中斷的銷毀佇列清理；未復活已銷毀卡片。';
+   }).catch(error=>{
+    $('backupStatus').textContent='先前銷毀的離線佇列仍待清理：'+String(error?.message||error)+'。卡片本體不會重新出現。';
+   });
  }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;$('destroyCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
 </script>
