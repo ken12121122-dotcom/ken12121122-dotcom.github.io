@@ -261,11 +261,13 @@
    add(actions,c.runeBinding.state==='sealed'?'法陣具現化':c.runeBinding.state==='cardified'?'歸還法陣':'封印到初始法陣','依目前契約狀態操作');
    add(animations,'初始法陣與原卡轉換','具現化／收回動畫（條件式）');
   }
-  if(isUnbindSpellTitle(c.title)&&c.placement==='hover'&&!c.runeBinding&&!c.containment&&!c.containerId){
-   add(spells,'解除契約術','長按三秒選取目標，確認頁批准才執行，成功後本卡消耗');
-   add(actions,'確認式解除契約','原卡及關聯物件需先確認');
-   add(animations,'六芒星長按特效','長按期間');
-   add(animations,'指向性吸收特效','解除契約成功後');
+  if(isUnbindSpellTitle(c.title)&&!c.runeBinding&&!c.containment){
+   const ready=c.placement==='hover'&&!c.containerId&&!c.ownerBookId;
+   add(spells,'解除契約術',ready?'已在玩家軌道；需確認目標才可施法':
+    '已配置法術；需先將卡片取回玩家軌道才可施法');
+   add(actions,'確認式解除契約','長按三秒選目標 → 檢查契約／群組 → 點 ✓ 後永久消耗施法卡');
+   add(animations,'六芒星長按特效','長按三秒期間（出卡後可觸發）');
+   add(animations,'指向性吸收特效','確認並成功解除後才播放');
   }
   if(c.linkedCardId)link('公開內容',c.linkedCardId,'卡片內容連結，非施法');
   if(c.copyInfo?.sourceId){
