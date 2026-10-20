@@ -218,6 +218,11 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 #cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
 #cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
 #cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
+#cardInfoDialog{box-sizing:border-box;width:min(94vw,590px);max-height:85dvh;overflow:auto;border:2px solid #a58655;border-radius:14px;padding:18px;background:#f5ecd9;color:#000}
+#cardInfoDialog::backdrop{background:#07101bba}
+#cardInfoDialog h2,#cardInfoDialog p{color:#000}
+#cardInfoDialog pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;padding:10px;border:1px solid #a58655;color:#000;font:12px/1.6 ui-monospace,monospace}
+#cardInfoDialog button{min-width:48px;min-height:48px;border-radius:9px;background:#e4d3b1;color:#000;font-size:22px}
 #drawerWrap.card-spell-leaving{opacity:0;pointer-events:none;transition:opacity .24s ease}
 #cardRecycleConfirm{max-width:min(92vw,430px);border:1px solid #cfb98f;border-radius:14px;background:#1c2d3d;color:#f7ebcf;padding:24px}
 #cardRecycleConfirm::backdrop{background:#08111dc7}
@@ -286,9 +291,17 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
  <output id="atlasObservationStatus" role="status" aria-live="polite"></output>
 </dialog>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
+<button id="cardFocusInfo" type="button" aria-label="查看卡片全部資料、法術、動畫及動作關聯" title="卡片資訊">ⓘ</button>
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
 <button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
 <button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
+<dialog id="cardInfoDialog" aria-labelledby="cardInfoTitle">
+<h2 id="cardInfoTitle">卡片資訊總覽</h2>
+<p id="cardInfoCounts"></p>
+<pre id="cardInfoText" aria-label="卡片已儲存資訊與程式關聯"></pre>
+<p>此頁唯讀：計數為目前已辨識的資料與條件式法術／動畫／動作，不代表實際播放中；消耗的歷史卡不列入。</p>
+<button id="cardInfoClose" type="button" aria-label="關閉卡片資訊" title="關閉">×</button>
+</dialog>
 <dialog id="cardRecycleConfirm" aria-label="確認回收懸浮卡">
 <p>要將這張卡移到回收站嗎？卡片會離開環繞軌道，但可從《卡片創造術》的回收站還原。</p>
 <button id="cardRecycleCancel" type="button" aria-label="取消回收" title="取消">×</button>
@@ -1634,6 +1647,26 @@ function exitCardFocus(){
  cameraUpdate();syncRender();
 }
 document.getElementById('cardFocusClose').addEventListener('click',exitCardFocus);
+const cardInfoDialog=document.getElementById('cardInfoDialog');
+document.getElementById('cardFocusInfo').addEventListener('click',()=>{
+ const id=focusedCard?.id;if(!id)return;
+ try{
+  const info=window.LivingObjectCraft.inspectCard(localStorage,id),n=info.stats;
+  document.getElementById('cardInfoTitle').textContent='ⓘ '+info.title;
+  document.getElementById('cardInfoCounts').textContent=
+   '實際屬性 '+n.fields+'（有值 '+n.filled+'）｜'+n.bytes+' bytes｜照片 '+(n.photo?'有':'無')+
+   '\n資料參照 '+n.links+'｜群組 '+n.groupMembers+' 件｜法術 '+n.spells+'｜動畫 '+n.animations+'｜動作 '+n.actions;
+  const rows=['ID：'+info.id,'位置：'+info.placement,'版本：'+info.revision];
+  for(const [k,values] of [['連動與位置',info.links],['法術',info.spells],['動畫',info.animations],['動作',info.actions]]){
+   rows.push('\n'+k+'（'+values.length+'）');
+   for(const v of values)rows.push('• '+(v.kind||v.name)+' → '+(v.id||v.detail||'')+(v.kind?' · '+v.detail:''));
+  }
+  rows.push('\n'+info.note,'\n已儲存欄位（省略圖片 Base64）',JSON.stringify(info.data,null,2));
+  document.getElementById('cardInfoText').textContent=rows.join('\n');
+  if(!cardInfoDialog.open)cardInfoDialog.showModal();
+ }catch(error){window.LivingLibrary?.toast?.('卡片資料無法檢視：'+error.message)}
+});
+document.getElementById('cardInfoClose').addEventListener('click',()=>cardInfoDialog.close());
 document.getElementById('cardFocusEdit').addEventListener('click',()=>{
  const id=focusedCard?.id;if(!id)return;exitCardFocus();
  window.LivingLibrary.openLocalCardEditor?.(id);
