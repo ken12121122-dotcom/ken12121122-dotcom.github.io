@@ -38,6 +38,15 @@ test('structurally stable dynamic objects produce stable IDs across equivalent s
  function create(){const q=setup();const gear=q.scene.add(node('Group','GearMachine'));gear.position.x=4;gear.add(node('Mesh','Gear'));return D.discover({scene:q.scene,keeper:q.keeper,legacyScenes:q.legacyScenes,books:q.books,floatingCards:q.floatingCards}).find(x=>x.group===gear)?.id}
  assert.equal(create(),create());
 });
+test('moving and animating anonymous objects never change scan identity in the same scene',()=>{
+ const q=setup(),m=q.scene.add(node('Group','AnimatedArtifact'));
+ const mesh=m.add(node('Mesh','AnimatedMesh'));
+ const opts={scene:q.scene,keeper:q.keeper,legacyScenes:q.legacyScenes,books:q.books,floatingCards:q.floatingCards};
+ const first=D.discover(opts).find(x=>x.group===m).id;
+ m.position.x+=13;m.position.y-=2;mesh.position.z+=5;m.scale.x=2.2;
+ const second=D.discover(opts).find(x=>x.group===m).id;
+ assert.equal(first,second);
+});
 test('future user-authored persistent IDs are accepted without predefined scanner entries',()=>{
  const q=setup(),m=q.scene.add(node('Group','Original statue'));m.add(node('Mesh'));m.userData.scanObjectId='scene.statue.user-defined';
  const all=D.discover({scene:q.scene,keeper:q.keeper,legacyScenes:[],books:[]});
