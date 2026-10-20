@@ -127,7 +127,16 @@ function create(opts){
   refreshPacked();
   if(bundleError)return;
   const mask=bundleTransfer?.releasing?new Map([...packed].filter(([,id])=>id!==bundleTransfer.cardId)):packed;
-  for(const o of entries())if(o.kind==='book'&&mask.has(o.kind+':'+o.id))for(const g of o.groups||[o.group])g.visible=false;
+  for(const o of entries())if(o.kind==='book')for(const g of o.groups||[o.group]){
+   const hidden=mask.has('book:'+o.id);
+   if(hidden){
+    if(!g.userData.scanHidden)g.userData.scanPreviousVisible=g.visible;
+    g.userData.scanHidden=true;g.visible=false;
+   }else if(g.userData.scanHidden){
+    g.visible=g.userData.scanPreviousVisible!==false;
+    delete g.userData.scanHidden;delete g.userData.scanPreviousVisible;
+   }
+  }
   opts.applyPacked?.(mask);
   const liveIds=new Set(worldCards.map(c=>c.id));
   for(const id of restoredBundleVersions.keys())if(!liveIds.has(id))restoredBundleVersions.delete(id);
@@ -817,6 +826,13 @@ function create(opts){
  // Generic contract release event: refresh this artifact only when its
  // ORIGINAL card was released. Other artifacts can subscribe independently.
  scene.addEventListener('living-contract-unbound',e=>{
+  if(e.bindingId==='scan.bundle.'+e.cardId&&Array.isArray(e.scanMembers)){
+   // The old owner no longer exists after the atomic unbind. Remove cached
+   // ownership AND world anchors immediately, not on a future scanner tick.
+   selected.clear();stop();cancelPrompt();applyPacked();
+   opts.onBundleRestored?.(e.scanMembers);
+   invalidate();
+  }
   if(e.cardId===card?.id)refreshAfterUnbind();
  });
  function ownsTransferCard(id){return !!transfer&&transfer.cardId===id}
