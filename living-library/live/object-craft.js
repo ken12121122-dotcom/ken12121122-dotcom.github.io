@@ -424,10 +424,21 @@
   const updated=[...objects];updated[blankIndex]=next;
   write(storage,updated);return {...next};
  }
- // GBA-FORGE-001: an inventory-independent index of designs the player
- // already created. The left 9 display wells are NOT involved in this process.
- // A stored/consumed spell's visual template may be downloaded, but this does
- // not retrieve, recharge, or change the original stored object.
+ // GBA-FORGE-001: downloadable FORMAT definitions are not historical cards.
+ // Keep a verified system recipe for the one-use unbinding spell: consuming the
+ // physical spell deletes its card record, NEVER the recipe needed to make more.
+ // No extra local.card ID, inventory, save field, or spent-spell record is minted.
+ const UNBIND_BLUEPRINT_ID='system.template.unbind-contract-v1';
+ const UNBIND_BLUEPRINT=Object.freeze({
+  id:UNBIND_BLUEPRINT_ID,revision:1,title:'解除契約卡',
+  description:'解除一項有效契約；使用後卡片永久消耗。',
+  cardType:'法術',image:null,downloadTemplate:true,sourceKind:'system-copyable-recipe'
+ });
+ function isSystemDownloadTemplate(source){
+  return source?.id===UNBIND_BLUEPRINT_ID&&
+   source.revision===UNBIND_BLUEPRINT.revision&&
+   source.sourceKind===UNBIND_BLUEPRINT.sourceKind;
+ }
  function canDownloadTemplate(c){
   // Opt-in only: being a draft card, an old book, or a stored spell is not
   // permission to publish this card's appearance in the GBA download list.
@@ -443,9 +454,11 @@
    !c.scanContract&&!c.truthEyeContract;
  }
  function listDownloadableTemplates(storage){
-  return listCards(storage).filter(canDownloadTemplate)
+  // Always present the reusable recipe FIRST, even if the last physical copy
+  // was consumed. Only other LIVE player cards explicitly opted in may follow.
+  return [UNBIND_BLUEPRINT,...listCards(storage).filter(canDownloadTemplate)
    .sort((a,b)=>String(a.title).localeCompare(String(b.title),'zh-Hant')||
-    a.id.localeCompare(b.id));
+    a.id.localeCompare(b.id))];
  }
  function forgeBlankFromTemplate(storage,{blankId,blankRevision,sourceId,sourceRevision},
   clock=()=>new Date().toISOString()){
@@ -453,14 +466,17 @@
    throw Error('空白卡與卡片範本不得為同一物件');
   const state=read(storage),objects=state.objects;
   const blankIndex=objects.findIndex(x=>x.id===blankId&&isPlayerCard(x)&&x.status!=='recycled');
-  const sourceIndex=objects.findIndex(x=>x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
-  if(blankIndex<0||sourceIndex<0)throw Error('空白卡或已建立的範本不存在');
-  const blank=objects[blankIndex],source=objects[sourceIndex];
+  const systemRecipe=sourceId===UNBIND_BLUEPRINT_ID;
+  const sourceIndex=systemRecipe?-1:objects.findIndex(x=>
+   x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
+  if(blankIndex<0||(!systemRecipe&&sourceIndex<0))throw Error('空白卡或目前可複製的卡片不存在');
+  const blank=objects[blankIndex],source=systemRecipe?UNBIND_BLUEPRINT:objects[sourceIndex];
   if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
     !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
    throw Error('卡片已變動，請重新選擇');
-  if(!isBlankCopyMedium(blank))throw Error('右側 GBA 讀卡格需要一張全新的空白卡');
-  if(!canDownloadTemplate(source))throw Error('此已建立卡片不允許作為下載範本');
+  if(!isBlankCopyMedium(blank))throw Error('右側 GBA 讀卡格需要一張真正的空白卡');
+  if(systemRecipe?!isSystemDownloadTemplate(source):!canDownloadTemplate(source))
+   throw Error('此範本不允許下載');
   const when=clock();
   const next={...blank,title:source.title,description:source.description||'',
    cardType:source.cardType||'',image:source.image?{...source.image}:null,
@@ -544,6 +560,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
