@@ -142,7 +142,11 @@ function create(opts){
   for(const id of restoredBundleVersions.keys())if(!liveIds.has(id))restoredBundleVersions.delete(id);
   for(const [id,anchor] of bundleAnchors)if(!liveIds.has(id)){scene.remove(anchor);bundleAnchors.delete(id)}
   for(const record of worldCards){
-   if(restoredBundleVersions.get(record.id)!==record.revision){opts.onBundleRestored?.(record.scanContract.members);restoredBundleVersions.set(record.id,record.revision)}
+   if(restoredBundleVersions.get(record.id)!==record.revision){
+     // Only a currently ACTIVE world-form contract may restore its book presentation.
+     opts.onBundleRestored?.(record.scanContract.members,record.id);
+     restoredBundleVersions.set(record.id,record.revision);
+    }
    const entry=floatingCards.get(record.id);
    if(entry)entry.group.visible=false;
    const members=record.scanContract.members.map(ref=>entries().find(o=>o.kind===ref.kind&&o.id===ref.id));
@@ -838,8 +842,9 @@ function create(opts){
    // The old owner no longer exists after the atomic unbind. Remove cached
    // ownership AND world anchors immediately, not on a future scanner tick.
    selected.clear();stop();cancelPrompt();applyPacked();
-   opts.onBundleRestored?.(e.scanMembers);
-   invalidate();
+   // A released contract has NO group ownership: never replay the old group's
+   // shelf-return callback after unbinding. Recompute scan targets instead.
+   updateMarks();invalidate();
   }
   if(e.cardId===card?.id)refreshAfterUnbind();
  });
