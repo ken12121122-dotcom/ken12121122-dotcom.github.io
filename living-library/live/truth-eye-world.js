@@ -87,6 +87,7 @@ function create(opts){
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
  let bundleTransfer=null,packed=new Map(),bundleError=null,packedRaw,worldCards=[];
  const bundleAnchors=new Map();
+ const restoredBundleVersions=new Map();
  const bundleHighlights=[];
  const Directed=root.LivingDirectedTransfer;
  if(!Directed?.normalize||!Directed?.sample)throw Error('缺少既有卡片定向吸收動畫');
@@ -127,8 +128,10 @@ function create(opts){
   for(const o of entries())if(o.kind==='book'&&mask.has(o.kind+':'+o.id))for(const g of o.groups||[o.group])g.visible=false;
   opts.applyPacked?.(mask);
   const liveIds=new Set(worldCards.map(c=>c.id));
+  for(const id of restoredBundleVersions.keys())if(!liveIds.has(id))restoredBundleVersions.delete(id);
   for(const [id,anchor] of bundleAnchors)if(!liveIds.has(id)){scene.remove(anchor);bundleAnchors.delete(id)}
   for(const record of worldCards){
+   if(restoredBundleVersions.get(record.id)!==record.revision){opts.onBundleRestored?.(record.scanContract.members);restoredBundleVersions.set(record.id,record.revision)}
    const entry=floatingCards.get(record.id);
    if(entry)entry.group.visible=false;
    const members=record.scanContract.members.map(ref=>entries().find(o=>o.kind===ref.kind&&o.id===ref.id));
@@ -448,6 +451,17 @@ function create(opts){
  }
  function complete(token){
   if(!hold||hold.token!==token)return;
+  if(hold.type==='bound-bundle'&&!hold.ceremonyStarted){
+   const remaining=3000-(performance.now()-hold.started);
+   if(remaining>0){clearTimeout(hold.timer);hold.timer=setTimeout(()=>complete(token),remaining);return}
+   const record=craft.listCards(storage).find(c=>c.id===hold.cardId);
+   if(!record||record.revision!==hold.revision||B.contract(record)?.form!=='world'){stop();toast('整組契約已改變，請重新長按');return}
+   clearTimeout(hold.timer);
+   hold.id=null;hold.ceremonyStarted=performance.now();
+   showBundleHighlights(record);hex.update(0,hold.ceremonyStarted);
+   hold.timer=setTimeout(()=>complete(token),900);invalidate();return;
+  }
+  if(hold.type==='bound-bundle'&&performance.now()-hold.ceremonyStarted<900)return;
   const gesture=hold,type=gesture.type;stop();
   // Contract/movement state can change when a card enters or leaves the
   // compendium. Never act on a cached original revision.
@@ -458,7 +472,7 @@ function create(opts){
    if(!record||record.revision!==gesture.revision||B.contract(record)?.form!=='world'){
     toast('整組契約已改變，請重新長按');return;
    }
-   bundlePrompt('bundle-repack',record);return;
+   selectedUntil=0;bundlePrompt('bundle-repack',record);return;
   }
   if(type==='books'){
    try{const ids=new Set(selected),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
@@ -581,11 +595,11 @@ function create(opts){
    eye.getWorldPosition(ritual.position);
    ritual.quaternion.copy(camera.quaternion);
   }
-  hex.update(0,performance.now());
+  if(type==='bound-bundle'){selectedUntil=0;hex.clear()}else hex.update(0,performance.now());
   const token=++serial;
   hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
   if(type==='books')collectButton.dataset.holding='true';
-  if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision;showBundleHighlights(contractRecord)}
+  if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision}
   invalidate();return true;
  }
  function pointerDown(e){
@@ -662,12 +676,12 @@ function create(opts){
    if(now-lastScan>320){lastScan=now;updateMarks()}
   }
   if(hold){
-   const p=clamp((now-hold.started)/3000,0,1);
+   const p=hold.ceremonyStarted?clamp((now-hold.ceremonyStarted)/900,0,1):clamp((now-hold.started)/3000,0,1);
    if(hold.type!=='books'&&hold.type!=='bound-bundle'){
     eye.getWorldPosition(ritual.position);
     ritual.quaternion.copy(camera.quaternion);
    }
-   hex.update(p,now);
+   if(hold.type!=='bound-bundle'||hold.ceremonyStarted)hex.update(p,now);else hex.clear();
    for(const helper of bundleHighlights){
     const ref=helper.userData.scanRef,o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);
     if(o){helper.box.makeEmpty();for(const g of o.groups||[o.group])helper.box.expandByObject(g);helper.updateMatrixWorld(true)}
@@ -759,7 +773,7 @@ function create(opts){
  }
  apply();state();
  return Object.freeze({tick,active,applyPacked,isPacked,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
-  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},hold:hold?{type:hold.type,cardId:hold.cardId,progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
+  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},ritualVisible:ritual.visible,hold:hold?{type:hold.type,phase:hold.ceremonyStarted?'animation':'holding',cardId:hold.cardId,progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visibleGroups:(o.groups||[o.group]).filter(g=>g.visible).length,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
