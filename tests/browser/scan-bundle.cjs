@@ -49,7 +49,8 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.ok(names.every(x=>x.id&&x.name.trim()),'real names or descriptive fallback');
   assert.ok(names.some(x=>x.id==='scene.floor'&&x.name==='地板'),'Chinese geometry label');
   assert.ok(names.some(x=>x.name.includes('之書')),'book names from original library');
-  assert.match(await page.locator('#eyeCount').innerText(),new RegExp('掃描 '+count+' 件.*書本 '));
+  assert.match(await page.locator('#eyeCount').innerText(),new RegExp('掃描 '+count+' 件物件'));
+  assert.doesNotMatch(await page.locator('#eyeCount').innerText(),/書本|其他物件|已選/,'scan count has no type distinctions or click selection');
   const visual=await page.locator('#eyeScanReadout').evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderTopWidth}));
   assert.ok(visual.background==='rgba(0, 0, 0, 0)'||visual.background==='transparent','no panel background');
   assert.equal(visual.border,'0px','no panel frame');
@@ -63,7 +64,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   for(const point of candidates){
    await page.mouse.move(point.x,point.y);await page.mouse.down();
    const inspected=await inspect();await page.mouse.up();
-   if(inspected.hold?.type==='books'){
+   if(inspected.hold?.type==='scan'){
     chosen=point;chosenId=inspected.hold.targetId;
     chosenKind=inspected.scanned.find(o=>o.id===chosenId)?.kind;break;
    }
@@ -76,7 +77,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   const hold=async ms=>{
    await page.mouse.move(chosen.x,chosen.y);await page.mouse.down();
    const snapshot=await inspect();
-   assert.equal(snapshot.hold?.type,'books');
+   assert.equal(snapshot.hold?.type,'scan');
    assert.deepEqual(snapshot.hold.scanIds,snapshot.scanned.map(o=>o.id));
    if(ms)await page.waitForTimeout(ms);
    else await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});
@@ -91,6 +92,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.deepEqual((await inspect()).packed,[],'cancel preserves world and save');
   const finalScan=await hold(),expected=finalScan.hold.scanIds;
   assert.match(await page.locator('#truthEyeConfirmText').innerText(),new RegExp(expected.length+' 件'));
+  assert.doesNotMatch(await page.locator('#truthEyeConfirmText').innerText(),/書本|其他物件/,'all members are generic objects');
   await page.locator('#truthEyeApprove').click();
   await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy,null,{timeout:15000});
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-library-player-objects-v1')));
