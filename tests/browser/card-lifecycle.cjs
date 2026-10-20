@@ -117,7 +117,9 @@ async function main(){
   assert.deepEqual(scan,{id:scanId,title:'空白卡片',memberCount:2,claims:0});
   proof.checks.push('2-object scan binding and release: same blank card, original members freed');
   await page.reload({waitUntil:'load'});
-  await page.getByRole('button',{name:'編輯空白卡片'}).last().click();
+  // Two genuine blanks exist after formatting and creating a new scan medium.
+  // Select the exact new card ID rather than whichever blank happens to be last.
+  await page.locator('#cardList button').filter({hasText:scanId.slice(-8)}).click();
   await page.locator('#recycleCard').click();await page.locator('#confirmRecycle').click();
   assert.ok((await page.evaluate(()=>window.LivingObjectCraft.listRecycledCards(localStorage).length))>=1);
   await page.locator('#recycleBin summary').click();
