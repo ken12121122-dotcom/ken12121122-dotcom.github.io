@@ -307,6 +307,50 @@
   }
   throw Error('無法安全產生卡片識別碼');
  }
+ // New and formatted blank media share one exact eleven-filled-field schema.
+ // Formatting never resets stable ID, createdAt, or optimistic revision.
+ function blankCardRecord(id,createdAt,updatedAt,revision){
+  return {id,objectType:'card',templateId:'blank-card-v1',title:'空白卡片',
+   description:'',cardLayout:'compendium-v2',cardNumber:'',cardType:'',
+   image:null,linkedCardId:null,ownerBookId:null,containerId:null,
+   placement:'hover',status:'draft',ability:null,permissions:[],
+   reusePolicy:'not-configured',revision,createdAt,updatedAt};
+ }
+ function formatCardBlockReason(card){
+  if(!isPlayerCard(card)||card.status!=='draft')return '只能格式化實際存在的普通卡片';
+  if(isPermanentRuneCard(card)||card.isUnique||card.unique||card.uniqueness||
+   card.reusePolicy==='unique'||card.copyPolicy==='forbidden'||
+   card.cardType==='唯一'||card.cardType==='獨一無二')
+   return '永久卡或具有唯一身分的卡片禁止格式化';
+  if(card.upgradeRequest?.state&&!['rejected','cancelled'].includes(card.upgradeRequest.state))
+   return '卡片升級申請尚未結束，不能格式化';
+  if(card.placement==='contained'||card.containment||card.consumedBy)
+   return '卡片仍被其他物件收納，須先合法取出';
+  if(!['hover','book'].includes(card.placement))return '卡片所在位置不可格式化';
+  if(card.runeBinding){
+   const state=String(card.runeBinding.state||'').toLowerCase();
+   if(!['unbound','released','revoked','cancelled'].includes(state))
+    return '此卡仍有有效或不明的綁定契約，請先使用「解除契約卡」完成解除，不可直接清除';
+  }
+  if(card.runeContract||card.boundRuneId||card.scanContract||card.truthEyeContract||
+   Object.keys(card).some(k=>/Contract$/.test(k)&&!!card[k]))
+   return '仍有契約或群組持有欄位；請先正式解除／修復契約，不能強制清空';
+  return null;
+ }
+ function formatCardToBlank(storage,id,expectedRevision,clock=()=>new Date().toISOString()){
+  const state=read(storage);
+  const at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
+  if(at<0)throw Error('找不到要格式化的實體卡片');
+  const original=state.objects[at];
+  if(!Number.isInteger(expectedRevision)||original.revision!==expectedRevision)
+   throw Error('卡片版本已變動，請重新開啟格式化確認');
+  const reason=formatCardBlockReason(original);
+  if(reason)throw Error(reason);
+  const now=clock();
+  const blank=blankCardRecord(original.id,original.createdAt||now,now,original.revision+1);
+  const objects=[...state.objects];objects[at]=blank;
+  write(storage,objects);return {...blank};
+ }
  function createBlankCard(storage,random,clock=()=>new Date().toISOString()){
   const state=read(storage);if(state.objects.filter(x=>isPlayerCard(x)&&x.status!=='recycled').length>=MAX_CARDS)
    throw Error('試作上限 64 張；沒有覆蓋既有卡片');
@@ -314,9 +358,7 @@
   for(let i=0;i<5;i++){id='local.card.'+token(random);if(!used.has(id))break}
   if(used.has(id))throw Error('卡片識別碼重複');
   const at=clock();
-  const card={id,objectType:'card',templateId:'blank-card-v1',title:'空白卡片',
-   description:'',cardLayout:'compendium-v2',cardNumber:'',cardType:'',image:null,linkedCardId:null,ownerBookId:null,containerId:null,placement:'hover',status:'draft',ability:null,
-   permissions:[],reusePolicy:'not-configured',revision:1,createdAt:at,updatedAt:at};
+  const card=blankCardRecord(id,at,at,1);
   write(storage,[...state.objects,card]);return {...card};
  }
  function createBook(storage,random,name='空白魔法書',clock=()=>new Date().toISOString(),openingMode='legacy'){
@@ -637,6 +679,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,formatCardToBlank,formatCardBlockReason,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
