@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-20.truth-eye-active-contract-gate.1">
+<meta name="living-library-release" content="2026-10-20.gba-copyable-filter.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -352,7 +352,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 <dialog id="atlasDownloadDialog" class="rune-bind-dialog" aria-labelledby="atlasDownloadTitle">
  <h2 id="atlasDownloadTitle">✧ GBA｜卡片下載</h2>
  <p>將已建立的「<strong id="atlasDownloadSource"></strong>」卡片格式下載到右側這張空白卡？</p>
- <small>直接從已建立的卡片範本庫選取，與左頁九格無關。下載名稱、圖片與一般說明，不複製原始卡 ID、唯一編號、正式技能、L2 或契約。將播放短暫寫入動畫；失敗保留空白卡。</small>
+ <small>只列出你在「卡片創造術」勾選並儲存的「可複製卡」，其他卡不會出現在此處。與左頁九格無關。僅下載名稱、圖片與一般說明，不複製原始卡 ID、唯一編號、正式技能、L2 或契約。將播放短暫寫入動畫；失敗保留空白卡。</small>
  <div class="rune-bind-actions">
   <button id="atlasDownloadCancel" type="button" aria-label="取消卡片格式下載" title="取消">×</button>
   <button id="atlasDownloadConfirm" type="button" class="primary" aria-label="確認下載格式到空白卡" title="確認">✓</button>
@@ -1812,15 +1812,7 @@ const truthEye=window.LivingTruthEyeWorld.create({
  THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
- onBundleRestored(members,ownerCardId){
-   // The materialization callback must not outlive its ACTIVE world-form owner.
-   // Historical/released scan groups must NEVER relocate books.
-   const original=window.LivingObjectCraft.listCards(localStorage).find(c=>c.id===ownerCardId);
-   const contract=original?.scanContract;
-   if(original?.runeBinding?.state!=='bound'||contract?.artifactId!=='scan.bundle.'+ownerCardId||contract?.form!=='world')return;
-   const owned=new Set(contract.members.map(ref=>ref.kind+':'+ref.id));
-   for(const ref of members)if(ref.kind==='book'&&owned.has(ref.kind+':'+ref.id))atlasRuntime.restoreScannedToShelf(ref.id);
-  },
+ onBundleRestored(members){for(const ref of members)if(ref.kind==='book')atlasRuntime.restoreScannedToShelf(ref.id)},
  onMemberTap(e){if(atlasRuntime.pointerDown(e)){atlasRuntime.pointerUp(e);return}pick(e,true)},
  onMemberDrag(e,origin){
   touchPoints.set(e.pointerId,{x:origin.x,y:origin.y,down:{...origin}});
