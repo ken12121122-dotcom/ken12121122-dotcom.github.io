@@ -162,6 +162,53 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.equal(repaired.card.title,'空白卡片');
   assert.equal((await inspect()).packed.length,0);
   report.checks.push('historical half-cleared scanned card auto-recovered with original localStorage backup');
+  // Regression: the user's complete 15-book set must be freely scannable
+  // again after releasing a single grouped original-card contract.
+  const fifteen=await page.evaluate(()=>{
+   const storage=localStorage,B=LivingScanBundle,C=LivingObjectCraft;
+   const ids=LivingLibrary.books.filter(x=>['public','local'].includes(x.sourceLayer)).map(x=>x.id);
+   if(ids.length!==15)throw Error('Expected the complete public 15-book catalog: '+ids.length);
+   const refs=ids.map(id=>({kind:'book',id})),blank=C.listCards(storage).find(c=>c.id==='local.card.medium');
+   if(!B.blank(blank))throw Error('Original card did not return blank');
+   const bound=B.bind(storage,{cardId:blank.id,revision:blank.revision,members:refs},refs);
+   const live=B.setForm(storage,bound.id,bound.revision,'world',refs);
+   const data=JSON.parse(storage.getItem(B.KEY));
+   data.objects.push({id:'local.card.spell-again',objectType:'card',templateId:'blank-card-v1',title:'解除契約',description:'',cardType:'',image:null,cardNumber:'',status:'draft',placement:'hover',revision:1});
+   storage.setItem(B.KEY,JSON.stringify(data));
+   return {ids,refs,owner:live.id,revision:live.revision};
+  });
+  await page.waitForTimeout(850);
+  const beforeBooks=await page.evaluate(ids=>({
+   bookRecords:LivingLibrary.books.filter(x=>ids.includes(x.id)).map(x=>({id:x.id,active:x.active})),
+   owned:[...LivingScanBundle.claims(localStorage)].filter(([id])=>id.startsWith('book:')).length
+  }),fifteen.ids);
+  assert.equal(beforeBooks.owned,15,'15 books have one valid grouped contract');
+  const released=await page.evaluate(({owner,revision,refs})=>{
+   const C=LivingObjectCraft,B=LivingScanBundle,storage=localStorage;
+   const spell=C.listCards(storage).find(c=>c.id==='local.card.spell-again');
+   const result=C.unbindAndAbsorbSpell(storage,{runeId:'scan.bundle.'+owner,
+    targetId:owner,targetRevision:revision,spellId:spell.id,spellRevision:spell.revision});
+   LivingScene.refreshFloatingCards();
+   LivingScene.truthEye.applyPacked();
+   return {card:result.target,blank:B.blank(result.target),claims:[...B.claims(storage)],
+    remaining:refs.filter(r=>B.claims(storage).has(r.kind+':'+r.id))};
+  },fifteen);
+  assert.ok(released.blank,'the 15-book original card must return to blank');
+  assert.deepEqual(released.claims,[],'no book is bound to old owner after unbind');
+  assert.deepEqual(released.remaining,[]);
+  await page.locator('#eyeRadius').fill('20');await page.locator('#eyeRadius').dispatchEvent('input');
+  await page.locator('#eyeAperture').fill('360');await page.locator('#eyeAperture').dispatchEvent('input');
+  await page.waitForTimeout(900);
+  const bookScan=await inspect(),bookIds=new Set(bookScan.scanned.filter(x=>x.kind==='book').map(x=>x.id));
+  assert.equal(fifteen.ids.filter(id=>bookIds.has(id)).length,15,'all released 15 books are available in current scanner');
+  const rebound=await page.evaluate(refs=>{
+   const B=LivingScanBundle,storage=localStorage,card=LivingObjectCraft.listCards(storage).find(c=>c.id==='local.card.medium');
+   return B.bind(storage,{cardId:card.id,revision:card.revision,members:refs},refs);
+  },fifteen.refs);
+  assert.equal(rebound.scanContract.members.length,15,'the same original card can rebind all books');
+  await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
+  assert.equal((await inspect()).packed.filter(([id])=>id.startsWith('book:')).length,15);
+  report.checks.push('all 15 original books: group bind, world restore, unbind, rescan, rebind to same blank card, reload');
   assert.deepEqual(report.errors,[]);report.status='PASS';
  }catch(e){report.status='FAIL';report.failure=e.stack;if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});throw e}
  finally{await fs.writeFile(path.join(out,'scan-bundle-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
