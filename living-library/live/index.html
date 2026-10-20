@@ -1804,6 +1804,10 @@ const truthEye=window.LivingTruthEyeWorld.create({
  storage:localStorage,craft:window.LivingObjectCraft,
  refreshCards:refreshFloatingCards,
  onMemberTap(e){if(atlasRuntime.pointerDown(e)){atlasRuntime.pointerUp(e);return}pick(e,true)},
+ onMemberDrag(e,origin){
+  touchPoints.set(e.pointerId,{x:origin.x,y:origin.y,down:{...origin}});
+  wasMoving=true;drag={x:origin.x,y:origin.y,lastX:origin.x,lastY:origin.y};
+ },
  summonShelfBooks(){for(const o of bookEntities)if(!o.b.active&&['public','local'].includes(o.b.sourceLayer))window.LivingLibrary.summonBook(o.id)},
  getScanEntries(){return [...worldScanEntries.filter(e=>e.id!=='scene.rune.origin'||!window.LivingObjectCraft.getRuneBoundCard(localStorage)),...bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>{
   const alternate=atlasRuntime.scanEntries?.().find(e=>e.id===o.id);
@@ -2301,7 +2305,8 @@ function inspectSpellNearest(spellId){
    const record=originalById.get(id);
    if(!record||record.visible||!ContractPolicy.canUnbind(record.record))return;
    node.updateWorldMatrix(true,false);
-   const p=node.getWorldPosition(new THREE.Vector3());
+   const origin=source.group.getWorldPosition(new THREE.Vector3());
+   const p=node.userData.boundCardTargetPoint?.(origin)||node.getWorldPosition(new THREE.Vector3());
    record.position={x:p.x,y:p.y,z:p.z};
    record.visible=true;
    record.worldContractTarget=true;

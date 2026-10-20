@@ -126,7 +126,10 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.waitForTimeout(500); // Let the new original card enter its actual orbit before projecting the pointer.
   // Adjacent orbit slots can overlap in the front camera. Use the real free
   // camera gesture to expose the spell instead of clicking through the card in front.
+  const beforeDrag=(await inspect()).cards.find(c=>c.id===worldSpell);
   await page.mouse.move(120,510);await page.mouse.down();await page.mouse.move(330,510,{steps:12});await page.mouse.up();await page.waitForTimeout(400);
+  const afterDrag=(await inspect()).cards.find(c=>c.id===worldSpell);
+  assert.ok(Math.hypot(afterDrag.x-beforeDrag.x,afterDrag.y-beforeDrag.y)>1,'dragging a bound floor still rotates the real camera');
   await holdCard(worldSpell);
   assert.equal(await page.evaluate(()=>LivingScene.unbindSpell.inspect().selection?.targetId),worldCard);
   await page.locator('#runeUnbindConfirm').click();

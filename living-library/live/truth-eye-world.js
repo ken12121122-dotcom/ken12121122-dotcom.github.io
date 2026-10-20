@@ -134,6 +134,14 @@ function create(opts){
    const members=record.scanContract.members.map(ref=>entries().find(o=>o.kind===ref.kind&&o.id===ref.id));
    let anchor=bundleAnchors.get(record.id);
    if(!anchor){anchor=new T.Group();anchor.userData.boundCardId=record.id;scene.add(anchor);bundleAnchors.set(record.id,anchor)}
+   anchor.userData.boundCardTargetPoint=point=>{
+    let nearest=null,distance=Infinity;
+    for(const o of members.filter(Boolean))for(const g of o.groups||[o.group]){
+     const box=new T.Box3().setFromObject(g),p=box.isEmpty()?g.getWorldPosition(new T.Vector3()):box.clampPoint(point,new T.Vector3());
+     const d=Math.hypot(p.x-point.x,p.z-point.z);if(d<distance){nearest=p;distance=d}
+    }
+    return nearest;
+   };
    anchor.visible=members.every(Boolean);
    if(anchor.visible){anchor.position.set(0,0,0);for(const o of members)anchor.position.add(o.group.getWorldPosition(new T.Vector3()));anchor.position.multiplyScalar(1/members.length)}
   }
@@ -581,6 +589,10 @@ function create(opts){
   invalidate();return true;
  }
  function pointerDown(e){
+  if(hold?.type==='bound-bundle'&&hold.id!==e.pointerId){
+   const origin=hold;stop();heldPointers.delete(origin.id);
+   opts.onMemberDrag?.({pointerId:origin.id},{x:origin.x,y:origin.y});return false;
+  }
   if(e.button!==0||e.isPrimary===false||hold||transfer||bundleTransfer||pending||dialog.open)return false;
   const member=boundMemberAt(e);
   if(member){
@@ -603,7 +615,12 @@ function create(opts){
  function pointerMove(e){
   if(!heldPointers.has(e.pointerId)&&hold?.id!==e.pointerId)return false;
   if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
-    (e.pointerType==='touch'||e.pointerType==='pen'?26:15))stop();
+    (e.pointerType==='touch'||e.pointerType==='pen'?26:15)){
+   const origin=hold;stop();
+   if(origin.type==='bound-bundle'){
+    heldPointers.delete(e.pointerId);opts.onMemberDrag?.(e,{x:origin.x,y:origin.y});return false;
+   }
+  }
   return true;
  }
  function pointerEnd(e){
