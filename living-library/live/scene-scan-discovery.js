@@ -6,15 +6,16 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.LivingSceneScanDiscovery=api})(typeof self!=='undefined'?self:globalThis,function(){
  'use strict';
  const validSceneId=id=>typeof id==='string'&&/^scene\.[a-z0-9.-]+$/.test(id)&&id.length<=160&&id!=='scene.keeper';
+ const identityCache=new WeakMap(); // Same runtime node keeps its reference across motion and animation.
  function hash(value){let h=2166136261;for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)}
  function number(v){return Number.isFinite(v)?Math.round(v*1000)/1000:0}
  function signature(node){
-  const out=[node.name||'',node.type||'',...[node.position?.x,node.position?.y,node.position?.z,node.scale?.x,node.scale?.y,node.scale?.z].map(number)];
+  // Object transforms are mutable during movement, spells and animation.
+  // Identity must depend on structural geometry, not the current position.
+  const out=[node.name||'',node.type||''];
   let collected=0;
   function visit(o){if(collected>=4)return;
-   if(o.isMesh){const g=o.geometry;out.push(o.type||'Mesh',g?.type||'',...[o.position?.x,o.position?.y,o.position?.z,o.scale?.x,o.scale?.y,o.scale?.z].map(number));
-    // Keep signatures bounded and JSON-safe: ExtrudeGeometry parameters may
-    // embed Shape/Curve object graphs that should never be recursively serialized.
+   if(o.isMesh){const g=o.geometry;out.push(o.type||'Mesh',g?.type||'');
     if(g?.parameters)out.push(...Object.entries(g.parameters).filter(([,v])=>['number','string','boolean'].includes(typeof v)).slice(0,16).map(([k,v])=>k+':'+v));
     collected++}
    for(const child of o.children||[])if(collected<4)visit(child);
@@ -38,10 +39,10 @@
   }
   for(const o of books){const r=sceneRoot(o.group,scene);if(r)metadata.set(r,{kind:'book',item:o})}
   const alternate=new Map(atlasEntries.map(e=>[e.id,e.group]));
-  const used=new Set(),duplicates=new Map(),result=[];
+  const used=new Set(),result=[];
   // The scene graph is the ONLY discovery source: a new mesh is detected even
   // without registerScene(), object kind tags or an author-maintained list.
-  for(const node of scene.children){
+  for(const [rootIndex,node] of scene.children.entries()){
    if(protectedSet.has(node)||node.userData?.scanProtected||node.userData?.localCardId||node.userData?.atlasId||
       node.isCamera||node.isLight||node.isPoints||node.isLine||node.isSprite||!physical(node))continue;
    const hint=metadata.get(node);
@@ -57,9 +58,10 @@
     used.add('scene:'+o.id);continue;
    }
    const authored=node.userData?.scanObjectId;
-   const sig=signature(node),key=hash(sig),ordinal=duplicates.get(key)||0;
-   duplicates.set(key,ordinal+1);
-   const id=validSceneId(authored)?authored:'scene.auto.'+key+(ordinal?'.'+ordinal:'');
+   // Deterministic hierarchy slot is the fallback for unregistered geometry.
+   // Avoid recalculating from live transforms on every scan tick.
+   const id=validSceneId(authored)?authored:(identityCache.get(node)||'scene.auto.'+hash(signature(node))+'.'+rootIndex);
+   if(!validSceneId(authored))identityCache.set(node,id);
    if(used.has('scene:'+id))continue;
    used.add('scene:'+id);
    result.push({id,kind:'scene',group:node,groups:[node],identitySource:validSceneId(authored)?'native':'geometry_fingerprint'});
