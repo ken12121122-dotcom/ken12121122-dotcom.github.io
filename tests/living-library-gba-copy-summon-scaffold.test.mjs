@@ -148,17 +148,18 @@ test('retro GBA menu selects downloadable formats without requiring left 9 wells
 test('the GBA template catalogue uses previously created copies wherever physically located',()=>{
  const blank=mk('local.card.blank','空白卡片',9);
  const shelf=mk('local.card.shelf','自然法術',1,{containerId:'local.book.other',
-  ownerBookId:'local.book.other',placement:'book'});
+  ownerBookId:'local.book.other',placement:'book',downloadTemplate:true});
  const floating=mk('local.card.floating','旅人記事',null,{containerId:null,ownerBookId:null,
   placement:'hover'});
  const contained=mk('local.card.old-spell','解除綁定術',null,{
   containerId:null,ownerBookId:null,placement:'contained',
-  containment:{kind:'consumed_spell',holderId:'local.card.origin',holderType:'card',state:'stored'}});
- const unsafe=mk('local.card.unique','特殊唯一卡',2,{unique:true});
+  containment:{kind:'consumed_spell',holderId:'local.card.origin',holderType:'card',state:'stored'},downloadTemplate:true});
+ const unsafe=mk('local.card.unique','特殊唯一卡',2,{unique:true,downloadTemplate:true});
  const db=storage([blank,shelf,floating,contained,unsafe]);
  const names=Craft.listDownloadableTemplates(db).map(x=>x.id);
- assert.equal(names.length,3);
- assert.deepEqual(new Set(names),new Set([shelf.id,floating.id,contained.id]));
+ assert.equal(names.length,2);
+ assert.deepEqual(new Set(names),new Set([shelf.id,contained.id]));
+ assert.equal(Craft.canDownloadTemplate(floating),false,'regular unselected floating cards never appear');
  assert.equal(Craft.canDownloadTemplate(unsafe),false);
  assert.equal(Craft.canDownloadTemplate(blank),false);
 });
@@ -167,7 +168,7 @@ test('template download transfers format into existing right-slot blank; stored 
   containerId:null,ownerBookId:null,placement:'contained',
   containment:{kind:'consumed_spell',holderId:'local.card.origin',holderType:'card',state:'stored'},
   image:{dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:1,x:50,y:50},
-  description:'原卡仍被封存',cardNumber:'SPELL-0001'});
+  description:'原卡仍被封存',cardNumber:'SPELL-0001',downloadTemplate:true});
  const blank=mk('local.card.blank','空白卡片',9);
  const db=storage([blank,source]),before=db.objects()[1];
  const made=Craft.forgeBlankFromTemplate(db,{
@@ -175,6 +176,7 @@ test('template download transfers format into existing right-slot blank; stored 
  assert.equal(made.id,blank.id);
  assert.equal(made.title,source.title);
  assert.deepEqual(made.image,source.image);
+ assert.equal(made.downloadTemplate,false,'new copies do not inherit download permissions');
  assert.equal(made.cardNumber,'');
  assert.equal(made.placement,'book');
  assert.equal(made.slotIndex,9);
@@ -193,7 +195,7 @@ test('template download rejects forbidden special cards, stale edits and quota f
  const params={blankId:blank.id,blankRevision:1,sourceId:forbidden.id,sourceRevision:1};
  assert.throws(()=>Craft.forgeBlankFromTemplate(db,params),/不允許/);
  assert.equal(db.raw(),before);
- const allowed=mk('local.card.free','花園',null,{placement:'hover',ownerBookId:null,containerId:null});
+ const allowed=mk('local.card.free','花園',null,{placement:'hover',ownerBookId:null,containerId:null,downloadTemplate:true});
  const ok=storage([blank,allowed]),prev=ok.raw();
  for(const patch of [{sourceRevision:2},{blankRevision:2}])
   assert.throws(()=>Craft.forgeBlankFromTemplate(ok,{...params,sourceId:allowed.id,...patch}),/變動/);
@@ -203,3 +205,55 @@ test('template download rejects forbidden special cards, stale edits and quota f
  assert.equal(ok.raw(),prev);
 });
 
+
+test('GBA downloads only cards that the player explicitly classified as 可複製卡',()=>{
+ const normal=mk('local.card.normal','初代之書',null,{placement:'hover',containerId:null,ownerBookId:null});
+ const spell=mk('local.card.spell','解除契約術',null,{placement:'hover',containerId:null,ownerBookId:null});
+ const data=storage([normal,spell]);
+ assert.deepEqual(Craft.listDownloadableTemplates(data),[],'old named cards must not be silently included');
+ assert.equal(Craft.canDownloadTemplate({...normal,copyPolicy:'allowed'}),false,'legacy copy policy alone is not user opt-in');
+ const marked=Craft.editCard(data,spell.id,{downloadTemplate:true});
+ assert.equal(marked.downloadTemplate,true);
+ assert.deepEqual(Craft.listDownloadableTemplates(data).map(c=>c.id),[spell.id]);
+ const rebooted=storage(data.objects());
+ assert.deepEqual(Craft.listDownloadableTemplates(rebooted).map(c=>c.id),[spell.id],'classification survives reload');
+ const hidden=Craft.editCard(data,spell.id,{downloadTemplate:false});
+ assert.equal(hidden.downloadTemplate,false);
+ assert.deepEqual(Craft.listDownloadableTemplates(data),[],'unchecking removes template without deleting original card');
+});
+test('cannot opt protected, empty or invalid cards into GBA downloads',()=>{
+ for(const patch of [
+  {runeBinding:{runeId:'local.rune.origin',state:'bound'}},
+  {scanContract:{artifactId:'scan.bundle.local.card.protected'} ,runeBinding:{runeId:'scan.bundle.local.card.protected',state:'bound'}},
+  {unique:true},{copyPolicy:'forbidden'},{permanentCard:true},
+  {ability:{type:'unsafe'}},{permissions:['remote']},
+  {containment:{kind:'untrusted',holderId:'x'}},
+  {upgradeRequest:{state:'requested'}}
+ ]){
+  const card=mk('local.card.protected','保護卡',null,{placement:'hover',containerId:null,ownerBookId:null,...patch});
+  const db=storage([card]),before=db.raw();
+  assert.throws(()=>Craft.editCard(db,card.id,{downloadTemplate:true}),Error,JSON.stringify(patch));
+  assert.equal(db.raw(),before);
+ }
+ const blank=mk('local.card.blank','空白卡片',null,{placement:'hover',containerId:null,ownerBookId:null});
+ const db=storage([blank]),before=db.raw();
+ assert.throws(()=>Craft.editCard(db,blank.id,{downloadTemplate:true}),/不可列為可複製卡/);
+ assert.throws(()=>Craft.editCard(db,blank.id,{downloadTemplate:'yes'}),/只能啟用或停用/);
+ assert.equal(db.raw(),before);
+});
+test('changing a copyable source revision or removing opt-in blocks GBA writing atomically',()=>{
+ const source=mk('local.card.source','允許下載',0,{downloadTemplate:true});
+ const blank=mk('local.card.blank','空白卡片',9),db=storage([source,blank]);
+ const unmarked=Craft.editCard(db,source.id,{downloadTemplate:false});
+ const raw=db.raw();
+ assert.throws(()=>Craft.forgeBlankFromTemplate(db,{blankId:blank.id,blankRevision:1,
+  sourceId:unmarked.id,sourceRevision:unmarked.revision}),/不允許/);
+ assert.equal(db.raw(),raw);
+});
+test('card creation UI exposes an independent copyable category, not overloaded card type',async()=>{
+ const ui=await readFile(new URL('../living-library/live/card-creation.html',import.meta.url),'utf8');
+ assert.match(ui,/id="editDownloadable" type="checkbox"/);
+ assert.match(ui,/downloadTemplate:\$\('editDownloadable'\)\.checked/);
+ assert.match(ui,/\$\('editDownloadable'\)\.checked=card\?\.downloadTemplate===true/);
+ assert.match(ui,/可複製卡（顯示在 GBA 卡片下載）/);
+});
