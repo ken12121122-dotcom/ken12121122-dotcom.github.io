@@ -13,7 +13,10 @@
   let collected=0;
   function visit(o){if(collected>=4)return;
    if(o.isMesh){const g=o.geometry;out.push(o.type||'Mesh',g?.type||'',...[o.position?.x,o.position?.y,o.position?.z,o.scale?.x,o.scale?.y,o.scale?.z].map(number));
-    if(g?.parameters)out.push(JSON.stringify(g.parameters));collected++}
+    // Keep signatures bounded and JSON-safe: ExtrudeGeometry parameters may
+    // embed Shape/Curve object graphs that should never be recursively serialized.
+    if(g?.parameters)out.push(...Object.entries(g.parameters).filter(([,v])=>['number','string','boolean'].includes(typeof v)).slice(0,16).map(([k,v])=>k+':'+v));
+    collected++}
    for(const child of o.children||[])if(collected<4)visit(child);
   }
   visit(node);return JSON.stringify(out);
