@@ -74,7 +74,10 @@ test('scanner has no extra action buttons and names/count render as unframed liv
  assert.match(source,/background:none!important;border:0!important/);
  assert.match(source,/scanName\(o\)/);
  assert.match(source,/if\(id&&start\('books',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/);
- assert.match(source,/scanIds:scanIds\?\[\.\.\.scanIds\]:null/);
+ assert.match(source,/const scanTargets=type==='books'\?targets\(\):null/);
+ assert.match(source,/const members=scanned\.map\(o=>\(\{kind:o\.kind,id:o\.id\}\)\)/);
+ assert.match(source,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/);
+ assert.doesNotMatch(source,/selected=new Set\(|dataset\.selected|已選 |已標記/);
  assert.match(source,/renderScanNames\(t\)/);
 });
 test('no preset book/library selection UI or scope filter survives in v2 source',async()=>{
@@ -85,4 +88,17 @@ test('no preset book/library selection UI or scope filter survives in v2 source'
  assert.match(html,/LivingSceneScanDiscovery\.discover/);
  assert.doesNotMatch(code,/eyeScope|cfg\.scope|<option value="all">/);
  assert.match(code,/!o\.protected/);
+});
+
+test('hidden child geometry and protected helpers do not become scan members',()=>{
+ const q=setup();
+ const hidden=q.scene.add(node('Group','InvisibleLegacy'));
+ const mesh=hidden.add(node('Mesh','PreviouslyRenderedObject'));mesh.visible=false;
+ const protectedRoot=q.scene.add(node('Group','InternalHelper'));
+ protectedRoot.userData.scanProtected=true;protectedRoot.add(node('Mesh','Internal'));
+ const p={scene:q.scene,keeper:q.keeper,legacyScenes:q.legacyScenes,books:q.books,floatingCards:q.floatingCards};
+ const found=D.discover(p);
+ assert.ok(!found.some(x=>x.group===hidden||x.group===protectedRoot),'only physically visible unprotected geometry');
+ mesh.visible=true;
+ assert.ok(D.discover(p).some(x=>x.group===hidden),'visible new geometry becomes scannable without preset registry');
 });
