@@ -663,6 +663,9 @@ function create(opts){
   // makes the ORIGINAL bound-card materialization gesture unreachable.
   const liveCardGroups=[...floatingCards.values()].filter(c=>c.group?.visible&&!c.summon&&!c.recycle).map(c=>c.group);
   if(liveCardGroups.length&&hit(e,liveCardGroups))return false;
+  // An avatar hit belongs to the movement/joystick workflow, never to a
+  // floor behind the character. Keep the same generous joystick hit radius.
+  if(hit(e,[keeper])||caster.ray.distanceToPoint(new T.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05)return false;
   const id=at(e);
   // Direct long-press on any live discovered object (no first tap).
   // Previously tapped objects, if any, remain included for a grouped contract.
@@ -677,7 +680,9 @@ function create(opts){
   if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
     (e.pointerType==='touch'||e.pointerType==='pen'?26:15)){
    const origin=hold;stop();
-   if(origin.type==='bound-bundle'){
+   if(origin.type==='bound-bundle'||origin.type==='books'){
+    // Yield camera dragging back to the game's normal pointer workflow on
+    // movement. A direct scan hold must never trap scene navigation.
     heldPointers.delete(e.pointerId);opts.onMemberDrag?.(e,{x:origin.x,y:origin.y});return false;
    }
   }
