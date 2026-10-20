@@ -173,3 +173,55 @@ test('formatting a formerly downloaded card in GBA returns the same 11-value bla
  const reinserted=craft.placeCard(store,blank.id,'local.atlas.compendium',9);
  assert.equal(craft.isBlankCopyMedium(reinserted),true);
 });
+
+test('lost scanner-labelled cards can be located without assuming names are contracts',()=>{
+ const db=storage(),card=craft.createBlankCard(db,rand,()=> '2026-10-20T12:00:00Z');
+ const stored=craft.placeCard(db,card.id,'local.atlas.collection',10);
+ const crafted=craft.editCard(db,stored.id,{title:'掃描收納卡'});
+ const before=db.getItem(craft.KEY);
+ assert.equal(craft.getStats(db).floatingCards,0);
+ assert.equal(craft.getStats(db).inBooks,1);
+ assert.equal(craft.listCards(db)[0].containerId,'local.atlas.collection');
+ assert.equal(craft.listCards(db)[0].slotIndex,10);
+ assert.equal(craft.listCards(db)[0].scanContract,undefined,'name alone is NOT proof of a live contract');
+ assert.equal(db.getItem(craft.KEY),before,'listing and diagnostics never change save');
+ const returned=craft.placeCard(db,crafted.id,null);
+ assert.equal(returned.id,card.id,'retrieval reuses original card ID');
+ assert.equal(returned.containerId,null);
+ assert.equal(returned.title,'掃描收納卡','retrieval does not reformat or rename a card');
+ assert.equal(craft.getStats(db).floatingCards,1);
+ assert.equal(craft.getStats(db).inBooks,0);
+});
+
+test('safe location recovery preserves an actual scanner contract and does not unbind it',()=>{
+ const db=storage(),created=craft.createBlankCard(db,rand);
+ const original=craft.read(db);
+ original.objects[0]={...created,title:'掃描收納卡',
+  runeBinding:{runeId:'scan.bundle.'+created.id,state:'bound'},
+  scanContract:{artifactId:'scan.bundle.'+created.id,version:1,form:'card',
+   members:[{kind:'book',id:'book.1'}]}};
+ db.setItem(craft.KEY,JSON.stringify(original));
+ const kept=craft.placeCard(db,created.id,'local.atlas.collection',2);
+ const recovered=craft.placeCard(db,kept.id,null);
+ assert.deepEqual(recovered.scanContract,original.objects[0].scanContract);
+ assert.deepEqual(recovered.runeBinding,original.objects[0].runeBinding);
+ assert.equal(recovered.id,created.id);
+ const world=craft.read(db);world.objects[0].scanContract.form='world';
+ db.setItem(craft.KEY,JSON.stringify(world));
+ const unchanged=db.getItem(craft.KEY);
+ assert.throws(()=>craft.placeCard(db,created.id,null),/不允許|狀態/);
+ assert.equal(db.getItem(craft.KEY),unchanged,'world-form object cannot be forcibly retrieved');
+});
+
+test('card creator shows precise stored locations and requires consent to recover a card',async()=>{
+ const editor=await read('living-library/live/card-creation.html');
+ assert.match(editor,/id="cardRecoverySummary"/);
+ assert.match(editor,/id="retrieveCardDialog"/);
+ assert.match(editor,/storedLocation\(card\)/);
+ assert.match(editor,/scanBindingStatus\(card\)/);
+ assert.match(editor,/retrieveDialog\.showModal\(\)/);
+ assert.match(editor,/Craft\.placeCard\(localStorage,item\.id,null\)/);
+ assert.match(editor,/localStorage\.getItem\(Craft\.KEY\)!==item\.snapshot/);
+ assert.match(editor,/notify\('card-edited',returned\.id\)/);
+ assert.match(editor,/此表|存檔共有|讀取本機存檔/);
+});
