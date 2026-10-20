@@ -490,7 +490,7 @@
  // No extra local.card ID, inventory, save field, or spent-spell record is minted.
  const UNBIND_BLUEPRINT_ID='system.template.unbind-contract-v1';
  const UNBIND_BLUEPRINT=Object.freeze({
-  id:UNBIND_BLUEPRINT_ID,inspectCard,revision:1,title:'解除契約卡',
+  id:UNBIND_BLUEPRINT_ID,revision:1,title:'解除契約卡',
   description:'解除一項有效契約；使用後卡片永久消耗。',
   cardType:'法術',image:null,downloadTemplate:true,sourceKind:'system-copyable-recipe'
  });
@@ -635,6 +635,6 @@
   const objects=[...state.objects];objects[at]=next;write(storage,objects);return {...next};
  }
  return {KEY,VERSION,MAX_CARDS,MAX_BOOKS,MAX_RECYCLED,read,listCards,listRecycledCards,getStats,floatingCards,listBooks,
-  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,
+  createBlankCard,createBlankBook,createCardBook,setBookView,setBookActive,editCard,recycleCard,restoreCard,placeCard,isBlankCopyMedium,canCopyAppearance,copySources,copyIntoBlankCard,canDownloadTemplate,listDownloadableTemplates,forgeBlankFromTemplate,purgeLegacyConsumedSpells,UNBIND_BLUEPRINT_ID,inspectCard,
   ORIGIN_RUNE,getRuneBoundCard,bindRuneCard,canStoreBoundCard,restoreUnregisteredUniqueWells,restoreUncommittedRuneCard,unbindAndAbsorbSpell,sealRuneCard,materializeRuneCard,returnRuneCard,isPermanentRuneCard};
 });
