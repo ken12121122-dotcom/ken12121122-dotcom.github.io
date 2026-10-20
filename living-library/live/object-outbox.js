@@ -7,6 +7,19 @@
 })(typeof self!=='undefined'?self:this,function(Backup){
  'use strict';
  const error=code=>Object.assign(Error(code),{code});
+ // A deletion journal is an incomplete cross-store cleanup, not a queueable
+ // card state. Reject synchronization reads/captures until reconciliation.
+ function requireNoPendingDestruction(storage){
+  if(!storage)return;
+  let raw,state;
+  try{raw=storage.getItem(Backup.KEY);state=raw===null?null:JSON.parse(raw)}
+  catch{fail('OBJECT_OUTBOX_SOURCE_UNAVAILABLE')}
+  if(state&&Object.hasOwn(state,'pendingCardOutboxPurges')){
+   if(!Array.isArray(state.pendingCardOutboxPurges)||
+      state.pendingCardOutboxPurges.length)
+    fail('OBJECT_OUTBOX_DESTRUCTION_CLEANUP_PENDING');
+  }
+ }
  const fail=code=>{throw error(code)};
  async function hash(text){
   const bytes=new TextEncoder().encode(text);
@@ -46,8 +59,9 @@
    });
   }
   close(){if(!this.#closed){this.#closed=true;this.#db.close()}}
-  pending(){
+  pending(storage=null){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   requireNoPendingDestruction(storage);
    return new Promise((resolve,reject)=>{
     const tx=this.#db.transaction('pending','readonly'),request=tx.objectStore('pending').getAll();let rows;
     request.onsuccess=()=>{rows=request.result};tx.oncomplete=()=>resolve(Object.freeze(rows.map(Object.freeze)));
@@ -77,7 +91,9 @@
   }
   async capture(storage){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   requireNoPendingDestruction(storage);
    const capture=await snapshot(storage);if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   requireNoPendingDestruction(storage);
    return new Promise((resolve,reject)=>{
     const tx=this.#db.transaction(['versions','pending'],'readwrite'),versions=tx.objectStore('versions'),pending=tx.objectStore('pending');
     let code='OBJECT_OUTBOX_WRITE_FAILED',result;
@@ -86,6 +102,8 @@
     request.onsuccess=()=>{
      try{
       if(storage.getItem(Backup.KEY)!==capture.source_text){code='OBJECT_OUTBOX_SOURCE_CHANGED';tx.abort();return}
+      try{requireNoPendingDestruction(storage)}
+      catch{code='OBJECT_OUTBOX_DESTRUCTION_CLEANUP_PENDING';tx.abort();return}
       const prior=new Map(request.result.map(row=>[row.object_id,row]));let queued=0,unchanged=0;
       // Validate the whole batch before writing. Read/write transactions serialize
       // competing connections, so an older/equal-revision divergent snapshot loses.
