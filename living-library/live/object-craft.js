@@ -21,7 +21,19 @@
    throw Error('創作資料版本不相容，已停止修改');
   return state;
  }
- function write(storage,objects){storage.setItem(KEY,JSON.stringify({version:VERSION,objects}))}
+ // Recipe artwork is a reusable VISUAL ASSET, not a card or spent-card record.
+ // Keep it inside the SAME atomic save as all card transactions.
+ function write(storage,objects,options={}){
+  const prior=read(storage);
+  const recipeArtwork=Object.hasOwn(options,'recipeArtwork')?options.recipeArtwork:prior.recipeArtwork;
+  const next={version:VERSION,objects};
+  if(recipeArtwork)next.recipeArtwork={...recipeArtwork};
+  storage.setItem(KEY,JSON.stringify(next));
+ }
+ function isUnbindSpellTitle(title){
+  return /^(解除綁定|解除契約|契約解除)(術|卡|魔法|卡片)?$/.test(
+   typeof title==='string'?title.trim().replace(/\s+/g,''):'');
+ }
  function isPlayerCard(x){return x.objectType==='card'&&x.templateId==='blank-card-v1'&&x.id.startsWith('local.card.')}
  // Return the same original card; a rune bond never creates a second card ID.
  function getRuneBoundCard(storage,runeId=ORIGIN_RUNE){
@@ -204,7 +216,9 @@
   // Only the original target survives. No hidden spent-spell card remains.
   const objects=cards.map((item,index)=>index===targetIndex?updatedTarget:item)
    .filter(item=>item.id!==spellId);
-  write(storage,objects);
+  // If the original spell had a player's photo, keep only its artwork format,
+  // without retaining or restoring the consumed physical card.
+  write(storage,objects,{recipeArtwork:spell.image||state.recipeArtwork||null});
   return {target:{...updatedTarget},spellId,consumed:true};
  }
  function listCards(storage){
@@ -439,6 +453,16 @@
    source.revision===UNBIND_BLUEPRINT.revision&&
    source.sourceKind===UNBIND_BLUEPRINT.sourceKind;
  }
+ function unbindRecipe(storage){
+  const state=read(storage);
+  // A surviving player-designed spell with artwork may supply the original
+  // appearance when no format artwork was previously saved.
+  const living=state.objects.find(c=>isPlayerCard(c)&&c.status==='draft'&&
+   ['hover','book'].includes(c.placement)&&!c.containment&&
+   isUnbindSpellTitle(c.title)&&c.image);
+  const art=state.recipeArtwork||living?.image||null;
+  return {...UNBIND_BLUEPRINT,image:art?{...art}:null};
+ }
  function canDownloadTemplate(c){
   // Opt-in only: being a draft card, an old book, or a stored spell is not
   // permission to publish this card's appearance in the GBA download list.
@@ -456,7 +480,7 @@
  function listDownloadableTemplates(storage){
   // Always present the reusable recipe FIRST, even if the last physical copy
   // was consumed. Only other LIVE player cards explicitly opted in may follow.
-  return [UNBIND_BLUEPRINT,...listCards(storage).filter(canDownloadTemplate)
+  return [unbindRecipe(storage),...listCards(storage).filter(canDownloadTemplate)
    .sort((a,b)=>String(a.title).localeCompare(String(b.title),'zh-Hant')||
     a.id.localeCompare(b.id))];
  }
@@ -470,7 +494,7 @@
   const sourceIndex=systemRecipe?-1:objects.findIndex(x=>
    x.id===sourceId&&isPlayerCard(x)&&x.status!=='recycled');
   if(blankIndex<0||(!systemRecipe&&sourceIndex<0))throw Error('空白卡或目前可複製的卡片不存在');
-  const blank=objects[blankIndex],source=systemRecipe?UNBIND_BLUEPRINT:objects[sourceIndex];
+  const blank=objects[blankIndex],source=systemRecipe?unbindRecipe(storage):objects[sourceIndex];
   if(!Number.isInteger(blankRevision)||blankRevision!==blank.revision||
     !Number.isInteger(sourceRevision)||sourceRevision!==source.revision)
    throw Error('卡片已變動，請重新選擇');
@@ -533,7 +557,12 @@
   }
   card.cardLayout='compendium-v2';
   card.revision=(Number.isInteger(card.revision)?card.revision:0)+1;card.updatedAt=clock();
-  const updated=[...state.objects];updated[at]=card;write(storage,updated);return {...card};
+  const updated=[...state.objects];updated[at]=card;
+  // Save edited spell photography as a reusable visual recipe, not a historical
+  // spell card. A later one-use cast may destroy the source card safely.
+  const recipeEdit=isUnbindSpellTitle(card.title)&&Object.hasOwn(patch,'image');
+  write(storage,updated,recipeEdit?{recipeArtwork:card.image||null}:{});
+  return {...card};
  }
  function recycleCard(storage,id,clock=()=>new Date().toISOString()){
   const state=read(storage),at=state.objects.findIndex(x=>x.id===id&&isPlayerCard(x)&&x.status!=='recycled');
