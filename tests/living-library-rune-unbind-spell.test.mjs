@@ -206,7 +206,7 @@ test('spell cancellation leaves linked card completely untouched until confirmat
  for(const t of timers.values())if(t.due<=now)t.cb();
  assert.equal(selected.length,0);assert.equal(s.raw(),before);
 });
-test('world UI uses one long hold for immediate atomic unbind and a visual-only effect',async()=>{
+test('world UI uses long hold followed by an explicit irreversible-unbind confirmation and visual effect',async()=>{
  const html=await readFile(new URL('../living-library/live/index.html',import.meta.url),'utf8');
  assert.match(html,/rune-unbind-spell\.js/);
  assert.match(html,/function boundObjectInScene\(cardId\)/);
@@ -229,7 +229,8 @@ test('world UI uses one long hold for immediate atomic unbind and a visual-only 
  assert.match(html,/spellHexagram\.group\.quaternion\.copy\(camera\.quaternion\)/);
  assert.match(html,/spellHexagram=ContractHexagram\.create/);
  assert.match(html,/confirmSpellUnbind\(\)/);
- assert.doesNotMatch(html,/unbindDialog\.showModal\(\)/);
+ assert.match(html,/unbindDialog\.showModal\(\)/);
+ assert.match(html,/if\(!unbindDialog\.open\|\|!spellSelection\|\|unbindEffect\)return/);
  assert.match(html,/unbindEffect=\{\.\.\.selection,fxCard:visual/);
  assert.match(html,/unbindAndAbsorbSpell\(/);
  assert.match(html,/DirectedTransfer\.sample\(active\.plan,now/);
