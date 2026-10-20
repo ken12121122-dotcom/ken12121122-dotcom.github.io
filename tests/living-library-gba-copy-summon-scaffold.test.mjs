@@ -152,8 +152,8 @@ test('the GBA template catalogue uses previously created copies wherever physica
  const unsafe=mk('local.card.unique','特殊唯一卡',2,{unique:true,downloadTemplate:true});
  const db=storage([blank,shelf,floating,contained,unsafe]);
  const names=Craft.listDownloadableTemplates(db).map(x=>x.id);
- assert.equal(names.length,1);
- assert.deepEqual(new Set(names),new Set([shelf.id]));
+ assert.equal(names.length,2);
+ assert.deepEqual(new Set(names),new Set([Craft.UNBIND_BLUEPRINT_ID,shelf.id]));
  assert.equal(Craft.canDownloadTemplate(contained),false,'spent spell cannot be a historical template');
  assert.equal(Craft.canDownloadTemplate(floating),false,'regular unselected floating cards never appear');
  assert.equal(Craft.canDownloadTemplate(unsafe),false);
@@ -205,16 +205,18 @@ test('GBA downloads only cards that the player explicitly classified as 可複�
  const normal=mk('local.card.normal','初代之書',null,{placement:'hover',containerId:null,ownerBookId:null});
  const spell=mk('local.card.spell','解除契約術',null,{placement:'hover',containerId:null,ownerBookId:null});
  const data=storage([normal,spell]);
- assert.deepEqual(Craft.listDownloadableTemplates(data),[],'old named cards must not be silently included');
+ assert.deepEqual(Craft.listDownloadableTemplates(data).map(c=>c.id),[Craft.UNBIND_BLUEPRINT_ID],
+  'built-in spell recipe is always present but arbitrary old cards are not');
  assert.equal(Craft.canDownloadTemplate({...normal,copyPolicy:'allowed'}),false,'legacy copy policy alone is not user opt-in');
  const marked=Craft.editCard(data,spell.id,{downloadTemplate:true});
  assert.equal(marked.downloadTemplate,true);
- assert.deepEqual(Craft.listDownloadableTemplates(data).map(c=>c.id),[spell.id]);
+ assert.deepEqual(Craft.listDownloadableTemplates(data).map(c=>c.id),[Craft.UNBIND_BLUEPRINT_ID,spell.id]);
  const rebooted=storage(data.objects());
- assert.deepEqual(Craft.listDownloadableTemplates(rebooted).map(c=>c.id),[spell.id],'classification survives reload');
+ assert.deepEqual(Craft.listDownloadableTemplates(rebooted).map(c=>c.id),[Craft.UNBIND_BLUEPRINT_ID,spell.id],'classification survives reload');
  const hidden=Craft.editCard(data,spell.id,{downloadTemplate:false});
  assert.equal(hidden.downloadTemplate,false);
- assert.deepEqual(Craft.listDownloadableTemplates(data),[],'unchecking removes template without deleting original card');
+ assert.deepEqual(Craft.listDownloadableTemplates(data).map(c=>c.id),[Craft.UNBIND_BLUEPRINT_ID],
+  'unchecking removes only the player template; system spell recipe remains');
 });
 test('cannot opt protected, empty or invalid cards into GBA downloads',()=>{
  for(const patch of [
@@ -251,4 +253,63 @@ test('card creation UI exposes an independent copyable category, not overloaded 
  assert.match(ui,/downloadTemplate:\$\('editDownloadable'\)\.checked/);
  assert.match(ui,/\$\('editDownloadable'\)\.checked=card\?\.downloadTemplate===true/);
  assert.match(ui,/可複製卡（顯示在 GBA 卡片下載）/);
+});
+
+test('GBA always shows a non-card unbinding RECIPE even after every physical spell is consumed',()=>{
+ const db=storage([]);
+ const templates=Craft.listDownloadableTemplates(db);
+ assert.equal(templates.length,1);
+ const recipe=templates[0];
+ assert.equal(recipe.id,Craft.UNBIND_BLUEPRINT_ID);
+ assert.equal(recipe.title,'解除契約卡');
+ assert.equal(recipe.sourceKind,'system-copyable-recipe');
+ assert.equal(Craft.canDownloadTemplate(recipe),false,'recipe itself is NOT a player card');
+ assert.deepEqual(db.objects(),[],'recipe is not inserted in card book, world or localStorage');
+});
+
+test('built-in unbinding recipe downloads repeatedly into genuine blank media without resurrecting old spell',()=>{
+ const a=mk('local.card.blank1','空白卡片',9);
+ const db=storage([a]);
+ const recipe=Craft.listDownloadableTemplates(db)[0];
+ const made=Craft.forgeBlankFromTemplate(db,{blankId:a.id,blankRevision:a.revision,
+  sourceId:recipe.id,sourceRevision:recipe.revision},()=> '2026-10-20T14:00:00Z');
+ assert.equal(made.id,a.id);
+ assert.equal(made.title,'解除契約卡');
+ assert.equal(made.downloadTemplate,false,'individual generated copies cannot silently become templates');
+ assert.equal(made.copyInfo.sourceId,recipe.id);
+ assert.equal(db.objects().length,1,'system recipe is not stored as a phantom card');
+ assert.equal(RuneSpell.isSpellCard(made),false,'GBA reader-held card cannot cast');
+ const floating=Craft.placeCard(db,a.id,null);
+ assert.equal(RuneSpell.isSpellCard(floating),true,'downloaded card can cast after leaving GBA');
+ const b=mk('local.card.blank2','空白卡片',9);
+ const again=storage([floating,b]);
+ const regenerated=Craft.forgeBlankFromTemplate(again,{blankId:b.id,blankRevision:b.revision,
+  sourceId:recipe.id,sourceRevision:recipe.revision});
+ assert.equal(regenerated.id,b.id);
+ assert.equal(again.objects().length,2,'new physical copy uses existing blank ID');
+});
+
+test('spell recipe rejects stale or fake versions without consuming blank or writing history',()=>{
+ const blank=mk('local.card.blank','空白卡片',9),db=storage([blank]),before=db.raw();
+ for(const choice of [
+  {blankId:blank.id,blankRevision:blank.revision+1,sourceId:Craft.UNBIND_BLUEPRINT_ID,sourceRevision:1},
+  {blankId:blank.id,blankRevision:blank.revision,sourceId:Craft.UNBIND_BLUEPRINT_ID,sourceRevision:999},
+  {blankId:blank.id,blankRevision:blank.revision,sourceId:'system.template.nonexistent',sourceRevision:1}
+ ]){assert.throws(()=>Craft.forgeBlankFromTemplate(db,choice),Error);assert.equal(db.raw(),before)}
+ const blocked={getItem:db.getItem,setItem:()=>{throw Error('quota')}};
+ assert.throws(()=>Craft.forgeBlankFromTemplate(blocked,{blankId:blank.id,blankRevision:blank.revision,
+  sourceId:Craft.UNBIND_BLUEPRINT_ID,sourceRevision:1}),/quota/);
+ assert.equal(db.raw(),before);
+});
+
+test('GBA exposes blueprint browsing before card insertion but requires blank before writing',async()=>{
+ const runtime=await readFile(new URL('../living-library/live/atlas-runtime.js',import.meta.url),'utf8');
+ const model=await readFile(new URL('../living-library/live/atlas-model.js',import.meta.url),'utf8');
+ assert.match(runtime,/screenMode='download';templateIndex=0/,'download selection opens recipe browser');
+ assert.doesNotMatch(runtime,/if\(screenMode==='download'&&!craft\.isBlankCopyMedium/,
+  'GBA must not kick users out of browser when right reader well is empty');
+ assert.match(runtime,/if\(!reader\|\|!craft\.isBlankCopyMedium\?\.\(reader\.record\)\)/,
+  'writing still requires a valid blank card');
+ assert.match(model,/else if\(mode==='download'\)\{[\s\S]*?請建立可複製卡/,
+  'empty reader shows downloadable template titles');
 });
