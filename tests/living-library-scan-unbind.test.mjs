@@ -74,3 +74,41 @@ test('invalid legacy corrupted binding metadata never automatically gets deleted
  assert.deepEqual(Bundle.recoverLegacyUnbound(storage),[]);
  assert.equal(storage.getItem(Bundle.BACKUP_KEY),null);
 });
+
+
+test('a 15-book collection can release into world and rebind the SAME blank card repeatedly',()=>{
+ const storage=store([makeCard('medium')]);
+ const books=Array.from({length:15},(_,i)=>({kind:'book',id:'test-book-'+(i+1)}));
+ for(let cycle=0;cycle<3;cycle++){
+  const blank=storage.snapshot().objects[0];
+  assert.ok(Bundle.blank(blank),'card remains reusable before contract cycle '+cycle);
+  const bound=Bundle.bind(storage,{cardId:blank.id,revision:blank.revision,members:books},books);
+  assert.equal(Bundle.claims(storage).size,15);
+  const freed=Bundle.release(storage,{cardId:bound.id,revision:bound.revision,form:'card'},books);
+  assert.deepEqual(freed.members,books);
+  assert.ok(Bundle.blank(freed.card),'release resets original without extra spell card');
+  assert.equal(Bundle.claims(storage).size,0,'all 15 book identities lose the previous owner');
+  assert.equal(storage.snapshot().objects.length,1,'original card and book identities preserved');
+ }
+});
+test('legacy world-form 15-book set can detach in place, then bind to another card',()=>{
+ const storage=store([makeCard('original'),makeCard('replacement')]);
+ const books=Array.from({length:15},(_,i)=>({kind:'book',id:'test-book-'+(i+1)}));
+ const bound=Bundle.bind(storage,{cardId:'local.card.original',revision:1,members:books},books);
+ const world=Bundle.setForm(storage,bound.id,bound.revision,'world',books);
+ assert.equal(Bundle.claims(storage,true).size,0,'world form is physically visible yet STILL under contract');
+ assert.equal(Bundle.claims(storage).size,15,'old ownership explains automatic return-to-original prompt');
+ assert.throws(()=>Bundle.bind(storage,{cardId:'local.card.replacement',revision:1,members:books},books),/不可用/);
+ const freed=Bundle.release(storage,{cardId:world.id,revision:world.revision,form:'world'},books);
+ assert.ok(Bundle.blank(freed.card));assert.equal(Bundle.claims(storage).size,0);
+ const replacement=Bundle.bind(storage,{cardId:'local.card.replacement',revision:1,members:books},books);
+ assert.equal(replacement.scanContract.members.length,15,'the user can choose a DIFFERENT original card after release');
+});
+test('releasing missing books refuses partial release and preserves complete prior save',()=>{
+ const storage=store([makeCard('original')]);
+ const all=Array.from({length:15},(_,i)=>({kind:'book',id:'test-book-'+(i+1)}));
+ const bound=Bundle.bind(storage,{cardId:'local.card.original',revision:1,members:all},all);
+ const before=storage.raw();
+ assert.throws(()=>Bundle.release(storage,{cardId:bound.id,revision:bound.revision,form:'card'},all.slice(0,14)),/未全部載入/);
+ assert.equal(storage.raw(),before,'no partial mutation when one of 15 is missing');
+});
