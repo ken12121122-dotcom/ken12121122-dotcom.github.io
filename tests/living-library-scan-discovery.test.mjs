@@ -102,3 +102,12 @@ test('hidden child geometry and protected helpers do not become scan members',()
  mesh.visible=true;
  assert.ok(D.discover(p).some(x=>x.group===hidden),'visible new geometry becomes scannable without preset registry');
 });
+
+test('packed world geometry remains discoverable for reversible materialization',()=>{
+ const q=setup();
+ q.shelf.userData.scanHidden=true;q.shelf.visible=false;
+ q.book.userData.scanHidden=true;q.book.visible=false;
+ const items=D.discover({scene:q.scene,keeper:q.keeper,legacyScenes:q.legacyScenes,books:q.books,floatingCards:q.floatingCards});
+ assert.ok(items.some(o=>o.kind==='scene'&&o.id==='scene.shelf.0'),'packed scene object retains original ID');
+ assert.ok(items.some(o=>o.kind==='book'&&o.id==='reference-book'),'packed book retains original ID');
+});
