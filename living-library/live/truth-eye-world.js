@@ -100,8 +100,8 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
- // Players choose objects by tapping actual 3D geometry; a hold on any
- // selected object starts the single contract for the whole chosen set.
+ // Every runtime-discovered 3D object is directly holdable. A short tap is
+ // optional for assembling a multi-object set, never required to contract.
  // Transparent text readout, not an interactive scan button.
  const readout=document.createElement('aside');
  readout.id='eyeScanReadout';readout.className='truthEyeScanReadout';
@@ -252,7 +252,7 @@ function create(opts){
  function pick(e){const id=at(e);if(!id)return false;
   if(selected.has(id))selected.delete(id);else selected.add(id);
    updateMarks();
-  toast(selected.size?'👁 已選取 '+selected.size+' 件；長按任一已選取物件三秒開始契約':'👁 已取消選取');invalidate();return true;
+  toast(selected.size?'👁 已標記 '+selected.size+' 件；任一掃描到的物件可直接長按三秒締約':'👁 已取消標記；長按掃描物件即可締約');invalidate();return true;
  }
  // Names are descriptions of live discoveries, never scan allowlist rules.
  function scanName(o){
@@ -507,7 +507,7 @@ function create(opts){
    selectedUntil=0;bundlePrompt('bundle-repack',record);return;
   }
   if(type==='books'){
-   try{const ids=new Set(selected),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
+   try{const ids=new Set(gesture.scanIds||[]),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
     if(!members.length||members.length!==ids.size)throw Error('選取物件已離開掃描範圍，請重新掃描');
     const id=B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries());
     const record=craft.listCards(storage).find(c=>c.id===id);bundlePrompt('bundle-bind',record,members);
@@ -609,11 +609,18 @@ function create(opts){
   }
   invalidate();
  }
- function start(type,id,x,y,contractRecord=null){
+ function start(type,id,x,y,contractRecord=null,scanObjectId=null){
   if(hold||pending||transfer||bundleTransfer||dialog.open)return false;
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
-  if(type==='books')for(const o of entries())if(selected.has(o.id))box.expandByObject(o.group);
+  // Snapshot the held object AND any optional taps. Never mutate user selection
+  // on pointerdown, and never contract every object just because it was scanned.
+  const scanIds=type==='books'?new Set([...selected,scanObjectId].filter(Boolean)):null;
+  if(type==='books'){
+   const found=targets(),ids=new Set(found.map(o=>o.id));
+   if(!scanObjectId||!ids.has(scanObjectId)||[...scanIds].some(id=>!ids.has(id)))return false;
+   for(const o of found)if(scanIds.has(o.id))box.expandByObject(o.group);
+  }
   if(contractRecord)for(const ref of contractRecord.scanContract.members){const o=entries().find(o=>o.id===ref.id&&o.kind===ref.kind);if(o)for(const g of o.groups||[o.group])box.expandByObject(g)}
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
   const size=box.isEmpty()?new T.Vector3(2,0,2):box.getSize(new T.Vector3());
@@ -629,7 +636,7 @@ function create(opts){
   }
   if(type==='bound-bundle'){selectedUntil=0;hex.clear()}else hex.update(0,performance.now());
   const token=++serial;
-  hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
+  hold={token,type,id,x,y,scanIds:scanIds?[...scanIds]:null,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
 
   if(contractRecord){hold.cardId=contractRecord.id;hold.revision=contractRecord.revision}
   invalidate();return true;
@@ -652,9 +659,10 @@ function create(opts){
    return true;
   }
   const id=at(e);
-  if(id&&selected.has(id)){
+  // Direct long-press on any live discovered object (no first tap).
+  // Previously tapped objects, if any, remain included for a grouped contract.
+  if(id&&start('books',e.pointerId,e.clientX,e.clientY,null,id)){
    heldPointers.add(e.pointerId);
-   start('books',e.pointerId,e.clientX,e.clientY);
    return true;
   }
   return false;
@@ -677,8 +685,7 @@ function create(opts){
    else{
     const tapType=e.type==='pointerup'?hold.type:null;
     stop();
-    // Short tap on a selected object deselects it instead of contracting.
-    // The 3-second hold remains the only path to confirmation.
+    // A short tap is optional multi-select only; a 3s hold starts a contract.
     if(tapType==='books')pick(e);
     else if(tapType==='bound-bundle')opts.onMemberTap?.(e);
    }
