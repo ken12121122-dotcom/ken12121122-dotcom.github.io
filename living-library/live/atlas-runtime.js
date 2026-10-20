@@ -106,6 +106,14 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  }
  function placeCollection(id=State.COLLECTION){syncCollections();const m=models.get(id);if(!m||m===atlas)return;cancelPointer();m.view.collection='inner';m.view.collectionOpen=true;persist(m);m.desired=true;setInnerPose(m);setCollectionActive(true,id);if(!m.animation)begin(m,true);if(focus&&focus.id!==id){focus.ids=[focus.id,id];m.center.set(keeper.position.x+m.offset.x,tuning.atlasHeight,keeper.position.z+m.offset.z);m.group.position.copy(m.center);focus.layoutFrom=new Map(focus.ids.map(key=>[key,models.get(key).group.position.clone()]));focus.from=camera.position.clone();focus.rotation=camera.quaternion.clone();focus.keeper=keeper.position.clone();focus.started=performance.now()}syncUI();invalidate()}
  function foldCollection(toShelf=false,id=focus?.id||State.COLLECTION){const m=models.get(id);if(!m||m===atlas)return;cancelPointer();m.view.collectionOpen=false;persist(m);m.desired=false;m.afterClose=toShelf?'shelf':'closed';if(!m.animation)begin(m,false);syncUI();invalidate()}
+ function restoreScannedToShelf(bookId){
+  syncCollections();const id=bookId==='cardCollection'?State.COLLECTION:bookId,m=models.get(id);
+  if(!m||m===atlas)return;
+  cancelPointer();if(focus?.ids.includes(id))exitFocus();
+  if(m.puffs)smoke.remove(m.puffs);m.puffs=null;m.animation=null;m.desired=false;
+  m.open=0;m.setOpen(0);m.group.visible=false;m.view.collection='shelf';m.view.collectionOpen=false;
+  persist(m);setCollectionActive(false,id);syncUI();invalidate();
+ }
  function present(m){return m.group.visible||m.focusHidden}
  function focusMembers(){return (focus?.ids||[]).map(id=>models.get(id)).filter(m=>m&&present(m)&&(m.id===focus.id||m.open>.98))}
  function enterFocus(id){const m=models.get(id);if(!m||!present(m)||m.animation)return;
@@ -292,7 +300,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
   for(const m of models.values())if(m.focusHidden){m.group.visible=true;m.focusHidden=false}
   applyTuning();
   syncCollections();
-  for(const m of models.values())if(m!==atlas){const entity=collectionEntity(m.id);if(entity&&!m.dragging)entity.visible=m.view.collection!=='inner'&&!focus&&!returning;}
+  for(const m of models.values())if(m!==atlas){const entity=collectionEntity(m.id);if(entity&&!m.dragging)entity.visible=m.view.collection!=='inner'&&!focus&&!returning;if(!m.animation&&!m.dragging&&m.view.collection!=='inner')m.group.visible=false;}
   for(const m of models.values()){
    if(!m.group.visible)continue;
    if(!m.dragging){m.center.set(keeper.position.x+(m.offset?.x||0),tuning.atlasHeight,keeper.position.z+(m.offset?.z||0));m.group.position.copy(m.center);m.group.quaternion.copy(m.rotation)}
@@ -357,7 +365,7 @@ root.LivingAtlasRuntime={create({THREE,scene,camera,canvas,keeper,cards,craft,st
  syncCollections();
  syncUI();
  root.addEventListener('pagehide',e=>{if(!e.persisted)dispose();else cancelPointer()});
- return {toggle,summon,placeCollection,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
+ return {toggle,summon,placeCollection,restoreScannedToShelf,focus:focusBook,exitFocus,tick,active,pointerDown,pointerMove,pointerUp,cancelPointer,
   isDraggingCard:id=>pointer?.entry?.id===id&&pointer.moved,isCollectionDragging:(id=State.COLLECTION)=>!!models.get(id)?.dragging,isCollection:id=>State.isCollection(id)&&models.has(id),
   get movementYaw(){const v=new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion);return Math.atan2(v.x,v.z)},get inFocus(){return !!focus||!!returning},get focusId(){return focus?.id},get collectionMode(){return saved.collection},showReaderReturn,audioStart,reportGithubUpload,
   scanEntries(){return [...models.values()].filter(m=>m!==atlas).map(m=>({id:m.id==='local.atlas.collection'?'cardCollection':m.id,group:m.group}))},

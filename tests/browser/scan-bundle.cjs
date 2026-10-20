@@ -67,18 +67,20 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   // atlas/card handler (not a direct call to a binder or long-press function).
   const holdCard=async id=>{const p=(await inspect()).cards.find(c=>c.id===id);assert.ok(p,'original card is visible');await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open||document.querySelector('#runeUnbindDialog').open,null,{timeout:15000});await page.mouse.up()};
   const memberPoint=async(kind='book')=>{const snap=await page.evaluate(()=>LivingScene.truthEye.inspect({pickPoints:true}));const p=snap.objects.find(o=>o.kind===kind&&o.id!=='cardCollection'&&o.memberPickable&&o.x>20&&o.x<420&&o.y>90&&o.y<650);assert.ok(p,'a real unobstructed bound '+kind+' member is visible: '+JSON.stringify(snap.objects.filter(o=>o.kind===kind)));return p};
-  const holdMember=async(kind)=>{const p=await memberPoint(kind);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(250);const h=(await inspect()).hold;assert.equal(h?.type,'bound-bundle');assert.ok(h.highlightCount>1,'all group members highlight');await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
+  const holdMember=async(kind)=>{const p=await memberPoint(kind);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.waitForTimeout(250);const h=(await inspect()).hold;assert.equal(h?.type,'bound-bundle');assert.equal(h.highlightCount,0,'early hold does not highlight');assert.equal((await inspect()).ritualVisible,false,'no hexagram before three seconds');await page.waitForFunction(()=>LivingScene.truthEye.inspect().hold?.phase==='animation',null,{timeout:10000});const charged=await inspect();assert.equal(charged.ritualVisible,true,'hexagram starts only after completed hold');assert.ok(charged.hold.highlightCount>1,'completed hold highlights all members');await page.mouse.up();await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});await page.mouse.up()};
   await holdCard('local.card.medium');
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true,'original card canvas hold opens restoration');
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(500);
   assert.equal((await inspect()).packed.length,0);assert.equal((await inspect()).scanned.length,count);
+  const assertCollectionShelved=async()=>{const c=await page.evaluate(()=>({model:LivingScene.atlas.inspect().collections.find(c=>c.id==='local.atlas.collection'),book:LivingLibrary.books.find(b=>b.id==='cardCollection'),entity:LivingScene.truthEye.inspect().objects.find(o=>o.id==='cardCollection')}));assert.equal(c.model.mode,'shelf');assert.equal(c.model.visible,false,'inner atlas model is absent');assert.equal(c.book.active,false,'original collection book is shelved');assert.equal(c.entity.visibleGroups,1,'exactly one original collection representation remains');};
+  await assertCollectionShelved();
   report.checks.push('actual canvas hold on same original card restores every original book');
   await page.screenshot({path:path.join(out,'books-restored.png')});
   assert.ok(!(await inspect()).cards.some(c=>c.id==='local.card.medium'),'materialized original card disappears');
   await page.locator('#eyeRadius').fill('2');await page.locator('#eyeRadius').dispatchEvent('input');
   const tapped=await memberPoint();await page.mouse.click(tapped.x,tapped.y);await page.waitForTimeout(350);
   assert.ok(await page.locator('#drawerWrap').evaluate(e=>e.classList.contains('open')),'short tap retains normal book function');await page.locator('#closeDrawer').click();
-  await holdMember();await page.locator('#truthEyeCancel').click();assert.ok(!(await inspect()).cards.some(c=>c.id==='local.card.medium'));
+  await holdMember();await page.locator('#truthEyeCancel').click();assert.ok(!(await inspect()).cards.some(c=>c.id==='local.card.medium'));assert.equal((await inspect()).ritualVisible,false,'cancel does not restart the hexagram');
   await holdMember();
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),true);
   await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
@@ -118,6 +120,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye);await page.waitForTimeout(500);
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
   assert.ok(!(await inspect()).cards.some(c=>c.id===worldCard),'world-form card stays absent after reload');
+  await assertCollectionShelved();
   await holdMember('scene');await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
   assert.equal((await inspect()).packed.length,worldCount);
   await holdCard(worldCard);await page.locator('#truthEyeApprove').click();await page.waitForFunction(()=>!LivingScene.truthEye.inspect().bundleBusy);await page.waitForTimeout(300);
