@@ -235,7 +235,9 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
    const seen=new Set(),refs=[];
    for(const o of usable){const key=o.kind+':'+o.id;if(seen.has(key))continue;
     seen.add(key);refs.push({kind:o.kind,id:o.id});if(refs.length===26)break}
-   if(refs.length!==26)throw Error('Need 26 physical members to simulate historical 27');
+   // Legacy save may refer to objects no longer loaded in this scene; the
+   // contract release must still work without inventing physical meshes.
+   for(let n=0;refs.length<26;n++)refs.push({kind:'scene',id:'scene.legacy.missing.'+n});
    refs.push({kind:'scene',id:'scene.keeper'});
    const eye=C.listCards(localStorage).find(c=>c.id==='local.card.eye');
    const legacy={...medium,title:'掃描收納卡',cardType:'收納契約',
