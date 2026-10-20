@@ -1,5 +1,5 @@
 /* Truth Eye 3D world integration: no image planes; original card IDs only.
- * Stage 1: scanner + binding the scanner itself. Book hexagram is a read-only preview. */
+ * Stage 1: scanner + binding the scanner itself. Scanned collections use an original blank card with reversible identity references. */
 (function(root){'use strict';
 const ID='artifact.truth-eye',RAD=Math.PI/180,clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function model(T){
@@ -53,13 +53,14 @@ function model(T){
 function create(opts){
  const {THREE:T,scene,keeper,camera,renderer,bookEntities,floatingCards,storage,craft,refreshCards,invalidate,toast,reducedMotion=false}=opts;
  if(!T||!scene||!keeper||!bookEntities||!floatingCards)throw Error('真實之眼需要既有 3D 場景');
+ const B=root.LivingScanBundle;if(!B)throw Error('缺少掃描收納模組');
  const C=root.LivingTruthEyeContract;if(!C)throw Error('真實之眼卡片契約模組不存在');
  const built=model(T),eye=built.group;scene.add(eye);
  const eyeLight=new T.PointLight(0x5cc5eb,4,5);scene.add(eyeLight);
- let cfg={radius:8,aperture:360,direction:0,mode:'both',enabled:true};
+ let cfg={radius:8,aperture:360,direction:0,mode:'both',scope:'book',enabled:true};
  try{const s=JSON.parse(storage.getItem('living-truth-eye-scan-v1')||'null');
   if(s){cfg.radius=clamp(Number(s.radius)||8,2,20);cfg.aperture=clamp(Number(s.aperture)||360,15,360);
-   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}
+   cfg.direction=clamp(Number(s.direction)||0,0,360);cfg.scope=['book','scene','all'].includes(s.scope)?s.scope:'book';cfg.mode=['both','radar','ripple'].includes(s.mode)?s.mode:'both'}
  }catch(_){}
  let card=null;try{card=C.boundCard(storage)}catch(e){toast('讀卡失敗：'+e.message)}
  const field=new T.Group();scene.add(field);
@@ -84,6 +85,7 @@ function create(opts){
  let cardCeremony=null,cardHold=null;
  const cardCaptured=new Set();
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
+ let bundleTransfer=null,packed=new Map(),bundleError=null,packedRaw;
  const Directed=root.LivingDirectedTransfer;
  if(!Directed?.normalize||!Directed?.sample)throw Error('缺少既有卡片定向吸收動畫');
  // A consumed pointer remains consumed even after the 3-second timer completes.
@@ -94,6 +96,81 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
+ const tools=document.createElement('div');tools.className='truthEyeTools';
+ tools.innerHTML='<button type="button" id="eyeSummon" aria-label="召喚全部書櫃書本" title="召喚全部書櫃書本">⇧</button><button type="button" id="eyeSelectAll" aria-label="全選掃描範圍內物件" title="全選掃描範圍內物件">⊙</button><button type="button" id="eyeCollect" aria-label="長按三秒收納選取物件" title="長按三秒收納選取物件">🔯</button><small id="eyeCount" role="status"></small>';
+ host.querySelector('#eyeControls').append(tools);
+ const extraStyle=document.createElement('style');extraStyle.textContent='.truthEyeTools{display:flex;flex-wrap:wrap;gap:5px}.truthEyeTools button{min-width:44px;min-height:44px}.truthEyeTools small{flex-basis:100%;line-height:1.5}.truthEyeTools button[data-holding="true"]{outline:2px solid #8cf6eb}';document.head.append(extraStyle);
+ const scopeSelect=document.createElement('select');scopeSelect.id='eyeScope';scopeSelect.setAttribute('aria-label','掃描對象');
+ scopeSelect.innerHTML='<option value="book">書本</option><option value="scene">圖書館場景</option><option value="all">書本與場景</option>';scopeSelect.value=cfg.scope;
+ host.querySelector('#eyeControls').prepend(scopeSelect);
+ scopeSelect.addEventListener('change',e=>{if(busy()){scopeSelect.value=cfg.scope;return}cfg.scope=e.target.value;selected.clear();apply();updateMarks()});
+ const countLabel=tools.querySelector('#eyeCount'),collectButton=tools.querySelector('#eyeCollect');
+ tools.querySelector('#eyeSummon').addEventListener('click',()=>{if(busy())return;opts.summonShelfBooks?.();invalidate()});
+ tools.querySelector('#eyeSelectAll').addEventListener('click',()=>{if(busy())return;selected.clear();targets().forEach(o=>selected.add(o.id));updateMarks();toast('👁 已選取掃描範圍內 '+selected.size+' 件；長按 🔯 三秒收納');invalidate()});
+ collectButton.addEventListener('pointerdown',e=>{if(e.button!==0||e.isPrimary===false||!selected.size||!field.visible||busy())return;heldPointers.add(e.pointerId);collectButton.setPointerCapture(e.pointerId);e.preventDefault();start('books',e.pointerId,e.clientX,e.clientY)});
+ collectButton.addEventListener('pointermove',pointerMove);
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])collectButton.addEventListener(event,pointerEnd);
+ collectButton.addEventListener('contextmenu',e=>e.preventDefault());
+ function busy(){return !!(hold||cardHold||pending||transfer||bundleTransfer||dialog?.open)}
+ function entries(){return (opts.getScanEntries?.()||bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer)).map(o=>({...o,kind:'book'})))}
+ function refreshPacked(){
+  try{const raw=storage.getItem(B.KEY);if(raw===packedRaw)return;packed=B.claims(storage,true);bundleError=null;packedRaw=raw}
+  catch(e){if(!bundleError)toast(e.message);bundleError=e;packed=new Map()}
+ }
+ function isPacked(kind,id){return packed.has(kind+':'+id)}
+ function applyPacked(){
+  refreshPacked();
+  if(bundleError)return;
+  const mask=bundleTransfer?.releasing?new Map([...packed].filter(([,id])=>id!==bundleTransfer.cardId)):packed;
+  for(const o of entries())if(o.kind==='book'&&mask.has(o.kind+':'+o.id))for(const g of o.groups||[o.group])g.visible=false;
+  opts.applyPacked?.(mask);
+ }
+ function bundlePrompt(kind,record,members){
+  if(busy())return false;
+  pending={kind,cardId:record.id,cardRevision:record.revision,members};
+  confirmLabel.textContent=kind==='bundle-bind'?'將掃描選取的 '+members.length+' 件物件收進這張空白卡？\n原物件 ID 保留，長按同一張收納卡可還原。':kind==='bundle-release'?'將此卡中的 '+record.scanContract.members.length+' 件原物件還原到世界？':'將此契約的原物件再次收回同一張卡？';
+  dialog.showModal();invalidate();return true;
+ }
+ function startBundleTransfer(request){
+  try{
+   const record=craft.listCards(storage).find(c=>c.id===request.cardId),entry=floatingCards.get(request.cardId);
+   if(bundleError||!record||record.revision!==request.cardRevision||!entry?.group.visible||entry.summon||entry.recycle||entry.drag||entry.focused||record.placement!=='hover'||record.containerId||record.ownerBookId)throw Error('原卡已改變或正在移動，請重新長按');
+   const members=request.members||B.contract(record).members;
+   const available=request.kind==='bundle-bind'?targets():entries();
+   if(request.kind==='bundle-bind'&&(!B.blank(record)||B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries())!==record.id))throw Error('最近空白卡已改變');
+   if(members.some(r=>!available.some(o=>o.id===r.id&&o.kind===r.kind)))throw Error('選取物件已離開掃描範圍或尚未載入');
+   const releasing=request.kind==='bundle-release';
+   const snapshots=members.flatMap(r=>{const o=entries().find(o=>o.id===r.id&&o.kind===r.kind);return (o.groups||[o.group]).map(group=>({group,position:group.position.clone(),scale:group.scale.clone(),visible:group.visible}))});
+   entry.group.updateWorldMatrix(true,false);const dest=entry.group.getWorldPosition(new T.Vector3());
+   const anchor={x:keeper.position.x,z:keeper.position.z};
+   bundleTransfer={...request,members,releasing,snapshots,dest,anchor,started:performance.now(),duration:reducedMotion?400:1400};
+   invalidate();
+  }catch(e){toast('收納未開始：'+e.message);invalidate()}
+ }
+ function tickBundle(now){
+  const job=bundleTransfer;if(!job)return;
+  const progress=clamp((now-job.started)/job.duration,0,1);
+  const u=progress*progress*(3-2*progress);
+  for(const snap of job.snapshots){const g=snap.group;g.visible=true;
+   const p=job.releasing?1-u:u;
+   // Preserve each object's original local transform, including keeper visuals
+   // whose control anchor must remain fixed throughout the absorption.
+   const endpoint=g.parent?.worldToLocal(job.dest.clone())||job.dest;
+   g.position.copy(snap.position).lerp(endpoint,p);g.position.y+=Math.sin(Math.PI*p)*.6;
+   g.scale.copy(snap.scale).multiplyScalar(Math.max(.001,1-p));
+  }
+  if(progress<1)return;
+  try{
+   const available=entries();
+   if(Math.hypot(keeper.position.x-job.anchor.x,keeper.position.z-job.anchor.z)>.15)throw Error('人物在收納期間移動，請重新掃描');
+   if(job.kind==='bundle-bind')B.bind(storage,{cardId:job.cardId,revision:job.cardRevision,members:job.members},entries());
+   else B.setForm(storage,job.cardId,job.cardRevision,job.releasing?'world':'card',available);
+   selected.clear();refreshCards();toast(job.releasing?'✦ 原物件已從同一張卡還原':'✦ 已將 '+job.members.length+' 件原物件收進同一張卡');
+  }catch(e){toast('收納未寫入，原物件保留：'+e.message)}
+  for(const snap of job.snapshots){snap.group.position.copy(snap.position);snap.group.scale.copy(snap.scale);snap.group.visible=job.releasing||snap.visible}
+  bundleTransfer=null;refreshPacked();invalidate();
+ }
+ refreshPacked();
  // Same confirmation gate as the ORIGINAL ground-rune flow; no direct card write.
  const dialog=document.createElement('dialog');
  dialog.id='truthEyeContractConfirm';
@@ -122,47 +199,49 @@ function create(opts){
  function apply(){for(const key of ['Radius','Aperture','Direction']){const name=key.toLowerCase(),number=cfg[name];
   el(key).value=String(number);el(key+'Val').textContent=number+(name==='radius'?'m':'°');
  }el('Mode').value=cfg.mode;
-  fan.geometry.dispose();fan.geometry=new T.CircleGeometry(cfg.radius,Math.max(48,Math.round(cfg.aperture/3)),0,cfg.aperture*RAD);
-  fan.rotation.z=cfg.direction*RAD;border.scale.setScalar(cfg.radius);
+  fan.geometry.dispose();fan.geometry=new T.CircleGeometry(cfg.radius,Math.max(48,Math.round(cfg.aperture/3)),Math.PI/2-(cfg.direction+cfg.aperture/2)*RAD,cfg.aperture*RAD);
+  fan.rotation.z=0;border.scale.setScalar(cfg.radius);
   try{storage.setItem('living-truth-eye-scan-v1',JSON.stringify(cfg))}catch(_){}
   invalidate();
  }
  for(const [k,name] of [['radius','Radius'],['aperture','Aperture'],['direction','Direction']]){
-  el(name).addEventListener('input',e=>{cfg[k]=Number(e.target.value);apply()});
+  el(name).addEventListener('input',e=>{if(busy()){apply();return}cfg[k]=Number(e.target.value);apply();updateMarks()});
  }
- el('Mode').addEventListener('change',e=>{cfg.mode=e.target.value;apply()});
- el('Toggle').addEventListener('click',()=>{cfg.enabled=!cfg.enabled;state();invalidate()});
+ el('Mode').addEventListener('change',e=>{if(busy()){apply();return}cfg.mode=e.target.value;apply()});
+ el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();invalidate()});
  function hit(e,meshes){const rect=renderer.domElement.getBoundingClientRect();if(!rect.width||!rect.height)return null;
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   caster.setFromCamera(mouse,camera);return caster.intersectObjects(meshes,true)[0]||null;
  }
- function inRange(group){
-  group.getWorldPosition(tmp);const dx=tmp.x-keeper.position.x,dz=tmp.z-keeper.position.z;
+ function inRange(o){
+  if(o.anchor)tmp.copy(o.anchor);else o.group.getWorldPosition(tmp);const dx=tmp.x-keeper.position.x,dz=tmp.z-keeper.position.z;
   const direction=(Math.atan2(dx,-dz)/RAD-cfg.direction+540)%360-180;
   return Math.hypot(dx,dz)<=cfg.radius&&(cfg.aperture===360||Math.abs(direction)<=cfg.aperture/2);
  }
- function targets(){return field.visible?bookEntities.filter(o=>o.group.visible&&inRange(o.group)):[]}
+ function targets(){return field.visible&&!bundleError?entries().filter(o=>(cfg.scope==='all'||o.kind===cfg.scope)&&!isPacked(o.kind,o.id)&&o.group.visible&&!(o.groups||[o.group]).some(g=>g.userData.boundCardId)&&inRange(o)):[]}
  function at(e){if(!field.visible)return null;const list=[];
-  for(const o of targets())o.group.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});
+  for(const o of targets()){for(const g of o.groups||[o.group])g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
  }
  function pick(e){const id=at(e);if(!id)return false;
   if(selected.has(id))selected.delete(id);else selected.add(id);
-  toast('👁 已選取 '+selected.size+' 件，長按其中一件可觀看契約動畫');invalidate();return true;
+  toast('👁 已選取 '+selected.size+' 件，長按選取物件或 🔯 三秒可收進空白卡');invalidate();return true;
  }
  function updateMarks(){
   const t=targets(),set=new Set(t.map(o=>o.id));
+   countLabel.textContent='掃描 '+t.length+' 件 · 選取 '+selected.size+' 件';
   for(const [id,g] of markMap)g.visible=set.has(id);
   for(const o of t){let m=markMap.get(o.id);
-   if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);
+   if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);const volume=new T.Mesh(new T.SphereGeometry(.45,10,8),new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));m.add(volume);
     const j=new T.Mesh(new T.OctahedronGeometry(.10),amber.clone());j.position.y=.72;m.add(j);marks.add(m);markMap.set(o.id,m);}
-   o.group.getWorldPosition(tmp);m.position.set(tmp.x,.15,tmp.z);
+   if(o.anchor)tmp.copy(o.anchor);else o.group.getWorldPosition(tmp);m.position.copy(tmp);m.position.y+=.7;
    m.scale.setScalar(selected.has(o.id)?1.65:1);
   }
   for(const id of [...selected])if(!set.has(id))selected.delete(id);
  }
  function stop(){
   if(hold){clearTimeout(hold.timer);hold=null}
+  collectButton?.removeAttribute('data-holding');
   hex.clear();invalidate();
  }
  function clearCardCeremony(){
@@ -196,8 +275,8 @@ function create(opts){
   state();
   const record=craft.listCards(storage).find(x=>x.id===held.cardId);
   const entry=floatingCards.get(held.cardId);
-  if(!record||record.revision!==held.revision||record.id!==card?.id||
-    record.truthEyeContract?.form!=='card'||record.placement!=='hover'||
+  if(!record||record.revision!==held.revision||(!record.scanContract&&record.id!==card?.id)||
+    (!record.scanContract&&record.truthEyeContract?.form!=='card')||record.placement!=='hover'||
     record.containerId||record.ownerBookId||!entry?.group.visible||
     entry.summon||entry.recycle){
    clearCardCeremony();toast('真實之眼契約卡已變更，請重新長按三秒');return false;
@@ -205,22 +284,24 @@ function create(opts){
   if(!cardCeremony||cardCeremony.cardId!==held.cardId)return false;
   cardCeremony.phase='selected';
   cardHex.update(1,performance.now());
-  if(!prompt('materialize',record.id,record.revision,record.title)){
+  if(!(record.scanContract?bundlePrompt(record.scanContract.form==='card'?'bundle-release':'bundle-repack',record):prompt('materialize',record.id,record.revision,record.title))){
    clearCardCeremony();return false;
   }
   return true;
  }
  function cardPressStart(e,id){
   state();
-  if(!card||card.id!==id||card.truthEyeContract?.form!=='card')return false;
-  if(card.placement!=='hover'||card.containerId||card.ownerBookId||pending||transfer||hold||dialog.open)return false;
+  const bundleCard=craft.listCards(storage).find(c=>c.id===id&&c.scanContract);
+  if(!bundleCard&&(!card||card.id!==id||card.truthEyeContract?.form!=='card'))return false;
+  const pressed=bundleCard||card;
+  if(pressed.placement!=='hover'||pressed.containerId||pressed.ownerBookId||pending||transfer||bundleTransfer||hold||dialog.open)return false;
   const entry=floatingCards.get(id);
   if(!entry||!entry.group.visible||entry.summon||entry.recycle||
    cardHold||e.isPrimary===false||e.button!==0||!Number.isInteger(e.pointerId))return false;
   if(!startCardCeremony(id))return false;
   cardCaptured.add(e.pointerId);
   cardHold={cardId:id,pointerId:e.pointerId,x:e.clientX,y:e.clientY,
-   revision:card.revision,startedAt:performance.now(),timer:setTimeout(finishCardHold,3000)};
+   revision:pressed.revision,startedAt:performance.now(),timer:setTimeout(finishCardHold,3000)};
   invalidate();
   return true;
  }
@@ -244,7 +325,7 @@ function create(opts){
   if(st.phase==='holding'){
    if(!cardHold||cardHold.cardId!==st.cardId){clearCardCeremony();return}
   }else if(st.phase==='selected'){
-   if(!pending||pending.kind!=='materialize'||pending.cardId!==st.cardId){
+   if(!pending||!['materialize','bundle-release','bundle-repack'].includes(pending.kind)||pending.cardId!==st.cardId){
     clearCardCeremony();return;
    }
   }else{clearCardCeremony();return}
@@ -315,8 +396,11 @@ function create(opts){
   state();
   selectedUntil=performance.now()+1800;
   if(type==='books'){
-   toast('🔯 已展示 '+selected.size+' 件的原版六芒星 · 正式多物件封裝尚未開放');
-   return;
+   try{const ids=new Set(selected),members=targets().filter(o=>ids.has(o.id)).map(o=>({kind:o.kind,id:o.id}));
+    if(!members.length||members.length!==ids.size)throw Error('選取物件已離開掃描範圍，請重新掃描');
+    const id=B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries());
+    const record=craft.listCards(storage).find(c=>c.id===id);bundlePrompt('bundle-bind',record,members);
+   }catch(e){toast(e.message)}return;
   }
   if(type==='eye'){
    const target=chooseCard();
@@ -339,6 +423,7 @@ function create(opts){
   pending=null;
   state();
   if(dialog.open)dialog.close();
+  if(request.kind.startsWith('bundle-')){clearCardCeremony();startBundleTransfer(request);return;}
   try{
    const record=craft.listCards(storage).find(o=>o.id===request.cardId);
    if(!record||record.revision!==request.cardRevision)throw Error('契約卡已變更，請重新長按');
@@ -414,10 +499,10 @@ function create(opts){
   invalidate();
  }
  function start(type,id,x,y){
-  if(hold||pending||transfer||dialog.open)return false;
+  if(hold||pending||transfer||bundleTransfer||dialog.open)return false;
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
-  if(type==='books')for(const o of bookEntities)if(selected.has(o.id))box.expandByObject(o.group);
+  if(type==='books')for(const o of entries())if(selected.has(o.id))box.expandByObject(o.group);
   const center=box.isEmpty()?new T.Vector3(keeper.position.x,0,keeper.position.z):box.getCenter(new T.Vector3());
   const size=box.isEmpty()?new T.Vector3(2,0,2):box.getSize(new T.Vector3());
   const radius=type==='books'?Math.max(1.2,Math.hypot(size.x,size.z)*.62):1.65;
@@ -433,10 +518,11 @@ function create(opts){
   hex.update(0,performance.now());
   const token=++serial;
   hold={token,type,id,x,y,started:performance.now(),timer:setTimeout(()=>complete(token),3000)};
+  if(type==='books')collectButton.dataset.holding='true';
   invalidate();return true;
  }
  function pointerDown(e){
-  if(e.button!==0||e.isPrimary===false||hold||transfer||pending||dialog.open)return false;
+  if(e.button!==0||e.isPrimary===false||hold||transfer||bundleTransfer||pending||dialog.open)return false;
   if(eye.visible&&hit(e,[eye])){
    heldPointers.add(e.pointerId);
    start(!card?'eye':card.truthEyeContract?.form==='sealed'?'eye-cardify':'eye-return',e.pointerId,e.clientX,e.clientY);
@@ -458,7 +544,11 @@ function create(opts){
  }
  function pointerEnd(e){
   const used=heldPointers.delete(e.pointerId);
-  if(hold?.id===e.pointerId){stop();return true}
+  if(hold?.id===e.pointerId){
+   if(e.type==='pointerup'&&performance.now()-hold.started>=3000)complete(hold.token);
+   else stop();
+   return true;
+  }
   return used;
  }
  // No floating contract button. Contract on 3D eye; manifestation from orbit card.
@@ -470,6 +560,7 @@ function create(opts){
  });
  root.addEventListener('blur',()=>{stop();cancelCardHold();cardCaptured.clear()});
  function tick(now){const t=now/1000;
+  tickBundle(now);
   const originalEye=new T.Vector3(keeper.position.x,keeper.position.y+3.50+(reducedMotion?0:.10*Math.sin(t*1.2)),keeper.position.z);
   if(eye.visible||transfer){
    eye.position.copy(originalEye);
@@ -532,6 +623,8 @@ function create(opts){
   // Read current data BEFORE presenting a confirmation; never use the
   // revision cached when the Eye was originally constructed.
   state();
+  const collection=craft.listCards(storage).find(c=>c.id===id&&c.scanContract);
+  if(collection){toast('🔯 長按此收納契約卡三秒，可'+(collection.scanContract.form==='card'?'還原原物件':'再次收納原物件'));return true}
   if(!card||card.id!==id||card.truthEyeContract?.form!=='card')return false;
   const entry=floatingCards.get(id);
   if(!entry||entry.summon||entry.recycle){
@@ -570,10 +663,14 @@ function create(opts){
   if(e.cardId===card?.id)refreshAfterUnbind();
  });
  function ownsTransferCard(id){return !!transfer&&transfer.cardId===id}
- function active(){return eye.visible||field.visible||!!hold||!!transfer||!!pending||!!cardCeremony||!!cardHold||performance.now()<selectedUntil}
+ function active(){return !!bundleTransfer||eye.visible||field.visible||!!hold||!!transfer||!!pending||!!cardCeremony||!!cardHold||performance.now()<selectedUntil}
+ function screenPoint(group){
+  group.updateWorldMatrix(true,false);const p=group.getWorldPosition(new T.Vector3()).project(camera),r=renderer.domElement.getBoundingClientRect();
+  return {x:r.left+(p.x+1)*r.width/2,y:r.top+(1-p.y)*r.height/2};
+ }
  apply();state();
- return Object.freeze({tick,active,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
-  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg}})});
+ return Object.freeze({tick,active,applyPacked,isPacked,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
+  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:()=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selected],config:{...cfg},objects:entries().map(o=>({id:o.id,kind:o.kind,visible:(o.groups||[o.group]).some(g=>g.visible)})),scanned:targets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
