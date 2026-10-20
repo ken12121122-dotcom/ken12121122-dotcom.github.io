@@ -36,6 +36,13 @@ textarea{min-height:74px;resize:vertical}
 details{border-top:1px solid #5e6c7a;padding-top:9px}
 summary{color:#c5b795;cursor:pointer}
 #cardList{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px;margin-top:14px}
+#cardRecoverySummary{margin:12px 0;background:#fff9ea;color:#000;padding:12px;border:1px solid #a28c65;border-radius:10px;white-space:pre-wrap}
+.mini .location-info{display:block;white-space:pre-wrap;color:#000;font-size:12px}
+.mini .take-card{min-height:44px;min-width:44px;margin:5px;border:1px solid #826948;background:#fff8e5;color:#000;border-radius:8px}
+#retrieveCardDialog{max-width:min(92vw,470px);background:#f5ecd9;color:#000;border:1px solid #947a51;border-radius:12px;padding:20px}
+#retrieveCardDialog::backdrop{background:#020812ad}
+#retrieveCardDialog p{color:#000;white-space:pre-wrap}
+#retrieveCardDialog button{min-width:90px;min-height:44px;margin:6px;background:#fff8e5;color:#000;border:1px solid #947a51;border-radius:8px}
 .mini{width:100%;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #7d6e59;border-radius:9px;background:#e7d5b5;color:#4c3824;overflow-wrap:anywhere}
 .mini.active{outline:3px solid #8bd4c7}.mini strong{font-size:13px}
 #recycleList{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px;padding-top:10px}
@@ -134,6 +141,7 @@ button:disabled{opacity:.45}
  </section>
 </div>
 <h1>已創造的卡片 <small id="cardCount"></small></h1>
+<p id="cardRecoverySummary">卡片位置檢查中……</p>
 <p id="objectStats" aria-live="polite"></p>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
@@ -153,6 +161,12 @@ button:disabled{opacity:.45}
  <p>會清除卡面文字、圖片、編號、複製來源、可複製分類及殘留的已終止資料；同一張卡保留原始 ID 與建立時間、更新版本，回到漂浮軌道。完成後有值欄位應為 <strong>11</strong>。</p>
  <small>這是清除卡片資料的操作，不是解除有效契約。若仍在綁定，必須先使用「解除契約卡」。清除前可使用下方「↓」下載本機備份；格式化後無復原鍵。</small>
  <div><button id="cancelFormatCard" type="button">取消</button><button id="confirmFormatCard" type="button">✓ 確認格式化</button></div>
+</dialog>
+<dialog id="retrieveCardDialog" aria-label="確認取回書內原卡">
+ <h2>取回書內卡片</h2><p id="retrieveCardPrompt"></p>
+ <p>只將原卡移回軌道；保留 ID、圖片和契約，不解除綁定、不刪除其他物件。若世界形態或契約不允許，程式會拒絕。</p>
+ <button id="retrieveCardCancel" type="button">取消</button>
+ <button id="retrieveCardConfirm" type="button">✓ 確認取回</button>
 </dialog>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
@@ -177,7 +191,7 @@ button:disabled{opacity:.45}
  const Craft=window.LivingObjectCraft;
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
- let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null,pendingDestroy=null;
+ let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null,pendingDestroy=null,retrieval=null;
  const catalog=window.LivingLibraryCatalog.buildCatalog();
  const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
  for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
@@ -286,9 +300,53 @@ button:disabled{opacity:.45}
   if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
   else if(card)preview.classList.add('hover');
  }
+ function storedLocation(card){
+  if(!card.containerId)return card.placement==='hover'?'漂浮軌道':'⚠ 位置異常或契約收納：'+card.placement;
+  const slot=Number.isInteger(card.slotIndex)?card.slotIndex:null;
+  if(card.containerId==='local.atlas.compendium')
+   return slot===9?'萬物圖鑑：右側 GBA 讀卡格':'萬物圖鑑：左頁第 '+(slot===null?'?':slot+1)+' 格';
+  if(card.containerId==='local.atlas.collection')
+   return '卡片之書：'+(slot===null?'格位不明':slot<9?'左頁第 '+(slot+1)+' 格':'右頁第 '+(slot-8)+' 格');
+  const book=Craft.listBooks(localStorage).find(x=>x.id===card.containerId);
+  return (book?.title||'⚠ 無法找到書本 '+card.containerId)+'：格位 '+(slot===null?'未知':slot+1);
+ }
+ function scanBindingStatus(card){
+  const b=card.scanContract,r=card.runeBinding;
+  if(b){
+   const consistent=b.artifactId==='scan.bundle.'+card.id&&r?.runeId===b.artifactId&&r?.state==='bound'&&
+    Array.isArray(b.members)&&b.members.length>0&&['card','world'].includes(b.form);
+   return consistent?'記錄掃描契約：'+b.members.length+' 件（'+b.form+'）；未驗證世界':
+    '⚠ 掃描契約與綁定標記不一致，請勿直接銷毀';
+  }
+  if(r?.runeId)return '綁定資料：'+r.runeId+'（'+(r.state||'未知')+'）';
+  if(card.title==='掃描收納卡')return '⚠ 只有掃描收納名稱，沒有掃描群組契約';
+  return '無掃描契約';
+ }
+ const retrieveDialog=$('retrieveCardDialog');
+ $('retrieveCardCancel').onclick=()=>{retrieval=null;retrieveDialog.close()};
+ retrieveDialog.addEventListener('close',()=>{retrieval=null});
+ retrieveDialog.addEventListener('cancel',()=>{retrieval=null});
+ $('retrieveCardConfirm').onclick=()=>{
+  if(!retrieval||!retrieveDialog.open)return;
+  const item=retrieval;retrieval=null;retrieveDialog.close();
+  try{
+   const latest=cards().find(c=>c.id===item.id);
+   if(!latest||latest.revision!==item.revision||localStorage.getItem(Craft.KEY)!==item.snapshot)
+    throw Error('卡片或存檔已變更，未移動');
+   if(latest.placement!=='book'||!latest.containerId||latest.containment)
+    throw Error('卡片已不在普通書內格位，未移動');
+   const returned=Craft.placeCard(localStorage,item.id,null);
+   show(returned);refresh();notify('card-edited',returned.id);
+   status('已找回同一張「'+returned.title+'」到漂浮軌道；沒有清除任何綁定。');
+  }catch(e){refresh();status('取回未執行：'+(e.message||e),true)}
+ };
  function refresh(){
   const items=cards(),stats=Craft.getStats(localStorage),deleted=Craft.listRecycledCards(localStorage);
   $('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
+  const related=items.filter(c=>c.title==='掃描收納卡'||c.scanContract);
+  $('cardRecoverySummary').textContent='讀取本機存檔：有效卡 '+items.length+
+   ' 張；漂浮 '+stats.floatingCards+' 張；書內／GBA '+stats.inBooks+
+   ' 張；名稱或資料涉及掃描收納 '+related.length+' 張。下方每張卡現在會標明真實儲存位置及契約欄位；不會自動移動或刪除任何卡片。';
   $('objectStats').textContent='懸浮 '+stats.floatingCards+' ｜ 書內 '+stats.inBooks+
    ' ｜ 自製書 '+stats.createdBooks+' ｜ 回收 '+stats.recycledCards;
   $('recycleCount').textContent=stats.recycledCards;
@@ -316,8 +374,23 @@ button:disabled{opacity:.45}
    const icon=document.createElement('span');icon.textContent='◇';
    const title=document.createElement('strong');title.textContent=card.title;
    const info=document.createElement('small');info.textContent='# '+card.id.slice(-8)+(card.downloadTemplate===true?' · 可複製卡':'');
-   btn.append(icon,title,info);btn.onclick=()=>{show(card);refresh();status('已開啟本機草稿卡')};
-   host.append(btn);
+   const location=document.createElement('small');location.className='location-info';
+   location.textContent='位置：'+storedLocation(card)+'\n'+scanBindingStatus(card);
+   btn.append(icon,title,info,location);
+   btn.onclick=()=>{show(card);refresh();status('已開啟卡片；下方已列出目前存放位置和契約')};
+   const holder=document.createElement('div');holder.append(btn);
+   if(card.containerId&&card.placement==='book'){
+    const take=document.createElement('button');take.type='button';take.className='take-card';
+    take.textContent='↗ 取回軌道';
+    take.setAttribute('aria-label','確認取回 '+card.title);
+    take.onclick=()=>{
+     const latest=cards().find(c=>c.id===card.id);if(!latest)return status('卡片資料已變動，請重新選取',true);
+     retrieval={id:latest.id,revision:latest.revision,snapshot:localStorage.getItem(Craft.KEY)};
+     $('retrieveCardPrompt').textContent='卡片：'+latest.title+'\nID：'+latest.id+'\n目前位置：'+storedLocation(latest)+'\n契約：'+scanBindingStatus(latest);
+     retrieveDialog.showModal();
+    };holder.append(take);
+   }
+   host.append(holder);
   }
  }
  $('recycleCard').addEventListener('click',()=>{
