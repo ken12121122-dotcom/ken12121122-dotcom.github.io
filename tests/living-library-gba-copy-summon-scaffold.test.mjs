@@ -157,18 +157,18 @@ test('the GBA template catalogue uses previously created copies wherever physica
  const unsafe=mk('local.card.unique','特殊唯一卡',2,{unique:true,downloadTemplate:true});
  const db=storage([blank,shelf,floating,contained,unsafe]);
  const names=Craft.listDownloadableTemplates(db).map(x=>x.id);
- assert.equal(names.length,2);
- assert.deepEqual(new Set(names),new Set([shelf.id,contained.id]));
+ assert.equal(names.length,1);
+ assert.deepEqual(new Set(names),new Set([shelf.id]));
+ assert.equal(Craft.canDownloadTemplate(contained),false,'spent spell cannot be a historical template');
  assert.equal(Craft.canDownloadTemplate(floating),false,'regular unselected floating cards never appear');
  assert.equal(Craft.canDownloadTemplate(unsafe),false);
  assert.equal(Craft.canDownloadTemplate(blank),false);
 });
-test('template download transfers format into existing right-slot blank; stored source is unchanged',()=>{
+test('template download transfers format into existing right-slot blank; existing world source is unchanged',()=>{
  const source=mk('local.card.stored','解除綁定術',null,{
-  containerId:null,ownerBookId:null,placement:'contained',
-  containment:{kind:'consumed_spell',holderId:'local.card.origin',holderType:'card',state:'stored'},
+  containerId:null,ownerBookId:null,placement:'hover',
   image:{dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:1,x:50,y:50},
-  description:'原卡仍被封存',cardNumber:'SPELL-0001',downloadTemplate:true});
+  description:'原卡仍在世界',cardNumber:'SPELL-0001',downloadTemplate:true});
  const blank=mk('local.card.blank','空白卡片',9);
  const db=storage([blank,source]),before=db.objects()[1];
  const made=Craft.forgeBlankFromTemplate(db,{
