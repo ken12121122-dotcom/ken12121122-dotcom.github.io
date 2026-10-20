@@ -113,9 +113,11 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   await page.waitForTimeout(550);
   assert.equal((await inspect()).packed.length,0,'card releases same world object');
   assert.ok((await inspect()).objects.some(x=>x.id===chosenId&&x.visible),'materialized object is physically present');
-  assert.ok(!(await inspect()).scanned.some(x=>x.id===chosenId),'still-bound object cannot be claimed for another scan');
-  assert.ok(!(await readNames()).some(x=>x.id===chosenId),'bound world-form object is not an independent scanner target');
-  report.checks.push('reload, materialization restores visible world object while keeping its owner');
+  assert.ok((await inspect()).scanned.some(x=>x.id===chosenId),'scanner still discovers materialized geometry');
+  assert.ok((await readNames()).some(x=>x.id===chosenId),'world-form member remains visible in live scan readout');
+  const owner=await page.evaluate(id=>LivingScanBundle.claims(localStorage).get('scene:'+id),chosenId);
+  assert.equal(owner,'local.card.medium','member remains owned; independent re-binding is forbidden until spell unbind');
+  report.checks.push('materialization restores visible geometry, scanner detects it, and persistent ownership still blocks rebinding');
 
   // Materialization is a form switch, NEVER a contract release.
   const restoredViaGesture=await page.evaluate(()=>{
