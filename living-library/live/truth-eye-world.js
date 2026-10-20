@@ -262,7 +262,18 @@ function create(opts){
   const direction=(Math.atan2(dx,-dz)/RAD-cfg.direction+540)%360-180;
   return Math.hypot(dx,dz)<=cfg.radius&&(cfg.aperture===360||Math.abs(direction)<=cfg.aperture/2);
  }
- function targets(){return field.visible&&!bundleError?entries().filter(o=>!o.protected&&!isPacked(o.kind,o.id)&&o.group.visible&&!(o.groups||[o.group]).some(g=>g.userData.boundCardId)&&inRange(o)):[]}
+ function visibleInScene(group){for(let n=group;n;n=n.parent)if(n.visible===false)return false;return true}
+ function targets(){
+  if(!field.visible||bundleError)return [];
+  const seen=new Set();
+  return entries().filter(o=>{
+   const key=o.kind+':'+o.id;
+   if(seen.has(key)||o.protected||isPacked(o.kind,o.id)||!visibleInScene(o.group)||
+      !(o.groups||[o.group]).some(visibleInScene)||
+      (o.groups||[o.group]).some(g=>g.userData.boundCardId)||!inRange(o))return false;
+   seen.add(key);return true;
+  });
+ }
  function at(e){if(!field.visible)return null;const list=[];
   for(const o of targets()){for(const g of o.groups||[o.group])g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
