@@ -90,7 +90,7 @@ test('Card Creation Spell exposes confirmed destroy, recycle-bin destroy, offlin
  const outbox=await readFile(new URL('../living-library/live/object-outbox.js',import.meta.url),'utf8');
  assert.match(html,/id="destroyCard"/);
  assert.match(html,/id="destroyInput"/);
- assert.match(html,/outbox[.]forget[(][[]plan[.]id,[.][.][.]plan[.]affectedCopyIds[]][)]/);
+ assert.match(html,/outbox\.forget\(\[plan\.id,\.\.\.plan\.affectedCopyIds\]\)/);
  assert.match(html,/Craft[.]destroyCard[(]localStorage/);
  assert.match(html,/erase[.]addEventListener[(]'click'/);
  assert.match(outbox,/forget[(]ids[)]/);
