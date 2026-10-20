@@ -301,7 +301,13 @@ button:disabled{opacity:.45}
   else if(card)preview.classList.add('hover');
  }
  function storedLocation(card){
-  if(!card.containerId)return card.placement==='hover'?'漂浮軌道':'⚠ 位置異常或契約收納：'+card.placement;
+  if(!card.containerId){
+   if(card.scanContract?.form==='world'||card.truthEyeContract?.form==='world')
+    return '世界實體形態（原卡 3D 暫時隱藏；不是漂浮實體卡）';
+   if(card.placement==='contained'||card.containment||card.truthEyeContract?.form==='sealed')
+    return '契約封印／收納中（原卡不在軌道）';
+   return card.placement==='hover'?'漂浮軌道（僅存檔位置，需由場景確認）':'⚠ 位置異常：'+card.placement;
+  }
   const slot=Number.isInteger(card.slotIndex)?card.slotIndex:null;
   if(card.containerId==='local.atlas.compendium')
    return slot===9?'萬物圖鑑：右側 GBA 讀卡格':'萬物圖鑑：左頁第 '+(slot===null?'?':slot+1)+' 格';
@@ -344,9 +350,20 @@ button:disabled{opacity:.45}
   const items=cards(),stats=Craft.getStats(localStorage),deleted=Craft.listRecycledCards(localStorage);
   $('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
   const related=items.filter(c=>c.title==='掃描收納卡'||c.scanContract);
+  const claimOwners=new Map(),duplicates=[];
+  for(const card of items)for(const member of card.scanContract?.members||[]){
+   if(!member?.kind||!member?.id)continue;
+   const key=member.kind+':'+member.id;
+   if(claimOwners.has(key)&&claimOwners.get(key)!==card.id)
+    duplicates.push({member:key,first:claimOwners.get(key),second:card.id});
+   else claimOwners.set(key,card.id);
+  }
   $('cardRecoverySummary').textContent='讀取本機存檔：有效卡 '+items.length+
-   ' 張；漂浮 '+stats.floatingCards+' 張；書內／GBA '+stats.inBooks+
-   ' 張；名稱或資料涉及掃描收納 '+related.length+' 張。下方每張卡現在會標明真實儲存位置及契約欄位；不會自動移動或刪除任何卡片。';
+   ' 張；標記為軌道 '+stats.floatingCards+' 張；標記為書內／GBA '+stats.inBooks+
+   ' 張；掃描相關名稱或欄位 '+related.length+' 張。'+
+   '\n掃描成員宣告 '+claimOwners.size+' 個，跨卡重複持有標記 '+duplicates.length+' 個'+
+   (duplicates.length?' ⚠ 請先保留備份，不能直接刪卡。':'（僅檢查存檔，不代表已驗證世界物件）')+
+   '\n下方逐張列出存檔位置與契約欄位；沒有自動移動、解除或刪除任何卡片。';
   $('objectStats').textContent='懸浮 '+stats.floatingCards+' ｜ 書內 '+stats.inBooks+
    ' ｜ 自製書 '+stats.createdBooks+' ｜ 回收 '+stats.recycledCards;
   $('recycleCount').textContent=stats.recycledCards;
