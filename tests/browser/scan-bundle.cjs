@@ -138,14 +138,14 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
    const result=C.unbindAndAbsorbSpell(storage,{
     runeId:world.runeBinding.runeId,targetId:world.id,targetRevision:world.revision,
     spellId:spell.id,spellRevision:spell.revision});
-   return {oldCount:before,newCard:result.target,spell:result.spell,remaining:[...B.claims(storage)]};
+   return {oldCount:before,newCard:result.target,spellId:result.spellId,remaining:[...B.claims(storage)]};
   },chosenId);
   assert.equal(unbound.oldCount,1);
   assert.equal(unbound.newCard.title,'空白卡片');
   assert.equal(unbound.newCard.description,'');assert.equal(unbound.newCard.cardType,'');
   assert.equal(unbound.newCard.runeBinding,undefined);assert.equal(unbound.newCard.scanContract,undefined);
   assert.deepEqual(unbound.remaining,[]);
-  assert.equal(unbound.spell.containment.kind,'consumed_spell');
+  assert.equal(unbound.spellId,'local.card.spell');
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});
   await page.waitForTimeout(650);
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
