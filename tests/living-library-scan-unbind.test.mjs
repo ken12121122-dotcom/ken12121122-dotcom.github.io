@@ -232,3 +232,35 @@ test('old spent spells are removed from persisted records while live and sealed 
  assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===sealed.id),sealed);
  assert.deepEqual(legacy.snapshot().objects.find(c=>c.id===owner.id),owner);
 });
+
+test('unbinding the Card Book collection uses the same generic rule as arbitrary scanned world objects',()=>{
+ const bookRef={kind:'book',id:'cardCollection'},medium=makeCard('universal'),spell=makeCard('spell','解除契約卡');
+ const storage=store([medium,spell]);
+ const bound=Bundle.bind(storage,{cardId:medium.id,revision:1,members:[bookRef]},[bookRef]);
+ assert.deepEqual(bound.scanContract.members,[bookRef]);
+ const snapshot=storage.snapshot();
+ const done=Craft.unbindAndAbsorbSpell(storage,{
+  runeId:bound.runeBinding.runeId,targetId:bound.id,targetRevision:bound.revision,
+  spellId:spell.id,spellRevision:spell.revision});
+ assert.equal(done.target.id,medium.id);
+ assert.equal(done.target.title,'空白卡片');
+ assert.equal(done.target.image,null);
+ assert.ok(Bundle.blank(done.target),'original card can return to a GBA reader as true blank');
+ assert.equal(storage.snapshot().objects.length,1,'spell permanently consumed, no duplicate book or card');
+ assert.deepEqual(storage.snapshot().unboundCarrierBackups[medium.id].card,snapshot.objects[0],
+  'pre-release carrier preserved as metadata, not as an extra world object');
+ assert.deepEqual([...Bundle.claims(storage)],[]);
+ const reused=Bundle.bind(storage,{cardId:medium.id,revision:done.target.revision,members:[{kind:'scene',id:'scene.any-object'}]},[{kind:'scene',id:'scene.any-object'}]);
+ assert.equal(reused.id,medium.id,'no book-specific rebind restriction');
+});
+
+test('generic contract release never invokes a book manifestation on unbind',()=>{
+ const eye=readFileSync(new URL('../living-library/live/truth-eye-world.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../living-library/live/index.html',import.meta.url),'utf8');
+ assert.match(eye,/job\.kind==='bundle-bind'\|\|job\.kind==='bundle-cardify'/);
+ assert.match(eye,/opts\.onBundleStored\?\.\(job\.members\)/);
+ assert.match(app,/onBundleStored\(members\)/);
+ const unboundHandler=eye.slice(eye.indexOf("scene.addEventListener('living-contract-unbound',e=>{"));
+ assert.doesNotMatch(unboundHandler.slice(0,600),/onBundleStored|onBundleRestored/);
+ assert.match(app,/for\(const ref of members\)if\(ref\.kind==='book'\)atlasRuntime\.restoreScannedToShelf\(ref\.id\)/);
+});
