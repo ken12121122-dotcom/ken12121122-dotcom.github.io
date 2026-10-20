@@ -76,10 +76,8 @@ test('unbound→sealed→cardified→unbound is a consistent roundtrip with cons
  assert.equal(effect.target.id,'local.card.origin');
  assert.equal(effect.target.runeBinding,undefined);
  assert.equal(effect.target.placement,'hover');
- assert.equal(effect.spell.id,spell.id);
- assert.equal(effect.spell.placement,'contained');
- assert.equal(effect.spell.containment.holderId,effect.target.id);
- assert.equal(db.objects().length,2);
+ assert.equal(effect.spellId,spell.id);assert.equal(effect.consumed,true);
+ assert.equal(db.objects().length,1,'spent spell is not archived');
  assert.equal(C.getRuneBoundCard(db),null);
  assert.equal(C.floatingCards(db).length,1);
  // After using the consume spell, the original may be bound again.
