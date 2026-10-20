@@ -72,7 +72,7 @@ test('restore missing image only on live unbinding spells and backup entire raw 
  assert.deepEqual(Craft.restoreMissingUnbindImages(db),[]);
  assert.equal(db.raw,once,'idempotent repairs do not rewrite localStorage');
 });
-test('never overwrite a player's own existing card photo or system recipe artwork',()=>{
+test("never overwrite a player\'s own existing card photo or system recipe artwork",()=>{
  const custom={dataUrl:'data:image/jpeg;base64,/9j/AA==',scale:2,x:21,y:72};
  const old=card('local.card.original','解除契約卡',custom);
  const db=store([old],{recipeArtwork:custom}),before=db.raw;
