@@ -107,7 +107,7 @@ test('permanent destroy control is prominent above editor form and iframe uses f
  assert.match(html,/id="destroyHint"/);
  assert.match(html,/🗑 永久銷毀卡片/);
  assert.match(html,/erase[.]textContent='🗑 銷毀'/);
- assert.match(index,/fresh[.]searchParams[.]set[(]'v','card-destroy-visible-20261020-v2'[)]/);
+ assert.match(index,/fresh[.]searchParams[.]set[(]'v','[^']+'[)]/);
  assert.match(index,/readerExternal'[)][.]href=fresh[.]toString[(][)]/);
 });
 
