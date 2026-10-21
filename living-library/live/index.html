@@ -589,6 +589,8 @@ function isLocalFunctionPage(url){
 let readerCard=null,cardSpellExitTimer=null;
 // Cloud-first candidate: this module is independent of the 3D scene and never
 // writes ObjectCraft or browser credentials. Consent occurs in system controls.
+const credentialVault=(()=>{try{return window.LivingWorldCredentialVault.create()}catch{return null}})();
+let credentialVaultEpoch=0;
 const worldSave=window.LivingWorldSaveSync.create({
  storage:localStorage,fetchImpl:(...args)=>fetch(...args),
  observeWorld:()=>window.LivingWorldObservation.collect(localStorage,()=>window.LivingScene?.observeWorld?.()||null),
