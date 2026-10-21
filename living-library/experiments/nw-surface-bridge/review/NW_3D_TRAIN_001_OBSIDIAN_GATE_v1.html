@@ -60,7 +60,7 @@ h1{font-size:23px}
 <header class="hud heading">
  <div class="kicker">N E N D O U &nbsp; W O R L D　/　3 D　L A B</div>
  <h1>雙界之門<br>黑曜石框架</h1>
- <div class="subtitle">NW-3D-TRAIN-001 · PROCEDURAL SCULPTURE · v1.1 / ORNATE</div>
+ <div class="subtitle">NW-3D-TRAIN-001 · PROCEDURAL SCULPTURE · v1.2 / CATHEDRAL</div>
  <div class="status" role="status">● <b id="stateText">準備載入 3D 模型</b></div>
 </header>
 <aside class="hud panel" aria-label="門框零件圖層">
@@ -167,7 +167,13 @@ try{
   rune:new THREE.MeshStandardMaterial({color:'#6fc6e7',emissive:'#149dc9',emissiveIntensity:2.15,roughness:.33}),
   amber:new THREE.MeshStandardMaterial({color:'#e8bd78',emissive:'#af6e21',emissiveIntensity:.44,metalness:.63,roughness:.25}),
   gem:new THREE.MeshPhysicalMaterial({color:'#6a4be1',emissive:'#5531b5',emissiveIntensity:1.4,metalness:.27,roughness:.15,clearcoat:1,clearcoatRoughness:.08}),
-  platform:new THREE.MeshStandardMaterial({color:'#242536',metalness:.21,roughness:.66})
+  platform:new THREE.MeshStandardMaterial({color:'#242536',metalness:.21,roughness:.66}),
+  sapphire:new THREE.MeshPhysicalMaterial({color:'#84dfff',emissive:'#155bd0',emissiveIntensity:1.95,metalness:.12,roughness:.11,clearcoat:1,clearcoatRoughness:.03}),
+  obsidianPolish:new THREE.MeshPhysicalMaterial({color:'#292d44',roughness:.19,metalness:.66,clearcoat:.85,clearcoatRoughness:.08}),
+  cyanFire:new THREE.MeshBasicMaterial({color:'#79f0ff',toneMapped:false,side:THREE.DoubleSide}),
+  violetFire:new THREE.MeshBasicMaterial({color:'#bd7dff',toneMapped:false,side:THREE.DoubleSide}),
+  cyanHalo:new THREE.MeshBasicMaterial({color:'#41bfff',toneMapped:false,transparent:true,opacity:.20,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}),
+  violetHalo:new THREE.MeshBasicMaterial({color:'#894afa',toneMapped:false,transparent:true,opacity:.24,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide})
  };
  const gate=new THREE.Group();gate.name='NW-3D-TRAIN-001_Obsidian_Frame';scene.add(gate);
  const parts={};
@@ -472,6 +478,171 @@ try{
   const a=i*Math.PI/4,tip=.47,center=new THREE.Vector2(0,5.72);
   beam('G05',center,new THREE.Vector2(Math.cos(a)*tip,5.72+Math.sin(a)*tip),i%2?.018:.039,.025,i%2?mat.rune:mat.brass,.93).castShadow=false;
  }
+ // v1.2 REFERENCE-BASED SCULPTURE: side machinery, gothic spires, suspended
+ // pendulums, nested celestial orbits, dark stone carvings, gem lenses and
+ // inner seam illumination. All decoration reuses G01-G06, with no portal
+ // interior, gameplay logic, contract IDs, storage or world coordinates.
+ function tubeCarving(id,points,radius,material,closed=false){
+  const vv=points.map(p=>new THREE.Vector3(p[0],p[1],p[2]));
+  const curve=new THREE.CatmullRomCurve3(vv,closed,'centripetal',.5);
+  const geom=new THREE.TubeGeometry(curve,Math.max(24,points.length*5),radius,6,closed);
+  const mesh=attach(id,new THREE.Mesh(geom,material));
+  mesh.castShadow=false;mesh.receiveShadow=false;
+  return mesh;
+ }
+ function compassGlyph(id,x,y,z,radius,color){
+  torus(id,x,y,z,radius,.017,mat.bronze).castShadow=false;
+  torus(id,x,y,z+.03,radius*.77,.008,color).castShadow=false;
+  for(let k=0;k<8;k++){
+   const a=k*Math.PI/4,cs=Math.cos(a),sn=Math.sin(a);
+   const spikeLen=k%2===0?.185:.095;
+   const a0=new THREE.Vector2(x+cs*(radius*.62),y+sn*(radius*.62));
+   const b0=new THREE.Vector2(x+cs*(radius+spikeLen),y+sn*(radius+spikeLen));
+   const ray=beam(id,a0,b0,k%2===0?.044:.022,.045,k%2===0?mat.brass:mat.bronze,z+.02);
+   ray.castShadow=false;
+   if(k%2===0)raisedRivet(id,b0.x,b0.y,z+.04,.032,color);
+  }
+ }
+ // G01: freestanding outer cathedral buttresses carry the vertical silhouette.
+ for(const s of [-1,1]){
+  const x=s*2.48;
+  box('G01',x,2.75,-.33,.31,3.53,.51,mat.obsidian);
+  box('G01',x,2.74,-.02,.19,3.32,.10,mat.edge);
+  box('G01',x+s*.17,2.8,-.31,.15,3.1,.42,mat.pitch);
+  for(const y of [1.28,2.23,3.15,4.02]){
+   plaque('G01',x,y,.075,.37,.48,.11,mat.obsidian,.27);
+   plaque('G01',x,y,.205,.14,.32,.025,mat.obsidianPolish,.34);
+   box('G01',x,y-.33,-.3,.43,.09,.61,mat.edge);
+   stoneFacet('G01',x,y,-.61,.24,.49,mat.edge);
+  }
+  // Eight-sided stone pyramidal cap and three rising finials.
+  cyl('G01',x,4.62,-.30,.29,.35,.41,mat.obsidian,8);
+  const needle=spike('G01',x,5.17,-.30,1.18,.21,mat.obsidian);
+  needle.rotation.y=.24;
+  spike('G01',x,5.78,-.30,.28,.095,mat.brass);
+  spike('G01',x+s*.27,4.92,-.46,.67,.105,mat.obsidian);
+  spike('G01',x-s*.22,4.79,-.36,.57,.10,mat.edge);
+  // Large triangulated flying buttress physically spans the side tower and gate.
+  tubeCarving('G01',[
+   [s*1.91,3.71,-.53],[s*2.12,4.14,-.60],[s*2.42,4.30,-.59],
+   [s*2.65,4.45,-.53]],.078,mat.obsidianPolish);
+  tubeCarving('G01',[
+   [s*1.93,3.60,-.57],[s*2.23,3.82,-.64],[s*2.46,4.02,-.61],
+   [s*2.60,4.23,-.53]],.034,mat.bronze);
+  for(const yy of [1.43,2.38,3.43])runeRelief('G03',x,yy,.255,.34,Math.floor(yy*5),mat.cyanFire);
+ }
+ // G02: the outer arch takes scalloped keystones and dark metal teeth.
+ const outerCarving=archPoints(2.18,3.73,5.79,45);
+ for(let i=3;i<outerCarving.length-3;i+=3){
+  const p=outerCarving[i],next=outerCarving[i+1];
+  const angle=-Math.atan2(next.x-p.x,next.y-p.y);
+  const keystone=plaque('G02',p.x,p.y,.735,.20,.26,.075,i%2?mat.obsidian:mat.obsidianPolish,.31);
+  keystone.rotation.z=angle;
+  if(i%3===0){
+   const crystal=plaque('G03',p.x,p.y,.845,.058,.11,.02,mat.cyanFire,.25);
+   crystal.rotation.z=angle;crystal.castShadow=false;
+  }
+ }
+ // G04: immense astrolabe orbit bands arc behind the architecture in THREE dimensions,
+ // not flat concentric rings or illustrated backgrounds. Visible especially from side.
+ for(const [radiusY,depth,skew,metal,thickness] of [
+  [1.13,-.98,.10,mat.bronze,.050],
+  [1.32,-1.23,-.13,mat.obsidianPolish,.071],
+  [1.54,-.91,.23,mat.brass,.029]
+ ]){
+  const points=[];
+  for(let i=0;i<48;i++){
+   const a=i/48*Math.PI*2;
+   points.push([Math.cos(a)*3.06,3.22+Math.sin(a)*radiusY,
+    depth+Math.sin(a*2)*skew+Math.cos(a)*.25]);
+  }
+  tubeCarving('G04',points,thickness,metal,true);
+ }
+ for(const s of [-1,1]){
+  // Brass ribbed clamps hold each orbit against the standing buttresses.
+  for(const y of [2.35,3.18,4.10]){
+   tubeCarving('G04',[
+    [s*2.35,y,.04],[s*2.74,y+.08,-.50],[s*3.05,y+.14,-.99]],.055,mat.bronze);
+   for(const x of [2.49,2.81]){
+    raisedRivet('G04',s*x,y+.025,.08,.045,mat.brass);
+   }
+  }
+  // Mechanized blue-violet wheel at the center of each jamb:
+  // deep backing, interlocking bezels, 16 mechanical teeth, illuminated lens.
+  const cx=s*2.12,cy=2.06,cz=.86;
+  const back=cyl('G04',cx,cy,cz,.56,.55,.15,mat.pitch,20);
+  back.rotation.x=Math.PI/2;
+  torus('G04',cx,cy,cz+.13,.51,.065,mat.bronze);
+  torus('G04',cx,cy,cz+.19,.45,.021,mat.brass);
+  torus('G04',cx,cy,cz+.21,.345,.027,mat.obsidianPolish);
+  torus('G04',cx,cy,cz+.25,.268,.018,s<0?mat.violetFire:mat.cyanFire).castShadow=false;
+  torus('G04',cx,cy,cz+.25,.306,.067,s<0?mat.violetHalo:mat.cyanHalo).castShadow=false;
+  for(let k=0;k<16;k++){
+   const a=k*Math.PI/8,cs=Math.cos(a),sn=Math.sin(a);
+   const tooth=box('G04',cx+cs*.57,cy+sn*.57,cz+.115,.084,k%2===0?.17:.115,.12,k%3===0?mat.brass:mat.bronze);
+   tooth.rotation.z=a-Math.PI/2;tooth.castShadow=false;
+   if(k%2===0)raisedRivet('G04',cx+cs*.43,cy+sn*.43,cz+.255,.035,mat.brass);
+  }
+  compassGlyph('G04',cx,cy,cz+.26,.47,s<0?mat.violetFire:mat.cyanFire);
+  const orbitLens=stud('G04',cx,cy,cz+.35,.215,s<0?mat.gem:mat.sapphire);
+  orbitLens.scale.z=.52;orbitLens.rotation.z=Math.PI/4;
+  for(const t of [-1,1]){
+   const spear=spike('G04',cx,cy+t*.76,cz+.13,.42,.083,mat.bronze,t>0);
+   spear.castShadow=false;
+  }
+  // Each dangling talisman is attached to a suspended spindle.
+  const hx=s*2.78;
+  tubeCarving('G04',[
+   [s*2.56,4.69,.24],[s*2.68,4.47,.28],[hx,4.27,.34],
+   [hx,3.86,.41]],.028,mat.brass);
+  tubeCarving('G04',[
+   [hx,4.03,.39],[hx,3.69,.39]],.012,mat.cyanFire);
+  const pendant=stud('G04',hx,3.66,.40,.13,s<0?mat.gem:mat.sapphire);
+  pendant.scale.y=1.8;pendant.castShadow=false;
+  spike('G04',hx,3.40,.39,.24,.057,mat.brass,false).castShadow=false;
+  // Ornamental rune caskets at foot of each pillar, matching reference architecture.
+  plaque('G01',s*1.80,1.18,.90,.52,.67,.16,mat.pitch,.26);
+  plaque('G04',s*1.80,1.18,1.07,.39,.55,.052,mat.obsidianPolish,.24);
+  runeRelief('G03',s*1.80,1.17,1.138,.40,3,s<0?mat.violetFire:mat.cyanFire);
+  raisedRivet('G04',s*1.80,1.52,1.15,.050,mat.brass);
+  raisedRivet('G04',s*1.80,.86,1.15,.045,mat.brass);
+ }
+ // G05: gigantic bat-winged crescent horns frame the crown, not just a small ring.
+ for(const s of [-1,1]){
+  tubeCarving('G05',[
+   [s*.70,5.82,.40],[s*.88,6.05,.38],[s*.99,6.42,.28],
+   [s*.90,6.80,.17],[s*.69,6.99,.08]],.074,mat.obsidian);
+  tubeCarving('G05',[
+   [s*.72,5.83,.56],[s*.88,6.05,.49],[s*.97,6.39,.34],
+   [s*.88,6.70,.19]],.019,mat.bronze);
+  const wing=plaque('G05',s*.96,6.31,.31,.23,.45,.085,mat.obsidianPolish,.35);
+  wing.rotation.z=s*-.18;
+  spike('G05',s*1.27,5.69,.28,.54,.115,mat.obsidian);
+  spike('G05',s*1.53,5.44,.17,.37,.072,mat.edge);
+ }
+ // Vertical spine and upper finial enhance silhouette without entering the passage.
+ spike('G05',0,6.38,.27,.63,.132,mat.obsidian);
+ spike('G05',0,6.82,.26,.31,.089,mat.brass);
+ const topCrystal=stud('G05',0,7.04,.30,.17,mat.sapphire);
+ topCrystal.scale.y=1.6;topCrystal.castShadow=false;
+ // G05 glyph radiance wraps the inner arch's exact FRONT curve (no interior pane).
+ const mouth=archPoints(1.40,3.63,4.87,48);
+ for(let side=0;side<2;side++){
+  const points=mouth.slice(side===0?0:48,side===0?49:97).map(p=>[p.x,p.y,.760]);
+  if(points.length>3){
+   tubeCarving('G05',points,.013,side===0?mat.violetFire:mat.cyanFire);
+   const fogPoints=points.map(p=>[p[0],p[1],p[2]-.007]);
+   tubeCarving('G05',fogPoints,.052,side===0?mat.violetHalo:mat.cyanHalo);
+  }
+ }
+ // Chest-high arches that echo the lower two gem sockets in the concept reference.
+ for(const s of [-1,1]){
+  tubeCarving('G04',[
+   [s*2.02,2.66,.88],[s*2.42,2.78,.84],[s*2.72,2.62,.65],
+   [s*2.83,2.27,.55]],.037,mat.bronze);
+  spike('G01',s*2.56,1.03,.35,.39,.12,mat.obsidian);
+ }
+
  // G06 – independent structural podium. Stage props are not included in the model group.
  box('G06',0,.19,0,5.25,.34,1.77,mat.platform);
  box('G06',0,.39,0,4.91,.20,1.46,mat.obsidian);
@@ -516,7 +687,7 @@ try{
  halo.rotation.x=-Math.PI/2;halo.position.y=.026;scene.add(halo);
  // Camera controls use Pointer Events: touch rotate, pinch zoom/pan, Shift+drag pan, wheel zoom.
  const focus=new THREE.Vector3(0,3.05,0);
- const cameraState={yaw:.18,pitch:.08,distance:11.2};
+ const cameraState={yaw:.13,pitch:.035,distance:13.6};
  let last=0,framePending=false;
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  function updateCamera(){
@@ -577,9 +748,9 @@ try{
   else return;
   updateCamera();e.preventDefault();
  });
- document.getElementById('front').addEventListener('click',()=>{spin=false;syncSpin();setView(0,.04,11.1)});
- document.getElementById('side').addEventListener('click',()=>{spin=false;syncSpin();setView(Math.PI/2,.05,11.1)});
- document.getElementById('reset').addEventListener('click',()=>{spin=false;syncSpin();setView(.18,.08,11.2)});
+ document.getElementById('front').addEventListener('click',()=>{spin=false;syncSpin();setView(0,.02,13.5)});
+ document.getElementById('side').addEventListener('click',()=>{spin=false;syncSpin();setView(Math.PI/2,.04,13.5)});
+ document.getElementById('reset').addEventListener('click',()=>{spin=false;syncSpin();setView(.13,.035,13.6)});
  const spinButton=document.getElementById('spin');
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
  function syncSpin(){
@@ -600,11 +771,11 @@ try{
  function resize(){
   const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
   renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
-  if(w<650)cameraState.distance=Math.max(cameraState.distance,13.0);
+  if(w<650)cameraState.distance=Math.max(cameraState.distance,15.4);
   updateCamera();
  }
  window.addEventListener('resize',resize);resize();
- status.textContent='雕刻精修 v1.1 · 六個模組可獨立檢查';loading.hidden=true;
+ status.textContent='神殿精雕 v1.2 · 雙側機械圓環與雕刻';loading.hidden=true;
  // Render only when the viewer interacts. Auto-rotation opts into a continuous loop.
  // This avoids a 60fps shadowed scene while the phone is idle.
  function invalidate(){
@@ -631,11 +802,11 @@ try{
  invalidate();
  // Export read-only review metadata. No localStorage, network write or game-world mutation.
  window.NW3DReview=Object.freeze({
-  id:'NW-3D-TRAIN-001',stage:'candidate',version:'v1.1',
+  id:'NW-3D-TRAIN-001',stage:'candidate',version:'v1.2',
   modules:Object.freeze(Object.keys(parts)),
   visualOnly:true,
-  details:Object.freeze(['beveled obsidian armor','backside engraving','nested gothic keystones','five-glyph relief alphabet','bronze filigree','sixteen-point celestial astrolabe','rivet and stepped plinth']),
-  dimensions:Object.freeze({approxHeight:6.4,approxWidth:5.25,clearOpeningWidth:2.68}),
+  details:Object.freeze(['beveled obsidian armor','backside engraving','nested gothic keystones','five-glyph relief alphabet','bronze filigree','sixteen-point celestial astrolabe','rivet and stepped plinth','twin suspended gemstone compasses','three three-dimensional orbital rings','flying buttresses and slender gothic spires','illuminated inner-arch seams']),
+  dimensions:Object.freeze({approxHeight:7.21,approxWidth:6.4,clearOpeningWidth:2.68}),
   parts:Object.freeze(Object.fromEntries(Object.keys(parts).map(k=>[k,parts[k].name])))
  });
 }catch(error){fail(error)}
