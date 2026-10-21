@@ -1240,7 +1240,7 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
  }
  function showUpdateNotice(items,firstVisit){
   // Avoid stacking an update modal over the startup credential prompt.
-  if(worldVaultUnlockDialog.open){
+  if(typeof worldVaultUnlockDialog!=='undefined'&&worldVaultUnlockDialog.open){
    worldVaultUnlockDialog.addEventListener('close',()=>showUpdateNotice(items,firstVisit),{once:true});
    return;
   }
