@@ -517,6 +517,7 @@ try{
  // Camera controls use Pointer Events: touch rotate, pinch zoom/pan, Shift+drag pan, wheel zoom.
  const focus=new THREE.Vector3(0,3.05,0);
  const cameraState={yaw:.18,pitch:.08,distance:11.2};
+ let last=0,framePending=false;
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  function updateCamera(){
   const s=cameraState;
@@ -606,7 +607,6 @@ try{
  status.textContent='雕刻精修 v1.1 · 六個模組可獨立檢查';loading.hidden=true;
  // Render only when the viewer interacts. Auto-rotation opts into a continuous loop.
  // This avoids a 60fps shadowed scene while the phone is idle.
- let last=0,framePending=false;
  function invalidate(){
   if(!framePending&&!document.hidden){framePending=true;requestAnimationFrame(render)}
  }
