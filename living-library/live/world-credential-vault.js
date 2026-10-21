@@ -20,6 +20,10 @@
  function create({indexedDBImpl=globalThis.indexedDB,cryptoImpl=globalThis.crypto,origin=globalThis.location?.origin||''}={}){
   if(!indexedDBImpl||!cryptoImpl?.subtle||typeof cryptoImpl.getRandomValues!=='function')
    fail('VAULT_UNAVAILABLE');
+  // Serialize remember/forget so a late PBKDF2 completion cannot re-enable
+  // an authorization explicitly revoked while encryption was running.
+  let revocation=0,mutation=Promise.resolve();
+  function serialize(fn){const p=mutation.then(fn,fn);mutation=p.catch(()=>{});return p}
   // Authenticated additional data prevents reuse under another origin/repository.
   const bound=enc.encode([SCHEMA,origin,REPO,BRANCH].join('|'));
   async function open(){
@@ -73,6 +77,7 @@
     raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
   }
   async function remember(token,password){
+   const lease=revocation;
    if(typeof token!=='string'||token.length<10||token.length>1024)
     fail('VAULT_TOKEN_INVALID');
    if(typeof password!=='string'||password.length<MIN_PASSWORD||password.length>256)
@@ -89,8 +94,11 @@
    const entry={schema:SCHEMA,repo:REPO,branch:BRANCH,consent:true,
     kdf:'PBKDF2-SHA256',cipher:'AES-256-GCM',rounds:ROUNDS,
     salt:base64(salt),iv:base64(iv),ciphertext:base64(ciphertext)};
-   try{await operation('put',entry)}catch{fail('VAULT_STORAGE_UNAVAILABLE')}
-   return {saved:true};
+   return serialize(async()=>{
+    if(lease!==revocation)fail('VAULT_AUTH_REVOKED');
+    try{await operation('put',entry)}catch{fail('VAULT_STORAGE_UNAVAILABLE')}
+    return {saved:true};
+   });
   }
   async function unlock(password){
    if(typeof password!=='string'||!password||password.length>256)
@@ -116,8 +124,11 @@
    return contents.token; // Caller must forward directly into session-only sync module.
   }
   async function forget(){
-   try{await operation('delete')}catch{fail('VAULT_STORAGE_UNAVAILABLE')}
-   return {saved:false};
+   revocation++;
+   return serialize(async()=>{
+    try{await operation('delete')}catch{fail('VAULT_STORAGE_UNAVAILABLE')}
+    return {saved:false};
+   });
   }
   return Object.freeze({inspect,remember,unlock,forget});
  }
