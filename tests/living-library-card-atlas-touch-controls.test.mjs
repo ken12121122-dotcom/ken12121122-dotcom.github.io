@@ -14,7 +14,7 @@ const Catalog=require('../living-library/live/public-catalog.js');
 const catalog=Catalog.buildCatalog();
 
 test('keep 14 books, GBA route, game atlas and native Android routes; relocate only approved actions',()=>{
- assert.equal(catalog.books.length,14);
+ assert.equal(catalog.books.length,15);
  assert.equal(catalog.bookCards.gaming.length,6);
  assert.equal(catalog.bookCards.android.length,16);
  assert.equal(catalog.cards['public.gba.runtime'].nativeRoute,'gba');
@@ -95,11 +95,11 @@ test('public in-book controls use same-origin iframe gated messages and no crede
  assert.doesNotMatch(systemPage,/github_pat_|sk-proj-/);
 });
 
-test('update notice stays automatic and booklet-styled, only private web book display preferences reset',()=>{
+test('update notice stays automatic and booklet-styled without resetting saved book placement',()=>{
  assert.match(html,/id="llUpdateDialog"/);
  assert.match(html,/ll-update-dialog/);
  assert.match(html,/setInterval\(\(\)=>\{if\(!document\.hidden\)refreshWebVersion\(\)\},180000\)/);
- assert.match(html,/Updates\.resetView\(localStorage\)/);
+ assert.doesNotMatch(html,/Updates\.resetView\(localStorage\)/);
  assert.doesNotMatch(html,/localStorage\.clear\(\)/);
  assert.match(html,/window\.location\.replace\(Updates\.reconnectUrl\(location\.href,Date\.now\(\)\)\)/);
 });

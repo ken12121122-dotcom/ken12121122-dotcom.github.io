@@ -13,10 +13,9 @@ main{max-width:850px;margin:auto;padding:18px 24px}h1{font:normal 28px/1.3 Georg
 @keyframes spawn{from{transform:perspective(500px) translateY(75px) scale(.3) rotateY(-65deg);opacity:0}to{transform:perspective(500px) rotateY(-15deg);opacity:1}}
 @keyframes float{from{transform:perspective(500px) translateY(0) rotateY(-15deg)}to{transform:perspective(500px) translateY(-12px) rotateY(-10deg)}}
 .panel{padding:20px;border:1px solid #8a756877;border-radius:16px;background:#172539}
-label{display:block;color:#e2c896;font-size:12px}input{display:block;width:100%;margin:9px 0;padding:12px;border-radius:8px;border:1px solid #9e987f;background:#0c1724;color:#fff0d2;font-size:16px}
+select{display:block;width:100%;min-height:44px;margin:9px 0;background:#0c1724;color:#fff0d2;border:1px solid #9e987f;border-radius:8px;font:inherit;padding:10px}label{display:block;color:#e2c896;font-size:12px}input{display:block;width:100%;margin:9px 0;padding:12px;border-radius:8px;border:1px solid #9e987f;background:#0c1724;color:#fff0d2;font-size:16px}
 button{cursor:pointer;min-height:44px;border:0;border-radius:9px;background:#ddbd82;color:#202636;font-weight:700;padding:10px 16px}
 button:disabled{opacity:.4}
-#queueBook{min-width:46px;min-height:46px;font-size:23px}
 button:focus-visible,input:focus-visible{outline:2px solid #a0e3cd;outline-offset:2px}
 #status{min-height:30px;font-size:12px;color:#b9e9cb;margin-top:15px}
 #list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
@@ -28,33 +27,14 @@ footer{margin-top:21px;border-top:1px solid #45576b;padding-top:12px;font-size:1
 @media(prefers-reduced-motion:reduce){.book.float,.book.spawn{animation:none}}
 </style></head><body><main>
 <header><h1>✧ 書本創造術</h1><small>LOCAL BOOK FORGE · MVP</small></header>
-<p>為世界創造一本空白魔法書。它會保留獨立 ID，以現有 3D 書本模型加入人物環繞軌道；先不改動一般書。下一階段再測試將懸浮卡放進你創造的書。</p>
+<p>為世界創造一本空白魔法書。它會保留獨立 ID，以現有 3D 書本模型加入人物環繞軌道；先不改動一般書。選擇「卡片之書」可創造左右各九格、能拖曳收卡與交換的實體卡冊。</p>
 <div class="cols"><section class="summon" aria-label="製書法陣"><div id="bookModel" class="book">空白魔法書</div></section>
-<section class="panel"><form id="form"><label for="name">書本名稱</label><input id="name" maxlength="30" value="我的魔法實驗書" required autocomplete="off"><button id="create" type="submit" aria-label="施放書本創造術" title="施放書本創造術">✦</button></form>
-<p>書頁：空白；可收納卡片的資料欄位已建立。書本目前沿用一般書的開啟模式，實體雙頁動畫會在後續測試。</p><div id="status" role="status" aria-live="polite"></div></section></div>
-<output id="queueStatus" role="status" aria-live="polite"></output>
-<details id="localQueue"><summary>本機待同步（未上傳）</summary>
-<p>本候選會在製書頁開啟、返回可見或建立書本後，自動核對本機卡片、書本與回收狀態的待同步佇列；⇧ 可手動重試。原存檔優先保存；離開頁面可能中斷準備，重開會再次核對。其他頁面變動需返回創作頁才會補齊，尚未連接私人遠端，待同步不代表雲端備份。</p>
-<button id="queueBook" type="button" aria-label="準備本機待同步佇列，不上傳" title="準備本機待同步佇列，不上傳">⇧</button></details>
+<section class="panel"><form id="form"><label for="bookType">書本種類</label><select id="bookType"><option value="legacy">空白魔法書</option><option value="atlas">卡片之書 · 左九格＋右九格</option></select><label for="name">書本名稱</label><input id="name" maxlength="30" value="我的魔法實驗書" required autocomplete="off"><button id="create" type="submit" aria-label="施放書本創造術" title="施放書本創造術">✦</button></form>
+<p id="typeHelp">空白魔法書沿用一般書的開啟方式。卡片之書可從外圈拿到身邊展開，合上、歸架或進入專注模式，各本卡片分別保存。</p><div id="status" role="status" aria-live="polite"></div></section></div>
 <h2>已創造的書 <small id="count"></small></h2><div id="list"></div>
 <footer>只有本機創作草稿，不寫入公開 GitHub 或私有 GEN2。若清除網站資料，尚未同步的創作可能遺失；請勿將這裡當成永久雲端備份。</footer>
-</main><script src="./object-craft.js"></script>
-<script src="./object-backup.js"></script><script src="./object-outbox.js"></script>
-<script src="./object-reconciler.js"></script><script>
+</main><script src="./object-craft.js"></script><script>
 (()=>{'use strict';const C=window.LivingObjectCraft,$=id=>document.getElementById(id);
-const reconciler=window.LivingObjectReconciler.create({storage:{getItem:key=>localStorage.getItem(key)},onStatus:result=>{
- $('queueStatus').textContent=result.state==='LOCAL_PENDING'?'本機待同步 '+result.count+' 筆；尚未上傳雲端。':
-  result.state==='PREPARING'?'正在核對本機待同步佇列；尚未上傳雲端。':
-  '本機佇列待補齊；原存檔保留，未上傳雲端。請點 ⇧ 重試或保留原資料並下載備份。';
-}});
-window.addEventListener('pageshow',()=>reconciler.request());
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)reconciler.request()});
-window.addEventListener('storage',event=>{if(event.key===C.KEY||event.key===null)reconciler.request()});
-window.addEventListener('pagehide',event=>{if(!event.persisted)reconciler.dispose()});
-$('queueBook').addEventListener('click',async()=>{
- $('queueBook').disabled=true;
- try{await reconciler.request()}finally{$('queueBook').disabled=false}
-});
 function render(){
  let items;
  try{items=C.listBooks(localStorage)}catch(e){$('create').disabled=true;$('status').textContent=e.message;return}
@@ -63,20 +43,24 @@ function render(){
  for(const b of [...items].reverse()){
   const item=document.createElement('div');item.className='item';
   const label=document.createElement('strong');label.textContent='📖 '+b.title;
-  const info=document.createElement('small');info.textContent='# '+b.id.slice(-8)+' · 空白書';item.append(label,info);list.append(item);
+  const info=document.createElement('small');info.textContent='# '+b.id.slice(-8)+(b.openingMode==='atlas'?' · 卡片之書／18 格':' · 空白魔法書');item.append(label,info);
+  const open=document.createElement('button');open.type='button';open.textContent='📖';open.setAttribute('aria-label','開啟'+b.title);open.onclick=()=>{if(window.parent!==window)window.parent.postMessage({kind:'living-library-public-card-action',action:'open-created-book',bookId:b.id},location.origin);else $('status').textContent='請從《遊戲之書》的「書本創造術」進入 3D 世界開書';};item.append(open);list.append(item);
  }
 }
+$('bookType').addEventListener('change',()=>{
+ const atlas=$('bookType').value==='atlas';
+ if(['我的魔法實驗書','我的卡片之書'].includes($('name').value))$('name').value=atlas?'我的卡片之書':'我的魔法實驗書';
+ $('bookModel').textContent=atlas?'卡片之書 · 九＋九格':'空白魔法書';
+});
 $('form').addEventListener('submit',e=>{e.preventDefault();
- try{const book=C.createBlankBook(localStorage,window.crypto,$('name').value);
+ try{const book=($('bookType').value==='atlas'?C.createCardBook:C.createBlankBook)(localStorage,window.crypto,$('name').value);
  const model=$('bookModel');model.textContent=book.title;model.classList.remove('spawn','float');
  void model.offsetWidth;model.classList.add('spawn');
  model.addEventListener('animationend',()=>{model.classList.remove('spawn');model.classList.add('float')},{once:true});
  render();$('status').textContent='✦ 已創造 3D 書本！返回場景可見它在人物周圍環繞。';
- reconciler.request();
- if(window.parent!==window)window.parent.postMessage({kind:'living-library-local-objects-updated'},location.origin);
+ if(window.parent!==window)window.parent.postMessage({kind:'living-library-local-objects-updated',action:'book-created',bookId:book.id},location.origin);
  }catch(err){$('status').textContent=err.message}
 });
 render();
-reconciler.request();
 })();
 </script></body></html>

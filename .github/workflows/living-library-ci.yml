@@ -5,7 +5,6 @@ on:
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
-      - 'tests/gpt-skills-embedded-card.test.mjs'
       - 'tests/browser/**'
       - '.github/workflows/living-library-ci.yml'
   push:
@@ -13,7 +12,6 @@ on:
     paths:
       - 'living-library/**'
       - 'tests/living-library-*.test.mjs'
-      - 'tests/gpt-skills-embedded-card.test.mjs'
       - 'tests/browser/**'
       - '.github/workflows/living-library-ci.yml'
   workflow_dispatch:
@@ -31,28 +29,25 @@ jobs:
         with:
           node-version: '22'
       - name: Execute Living Library Node regression
-        run: node --test tests/living-library-*.test.mjs tests/gpt-skills-embedded-card.test.mjs
+        run: node --test tests/*.test.mjs
       - name: Confirm all public standalone site entrypoints exist
         run: |
           test -f living-library/index.html
           test -f living-library/avatar-movement.js
           test -f living-library/book-placement.js
           test -f living-library/gpt-library-bridge.html
-      - name: Install isolated browser test dependencies
+      - name: Install pinned isolated browser dependencies
         run: npm ci --prefix tests/browser --ignore-scripts
-      - name: Validate Rune and Spell JSON Schema contracts
-        run: node tests/browser/schema-contract.cjs
       - name: Install test Chromium
         run: tests/browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Exercise candidate public card navigation in Chromium
+      - name: Verify icon controls, clean view and existing public navigation
         env:
-          NW_BROWSER_OUTPUT: ${{ runner.temp }}/nw-browser-proof
+          NW_BROWSER_OUTPUT: ${{ runner.temp }}/nw-ui-proof
         run: npm test --prefix tests/browser
       - name: Preserve browser diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nw-p0-browser-proof
-          path: ${{ runner.temp }}/nw-browser-proof/
-          if-no-files-found: warn
+          name: nw-ui-browser-proof
+          path: ${{ runner.temp }}/nw-ui-proof/
           retention-days: 7

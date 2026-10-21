@@ -76,6 +76,15 @@
 - 真正刪除歷史 GitHub 分支／合併尚未通過的 PR 是另一個需經 OWNER 明確批准的受控行為；本頁不提供此類寫入功能。
 - 更新方法：改動目錄／UI 名稱先更新 canonical `book_id`／`card_id`，測試 Live 與 Dev 是否一致；版本發布後 UI 只會顯示其當下已部署的公開資料，不能以 PR 的候選頁聲稱主站已更新。
 
+### 分支生命週期與創作發布分級（2026-10-17 候選）
+
+- 權威程序參考：根目錄 `AGENTS.md` 與 `docs/governance/NW-BRANCH-LIFECYCLE-001_分支生命週期與分級創作發布_v1.0.md`；此 UI Registry **不取代** GitHub 真實分支、PR、測試和部署紀錄。
+- 「分支」是程式開發的隔離單位，與網站數、卡片數及書本數互不對應；新分支前先查是否已有對應 PR，優先延續相同範圍。
+- 改動分類為 **C0 純創作資料／C1 靜態內容與公開目錄／C2 遊戲核心／C3 原生與權限**；C0 不需開分支，但若新增卡片時必須改 `public-catalog.js` 或同源 reader，仍屬 C1、目前須 PR。
+- 本文件既有 **L0～L3 指 UI 定位／確認深度**，不是 C0～C3 發布風險級別。沒有建立額外常駐自動任務或刪除權限。
+- 分支生命週期以 `ACTIVE / DRAFT PR / REVIEW / MERGED / BLOCKED / ABANDONED` 記錄；舊分支先盤點，清理只提候選清單。**刪除 Git 分支、關閉未驗收 PR、正式合併仍需 OWNER 對具體目標核准**。
+- 暫行「同 Agent 超過 3 條未結案分支／repo 超過 20 條活躍開發分支」僅用於提醒進行盤點，非 GitHub 平台上限。
+
 ## 8. 3D 遊戲參數的既有卡片歸屬（2026-10-15 候選版）
 
 **避免誤認兩張 UI 卡**：`public.system.ui.map`（《系統之書》→「UI 名詞與書籍分工」）是**UI／卡片路由與管理索引**，不是即時編輯器；玩家真正能調整操作偏好的既有卡是 `public.system.controls`（《系統之書》→「連線與版本」，`living-library/live/system-controls.html`）。
@@ -91,9 +100,63 @@
 
 **程式位置**：`living-library/live/card-placement.js` 定義卡片圈層、預設與範圍；`living-library/live/index.html` 負責安全偏好正規化、同源指令驗證、套用 3D 變化；`living-library/live/system-controls.html` 顯示滑桿與「↺」恢復預設。與 `living-library/live/book-placement.js` 的**原有環繞書**數學分開；不得將數值當成原始卡片資料或改寫物件唯一 ID。開發參數變更需更新本表、測試與 GitHub Diff；WebView/手機視效須另驗證。
 
-## 9. 法術卡草稿候選入口（未正式發布）
+## 萬物圖鑑整合（2026-10-15 開發分支）
 
-- `book_id=gaming`，`card_id=public.gaming.spell.creation`，`living-library/live/spell-creation.html`，書內既有 `readerFrame`。只新增一張本機編輯入口，不新增書本、不改動既有卡片 ID／排列，也不轉換 ObjectCraft 空白卡。
-- 編輯名稱、用途、咒語與替代說法；既有 SpellStore `nw-rune-creations-v1` 以單一 IndexedDB 交易保存卡片及待同步意圖。列表讀回同一草稿 ID，以 revision 阻止多頁靜默覆蓋。
-- 此切片僅為停用的歸書術配方文字編輯；符文拖曳、真實 handler、語音、3D 施法、私人遠端、migration／匯入救援及手機驗收未完成。metadata 不註冊假 handler、不載入 executor；本機保存不代表雲端同步。
-- 操作按鈕僅圖示；內容欄位、失敗與待授權說明保留。正式發布另遵循 OWNER Gate。
+- 新增 `book_id=cardCollection`（卡片之書）與 `card_id=public.gaming.atlas`；原 14 本書及遊戲之書原 5 張卡均保留。Live 合計 15 本書、遊戲之書 6 張入口；Dev 舊版維持原樣。
+- 萬物圖鑑不是額外公開 KB：場景模型 `local.atlas.compendium`，左右 9+1 格，無歸架按鈕；卡片之書的卡片容器為 `local.atlas.collection`，左右 9+9 格。
+- `ObjectCraft` 是本機卡片正本：卡片 ID 不變，`containerId`、`ownerBookId`、`slotIndex` 記錄移動；所有格子是有限整數且滿格拒絕轉移。卡片之書的位置偏好另存版本 key，不存私有 GEN2。
+- `atlas-state.js` 定義格位；`atlas-model.js` 承接提供的 v0.2 3D 原型；`atlas-runtime.js` 重用原 renderer、煙霧與閱讀器；`atlas-voice.js` 使用原生訊息通道或瀏覽器辨識，網頁負責命令路由。
+- 主場景點人物開啟搖桿及語音；鬆開／移動搖桿不停止辨識。進入專注保留搖桿，× 只退出視角；卡片之書另有合上、歸架。語音在頁面隱藏／離開 APP 時停止。
+- 無 WebGL 時以 `atlas-controls.html` 操作同一份卡片資料；同源 allowlist 明確加入此頁。原始 GBA、GEN2、存檔、Android 路由不變。
+- 網頁正式發布仍需 OWNER 驗收。原生語音連接由使用者於本次對話另行授權直接更新 APP；Android 自動檢查及語音手機實測分別記錄，不將 parser／幾何測試冒充實機證據。
+
+## 圖鑑調整（OWNER 2026-10-15 23:52 請求）
+
+沿用 `book_id=system` / `card_id=public.system.controls`「連線與版本」，不新增設定卡。`atlas-state.js` 是六個新參數的預設／範圍正本：距離 1.35（0.8–2.8）、高度 2.35（1.2–3.6）、書大小 1×（0.65–1.4）、左右偏移 0.95（0.65–1.8）、專注鏡頭距離 1×（0.75–1.5）、書內卡大小 1×（0.65–1）。共享本機 controls 偏好與既有 iframe 確認回覆；原四項卡片軌道參數保留，各組獨立恢復預設。
+
+第二本《卡片之書》已是現成公共書，不透過書本創造術建立。不含新書的舊偏好首次引入外圈；記錄 `known` 後尊重使用者歸架與既有 atlas 保存。書本創造術另提供開啟現成卡片之書的圖示入口；不增加卡片／書本身份。
+
+OWNER 23:58 指定第二本書從《遊戲之書》→「書本創造術」打開；沿用 `public.gaming.book.creation` 既有 reader iframe 的同源來源驗證，`summon-collection` 只接受這張卡。設定卡只放參數，不放新書入口。
+
+## 真實之眼掃描收納（2026-10-20 候選）
+
+- surface：`living-library/live/index.html#stage`、既有 `.truthEyeHud`；確認深度 L2、程式風險 C2。新增 `#eyeScope`（書本／場景／兩者）、`#eyeSummon`（⇧ 離架召喚）、`#eyeSelectAll`（⊙ 範圍全選）、`#eyeCollect`（🔯 長按三秒收納），沿用原距離／角度／方向與確認框。
+- 沒有新增 book_id、公開 card_id 或 reader 來源；共享影響為已登記公開／本機書本和場景模型。私有 GEN2 書不持久化為收納成員，已獨立締約的法陣保留原契約。
+- `scan-bundle.js` 保存原空白卡 ID 與成員引用，`scanContract.form` 切換 card/world；長按同卡實體化／再卡片化。原「解除契約」法術沿用共用規則；移除契約後還原場景可見性，不新增卡、不配永久號。
+- 來源基線 `df41a9715b5a5bf0d10fdc7b828e832693235450`。經驗與驗證邊界見 `reviews/EXP-TRUTH-EYE-001_掃描收納契約驗證.md`；本機證據見 `test-evidence/scan-bundle-browser.json`。候選修改、CI、正式 Pages 及 OWNER 手機分別記錄，不能由瀏覽器測試推定已發布。
+
+## 書本創造術型別選擇（OWNER 2026-10-16 00:09 更正）
+
+以此段取代上文「第二本從固定現成書入口開啟」的解讀。`public.gaming.book.creation` 內選擇空白魔法書（legacy）／卡片之書（atlas），再創造具有獨立 `local.book.*` ID 的實體書。`ObjectCraft` 保留既有 blank-book-v1 封套，atlas 型別由 openingMode 區別，十八格容器就是自己的 Book ID；不能把卡片放進 legacy 書或不存在的 ID。
+
+創造清單可開啟每本原書；`open-created-book` 僅接受當前書本創造術 iframe，同源與 record ID 均驗證。atlas 型別在場景具備卡冊模型、拖曳、放卡／跨書、合上留內圈、歸架與獨立保存，legacy 型別保持原有閱讀方式。原固定卡片之書與既有資料保留相容，不代替創造型別。調整參數仍只放於 system/public.system.controls。
+
+## 空白圖鑑卡第二版（OWNER 2026-10-16 授權發布）
+
+沿用《遊戲之書》`public.gaming.card.creation` 與既有本機卡 ID、尺寸、召喚及放卡模型。`card-creation.html` 提供自行輸入卡名／類型／說明、選擇 PNG/JPEG/WebP 圖片並壓縮為小型 JPEG、調整圖片縮放與位置、翻面檢視紀錄及保存。文字全部黑色。新卡沒有法陣、圖片、分類或執行能力。
+
+`compendium-card.js` 只繪製 2D 卡面，`atlas-model.js` 在原卡片模型套用同一卡面；不新增 3D 幾何。`object-craft.js` 保留 version=1 與 blank-card-v1 既有身分，僅增加可選卡面欄位。圖片資料只存本機創作資料與使用者主動下載的備份；不自動上傳。失敗不清除既有資料。
+
+連結先支援目錄內既有同站公開功能卡；從可信當前編輯器讀回已保存的 linkedCardId，重用閱讀器白名單。新遊戲物件／法陣執行未實作，不接受任意 URL 或程式。唯一圖鑑收錄、分類規則、999 容量、配號與固定位置均未實作。收藏號保留未登錄。
+
+
+## 手動卡片編號（OWNER 2026-10-16 補充要求，候選）
+
+`public.gaming.card.creation` 新增「卡片編號」文字欄位，存入同一張本機卡的 `cardNumber`；可留空、可保留 `001` 前導零，最多 20 字。卡面與背面使用同一份數值，沿用原本儲存按鈕；不自動配號、不改 ID、卡槽或收錄資格。舊卡沒有欄位時顯示「—」，可直接編輯，不做遷移。既有圖片、連結及按鈕保留。自動唯一編號、圖鑑容量與固定位置規則仍未實作。
+
+
+
+## 群組契約唯一形態與成員長按（OWNER 2026-10-20 授權）
+
+- 已綁定群組任一可見成員可長按三秒；沿用六芒星進度並標示整組，確認後全部收回原卡 ID。短按保留物件原功能；取消不改契約。既有群組收回不受掃描器角度／範圍限制。
+- `scanContract.form=world` 時原卡隱藏並退出點選；`card` 時所有成員隱藏、同一原卡回到軌道。重載依同一契約重建唯一形態。底層原卡紀錄保留，不複製身分。
+- 沿用解除契約法術，以唯一群組場景錨點定位實體形態。掃描器與 GBA 編輯入口留待後續任務。
+- 來源 main `8f61962a765e921a54f12d0985e2b4fb5680420a`；驗證紀錄見 `reviews/EXP-GROUP-CONTRACT-002_群組形態與長按.md`。
+
+
+## 群組成員長按動畫延後（OWNER 2026-10-20 修正）
+
+覆蓋前段群組成員按下即顯示六芒星的時序：前三秒僅辨識長按，不顯示六芒星或群組框；短按開啟原功能。按滿三秒才播放 900 毫秒既有六芒星動畫並標示整組，完成後開啟原確認窗；達標後放手不取消已啟動的動畫。取消、失焦與拖曳仍清除未完成操作，原卡 ID 與形態互斥保持不變。此調整只針對已綁定群組成員，既有神器／原卡的長按規則未改。
+
+
+卡片之書重複實體修正：掃描群組實體化／重載實體形態時，卡冊型書本統一沿用原書 ID 歸架，隱藏內圈卡冊模型。非 inner 狀態不再顯示內圈模型；正常開書後仍可進入 inner。保留卡冊與所有內含卡片，不新增平行書本。

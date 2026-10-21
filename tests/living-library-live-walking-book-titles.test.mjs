@@ -51,7 +51,7 @@ test('live Game Book, all original public books and native route stay intact',()
  assert.match(source,/src="\.\.\/\.\.\/packagecanvas\/gen2-source\.js/);
  assert.match(source,/['\"]public-catalog\.js['\"]/);
  const c=Catalog.buildCatalog();
- assert.equal(c.books.length,14);
+ assert.equal(c.books.length,15);
  assert.equal(c.bookCards.gaming.length,6);
  assert.equal(c.cards['KW-GAME-MEMORY-PALACE-20261014'].title,'知識城堡｜遊戲設計');
  assert.equal(c.cards['public.gba.runtime'].nativeRoute,'gba');

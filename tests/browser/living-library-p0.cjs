@@ -76,30 +76,50 @@ async function main(){
   await p.getByRole('button',{name:'展開書頁',exact:true}).click();
   await p.getByRole('button',{name:'關閉書頁',exact:true}).click();
   report.checks.push({id:'icon_first_controls',result:'PASS',scope:'Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved.'});
-  assert.equal(await p.locator('.brand').innerText(),'✧');
-  const cleanToggle=p.locator('#cleanViewToggle');
+  assert.equal(await p.locator('.brand').count(),0);
+  const cleanToggle=p.locator('#cleanViewToggle'),cleanAction=p.locator('#cleanViewAction');
   await p.evaluate(()=>localStorage.setItem('nw-clean-save-sentinel','preserve'));
   await cleanToggle.click();
+  assert.equal(await cleanToggle.getAttribute('aria-expanded'),'true');
+  await cleanAction.click();
   assert.equal(await p.locator('#catalog').isVisible(),false);
   assert.equal(await p.locator('.bottom').isVisible(),false);
-  assert.equal(await cleanToggle.getAttribute('aria-label'),'顯示操作介面');
+  assert.equal(await cleanAction.getAttribute('aria-label'),'顯示操作介面');
   assert.equal(await p.locator('#fallbackOpen').isVisible(),true);
   await p.reload({waitUntil:'domcontentloaded'});
   await p.waitForFunction(()=>document.body.classList.contains('clean-view'));
   await p.locator('#fallback.show').waitFor();
   await dismissUpdate(p);
-  // Restore remains available on a phone, without relying on a keyboard.
+  // Restore remains available through the icon-only top-right menu.
   await p.locator('#cleanViewToggle').click();
+  await p.locator('#cleanViewAction').click();
   assert.equal(await p.locator('#catalog').isVisible(),true);
   assert.equal(await p.locator('.bottom').isVisible(),true);
   assert.equal(await p.evaluate(()=>localStorage.getItem('nw-clean-save-sentinel')),'preserve');
   await p.locator('#cleanViewToggle').click();
   await p.keyboard.press('Escape');
-  assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-pressed'),'false');
-  report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance.'});
-  assert.equal(await p.locator('#bookList button').count(),14);
+  assert.equal(await p.locator('#cleanViewToggle').getAttribute('aria-expanded'),'false');
+  assert.equal(await p.locator('#cleanViewAction').getAttribute('aria-pressed'),'false');
+  report.checks.push({id:'clean_view_restore_reload',result:'PASS',scope:'Unused top-left star removed; top-right menu toggles/reloads/restores clean view and closes via Escape; fallback/storage preserved. No 3D/device acceptance.'});
+  assert.equal(await p.locator('#bookList button').count(),15);
   assert.equal(await p.locator('#walkPad').isVisible(),false);
-  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:14,joystick_hidden:true});
+  report.checks.push({id:'forced_engine_failure_fallback',result:'PASS',books:15,joystick_hidden:true});
+  // RUNE-01 contract stays usable and read-only even if WebGL fails.
+  const runeContractProof=await p.evaluate(()=>{
+   const R=window.LivingRuneContract;
+   const original=localStorage.getItem('living-library-player-objects-v1');
+   const mk=id=>({id,record:{id,objectType:'card',templateId:'blank-card-v1',status:'draft',
+    placement:'hover',containerId:null,ownerBookId:null,title:'合成普通卡'},
+    visible:true,position:{x:1,y:3,z:0}});
+   const nearest=R.findNearestEligibleCard({x:0,y:0,z:0},[mk('local.card.browser')]);
+   return {id:R.RUNE_ID,nearest,untouched:localStorage.getItem('living-library-player-objects-v1')===original};
+  });
+  assert.equal(runeContractProof.id,'local.rune.origin');
+  assert.equal(runeContractProof.nearest.cardId,'local.card.browser');
+  assert.equal(runeContractProof.nearest.distance,1);
+  assert.equal(runeContractProof.untouched,true);
+  report.checks.push({id:'rune_01_fallback_contract_no_write',result:'PASS',
+   scope:'Candidate scene loads read-only rune identity and nearest X/Z calculation without storage mutations, even without WebGL; raycast requires GPU verification.'});
   for(const capability of contract.capabilities){
    const b=catalog.books.find(b=>b.id===capability.book);
    // The mobile catalog is collapsed by default.
@@ -128,6 +148,14 @@ async function main(){
    await p.locator('#closeDrawer').click();
    report.checks.push({id:capability.id,result:'PASS',scope:capability.external?'External link target only; no sign-in':'Public card click, rendered iframe and return; underlying application actions not exercised'});
   }
+  // Focus presentation hides obstructing panels without overwriting the user's clean-view preference.
+  const cleanBefore=await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1'));
+  await p.evaluate(()=>document.body.classList.add('atlas-focused'));
+  for(const selector of ['#catalog','.bottom','.top','#cleanViewToggle'])assert.equal(await p.locator(selector).isVisible(),false);
+  await p.evaluate(()=>document.body.classList.remove('atlas-focused'));
+  assert.equal(await p.locator('#catalog').isVisible(),true);assert.equal(await p.locator('.bottom').isVisible(),true);
+  assert.equal(await p.evaluate(()=>localStorage.getItem('nw-library-clean-view-v1')),cleanBefore);
+  report.checks.push({id:'atlas_focus_overlay_visibility',result:'PASS',scope:'Actual CSS focus class hides catalog/navigation and restores them without changing clean-view preference; geometry/state tested separately.'});
   // End-to-end regression: real System Book -> same-origin iframe slider ->
   // guarded parent handler -> actual shared preference object -> acknowledged value.
   if(await p.locator('#catalogHead').getAttribute('aria-expanded')==='false')await p.locator('#catalogHead').click();
@@ -149,12 +177,17 @@ async function main(){
   await prefsFrame.locator('#cardOrbitSpeed').focus();
   await prefsFrame.locator('#cardOrbitSpeed').press('Home');
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardOrbitSpeed===0);
+  for(const [key,value,press] of [['atlasDistance',.8,'Home'],['atlasHeight',3.6,'End'],['atlasSize',1.4,'End'],['atlasSeparation',1.8,'End'],['atlasFocusDistance',.75,'Home'],['atlasCardSize',.65,'Home']]){
+   await prefsFrame.locator('#'+key).focus();await prefsFrame.locator('#'+key).press(press);
+   await p.waitForFunction(([k,v])=>window.LivingLibrary?.controls?.[k]===v,[key,value]);
+   assert.equal(await p.evaluate(k=>JSON.parse(localStorage.getItem('living-library-controls-v1'))[k],key),value);
+  }
   const state=await p.evaluate(()=>{
    const value=window.LivingLibrary.controls;
    return {size:value.cardSize,orbit:value.cardOrbitDistance,speed:value.cardOrbitSpeed,
     duration:value.cardSummonDuration,bookCount:window.LivingLibrary.books.length};
   });
-  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:14});
+  assert.deepEqual(state,{size:1.2,orbit:1,speed:0,duration:4500,bookCount:15});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
   await p.getByRole('button',{name:'選取系統之書',exact:true}).click();
@@ -167,10 +200,62 @@ async function main(){
   await restoredFrame.locator('#resetCardParams').click();
   await p.waitForFunction(()=>window.LivingLibrary?.controls?.cardSize===1&&window.LivingLibrary?.controls?.cardSummonDuration===2850&&window.LivingLibrary?.controls?.cardOrbitSpeed===1);
   await restoredFrame.waitForFunction(()=>document.querySelector('#prefStatus')?.textContent.includes('無 3D 場景'));
+  assert.equal(await restoredFrame.locator('#atlasDistance').inputValue(),'0.8');
+  assert.equal(await p.evaluate(()=>LivingLibrary.controls.atlasSize),1.4,'card reset preserves atlas settings');
+  await restoredFrame.locator('#resetAtlasParams').click();
+  await p.waitForFunction(()=>LivingLibrary.controls.atlasDistance===1.35&&LivingLibrary.controls.atlasSize===1);
   report.checks.push({id:'system_book_3d_preferences_ack_fallback',result:'PASS',
    scope:'Actual system card iframe, slider changes, parent validated action, exact limits, confirmed fallback message, persistence, re-open and reset; no GPU.'});
   await p.locator('#readerBack').click();
   await p.locator('#closeDrawer').click();
+  await p.getByRole('button',{name:'選取遊戲之書',exact:true}).click();
+  if(!await p.locator('#drawerWrap').evaluate(el=>el.classList.contains('open')))await p.locator('#fallbackOpen').click();
+  // Existing Game Book card links to interactive rules, not the world atlas.
+  await p.locator('[data-card-id="public.gaming.atlas"]').dispatchEvent('click');
+  const rulesFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await rulesFrame.waitForURL(url=>url.pathname.endsWith('/living-library/live/atlas-rulebook-review.html'));
+  assert.match(await rulesFrame.locator('h1').textContent(),/一本圖鑑，一個存在/);
+  assert.ok(await rulesFrame.locator('.rule').count()>0,'interactive rules available inside reader');
+
+  // The published rule preview remains unchanged; its new issue register is a local-only candidate.
+  await rulesFrame.locator('[data-tab="progress"]').click();
+  await rulesFrame.locator('#progressRows tr').first().waitFor({timeout:15000});
+  assert.equal(await rulesFrame.locator('#progressRows tr').count(),15);
+  const issueRow=rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'});
+  await issueRow.locator('select').selectOption('in_progress');
+  await issueRow.locator('textarea').fill('候選註記：等待動態分頁整合；此項尚未正式實作。');
+  await issueRow.locator('textarea').press('Tab');
+  const stored=await rulesFrame.evaluate(()=>JSON.parse(localStorage.getItem('nw-atlas-progress-local-v1')));
+  assert.equal(stored.edits['ATLAS-010'].status,'in_progress');
+  assert.match(stored.edits['ATLAS-010'].note,/等待動態分頁整合/);
+  await rulesFrame.locator('#progressReload').click();
+  await rulesFrame.locator('#progressRows tr').first().waitFor();
+  assert.equal(await rulesFrame.locator('#progressRows tr').filter({hasText:'ATLAS-010'}).locator('select').inputValue(),'in_progress');
+  await rulesFrame.waitForFunction(()=>document.querySelector('#progressNotice')?.textContent?.includes('只存本機'),null,{timeout:15000});
+  assert.match(await rulesFrame.locator('#progressNotice').innerText(),/只存本機/);
+  report.checks.push({id:'atlas_progress_candidate_local_persistence',result:'PASS',
+   scope:'Evidence ledger loads 15 rows; local-only status and note persist through refetch; source records and formal approvals remain unchanged.'});
+
+  await p.locator('#readerBack').click();
+  assert.equal(await p.locator('#drawerTitle').textContent(),'遊戲之書');
+  report.checks.push({id:'game_atlas_card_opens_rules_preview',result:'PASS',scope:'Existing gaming card embeds draft page and returns; created card book still accesses its 18-slot 2D reader.'});
+  await p.locator('[data-card-id="public.gaming.book.creation"]').dispatchEvent('click');
+  const forge=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forge.waitForURL(url=>url.pathname.endsWith('/living-library/live/book-creation.html'));
+  const booksBefore=await p.evaluate(()=>LivingLibrary.books.length);
+  await forge.locator('#bookType').selectOption('atlas');await forge.locator('#name').fill('測試九加九卡冊');
+  await forge.getByRole('button',{name:'施放書本創造術',exact:true}).click();
+  await p.waitForFunction(n=>LivingLibrary.books.length===n+1,booksBefore);
+  const forgedId=await p.evaluate(()=>LivingObjectCraft.listBooks(localStorage).find(b=>b.title==='測試九加九卡冊')?.id);
+  assert.ok(forgedId);assert.equal(await p.evaluate(id=>LivingLibrary.books.find(b=>b.id===id).openingMode,forgedId),'atlas');
+  await forge.getByRole('button',{name:'開啟測試九加九卡冊',exact:true}).click();
+  await p.waitForFunction(()=>document.querySelector('#drawerTitle').textContent==='測試九加九卡冊');
+  await p.locator('[data-card-id="public.gaming.atlas"]').dispatchEvent('click');
+  const forgedFrame=await p.locator('#readerFrame').elementHandle().then(el=>el.contentFrame());
+  await forgedFrame.waitForURL(url=>url.searchParams.get('book')===forgedId);
+  assert.equal(await forgedFrame.locator('.slot').count(),18);assert.equal(await forgedFrame.locator('#bookPicker').inputValue(),forgedId);
+  await p.locator('#readerBack').click();await p.locator('#closeDrawer').click();
+  report.checks.push({id:'book_forge_template_collection',result:'PASS',scope:'Real template choice creates an independently identified 18-slot card book; its own reader selects that exact container.'});
   // Placement preferences must never wipe unrelated player data on reload.
   await p.evaluate(()=>localStorage.setItem('nw-p0-save-sentinel','synthetic-preserve-me'));
   await p.reload({waitUntil:'domcontentloaded'});

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>3D 物件盤點｜系統之書</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#202222;background:#fcfbf8}
+*{box-sizing:border-box}
+body{margin:0;padding:clamp(16px,4vw,36px);line-height:1.5}
+main{max-width:920px;margin:auto}
+header{border-bottom:1px solid #d3d1c9;padding-bottom:16px;margin-bottom:15px}
+small{color:#62645f;font-size:12px;letter-spacing:.08em}
+h1{font-size:clamp(22px,4.5vw,34px);font-weight:750;letter-spacing:.04em;margin:5px 0 8px}
+p{margin:6px 0;color:#4e504d;font-size:13px;line-height:1.8}
+.summary{font-weight:650;color:#2a3937;margin:14px 0}
+h2{font-size:16px;margin:24px 0 11px;border-left:3px solid #717d74;padding-left:9px}
+ul{margin:0;padding:0;list-style:none}
+li{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,auto);gap:7px 16px;align-items:start;padding:13px 0;border-bottom:1px solid #e2e1dc}
+.name{font-size:15px;font-weight:660;overflow-wrap:anywhere}
+.id{display:block;font-size:11px;font-weight:400;color:#777e7b;overflow-wrap:anywhere;margin-top:2px}
+.metadata{font-size:12px;color:#515954}
+.state{font-size:12px;text-align:right;color:#323a36}
+.state strong{display:block;font-size:12px;font-weight:640;color:#242f29}
+.status{display:block;font-size:11px;color:#55615d;margin-top:3px}
+.note{font-size:12px;line-height:1.5;color:#686b67;grid-column:1/-1}
+footer{margin-top:22px;border-top:1px solid #d3d1c9;padding-top:12px}
+.error{color:#9b3030}
+@media(max-width:440px){li{grid-template-columns:minmax(0,1fr) minmax(118px,40%);gap:7px 10px}.state{font-size:11px}}
+</style>
+<script src="./public-catalog.js"></script>
+<script src="./object-craft.js"></script>
+<script src="./world-object-inventory.js?v=20261017-1"></script>
+</head>
+<body>
+<main>
+<header>
+<small>系統之書 ／ 唯讀清冊</small>
+<h1>3D 物件盤點</h1>
+<p>列出目前圖書館場景的獨立物件與物件群組，以及現有 3D 書本、漂浮卡片。僅盤點，不建立卡片、不改變世界。</p>
+</header>
+<p id="summary" class="summary" role="status">正在核對物件清冊…</p>
+<section aria-labelledby="worldTitle">
+<h2 id="worldTitle">世界物件</h2>
+<ul id="worldItems"></ul>
+</section>
+<section aria-labelledby="bookTitle">
+<h2 id="bookTitle">3D 書本</h2>
+<ul id="bookItems"></ul>
+</section>
+<section aria-labelledby="cardTitle">
+<h2 id="cardTitle">世界中漂浮的卡片</h2>
+<ul id="cardItems"></ul>
+</section>
+<footer>
+<p>卡片化能力按現有已實作程式判斷：目前僅「初始法陣 ⇄ 原卡」有專用轉換流程，且必須符合契約與封印條件。其他場景物件尚未開放通用卡片化；既有書本、卡片不視為可再次卡片化。</p>
+<p>場景裝飾以語意群組合併，不逐一列出構成零件、照明光源與粒子效果。清冊反映本版已登錄的場景物件；新增模型必須同步登錄，不代表能自動辨識任意未登錄模型。</p>
+<p id="syncNote">本機卡片及書本以目前瀏覽器的資料讀取；不同裝置不會自動共享本機紀錄。此頁不寫入任何資料。</p>
+</footer>
+</main>
+<script>
+(function(){
+'use strict';
+ const Inventory=window.LivingWorldObjectInventory;
+ const groups={world:document.getElementById('worldItems'),book:document.getElementById('bookItems'),card:document.getElementById('cardItems')};
+ let previous='';
+ function textNode(tag,value,className){
+  const el=document.createElement(tag);el.textContent=value;
+  if(className)el.className=className;
+  return el;
+ }
+ function display(list,items){
+  const frag=document.createDocumentFragment();
+  for(const item of items){
+   const li=document.createElement('li');
+   const title=document.createElement('div');
+   title.append(textNode('span',item.name+(item.count>1?' × '+item.count:''),'name'));
+   title.append(textNode('small',item.id,'id'));
+   title.append(textNode('span',item.kind,'metadata'));
+   const state=document.createElement('div');state.className='state';
+   state.append(textNode('strong',item.capability));
+   state.append(textNode('span',item.state,'status'));
+   li.append(title,state);
+   if(item.note)li.append(textNode('div',item.note,'note'));
+   frag.append(li);
+  }
+  list.replaceChildren(frag);
+ }
+ function render(){
+  if(!Inventory){document.getElementById('summary').textContent='清冊模組尚未載入';return}
+  try{
+   const snapshot=Inventory.build({catalog:window.LivingLibraryCatalog,craft:window.LivingObjectCraft,storage:window.localStorage});
+   const fingerprint=JSON.stringify(snapshot);
+   if(fingerprint===previous)return;
+   previous=fingerprint;
+   display(groups.world,snapshot.rows.filter(row=>!row.kind.includes('書本')&&!row.kind.includes('卡片')));
+   display(groups.book,snapshot.rows.filter(row=>row.kind.includes('書本')));
+   display(groups.card,snapshot.rows.filter(row=>row.kind.includes('卡片')));
+   const sceneCount=snapshot.sceneInstances;
+   document.getElementById('summary').textContent='世界物件：'+snapshot.sceneGroups+' 類／'+sceneCount+' 個 · 現有可轉換種類：'+snapshot.supported+' 種（初始法陣） · 3D 書本：'+snapshot.rows.filter(r=>r.kind.includes('書本')).length+' 本 · 漂浮卡片：'+snapshot.rows.filter(r=>r.kind.includes('卡片')).length+' 張';
+   const note=document.getElementById('syncNote');
+   note.textContent=snapshot.readable?'本機卡片及書本依目前瀏覽器資料定期重新讀取；不同裝置不會自動共享。本頁不寫入任何資料。':'本機物件資料無法讀取；僅列出程式已登錄的場景和公開書本，不會修改儲存內容。';
+   note.classList.toggle('error',!snapshot.readable);
+  }catch(err){
+   document.getElementById('summary').textContent='清冊讀取失敗；既有世界與卡片資料未修改。';
+   document.getElementById('summary').classList.add('error');
+  }
+ }
+ window.addEventListener('storage',render);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});
+ setInterval(()=>{if(!document.hidden)render()},4000);
+ render();
+})();
+</script>
+</body>
+</html>

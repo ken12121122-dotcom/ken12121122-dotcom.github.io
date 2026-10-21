@@ -1,29 +1,26 @@
 /* P2/P5 isolated preparation. Explicit creator capture only; NOT loaded by 3D scene.
  * ObjectCraft stays authoritative in localStorage. No migration, remote transport,
- * deletion inference or credential authority is provided here. Receipt settlement
- * is explicit local bookkeeping only; callers must authenticate their transport. */
+ * deletion inference, acknowledgement or credential authority is provided here. */
 (function(root,factory){
  if(typeof module==='object'&&module.exports)module.exports=factory(require('./object-backup.js'));
  else root.LivingObjectOutbox=factory(root.LivingObjectBackup);
 })(typeof self!=='undefined'?self:this,function(Backup){
  'use strict';
  const error=code=>Object.assign(Error(code),{code});
- const fail=code=>{throw error(code)};
- function identity(input,receipt=false){
-  if(!input||typeof input!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(input)))fail('OBJECT_OUTBOX_INVALID_RECEIPT');
-  const keys=['object_id','local_revision','content_hash','idempotency_key'];
-  if(receipt)keys.push('schema','remote_revision');
-  const copy={};
-  for(const key of keys){const d=Object.getOwnPropertyDescriptor(input,key);if(!d||!Object.hasOwn(d,'value'))fail('OBJECT_OUTBOX_INVALID_RECEIPT');copy[key]=d.value}
-  if(receipt&&Reflect.ownKeys(input).some(k=>!keys.includes(k)))fail('OBJECT_OUTBOX_INVALID_RECEIPT');
-  if(typeof copy.object_id!=='string'||!/^local\.(card|book)\.[a-z0-9_.-]+$/.test(copy.object_id)||copy.object_id.length>128||
-   !Number.isSafeInteger(copy.local_revision)||copy.local_revision<1||
-   typeof copy.content_hash!=='string'||!/^[a-f0-9]{64}$/.test(copy.content_hash)||
-   copy.idempotency_key!==copy.object_id+':'+copy.local_revision+':'+copy.content_hash)fail('OBJECT_OUTBOX_INVALID_RECEIPT');
-  if(receipt&&(copy.schema!=='nw.object-receipt.v1'||typeof copy.remote_revision!=='string'||!/^[-a-zA-Z0-9_.:]{1,128}$/.test(copy.remote_revision)))fail('OBJECT_OUTBOX_INVALID_RECEIPT');
-  return Object.freeze(copy);
+ // A deletion journal is an incomplete cross-store cleanup, not a queueable
+ // card state. Reject synchronization reads/captures until reconciliation.
+ function requireNoPendingDestruction(storage){
+  if(!storage)return;
+  let raw,state;
+  try{raw=storage.getItem(Backup.KEY);state=raw===null?null:JSON.parse(raw)}
+  catch{fail('OBJECT_OUTBOX_SOURCE_UNAVAILABLE')}
+  if(state&&Object.hasOwn(state,'pendingCardOutboxPurges')){
+   if(!Array.isArray(state.pendingCardOutboxPurges)||
+      state.pendingCardOutboxPurges.length)
+    fail('OBJECT_OUTBOX_DESTRUCTION_CLEANUP_PENDING');
+  }
  }
- const same=(a,b)=>['object_id','local_revision','content_hash','idempotency_key'].every(k=>a[k]===b[k]);
+ const fail=code=>{throw error(code)};
  async function hash(text){
   const bytes=new TextEncoder().encode(text);
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
@@ -62,41 +59,46 @@
    });
   }
   close(){if(!this.#closed){this.#closed=true;this.#db.close()}}
-  pending(){
+  pending(storage=undefined){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   // Browser consumers that call pending() without arguments must NOT read a
+   // card snapshot after its local original was destroyed. Node adapters may
+   // pass the explicit source storage, as before.
+   if(storage===undefined&&typeof globalThis.localStorage!=='undefined')
+    storage=globalThis.localStorage;
+   requireNoPendingDestruction(storage);
    return new Promise((resolve,reject)=>{
     const tx=this.#db.transaction('pending','readonly'),request=tx.objectStore('pending').getAll();let rows;
     request.onsuccess=()=>{rows=request.result};tx.oncomplete=()=>resolve(Object.freeze(rows.map(Object.freeze)));
     tx.onabort=()=>reject(error('OBJECT_OUTBOX_READ_FAILED'));
    });
   }
-  async acknowledge(input,receipt){
+
+  // An explicit irreversible deletion may purge unsent card snapshots.
+  // Regular capture still NEVER infers deletion from a missing source ID.
+  forget(ids){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
-   const attempt=identity(input),ack=identity(receipt,true);
-   if(!same(attempt,ack))fail('OBJECT_OUTBOX_RECEIPT_MISMATCH');
-   // Never infer authentication from matching data. No sender/UI invokes this
-   // method yet. Serialize with capture via the existing pending object store.
+   if(!Array.isArray(ids)||!ids.length||ids.some(id=>
+     typeof id!=='string'||!/^local[.]card[.][a-zA-Z0-9_-]{1,128}$/.test(id)))
+    fail('OBJECT_OUTBOX_INVALID_CARD_ID');
+   const unique=[...new Set(ids)];
    return new Promise((resolve,reject)=>{
-    const tx=this.#db.transaction('pending','readwrite'),store=tx.objectStore('pending');
-    let result;tx.onabort=()=>reject(error('OBJECT_OUTBOX_RECEIPT_WRITE_FAILED'));
-    tx.oncomplete=()=>resolve(Object.freeze(result));
-    const request=store.get(attempt.object_id);
-    request.onsuccess=()=>{
-     try{
-      const current=request.result;
-      if(!current){result={result:'NO_PENDING_MATCH',removed:false};return}
-      if(!same(current,attempt)){result={result:'STALE_ATTEMPT',removed:false};return}
-      store.delete(attempt.object_id);
-      // Retain version ledger so retrying the same captured source does not
-      // recreate the acknowledged intent. Newer source revisions still queue.
-      result={result:'LOCAL_RECEIPT_APPLIED',removed:true};
-     }catch{tx.abort()}
-    };
+    const tx=this.#db.transaction(['versions','pending'],'readwrite');
+    tx.onabort=()=>reject(error('OBJECT_OUTBOX_FORGET_FAILED'));
+    tx.oncomplete=()=>resolve(Object.freeze({result:'LOCAL_CARD_SNAPSHOTS_ERASED',count:unique.length}));
+    try{
+     for(const id of unique){
+      tx.objectStore('pending').delete(id);
+      tx.objectStore('versions').delete(id);
+     }
+    }catch(_){tx.abort()}
    });
   }
   async capture(storage){
    if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   requireNoPendingDestruction(storage);
    const capture=await snapshot(storage);if(this.#closed)fail('OBJECT_OUTBOX_CLOSED');
+   requireNoPendingDestruction(storage);
    return new Promise((resolve,reject)=>{
     const tx=this.#db.transaction(['versions','pending'],'readwrite'),versions=tx.objectStore('versions'),pending=tx.objectStore('pending');
     let code='OBJECT_OUTBOX_WRITE_FAILED',result;
@@ -105,6 +107,8 @@
     request.onsuccess=()=>{
      try{
       if(storage.getItem(Backup.KEY)!==capture.source_text){code='OBJECT_OUTBOX_SOURCE_CHANGED';tx.abort();return}
+      try{requireNoPendingDestruction(storage)}
+      catch{code='OBJECT_OUTBOX_DESTRUCTION_CLEANUP_PENDING';tx.abort();return}
       const prior=new Map(request.result.map(row=>[row.object_id,row]));let queued=0,unchanged=0;
       // Validate the whole batch before writing. Read/write transactions serialize
       // competing connections, so an older/equal-revision divergent snapshot loses.

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e19">
-<meta name="living-library-release" content="2026-10-15.local-object-queue-v1">
+<meta name="living-library-release" content="2026-10-20.unbind-selected-artwork.1">
 <title>念動圖書館｜線上知識世界</title>
 <meta name="description" content="獨立的 Three.js 魔法圖書館概念場景：環繞書、召喚、歸架、展開書頁。正式 GEN2 需明確授權。">
 <style>
@@ -99,6 +99,20 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .drawer-actions button.primary{background:#d0ad7d;color:#17222d;font-weight:800}
 .blank{border:1px dashed #6b6470;background:rgba(38,42,58,.65);padding:10px 12px;border-radius:8px;color:#c6c4c5;font-size:12px;margin-top:18px}
 .fallback{pointer-events:none;display:none;position:fixed;z-index:6;inset:125px 20px 125px 20px;max-width:800px;margin:auto;align-content:center;text-align:center;color:#e9dfcd}.fallback.show{display:grid}.fallback h2{font:normal 31px Georgia,serif}.fallback p{color:#aabcc9}#fallbackOpen,#retry3d{pointer-events:auto;touch-action:manipulation}.fallback button{background:#d7b982;color:#132235;padding:12px 16px;border:none;border-radius:9px}
+.rune-unbind-progress{position:fixed;z-index:9;left:0;top:0;display:none;width:74px;height:74px;
+ border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);
+ box-shadow:0 0 22px #a9f9d6aa,inset 0 0 15px #162e3ccc}
+.rune-unbind-progress::after{content:"";position:absolute;inset:9px;border-radius:50%;
+ background:#0a1a2dbb;border:1px solid #b9ead5aa}
+.rune-bind-dialog{position:fixed;z-index:30;width:min(91vw,400px);max-width:400px;border:2px solid #c6a779;border-radius:18px;padding:22px 24px 19px;background:linear-gradient(160deg,#fdf4e3,#e9d7b5);color:#1d2b30;box-shadow:0 24px 85px #030812db,inset 0 0 0 4px #f7edda}
+.rune-bind-dialog::backdrop{background:#00091590;backdrop-filter:blur(3px)}
+.rune-bind-dialog h2{font-size:20px;font-weight:750;color:#1a2a30;margin:0 0 10px}
+.rune-bind-dialog p{font-size:14px;line-height:1.7;margin:5px 0;color:#26383d}
+.rune-bind-dialog strong{color:#0b2926;overflow-wrap:anywhere}
+.rune-bind-dialog small{display:block;color:#5d574d;margin-top:9px}
+.rune-bind-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:17px}
+.rune-bind-actions button{min-width:48px;min-height:44px;border:1px solid #8c7653;border-radius:11px;background:#eee4d1;color:#142b30;font-size:22px;font-weight:bold}
+.rune-bind-actions button.primary{background:#254d49;color:#fff6df;border-color:#244a43}
 .toast{position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:25;pointer-events:none;border:1px solid #90775c;border-radius:10px;background:#112235ee;padding:10px 15px;font-size:12px;opacity:0;transition:opacity .3s;white-space:nowrap}.toast.show{opacity:1}
 .quality{display:inline-block;border:1px solid #8d866e;border-radius:999px;padding:2px 8px;font-size:10px;color:#cab98e}
 @media(max-width:920px){.side{top:115px;left:16px;transform:none;width:145px}.side h2{font-size:25px}.side p{font-size:11px}.side .legend{display:none}.catalog{top:auto;right:10px;bottom:114px;width:185px;max-height:36vh}.catalog-head{padding:10px 12px}.catalog-head h2{font-size:15px}.catalog-head p{display:none}.book-entry{padding:7px}.book-entry .swatch{width:20px;height:29px}.book-entry strong{font-size:11px}.book-entry small{font-size:9px}.top{padding:18px 16px}.headline{font-size:20px}}
@@ -197,12 +211,18 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 @media(max-width:650px){.walk-ui{inset:0!important;left:0!important;top:0!important;bottom:auto!important}.walk-pad{width:112px;height:112px}}
 #cleanViewToggle{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:8;width:44px;height:44px;border:1px solid #bca67b66;border-radius:50%;background:#0c1623cc;color:#e5c28d;font-size:22px;touch-action:manipulation}
 body.clean-view>.top,body.clean-view>.catalog,body.clean-view>.bottom{display:none!important}
+body.atlas-focused>.top,body.atlas-focused>.catalog,body.atlas-focused>.bottom,body.atlas-focused>#cleanViewToggle{display:none!important}
 body.clean-view #cleanViewToggle{opacity:.45}
 body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-visible{opacity:1}
 #cardFocusActions[hidden]{display:none!important}
 #cardFocusActions{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:15;display:flex;gap:9px}
 #cardFocusActions button{min-height:48px;min-width:48px;border:1px solid #e7cc96aa;border-radius:50%;background:#152539ee;color:#f4d69f;font-size:24px}
 #cardFocusActions button:focus-visible{outline:2px solid #a4e8d3}
+#cardInfoDialog{box-sizing:border-box;width:min(94vw,590px);max-height:85dvh;overflow:auto;border:2px solid #a58655;border-radius:14px;padding:18px;background:#f5ecd9;color:#000}
+#cardInfoDialog::backdrop{background:#07101bba}
+#cardInfoDialog h2,#cardInfoDialog p{color:#000}
+#cardInfoDialog pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;padding:10px;border:1px solid #a58655;color:#000;font:12px/1.6 ui-monospace,monospace}
+#cardInfoDialog button{min-width:48px;min-height:48px;border-radius:9px;background:#e4d3b1;color:#000;font-size:22px}
 #drawerWrap.card-spell-leaving{opacity:0;pointer-events:none;transition:opacity .24s ease}
 #cardRecycleConfirm{max-width:min(92vw,430px);border:1px solid #cfb98f;border-radius:14px;background:#1c2d3d;color:#f7ebcf;padding:24px}
 #cardRecycleConfirm::backdrop{background:#08111dc7}
@@ -210,26 +230,90 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Compact visual labels retain full accessible names and touch targets. */
 .pillbar .action{min-width:48px;min-height:48px;font-size:24px;padding:8px 16px}
 .drawer-actions button,.reader-back,.card-reveal-head button,.editor-controls button,.submit-controls button{min-width:44px;min-height:44px}
+#atlasActions[hidden],#atlasVoiceState[hidden]{display:none!important}
+#atlasActions{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:18;display:flex;gap:7px}
+#atlasActions button{width:46px;height:46px;border:1px solid #d7bb83;border-radius:50%;background:#152539ed;color:#fff0c9;font-size:24px;touch-action:manipulation}
+#atlasActions button:focus-visible{outline:3px solid #94e3cf}
+#atlasObservationDialog{box-sizing:border-box;width:min(92vw,590px);max-height:85dvh;overflow:auto;border:2px solid #a58655;border-radius:15px;background:#f5ecd9;color:#000;padding:18px}
+#atlasObservationDialog::backdrop{background:#07101bba}
+#atlasObservationDialog h2,#atlasObservationDialog p,#atlasObservationDialog output{color:#000}
+#atlasObservationJson{box-sizing:border-box;display:block;width:100%;height:min(40dvh,300px);min-height:130px;overflow:auto;resize:vertical;background:#fff;color:#000;border:1px solid #7d6a53;border-radius:8px;padding:12px;font:12px/1.5 monospace}
+#atlasObservationDialog button{min-width:48px;min-height:48px;margin:8px 7px 2px 0;border:1px solid #ad8c62;border-radius:9px;background:#e4d3b1;color:#000;font-size:22px}
+#atlasGithubDialog{box-sizing:border-box;width:min(92vw,550px);max-height:84dvh;overflow:auto;border:2px solid #a58655;border-radius:15px;background:#f5ecd9;color:#000;padding:18px}
+#atlasGithubDialog::backdrop{background:#07101bd9}
+#atlasGithubDialog :is(h2,p,strong,small,label,output){color:#000}
+#atlasGithubDialog input{width:100%;min-height:48px;padding:9px;margin:8px 0 16px;color:#000;background:#fff;border:1px solid #7d6a53;border-radius:8px;font:16px system-ui}
+#atlasGithubDialog button{min-width:56px;min-height:48px;margin:5px 7px 3px 0;background:#e4d3b1;color:#000;border:1px solid #ad8c62;border-radius:8px;font:700 18px system-ui}
+
+/* Compact permanent build controls: icon-only, touch target at least 44px. */
+#permanentBuildToggle[hidden],#permanentBuildTools[hidden]{display:none!important}
+#libraryQuickMenu[hidden]{display:none!important}
+#libraryQuickMenu{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(64px + env(safe-area-inset-top));z-index:18;display:flex;gap:7px;padding:7px;border:1px solid #bca67b66;border-radius:15px;background:#0c1623ed;box-shadow:0 9px 30px #010611a6}
+#libraryQuickMenu button{min-width:48px;min-height:48px;border:1px solid #dfbe80;border-radius:50%;background:#142b3de9;color:#f7dbaa;font-size:23px;touch-action:manipulation}
+#libraryQuickMenu button[hidden]{display:none!important}
+body.atlas-focused>#libraryQuickMenu{display:none!important}
+#permanentBuildTools{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:18;
+ display:flex;gap:10px;padding:7px;border:1px solid #caa76f;border-radius:25px;background:#14263be9}
+#permanentBuildTools button{min-height:48px;min-width:48px;border:1px solid #a9b0ae;border-radius:50%;font-size:24px;color:#e9dcbb;background:#354959;touch-action:manipulation}
+#permanentBuildTools button[data-on="true"]{border-color:#8eefd1;color:#8eefd1}
+#atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<div id="atlasActions" hidden aria-label="卡冊操作">
+<button id="atlasCollectionClose" type="button" aria-label="合上卡片之書，留在內圈" title="合上書本">▰</button>
+<button id="atlasCollectionShelf" type="button" aria-label="卡片之書回到書架" title="回到書架">⇥</button>
+<button id="atlasFocusSwitch" type="button" aria-label="切換專注的卡冊" title="切換卡冊">⇄</button>
+<button id="atlasFocusExit" type="button" aria-label="退出卡冊專注模式" title="退出專注模式">×</button></div>
+<div id="permanentBuildTools" role="toolbar" hidden aria-label="永久物件擺放工具">
+ <button id="permanentBuildSnap" type="button" aria-label="切換地面網格吸附" title="網格吸附">⊞</button>
+ <button id="permanentBuildRotate" type="button" aria-label="旋轉投影十五度" title="旋轉">↻</button>
+ <button id="permanentBuildApply" type="button" aria-label="確認投影位置" title="確認放置">✓</button>
+ <button id="permanentBuildCancel" type="button" aria-label="取消本次擺放" title="取消擺放">×</button>
+</div>
+<span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
+<dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
+ <h2>發送到私人 GitHub</h2>
+ <p>僅發送右側讀卡格目前這張已儲存卡片，<strong>包含壓縮後的圖片</strong>。目標是私有的 <strong>gen2-knowledge / card-inbox</strong> 分支之 <strong>card-inbox/v1</strong> 資料夾；不會修改正式知識庫 main，也不會發送到公開網站儲存庫。</p>
+ <p>第一次測試請輸入只授權 <strong>gen2-knowledge</strong>、具有 <strong>Contents: Read and write</strong> 的 GitHub fine-grained token。權杖僅用於這次傳送，離開對話框後不儲存。</p>
+ <label for="atlasGithubToken">GitHub 授權權杖</label>
+ <input id="atlasGithubToken" type="password" autocomplete="off" spellcheck="false" inputmode="text" placeholder="github_pat_…" aria-label="GitHub 私人儲存庫單次授權權杖">
+ <div><button id="atlasGithubSend" type="button" aria-label="確認傳送這張卡片至私人 GitHub" title="確認傳送">↑</button>
+ <button id="atlasGithubCancel" type="button" aria-label="取消 GitHub 傳送" title="取消">×</button></div>
+ <output id="atlasGithubStatus" role="status" aria-live="polite"></output>
+</dialog>
+<dialog id="atlasObservationDialog" aria-label="萬物圖鑑 AI 唯讀觀察">
+ <h2>AI 唯讀觀察</h2>
+ <p>從圖鑑右側讀卡格讀取「已儲存」的單一卡片。此處不會發送資料給 AI 或 GitHub，不含照片內容；要讓 ChatGPT 看到圖片，請另外傳送截圖。按 ⧉ 自行複製文字資料。</p>
+ <textarea id="atlasObservationJson" aria-label="唯讀卡片 JSON" readonly spellcheck="false"></textarea>
+ <div><button id="atlasObservationCopy" type="button" aria-label="複製卡片唯讀資料" title="複製資料">⧉</button><button id="atlasObservationClose" type="button" aria-label="關閉 AI 觀察畫面" title="關閉">×</button></div>
+ <output id="atlasObservationStatus" role="status" aria-live="polite"></output>
+</dialog>
 <div id="cardFocusActions" hidden aria-label="卡片專注模式">
+<button id="cardFocusInfo" type="button" aria-label="查看卡片全部資料、法術、動畫及動作關聯" title="卡片資訊">ⓘ</button>
 <button id="cardFocusEdit" type="button" aria-label="編輯這張空白卡" title="編輯卡片">✎</button>
 <button id="cardFocusRecycle" type="button" aria-label="回收這張空白卡" title="回收卡片">♻</button>
 <button id="cardFocusClose" type="button" aria-label="退出卡片專注模式" title="退出專注模式">×</button></div>
+<dialog id="cardInfoDialog" aria-labelledby="cardInfoTitle">
+<h2 id="cardInfoTitle">卡片資訊總覽</h2>
+<p id="cardInfoCounts"></p>
+<pre id="cardInfoText" aria-label="卡片已儲存資訊與程式關聯"></pre>
+<p>此頁唯讀：計數為目前已辨識的資料與條件式法術／動畫／動作，不代表實際播放中；消耗的歷史卡不列入。</p>
+<button id="cardInfoClose" type="button" aria-label="關閉卡片資訊" title="關閉">×</button>
+</dialog>
 <dialog id="cardRecycleConfirm" aria-label="確認回收懸浮卡">
 <p>要將這張卡移到回收站嗎？卡片會離開環繞軌道，但可從《卡片創造術》的回收站還原。</p>
 <button id="cardRecycleCancel" type="button" aria-label="取消回收" title="取消">×</button>
 <button id="cardRecycleAccept" type="button" aria-label="確認回收" title="確認回收">✓</button>
 </dialog>
 <div class="vignette"></div><div class="mist"></div>
-<header class="top">
-<div class="brand" aria-label="念動圖書館"><div class="emblem" aria-hidden="true"><span>✧</span></div></div>
-
-</header>
 <div id="webRuntimeStamp" role="status" aria-live="polite">WEB LIVE · 正在載入卡片目錄…</div>
-<button id="cleanViewToggle" type="button" aria-label="開啟乾淨畫面" title="開啟乾淨畫面" aria-pressed="false" aria-controls="catalog">◌</button>
+<button id="cleanViewToggle" type="button" aria-label="開啟介面選單" title="介面選單" aria-expanded="false" aria-controls="libraryQuickMenu">⋯</button>
+<div id="libraryQuickMenu" role="group" aria-label="介面選單" hidden>
+ <button id="cleanViewAction" type="button" aria-label="開啟乾淨畫面" title="開啟乾淨畫面" aria-pressed="false">◌</button>
+ <button id="permanentBuildToggle" type="button" hidden aria-label="開啟永久物件建造模式" title="建造模式">⚒</button>
+</div>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button" aria-label="前一本" title="前一本">‹</button><span class="divider"></span><button id="openBtn" class="action main" type="button" aria-label="展開書頁" title="展開書頁">▤</button><span class="divider"></span><button id="nextBtn" class="action" type="button" aria-label="下一本" title="下一本">›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
 <div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
@@ -266,13 +350,71 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 <dialog id="mdSearch"><h2>正式 MD 查閱與跨書搜尋</h2><label>關鍵字 <input id="mdQuery" type="search" placeholder="例如：Google Calendar 或 OWNER Gate"></label><label>範圍 <select id="mdScope"><option value="">全部正式知識庫與規則</option></select></label><p>以目前授權 main 的文字比對搜尋；多詞以空白分隔，全部符合才列出。這不是語意搜尋。</p><div id="mdResults"></div><button id="closeSearch" type="button" aria-label="返回圖書館" title="返回圖書館">←</button></dialog>
 <dialog id="gen2Auth"><form method="dialog"><h2>授權讀取 GEN2</h2><p>只讀取 gen2-knowledge 的 main/kb。權杖只保留於本頁記憶體；斷線或關頁即清除。</p><p>請使用僅授權此私有 repo、Contents: Read-only 的 fine-grained token。</p><label>唯讀權杖 <input id="gen2Token" type="password" autocomplete="off" spellcheck="false"></label><p><button id="readGen2" type="button" aria-label="讀取正式書庫，僅唯讀" title="讀取正式書庫，僅唯讀">⚿</button> <button id="reuseGen2" type="button" aria-label="沿用此站 PackageCanvas 授權" title="沿用此站 PackageCanvas 授權">↪</button> <button id="disconnectGen2" type="button" aria-label="斷線並清除私有投影" title="斷線並清除私有投影">⏻</button> <button aria-label="關閉授權視窗" title="關閉">×</button></p><p id="authStatus" role="status"></p></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="runeUnbindProgress" class="rune-unbind-progress" aria-hidden="true"></div>
+<dialog id="atlasPermanentDialog" class="rune-bind-dialog" aria-labelledby="atlasPermanentTitle">
+ <h2 id="atlasPermanentTitle">✦ BOOK｜永久卡登錄</h2>
+ <p>登錄原卡：<strong id="atlasPermanentName"></strong></p>
+ <p id="atlasPermanentChecks" role="status"></p>
+ <small>本機唯一認證試行：不代表 AI 已完成審核或跨裝置權威同步。認證成功後原卡 ID 保留、契約不可解除、不能複製永久身分或用一般編輯器修改／回收；只能存入唯一 BOOK 的專屬編號格。</small>
+ <div class="rune-bind-actions">
+  <button id="atlasPermanentCancel" type="button" aria-label="取消永久認證" title="取消">×</button>
+  <button id="atlasPermanentHold" type="button" class="primary" aria-label="長按三秒確認不可逆永久登錄" title="長按三秒確認永久登錄">✦</button>
+ </div>
+ <small id="atlasPermanentHoldStatus" role="status">長按 ✦ 三秒完成正式確認，放開即取消。</small>
+</dialog>
+<dialog id="atlasDownloadDialog" class="rune-bind-dialog" aria-labelledby="atlasDownloadTitle">
+ <h2 id="atlasDownloadTitle">✧ GBA｜卡片下載</h2>
+ <p>將已建立的「<strong id="atlasDownloadSource"></strong>」卡片格式下載到右側這張空白卡？</p>
+ <small>只列出你在「卡片創造術」勾選並儲存的「可複製卡」，其他卡不會出現在此處。與左頁九格無關。僅下載名稱、圖片與一般說明，不複製原始卡 ID、唯一編號、正式技能、L2 或契約。將播放短暫寫入動畫；失敗保留空白卡。</small>
+ <div class="rune-bind-actions">
+  <button id="atlasDownloadCancel" type="button" aria-label="取消卡片格式下載" title="取消">×</button>
+  <button id="atlasDownloadConfirm" type="button" class="primary" aria-label="確認下載格式到空白卡" title="確認">✓</button>
+ </div>
+</dialog>
+<dialog id="runeUnbindDialog" class="rune-bind-dialog" aria-labelledby="runeUnbindTitle">
+ <h2 id="runeUnbindTitle">✧ 解除契約確認</h2>
+ <label for="runeUnbindTargetPicker">選擇要解除的契約（依原卡紀錄，不依物件類別）</label>
+ <select id="runeUnbindTargetPicker" aria-label="選擇解除契約目標" style="width:100%;max-width:100%;padding:9px;margin:6px 0;color:#fff0cd;background:#152738;border:1px solid #9d8a65"></select>
+ <p>即將解除：<strong id="runeUnbindTargetName"></strong></p>
+ <p>原卡 ID：<code id="runeUnbindTargetId"></code></p>
+ <p>目前契約：<strong id="runeUnbindContractType"></strong></p>
+ <p id="runeUnbindMembers" style="white-space:pre-wrap;max-height:26vh;overflow-y:auto"></p>
+ <small>只有按下 ✓「確認解除契約」才會執行。原卡保留、群組解除；本次施法卡永久消耗，不保留卡片歷史。按 × 則全部保留。</small>
+ <div class="rune-bind-actions">
+  <button id="runeUnbindCancel" type="button" aria-label="取消解除，保留目前契約" title="取消">×</button>
+  <button id="runeUnbindConfirm" class="primary" type="button" aria-label="確認解除契約並消耗施法卡" title="確認解除契約">✓</button>
+ </div>
+</dialog>
+<dialog id="runeBindDialog" class="rune-bind-dialog" aria-labelledby="runeBindTitle" aria-describedby="runeBindDescription">
+<h2 id="runeBindTitle">✧ 法陣已選取</h2><p id="runeBindDescription">是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？</p>
+<small>確認後原卡會沿光線飛入地面法陣，完成封印。原始卡片 ID、圖片與資料完整保留。</small>
+<div class="rune-bind-actions"><button id="runeBindCancel" type="button" aria-label="取消法陣連結" title="取消">×</button>
+<button id="runeBindConfirm" class="primary" type="button" aria-label="確認連結法陣與卡片" title="確認連結">✓</button></div></dialog>
+<dialog id="runeCardifyDialog" class="rune-bind-dialog" aria-labelledby="runeCardifyTitle">
+ <h2 id="runeCardifyTitle">✧ 法陣具現化</h2>
+ <p>是否要將「初始法陣」變成卡片，讓原本被封印的同一張卡回到世界？</p>
+ <small>卡片將由法陣飛出；原卡圖片、身分與契約記錄不變。可以再用解除綁定術對卡片施法。</small>
+ <div class="rune-bind-actions">
+  <button id="runeCardifyCancel" type="button" aria-label="維持地面法陣封印" title="取消">×</button>
+  <button id="runeCardifyConfirm" type="button" class="primary" aria-label="將法陣轉換回原卡" title="確認">✓</button>
+ </div>
+</dialog>
+<dialog id="runeReturnDialog" class="rune-bind-dialog" aria-labelledby="runeReturnTitle">
+ <h2 id="runeReturnTitle">✧ 法陣歸還</h2>
+ <p>要讓「<strong id="runeReturnCardName"></strong>」從卡片形態重新還原為地面的初始法陣嗎？</p>
+ <small>同一張原卡會飛回地面法陣。契約、原始 ID、圖片均保留；未解除契約，也不影響未來正式升級。</small>
+ <div class="rune-bind-actions">
+  <button id="runeReturnCancel" type="button" aria-label="取消還原法陣" title="取消">×</button>
+  <button id="runeReturnConfirm" type="button" class="primary" aria-label="確認還原地面初始法陣" title="確認">✓</button>
+ </div>
+</dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
  <h2 class="ll-update-title" id="llUpdateHeading">知識書庫更新完成</h2></div></div>
  <p class="ll-update-summary" id="llUpdateSummary"></p>
  <ul id="llUpdateList" class="ll-update-list" aria-label="本次更新項目"></ul>
- <p class="ll-update-warning">重新連結後，僅重設這座圖書館的書本選取、環繞及書架顯示紀錄。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
+ <p class="ll-update-warning">更新會保留你的書本選取、環繞及書架配置。<strong>不會清除 GBA 存檔、GEN2／Google Drive 文件、登入授權或其他 App 資料。</strong></p>
  <div class="ll-update-actions"><button type="button" id="llUpdateDone" aria-label="知道了，繼續閱讀" title="知道了，繼續閱讀">✓</button></div>
 </dialog>
 <script src="../../packagecanvas/gen2-source.js?v=gen2-public-regression-20261013"></script>
@@ -280,7 +422,7 @@ body.clean-view #cleanViewToggle:hover,body.clean-view #cleanViewToggle:focus-vi
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','render-capability.js','gen2-editor.js','update-manager.js','object-craft.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -300,6 +442,38 @@ const Catalog=window.LivingLibraryCatalog;
 const Placement=window.LivingBookPlacement;
 const initialCatalog=Catalog.buildCatalog();BOOKS.push(...initialCatalog.books);Object.assign(CARDS,initialCatalog.cards);Object.assign(BOOK_CARDS,initialCatalog.bookCards);
 const ObjectCraft=window.LivingObjectCraft;
+// Restore only missing photos on surviving unbinding cards. This is an
+// opt-in artwork repair with a complete storage backup before any mutation.
+// It does not recreate consumed cards and never overwrites existing photos.
+if(ObjectCraft?.restoreMissingUnbindImages){
+ try{
+  const repaired=ObjectCraft.restoreMissingUnbindImages(localStorage);
+  if(repaired.length)console.info('解除契約卡缺失照片已補入：',repaired);
+ }catch(error){console.warn('解除契約卡照片修復未寫入，原始資料保留：',error)}
+}
+// Remove strictly verified old spent spell records; world cards/books survive.
+if(ObjectCraft?.purgeLegacyConsumedSpells){
+ try{ObjectCraft.purgeLegacyConsumedSpells(localStorage)}
+ catch(error){console.warn('舊版已消耗術卡清理未修改資料：',error)}
+}
+// Repair only scanner-generated orphan data from earlier "解除綁定" spells.
+// One-time versioned backup precedes any modification. Never touch active
+// contracts, custom card content, other spell/rune cards or player book data.
+if(window.LivingScanBundle?.recoverLegacyUnbound){
+ try{
+  const repaired=window.LivingScanBundle.recoverLegacyUnbound(localStorage);
+  if(repaired.length)console.info('真實之眼已恢復解除綁定的原空白卡：',repaired);
+ }catch(error){console.warn('掃描存檔相容復原已保留原始資料：',error)}
+}
+// Repair ONLY old ordinary/unupgraded cards that earlier versions incorrectly
+// accepted in the nine permanent-only showcase cells. Preserve original IDs,
+// titles, artwork, binding data and all other card/book placements.
+if(ObjectCraft?.restoreUnregisteredUniqueWells){
+ try{
+  const returned=ObjectCraft.restoreUnregisteredUniqueWells(localStorage);
+  if(returned.length)console.info('唯一圖鑑已將非永久卡移回原玩家軌道，原卡與卡面保留：',returned.length);
+ }catch(error){console.warn('唯一圖鑑檢查未修改原始存檔：',error)}
+}
 const CardTuning=window.LivingCardPlacement; // Shared numeric contract with the 3D card orbit and the System Book.
 // Player-made objects use LOCAL, non-GEN2 identities. They never alter the public catalog's source registry.
 function syncPlayerObjects(){
@@ -310,10 +484,10 @@ function syncPlayerObjects(){
  for(const key of Object.keys(BOOK_CARDS))if(key.startsWith('local.book.'))delete BOOK_CARDS[key];
  for(const book of records){
   if(BOOKS.some(b=>b.id===book.id))continue;
-  BOOKS.push({id:book.id,name:book.title,kind:'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
+  BOOKS.push({id:book.id,name:book.title,kind:book.openingMode==='atlas'?'玩家創作 · 卡片之書':'玩家創作 · 本機草稿',tag:'LOCAL BOOK',
    description:book.description,target:'空白卡槽／未建立技能',icon:'◇',color:'#3c7880',
    active:book.active!==false,sourceLayer:'local',kb_id:null,publicId:null,openingMode:book.openingMode});
-  BOOK_CARDS[book.id]=[...(book.contentIds||[])];
+  BOOK_CARDS[book.id]=book.openingMode==='atlas'?['public.gaming.atlas']:[...(book.contentIds||[])];
  }
  return true;
 }
@@ -321,7 +495,7 @@ syncPlayerObjects();
 const Updates=window.LivingLibraryUpdates;
 const previousUpdate=Updates?.read(localStorage,Updates.BASELINE_KEY)||null;
 const pendingUpdate=Updates?.read(sessionStorage,Updates.PENDING_KEY)||null;
-if(Updates&&(!previousUpdate||pendingUpdate))Updates.resetView(localStorage);
+// Update metadata must never reset the player's saved book placement.
 const gptSkillsReady=!!CARDS['public.gpt.skills']&&(BOOK_CARDS.gpt||[]).includes('public.gpt.skills')&&(BOOK_CARDS.system||[]).includes('public.gpt.skills');
 const stamp=document.getElementById('webRuntimeStamp');
 if(stamp){stamp.dataset.catalog=gptSkillsReady?'ready':'missing';stamp.textContent=gptSkillsReady?'WEB LIVE r2 · GPT 技能卡已載入':'WEB LIVE r2 · 卡片目錄仍是舊版';}
@@ -333,7 +507,7 @@ const clampUnit=(n,min,max)=>Math.min(max,Math.max(min,n));
 function normalizeControls(raw){
  const d=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
  const p=d.joystickPosition&&typeof d.joystickPosition==='object'?d.joystickPosition:{};
- return {rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
+ return {...window.LivingAtlasState.normalizeSettings(d),rotationEnabled:typeof d.rotationEnabled==='boolean'?d.rotationEnabled:true,
  rotationMode:d.rotationMode==='single'||d.rotationMode==='dual'?d.rotationMode:(d.singleFingerRotate===true?'single':'dual'),
  joystickEnabled:typeof d.joystickEnabled==='boolean'?d.joystickEnabled:true,
  joystickMode:d.joystickMode==='fixed'?'fixed':'follow',
@@ -369,8 +543,8 @@ function swapCardSlots(bookId,first,second){
  try{localStorage.setItem(CARD_ORDER_KEY,JSON.stringify(cardOrders))}catch(_){}
  swapFrom=null;renderFunctions(book());toast('已交換卡片位置（不修改原始資料）');return true;
 }
-function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
-function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
+function storeBooks(){try{localStorage.setItem(BOOK_PREFS_KEY,JSON.stringify({selectedId:book()?.publicId||null,known:BOOKS.filter(b=>b.publicId).map(b=>b.publicId),active:BOOKS.filter(b=>b.active&&b.publicId).map(b=>b.publicId)}))}catch(_){}}
+function restoreBooks(){try{const value=JSON.parse(localStorage.getItem(BOOK_PREFS_KEY)||'null');if(!value||!Array.isArray(value.active))return;const resolve=id=>BOOKS.find(b=>b.id===id||b.publicId===id||(id==='KB-STARTUP'&&b.publicId==='startup'));const active=[...new Set(value.active.map(id=>resolve(id)?.id).filter(Boolean))];if(value.active.length===0||active.length){const ids=new Set(active);BOOKS.forEach(b=>{if(b.sourceLayer!=='local')b.active=ids.has(b.id)||(b.id==='cardCollection'&&window.LivingAtlasState.introduceCollection(value,localStorage.getItem('living-library-atlas-view-v1')))})}const selected=resolve(value.selectedId);if(selected)selectedId=selected.id}catch(_){}}
 
 restoreBooks();storeBooks();
 const $=id=>document.getElementById(id);
@@ -401,9 +575,11 @@ function isLocalFunctionPage(url){
     new URL('./gpt-skills.html',current).pathname,
     new URL('./knowledge-search.html',current).pathname,
     new URL('./system-controls.html',current).pathname,
+    new URL('./3d-object-inventory.html',current).pathname,
     new URL('./card-creation.html',current).pathname,
     new URL('./book-creation.html',current).pathname,
-    new URL('./spell-creation.html',current).pathname,
+    new URL('./atlas-controls.html',current).pathname,
+    new URL('./atlas-rulebook-review.html',current).pathname,
     '/living-library/ui-map.html'
    ].includes(u.pathname))return true;
   return u.protocol==='https:'&&u.hostname==='ken12121122-dotcom.github.io'&&
@@ -417,6 +593,13 @@ window.addEventListener('message',event=>{
  if(event.data?.kind!=='living-library-local-objects-updated')return;
  if(!['public.gaming.card.creation','public.gaming.book.creation'].includes(readerCard?.id)&&
     !(readerCard?.id?.startsWith('local.card.')&&readerCard.url?.startsWith('./card-creation.html?card=')))return;
+ if(event.data.action==='open-card-link'){
+  const local=ObjectCraft.listCards(localStorage).find(c=>c.id===event.data.cardId);
+  if(readerCard?.id?.startsWith('local.card.')&&readerCard.id!==local?.id)return;
+  const target=local?.linkedCardId&&CARDS[local.linkedCardId];
+  if(target?.sourceLayer==='public'&&isLocalFunctionPage(target.url))openCardReader(target);
+  return;
+ }
  if(!syncPlayerObjects())return;
  updateUI();window.LivingScene?.rebuild?.();
  // Recycle is staged before the 3D mesh is removed. Both the in-book UI and
@@ -474,6 +657,10 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+ else if(id==='public.gaming.book.creation'&&action==='open-created-book'){
+  let record;try{record=ObjectCraft.listBooks(localStorage).find(b=>b.id===event.data.bookId)}catch(e){toast(e.message);return}
+  if(!record)return;closeBook();select(record.id);openBook();
+ }
  else if(id==='public.system.controls'&&action==='update-preferences'){
   const input=event.data.settings;
   if(!input||typeof input!=='object'||Array.isArray(input))return;
@@ -482,10 +669,10 @@ window.addEventListener('message',event=>{
   if(input.rotationMode==='single'||input.rotationMode==='dual')next.rotationMode=input.rotationMode;
   if(input.joystickMode==='fixed'||input.joystickMode==='follow')next.joystickMode=input.joystickMode;
   // Single source of truth: these are the SAME limits used by the 3D orbit and slider.
-  for(const [field,limits] of Object.entries(CardTuning?.LIMITS||{
+  for(const [field,limits] of Object.entries({...window.LivingAtlasState.LIMITS,...(CardTuning?.LIMITS||{
    cardSize:[.65,1.2],cardOrbitDistance:[.88,1.06],
    cardOrbitSpeed:[0,1.8],cardSummonDuration:[1800,4500]
-  }))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
+  })}))if(typeof input[field]==='number'&&Number.isFinite(input[field]))
    next[field]=clampUnit(input[field],...limits);
   if(Object.keys(next).length){
    const persisted=saveControls(next);
@@ -506,6 +693,12 @@ window.addEventListener('message',event=>{
  }
 });
 function openCardReader(card){
+ // Only the existing card in 遊戲之書 changes its destination to the rules preview.
+ // The atlas portals in created books and 2D fallback keep their working routes.
+ const atlasPortal=card.id==='public.gaming.atlas'&&book().id!=='gaming';
+ if(atlasPortal&&window.LivingScene?.atlas){const b=book();closeBook();if(b.openingMode==='atlas')window.LivingScene.atlas.placeCollection(b.id);else window.LivingScene.atlas.summon();return}
+ if(atlasPortal&&book().openingMode==='atlas')card={...card,url:'./atlas-controls.html?book='+encodeURIComponent(book().id)};
+ else if(atlasPortal&&book().id==='cardCollection')card={...card,url:'./atlas-controls.html'};
  storeBooks();
  readerCard=card;
  $('readerTitle').textContent=card.title;
@@ -523,7 +716,9 @@ function openCardReader(card){
   if(navigator.userAgent.includes('LivingLibraryNative/')){const a=document.createElement('a');a.href='amin-library://'+card.nativeRoute;a.textContent='開啟 '+card.title+' →';page.append(a);}
   else{const p=document.createElement('p');p.textContent='目前為網頁模式。此功能需使用新版念動圖書館 APK。';page.append(p);}
  }
- else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;$('readerFrame').src=card.url;}
+ else if(isLocalFunctionPage(card.url)){$('sourcePage').hidden=true;$('readerFrame').hidden=false;
+  if(new URL(card.url,location.href).pathname.endsWith('/card-creation.html')){const fresh=new URL(card.url,location.href);fresh.searchParams.set('v','card-destroy-saga-20261021-v1');$('readerFrame').src=fresh.toString();$('readerExternal').href=fresh.toString()}
+  else $('readerFrame').src=card.url;}
  else{$('readerFrame').hidden=true;$('readerFrame').removeAttribute('src');const page=$('sourcePage');page.hidden=false;page.replaceChildren();const p=document.createElement('p');p.textContent=card.desc+'\n此功能使用原網站登入，於新分頁開啟。';const a=document.createElement('a');a.href=card.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='開啟 '+card.title+' ↗';page.append(p,a);}
 
  $('readerBack').focus();
@@ -536,6 +731,7 @@ function closeReader(){
  $('drawerWrap').querySelector('.drawer')?.classList.remove('reader-active');
  $('readerFrame').removeAttribute('src');$('sourcePage').replaceChildren();$('sourcePage').hidden=true;
  readerCard=null;
+ window.LivingScene?.atlas?.showReaderReturn();
  $('drawerFunctions').querySelector('.codex-slot.selected')?.focus();
 }
 function revealCard(card,button){
@@ -625,7 +821,7 @@ function renderFunctions(b){
 }
 
 $('closeCard').addEventListener('click',()=>{$('cardReveal').hidden=true;$('drawerFunctions').querySelectorAll?.('.codex-slot').forEach(el=>el.classList.remove('selected'))});
-function openBook(){const b=book();if(!b)return;closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
+function openBook(){const b=book();if(!b)return;if((b.id==='cardCollection'||b.openingMode==='atlas')&&window.LivingScene?.atlas){window.LivingScene.atlas.placeCollection(b.id==='cardCollection'?undefined:b.id);return;}closeReader();renderFunctions(b);$('drawerTitle').textContent=b.name;$('drawerDesc').textContent=b.description;$('drawerCategory').textContent=b.kind;$('drawerSource').textContent=b.sourceLayer==='gen2'?'正式 KB＋公開入口（如有）':'公開功能入口，非 GEN2 知識庫';$('readBookMD').disabled=!b.kb_id;$('drawerLocation').textContent=b.active?'主動環繞層':'分類書架';$('drawerTarget').textContent=b.target;$('drawerMeta').textContent=b.tag+' · '+(b.active?'SUMMONED':'ARCHIVED');$('drawerIcon').textContent=b.icon;$('drawerIcon').style.background=b.color;$('moveBtn').textContent=b.active?'⇥':'✦';$('moveBtn').setAttribute('aria-label',b.active?'歸還書架':'召喚到身邊');$('moveBtn').title=b.active?'歸還書架':'召喚到身邊';$('drawerWrap').classList.add('open');syncScene();$('closeDrawer').focus();}
 function closeBook(){closeReader();$('drawerWrap').classList.remove('open');syncScene();$('openBtn').focus()}
 function setBookActive(b,active){
  if(!b||b.active===active)return;
@@ -734,7 +930,78 @@ setInterval(()=>{if(!document.hidden)refreshGen2()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshGen2()});
 window.addEventListener('pagehide',disconnect);
 updateUI();$('gen2Status').textContent=catalogStatus();
-window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
+const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObservationJson');
+ const githubDialog=$('atlasGithubDialog'),githubToken=$('atlasGithubToken');
+ let pendingGithubCard=null,githubBusy=false;
+ const reportGithub=(id,state,code='')=>window.LivingScene?.atlas?.reportGithubUpload?.(id,state,code);
+ function sendLocalCardToGithub(id){
+  if(githubBusy||githubDialog.open)return;
+  try{
+   const card=ObjectCraft.listCards(localStorage).find(x=>x.id===id&&
+    x.containerId==='local.atlas.compendium'&&x.slotIndex===9&&x.status!=='recycled');
+   if(!card)throw Error('單卡格沒有可傳送的已儲存卡片');
+   pendingGithubCard=id;
+   githubToken.value='';
+   $('atlasGithubStatus').textContent='尚未上傳。確認私人儲存庫與權杖後按 ↑ 發送。';
+   reportGithub(id,'auth');
+   githubDialog.showModal();
+  }catch(e){reportGithub(id,'error','GITHUB_CARD_NOT_IN_READER');toast(e.message)}
+ }
+ $('atlasGithubCancel').addEventListener('click',()=>{if(!githubBusy)githubDialog.close()});
+ githubDialog.addEventListener('close',()=>{
+  githubToken.value='';
+  if(!githubBusy&&pendingGithubCard)reportGithub(pendingGithubCard,'idle');
+  pendingGithubCard=null;
+ });
+ $('atlasGithubSend').addEventListener('click',async()=>{
+  if(githubBusy||!pendingGithubCard)return;
+  const id=pendingGithubCard,token=githubToken.value;
+  githubToken.value='';
+  if(!token||token.trim().length<10){
+   $('atlasGithubStatus').textContent='請輸入有效的 GitHub 私人儲存庫授權權杖。';
+   reportGithub(id,'error','GITHUB_TOKEN_REQUIRED');return;
+  }
+  githubBusy=true;$('atlasGithubSend').disabled=true;
+  reportGithub(id,'sending');pendingGithubCard=null;githubDialog.close();
+  try{
+   const result=await window.LivingCardGithubInbox.upload({
+    storage:localStorage,craft:ObjectCraft,observer:window.LivingCardObserver,cardId:id,token
+   });
+   reportGithub(id,'ok',result.commit_sha.slice(0,12));
+   toast('私人 GitHub 已確認儲存：'+result.commit_sha.slice(0,7));
+  }catch(e){
+   const code=typeof e?.code==='string'&&/^GITHUB_[A-Z_]+$/.test(e.code)?e.code:'GITHUB_SEND_FAILED';
+   reportGithub(id,'error',code);toast('GitHub 發送失敗：'+code);
+  }finally{githubBusy=false;$('atlasGithubSend').disabled=false}
+ });
+ window.addEventListener('pagehide',()=>{githubToken.value=''});
+ function openAtlasObservation(id){
+  try{
+   // Only the ONE currently saved card physically placed in the right-side reader slot.
+   const card=ObjectCraft.listCards(localStorage).find(x=>x.id===id&&
+    x.containerId==='local.atlas.compendium'&&x.slotIndex===9);
+   if(!card)throw Error('請先將單張卡片放入圖鑑右側讀卡格');
+   const observation=window.LivingCardObserver.snapshot({storage:localStorage,craft:ObjectCraft,cardId:id});
+   observationText.value=JSON.stringify(observation,null,2);
+   $('atlasObservationStatus').textContent='僅讀取本機已儲存內容；尚未分享。';
+   if(!observationDialog.open)observationDialog.showModal();
+  }catch(e){toast(e.message||'讀卡失敗；資料未修改')}
+ }
+ $('atlasObservationClose').addEventListener('click',()=>observationDialog.close());
+ $('atlasObservationCopy').addEventListener('click',async()=>{
+  const data=observationText.value;if(!data)return;
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('clipboard_unavailable');
+   await navigator.clipboard.writeText(data);
+   $('atlasObservationStatus').textContent='已複製，請自行貼到 ChatGPT；未自動上傳。';
+  }catch(_){
+   observationText.focus();observationText.select();
+   $('atlasObservationStatus').textContent='已選取文字；請長按複製並自行貼到 ChatGPT。';
+  }
+ });
+ observationDialog.addEventListener('close',()=>{observationText.value='';$('atlasObservationStatus').textContent='';syncScene()});
+ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,openAtlasObservation,sendLocalCardToGithub,
+ setCollectionActive(active,id='local.atlas.collection'){const b=BOOKS.find(x=>x.id===(id==='local.atlas.collection'?'cardCollection':id));if(b)setBookActive(b,active)},
  getLocalObjectStats(){return ObjectCraft?.getStats(localStorage)||null},
  openLocalCardEditor(id){
   let card;try{card=ObjectCraft?.listCards(localStorage).find(x=>x.id===id)}catch(e){toast(e.message);return}
@@ -755,7 +1022,7 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
 },isMotion:()=>motion};
 
  // Release watchdog: public cards, UI buttons, and source fingerprints only.
- // Never stores private GEN2 projection or credentials; only removes VIEW_KEY.
+ // Never stores private GEN2 projection or credentials, or resets player layout.
  let refreshBusy=false, queuedReconnect=false;
  const updateDialog=$('llUpdateDialog');
  const watchedCards=Object.values(initialCatalog.cards).filter(c=>c.sourceLayer==='public'&&
@@ -766,13 +1033,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
  const updateButtons=()=>document.querySelectorAll('button[id]');
  function updateSnapshot(fingerprints){
   return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
- }
- function resetLibraryView(){
-  Updates.resetView(localStorage);
-  const defaults=new Map(Catalog.buildCatalog().books.map(b=>[b.publicId||b.id,b.active]));
-  for(const b of BOOKS)if(b.sourceLayer==='public')b.active=!!defaults.get(b.publicId||b.id);
-  selectedId='research';storeBooks();updateUI();window.LivingScene?.rebuild?.();
-  window.LivingScene?.select?.(selectedId);window.LivingScene?.syncRender?.();
  }
  function showUpdateNotice(items,firstVisit){
   $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
@@ -793,7 +1053,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
   if(!Updates||refreshBusy)return;
   queuedReconnect=false;
   Updates.write(sessionStorage,Updates.PENDING_KEY,{previous:Updates.read(localStorage,Updates.BASELINE_KEY)||null,at:Date.now()});
-  Updates.resetView(localStorage);
   window.location.replace(Updates.reconnectUrl(location.href,Date.now()));
  }
  function canRefreshSilently(){
@@ -813,7 +1072,6 @@ window.LivingLibrary={books:BOOKS,select,openBook,summonBook,
        previousUpdate?.version!==now.version||
        JSON.stringify(previousUpdate?.cards)!==JSON.stringify(now.cards)||
        JSON.stringify(previousUpdate?.buttons)!==JSON.stringify(now.buttons)){
-      resetLibraryView();
       const items=Updates.differences(was,now);
       Updates.write(localStorage,Updates.BASELINE_KEY,now);
       try{sessionStorage.removeItem(Updates.PENDING_KEY)}catch(_){}
@@ -911,13 +1169,38 @@ const unit=new THREE.BoxGeometry(1,1,1);
 function box(w,h,d,x,y,z,mat,parent=scene){const m=new THREE.Mesh(unit,mat);m.scale.set(w,h,d);m.position.set(x,y,z);parent.add(m);return m}
 function cyl(radTop,radBottom,height,x,y,z,mat,parent=scene,segments=48){const m=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,height,segments),mat);m.position.set(x,y,z);parent.add(m);return m}
 function torus(R,r,x,y,z,mat,parent=scene,rx=0){const m=new THREE.Mesh(new THREE.TorusGeometry(R,r,7,96),mat);m.position.set(x,y,z);m.rotation.x=rx;parent.add(m);return m}
-const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);
-for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2}
-for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2)}for(let z=-24;z<=24;z+=3.9){box(50,.018,.018,0,-.24,z,stone2)}
-cyl(3.02,3.35,.36,0,-.13,0,stone2);cyl(2.85,2.96,.22,0,.16,0,blackstone);cyl(2.4,2.5,.055,0,.30,0,gold);cyl(2.38,2.39,.055,0,.35,0,stone);
-for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,scene,Math.PI/2);
+const worldScanEntries=[];
+function registerScene(id,groups){
+ const bounds=new THREE.Box3().makeEmpty();groups.forEach(g=>{g.updateWorldMatrix(true,true);bounds.expandByObject(g)});
+ const anchor=bounds.isEmpty()?groups[0].getWorldPosition(new THREE.Vector3()):bounds.getCenter(new THREE.Vector3());
+ worldScanEntries.push({id,kind:'scene',group:groups[0],groups,anchor});
+}
+const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);registerScene('scene.floor',[floor]);
+const floorRings=[];
+for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2;floorRings.push(ring)}
+registerScene('scene.floor.rings',floorRings);
+const floorGrid=[];
+for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2);floorGrid.push(line)}for(let z=-24;z<=24;z+=3.9){floorGrid.push(box(50,.018,.018,0,-.24,z,stone2))}
+registerScene('scene.floor.grid',floorGrid);
+// RUNE-01: real origin-ground sigil becomes one tagged scene entity.
+// No new geometry, visual changes, touch consumption or save mutations.
+const RuneContract=window.LivingRuneContract;
+if(!RuneContract)throw Error('Rune identity contract unavailable');
+const runeGroup=new THREE.Group();runeGroup.name='OriginRune';runeGroup.userData.runeId=RuneContract.RUNE_ID;scene.add(runeGroup);
+try{
+ const saved=window.LivingObjectCraft?.getRuneBoundCard(localStorage)?.permanentRegistry?.anchor;
+ if(saved?.sceneId==='living-library'&&['x','y','z'].every(k=>Number.isFinite(saved.position?.[k]))){
+  runeGroup.position.set(saved.position.x,saved.position.y,saved.position.z);
+  if(Number.isFinite(saved.rotationY))runeGroup.rotation.y=saved.rotationY;
+ }
+}catch(err){console.warn('Stored permanent rune placement invalid',err)}
+cyl(3.02,3.35,.36,0,-.13,0,stone2,runeGroup);cyl(2.85,2.96,.22,0,.16,0,blackstone,runeGroup);
+cyl(2.4,2.5,.055,0,.30,0,gold,runeGroup);cyl(2.38,2.39,.055,0,.35,0,stone,runeGroup);
+for(const rad of [1.55,2.0,2.46])torus(rad,.021,0,.41,0,glow,runeGroup,Math.PI/2);
 const runes=[];
-for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold);rune.rotation.y=-a;runes.push(rune)}
+for(let i=0;i<22;i++){const a=i*Math.PI*2/22;const rune=box(.14,.013,.28,2.17*Math.cos(a),.42,2.17*Math.sin(a),gold,runeGroup);rune.rotation.y=-a;runes.push(rune)}
+runeGroup.traverse(mesh=>{if(mesh.isMesh)mesh.userData.runeId=RuneContract.RUNE_ID});
+registerScene('scene.rune.origin',[runeGroup]);
 // Seven real, empty 5×5 bookcases occupy only the front arc of the world.
 // No decorative/fake book meshes: only registered public or authorized GEN2 books occupy a slot.
 const shelves=[];
@@ -935,18 +1218,22 @@ for(let row=0;row<5;row++){
   box(1.08,.018,.22,-2.68+col*1.34,y+.09,.57,shelfSlotPlate,group);
  }
 }
-shelves.push(group)}
+registerScene('scene.shelf.'+shelves.length,[group]);shelves.push(group)}
 for(const a of [-1.40,-.90,-.42,.05,.52,.99,1.44])makeShelf(a);
 // Pillars and vaulted arches behind shelves.
+let pillarIndex=0;
 for(const a of [-1.67,-1.10,-.55,0,.55,1.10,1.67]){const r=13.3,x=Math.sin(a)*r,z=-Math.cos(a)*r;
-cyl(.48,.53,10.7,x,5.1,z,stone2);cyl(.62,.62,.40,x,10.65,z,gold);cyl(.60,.68,.45,x,.04,z,stone2);
+registerScene('scene.pillar.'+pillarIndex++,[cyl(.48,.53,10.7,x,5.1,z,stone2),cyl(.62,.62,.40,x,10.65,z,gold),cyl(.60,.68,.45,x,.04,z,stone2)]);
 }
+let lampIndex=0;
 for(const a of [-1.3,-.7,0,.7,1.3]){const r=11.85,x=Math.sin(a)*r,z=-Math.cos(a)*r;
 const lamp=new THREE.Group();scene.add(lamp);lamp.position.set(x,8.4,z);const orb=new THREE.Mesh(new THREE.SphereGeometry(.17,12,12),new THREE.MeshBasicMaterial({color:0xffd599}));lamp.add(orb);
-const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light)}
+const light=new THREE.PointLight(0xeaaf68,7,4,2);light.position.set(x,8.4,z);scene.add(light);registerScene('scene.lamp.'+lampIndex++,[lamp,light])}
 // A luminous ceiling oculus
-torus(11.2,.12,0,12,0,gold,scene,Math.PI/2);torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2);
-for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a}
+registerScene('scene.oculus.rings',[torus(11.2,.12,0,12,0,gold,scene,Math.PI/2),torus(8.5,.08,0,12.1,0,stone2,scene,Math.PI/2)]);
+const oculusSpokes=[];
+for(let i=0;i<18;i++){const a=Math.PI*2*i/18;const m=box(.07,.045,3.1,Math.cos(a)*9.84,12.04,Math.sin(a)*9.84,gold);m.rotation.y=-a;oculusSpokes.push(m)}
+registerScene('scene.oculus.spokes',oculusSpokes);
 const skylight=new THREE.PointLight(0xb6becf,12,26,2);skylight.position.set(0,12,0);scene.add(skylight);
 // Neutral keeper silhouette on the dais.
 const keeper=new THREE.Group();scene.add(keeper);keeper.position.set(0,.46,0);
@@ -960,7 +1247,8 @@ const hood=new THREE.Mesh(new THREE.ConeGeometry(.44,.62,12),simple(0x1b2e43));h
 box(.48,.095,.26,0,1.39,.30,gold,keeper);
 for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
 const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
-const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);
+const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);registerScene('scene.keeper',[...keeper.children,aura]);
+registerScene('scene.lighting',[ambient,warm,cold,moon,skylight]);
 // Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
 // Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
 // Direct-touch input: the finger-down point becomes the temporary joystick.
@@ -969,13 +1257,14 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
+let atlasRuntime=null,atlasVoice=null;
 let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
 function resetJoystick(hide=false){
  joy={x:0,y:0};joystickPointer=null;
  walkKnob.style.transform='translate(-50%,-50%)';
- if(hide){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true}
+ if(hide&&!atlasRuntime?.inFocus){joystickOrigin=null;joystickVisible=false;walkPad.hidden=true;atlasVoice?.stop()}
 }
 function positionJoystick(x,y){
  const mx=Math.min(65,window.innerWidth/2),my=Math.min(65,window.innerHeight/2);
@@ -987,6 +1276,7 @@ function showJoystick(e){
  resetJoystick(false);
  if(controlPrefs.joystickMode==='fixed')positionJoystick(controlPrefs.joystickPosition.x*window.innerWidth,controlPrefs.joystickPosition.y*window.innerHeight);
  else positionJoystick(e.clientX,e.clientY);
+ atlasRuntime?.audioStart();atlasVoice?.start();
  // The camera never zooms when the joystick appears.
 }
 function beginJoystickPlacement(){
@@ -996,6 +1286,7 @@ function beginJoystickPlacement(){
 }
 function applyControlPrefs(){
  // Inspectable proof of the settings received by the live 3D scene. No new visible UI.
+ for(const key of Object.keys(window.LivingAtlasState.DEFAULTS))stage.dataset[key]=String(controlPrefs[key]);
  stage.dataset.cardSize=String(controlPrefs.cardSize);
  stage.dataset.cardOrbitDistance=String(controlPrefs.cardOrbitDistance);
  stage.dataset.cardOrbitSpeed=String(controlPrefs.cardOrbitSpeed);
@@ -1045,8 +1336,18 @@ document.addEventListener('keyup',e=>{
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 function stepAvatar(dt){
+ if(buildState){
+  const input=exploreInput();
+  if(Math.hypot(input.x,input.y)<.025)return false;
+  const moveSpan=Math.min(.16,dt*2.2);
+  const raw=buildState.precise||buildState.position;
+  buildState.precise={x:raw.x+input.x*moveSpan,y:0,z:raw.z-input.y*moveSpan};
+  buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
+  updateHologram(performance.now());return true;
+ }
  if(!hasWalkInput()){keeper.position.y=.46;return false}
- const next=Movement3D.move(keeper.position,exploreInput(),theta,dt);
+ const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
+ const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
  if(next.distance<=.00001)return false;
  keeper.position.set(next.x,.46,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
@@ -1063,7 +1364,7 @@ function stepAvatar(dt){
 // Dust motes
 const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
 for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
-const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
+const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xd4d3b4,size:.055,transparent:true,opacity:.64,sizeAttenuation:true,depthWrite:false}));scene.add(dust);registerScene('scene.dust',[dust]);
 const labelCache=new Map();
 // High-contrast, large-type printed COVER. No title floating above a book.
 function coverTex(b){
@@ -1162,27 +1463,23 @@ function removeCardSmoke(puffs){
  for(const p of puffs){scene.remove(p.sprite);p.sprite.material.dispose()}
 }
 function newFloatingCard(record){
- const canvas=document.createElement('canvas');canvas.width=384;canvas.height=540;
- const ctx=canvas.getContext('2d');
- ctx.fillStyle='#eadbb9';ctx.fillRect(0,0,384,540);
- ctx.strokeStyle='#97754b';ctx.lineWidth=12;ctx.strokeRect(17,17,350,506);
- ctx.lineWidth=3;ctx.strokeRect(36,36,312,467);
- ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#786040';
- ctx.font='96px serif';ctx.fillText('◇',192,157);
- ctx.font='bold 36px "Noto Sans TC",sans-serif';
- const chars=[...String(record.title||'空白卡片')];
- for(let i=0;i<Math.min(3,Math.ceil(chars.length/8));i++)
-  ctx.fillText(chars.slice(i*8,(i+1)*8).join(''),192,275+i*46,295);
- ctx.font='22px monospace';ctx.fillText('BLANK CARD',192,470);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const texture=window.LivingAtlasModel.cardTexture(THREE,record);
  const faceMat=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
  const frameMat=new THREE.MeshStandardMaterial({color:0xc6a472,roughness:.77});
- const group=new THREE.Group();
+ const group=new THREE.Group(),bindingMaterials=[];
+ if(record.runeBinding?.runeId===window.LivingRuneContract?.RUNE_ID){
+  const sealMat=new THREE.MeshBasicMaterial({color:0xdac18a,side:THREE.DoubleSide,transparent:true,opacity:.95,depthTest:false});
+  const mark=new THREE.Mesh(new THREE.TorusGeometry(.058,.009,5,36),sealMat);
+  mark.position.set(.15,-.235,.038);group.add(mark);bindingMaterials.push(sealMat);
+  const iconMat=new THREE.MeshBasicMaterial({color:0x76caba,side:THREE.DoubleSide,depthTest:false});
+  const icon=new THREE.Mesh(new THREE.OctahedronGeometry(.026,0),iconMat);
+  icon.position.set(.15,-.235,.039);group.add(icon);bindingMaterials.push(iconMat);
+ }
  const back=new THREE.Mesh(new THREE.BoxGeometry(.45,.66,.025),frameMat);
  const face=new THREE.Mesh(new THREE.PlaneGeometry(.43,.64),faceMat);face.position.z=.015;
  back.userData.localCardId=record.id;face.userData.localCardId=record.id;
  group.add(back,face);scene.add(group);
- return {id:record.id,record,group,texture,faceMat,frameMat,born:performance.now(),
+ return {id:record.id,record,group,texture,faceMat,frameMat,bindingMaterials,born:performance.now(),
   summon:null,recycle:null};
 }
 function disposeFloatingCard(entry){
@@ -1192,10 +1489,11 @@ function disposeFloatingCard(entry){
  scene.remove(entry.group);
  for(const mesh of entry.group.children)mesh.geometry.dispose();
  entry.faceMat.dispose();entry.frameMat.dispose();entry.texture.dispose();
+ for(const material of entry.bindingMaterials||[])material.dispose();
 }
 function refreshFloatingCards(){
  let records;
- try{records=window.LivingObjectCraft?.floatingCards(localStorage)||[]}
+ try{records=window.LivingObjectCraft?.listCards(localStorage)||[]}
  catch(err){console.warn('Card storage unreadable; no overwrite',err);return}
  const next=new Map(records.map(x=>[x.id,x]));
  for(const [id,entry] of [...floatingCardMeshes]){
@@ -1212,7 +1510,7 @@ function refreshFloatingCards(){
 }
 function queueCardSummon(id){
  const entry=floatingCardMeshes.get(id);
- if(!entry)return false;
+ if(!entry||entry.record.containerId)return false;
  reservedCardSummons.add(id);entry.group.visible=false;return true;
 }
 function startCardSummon(id){
@@ -1250,6 +1548,20 @@ function updateFloatingCards(now){
  const items=[...floatingCardMeshes.values()];
  for(let i=0;i<items.length;i++){
   const entry=items[i];
+  // The artifact's original-card absorption / manifestation must exclusively
+  // own its position, visibility and scale until the final state is committed.
+  // Otherwise the ordinary orbit updater resets the flight on every frame.
+  if(truthEye.ownsTransferCard(entry.id))continue;
+  if(atlasRuntime?.isDraggingCard(entry.id))continue;
+  if(entry.record.scanContract?.form==='world'||['world','sealed'].includes(entry.record.truthEyeContract?.form)||entry.record.containerId||entry.record.placement==='contained'||entry.record.containment){
+    // Keep the hidden ORIGINAL card's world orbit anchor current. Its 3D mesh
+    // is reused for the inverse seal -> card animation, never cloned.
+    const p=CardPlacement.orbitPosition(i,currentOrbitTime,controlPrefs);
+    entry.group.position.set(keeper.position.x+p.x,p.y,keeper.position.z+p.z);
+    entry.group.quaternion.copy(camera.quaternion);
+    entry.group.scale.setScalar(controlPrefs.cardSize);
+    entry.group.visible=false;continue
+   }
   if(entry.recycle){
    const fx=entry.recycle;
    // First show the original small card in the normal world orbit, unzoomed.
@@ -1346,6 +1658,26 @@ function exitCardFocus(){
  cameraUpdate();syncRender();
 }
 document.getElementById('cardFocusClose').addEventListener('click',exitCardFocus);
+const cardInfoDialog=document.getElementById('cardInfoDialog');
+document.getElementById('cardFocusInfo').addEventListener('click',()=>{
+ const id=focusedCard?.id;if(!id)return;
+ try{
+  const info=window.LivingObjectCraft.inspectCard(localStorage,id),n=info.stats;
+  document.getElementById('cardInfoTitle').textContent='ⓘ '+info.title;
+  document.getElementById('cardInfoCounts').textContent=
+   '實際屬性 '+n.fields+'（有值 '+n.filled+'）｜'+n.bytes+' bytes｜照片 '+(n.photo?'有':'無')+
+   '\n資料參照 '+n.links+'｜群組 '+n.groupMembers+' 件｜法術 '+n.spells+'｜動畫 '+n.animations+'｜動作 '+n.actions;
+  const rows=['ID：'+info.id,'位置：'+info.placement,'版本：'+info.revision];
+  for(const [k,values] of [['連動與位置',info.links],['法術',info.spells],['動畫',info.animations],['動作',info.actions]]){
+   rows.push('\n'+k+'（'+values.length+'）');
+   for(const v of values)rows.push('• '+(v.kind||v.name)+' → '+(v.id||v.detail||'')+(v.kind?' · '+v.detail:''));
+  }
+  rows.push('\n'+info.note,'\n已儲存欄位（省略圖片 Base64）',JSON.stringify(info.data,null,2));
+  document.getElementById('cardInfoText').textContent=rows.join('\n');
+  if(!cardInfoDialog.open)cardInfoDialog.showModal();
+ }catch(error){window.LivingLibrary?.toast?.('卡片資料無法檢視：'+error.message)}
+});
+document.getElementById('cardInfoClose').addEventListener('click',()=>cardInfoDialog.close());
 document.getElementById('cardFocusEdit').addEventListener('click',()=>{
  const id=focusedCard?.id;if(!id)return;exitCardFocus();
  window.LivingLibrary.openLocalCardEditor?.(id);
@@ -1370,10 +1702,11 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&focusedCard){e.preventDefault();exitCardFocus()}
 });
 function pickFloatingCard(ray){
- const targets=[...floatingCardMeshes.values()].filter(x=>!x.summon&&!x.recycle)
+ const targets=[...floatingCardMeshes.values()].filter(x=>x.group.visible&&!x.summon&&!x.recycle)
   .flatMap(entry=>entry.group.children);
  const hit=ray.intersectObjects(targets,false)[0];
  if(!hit?.object.userData.localCardId)return false;
+ if(truthEye.cardTap(hit.object.userData.localCardId))return true;
  focusCard(hit.object.userData.localCardId);return true;
 }
 
@@ -1457,6 +1790,7 @@ function targetFor(o,t){
 function updateOrbit(t,now=performance.now()){
  currentOrbitTime=t;
  for(const o of bookEntities){
+  if(atlasRuntime?.isCollectionDragging(o.id==='cardCollection'?'local.atlas.collection':o.id))continue;
   const target=targetFor(o,t),g=o.group,flight=o.flight;
   if(flight&&!preferReduced){
    const linear=THREE.MathUtils.clamp((now-flight.started)/flight.duration,0,1);
@@ -1504,8 +1838,1018 @@ function rebuild(){
  updateOrbit(currentOrbitTime,now);
 }
 let selectedId=null;rebuild();refreshFloatingCards();
+atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:renderer.domElement,keeper,cards:floatingCardMeshes,
+ craft:window.LivingObjectCraft,storage:localStorage,reduced:preferReduced,toast,
+ smoke:{create:createCardSmoke,update:updateCardSmoke,remove:removeCardSmoke},
+ invalidate:()=>window.LivingScene?.syncRender?.(),
+ controls:controlPrefs,collectionEntity:(id='local.atlas.collection')=>entityById.get(id==='local.atlas.collection'?'cardCollection':id)?.group,
+ setCollectionActive:(active,id)=>window.LivingLibrary.setCollectionActive(active,id),
+ openCard:id=>window.LivingLibrary.openLocalCardEditor(id),observeCard:id=>window.LivingLibrary.sendLocalCardToGithub(id),
+ focusCard:id=>{if(!truthEye.cardTap(id))focusCard(id)},
+ onStoredCardTap:id=>truthEye.cardTap(id),
+ onCardPressStart:(e,id)=>truthEye.cardPressStart(e,id),
+ onCardPressMove:(e,id,moved)=>truthEye.cardPressMove(e,id,moved),
+ onCardPressEnd:(e,id,cancel,moved)=>truthEye.cardPressEnd(e,id,cancel,moved)});
+atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
+ onState:state=>{const el=document.getElementById('atlasVoiceState');
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  stage.dataset.voiceState=state.status;
+  if(state.status==='listening')toast('語音已開啟：Book');
+ }});
+window.addEventListener('pagehide',()=>atlasVoice.stop());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
+
+// TRUTH-EYE-BETA: additive in-world artifact. Existing rune binding is untouched.
+const truthEye=window.LivingTruthEyeWorld.create({
+ THREE,scene,keeper,camera,renderer,bookEntities,floatingCards:floatingCardMeshes,
+ storage:localStorage,craft:window.LivingObjectCraft,
+ refreshCards:refreshFloatingCards,
+ onBundleRestored(members,ownerCardId){
+   // The materialization callback must not outlive its ACTIVE world-form owner.
+   // Historical/released scan groups must NEVER relocate books.
+   const original=window.LivingObjectCraft.listCards(localStorage).find(c=>c.id===ownerCardId);
+   const contract=original?.scanContract;
+   if(original?.runeBinding?.state!=='bound'||contract?.artifactId!=='scan.bundle.'+ownerCardId||contract?.form!=='world')return;
+   const owned=new Set(contract.members.map(ref=>ref.kind+':'+ref.id));
+   for(const ref of members)if(ref.kind==='book'&&owned.has(ref.kind+':'+ref.id))atlasRuntime.restoreScannedToShelf(ref.id);
+  },
+ shouldYieldSceneGesture(e){return canStartRunePress(e)},
+ onMemberTap(e){if(atlasRuntime.pointerDown(e)){atlasRuntime.pointerUp(e);return}pick(e,true)},
+ onMemberDrag(e,origin){
+  touchPoints.set(e.pointerId,{x:origin.x,y:origin.y,down:{...origin}});
+  wasMoving=true;drag={x:origin.x,y:origin.y,lastX:origin.x,lastY:origin.y};
+ },
+ summonShelfBooks(){for(const o of bookEntities)if(!o.b.active&&['public','local'].includes(o.b.sourceLayer))window.LivingLibrary.summonBook(o.id)},
+ getScanEntries({excludeRoots=[]}={}){
+  // Authoritative discovery traverses live scene geometry; legacy metadata
+  // can preserve identity but cannot restrict which new objects are detected.
+  const books=bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer));
+  const protectedBooks=bookEntities.filter(o=>!['public','local'].includes(o.b.sourceLayer)).map(o=>o.group);
+  const runeBound=!!window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  const found=window.LivingSceneScanDiscovery.discover({
+   scene,keeper,legacyScenes:worldScanEntries,books,atlasEntries:atlasRuntime.scanEntries?.()||[],
+   floatingCards:[...floatingCardMeshes.values()],
+   protectedRoots:[...excludeRoots,...protectedBooks,...(runeBound?[runeGroup]:[])]
+  });
+  const avatar=worldScanEntries.find(o=>o.id==='scene.keeper');
+  return avatar?[...found,{...avatar,protected:true}]:found;
+ },
+ applyPacked(packed){
+  // A discovered unregistered world mesh is subject to the same reversible
+  // visibility policy as old library assets, while player avatar stays guarded.
+  const books=bookEntities.filter(o=>['public','local'].includes(o.b.sourceLayer));
+  const discovered=window.LivingSceneScanDiscovery.discover({
+   scene,keeper,legacyScenes:worldScanEntries,books,atlasEntries:atlasRuntime.scanEntries?.()||[],
+   floatingCards:[...floatingCardMeshes.values()],
+   protectedRoots:bookEntities.filter(o=>!['public','local'].includes(o.b.sourceLayer)).map(o=>o.group)
+  });
+  const avatar=worldScanEntries.find(o=>o.id==='scene.keeper');
+  for(const o of [...discovered.filter(e=>e.kind==='scene'),...(avatar?[avatar]:[])])for(const group of o.groups||[o.group]){
+   const hidden=packed.has('scene:'+o.id);
+   if(hidden){if(!group.userData.scanHidden)group.userData.scanPreviousVisible=group.visible;group.userData.scanHidden=true;group.visible=false}
+   else if(group.userData.scanHidden){group.visible=group.userData.scanPreviousVisible!==false;delete group.userData.scanHidden;delete group.userData.scanPreviousVisible}
+  }
+  for(const entry of floatingCardMeshes.values()){
+   const container=entry.record.containerId==='local.atlas.collection'?'cardCollection':entry.record.containerId;
+   if(container&&packed.has('book:'+container))entry.group.visible=false;
+  }},
+ invalidate:()=>window.LivingScene?.syncRender?.(),
+ toast,reducedMotion:preferReduced
+});
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
-function pick(e){
+// RUNE-01 read-only hit-test. Pointer hold & binding belong to RUNE-02/03.
+const runeHitRay=new THREE.Raycaster(),runeHitPointer=new THREE.Vector2();
+function runeHitTest(clientX,clientY){
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!Number.isFinite(clientX)||!Number.isFinite(clientY)||!rect.width||!rect.height)return false;
+ if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return false;
+ runeHitPointer.set(((clientX-rect.left)/rect.width)*2-1,-((clientY-rect.top)/rect.height)*2+1);
+ runeHitRay.setFromCamera(runeHitPointer,camera);
+ return runeHitRay.intersectObject(runeGroup,true).some(hit=>hit.object.userData.runeId===RuneContract.RUNE_ID);
+}
+function runeWorldAnchor(){
+ runeGroup.updateWorldMatrix(true,false);
+ const p=runeGroup.getWorldPosition(new THREE.Vector3());return {x:p.x,y:p.y,z:p.z};
+}
+function findNearestRuneCard(){
+ const entries=[...floatingCardMeshes.values()].map(entry=>{
+  entry.group.updateWorldMatrix(true,false);
+  const p=entry.group.getWorldPosition(new THREE.Vector3());
+  return {id:entry.id,record:entry.record,position:{x:p.x,y:p.y,z:p.z},
+   visible:entry.group.visible&&!atlasRuntime?.inFocus,
+   isDragging:!!atlasRuntime?.isDraggingCard(entry.id),
+   isSummoning:!!entry.summon||reservedCardSummons.has(entry.id),
+   isRecycling:!!entry.recycle,isFocused:focusedCard?.id===entry.id};
+ });
+ return RuneContract.findNearestEligibleCard(runeWorldAnchor(),entries);
+}
+// RUNE-02: no new save keys, no binding, no new card mesh.
+const RuneHold=window.LivingRuneHold;
+if(!RuneHold)throw Error('Rune hold gesture module unavailable');
+// Every existing 3-second contract uses a native 3D six-pointed star.
+ // Existing contract storage, gesture duration and validations remain unchanged.
+const ContractHexagram=window.LivingContractHexagram;
+if(!ContractHexagram)throw Error('六芒星契約動畫模組未載入');
+const runeHexagram=ContractHexagram.create({THREE,parent:runeGroup,plane:'xz',radius:2.48});
+runeHexagram.group.position.y=.51;
+const runeSelectionMat=new THREE.MeshBasicMaterial({
+ color:0xa8e7cf,transparent:true,opacity:.6,depthWrite:false});
+const runeSelectionRing=new THREE.Mesh(new THREE.TorusGeometry(2.48,.035,6,96),runeSelectionMat);
+runeSelectionRing.position.y=.49;runeSelectionRing.rotation.x=Math.PI/2;
+runeSelectionRing.visible=false;runeGroup.add(runeSelectionRing);
+const runeGlyphs=new THREE.Group();runeGroup.add(runeGlyphs);
+const runeGlyphMat=new THREE.MeshBasicMaterial({
+ color:0xe8c88e,transparent:true,opacity:.8,depthWrite:false});
+const runeGlyphShape=new THREE.BoxGeometry(.19,.022,.05);
+for(let i=0;i<12;i++){
+ const a=i*Math.PI/6;
+ const glyph=new THREE.Mesh(runeGlyphShape,runeGlyphMat);
+ glyph.position.set(Math.sin(a)*1.83,.485,Math.cos(a)*1.83);
+ glyph.rotation.y=a;
+ runeGlyphs.add(glyph);
+}
+runeGlyphs.visible=false;
+const runeBeamMaterial=new THREE.LineBasicMaterial({
+ color:0xb7e5d2,transparent:true,opacity:.98,depthWrite:false});
+const runeBeamGeometry=new THREE.BufferGeometry();
+runeBeamGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+const runeCandidateBeam=new THREE.Line(runeBeamGeometry,runeBeamMaterial);
+runeCandidateBeam.visible=false;scene.add(runeCandidateBeam);
+// Thin WebGL lines are often nearly invisible on phones; add a translucent
+// world-space tether and two traveling glints, without allocating per frame.
+const tetherMat=new THREE.MeshBasicMaterial({color:0x9bf4d4,transparent:true,opacity:.52,
+ blending:THREE.AdditiveBlending,depthWrite:false});
+const runeTether=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1,8),tetherMat);
+runeTether.visible=false;scene.add(runeTether);
+const glintMat=new THREE.MeshBasicMaterial({color:0xf5e3ae,transparent:true,
+ opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeGlints=[0,1].map(()=>{
+ const glint=new THREE.Mesh(new THREE.SphereGeometry(.059,10,8),glintMat);
+ glint.visible=false;scene.add(glint);return glint;
+});
+const tetherAxis=new THREE.Vector3(0,1,0),tetherVector=new THREE.Vector3();
+const tetherStart=new THREE.Vector3(),tetherEnd=new THREE.Vector3();
+let runeNearest=null,runeBindingPulseUntil=0,runeBindingCardId=null,runePromptTimer=null;
+let runeTransfer=null,runeLegacySeal=false,runeReleaseEffect=null;
+let runeBound=null;
+try{runeBound=window.LivingObjectCraft.getRuneBoundCard(localStorage)}catch(error){console.warn('Rune contract read failed',error)}
+runeGroup.visible=runeBound?.runeBinding?.state!=='cardified';
+const runeBindDialog=document.getElementById('runeBindDialog'),
+ runeBindDescription=document.getElementById('runeBindDescription'),
+ runeCardifyDialog=document.getElementById('runeCardifyDialog');
+const runeGlowMaterial=new THREE.MeshBasicMaterial({color:0xafffe4,transparent:true,
+ opacity:.38,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+const runeGlow=new THREE.Mesh(new THREE.RingGeometry(1.25,2.42,96),runeGlowMaterial);
+runeGlow.rotation.x=-Math.PI/2;runeGlow.position.y=.477;
+runeGlow.visible=false;runeGroup.add(runeGlow);
+function updateRuneVisual(now){
+ const info=runeGesture.inspect(now);
+ const show=info.phase==='holding'||info.phase==='selected';
+ const bindingFlash=now<runeBindingPulseUntil||!!runeTransfer||!!runeReleaseEffect;
+ const illuminated=show||bindingFlash||runeBindDialog.open||runeCardifyDialog.open;
+ runeGlow.visible=illuminated||!!runeBound;
+ runeGlowMaterial.opacity=illuminated?(.25+.12*Math.sin(now*.014)+.19*info.progress):.065;
+ runeSelectionRing.visible=!show&&(illuminated||!!runeBound);
+ runeSelectionMat.opacity=illuminated?.92:.22;
+ if(show)runeHexagram.update(info.progress,now);
+ else runeHexagram.clear();
+ runeGlyphs.visible=(show||bindingFlash)&&!preferReduced;
+ runeGlyphs.rotation.y=info.phase==='selected'||preferReduced?0:now*.00016;
+ runeSelectionRing.scale.setScalar(illuminated&&!preferReduced?1+.035*Math.sin(now*.012):1);
+ runeCandidateBeam.visible=false;runeTether.visible=false;
+ for(const glint of runeGlints)glint.visible=false;
+ const linkCardId=runeTransfer?.cardId||
+  (info.phase==='selected'&&runeNearest?.status==='selected'
+   ?runeNearest.cardId:bindingFlash?runeBindingCardId:null);
+ if(linkCardId){
+  const card=floatingCardMeshes.get(linkCardId);
+  if(card&&card.group.visible&&!card.record.containerId){
+   card.group.updateWorldMatrix(true,false);
+   const target=card.group.getWorldPosition(new THREE.Vector3()),anchor=runeWorldAnchor();
+   const points=runeBeamGeometry.attributes.position;
+   points.setXYZ(0,anchor.x,.68,anchor.z);
+   points.setXYZ(1,target.x,target.y,target.z);
+   points.needsUpdate=true;
+   runeCandidateBeam.visible=true;
+   tetherStart.set(anchor.x,.68,anchor.z);
+   tetherEnd.copy(target);tetherVector.copy(tetherEnd).sub(tetherStart);
+   const len=tetherVector.length();
+   if(len>.02){
+    runeTether.visible=true;runeTether.position.copy(tetherStart).addScaledVector(tetherVector,.5);
+    runeTether.quaternion.setFromUnitVectors(tetherAxis,tetherVector.clone().normalize());
+    runeTether.scale.set(1,len,1);
+    tetherMat.opacity=preferReduced?.45:.45+.14*Math.sin(now*.012);
+    for(let i=0;i<runeGlints.length;i++){
+     const particle=runeGlints[i];particle.visible=!preferReduced;
+     const t=(now*.00058+i*.5)%1;
+     particle.position.copy(tetherStart).addScaledVector(tetherVector,t);
+    }
+   }
+   runeBeamMaterial.opacity=preferReduced?.88:.83+.15*Math.sin(now*.014);
+  }
+ }
+}
+function runeAllowed(){return !overlayActive()&&!document.hidden&&!focusedCard&&
+ !atlasRuntime?.inFocus&&!placingJoystick&&!runeTransfer&&!runeReleaseEffect&&!buildState}
+function sceneRuneClaimed(){
+ try{return window.LivingScanBundle.claims(localStorage).has('scene:scene.rune.origin')}
+ catch(_){return true}
+}
+function canStartRunePress(e){
+ if(sceneRuneClaimed()||!runeAllowed()||runeBound?.runeBinding?.state==='cardified'||
+ touchPoints.size||!runeHitTest(e.clientX,e.clientY))return false;
+ const runeHits=runeHitRay.intersectObject(runeGroup,true)
+  .filter(h=>h.object.userData.runeId===RuneContract.RUNE_ID);
+ if(!runeHits.length)return false;
+ const dist=runeHits[0].distance;
+ // Preserve taps on avatar/cards/books if those meshes are IN FRONT of the floor.
+ const blockers=[...runeHitRay.intersectObject(keeper,true),
+  ...[...floatingCardMeshes.values()].filter(c=>c.group.visible)
+    .flatMap(c=>runeHitRay.intersectObject(c.group,true))];
+ for(const b of bookEntities)if(b.group.visible)
+  blockers.push(...runeHitRay.intersectObject(b.group,true));
+ if(blockers.some(h=>h.distance<dist-.025))return false;
+ return true;
+}
+function closeRunePrompt(){
+ if(runePromptTimer!==null){clearTimeout(runePromptTimer);runePromptTimer=null}
+ if(runeBindDialog.open)runeBindDialog.close();
+ if(runeCardifyDialog.open)runeCardifyDialog.close();
+}
+// Reuse NW-TRANSFER-001 for card → floor-rune absorption and inverse cardification.
+// During the visual transition the persistent snapshot remains unchanged.
+// Completion is a single guarded write; interruption leaves original card data intact.
+function startRuneTransfer(kind,record,placement=null){
+ if(runeTransfer||!record)throw Error('另一個法陣儀式正在進行');
+ const entry=floatingCardMeshes.get(record.id);
+ if(!entry)throw Error('原始卡片模型不存在');
+ const anchor=kind==='return'&&placement?placement.position:runeWorldAnchor(),isSeal=kind==='seal'||kind==='return';
+ if(isSeal&&(!entry.group.visible||entry.record.placement!=='hover'||entry.record.containerId))
+  throw Error('請先將原卡移回漂浮狀態再締結契約');
+ if(kind==='return'&&record.runeBinding?.state!=='cardified')
+  throw Error('只能讓已具現化的原卡還原成法陣');
+ if(!isSeal&&(record.placement!=='contained'||record.runeBinding?.state!=='sealed'))
+  throw Error('法陣內沒有等待具現化的卡片');
+ entry.group.updateWorldMatrix(true,false);
+ const from=isSeal?entry.group.getWorldPosition(new THREE.Vector3()):
+  new THREE.Vector3(anchor.x,.58,anchor.z);
+ const positionIndex=[...floatingCardMeshes.keys()].indexOf(record.id);
+ const orbit=CardPlacement.orbitPosition(positionIndex,currentOrbitTime,controlPrefs);
+ const target=isSeal?new THREE.Vector3(anchor.x,.44,anchor.z):
+  new THREE.Vector3(keeper.position.x+orbit.x,orbit.y,keeper.position.z+orbit.z);
+ const start=performance.now(),duration=preferReduced?400:1500;
+ runeTransfer={kind,cardId:record.id,expectedRevision:record.revision,placement,
+  plan:DirectedTransfer.normalize({sourceId:isSeal?record.id:RuneContract.RUNE_ID,
+   targetId:isSeal?RuneContract.RUNE_ID:record.id,
+   from:{x:from.x,y:from.y,z:from.z},to:{x:target.x,y:target.y,z:target.z},
+   startedAt:start,duration,initialScale:isSeal?entry.group.scale.x:.001})};
+ runeBindingCardId=record.id;runeBindingPulseUntil=start+duration+450;
+ runeGlow.visible=true;
+ syncRender();
+}
+function tickRuneTransfer(now){
+ const active=runeTransfer;
+ if(!active)return;
+ const entry=floatingCardMeshes.get(active.cardId);
+ if(!entry){runeTransfer=null;toast('法陣儀式中斷，沒有修改原卡資料');return}
+ const cardify=active.kind==='cardify';
+ const frame=DirectedTransfer.sample(active.plan,now);
+ entry.group.visible=true;
+ entry.group.position.set(frame.position.x,frame.position.y,frame.position.z);
+ entry.group.quaternion.copy(camera.quaternion);
+ // Inverse materialization grows the SAME card outward from its tiny rune point.
+ entry.group.scale.setScalar(cardify?Math.max(.001,controlPrefs.cardSize*frame.progress):frame.scale);
+ if(!frame.done)return;
+ runeTransfer=null;
+ try{
+  const craft=window.LivingObjectCraft;
+  const changed=cardify?
+   craft.materializeRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision):
+   active.kind==='return'?
+    craft.returnRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision,undefined,active.placement):
+    craft.sealRuneCard(localStorage,RuneContract.RUNE_ID,active.cardId,active.expectedRevision);
+  runeBound=changed;runeNearest=null;runeBindingCardId=changed.id;
+  if(changed.permanentRegistry?.anchor&&active.kind==='return'){
+   const pos=changed.permanentRegistry.anchor.position;
+   runeGroup.position.set(pos.x,pos.y,pos.z);
+   runeGroup.rotation.y=changed.permanentRegistry.anchor.rotationY||0;
+  }
+  runeGroup.visible=!cardify; // After cardification, floor rune withdraws into original card.
+  runeBindingPulseUntil=performance.now()+(cardify?800:2200);
+  refreshFloatingCards();
+  toast(cardify?'✦ 初始法陣已具現化成原卡，可使用解除契約術':
+   active.kind==='return'?'✦ 原卡已還原為地面法陣，契約仍然保留':
+   '✦ 原始卡片已沒入初始法陣，契約封印完成');
+ }catch(error){
+  // Guarded write failed: world model will return to persisted position next paint.
+  runeBindingPulseUntil=0;
+  toast('儀式未完成，卡片資料保持原狀：'+String(error?.message||error));
+ }
+ syncRender();
+}
+function confirmRuneBinding(){
+ const selected=runeNearest;
+ if(!selected||selected.status!=='selected')return;
+ try{
+  if(sceneRuneClaimed())throw Error('初始法陣已有收納契約，請先使用解除契約術');
+  const legacy=runeLegacySeal;
+  const record=floatingCardMeshes.get(selected.cardId)?.record;
+  if(!record)throw Error('候選卡片已不存在');
+  if(legacy){
+   const bound=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   if(!bound||bound.id!==record.id||bound.revision!==record.revision||
+      bound.runeBinding?.state!=='bound')throw Error('既有契約已變動');
+  }else{
+   const latest=findNearestRuneCard();
+   if(latest.status!=='selected'||latest.cardId!==selected.cardId)
+    throw Error('卡片位置或狀態已改變，請重新長按法陣');
+  }
+  closeRunePrompt();runeLegacySeal=false;
+  startRuneTransfer('seal',record);
+ }catch(error){
+  closeRunePrompt();runeLegacySeal=false;
+  toast('無法締結：'+String(error?.message||error));syncRender();
+ }
+}
+function confirmRuneCardify(){
+ try{
+  const latest=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  if(!latest||latest.runeBinding?.state!=='sealed'||runeTransfer)
+   throw Error('法陣封印狀態已變動');
+  closeRunePrompt();
+  startRuneTransfer('cardify',latest);
+ }catch(error){closeRunePrompt();toast('無法卡片化：'+String(error?.message||error))}
+}
+document.getElementById('runeBindConfirm').addEventListener('click',confirmRuneBinding);
+document.getElementById('runeBindCancel').addEventListener('click',()=>{
+ closeRunePrompt();runeNearest=null;runeLegacySeal=false;toast('已取消連結');syncRender();
+});
+document.getElementById('runeCardifyConfirm').addEventListener('click',confirmRuneCardify);
+document.getElementById('runeCardifyCancel').addEventListener('click',()=>{
+ closeRunePrompt();toast('已保留法陣封印');syncRender();
+});
+runeBindDialog.addEventListener('cancel',()=>{runeNearest=null;runeLegacySeal=false;syncRender()});
+runeBindDialog.addEventListener('close',()=>syncRender());
+runeCardifyDialog.addEventListener('close',()=>syncRender());
+const runeGesture=RuneHold.create({
+ isAllowed:runeAllowed,
+ onChange:()=>syncRender(),
+ onSelected:()=>{
+  if(runeBound?.runeBinding?.state==='sealed'){
+   runeBindingPulseUntil=performance.now()+2400;
+   if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+   runePromptTimer=setTimeout(()=>{
+    runePromptTimer=null;
+    if(!document.hidden&&!runeCardifyDialog.open&&!runeTransfer)
+     runeCardifyDialog.showModal();
+   },650);
+   toast('✦ 已選取封印法陣 · 可將原卡重新具現化');
+   return;
+  }
+  if(runeBound?.runeBinding?.state==='cardified'){
+   toast('✦ 法陣已具現化為卡片，可使用解除綁定術');return;
+  }
+  if(runeBound?.runeBinding?.state==='bound'){
+   const record=floatingCardMeshes.get(runeBound.id)?.record;
+   if(!record||record.placement!=='hover'||record.containerId){
+    toast('✦ 請先把已締結契約的原卡從 GBA 移出，再完成封印');return;
+   }
+   runeLegacySeal=true;
+   runeNearest={status:'selected',cardId:record.id};
+   runeBindDescription.innerHTML='是否完成「<strong id="runeBindCardName">此卡</strong>」的法陣封印？';
+   document.getElementById('runeBindCardName').textContent=record.title;
+  }else{
+   runeLegacySeal=false;
+   runeNearest=findNearestRuneCard();
+   if(runeNearest.status!=='selected'){
+    toast('✦ 法陣已選取 · 附近沒有唯一可連結的普通卡');return;
+   }
+   const record=floatingCardMeshes.get(runeNearest.cardId)?.record;
+   if(!record)return;
+   runeBindDescription.innerHTML='是否將「<strong id="runeBindCardName"></strong>」與初始法陣建立連結？';
+   document.getElementById('runeBindCardName').textContent=record.title;
+  }
+  if(runePromptTimer!==null)clearTimeout(runePromptTimer);
+  const picked=runeNearest.cardId;
+  runePromptTimer=setTimeout(()=>{
+   runePromptTimer=null;
+   if(!document.hidden&&!runeBindDialog.open&&runeNearest?.cardId===picked&&!runeTransfer)
+    runeBindDialog.showModal();
+  },700);
+  toast('✦ 法陣選取成功 · 已定位契約卡');
+ }
+});
+// RUNE-UNBIND-001: long-press a PLAYER card explicitly named "解除綁定" (or
+// "解除綁定術" / "解除契約"), not the bound target. No auto-created spell card.
+const UnbindSpell=window.LivingRuneUnbindSpell,DirectedTransfer=window.LivingDirectedTransfer,
+ ContractPolicy=window.LivingContractPolicy;
+if(!ContractPolicy)throw Error('Generic contract policy unavailable');
+if(!UnbindSpell||!DirectedTransfer)throw Error('Directed rune transfer modules unavailable');
+const unbindDialog=document.getElementById('runeUnbindDialog'),
+ unbindName=document.getElementById('runeUnbindTargetName'),
+ unbindTargetId=document.getElementById('runeUnbindTargetId'),
+ unbindContractType=document.getElementById('runeUnbindContractType'),
+ unbindMembers=document.getElementById('runeUnbindMembers'),
+ unbindPicker=document.getElementById('runeUnbindTargetPicker'),
+ unbindConfirm=document.getElementById('runeUnbindConfirm'),
+ unbindProgress=document.getElementById('runeUnbindProgress');
+let spellPointerId=null,spellActivatedPointerId=null,spellOriginPoint=null,
+ spellSelection=null,spellSession=null,spellPromptTimer=null,unbindEffect=null;
+const spellRay=new THREE.Raycaster(),spellPointer=new THREE.Vector2();
+// Spell-card hold also uses the exact same hexagram visual language.
+const spellHexagram=ContractHexagram.create({THREE,parent:scene,plane:'xy',radius:.45});
+const spellBeamMat=new THREE.MeshBasicMaterial({
+ color:0xb7e5d2,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending});
+const spellBeam=new THREE.Mesh(new THREE.CylinderGeometry(.017,.017,1,8),spellBeamMat);
+spellBeam.visible=false;scene.add(spellBeam);
+const spellRingMat=new THREE.MeshBasicMaterial({
+ color:0xa8e7cf,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false});
+const spellRing=new THREE.Mesh(new THREE.TorusGeometry(.31,.026,5,48),spellRingMat);
+spellRing.visible=false;scene.add(spellRing);
+const spellSparkMat=new THREE.MeshBasicMaterial({
+ color:0xe7fff6,transparent:true,opacity:.92,depthWrite:false});
+const spellSpark=new THREE.Mesh(new THREE.SphereGeometry(.07,9,7),spellSparkMat);
+spellSpark.visible=false;scene.add(spellSpark);
+const spellSpark2=new THREE.Mesh(new THREE.SphereGeometry(.059,10,8),spellSparkMat);
+spellSpark2.visible=false;scene.add(spellSpark2);
+const spellAxis=new THREE.Vector3(0,1,0),spellDelta=new THREE.Vector3();
+// RUNE-07 | The spell FIRST disappears INTO its card target. Only after the
+// atomic unbind succeeds does its TARGET CARD release an energy trail to the
+// unchanged world origin. No second physical rune or new card identity.
+const runeReleaseEnergyMat=new THREE.MeshBasicMaterial({
+ color:0xd9ffd9,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeReleaseOrb=new THREE.Mesh(new THREE.SphereGeometry(.13,14,10),runeReleaseEnergyMat);
+const runeReleaseBeamMat=new THREE.MeshBasicMaterial({
+ color:0x8cf0d1,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeReleaseBeam=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,1,8),runeReleaseBeamMat);
+const runeReleaseSourceMat=new THREE.MeshBasicMaterial({
+ color:0xffecc5,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
+const runeReleaseSource=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,8,48),runeReleaseSourceMat);
+const runeReleaseLandingMat=new THREE.MeshBasicMaterial({
+ color:0xa8f8de,transparent:true,opacity:.78,blending:THREE.AdditiveBlending,
+ depthWrite:false,side:THREE.DoubleSide});
+const runeReleaseLanding=new THREE.Mesh(new THREE.RingGeometry(1.25,2.35,72),runeReleaseLandingMat);
+runeReleaseLanding.rotation.x=-Math.PI/2;
+for(const part of [runeReleaseOrb,runeReleaseBeam,runeReleaseSource,runeReleaseLanding]){
+ part.visible=false;scene.add(part);
+}
+const runeReleaseAxis=new THREE.Vector3(0,1,0),runeReleaseDelta=new THREE.Vector3();
+function endRuneReleaseEffect(){
+ if(!runeReleaseEffect)return; // Do not reveal a cardified rune on unrelated blur/hide.
+ // Data already committed by unbindAndAbsorbSpell; never mutate persistent
+ // state from this purely visual return, even on tab hide or reduced motion.
+ runeReleaseEffect=null;runeGroup.visible=true;runeGroup.scale.setScalar(1);
+ for(const part of [runeReleaseOrb,runeReleaseBeam,runeReleaseSource,runeReleaseLanding])
+  part.visible=false;
+}
+function startRuneReleaseEffect(targetCardId,targetPosition,now){
+ const anchor=runeWorldAnchor();
+ const from={x:targetPosition.x,y:targetPosition.y+.10,z:targetPosition.z};
+ const to={x:anchor.x,y:.47,z:anchor.z};
+ runeReleaseEffect={
+  targetCardId,started:now,duration:preferReduced?340:1450,
+  from:new THREE.Vector3(from.x,from.y,from.z),
+  to:new THREE.Vector3(to.x,to.y,to.z),
+  plan:DirectedTransfer.normalize({sourceId:targetCardId,targetId:RuneContract.RUNE_ID,
+   from,to,startedAt:now,duration:preferReduced?340:1450,initialScale:1})
+ };
+ runeGroup.visible=false;runeGroup.scale.setScalar(1);
+}
+function updateRuneReleaseEffect(now){
+ const fx=runeReleaseEffect;if(!fx)return;
+ const frame=DirectedTransfer.sample(fx.plan,now),u=frame.progress;
+ const smooth=t=>{const v=Math.min(1,Math.max(0,t));return v*v*(3-2*v)};
+ runeReleaseOrb.visible=true;
+ runeReleaseOrb.position.set(frame.position.x,frame.position.y,frame.position.z);
+ runeReleaseOrb.scale.setScalar(.75+Math.sin(Math.PI*u)*1.6);
+ runeReleaseEnergyMat.opacity=.98*(1-smooth((u-.88)/.12));
+ runeReleaseSource.visible=u<.48;
+ runeReleaseSource.position.copy(fx.from);
+ runeReleaseSource.quaternion.copy(camera.quaternion);
+ runeReleaseSource.scale.setScalar(.9+u*3);
+ runeReleaseSourceMat.opacity=Math.max(0,1-u/.48)*.95;
+ runeReleaseDelta.copy(runeReleaseOrb.position).sub(fx.from);
+ const length=runeReleaseDelta.length();
+ runeReleaseBeam.visible=length>.025&&u<.93;
+ if(runeReleaseBeam.visible){
+  runeReleaseBeam.position.copy(fx.from).addScaledVector(runeReleaseDelta,.5);
+  runeReleaseBeam.quaternion.setFromUnitVectors(runeReleaseAxis,runeReleaseDelta.clone().normalize());
+  runeReleaseBeam.scale.set(1,length,1);
+  runeReleaseBeamMat.opacity=.64*(1-smooth((u-.62)/.31));
+ }
+ // The original ground-rune mesh expands from its ORIGINAL anchor as the
+ // returning energy arrives. The temporary landing ring is visual-only.
+ const open=smooth((u-.70)/.30);
+ runeGroup.visible=open>0;
+ if(open>0)runeGroup.scale.setScalar(Math.max(.001,.17+.83*open));
+ runeReleaseLanding.visible=open>0;
+ runeReleaseLanding.position.copy(fx.to);
+ runeReleaseLanding.scale.setScalar(.28+.72*open);
+ runeReleaseLandingMat.opacity=.8*(1-smooth((u-.89)/.11));
+ if(frame.done){
+  endRuneReleaseEffect();
+  runeBindingPulseUntil=now+(preferReduced?200:850);
+  toast('✧ 契約解除完成 · 法陣能量已回到地面原點');
+  syncRender();
+ }
+}
+// Existing origin-rune appearance is just an event subscriber, not
+// a rule hard-coded in the unbind spell. Future objects can subscribe too.
+scene.addEventListener('living-contract-unbound',e=>{
+ if(e.bindingId!==RuneContract.RUNE_ID)return;
+ runeBound=null;runeNearest=null;runeBindingCardId=null;runeBindingPulseUntil=0;
+ startRuneReleaseEffect(e.cardId,e.from,e.now);
+});
+function localFloatEntry(entry){
+ entry.group.updateWorldMatrix(true,false);
+ const p=entry.group.getWorldPosition(new THREE.Vector3());
+ return {id:entry.id,record:entry.record,position:{x:p.x,y:p.y,z:p.z},
+  visible:entry.group.visible&&!atlasRuntime?.inFocus,
+  isDragging:!!atlasRuntime?.isDraggingCard(entry.id),
+  isSummoning:!!entry.summon||reservedCardSummons.has(entry.id),
+  isRecycling:!!entry.recycle,isFocused:focusedCard?.id===entry.id};
+}
+// A reusable marker contract: every manifested world object with a bound
+// original card sets group.userData.boundCardId = that ORIGINAL card's id.
+// The spell knows only card bindings and this marker, never artifact types.
+function boundObjectInScene(cardId){
+ let found=null,duplicates=false;
+ scene.traverse(node=>{
+  if(node.userData?.boundCardId!==cardId)return;
+  for(let a=node;a;a=a.parent)if(!a.visible)return;
+  node.updateWorldMatrix(true,false);
+  const p=node.getWorldPosition(new THREE.Vector3());
+  if(found){duplicates=true;return}
+  found={node,position:{x:p.x,y:p.y,z:p.z}};
+ });
+ return duplicates?null:found;
+}
+function inspectSpellNearest(spellId){
+ const source=floatingCardMeshes.get(spellId);
+ if(!source)return {status:'unavailable',reason:'no_spell'};
+ const entries=[...floatingCardMeshes.values()].map(localFloatEntry);
+ if(!atlasRuntime?.inFocus){
+  const originalById=new Map(entries.map(x=>[x.id,x]));
+  const seen=new Set(),duplicates=new Set();
+  scene.traverse(node=>{
+   const id=node.userData?.boundCardId;
+   if(typeof id!=='string'||!id)return;
+   for(let p=node;p;p=p.parent)if(!p.visible)return;
+   if(seen.has(id)){duplicates.add(id);return}
+   seen.add(id);
+   const record=originalById.get(id);
+   if(!record||record.visible||!ContractPolicy.canUnbind(record.record))return;
+   node.updateWorldMatrix(true,false);
+   const origin=source.group.getWorldPosition(new THREE.Vector3());
+   const p=node.userData.boundCardTargetPoint?.(origin)||node.getWorldPosition(new THREE.Vector3());
+   record.position={x:p.x,y:p.y,z:p.z};
+   record.visible=true;
+   record.worldContractTarget=true;
+  });
+  for(const id of duplicates){
+   const entry=originalById.get(id);if(entry){entry.visible=false;entry.worldContractTarget=false}
+  }
+ }
+ return UnbindSpell.findNearestBoundCard(spellId,entries.find(x=>x.id===spellId),entries);
+}
+function interactableCardAt(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ if(!rect.width||!rect.height)return null;
+ spellPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ spellRay.setFromCamera(spellPointer,camera);
+ // Match AtlasRuntime's nearest-card priority: do not pick a spell through another card.
+ const meshes=[...floatingCardMeshes.values()].filter(x=>x.group.visible&&!x.recycle&&!x.summon&&
+  !x.record.containerId).flatMap(x=>x.group.children.filter(m=>m.isMesh&&m.userData.localCardId));
+ const hit=spellRay.intersectObjects(meshes,false)[0];
+ if(!hit)return null;
+ const bookBlock=[...bookEntities.filter(b=>b.group.visible).flatMap(b=>spellRay.intersectObject(b.group,true))][0];
+ if(bookBlock&&bookBlock.distance+.06<hit.distance)return null;
+ const avatarBlock=spellRay.intersectObject(keeper,true)[0];
+ if(avatarBlock&&avatarBlock.distance+.06<hit.distance)return null;
+ const entry=floatingCardMeshes.get(hit.object.userData.localCardId);
+ return entry||null;
+}
+function spellCardAt(e){
+ const entry=interactableCardAt(e);
+ return UnbindSpell.isSpellCard(entry?.record)?entry:null;
+}
+function runeCardAt(e){
+ const entry=interactableCardAt(e),card=entry?.record;
+ return card?.runeBinding?.runeId===RuneContract.RUNE_ID&&
+  card.runeBinding.state==='cardified'&&card.placement==='hover'&&
+  !card.containerId&&!entry.summon&&!entry.recycle?entry:null;
+}
+function closeSpellPrompt(){
+ if(spellPromptTimer!==null){clearTimeout(spellPromptTimer);spellPromptTimer=null}
+ if(unbindDialog.open)unbindDialog.close();
+}
+function spellAllowed(){return runeAllowed()&&!unbindDialog.open&&!unbindEffect}
+// Contract release is a data-driven list of the player's actual original cards.
+// This includes historical world groups whose geometry/anchor cannot be selected.
+// No world-object IDs, meshes, book names or pre-selected contract IDs are used.
+function eligibleUnbindContracts(spellId){
+ const records=window.LivingObjectCraft.listCards(localStorage);
+ return records.filter(c=>c.id!==spellId&&ContractPolicy.canUnbind(c)&&
+  !window.LivingObjectCraft.isPermanentRuneCard(c))
+  .sort((a,b)=>a.id.localeCompare(b.id));
+}
+function chooseUnbindContract(){
+ const id=unbindPicker.value;
+ const bound=eligibleUnbindContracts(spellSession?.casterId).find(c=>c.id===id);
+ spellSelection=null;unbindConfirm.disabled=true;
+ unbindName.textContent='尚未選擇';
+ unbindTargetId.textContent='—';
+ unbindContractType.textContent='—';unbindMembers.textContent='';
+ if(!spellSession||!bound)return;
+ const caster=floatingCardMeshes.get(spellSession.casterId);
+ if(!caster||!UnbindSpell.isSpellCard(caster.record)||
+    caster.record.revision!==spellSession.spellRevision)return;
+ spellSelection={casterId:spellSession.casterId,targetId:bound.id,
+  runeId:bound.runeBinding.runeId,expectedRevision:bound.revision,
+  spellRevision:spellSession.spellRevision};
+ unbindName.textContent=bound.title||'未命名契約卡';
+ unbindTargetId.textContent=bound.id;
+ const group=bound.scanContract;
+ const type=group?'掃描收納契約（'+group.form+'）':
+  bound.truthEyeContract?'真實之眼契約':'一般法陣／物件契約';
+ unbindContractType.textContent=type+' · '+bound.runeBinding.runeId;
+ if(Array.isArray(group?.members)&&group.members.length){
+  unbindMembers.textContent='將解除 '+group.members.length+
+   ' 件物件的共同持有關係。原物件身分保留；不會影響其他契約。';
+ }else unbindMembers.textContent='將解除這張原卡目前唯一有效的契約連結。';
+ unbindConfirm.disabled=false;
+}
+unbindPicker.addEventListener('change',chooseUnbindContract);
+const spellHold=RuneHold.create({
+ isAllowed:spellAllowed,
+ onChange:()=>syncRender(),
+ onSelected:spellId=>{
+  spellActivatedPointerId=spellPointerId;
+  if(spellPointerId!==null)atlasRuntime?.cancelPointer(spellPointerId);
+  try{
+   const caster=floatingCardMeshes.get(spellId);
+   if(!caster||!UnbindSpell.isSpellCard(caster.record))throw Error('施法卡已改變');
+   const candidates=eligibleUnbindContracts(spellId);
+   spellSelection=null;spellSession=null;
+   if(!candidates.length){
+    toast('✧ 沒有可解除的契約；若原卡在圖鑑／GBA，先移回玩家軌道。永久卡不可解除。');
+    return;
+   }
+   spellSession={casterId:spellId,spellRevision:caster.record.revision};
+   unbindPicker.replaceChildren();
+   const empty=document.createElement('option');
+   empty.value='';empty.textContent='請選擇原卡契約';unbindPicker.append(empty);
+   for(const record of candidates){
+    const option=document.createElement('option');option.value=record.id;
+    const count=record.scanContract?.members?.length;
+    option.textContent=(record.title||'未命名契約卡')+
+     (Number.isInteger(count)?'（'+count+' 件物件）':'')+' · '+record.id;
+    unbindPicker.append(option);
+   }
+   unbindPicker.value='';
+   chooseUnbindContract();
+   unbindDialog.showModal();
+   toast('✧ 已找到 '+candidates.length+' 項可解除的原卡契約；請選擇並確認。');
+  }catch(error){spellSession=null;spellSelection=null;
+   toast('解除搜尋失敗：'+String(error?.message||error))}
+ }
+});
+function disposeSpellVisual(group){
+ if(!group)return;
+ scene.remove(group);
+ group.traverse(node=>{
+  if(!node.isMesh)return;
+  node.geometry?.dispose();
+  const materials=Array.isArray(node.material)?node.material:[node.material];
+  for(const mat of materials){mat?.map?.dispose();mat?.dispose()}
+ });
+}
+function confirmSpellUnbind(){
+ // A tap of the in-dialog ✓ is required for irreversible deletion.
+ if(!unbindDialog.open||!spellSelection||unbindEffect)return;
+ const selection=spellSelection;
+ let committed=false,visual=null;
+ try{
+  const current=window.LivingObjectCraft.getRuneBoundCard(localStorage,selection.runeId);
+  if(!spellSession||spellSession.casterId!==selection.casterId||
+    !eligibleUnbindContracts(selection.casterId).some(c=>c.id===selection.targetId)||
+    !current||current.id!==selection.targetId||current.revision!==selection.expectedRevision||
+    window.LivingObjectCraft.isPermanentRuneCard(current)||
+    floatingCardMeshes.get(selection.casterId)?.record.revision!==selection.spellRevision)
+   throw Error('目標位置或資料已有變動，請重新長按魔法卡');
+  const caster=floatingCardMeshes.get(selection.casterId);
+  const target=floatingCardMeshes.get(selection.targetId);
+  const worldTarget=!target?.group.visible?boundObjectInScene(selection.targetId):null;
+  if(!caster||!caster.group.visible)
+   throw Error('施法卡不在玩家軌道；契約尚未解除');
+  caster.group.updateWorldMatrix(true,false);
+  const origin=caster.group.getWorldPosition(new THREE.Vector3());
+  const endpoint=worldTarget?new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
+   target?.group?.visible?target.group.getWorldPosition(new THREE.Vector3()):
+   origin.clone(); // Recovery path for a legacy contract without a visible world anchor.
+  const started=performance.now(),duration=preferReduced?380:1300;
+  const plan=DirectedTransfer.normalize({sourceId:caster.id,targetId:target.id,
+   from:{x:origin.x,y:origin.y,z:origin.z},
+   to:{x:endpoint.x,y:endpoint.y,z:endpoint.z},
+   startedAt:started,duration,initialScale:caster.group.scale.x});
+  // Copy ONLY the 3D appearance before deleting the physical spell record.
+  visual=caster.group.clone(true);
+  // Original card renderer disposes its texture/material/mesh on refresh.
+  // Give the visual-only clone independent GPU resources for its final animation.
+  visual.traverse(node=>{
+   if(!node.isMesh)return;
+   node.geometry=node.geometry.clone();
+   const copyMaterial=source=>{
+    const mat=source.clone();
+    if(source.map){mat.map=source.map.clone();mat.map.needsUpdate=true}
+    return mat;
+   };
+   node.material=Array.isArray(node.material)?node.material.map(copyMaterial):copyMaterial(node.material);
+  });
+  visual.userData.scanProtected=true;
+  const originalScanMembers=window.LivingObjectCraft.listCards(localStorage)
+   .find(c=>c.id===selection.targetId)?.scanContract?.members||[];
+  const result=window.LivingObjectCraft.unbindAndAbsorbSpell(localStorage,{
+   runeId:selection.runeId,targetId:selection.targetId,
+   targetRevision:selection.expectedRevision,spellId:selection.casterId,
+   spellRevision:selection.spellRevision});
+  committed=true;spellSelection=null;spellSession=null;closeSpellPrompt();
+  unbindEffect={...selection,fxCard:visual,from:origin,to:endpoint,start:started,duration,plan};
+  scene.add(visual);
+  refreshFloatingCards();
+  scene.dispatchEvent({type:'living-contract-unbound',cardId:result.target.id,
+   bindingId:selection.runeId,scanMembers:originalScanMembers,from:endpoint.clone(),now:started});
+  toast('✧ 已解除「'+(current.title||current.id)+'」的契約；本次施法卡永久消耗');
+  syncRender();
+ }catch(error){
+  spellSelection=null;spellSession=null;closeSpellPrompt();
+  // UI failure AFTER a committed save must never be reported as an undo.
+  if(committed){disposeSpellVisual(unbindEffect?.fxCard||visual);unbindEffect=null;
+   try{refreshFloatingCards()}catch(_){}
+   toast('契約已解除，但動畫更新失敗：'+String(error?.message||error))}
+  else {disposeSpellVisual(visual);toast('無法解除，原始資料保留：'+String(error?.message||error))}
+ }
+}
+document.getElementById('runeUnbindConfirm').addEventListener('click',confirmSpellUnbind);
+document.getElementById('runeUnbindCancel').addEventListener('click',()=>{
+ closeSpellPrompt();spellSelection=null;spellSession=null;toast('已保留原契約');syncRender();
+});
+unbindDialog.addEventListener('cancel',()=>{spellSelection=null;spellSession=null;syncRender()});
+unbindDialog.addEventListener('close',syncRender);
+function cancelSpellUnbind(){
+ closeSpellPrompt();spellSelection=null;spellSession=null;
+ spellHold.cancelAll();spellActivatedPointerId=null;spellPointerId=null;
+ if(unbindEffect?.fxCard)disposeSpellVisual(unbindEffect.fxCard);
+ unbindEffect=null;unbindProgress.style.display='none';
+ spellHexagram.clear();
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
+}
+function updateSpellEffect(now){
+ const info=spellHold.inspect(now);
+ // Shared six-pointed hold progress in world space.
+ const holding=info.phase==='holding'&&spellPointerId!==null;
+ const casterHold=holding?[...floatingCardMeshes.values()].find(c=>
+  UnbindSpell.isSpellCard(c.record)&&c.id===spellHold.inspect().runeId):null;
+ if(casterHold){
+  casterHold.group.updateWorldMatrix(true,false);
+  spellHexagram.group.position.copy(casterHold.group.getWorldPosition(new THREE.Vector3()));
+  spellHexagram.group.quaternion.copy(camera.quaternion);
+  spellHexagram.update(info.progress,now);
+ }else spellHexagram.clear();
+ unbindProgress.style.display='none'; // No duplicate flat overlay.
+ spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
+ const active=unbindEffect;
+ const pair=active||((info.phase==='selected'||unbindDialog.open)&&spellSelection);
+ if(!pair)return;
+ const caster=active?{group:active.fxCard}:floatingCardMeshes.get(pair.casterId),
+  target=floatingCardMeshes.get(pair.targetId);
+ const worldTarget=active?null:(!target?.group.visible?boundObjectInScene(pair.targetId):null);
+ if(!caster||(!active&&!caster.group.visible))return;
+ caster.group.updateWorldMatrix(true,false);
+ const a=active?active.from.clone():caster.group.getWorldPosition(new THREE.Vector3());
+ const b=active?active.to.clone():(worldTarget?
+  new THREE.Vector3(worldTarget.position.x,worldTarget.position.y,worldTarget.position.z):
+  target?.group?.visible?target.group.getWorldPosition(new THREE.Vector3()):a.clone());
+ let progress=0,scale=null;
+ if(active){
+  const frame=DirectedTransfer.sample(active.plan,now,{x:b.x,y:b.y,z:b.z});
+  progress=frame.progress;
+  a.set(frame.position.x,frame.position.y,frame.position.z);
+  scale=frame.scale;
+  caster.group.position.copy(a);
+  caster.group.scale.setScalar(scale);
+  caster.group.quaternion.copy(camera.quaternion);
+ }
+ a.y+=.12;b.y+=.12;
+ spellDelta.copy(b).sub(a);const dist=spellDelta.length();
+ if(dist>.02){
+  spellBeam.visible=true;spellBeam.position.copy(a).addScaledVector(spellDelta,.5);
+  spellBeam.quaternion.setFromUnitVectors(spellAxis,spellDelta.clone().normalize());
+  spellBeam.scale.set(1,dist,1);
+  spellBeamMat.opacity=active?.8*(1-progress*.65):.55;
+  spellSpark.visible=!preferReduced;spellSpark2.visible=!preferReduced;
+  const travel=active?progress:(now*.00075)%1;
+  spellSpark.position.copy(a).addScaledVector(spellDelta,travel);
+  spellSpark2.position.copy(a).addScaledVector(spellDelta,(travel+.5)%1);
+ }
+ spellRing.visible=true;spellRing.position.copy(b);spellRing.quaternion.copy(camera.quaternion);
+ spellRing.scale.setScalar(active?1+progress*.8:1);
+ spellRingMat.opacity=active?.85*(1-progress):.62;
+ if(active&&progress>=1){
+  // World state was committed at the end of the hold, BEFORE this visual effect.
+  disposeSpellVisual(active.fxCard);unbindEffect=null;
+  spellBeam.visible=false;spellRing.visible=false;spellSpark.visible=false;spellSpark2.visible=false;
+  syncRender();
+ }
+}
+// RUNE-06: the manifested original card can transform back into the floor rune.
+const returnDialog=document.getElementById('runeReturnDialog'),returnName=document.getElementById('runeReturnCardName');
+let returnCardPointerId=null,returnCardActivatedPointerId=null,returnCardSelection=null,returnPromptTimer=null;
+const returnHexagram=ContractHexagram.create({THREE,parent:scene,plane:'xy',radius:.45});
+function closeReturnPrompt(){
+ if(returnPromptTimer!==null){clearTimeout(returnPromptTimer);returnPromptTimer=null}
+ if(returnDialog.open)returnDialog.close();
+}
+const returnCardHold=RuneHold.create({
+ isAllowed:()=>runeAllowed()&&!unbindEffect&&!returnDialog.open,
+ onChange:()=>syncRender(),
+ onSelected:id=>{
+  returnCardActivatedPointerId=returnCardPointerId;
+  if(returnCardPointerId!==null)atlasRuntime?.cancelPointer(returnCardPointerId);
+  try{
+   const card=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+   if(!card||card.id!==id||card.runeBinding?.state!=='cardified'||
+      floatingCardMeshes.get(id)?.record.revision!==card.revision||
+      card.placement!=='hover'||card.containerId)throw Error('法陣原卡狀態已變動');
+   if(window.LivingPermanentCards?.isRegistered(card)){
+    beginPermanentBuild('card',card);
+    return;
+   }
+   returnCardSelection={id,revision:card.revision};returnName.textContent=card.title;
+   returnPromptTimer=setTimeout(()=>{
+    returnPromptTimer=null;
+    if(!document.hidden&&!returnDialog.open&&!runeTransfer&&
+      returnCardSelection?.id===id&&!focusedCard&&!atlasRuntime?.inFocus)returnDialog.showModal();
+   },550);
+   toast('✦ 長按成功：已選擇將原卡還原成地面法陣');
+  }catch(error){returnCardSelection=null;toast('法陣還原未啟動：'+error.message)}
+ }
+});
+document.getElementById('runeReturnConfirm').addEventListener('click',()=>{
+ const selected=returnCardSelection;if(!selected||runeTransfer)return;
+ try{
+  const card=window.LivingObjectCraft.getRuneBoundCard(localStorage);
+  if(!card||card.id!==selected.id||card.revision!==selected.revision||
+    card.runeBinding?.state!=='cardified'||card.placement!=='hover'||card.containerId)
+    throw Error('原卡已改變，請重新長按');
+  closeReturnPrompt();returnCardSelection=null;startRuneTransfer('return',card);
+ }catch(e){closeReturnPrompt();returnCardSelection=null;toast('還原未完成：'+e.message)}
+});
+document.getElementById('runeReturnCancel').addEventListener('click',()=>{closeReturnPrompt();returnCardSelection=null;syncRender()});
+returnDialog.addEventListener('cancel',()=>{returnCardSelection=null;syncRender()});
+returnDialog.addEventListener('close',syncRender);
+function updateRuneReturnVisual(now){
+ const progress=returnCardHold.inspect(now);
+ const entry=progress.phase==='holding'&&returnCardPointerId!==null?
+  floatingCardMeshes.get(progress.runeId):null;
+ if(!entry?.group.visible){returnHexagram.clear();return}
+ const pos=entry.group.getWorldPosition(new THREE.Vector3());
+ returnHexagram.group.position.copy(pos);
+ returnHexagram.group.quaternion.copy(camera.quaternion);
+ returnHexagram.update(progress.progress,now);
+}
+// PERM-BUILD-001 | The transparent hologram is a preview ONLY, never a
+// second authoritative world rune. Both entry paths share the same placement.
+const Build=rootBuild(),Registry=window.LivingPermanentCards;
+function rootBuild(){return window.LivingPermanentBuild}
+const buildToggle=document.getElementById('permanentBuildToggle'),
+ buildTools=document.getElementById('permanentBuildTools'),
+ buildSnap=document.getElementById('permanentBuildSnap');
+let buildState=null,buildPointer=null,buildCameraPan=null;
+const holoGroup=new THREE.Group(),holoMats=[];
+for(const radius of [1.45,2.03,2.5]){
+ const mat=new THREE.MeshBasicMaterial({color:0x8cffe0,transparent:true,opacity:.46,
+  depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+ const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.055,6,70),mat);
+ hoop.rotation.x=Math.PI/2;hoop.position.y=.46;holoGroup.add(hoop);holoMats.push(mat);
+}
+for(let i=0;i<12;i++){
+ const a=i*Math.PI*2/12,mat=new THREE.MeshBasicMaterial({color:0x8cffe0,
+  transparent:true,opacity:.65,depthWrite:false});
+ const mark=new THREE.Mesh(new THREE.BoxGeometry(.17,.045,.35),mat);
+ mark.position.set(Math.sin(a)*1.82,.46,Math.cos(a)*1.82);
+ mark.rotation.y=a;holoGroup.add(mark);holoMats.push(mat);
+}
+holoGroup.visible=false;scene.add(holoGroup);
+function locatePermanentWorldCard(){
+ try{return window.LivingObjectCraft.getRuneBoundCard(localStorage)}
+ catch{return null}
+}
+function syncBuildControls(){
+ const card=locatePermanentWorldCard(),registered=Registry?.isRegistered(card);
+ buildToggle.hidden=!registered||!!buildState||!!atlasRuntime?.inFocus;
+ buildTools.hidden=!buildState;
+ buildSnap.dataset.on=buildState?.grid?'true':'false';
+}
+function updateHologram(now){
+ if(!buildState){holoGroup.visible=false;return}
+ const {position,rotationY}=buildState;
+ const outcome=Build.place(position,{grid:buildState.grid});
+ buildState.valid=outcome.valid;
+ holoGroup.visible=true;
+ holoGroup.position.set(outcome.position.x,0,outcome.position.z);
+ holoGroup.rotation.y=rotationY;
+ for(const mat of holoMats){mat.color.set(outcome.valid?'#8cffe0':'#ff7272');
+  mat.opacity=preferReduced?.48:.38+.10*Math.sin(now*.006)}
+}
+function beginPermanentBuild(mode,card){
+ if(buildState||!Build||!Registry?.isRegistered(card))return false;
+ if(mode==='card'&&!(card.runeBinding?.state==='cardified'&&card.placement==='hover'&&!card.containerId))
+  throw Error('請先將永久原卡從 BOOK 經 GBA 調出，才能投影物件');
+ if(mode==='world'&&!(card.runeBinding?.state==='sealed'&&card.placement==='contained'))
+  throw Error('世界建造只能選擇目前已實體化的永久物件');
+ const anchor=card.permanentRegistry.anchor||{position:{x:0,y:0,z:0},rotationY:0};
+ buildState={mode,cardId:card.id,revision:card.revision,
+  position:Build.place(anchor.position).position,precise:Build.place(anchor.position).position,
+  rotationY:anchor.rotationY||0,
+  grid:false,valid:true};
+ resetJoystick(false);syncBuildControls();updateHologram(performance.now());
+ toast('✦ 虛擬投影已啟動：觸碰地面定位、搖桿微調、⊞ 吸附網格');
+ syncRender();return true;
+}
+function cancelPermanentBuild(){
+ if(!buildState)return;
+ buildState=null;buildPointer=null;buildCameraPan=null;holoGroup.visible=false;
+ resetJoystick(false);syncBuildControls();syncRender();
+}
+function confirmPermanentBuild(){
+ const chosen=buildState;if(!chosen)return;
+ const snap=Build.place(chosen.position,{grid:chosen.grid});
+ if(!snap.valid){toast('紅色投影無法放置，請移回合法地面');return}
+ const original=locatePermanentWorldCard();
+ if(!original||original.id!==chosen.cardId||original.revision!==chosen.revision){
+  toast('原卡資料已變動；建造已取消');cancelPermanentBuild();return;
+ }
+ try{
+  if(chosen.mode==='world'){
+   const moved=Registry.movableAnchor(localStorage,original.id,original.revision,
+    snap.position,chosen.rotationY);
+   runeGroup.position.set(snap.position.x,snap.position.y,snap.position.z);
+   runeGroup.rotation.y=chosen.rotationY;
+   runeBound=moved;refreshFloatingCards();
+   toast('✦ 永久法陣已移至指定位置，編號與契約保持不變');
+  }else{
+   startRuneTransfer('return',original,
+    {position:snap.position,rotationY:chosen.rotationY});
+   toast('✦ 投影定位完成，原卡開始具現化成原世界物件');
+  }
+  cancelPermanentBuild();
+ }catch(e){toast('建造未完成：'+e.message)}
+}
+function pickBuildGround(e){
+ if(!buildState||!e||!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY))return;
+ const bounds=renderer.domElement.getBoundingClientRect();
+ if(!bounds.width||!bounds.height)return;
+ const loc=new THREE.Vector2((e.clientX-bounds.left)/bounds.width*2-1,
+  -(e.clientY-bounds.top)/bounds.height*2+1);
+ const cast=new THREE.Raycaster();cast.setFromCamera(loc,camera);
+ const hit=cast.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),
+  new THREE.Vector3());
+ if(hit){const next=Build.place(hit,{grid:buildState.grid});
+  buildState.precise={x:hit.x,y:0,z:hit.z};buildState.position=next.position;
+  buildState.valid=next.valid;updateHologram(performance.now());syncRender()}
+}
+buildToggle.addEventListener('click',()=>{
+ const card=locatePermanentWorldCard();
+ if(!card||!Registry?.isRegistered(card)){toast('目前沒有可建造的永久卡');return}
+ try{beginPermanentBuild('world',card)}
+ catch(e){toast(e.message)}
+});
+buildSnap.addEventListener('click',()=>{
+ if(!buildState)return;
+ buildState.grid=!buildState.grid;
+ buildState.position=Build.place(buildState.position,{grid:buildState.grid}).position;
+ buildState.precise={...buildState.position};
+ syncBuildControls();updateHologram(performance.now());syncRender();
+});
+document.getElementById('permanentBuildRotate').addEventListener('click',()=>{
+ if(!buildState)return;buildState.rotationY=Build.rotate(buildState.rotationY);syncRender();
+});
+document.getElementById('permanentBuildApply').addEventListener('click',confirmPermanentBuild);
+document.getElementById('permanentBuildCancel').addEventListener('click',cancelPermanentBuild);
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&buildState){e.preventDefault();cancelPermanentBuild()}
+});
+syncBuildControls();
+const runeInspection=Object.freeze({
+ id:RuneContract.RUNE_ID,displayName:RuneContract.DISPLAY_NAME,
+ anchor:()=>RuneContract.describeRune(runeWorldAnchor()),
+ hitTest:runeHitTest,findNearestCard:findNearestRuneCard,
+ inspectHold:()=>Object.freeze({...runeGesture.inspect(),nearest:runeNearest}),
+ cancelHold:()=>runeGesture.cancelAll()
+});
+function pick(e,skipTruthEye=false){
+ if(!skipTruthEye&&truthEye.pick(e))return 'truth-eye';
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
@@ -1513,7 +2857,7 @@ function pick(e){
  if(pickFloatingCard(ray))return 'card';
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
- bookEntities.forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
+ bookEntities.filter(o=>o.group.visible).forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
  const bookHit=ray.intersectObjects(targets,false)[0];
  if(bookHit){
   resetJoystick(true);
@@ -1538,7 +2882,39 @@ function contactPair(){
   x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2};
 }
 renderer.domElement.addEventListener('pointerdown',e=>{
- if(focusedCard)return;
+ if(!buildState&&!focusedCard&&!atlasRuntime?.inFocus&&!insideJoystick(e)&&truthEye.pointerDown(e)){
+  renderer.domElement.setPointerCapture?.(e.pointerId);
+  e.preventDefault();syncRender();return;
+ }
+ if(buildState&&!insideJoystick(e)){
+  buildPointer=e.pointerId;
+  buildCameraPan={startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  e.preventDefault();return;
+ }
+ runeGesture.foreignDown(e.pointerId); // A second finger cancels the first hold.
+ spellHold.foreignDown(e.pointerId);
+ returnCardHold.foreignDown(e.pointerId);
+ if(focusedCard||unbindEffect||runeTransfer||runeReleaseEffect)return;
+ if(!insideJoystick(e)&&atlasRuntime.pointerDown(e)){
+  const card=spellAllowed()?spellCardAt(e):null;
+  if(card&&spellHold.pointerDown(e,card.id)){
+   spellPointerId=e.pointerId;spellOriginPoint={x:e.clientX,y:e.clientY};
+   if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+  }else{
+   const manifestation=runeAllowed()?runeCardAt(e):null;
+   if(manifestation&&returnCardHold.pointerDown(e,manifestation.id)){
+    returnCardPointerId=e.pointerId;
+    if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+   }
+  }
+  syncRender();return
+ }
+ if(!insideJoystick(e)&&canStartRunePress(e)&&runeGesture.pointerDown(e,RuneContract.RUNE_ID)){
+  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
+  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
+  syncRender();return;
+ }
  if(!renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.setPointerCapture(e.pointerId);
  touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY,down:{x:e.clientX,y:e.clientY}});
  if(e.pointerType==='touch'||e.pointerType==='pen')e.preventDefault();
@@ -1559,7 +2935,31 @@ renderer.domElement.addEventListener('pointerdown',e=>{
  }
 });
 renderer.domElement.addEventListener('pointermove',e=>{
+ if(truthEye.pointerMove(e)){syncRender();return}
+ if(buildState&&buildPointer===e.pointerId){
+  if(buildCameraPan){
+   const pan=buildCameraPan,dx=e.clientX-pan.lastX,dy=e.clientY-pan.lastY;
+   pan.lastX=e.clientX;pan.lastY=e.clientY;
+   // Right-half drag keeps the existing free camera during building.
+   if(pan.startX>window.innerWidth*.5&&
+      (pan.moved||Math.hypot(e.clientX-pan.startX,e.clientY-pan.startY)>7)){
+    pan.moved=true;theta-=dx*.005;
+    phi=THREE.MathUtils.clamp(phi+dy*.003,-.07,1.27);cameraUpdate();
+   }
+  }
+  syncRender();return;
+ }
+ if(runeGesture.pointerMove(e)){syncRender();return}
+ if(spellHold.pointerMove(e)){
+  if(spellActivatedPointerId===e.pointerId){syncRender();return}
+  syncRender();
+ }
+ if(returnCardHold.pointerMove(e)){
+  if(returnCardActivatedPointerId===e.pointerId){syncRender();return}
+  syncRender();
+ }
  if(focusedCard)return;
+ if(e.pointerId!==joystickPointer&&atlasRuntime.pointerMove(e)){syncRender();return}
  if(!touchPoints.has(e.pointerId))return;
  touchPoints.set(e.pointerId,{...touchPoints.get(e.pointerId),x:e.clientX,y:e.clientY});
  if(placingJoystick&&touchPoints.size===1){positionJoystick(e.clientX,e.clientY);return}
@@ -1593,7 +2993,26 @@ renderer.domElement.addEventListener('pointermove',e=>{
  }
 });
 renderer.domElement.addEventListener('pointerup',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
+ if(buildState&&buildPointer===e.pointerId){
+  const wasCameraDrag=!!buildCameraPan?.moved;
+  buildPointer=null;buildCameraPan=null;
+  if(!wasCameraDrag)pickBuildGround(e);
+  syncRender();return;
+ }
+ if(runeGesture.pointerUp(e)){syncRender();return}
+ spellHold.pointerUp(e);
+ returnCardHold.pointerUp(e);
+ if(returnCardActivatedPointerId===e.pointerId){
+  returnCardActivatedPointerId=null;returnCardPointerId=null;syncRender();return;
+ }
+ if(returnCardPointerId===e.pointerId)returnCardPointerId=null;
+ if(spellActivatedPointerId===e.pointerId){
+  spellActivatedPointerId=null;spellPointerId=null;syncRender();return;
+ }
+ if(spellPointerId===e.pointerId)spellPointerId=null;
  if(focusedCard)return;
+ if(e.pointerId!==joystickPointer&&atlasRuntime.pointerUp(e)){syncRender();return}
  if(placingJoystick){
   if(joystickOrigin){
    const p={x:clampUnit(joystickOrigin.x/window.innerWidth,.08,.92),y:clampUnit(joystickOrigin.y/window.innerHeight,.12,.88)};
@@ -1613,11 +3032,31 @@ renderer.domElement.addEventListener('pointerup',e=>{
  syncRender();
 });
 renderer.domElement.addEventListener('pointercancel',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
+ if(runeGesture.pointerCancel(e)){syncRender();return}
+ spellHold.pointerCancel(e);
+ returnCardHold.pointerCancel(e);
+ if(returnCardActivatedPointerId===e.pointerId){returnCardActivatedPointerId=null;returnCardPointerId=null;syncRender();return}
+ if(returnCardPointerId===e.pointerId)returnCardPointerId=null;
+ if(spellActivatedPointerId===e.pointerId){spellActivatedPointerId=null;spellPointerId=null;syncRender();return}
+ if(spellPointerId===e.pointerId)spellPointerId=null;
+ atlasRuntime.cancelPointer(e.pointerId);
  if(placingJoystick){placingJoystick=false;resetJoystick(true);toast('已取消搖桿定位')}
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);pinch=null;pinchCenter=null;drag=null;wasMoving=true;syncRender();
 });
 renderer.domElement.addEventListener('lostpointercapture',e=>{
+ if(truthEye.pointerEnd(e)){syncRender();return}
+ if(buildPointer===e.pointerId){buildPointer=null;buildCameraPan=null;return}
+ if(runeGesture.pointerCancel(e)){syncRender();return}
+ spellHold.pointerCancel(e);
+ returnCardHold.pointerCancel(e);
+ if(returnCardActivatedPointerId===e.pointerId){returnCardActivatedPointerId=null;returnCardPointerId=null;syncRender();return}
+ if(returnCardPointerId===e.pointerId)returnCardPointerId=null;
+ if(spellActivatedPointerId===e.pointerId){spellActivatedPointerId=null;spellPointerId=null;syncRender();return}
+ if(spellPointerId===e.pointerId)spellPointerId=null;
+ atlasRuntime.cancelPointer(e.pointerId);
  if(e.pointerId===joystickPointer)resetJoystick(false);
  touchPoints.delete(e.pointerId);
  if(touchPoints.size<2){pinch=null;pinchCenter=null}
@@ -1625,7 +3064,7 @@ renderer.domElement.addEventListener('lostpointercapture',e=>{
 });
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();
- if(focusedCard)return;
+ if(focusedCard||atlasRuntime.inFocus)return;
  distance=THREE.MathUtils.clamp(distance+e.deltaY*.015,CAMERA_MIN,CAMERA_MAX);
  cameraUpdate();
 },{passive:false});
@@ -1663,13 +3102,26 @@ function stopRenderLoop(){
  running=false;
  renderer.setAnimationLoop(null);
 }
-let proofPaintAt=0;
+let proofPaintAt=0,buildSyncLast=0;
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
  if(isMotion()&&!reduced)elapsed+=dt;
  stepAvatar(dt);
  updateOrbit(elapsed,now);
  updateFloatingCards(now);
+ tickRuneTransfer(now);
+ runeGesture.tick();updateRuneVisual(now);
+ spellHold.tick();updateSpellEffect(now);
+ updateRuneReleaseEffect(now);
+ returnCardHold.tick();updateRuneReturnVisual(now);
+ updateHologram(now);
+ truthEye.tick(now);
+ if(now-buildSyncLast>650){buildSyncLast=now;syncBuildControls()}
+ atlasRuntime?.tick(now);
+ // Other physical books keep their state/position but cannot occlude close-up pages.
+ for(const entry of bookEntities)if(!atlasRuntime?.isCollection(entry.id==='cardCollection'?'local.atlas.collection':entry.id))entry.group.visible=!atlasRuntime?.inFocus;
+ keeper.visible=!atlasRuntime?.inFocus;
+ truthEye.applyPacked();
  if(now-proofPaintAt>250){
   const proof=document.getElementById('livingReleaseProof');
   if(proof){
@@ -1693,11 +3145,12 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput())syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
- if(((isMotion()||hasFlight()||hasCardSummon())&&!reduced)||hasWalkInput()){
+ if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
+  performance.now()<runeBindingPulseUntil||hasWalkInput()||truthEye.active()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -1708,9 +3161,10 @@ function invalidate(){
  if(overlayActive())return;
  if(!running)paint(performance.now()); // Camera/book interactions still update a paused scene.
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden){walkKeys.clear();resetJoystick(true)}syncRender()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardSelection=null;returnCardHold.cancelAll();runeGesture.cancelAll();walkKeys.clear();atlasRuntime?.cancelPointer();atlasVoice?.stop();resetJoystick(true)}syncRender()});
+window.addEventListener('blur',()=>{cancelPermanentBuild();endRuneReleaseEffect();spellHold.cancelAll();returnCardHold.cancelAll();runeGesture.cancelAll();syncRender()});
 window.addEventListener('pageshow',syncRender);
-window.addEventListener('pagehide',stopRenderLoop);
+window.addEventListener('pagehide',()=>{cancelPermanentBuild();runeTransfer=null;endRuneReleaseEffect();cancelSpellUnbind();closeRunePrompt();closeReturnPrompt();returnCardHold.cancelAll();runeGesture.cancelAll();stopRenderLoop()});
 initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
@@ -1719,6 +3173,11 @@ notifyReady({
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
  isExploreMode(){return true},
+ atlas:atlasRuntime,
+ truthEye:truthEye,
+ rune:runeInspection,
+ unbindSpell:Object.freeze({inspect:()=>Object.freeze({...spellHold.inspect(),selection:spellSelection}),
+  findNearest:inspectSpellNearest,cancel:cancelSpellUnbind}),
  beginJoystickPlacement,applyControls:applyControlPrefs,
  refreshFloatingCards,queueCardSummon,startCardSummon,startCardRecycle,exitCardFocus,
  syncRender,invalidate
@@ -1744,3 +3203,4 @@ syncRender();
 </script>
 <script src="./clean-view.js?v=20261015-1"></script>
 </body></html>
+

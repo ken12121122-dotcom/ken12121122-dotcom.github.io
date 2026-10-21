@@ -15,7 +15,7 @@ const snapshot=new Function('self',snapshotScript+'return self.GPTSkillsSnapshot
 
 test('GPT Book adds a real embeddable webpage card, preserving all 14 books and 16 Android routes',()=>{
  const a=Catalog.buildCatalog();
- assert.equal(a.books.length,14);
+ assert.equal(a.books.length,15);
  assert.equal(a.bookCards.android.length,16);
  assert.equal(a.bookCards.gaming.length,6);
  assert.deepEqual(a.bookCards.gpt,['public.gpt.bridge','public.gpt.skills']);

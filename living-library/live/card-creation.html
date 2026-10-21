@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111929">
-<title>卡片創造術｜念動世界・3D 召喚</title>
+<title>卡片創造術｜空白圖鑑卡第二版</title>
 <style>
 :root{color-scheme:dark;--bg:#101a2a;--panel:#1a2a3e;--ink:#f6f0df;--line:#8c7963;--gold:#e9c996;--soft:#bec6d2}
 *{box-sizing:border-box}
@@ -36,96 +36,193 @@ textarea{min-height:74px;resize:vertical}
 details{border-top:1px solid #5e6c7a;padding-top:9px}
 summary{color:#c5b795;cursor:pointer}
 #cardList{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px;margin-top:14px}
+#cardRecoverySummary{margin:12px 0;background:#fff9ea;color:#000;padding:12px;border:1px solid #a28c65;border-radius:10px;white-space:pre-wrap}
+.mini .location-info{display:block;white-space:pre-wrap;color:#000;font-size:12px}
+.mini .take-card{min-height:44px;min-width:44px;margin:5px;border:1px solid #826948;background:#fff8e5;color:#000;border-radius:8px}
+#retrieveCardDialog{max-width:min(92vw,470px);background:#f5ecd9;color:#000;border:1px solid #947a51;border-radius:12px;padding:20px}
+#retrieveCardDialog::backdrop{background:#020812ad}
+#retrieveCardDialog p{color:#000;white-space:pre-wrap}
+#retrieveCardDialog button{min-width:90px;min-height:44px;margin:6px;background:#fff8e5;color:#000;border:1px solid #947a51;border-radius:8px}
 .mini{width:100%;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid #7d6e59;border-radius:9px;background:#e7d5b5;color:#4c3824;overflow-wrap:anywhere}
 .mini.active{outline:3px solid #8bd4c7}.mini strong{font-size:13px}
 #recycleList{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px;padding-top:10px}
 .recycleItem{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:10px;border:1px dashed #96856c;border-radius:9px;background:#17263a}
 .recycleItem span{overflow-wrap:anywhere;min-width:0}
-.recycleItem button,#recycleCard{min-width:46px;min-height:46px;border-radius:8px;border:1px solid #b9a37f;background:#574a3e;color:#fff0d7;font-size:22px;cursor:pointer}
+.recycleItem button,#recycleCard,#destroyCard{min-width:46px;min-height:46px;border-radius:8px;border:1px solid #b9a37f;background:#574a3e;color:#fff0d7;font-size:22px;cursor:pointer}
 #recycleDialog{border:1px solid #b49a72;border-radius:15px;background:#192b3d;color:#f4e6d1;max-width:min(92%,420px);padding:21px}
-#recycleDialog::backdrop{background:#03080fc7}
+#recycleDialog::backdrop,#destroyDialog::backdrop{background:#03080fc7}
+#destroyDialog{border:1px solid #8f423b;border-radius:15px;background:#f4eddb;color:#000;max-width:min(92%,460px);padding:20px}
+#destroyDialog button{min-width:56px;min-height:46px;border:1px solid #8f423b;border-radius:8px;background:#e6d5b6;color:#000;font-size:22px;margin:4px}
+#destroyPrompt{color:#000;white-space:pre-wrap}
 #recycleDialog button{min-width:56px;min-height:46px;border:1px solid #b69d76;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 .backupActions button{min-width:46px;min-height:46px;border:1px solid #b9a37f;border-radius:8px;background:#364b5e;color:#fff2d8;font-size:23px;margin:4px}
 footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71;padding-top:11px}
 @media(max-width:650px){main{padding:12px}.layout{grid-template-columns:1fr;gap:12px}.circle{min-height:295px}.controls{padding:13px}h1{font-size:19px}header strong{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.paper.summon,.paper.hover{animation:none}}
+
+/* Compendium card V2: existing 142×203 preview and existing world geometry. */
+:root{color-scheme:light;--ink:#000;--soft:#000;--gold:#000}
+body{background:#eee7d6;color:#000}
+header strong,small,p,h1,label,summary,footer,#status,#backupStatus,.mini,.recycleItem{color:#000!important}
+.circle{background:#ddd4bf}.controls,.recycleItem{background:#f4eddb}
+.paper{padding:0;border:0;overflow:hidden;background:#f3ead2;color:#000}
+#cardFace{display:block;width:142px;height:203px}
+input,textarea,select{color:#000!important;background:#fffaf0;border:1px solid #948774;font:16px/1.5 system-ui;max-width:100%}
+select{display:block;width:100%;padding:10px;border-radius:8px;margin-top:5px}
+button,#recycleCard,#destroyCard,#recycleDialog button,#destroyDialog button,.backupActions button{color:#000!important;background:#e6d5b6!important;min-height:44px;min-width:44px}
+#recycleDialog{background:#f4eddb;color:#000}
+.downloadOptIn{display:flex;align-items:center;gap:9px;border:1px solid #948774;padding:10px;border-radius:8px;background:#fffaf0;color:#000}
+.downloadOptIn input{width:20px;height:20px;flex:0 0 20px;accent-color:#275b55}
+.downloadOptInHelp{display:block;margin:0 0 9px}
+input[type=range]{padding:0;accent-color:#35494c}
+input::placeholder,textarea::placeholder{color:#000;opacity:1}
+button:disabled{opacity:.45}
+.photoActions{display:flex;gap:8px;flex-wrap:wrap}
+.destroyShortcut{margin:12px 0 16px;padding:13px;border:2px solid #a3493c;border-radius:12px;background:#fff4ed}
+.controls .destroyShortcut button{width:100%;min-height:54px;background:#8e3029!important;color:#fff!important;border:2px solid #61251e;font-size:17px;font-weight:800;justify-content:center}
+.controls .destroyShortcut button:disabled{background:#d9c8c1!important;color:#302a28!important;border-color:#927b77;opacity:1}
+#destroyHint{display:block;font-size:12px;line-height:1.6;margin-top:7px;color:#4d342f!important}
+#formatCardDialog{border:1px solid #a58655;border-radius:13px;max-width:min(94vw,460px);padding:20px;background:#f5ecd9;color:#000}
+#formatCardDialog::backdrop{background:#060d19bc}
+#formatCardDialog h2,#formatCardDialog p,#formatCardDialog small{color:#000}
+#formatCardDialog button{min-width:84px;min-height:46px;margin:8px;border:1px solid #987b54;border-radius:8px;background:#e6d5b6;color:#000;font:700 16px system-ui}
+#cardAudit{margin-top:16px;border:1px solid #aa9882;border-radius:10px;padding:12px;background:#fffaf0;color:#000}
+#cardAudit summary,#cardAudit p,#cardAudit strong{color:#000}
+#cardAuditStats{font-weight:700;white-space:pre-wrap}
+#cardAuditDetails{white-space:pre-wrap;overflow-wrap:anywhere}
+#cardAuditRaw{max-height:220px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#ede6d8;color:#000;padding:10px;font:12px/1.5 ui-monospace,monospace}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <main>
-<header><strong>✦ 卡片創造術</strong><small>LOCAL CRAFT / V0.1</small></header>
+<header><strong>✦ 卡片創造術</strong><small>圖鑑卡 / V0.2</small></header>
 <h1>從空白卡開始，逐步賦予能力</h1>
 <p>觸碰符印，創造一張真正有獨立身分的空白卡。按下創造符印後將直接返回 3D 世界，從煙霧中召喚一張小型空白卡；卡片進入人物與漂浮書本之間的專屬內圈軌道，尚未放入任何書。</p>
 <div class="layout">
  <section class="circle" aria-label="創卡法陣">
-  <div id="cardPreview" class="paper"><span class="rune">◇</span><b id="cardTitle">空白卡片</b><small id="cardMark">尚未召喚</small></div>
+  <div id="cardPreview" class="paper"><canvas id="cardFace" width="560" height="780" aria-label="空白圖鑑卡卡面預覽"></canvas><b id="cardTitle" hidden>空白卡片</b><small id="cardMark" hidden>尚未召喚</small></div>
   <button id="createCard" type="button" aria-label="施放卡片創造術" title="施放卡片創造術">✦</button>
   <small style="margin-top:8px">✦ 創造空白卡</small>
  </section>
  <section class="controls" aria-label="空白卡片資訊">
-  <strong>卡片屬性</strong>
-  <p>卡片建立後可以命名、留下用途描述。未來由 AI 協助設計功能，再經測試與授權啟用。</p>
+  <strong>空白圖鑑卡</strong>
+  <div class="destroyShortcut">
+   <button id="destroyCard" type="button" disabled aria-label="永久銷毀目前選取的卡片" title="永久刪除整張卡（不可還原）">🗑 永久銷毀卡片</button>
+   <small id="destroyHint">先從下方「已創造的卡片」選取一張卡；回收站的卡可在回收站內直接銷毀。</small>
+  </div>
+  <p>創造空白卡後，自行放入圖片、修改文字，再連結既有公開內容。圖片與說明本身不會產生施法能力。</p>
   <form id="editForm">
+   <label>卡片編號<input id="editNumber" type="text" maxlength="20" autocomplete="off" placeholder="例如 001，可留空"></label>
    <label>卡片名稱<input id="editName" maxlength="40" autocomplete="off" value="空白卡片" required></label>
-   <label>預期用途（純文字草稿）<textarea id="editDescription" maxlength="500" placeholder="例如：我希望這張卡能讓書本合上"></textarea></label>
+   <label>卡片說明<textarea id="editDescription" maxlength="500" placeholder="自行填寫，亦可留空"></textarea></label>
+   <label>內容類型<input id="editType" maxlength="20" autocomplete="off" placeholder="自行填寫，亦可留空"></label>
+   <label class="downloadOptIn"><input id="editDownloadable" type="checkbox"> 可複製卡（顯示在 GBA 卡片下載）</label>
+   <small class="downloadOptInHelp">預設不顯示。只有勾選並儲存的普通卡會列入下載；取消勾選即從清單移除。只複製卡面格式，不複製 ID、唯一編號、法陣或能力。</small>
+   <div class="photoActions"><button id="choosePhoto" type="button" disabled aria-label="選擇卡面圖片" title="選擇圖片">▧</button><button id="removePhotoOnly" type="button" disabled aria-label="只移除卡面圖片" title="僅移除圖片">⊟</button><button id="removePhoto" type="button" disabled aria-label="將整張卡片格式化為真正空白卡" title="完整格式化卡片（11 項有值欄位）">×</button><button id="flipCard" type="button" aria-label="翻到卡片紀錄" aria-pressed="false" title="翻面">⇄</button></div>
+   <small>× = 完整格式化整張卡片（不是只刪除圖片）；⊟ = 僅移除圖片。格式化須確認，有效契約／永久卡禁止直接清除。</small>
+   <input id="photoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+   <div id="cropControls" hidden><label>圖片縮放<input id="photoScale" type="range" min="1" max="3" step="0.05" value="1"></label><label>左右位置<input id="photoX" type="range" min="0" max="100" value="50"></label><label>上下位置<input id="photoY" type="range" min="0" max="100" value="50"></label></div>
+   <label>連結既有公開內容<select id="editLink"><option value="">未連結</option></select></label>
+   <p id="linkNote">先儲存，再按 ↗ 開啟連結。未收錄的遊戲物件暫不可連結。</p>
+   <button id="openLink" type="button" disabled aria-label="開啟已儲存的內容連結" title="開啟連結">↗</button>
    <button id="saveCard" type="submit" disabled aria-label="儲存卡片草稿" title="儲存卡片草稿">✓</button>
    <button id="recycleCard" type="button" disabled aria-label="回收所選卡片" title="回收所選卡片">♻</button>
   </form>
+  <details id="cardAudit" open><summary>ⓘ 卡片資訊總覽（唯讀）</summary>
+   <p id="cardAuditStats">選擇卡片即可檢視已保存的資訊。</p>
+   <div id="cardAuditDetails"></div>
+   <details><summary>查看卡片屬性（省略圖片 Base64）</summary>
+    <pre id="cardAuditRaw"></pre></details>
+   <small>法術／動畫／動作為目前程式可辨識的條件式規則，不代表已正在執行。此處不修改契約。</small>
+  </details>
   <div id="status" role="status" aria-live="polite">等待施放卡片創造術。</div>
   <details><summary>卡片的功能與安全限制</summary><p>這一階段只有建立、改名與本機保存；不能執行任意程式、修改私人雲端、取得權限或自動變成 GEN2 技能。資料只留在目前瀏覽器／WebView，清除網站資料可能造成遺失。</p></details>
  </section>
 </div>
 <h1>已創造的卡片 <small id="cardCount"></small></h1>
+<p id="cardRecoverySummary">卡片位置檢查中……</p>
 <p id="objectStats" aria-live="polite"></p>
 <div id="cardList" aria-label="本機創作卡片列表"></div>
 <details id="recycleBin"><summary>回收站 <small id="recycleCount"></small></summary>
-<p>回收不是永久刪除，卡片 ID、名稱及說明都會保留。點擊 ♻ 可以還原到懸浮軌道。</p>
+<p>回收站仍保留卡片，按 ♻ 可以還原；按 🗑 並輸入確認文字後才會永久銷毀。</p>
 <div id="recycleList"></div></details>
-<output id="queueStatus" role="status" aria-live="polite"></output>
 <details id="localBackup"><summary>本機備份與救援檢查</summary>
 <p>↓ 下載目前瀏覽器的全部自製卡片、書本及回收站；⌕ 檢查備份完整性與數量，不還原、不覆寫、不轉換成法術、不送出雲端。備份含私人創作，請保留在自己的裝置，不要貼到公開 PR。校驗碼僅檢查資料損毀，不保證來源可信；檢查通過不代表已還原。</p>
 <div class="backupActions"><button id="exportObjects" type="button" aria-label="下載本機創作備份" title="下載本機創作備份">↓</button>
 <button id="inspectObjects" type="button" aria-label="選取備份並檢查，不還原" title="檢查備份，不還原">⌕</button>
 <button id="queueObjects" type="button" aria-label="準備本機待同步佇列，不上傳" title="準備本機待同步佇列，不上傳">⇧</button></div>
-<p>本候選在此創作頁開啟、返回可見或完成本頁修改後，自動準備本機卡片、書本與回收狀態的待同步佇列；⇧ 可手動重試。離開頁面可能中斷，重新開頁會再次核對。原存檔不變；尚未連接私人遠端，待同步不代表雲端備份。其他頁面的變動要回到本頁才會補齊。</p>
+<p>⇧ 將目前本機卡片、書本與回收狀態放入待同步佇列，不改動原存檔。此功能尚未連接私人遠端，稍後的修改需再次準備；待同步不代表雲端備份。</p>
 <input id="backupFile" type="file" accept=".json,application/json" hidden>
 <output id="backupStatus" role="status" aria-live="polite"></output></details>
+<dialog id="formatCardDialog" aria-labelledby="formatCardTitle">
+ <h2 id="formatCardTitle">確認格式化為真正空白卡</h2>
+ <p id="formatCardPrompt"></p>
+ <p>會清除卡面文字、圖片、編號、複製來源、可複製分類及殘留的已終止資料；同一張卡保留原始 ID 與建立時間、更新版本，回到漂浮軌道。完成後有值欄位應為 <strong>11</strong>。</p>
+ <small>這是清除卡片資料的操作，不是解除有效契約。若仍在綁定，必須先使用「解除契約卡」。清除前可使用下方「↓」下載本機備份；格式化後無復原鍵。</small>
+ <div><button id="cancelFormatCard" type="button">取消</button><button id="confirmFormatCard" type="button">✓ 確認格式化</button></div>
+</dialog>
+<dialog id="retrieveCardDialog" aria-label="確認取回書內原卡">
+ <h2>取回書內卡片</h2><p id="retrieveCardPrompt"></p>
+ <p>只將原卡移回軌道；保留 ID、圖片和契約，不解除綁定、不刪除其他物件。若世界形態或契約不允許，程式會拒絕。</p>
+ <button id="retrieveCardCancel" type="button">取消</button>
+ <button id="retrieveCardConfirm" type="button">✓ 確認取回</button>
+</dialog>
 <dialog id="recycleDialog" aria-label="確認回收卡片">
 <p id="recyclePrompt">確定將這張卡移到回收站？可隨時還原。</p>
 <div><button id="cancelRecycle" type="button" aria-label="取消回收" title="取消">×</button>
 <button id="confirmRecycle" type="button" aria-label="確認回收" title="確認回收">✓</button></div></dialog>
+<dialog id="destroyDialog" aria-label="確認永久銷毀卡片">
+<p id="destroyPrompt"></p>
+<label>請輸入「銷毀」才能執行<input id="destroyInput" type="text" autocomplete="off" spellcheck="false" placeholder="銷毀"></label>
+<small>只刪除目前瀏覽器的遊戲卡片及其未送出的同步快照；另外下載的備份、其他裝置或獨立系統範本不會受影響。</small>
+<div><button id="cancelDestroy" type="button" aria-label="取消銷毀" title="取消">×</button>
+<button id="confirmDestroy" type="button" aria-label="確認永久銷毀" title="確認永久銷毀">✓</button></div></dialog>
 <footer>試作規則：同一張卡擁有唯一 ID；重新命名不改變 ID。共用身分、版本與狀態契約可供下一步「製書工作臺」沿用。此處不是正式 GEN2 Skill 或後端同步。離開創造術後卡片仍會懸浮在 3D 世界，並可由這個工作頁繼續修改。</footer>
 </main>
-<script src="./object-craft.js"></script>
+<script src="./compendium-card.js?v=card-create-menu-fix-20261017"></script>
+<script src="./public-catalog.js?v=card-create-menu-fix-20261017"></script>
+<script src="./unbind-card-art.js?v=unbind-selected-artwork-20261020"></script>
+<script src="./object-craft.js?v=card-destroy-saga-20261021"></script>
 <script src="./object-backup.js"></script>
-<script src="./object-outbox.js"></script>
-<script src="./object-reconciler.js"></script>
+<script src="./object-outbox.js?v=card-destroy-saga-20261021"></script>
+<script src="./card-destruction.js?v=card-destroy-saga-20261021"></script>
 <script>
 (function(){
  'use strict';
  const Craft=window.LivingObjectCraft;
+ // Fill only missing photographs of still-existing 解除契約 cards;
+ // an existing saved photograph always wins over the system default.
+ try{Craft.restoreMissingUnbindImages(localStorage)}
+ catch(error){console.warn('解除契約卡照片未修復，原始存檔保持：',error)}
  const $=id=>document.getElementById(id);
  const query=new URL(location.href).searchParams.get('card');
- let currentId=null;
+ let currentId=null,draftImage=null,photoBusy=false,photoEpoch=0,back=false,formatSelection=null,pendingDestroy=null,retrieval=null;
+ const catalog=window.LivingLibraryCatalog.buildCatalog();
+ const linkTargets=Object.values(catalog.cards).filter(c=>c.sourceLayer==='public'&&c.id.startsWith('public.')&&typeof c.url==='string'&&c.url.startsWith('./')&&!c.url.includes('..'));
+ for(const card of linkTargets){const o=document.createElement('option');o.value=card.id;o.textContent=card.title;$('editLink').append(o)}
+ const selected=()=>cards().find(c=>c.id===currentId);
+ function draft(){return {cardNumber:$('editNumber').value,title:$('editName').value,description:$('editDescription').value,cardType:$('editType').value,downloadTemplate:$('editDownloadable').checked,image:draftImage,linkedCardId:$('editLink').value||null}}
+ function paint(){
+  const canvas=$('cardFace'),record={...draft(),permanentRegistry:selected()?.permanentRegistry};
+  if(!back){window.LivingCompendiumCard.draw(canvas,record);return}
+  window.LivingCompendiumCard.draw(canvas,{title:'卡片紀錄',description:'',cardNumber:record.cardNumber,cardType:record.cardType});
+  const x=canvas.getContext('2d');x.fillStyle='#f3ead2';x.fillRect(42,151,476,564);x.fillStyle='#000000';x.font='25px sans-serif';
+  const actual=selected(),target=linkTargets.find(c=>c.id===record.linkedCardId);
+  ['卡片編號：'+(record.cardNumber||'—'),'版本：'+(actual?.revision||'—'),'來源：自行編輯','連結：'+(target?.title||'未連結'),'卡片身分：',actual?.id?.slice(-16)||'尚未創造'].forEach((line,i)=>x.fillText(line,45,206+i*65,470));
+ }
+ function syncCrop(){if(draftImage){draftImage={...draftImage,scale:Number($('photoScale').value),x:Number($('photoX').value),y:Number($('photoY').value)}}}
  const cards=()=>Craft.listCards(localStorage);
  const Backup=window.LivingObjectBackup;
- const reconciler=window.LivingObjectReconciler.create({storage:{getItem:key=>localStorage.getItem(key)},onStatus:result=>{
-  $('queueStatus').textContent=result.state==='LOCAL_PENDING'?'本機待同步 '+result.count+' 筆；尚未上傳雲端。':
-   result.state==='PREPARING'?'正在核對本機待同步佇列；尚未上傳雲端。':
-   '本機佇列待補齊；原存檔保留，未上傳雲端。請點 ⇧ 重試或先下載備份。';
- }});
- window.addEventListener('pageshow',()=>reconciler.request());
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)reconciler.request()});
- window.addEventListener('storage',event=>{if(event.key===Craft.KEY||event.key===null)reconciler.request()});
- window.addEventListener('pagehide',event=>{if(!event.persisted)reconciler.dispose()});
  $('queueObjects').addEventListener('click',async()=>{
-  $('queueObjects').disabled=true;
+  $('queueObjects').disabled=true;let queue;
   try{
-   const result=await reconciler.request();
-   if(result.state!=='LOCAL_PENDING')throw Error('local queue pending');
-   $('backupStatus').textContent='本機待同步 '+result.count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更。';
+   await window.LivingCardDestruction.reconcile(localStorage);
+   queue=await window.LivingObjectOutbox.ObjectOutbox.open();
+   const result=await queue.capture(localStorage),count=(await queue.pending(localStorage)).length;
+   $('backupStatus').textContent='本機待同步 '+count+' 筆；本次更新 '+result.queued+' 筆。尚未上傳雲端；原存檔未變更，後續修改需再次準備。';
   }catch(_){$('backupStatus').textContent='無法準備待同步佇列：資料可能已更新或儲存不可用。原存檔未變更，未上傳雲端；可重新操作或先下載備份。'}
-  finally{$('queueObjects').disabled=false}
+  finally{queue?.close();$('queueObjects').disabled=false}
  });
  $('exportObjects').addEventListener('click',async()=>{
   $('exportObjects').disabled=true;
@@ -152,26 +249,128 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
  });
  function status(text,error=false){$('status').textContent=text;$('status').style.color=error?'#ffbca8':'#a9e0c4'}
  function notify(action,cardId){
-  reconciler.request();
   if(window.parent!==window)window.parent.postMessage({
    kind:'living-library-local-objects-updated',action,cardId
   },location.origin);
  }
+ function renderCardAudit(card){
+  const label=$('cardAuditStats'),area=$('cardAuditDetails'),raw=$('cardAuditRaw');
+  if(!card){label.textContent='目前尚未選擇卡片';area.textContent='';raw.textContent='';return}
+  try{
+   const x=Craft.inspectCard(localStorage,card.id),n=x.stats;
+   label.textContent='儲存屬性 '+n.fields+'（有值 '+n.filled+'）｜約 '+n.bytes+' bytes｜圖片 '+(n.photo?'有':'無')+
+    '\n契約／位置參照 '+n.links+'｜群組成員 '+n.groupMembers+
+    '\n已辨識法術 '+n.spells+'｜動畫 '+n.animations+'｜動作 '+n.actions;
+   const rows=['卡片 ID：'+x.id,'目前狀態：'+x.placement+'；版本：'+x.revision];
+   for(const [kind,items] of [['關聯',x.links],['法術',x.spells],['動畫',x.animations],['動作',x.actions]]){
+    rows.push(kind+' ('+items.length+')');
+    if(!items.length)rows.push('  無已辨識項目');
+    for(const v of items)rows.push('  • '+(v.kind||v.name)+' → '+(v.id||v.detail||'')+(v.kind?' · '+v.detail:'')+(v.status&&v.status!=='有效'?' ['+v.status+']':''));
+   }
+   rows.push(x.note);area.textContent=rows.join('\n');raw.textContent=JSON.stringify(x.data,null,2);
+  }catch(e){label.textContent='資料檢視失敗：'+e.message;area.textContent='';raw.textContent=''}
+ }
  function show(card,animate=false){
-  currentId=card?.id||null;
+  photoEpoch++;photoBusy=false;currentId=card?.id||null;draftImage=card?.image?{...card.image}:null;
   $('cardTitle').textContent=card?.title||'空白卡片';
   $('cardMark').textContent=card?'# '+card.id.slice(-8):'尚未召喚';
+  $('editNumber').value=card?.cardNumber||'';
   $('editName').value=card?.title||'空白卡片';
   $('editDescription').value=card?.description||'';
-  $('saveCard').disabled=!card;
-  $('recycleCard').disabled=!card;
-  const preview=$('cardPreview');preview.classList.remove('summon','hover');
+  $('editType').value=card?.cardType||'';
+  $('editDownloadable').checked=card?.downloadTemplate===true;
+  $('editLink').value=card?.linkedCardId||'';
+  const immutable=card?.permanentRegistry?.state==='registered'||card?.permanentCard===true;
+   for(const id of ['editNumber','editName','editDescription','editType','editLink','editDownloadable',
+    'photoScale','photoX','photoY'])$(id).disabled=!!immutable;
+   $('choosePhoto').disabled=!card||immutable;
+   $('removePhoto').disabled=!card||immutable;
+   $('removePhotoOnly').disabled=!card||!draftImage||immutable;
+  $('openLink').disabled=!card?.linkedCardId||!linkTargets.some(c=>c.id===card.linkedCardId)||window.parent===window;
+  $('cropControls').hidden=!draftImage;
+  $('photoScale').value=draftImage?.scale||1;$('photoX').value=draftImage?.x??50;$('photoY').value=draftImage?.y??50;
+  paint();renderCardAudit(card);
+  $('saveCard').disabled=!card||immutable;
+  $('recycleCard').disabled=!card||!!card.containerId||immutable;
+  const destroyButton=$('destroyCard'),destroyHint=$('destroyHint');
+  destroyButton.disabled=!card||immutable;
+  if(!card)destroyHint.textContent='先從下方「已創造的卡片」選取一張卡片，才可按永久銷毀；回收站也有銷毀入口。';
+  else if(immutable)destroyHint.textContent='永久／唯一卡受保護，禁止直接銷毀。';
+  else{
+   try{Craft.planDestroyCard(localStorage,card.id,card.revision);
+    destroyHint.textContent='目前選取：'+card.title+'（ID '+card.id.slice(-8)+'）。按上方按鈕後，仍須輸入「銷毀」確認。';
+   }catch(e){destroyButton.disabled=true;destroyHint.textContent='目前選取：'+card.title+'；無法直接銷毀：'+e.message}
+  }
+  $('recycleCard').title=card?.containerId?'先將卡片移回軌道才可回收':'回收所選卡片';
+  if(immutable)status('永久卡為唯讀：要修改需由 GBA 提出正式申請（尚未開放），不能直接改圖或回收。');
+   const preview=$('cardPreview');preview.classList.remove('summon','hover');
   if(animate){void preview.offsetWidth;preview.classList.add('summon');preview.addEventListener('animationend',()=>{preview.classList.remove('summon');preview.classList.add('hover')},{once:true})}
   else if(card)preview.classList.add('hover');
  }
+ function storedLocation(card){
+  if(!card.containerId){
+   if(card.scanContract?.form==='world'||card.truthEyeContract?.form==='world')
+    return '世界實體形態（原卡 3D 暫時隱藏；不是漂浮實體卡）';
+   if(card.placement==='contained'||card.containment||card.truthEyeContract?.form==='sealed')
+    return '契約封印／收納中（原卡不在軌道）';
+   return card.placement==='hover'?'漂浮軌道（僅存檔位置，需由場景確認）':'⚠ 位置異常：'+card.placement;
+  }
+  const slot=Number.isInteger(card.slotIndex)?card.slotIndex:null;
+  if(card.containerId==='local.atlas.compendium')
+   return slot===9?'萬物圖鑑：右側 GBA 讀卡格':'萬物圖鑑：左頁第 '+(slot===null?'?':slot+1)+' 格';
+  if(card.containerId==='local.atlas.collection')
+   return '卡片之書：'+(slot===null?'格位不明':slot<9?'左頁第 '+(slot+1)+' 格':'右頁第 '+(slot-8)+' 格');
+  const book=Craft.listBooks(localStorage).find(x=>x.id===card.containerId);
+  return (book?.title||'⚠ 無法找到書本 '+card.containerId)+'：格位 '+(slot===null?'未知':slot+1);
+ }
+ function scanBindingStatus(card){
+  const b=card.scanContract,r=card.runeBinding;
+  if(b){
+   const consistent=b.artifactId==='scan.bundle.'+card.id&&r?.runeId===b.artifactId&&r?.state==='bound'&&
+    Array.isArray(b.members)&&b.members.length>0&&['card','world'].includes(b.form);
+   return consistent?'記錄掃描契約：'+b.members.length+' 件（'+b.form+'）；未驗證世界':
+    '⚠ 掃描契約與綁定標記不一致，請勿直接銷毀';
+  }
+  if(r?.runeId)return '綁定資料：'+r.runeId+'（'+(r.state||'未知')+'）';
+  if(card.title==='掃描收納卡')return '⚠ 只有掃描收納名稱，沒有掃描群組契約';
+  return '無掃描契約';
+ }
+ const retrieveDialog=$('retrieveCardDialog');
+ $('retrieveCardCancel').onclick=()=>{retrieval=null;retrieveDialog.close()};
+ retrieveDialog.addEventListener('close',()=>{retrieval=null});
+ retrieveDialog.addEventListener('cancel',()=>{retrieval=null});
+ $('retrieveCardConfirm').onclick=()=>{
+  if(!retrieval||!retrieveDialog.open)return;
+  const item=retrieval;retrieval=null;retrieveDialog.close();
+  try{
+   const latest=cards().find(c=>c.id===item.id);
+   if(!latest||latest.revision!==item.revision||localStorage.getItem(Craft.KEY)!==item.snapshot)
+    throw Error('卡片或存檔已變更，未移動');
+   if(latest.placement!=='book'||!latest.containerId||latest.containment)
+    throw Error('卡片已不在普通書內格位，未移動');
+   const returned=Craft.placeCard(localStorage,item.id,null);
+   show(returned);refresh();notify('card-edited',returned.id);
+   status('已找回同一張「'+returned.title+'」到漂浮軌道；沒有清除任何綁定。');
+  }catch(e){refresh();status('取回未執行：'+(e.message||e),true)}
+ };
  function refresh(){
   const items=cards(),stats=Craft.getStats(localStorage),deleted=Craft.listRecycledCards(localStorage);
   $('cardCount').textContent=items.length+' / '+Craft.MAX_CARDS;
+  const related=items.filter(c=>c.title==='掃描收納卡'||c.scanContract);
+  const claimOwners=new Map(),duplicates=[];
+  for(const card of items)for(const member of card.scanContract?.members||[]){
+   if(!member?.kind||!member?.id)continue;
+   const key=member.kind+':'+member.id;
+   if(claimOwners.has(key)&&claimOwners.get(key)!==card.id)
+    duplicates.push({member:key,first:claimOwners.get(key),second:card.id});
+   else claimOwners.set(key,card.id);
+  }
+  $('cardRecoverySummary').textContent='讀取本機存檔：有效卡 '+items.length+
+   ' 張；標記為軌道 '+stats.floatingCards+' 張；標記為書內／GBA '+stats.inBooks+
+   ' 張；掃描相關名稱或欄位 '+related.length+' 張。'+
+   '\n掃描成員宣告 '+claimOwners.size+' 個，跨卡重複持有標記 '+duplicates.length+' 個'+
+   (duplicates.length?' ⚠ 請先保留備份，不能直接刪卡。':'（僅檢查存檔，不代表已驗證世界物件）')+
+   '\n下方逐張列出存檔位置與契約欄位；沒有自動移動、解除或刪除任何卡片。';
   $('objectStats').textContent='懸浮 '+stats.floatingCards+' ｜ 書內 '+stats.inBooks+
    ' ｜ 自製書 '+stats.createdBooks+' ｜ 回收 '+stats.recycledCards;
   $('recycleCount').textContent=stats.recycledCards;
@@ -185,7 +384,11 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
     try{Craft.restoreCard(localStorage,card.id);refresh();notify('card-restored',card.id);status('卡片已還原，將退出書頁並從 3D 煙霧中重新誕生。')}
     catch(e){status(e.message,true)}
    });
-   row.append(label,restore);bin.append(row);
+   const erase=document.createElement('button');erase.type='button';erase.textContent='🗑';
+    erase.setAttribute('aria-label','永久銷毀 '+card.title);erase.title='永久銷毀（不可還原）';
+    erase.textContent='🗑 銷毀';erase.style.fontSize='13px';erase.style.whiteSpace='nowrap';
+    erase.addEventListener('click',()=>requestDestroy(card));
+    row.append(label,restore,erase);bin.append(row);
   }
   $('createCard').disabled=items.length>=Craft.MAX_CARDS;
   const host=$('cardList');host.replaceChildren();
@@ -194,9 +397,24 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    btn.setAttribute('aria-label','編輯'+card.title);
    const icon=document.createElement('span');icon.textContent='◇';
    const title=document.createElement('strong');title.textContent=card.title;
-   const info=document.createElement('small');info.textContent='# '+card.id.slice(-8);
-   btn.append(icon,title,info);btn.onclick=()=>{show(card);refresh();status('已開啟本機草稿卡')};
-   host.append(btn);
+   const info=document.createElement('small');info.textContent='# '+card.id.slice(-8)+(card.downloadTemplate===true?' · 可複製卡':'');
+   const location=document.createElement('small');location.className='location-info';
+   location.textContent='位置：'+storedLocation(card)+'\n'+scanBindingStatus(card);
+   btn.append(icon,title,info,location);
+   btn.onclick=()=>{show(card);refresh();status('已開啟卡片；下方已列出目前存放位置和契約')};
+   const holder=document.createElement('div');holder.append(btn);
+   if(card.containerId&&card.placement==='book'){
+    const take=document.createElement('button');take.type='button';take.className='take-card';
+    take.textContent='↗ 取回軌道';
+    take.setAttribute('aria-label','確認取回 '+card.title);
+    take.onclick=()=>{
+     const latest=cards().find(c=>c.id===card.id);if(!latest)return status('卡片資料已變動，請重新選取',true);
+     retrieval={id:latest.id,revision:latest.revision,snapshot:localStorage.getItem(Craft.KEY)};
+     $('retrieveCardPrompt').textContent='卡片：'+latest.title+'\nID：'+latest.id+'\n目前位置：'+storedLocation(latest)+'\n契約：'+scanBindingStatus(latest);
+     retrieveDialog.showModal();
+    };holder.append(take);
+   }
+   host.append(holder);
   }
  }
  $('recycleCard').addEventListener('click',()=>{
@@ -212,22 +430,131 @@ footer{margin-top:20px;color:#b7c3d2;font-size:11px;border-top:1px solid #4a5d71
    notify('card-recycled',id);status('卡片已進入回收站，可從下方還原。');}
   catch(e){status(e.message||'回收失敗',true)}
  });
+
+ function requestDestroy(card){
+  if(!card)return;
+  try{
+   const plan=Craft.planDestroyCard(localStorage,card.id,card.revision);
+   pendingDestroy={...plan,expectedSnapshot:localStorage.getItem(Craft.KEY)};
+   $('destroyInput').value='';
+   $('destroyPrompt').textContent='永久銷毀「'+plan.title+'」？\n卡片 ID：'+plan.id+
+    '\n將從遊戲世界、卡冊或回收站及本機存檔移除，無法還原。'+
+    (plan.affectedCopyIds.length?'\n另外 '+plan.affectedCopyIds.length+' 張複製卡會保留卡面及身分，但清除來源關聯。':'');
+   $('destroyDialog').showModal();
+  }catch(e){status(e.message||'無法銷毀',true)}
+ }
+ $('destroyCard').addEventListener('click',()=>requestDestroy(selected()));
+ $('cancelDestroy').addEventListener('click',()=>{$('destroyDialog').close();pendingDestroy=null});
+ $('destroyDialog').addEventListener('close',()=>{pendingDestroy=null});
+ $('confirmDestroy').addEventListener('click',async()=>{
+  const plan=pendingDestroy;if(!plan)return;
+  if($('destroyInput').value.trim()!=='銷毀'){status('必須輸入「銷毀」才能永久刪除',true);return}
+  $('confirmDestroy').disabled=true;
+  try{
+   const result=await window.LivingCardDestruction.destroy(localStorage,{
+    id:plan.id,revision:plan.revision,confirmation:'銷毀',
+    expectedSnapshot:plan.expectedSnapshot,expectedCopyIds:plan.affectedCopyIds
+   });
+   $('destroyDialog').close();
+   if(currentId===plan.id)show(null);
+   refresh();notify('card-destroyed',plan.id);
+   if(result.cleanup==='complete'){
+    status('🗑 已永久銷毀「'+plan.title+'」，本機卡片及待同步佇列均已清除。'+
+     (result.detachedCopies?'另有 '+result.detachedCopies+' 張複製卡保留，已解除來源關聯。':''));
+   }else{
+    status('🗑「'+plan.title+'」已從本機卡片資料永久移除；離線佇列清理尚未完成，系統會在下次開啟時重試。不要清除網站資料。',true);
+   }
+  }catch(e){
+   $('destroyDialog').close();
+   status('未銷毀任何卡片：'+(e.message||'儲存或佇列不可用')+'。原卡保留，請確認後重試。',true);
+  }finally{$('confirmDestroy').disabled=false}
+ });
  $('createCard').onclick=()=>{
-  try{const card=Craft.createBlankCard(localStorage,window.crypto);show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
+  try{const card=Craft.createBlankCard(localStorage,window.crypto);
+    // A new card is always an independent, untouched draft; no GBA template may be applied here.
+    if(card.title!=='空白卡片'||card.copyInfo||card.runeBinding)throw Error('新卡狀態異常，請先保留本機存檔');
+    show(card,false);refresh();notify('card-created',card.id);status('✦ 空白卡已生成，正在退出書頁並顯示 3D 召喚動畫。')}
   catch(e){status(e.message||'建立失敗',true)}
  };
  $('editForm').addEventListener('submit',event=>{
   event.preventDefault();if(!currentId)return;
   try{
-   const card=Craft.editCard(localStorage,currentId,{title:$('editName').value,description:$('editDescription').value});
-   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存；卡片仍保持懸浮，等待放進你創造的書。');
-  }catch(e){status(e.message||'儲存失敗',true)}
+   if(photoBusy){status('圖片處理中，請稍候再儲存。');return}
+   const card=Craft.editCard(localStorage,currentId,draft());
+   show(card);refresh();notify('card-edited',card.id);status('✓ 已儲存卡片草稿，保留目前的軌道或書內位置。');
+  }catch(e){status(e.name==='QuotaExceededError'?'儲存空間不足；原卡片未改動，請縮小圖片或移除本次圖片後再試。':e.message||'儲存失敗',true)}
  });
+ ['editNumber','editName','editDescription','editType','editLink','editDownloadable'].forEach(id=>$(id).addEventListener('input',paint));
+ ['photoScale','photoX','photoY'].forEach(id=>$(id).addEventListener('input',()=>{syncCrop();paint()}));
+ $('flipCard').onclick=()=>{back=!back;$('flipCard').setAttribute('aria-pressed',String(back));$('flipCard').setAttribute('aria-label',back?'翻回卡片正面':'翻到卡片紀錄');paint()};
+ $('choosePhoto').onclick=()=>$('photoFile').click();
+ $('removePhotoOnly').onclick=()=>{photoEpoch++;photoBusy=false;draftImage=null;$('cropControls').hidden=true;$('removePhotoOnly').disabled=true;paint();status('僅從草稿移除圖片；按 ✓ 才會儲存。')};
+ const formatDialog=$('formatCardDialog');
+ $('removePhoto').onclick=()=>{
+  const card=selected();if(!card)return;
+  if(photoBusy){status('圖片處理中，請先完成圖片處理',true);return}
+  const reason=Craft.formatCardBlockReason(card);
+  if(reason){status('禁止格式化：「'+card.title+'」'+reason,true);return}
+  try{
+   const audit=Craft.inspectCard(localStorage,card.id);
+   formatSelection={id:card.id,revision:card.revision};
+   $('formatCardPrompt').textContent='卡片「'+card.title+'」\nID：'+card.id+
+    '\n目前有值 '+audit.stats.filled+' 項 → 格式化後 11 項。\n此卡會從書本／GBA 移回漂浮軌道。未儲存的草稿內容也會放棄。';
+   formatDialog.showModal();
+  }catch(e){formatSelection=null;status('格式化檢查失敗：'+e.message,true)}
+ };
+ $('cancelFormatCard').onclick=()=>{formatSelection=null;formatDialog.close();status('已取消格式化，原卡完全保留。')};
+ formatDialog.addEventListener('cancel',()=>{formatSelection=null});
+ formatDialog.addEventListener('close',()=>{formatSelection=null});
+ $('confirmFormatCard').onclick=()=>{
+  const selectedFormat=formatSelection;
+  if(!selectedFormat||!formatDialog.open)return;
+  formatSelection=null;formatDialog.close();
+  try{
+   const card=Craft.formatCardToBlank(localStorage,selectedFormat.id,selectedFormat.revision);
+   const count=Craft.inspectCard(localStorage,card.id).stats.filled;
+   if(count!==11)throw Error('格式化欄位數異常：'+count);
+   show(card);refresh();notify('card-formatted',card.id);
+   status('✓ 格式化完成：原卡 ID 保留；有值 '+count+' 項。卡片已回漂浮軌道，可再次放入 GBA 下載。');
+  }catch(e){try{const latest=cards().find(x=>x.id===selectedFormat.id);if(latest)show(latest);refresh()}catch(_){}
+   status('格式化未完成：'+String(e?.message||e),true)}
+ };
+ $('photoFile').addEventListener('change',async()=>{
+  const file=$('photoFile').files[0];$('photoFile').value='';if(!file||!currentId)return;
+  const epoch=++photoEpoch;photoBusy=false;
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){status('請選擇 10 MB 以內的 JPEG、PNG 或 WebP 圖片。',true);return}
+  photoBusy=true;const url=URL.createObjectURL(file);
+  try{
+   const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+   if(epoch!==photoEpoch)return;
+   if(img.naturalWidth*img.naturalHeight>24000000)throw Error('圖片尺寸過大，請先縮小再選擇。');
+   const c=document.createElement('canvas');let edge=480,dataUrl;
+   do{
+    const ratio=Math.min(1,edge/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.max(1,Math.round(img.naturalWidth*ratio));c.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+    const ctx=c.getContext('2d');ctx.fillStyle='#f3ead2';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);
+    dataUrl=c.toDataURL('image/jpeg',.78);edge=Math.floor(edge*.8);
+   }while(dataUrl.length>70000&&edge>=96);
+   if(dataUrl.length>70000)throw Error('圖片壓縮後仍太大，請選擇較小圖片。');
+   draftImage={dataUrl,scale:1,x:50,y:50};$('photoScale').value=1;$('photoX').value=50;$('photoY').value=50;
+   $('cropControls').hidden=false;$('removePhotoOnly').disabled=false;back=false;$('flipCard').setAttribute('aria-pressed','false');$('flipCard').setAttribute('aria-label','翻到卡片紀錄');paint();status('圖片已準備好；可調整位置，按 ✓ 儲存。');
+  }catch(e){if(epoch===photoEpoch)status(e.message||'無法讀取圖片，原卡片未改動。',true)}
+  finally{URL.revokeObjectURL(url);if(epoch===photoEpoch)photoBusy=false}
+ });
+ $('openLink').onclick=()=>{const c=selected();if(c?.linkedCardId&&linkTargets.some(t=>t.id===c.linkedCardId))notify('open-card-link',c.id)};
  try{
-  const all=cards();show(all.find(c=>c.id===query)||all[all.length-1]||null);
+  // Opening the creation spell without ?card must show a blank preview, never
+   // silently reopen the most recent spell card (e.g. 解除契約卡).
+   const all=cards();show(query?all.find(c=>c.id===query)||null:null);
   refresh();if(currentId)status('已讀取本機草稿；尚未賦予任何執行能力。');
-  reconciler.request();
- }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;status(e.message||'本機讀取失敗',true)}
+  // Recovery happens only for a card already deleted in the same atomic
+  // localStorage write as its journal; it cannot destroy a new/different card.
+  if(Craft.pendingCardOutboxPurges(localStorage).length)
+   void window.LivingCardDestruction.reconcile(localStorage).then(({cleaned})=>{
+    if(cleaned)$('backupStatus').textContent='已恢復完成 '+cleaned+' 筆中斷的銷毀佇列清理；未復活已銷毀卡片。';
+   }).catch(error=>{
+    $('backupStatus').textContent='先前銷毀的離線佇列仍待清理：'+String(error?.message||error)+'。卡片本體不會重新出現。';
+   });
+ }catch(e){$('createCard').disabled=true;$('saveCard').disabled=true;$('recycleCard').disabled=true;$('destroyCard').disabled=true;status(e.message||'本機讀取失敗',true)}
 })();
 </script>
 </body></html>

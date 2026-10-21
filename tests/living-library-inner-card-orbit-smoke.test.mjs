@@ -75,7 +75,7 @@ test('System Book contains bounded working game-parameter controls, not a new du
   assert.match(live,new RegExp(key+':clampUnit'));
  }
  assert.match(page,/id="resetCardParams" aria-label="恢復卡片參數預設值"/);
- assert.match(page,/restoreCardValues\(cardParameterDefaults\)/);
+ assert.match(page,/restoreCardValues\(\{\.\.\.saved,\.\.\.window\.LivingCardPlacement\.DEFAULTS\}\)/);
  assert.match(live,/for\(const \[field,limits\] of Object\.entries/);
  assert.match(live,/const p=CardPlacement\.orbitPosition\(i,currentOrbitTime,controlPrefs\)/);
  assert.match(live,/age\/duration/);
