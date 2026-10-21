@@ -76,7 +76,7 @@
   for(const index of gltf.scenes?.[gltf.scene||0]?.nodes||[])sceneRoot.add(built[index]);
   return sceneRoot;
  }
- async function attach({THREE,scene,url=FILE,position={x:0,y:0.006,z:24.667},scale=0.9}={}){
+ async function attach({THREE,scene,url=FILE,position={x:0,y:0.006,z:8.4},scale=0.9}={}){
   if(!THREE?.Group||!scene?.add)throw Error('缺少 Three.js 世界');
   const response=await fetch(url,{credentials:'same-origin'});
   if(!response.ok)throw Error('魔法門 GLB HTTP '+response.status);
