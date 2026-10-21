@@ -73,12 +73,13 @@ test('scanner has no extra action buttons and names/count render as unframed liv
  assert.match(source,/id='eyeScanNames'/);
  assert.match(source,/background:none!important;border:0!important/);
  assert.match(source,/scanName\(o\)/);
- assert.match(source,/if\(id&&start\('scan',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/);
- assert.match(source,/const scanTargets=type==='scan'\?targets\(\):null/);
+ assert.match(source,/if\(selectedScanIds\.has\(id\)\)start\('scan'/);
+ assert.match(source,/const scanTargets=type==='scan'\?selectedTargets\(\):null/);
  assert.match(source,/const members=scanned\.map\(o=>\(\{kind:o\.kind,id:o\.id\}\)\)/);
- assert.match(source,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/);
- assert.doesNotMatch(source,/selected=new Set\(|dataset\.selected|已選 |已標記/);
- assert.match(source,/countLabel\.textContent='掃描 '\+objects\.length\+' 件物件'/);
+ assert.match(source,/selected:\[\.\.\.selectedScanIds\]/);
+ assert.match(source,/selectedScanIds=new Set\(\)/);
+ assert.match(source,/dataset\.selected=String/);
+ assert.match(source,/countLabel\.textContent='掃描 '\+objects\.length\+' 件｜已選 '/);
  assert.doesNotMatch(source,/countLabel\.textContent=.*書本|countLabel\.textContent=.*其他物件|dataset\.scanKind/);
  assert.match(source,/renderScanNames\(t\)/);
 });

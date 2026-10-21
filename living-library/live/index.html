@@ -430,7 +430,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1977,6 +1977,22 @@ const truthEye=window.LivingTruthEyeWorld.create({
  invalidate:()=>window.LivingScene?.syncRender?.(),
  toast,reducedMotion:preferReduced
 });
+// This is ordinary authored scenery. No card creation, permanent-build UI or
+// player-save write occurs when its GLB is installed into the live scene.
+let gateInspection={id:'scene.gate.obsidian.001',loaded:false};
+if(window.LivingWorldGate?.attach){
+ window.LivingWorldGate.attach({THREE,scene}).then(gate=>{
+  registerScene(gate.id,[gate.root]);
+  gateInspection={id:gate.id,loaded:true,position:gate.root.position.toArray(),
+   bounds:{min:gate.bounds.min.toArray(),max:gate.bounds.max.toArray()}};
+  // Apply currently committed form (if any) to a late-loaded scene mesh.
+  // This does not start a new scan or modify a contract.
+  truthEye.applyPacked();
+  syncRender();
+ }).catch(error=>{console.warn('固定雙界之門載入失敗；圖書館維持可用',error);
+  gateInspection={id:'scene.gate.obsidian.001',loaded:false,error:String(error.message||error)};
+ });
+}
 const pointer=new THREE.Vector2(),ray=new THREE.Raycaster();let drag=null,pinch=null,wasMoving=false;
 // RUNE-01 read-only hit-test. Pointer hold & binding belong to RUNE-02/03.
 const runeHitRay=new THREE.Raycaster(),runeHitPointer=new THREE.Vector2();
