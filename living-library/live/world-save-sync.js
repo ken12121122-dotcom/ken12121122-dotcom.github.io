@@ -122,7 +122,7 @@
     writeBaseline(storage,saved.content.sha,verified.sha256);
     lastSynced=new Date().toISOString();state('synced');
     return status();
-   }catch(e){state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
+   }catch(e){stop();state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
    finally{busy=false}
   }
   async function connect(candidate){
@@ -143,7 +143,7 @@
     if(mine!==epoch)return status();
     state('ready');
     const result=await sync({forceVerify:true});
-    if(result.phase==='synced'||result.phase==='error')
+    if(result.phase==='synced')
      timer=setInterval(()=>{if(token&&!busy)sync()},Math.max(30000,intervalMs));
     return result;
    }catch(e){token='';state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
