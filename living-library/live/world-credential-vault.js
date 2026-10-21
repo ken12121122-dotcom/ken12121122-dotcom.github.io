@@ -76,7 +76,7 @@
    return cryptoImpl.subtle.deriveKey({name:'PBKDF2',salt,iterations:ROUNDS,hash:'SHA-256'},
     raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
   }
-  async function remember(token,password){
+  async function remember(token,password,isAuthorized=()=>true){
    const lease=revocation;
    if(typeof token!=='string'||token.length<10||token.length>1024)
     fail('VAULT_TOKEN_INVALID');
@@ -95,7 +95,7 @@
     kdf:'PBKDF2-SHA256',cipher:'AES-256-GCM',rounds:ROUNDS,
     salt:base64(salt),iv:base64(iv),ciphertext:base64(ciphertext)};
    return serialize(async()=>{
-    if(lease!==revocation)fail('VAULT_AUTH_REVOKED');
+    if(lease!==revocation||!isAuthorized())fail('VAULT_AUTH_REVOKED');
     try{await operation('put',entry)}catch{fail('VAULT_STORAGE_UNAVAILABLE')}
     return {saved:true};
    });
