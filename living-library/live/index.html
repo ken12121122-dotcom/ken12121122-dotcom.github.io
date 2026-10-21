@@ -3208,6 +3208,7 @@ initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
  select(id){selectedId=id;invalidate()},
+ observeWorld(){return {ready:true,player:{x:keeper.position.x,y:0,z:keeper.position.z},camera:{theta,phi,distance},books:[],sceneObjects:[]}},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
  reset(){theta=0;phi=.17;distance=window.innerWidth<650?15.8:14.1;look.set(keeper.position.x,2.9,keeper.position.z);cameraUpdate();invalidate()},
