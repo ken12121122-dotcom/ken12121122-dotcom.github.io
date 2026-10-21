@@ -1238,6 +1238,11 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
   return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
  }
  function showUpdateNotice(items,firstVisit){
+  // Avoid stacking an update modal over the startup credential prompt.
+  if(worldVaultUnlockDialog.open){
+   worldVaultUnlockDialog.addEventListener('close',()=>showUpdateNotice(items,firstVisit),{once:true});
+   return;
+  }
   $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
   $('llUpdateSummary').textContent=firstVisit?
    '已建立最新卡片與介面版本紀錄。因先前沒有基準快照，以下列出目前已收錄的重點，不能將全部視為本次新增。':
