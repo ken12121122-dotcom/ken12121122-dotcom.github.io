@@ -77,3 +77,35 @@ test('pending destruction cleanup blocks all synchronization',async()=>{
  assert.equal(mock.putCount,0);
  client.disconnect();
 });
+
+test('verified private permission may be encrypted after a non-destructive cloud conflict',async()=>{
+ const remote=await Backup.exportBackup(storage(one(9)));
+ const local=storage(one(2)),mock=github({remoteEnvelope:remote});
+ const client=World.create({storage:local,fetchImpl:mock.fetchImpl});
+ const connected=await client.connect('github_pat_example');
+ assert.equal(connected.phase,'error');
+ assert.equal(connected.error,'CLOUD_REMOTE_CONFLICT');
+ assert.equal(connected.credential_verified,true);
+ assert.equal(mock.putCount,0);
+ const observed=[];
+ const vault={remember:async(token,password,check)=>{
+  assert.equal(check(),true);
+  observed.push({token,password});
+ }};
+ const proof=await client.rememberCredential(vault,'safe password longer');
+ assert.deepEqual(proof,{saved:true});
+ assert.deepEqual(observed,[{token:'github_pat_example',password:'safe password longer'}]);
+ assert.equal(local.getItem(Backup.KEY),JSON.stringify(one(2)));
+ client.disconnect();
+ assert.equal(client.status().credential_verified,false);
+ await assert.rejects(client.rememberCredential(vault,'safe password longer'),/VAULT_SESSION_NOT_VERIFIED/);
+});
+test('invalid PAT/repo is never permitted into encrypted credential vault',async()=>{
+ const local=storage(one()),mock=github({isPrivate:false});
+ const client=World.create({storage:local,fetchImpl:mock.fetchImpl});
+ assert.equal((await client.connect('github_pat_bad')).credential_verified,false);
+ let called=false;
+ await assert.rejects(client.rememberCredential({remember:async()=>{called=true}},'valid password length'),/VAULT_SESSION_NOT_VERIFIED/);
+ assert.equal(called,false);
+ client.disconnect();
+});

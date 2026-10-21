@@ -78,12 +78,14 @@ test('the system book requires explicit opt-in, clears passwords, and has revoke
  assert.match(html,/id="cloudWorldRemember"/);
  assert.match(html,/id="cloudWorldPassword"/);
  assert.match(html,/id="cloudWorldUnlock"/);
+ assert.match(html,/id="cloudWorldRememberNow"/);
+ assert.match(html,/cloud-world-remember/);
  assert.match(html,/id="cloudWorldForget"/);
  assert.match(html,/clearSecrets\(\)/);
  assert.match(html,/cloud-world-unlock/);
  assert.match(html,/cloud-world-forget/);
  assert.match(main,/LivingWorldCredentialVault\.create\(\)/);
- assert.match(main,/credentialVault\.remember/);
+ assert.match(main,/worldSave\.rememberCredential/);
  assert.match(main,/credentialVault\.unlock/);
  assert.match(main,/credentialVault\.forget/);
  assert.match(main,/worldSave\.disconnect\(\)/);
@@ -97,4 +99,10 @@ test('forget during encryption cancels a late remember and leaves no stored cred
  assert.deepEqual(await revoked,{saved:false});
  assert.equal(s.rows.size,0);
  assert.deepEqual(await v.inspect(),{saved:false});
+});
+
+test('failed session lease validation cannot persist a late credential',async()=>{
+ const st=storage(),v=Vault.create(opts(st));
+ await assert.rejects(v.remember(secret,'minimum length password',()=>false),/VAULT_AUTH_REVOKED/);
+ assert.equal((await v.inspect()).saved,false);
 });

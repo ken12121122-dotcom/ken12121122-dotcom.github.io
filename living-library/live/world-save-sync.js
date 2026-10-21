@@ -52,8 +52,8 @@
  function create({storage,fetchImpl,notify=()=>{},intervalMs=60000,observeWorld=null}={}){
   if(!storage||typeof storage.getItem!=='function'||typeof storage.setItem!=='function'||typeof fetchImpl!=='function')
    fail('CLOUD_DEPENDENCIES_MISSING');
-  let token='',phase='disconnected',error='',lastSynced=null,timer=null,busy=false,epoch=0,abort=null,sceneSynced=null,scenePhase='disabled';
-  const status=()=>({phase,error,last_synced:lastSynced,authorized:!!token,
+  let token='',verified=false,phase='disconnected',error='',lastSynced=null,timer=null,busy=false,epoch=0,abort=null,sceneSynced=null,scenePhase='disabled';
+  const status=()=>({phase,error,last_synced:lastSynced,authorized:!!token,credential_verified:verified,
    repo:REPO,branch:BRANCH,path:PATH,token_persisted:false,
    scene_phase:scenePhase,scene_last_synced:sceneSynced,scene_path:SCENE_PATH});
   function publish(){try{notify(status())}catch{}}
@@ -199,7 +199,7 @@
    }finally{busy=false}
   }
   async function connect(candidate){
-   stop();if(abort)abort.abort();abort=new AbortController();token='';epoch++;const mine=epoch;
+   stop();if(abort)abort.abort();abort=new AbortController();token='';verified=false;epoch++;const mine=epoch;
    if(typeof candidate!=='string'||candidate.trim().length<10||candidate.length>1024)
     return state('error','CLOUD_TOKEN_REQUIRED'),status();
    token=candidate.trim();state('verifying');
@@ -214,15 +214,26 @@
     const ref=await json(branchResponse,'CLOUD_BRANCH_UNAVAILABLE');
     if(ref.ref!=='refs/heads/'+BRANCH)fail('CLOUD_BRANCH_UNAVAILABLE');
     if(mine!==epoch)return status();
+    verified=true;
     state('ready');
     const result=await sync({forceVerify:true});
     if(result.phase==='synced')
      timer=setInterval(()=>{if(token&&!busy)sync()},Math.max(30000,intervalMs));
     return result;
-   }catch(e){token='';state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
+   }catch(e){token='';verified=false;state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
   }
-  function disconnect(){stop();epoch++;if(abort)abort.abort();abort=null;token='';state('disconnected');return status()}
-  return Object.freeze({connect,sync,disconnect,status});
+  function disconnect(){stop();epoch++;if(abort)abort.abort();abort=null;token='';verified=false;state('disconnected');return status()}
+  // Never release PAT to the UI; only previously verified private-repo sessions
+  // can opt-in to an encrypted local vault. A world-save conflict must not
+  // prevent storing verified authorization, because user data stays untouched.
+  async function rememberCredential(vault,password){
+   if(!verified||!token)fail('VAULT_SESSION_NOT_VERIFIED');
+   if(!vault||typeof vault.remember!=='function')fail('VAULT_UNAVAILABLE');
+   const lease=epoch,current=token;
+   await vault.remember(current,password,()=>verified&&epoch===lease&&token===current);
+   return {saved:true};
+  }
+  return Object.freeze({connect,sync,disconnect,status,rememberCredential});
  }
  return Object.freeze({REPO,BRANCH,PATH,BASELINE,SCENE_PATH,SCENE_BASELINE,create});
 });
