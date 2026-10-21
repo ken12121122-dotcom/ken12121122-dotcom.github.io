@@ -62,7 +62,7 @@ test('encrypted vault is origin-bound and damaged records do not disclose token'
  const foreign=Vault.create({...opts(s),origin:'https://another-domain.example'});
  await assert.rejects(foreign.unlock('special password 987'),/VAULT_UNLOCK_FAILED/);
  const row=s.rows.values().next().value;
- s.rows.set(Vault.STORE==='credentials'?'private-github-card-inbox':'private-github-card-inbox',
+ s.rows.set('private-github-card-inbox',
   {...row,repo:'an-attacker/repository'});
  await assert.rejects(v.unlock('special password 987'),/VAULT_INVALID_RECORD/);
  assert.equal(s.rows.size,1);
@@ -87,4 +87,14 @@ test('the system book requires explicit opt-in, clears passwords, and has revoke
  assert.match(main,/credentialVault\.unlock/);
  assert.match(main,/credentialVault\.forget/);
  assert.match(main,/worldSave\.disconnect\(\)/);
+});
+
+test('forget during encryption cancels a late remember and leaves no stored credential',async()=>{
+ const s=storage(),v=Vault.create(opts(s));
+ const inFlight=v.remember(secret,'secret password this is long');
+ const revoked=v.forget();
+ await assert.rejects(inFlight,/VAULT_AUTH_REVOKED/);
+ assert.deepEqual(await revoked,{saved:false});
+ assert.equal(s.rows.size,0);
+ assert.deepEqual(await v.inspect(),{saved:false});
 });
