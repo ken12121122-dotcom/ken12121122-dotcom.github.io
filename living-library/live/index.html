@@ -657,9 +657,10 @@ async function offerWorldVaultUnlock(){
   console.warn('World credential vault unreadable; public gameplay remains available');
  }
 }
-function closeWorldVaultUnlock(){
+function closeWorldVaultUnlock(cancelPending=true){
  worldVaultPromptDismissed=true;
  credentialVaultEpoch++; // Ignore late decrypt/connection completions after dismissal.
+ if(cancelPending&&worldVaultUnlockBusy)worldSave.disconnect(); // Abort an in-flight GitHub login on user cancel.
  worldVaultUnlockPassword.value='';
  worldVaultUnlockBusy=false;
  worldVaultUnlockSubmit.disabled=false;
@@ -690,7 +691,7 @@ worldVaultUnlockForm.addEventListener('submit',async event=>{
   if(status.credential_verified){
    worldVaultUnlockStatus.textContent=status.phase==='synced'?'✓ 授權已解鎖，世界存檔同步成功。':
     '✓ 授權已解鎖；世界同步未完成（'+(status.error||'暫時無法同步')+'），可在系統之書查看。';
-   closeWorldVaultUnlock();
+   closeWorldVaultUnlock(false);
    if(status.phase!=='synced')toast('GitHub 已解鎖，世界同步需檢查：'+(status.error||'未知錯誤'));
   }else{
    worldVaultUnlockStatus.textContent='⚠ GitHub 授權驗證失敗：'+(status.error||'未知錯誤')+'。請在系統之書重新授權。';
