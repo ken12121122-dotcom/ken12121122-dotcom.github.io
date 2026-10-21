@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d19">
+<title>NW-3D-TRAIN-001｜雙界之門 · 黑曜石魔法門框 v1</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#e5ebfa;background:#080d19;font-synthesis:none}
+*{box-sizing:border-box}
+html,body{height:100%;min-height:100%;margin:0;overflow:hidden}
+body{background:radial-gradient(ellipse at 50% 44%,#192438 0%,#090e1b 68%,#050914 100%)}
+#viewport{position:fixed;inset:0;touch-action:none;outline:none;cursor:grab}
+#viewport:active{cursor:grabbing}
+#viewport canvas{display:block;width:100%;height:100%}
+.hud{position:fixed;z-index:5;pointer-events:none}
+.heading{left:max(17px,env(safe-area-inset-left));top:max(17px,env(safe-area-inset-top));max-width:min(72vw,410px)}
+.kicker{color:#85d9e4;letter-spacing:.23em;font:700 10px/1.6 system-ui}
+h1{font-family:Georgia,"Noto Serif TC",serif;font-size:clamp(20px,3vw,33px);font-weight:500;line-height:1.15;margin:9px 0 6px;letter-spacing:.03em;text-shadow:0 3px 18px #000b}
+.subtitle{font-size:11px;line-height:1.75;letter-spacing:.09em;color:#a5b1cb}
+.status{margin-top:11px;font:600 10px/1.3 system-ui;color:#bccbe1}
+.status b{color:#8ce5c4;font-weight:700}
+.panel{pointer-events:auto;right:max(17px,env(safe-area-inset-right));top:max(17px,env(safe-area-inset-top));width:220px;padding:14px 15px 11px;border:1px solid #6e83a33b;background:linear-gradient(155deg,#121d30de,#091322dd);border-radius:11px;backdrop-filter:blur(10px);box-shadow:0 8px 36px #0007}
+.panel strong{display:block;font:700 10px/1.6 system-ui;letter-spacing:.16em;color:#dfc293}
+.panel small{display:block;margin-top:3px;color:#8192a9;font-size:10px;line-height:1.5}
+.mods{margin-top:11px;display:grid;gap:6px}
+.mod{display:flex;gap:9px;align-items:center;border-top:1px solid #a5b4d017;padding-top:6px}
+.mod code{font:700 10px/1 monospace;color:#93d8e5}
+.mod span{font-size:11px;color:#cbd6e8;flex:1}
+.mod button{pointer-events:auto;flex:none;display:grid;place-items:center;width:29px;height:29px;padding:0;background:transparent;border:1px solid #71849c43;border-radius:7px;color:#b2c3df;font-size:14px;cursor:pointer}
+.mod button[aria-pressed="true"]{color:#536178;opacity:.5}
+.tools{left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:9px;padding:8px;border-radius:16px;background:#0b1426ba;border:1px solid #8297b240;backdrop-filter:blur(13px);pointer-events:auto}
+.tools button{display:grid;place-items:center;cursor:pointer;width:48px;height:48px;border:1px solid #8c9eb84d;background:#1c2a42cc;color:#f0f4ff;font-size:20px;border-radius:11px}
+.tools button[aria-pressed="true"]{border-color:#71cbd6;color:#71d7df;background:#1d3448}
+button:focus-visible,#viewport:focus-visible{outline:2px solid #9ce4ef;outline-offset:3px}
+.hint{bottom:max(95px,calc(env(safe-area-inset-bottom) + 75px));left:50%;transform:translateX(-50%);text-align:center;font-size:11px;color:#91a8ca;white-space:nowrap;text-shadow:0 2px 12px #000e}
+.badge{left:max(17px,env(safe-area-inset-left));bottom:max(19px,env(safe-area-inset-bottom));font:600 10px/1.6 monospace;letter-spacing:.05em;color:#7188a5}
+#loading{position:fixed;z-index:10;inset:0;display:grid;place-items:center;background:#080e1c;color:#bfdbe8;font-size:13px;letter-spacing:.11em}
+#loading[hidden]{display:none}
+#loading div{padding:20px;text-align:center;max-width:300px;line-height:1.8}
+#loading .mark{font-size:30px;color:#98d9ed;display:block;margin-bottom:12px}
+@media(max-width:620px){
+.heading{max-width:calc(100vw - 34px)}
+h1{font-size:23px}
+.panel{top:auto;bottom:max(102px,calc(env(safe-area-inset-bottom) + 90px));right:13px;width:160px;padding:9px 11px}
+.panel small{display:none}
+.mods{margin-top:5px;gap:1px}
+.mod{padding-top:2px}
+.mod span{font-size:10px}
+.mod button{width:26px;height:26px}
+.hint{bottom:max(87px,calc(env(safe-area-inset-bottom) + 70px));left:18px;transform:none;font-size:10px}
+.tools{bottom:max(16px,env(safe-area-inset-bottom))}
+.badge{bottom:auto;top:118px}
+}
+@media(max-height:530px){.panel{display:none}.hint{display:none}}
+</style>
+</head>
+<body>
+<div id="viewport" role="application" tabindex="0" aria-label="黑曜石魔法門框 3D 審核：單指旋轉，雙指縮放及平移，滑鼠滾輪縮放"></div>
+<header class="hud heading">
+ <div class="kicker">N E N D O U &nbsp; W O R L D　/　3 D　L A B</div>
+ <h1>雙界之門<br>黑曜石框架</h1>
+ <div class="subtitle">NW-3D-TRAIN-001 · PROCEDURAL SCULPTURE · v1.0</div>
+ <div class="status" role="status">● <b id="stateText">準備載入 3D 模型</b></div>
+</header>
+<aside class="hud panel" aria-label="門框零件圖層">
+ <strong>G01—G06 ｜ 模組</strong>
+ <small>點擊眼睛圖示，可單獨隱藏或顯示零件。</small>
+ <div class="mods" id="modules">
+  <div class="mod" data-part="G01"><code>G01</code><span>黑曜石巨柱</span><button type="button" aria-label="隱藏 G01 黑曜石巨柱" aria-pressed="false">◉</button></div>
+  <div class="mod" data-part="G02"><code>G02</code><span>尖拱門頂</span><button type="button" aria-label="隱藏 G02 尖拱門頂" aria-pressed="false">◉</button></div>
+  <div class="mod" data-part="G03"><code>G03</code><span>雕刻凹槽</span><button type="button" aria-label="隱藏 G03 雕刻凹槽" aria-pressed="false">◉</button></div>
+  <div class="mod" data-part="G04"><code>G04</code><span>古銅鑲嵌</span><button type="button" aria-label="隱藏 G04 古銅鑲嵌" aria-pressed="false">◉</button></div>
+  <div class="mod" data-part="G05"><code>G05</code><span>頂部魔法核心</span><button type="button" aria-label="隱藏 G05 頂部魔法核心" aria-pressed="false">◉</button></div>
+  <div class="mod" data-part="G06"><code>G06</code><span>承重基座</span><button type="button" aria-label="隱藏 G06 承重基座" aria-pressed="false">◉</button></div>
+ </div>
+</aside>
+<div class="hud hint" aria-hidden="true">⟲ 單指旋轉 · ⊕ 雙指縮放 · ⇧ 拖曳平移</div>
+<nav class="hud tools" aria-label="3D 相機控制">
+ <button id="front" type="button" title="正面" aria-label="切換正面視角">▤</button>
+ <button id="side" type="button" title="側面" aria-label="切換側面視角">◧</button>
+ <button id="reset" type="button" title="重設視角" aria-label="重設視角">↺</button>
+ <button id="spin" type="button" title="自動旋轉" aria-label="切換自動旋轉" aria-pressed="false">⟳</button>
+</nav>
+<div class="hud badge">EXPERIMENT ONLY · NOT CONNECTED TO PLAYER SAVES</div>
+<div id="loading" role="status"><div><span class="mark">◇</span><span id="loadText">正在構築黑曜石門框…</span></div></div>
+<script type="module">
+'use strict';
+const viewport=document.getElementById('viewport');
+const status=document.getElementById('stateText');
+const loading=document.getElementById('loading');
+function fail(error){
+ console.error('[NW-3D-TRAIN-001]',error);
+ document.getElementById('loadText').textContent='無法載入 3D。請確認網路連線及瀏覽器 WebGL 支援。';
+ status.textContent='3D 暫時無法使用';
+}
+async function loadThree(){
+ for(const url of [
+  'https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js',
+  'https://unpkg.com/three@0.185.0/build/three.module.js'
+ ]){
+  try{return await import(url)}catch(error){console.warn('Three source unavailable:',url,error)}
+ }
+ throw new Error('Cannot import pinned Three.js');
+}
+try{
+ const THREE=await loadThree();
+ const scene=new THREE.Scene();
+ scene.background=new THREE.Color('#090d18');
+ scene.fog=new THREE.FogExp2('#090d18',.026);
+ const camera=new THREE.PerspectiveCamera(40,1,.1,120);
+ const renderer=new THREE.WebGLRenderer({antialias:innerWidth>720,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<640?1.5:2));
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.48;
+ renderer.shadowMap.enabled=true;
+ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ viewport.appendChild(renderer.domElement);
+ const ambient=new THREE.HemisphereLight('#97aecf','#10101b',2.0);scene.add(ambient);
+ const key=new THREE.DirectionalLight('#e3d6c0',4.2);
+ key.position.set(5,9,8);key.castShadow=true;
+ key.shadow.mapSize.set(1024,1024);
+ key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;
+ key.shadow.bias=-.0005;scene.add(key);
+ const violet=new THREE.PointLight('#7655e9',55,15,1.9);
+ violet.position.set(-4,4,-2);scene.add(violet);
+ const ice=new THREE.PointLight('#4abbe8',52,16,1.9);
+ ice.position.set(4.5,4,4);scene.add(ice);
+ const rim=new THREE.DirectionalLight('#a0d9ff',2.25);
+ rim.position.set(-5,3,-5);scene.add(rim);
+ // Deterministic high-frequency stone albedo/bump texture. No external model or paid asset.
+ let seed=153937;
+ function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+ function stoneTexture(){
+  const c=document.createElement('canvas');c.width=c.height=256;
+  const cx=c.getContext('2d',{willReadFrequently:true});
+  const im=cx.createImageData(256,256);
+  const n=new Float32Array(256*256);
+  for(let i=0;i<n.length;i++)n[i]=rand();
+  for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+   const i=y*256+x,v=Math.max(0,Math.min(255,17+n[i]*17+Math.sin(x*.17+y*.09)*5));
+   im.data[i*4]=v*.83;im.data[i*4+1]=v*.88;im.data[i*4+2]=v*1.25;im.data[i*4+3]=255;
+  }
+  cx.putImageData(im,0,0);
+  for(let i=0;i<24;i++){
+   cx.beginPath();const x=rand()*256,y=rand()*256;
+   cx.moveTo(x,y);
+   cx.bezierCurveTo(x+8,y-16,x-22,y+23,x+20,y+rand()*45);
+   cx.strokeStyle=rand()>.5?'rgba(91,116,176,.19)':'rgba(2,4,12,.58)';
+   cx.lineWidth=.5+rand()*1.2;cx.stroke();
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2.4,2.4);
+  t.colorSpace=THREE.SRGBColorSpace;
+  t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+  return t;
+ }
+ const stoneMap=stoneTexture();
+ const mat={
+  obsidian:new THREE.MeshStandardMaterial({map:stoneMap,color:'#b4bed8',roughness:.33,metalness:.34,side:THREE.DoubleSide}),
+  inset:new THREE.MeshStandardMaterial({color:'#101223',roughness:.52,metalness:.25,side:THREE.DoubleSide}),
+  edge:new THREE.MeshStandardMaterial({color:'#353a53',roughness:.39,metalness:.45,side:THREE.DoubleSide}),
+  pitch:new THREE.MeshStandardMaterial({color:'#080a12',roughness:.32,metalness:.24}),
+  bronze:new THREE.MeshStandardMaterial({color:'#9a7140',roughness:.29,metalness:.88,side:THREE.DoubleSide}),
+  brass:new THREE.MeshStandardMaterial({color:'#c8a36c',roughness:.26,metalness:.88}),
+  rune:new THREE.MeshStandardMaterial({color:'#6fc6e7',emissive:'#149dc9',emissiveIntensity:2.15,roughness:.33}),
+  amber:new THREE.MeshStandardMaterial({color:'#e8bd78',emissive:'#af6e21',emissiveIntensity:.44,metalness:.63,roughness:.25}),
+  gem:new THREE.MeshPhysicalMaterial({color:'#6a4be1',emissive:'#5531b5',emissiveIntensity:1.4,metalness:.27,roughness:.15,clearcoat:1,clearcoatRoughness:.08}),
+  platform:new THREE.MeshStandardMaterial({color:'#242536',metalness:.21,roughness:.66})
+ };
+ const gate=new THREE.Group();gate.name='NW-3D-TRAIN-001_Obsidian_Frame';scene.add(gate);
+ const parts={};
+ for(const id of ['G01','G02','G03','G04','G05','G06']){
+  parts[id]=new THREE.Group();parts[id].name=id;gate.add(parts[id]);
+ }
+ const attach=(id,mesh)=>{parts[id].add(mesh);mesh.castShadow=true;mesh.receiveShadow=true;return mesh};
+ const box=(id,x,y,z,sx,sy,sz,material)=>{
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
+  mesh.position.set(x,y,z);return attach(id,mesh);
+ };
+ function cyl(id,x,y,z,r1,r2,h,material,edges=10){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,edges),material);
+  m.position.set(x,y,z);return attach(id,m);
+ }
+ function torus(id,x,y,z,r,t,material,rotation=0){
+  const m=new THREE.Mesh(new THREE.TorusGeometry(r,t,8,72),material);
+  m.position.set(x,y,z);m.rotation.y=rotation;return attach(id,m);
+ }
+ function spike(id,x,y,z,height,radius,material,up=true){
+  const m=new THREE.Mesh(new THREE.ConeGeometry(radius,height,5),material);
+  m.position.set(x,y,z);if(!up)m.rotation.z=Math.PI;return attach(id,m);
+ }
+ // Gothic pointed arch described by two quadratic Bezier curves (one cusp at the apex).
+ function archPoints(half,shoulder,apex,segments=22){
+  const left=[];
+  for(let i=0;i<=segments;i++){
+   const t=i/segments,u=1-t;
+   left.push(new THREE.Vector2(u*u*(-half)+2*u*t*(-half*.83),u*u*shoulder+2*u*t*(apex-.31)+t*t*apex));
+  }
+  const right=left.slice(0,-1).reverse().map(p=>new THREE.Vector2(-p.x,p.y));
+  return [...left,...right];
+ }
+ function band(id,outer,inner,z,depth,material){
+  const outerPts=archPoints(...outer),innerPts=archPoints(...inner).reverse();
+  const shape=new THREE.Shape();
+  shape.moveTo(outerPts[0].x,outerPts[0].y);
+  for(const p of outerPts.slice(1))shape.lineTo(p.x,p.y);
+  for(const p of innerPts)shape.lineTo(p.x,p.y);
+  shape.closePath();
+  const geo=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:true,bevelThickness:.028,bevelSize:.023,bevelSegments:2});
+  geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo,material);m.position.z=z;
+  return attach(id,m);
+ }
+ function beam(id,a,b,width,depth,material,z){
+  const dx=b.x-a.x,dy=b.y-a.y;
+  const m=box(id,(a.x+b.x)/2,(a.y+b.y)/2,z,width,Math.hypot(dx,dy),depth,material);
+  m.rotation.z=-Math.atan2(dx,dy);return m;
+ }
+ function stud(id,x,y,z,r,material){
+  const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),material);
+  m.position.set(x,y,z);return attach(id,m);
+ }
+ // G01 – 12-tapered faces, five structural segments and deep stone ribs per pillar.
+ for(const s of [-1,1]){
+  const x=s*1.75;
+  box('G01',x,2.02,0,.72,3.87,.9,mat.obsidian);
+  box('G01',x,2.00,-.45,.91,3.94,.14,mat.inset);
+  box('G01',x,2.02,.44,.55,3.78,.14,mat.edge);
+  for(const y of [.48,1.28,2.10,2.94,3.62]){
+   box('G01',x,y,.05,.94,.14,1.06,mat.obsidian);
+   box('G01',x,y+.045,.59,1,.055,.12,mat.edge);
+  }
+  box('G01',x+s*.34,1.95,.05,.14,3.72,.95,mat.pitch);
+  box('G01',x-s*.23,2.03,.52,.14,3.7,.09,mat.inset);
+  for(const y of [1.02,1.86,2.70,3.36]){
+   const p=box('G01',x, y,.58,.38,.54,.11,mat.obsidian);
+   p.rotation.z=s*.075;
+  }
+  spike('G01',x,4.24,-.02,.95,.30,mat.obsidian);
+  spike('G01',x+s*.26,4.35,-.18,.53,.13,mat.edge);
+ }
+ // G02 – pointed, layered architectural masonry, no filled portal plane.
+ band('G02',[2.12,3.62,5.72],[1.34,3.61,4.72],-.40,.87,mat.obsidian);
+ band('G02',[2.22,3.78,5.94],[2.07,3.68,5.74],-.15,.34,mat.inset);
+ band('G02',[2.15,3.69,5.84],[2.01,3.61,5.65],.45,.15,mat.edge);
+ band('G02',[1.55,3.68,5.07],[1.39,3.64,4.86],.48,.19,mat.pitch);
+ for(const s of [-1,1])for(let i=0;i<6;i++){
+  const y=3.45+i*.32,x=s*(2.12-i*.11);
+  spike('G02',x,y,-.16,.30+i*.06,.08+i*.014,mat.edge);
+ }
+ // G03 – incised rune-grooves, individual diamonds and razor facets on the jambs.
+ for(const s of [-1,1]){
+  const x=s*1.75,z=.665;
+  for(let i=0;i<8;i++){
+   const y=.73+i*.395;
+   const c=new THREE.Group();c.position.set(x,y,z);parts.G03.add(c);
+   const pts=[[-.09,0],[0,.16],[.09,0],[0,-.16],[-.09,0]];
+   for(let j=0;j<4;j++){
+    const a=pts[j],b=pts[j+1];
+    const dx=b[0]-a[0],dy=b[1]-a[1];
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.018,Math.hypot(dx,dy),.026),i%3===0?mat.rune:mat.inset);
+    m.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,0);
+    m.rotation.z=-Math.atan2(dx,dy);c.add(m);
+   }
+   const run=new THREE.Mesh(new THREE.BoxGeometry(.014,.13,.025),i%3===0?mat.rune:mat.bronze);
+   run.position.y=i%2===0?.04:-.035;run.rotation.z=i%2===0?.6:-.6;c.add(run);
+  }
+ }
+ // Angled blackstone engraved shards follow the arch face.
+ const arc=archPoints(1.93,3.65,5.55,22);
+ for(let i=2;i<arc.length-2;i+=3){
+  const p=arc[i],n=arc[i+1],angle=-Math.atan2(n.x-p.x,n.y-p.y);
+  const shard=box('G03',p.x,p.y,.685,.10,.19,.105,mat.pitch);
+  shard.rotation.z=angle;
+  stud('G03',p.x,p.y,.75,.046,mat.rune);
+ }
+ // G04 – warm aged bronze fillets, gold strips, socket rings and machined rivets.
+ band('G04',[1.50,3.68,5.02],[1.43,3.66,4.93],.69,.075,mat.bronze);
+ band('G04',[2.07,3.65,5.68],[2.015,3.62,5.62],.61,.07,mat.bronze);
+ for(const s of [-1,1]){
+  const x=s*1.75;
+  for(const offset of [-.23,.23])box('G04',x+offset,2.09,.69,.045,3.4,.065,mat.bronze);
+  for(const y of [.58,1.37,2.13,2.96,3.60]){
+   box('G04',x,y,.71,.76,.048,.07,mat.bronze);
+   for(const ox of [-.28,.28])stud('G04',x+ox,y,.78,.048,mat.brass);
+  }
+  torus('G04',s*2.02,3.08,.74,.27,.045,mat.bronze);
+  torus('G04',s*2.02,3.08,.75,.16,.022,mat.amber);
+  const orb=stud('G04',s*2.02,3.08,.8,.145,mat.gem);orb.scale.z=.58;
+  for(const y of [1.02,1.85,2.66]){
+   const shield=box('G04',x,y,.76,.24,.34,.055,mat.bronze);shield.rotation.z=s*.06;
+   stud('G04',x,y,.83,.068,mat.brass);
+  }
+ }
+ // G05 – arcane crown, crossed metal orbit rings, central prismatic violet core.
+ cyl('G05',0,5.70,.35,.40,.44,.11,mat.pitch,12).rotation.x=Math.PI/2;
+ torus('G05',0,5.72,.74,.43,.064,mat.bronze);
+ torus('G05',0,5.72,.76,.29,.032,mat.brass);
+ const core=new THREE.Mesh(new THREE.OctahedronGeometry(.27,1),mat.gem);
+ core.position.set(0,5.72,.82);core.rotation.z=Math.PI/4;attach('G05',core);
+ spike('G05',0,6.09,.58,.62,.105,mat.brass);
+ spike('G05',0,5.29,.60,.48,.09,mat.bronze,false);
+ for(const s of [-1,1]){
+  const points=[new THREE.Vector2(s*.40,5.76),new THREE.Vector2(s*.66,6.03),new THREE.Vector2(s*.91,5.90)];
+  beam('G05',points[0],points[1],.080,.10,mat.bronze,.63);
+  beam('G05',points[1],points[2],.070,.10,mat.brass,.63);
+  stud('G05',s*.68,6.02,.67,.083,mat.rune);
+ }
+ // G06 – independent structural podium. Stage props are not included in the model group.
+ box('G06',0,.19,0,5.25,.34,1.77,mat.platform);
+ box('G06',0,.39,0,4.91,.20,1.46,mat.obsidian);
+ box('G06',0,.53,.06,4.50,.12,1.26,mat.edge);
+ box('G06',0,.10,1.10,4.37,.18,.50,mat.pitch);
+ for(const s of [-1,1]){
+  box('G06',s*1.74,.61,0,1.15,.20,1.45,mat.obsidian);
+  box('G06',s*1.74,.75,0,.92,.09,1.20,mat.bronze);
+  for(const z of [-.55,.55])stud('G06',s*1.74,.77,z,.073,mat.brass);
+ }
+ // Floor is only an isolated review stage; it never references a game world origin.
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(45,45),new THREE.MeshStandardMaterial({color:'#0a1223',roughness:1,metalness:0}));
+ ground.rotation.x=-Math.PI/2;ground.position.y=-.015;ground.receiveShadow=true;scene.add(ground);
+ const grid=new THREE.GridHelper(42,42,'#315066','#203046');grid.position.y=.012;scene.add(grid);
+ const halo=new THREE.Mesh(new THREE.RingGeometry(2.25,2.31,96),new THREE.MeshBasicMaterial({color:'#4b7087',transparent:true,opacity:.45,side:THREE.DoubleSide}));
+ halo.rotation.x=-Math.PI/2;halo.position.y=.026;scene.add(halo);
+ // Camera controls use Pointer Events: touch rotate, pinch zoom/pan, Shift+drag pan, wheel zoom.
+ const focus=new THREE.Vector3(0,3.05,0);
+ const cameraState={yaw:.18,pitch:.08,distance:11.2};
+ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ function updateCamera(){
+  const s=cameraState;
+  camera.position.set(focus.x+Math.sin(s.yaw)*Math.cos(s.pitch)*s.distance,
+   focus.y+Math.sin(s.pitch)*s.distance,
+   focus.z+Math.cos(s.yaw)*Math.cos(s.pitch)*s.distance);
+  camera.lookAt(focus);
+ }
+ function setView(yaw,pitch,distance){
+  cameraState.yaw=yaw;cameraState.pitch=pitch;cameraState.distance=distance;focus.set(0,3.05,0);
+  updateCamera();
+ }
+ const pointers=new Map();let pinch=null,dragged=false,spin=false;
+ function pointerArray(){return [...pointers.values()]}
+ viewport.addEventListener('pointerdown',e=>{
+  if(e.button!==0&&e.button!==1&&e.button!==2)return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,prevX:e.clientX,prevY:e.clientY,shift:e.shiftKey||e.button!==0});
+  if(pointers.size===2){const [a,b]=pointerArray();pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),midX:(a.x+b.x)/2,midY:(a.y+b.y)/2}}
+  else pinch=null;
+  viewport.setPointerCapture(e.pointerId);dragged=true;e.preventDefault();
+ });
+ viewport.addEventListener('pointermove',e=>{
+  const p=pointers.get(e.pointerId);if(!p)return;
+  p.prevX=p.x;p.prevY=p.y;p.x=e.clientX;p.y=e.clientY;
+  const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
+  if(pointers.size===2){
+   const [a,b]=pointerArray(),d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+   if(pinch){
+    cameraState.distance=clamp(cameraState.distance*pinch.distance/Math.max(8,d),6.2,20);
+    focus.x=clamp(focus.x+(pinch.midX-mx)*cameraState.distance/w*.9,-2.5,2.5);
+    focus.y=clamp(focus.y+(my-pinch.midY)*cameraState.distance/h*.7,1,5.2);
+   }
+   pinch={distance:d,midX:mx,midY:my};
+  }else if(p.shift){
+   focus.x=clamp(focus.x-(p.x-p.prevX)*cameraState.distance/w,-2.5,2.5);
+   focus.y=clamp(focus.y+(p.y-p.prevY)*cameraState.distance/h,1,5.2);
+  }else{
+   cameraState.yaw-=(p.x-p.prevX)*.008;
+   cameraState.pitch=clamp(cameraState.pitch+(p.y-p.prevY)*.006,-.35,1.3);
+  }
+  updateCamera();e.preventDefault();
+ });
+ function endPointer(e){pointers.delete(e.pointerId);if(pointers.size<2)pinch=null}
+ viewport.addEventListener('pointerup',endPointer);viewport.addEventListener('pointercancel',endPointer);
+ viewport.addEventListener('wheel',e=>{
+  cameraState.distance=clamp(cameraState.distance*Math.exp(e.deltaY*.001),6.2,20);updateCamera();e.preventDefault();
+ },{passive:false});
+ viewport.addEventListener('contextmenu',e=>e.preventDefault());
+ viewport.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft')cameraState.yaw-=.11;
+  else if(e.key==='ArrowRight')cameraState.yaw+=.11;
+  else if(e.key==='ArrowUp')cameraState.pitch=clamp(cameraState.pitch+.08,-.35,1.3);
+  else if(e.key==='ArrowDown')cameraState.pitch=clamp(cameraState.pitch-.08,-.35,1.3);
+  else if(e.key==='+'||e.key==='=')cameraState.distance=clamp(cameraState.distance-.7,6.2,20);
+  else if(e.key==='-')cameraState.distance=clamp(cameraState.distance+.7,6.2,20);
+  else return;
+  updateCamera();e.preventDefault();
+ });
+ document.getElementById('front').addEventListener('click',()=>{spin=false;syncSpin();setView(0,.04,11.1)});
+ document.getElementById('side').addEventListener('click',()=>{spin=false;syncSpin();setView(Math.PI/2,.05,11.1)});
+ document.getElementById('reset').addEventListener('click',()=>{spin=false;syncSpin();setView(.18,.08,11.2)});
+ const spinButton=document.getElementById('spin');
+ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ function syncSpin(){
+  spinButton.setAttribute('aria-pressed',String(spin));spinButton.title=spin?'停止旋轉':'自動旋轉';
+  spinButton.setAttribute('aria-label',spinButton.title);
+ }
+ spinButton.addEventListener('click',()=>{spin=!spin;syncSpin()});
+ document.querySelectorAll('.mod').forEach(row=>{
+  const part=parts[row.dataset.part],button=row.querySelector('button'),label=row.querySelector('span').textContent;
+  button.addEventListener('click',()=>{
+   part.visible=!part.visible;
+   button.setAttribute('aria-pressed',String(!part.visible));
+   button.textContent=part.visible?'◉':'◌';
+   button.setAttribute('aria-label',part.visible?'隱藏 '+row.dataset.part+' '+label:'顯示 '+row.dataset.part+' '+label);
+  });
+ });
+ function resize(){
+  const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  if(w<650)cameraState.distance=Math.max(cameraState.distance,13.0);
+  updateCamera();
+ }
+ window.addEventListener('resize',resize);resize();
+ status.textContent='可旋轉檢查 · 6 個獨立模組';loading.hidden=true;
+ let last=0;
+ function render(now){
+  requestAnimationFrame(render);
+  if(document.hidden)return;
+  const dt=last?Math.min((now-last)/1000,.07):0;last=now;
+  if(spin&&pointers.size===0)cameraState.yaw+=dt*.28;
+  if(spin)updateCamera();
+  renderer.render(scene,camera);
+ }
+ requestAnimationFrame(render);
+ // Export read-only review metadata. No localStorage, network write or game-world mutation.
+ window.NW3DReview=Object.freeze({
+  id:'NW-3D-TRAIN-001',stage:'candidate',version:'v1',
+  modules:Object.freeze(Object.keys(parts)),
+  visualOnly:true,
+  dimensions:Object.freeze({approxHeight:6.4,approxWidth:5.25,clearOpeningWidth:2.68}),
+  parts:Object.freeze(Object.fromEntries(Object.keys(parts).map(k=>[k,parts[k].name])))
+ });
+}catch(error){fail(error)}
+</script>
+</body>
+</html>
