@@ -691,7 +691,7 @@ window.addEventListener('message',event=>{
      inspection:'共 '+b.summary.total+' 項（卡片 '+b.summary.cards+
       '／書本 '+b.summary.books+'／已回收 '+b.summary.recycled+
       '），SHA-256 '+b.sha256.slice(0,12)+
-      '。此為 ObjectCraft 範圍，其他本機系統仍待盤點。'},origin))
+      '。3D 觀察檔：'+(window.LivingScene?.observeWorld?.()?.ready?'可讀取人物與場景座標':'目前未載入 3D，僅能同步安全偏好')+'；其他獨立存檔仍待盤點。'},origin))
     .catch(e=>source.postMessage({kind:'living-library-world-save-status',
      inspection:'無法讀取：'+(typeof e?.code==='string'?e.code:'CLOUD_LOCAL_INVALID')},origin));
   }
