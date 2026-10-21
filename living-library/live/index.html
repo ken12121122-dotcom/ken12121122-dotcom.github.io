@@ -11,8 +11,15 @@
 :root{--bg:#070e1b;--panel:rgba(12,22,35,.87);--line:rgba(188,166,123,.29);--gold:#e5c28d;--gold2:#bb9563;--muted:#b4becb;--ink:#e9e8e5;--teal:#9ce0d5}
 *{box-sizing:border-box}html,body{height:100%;width:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
 button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
-#stage{position:fixed;inset:0;z-index:0;touch-action:none;background:radial-gradient(ellipse at 50% 46%,#28354b 0%,#11192a 40%,#080d18 80%)}
+#stage{position:fixed;inset:0;z-index:0;touch-action:none;background:#eff5fa}
 #stage canvas{display:block;width:100%;height:100%;outline:0}
+.jump-control{position:fixed;left:0;top:0;z-index:9;width:62px;height:62px;border-radius:50%;
+display:grid;place-items:center;border:2px solid #78a6be;background:#f7fbffed;color:#205879;
+font:bold 30px/1 system-ui;box-shadow:0 3px 14px #647f9840;cursor:grab;touch-action:none;
+user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.jump-control[hidden]{display:none!important}
+.jump-control.dragging{cursor:grabbing;border-color:#2563a4;background:#dbeefa}
+.jump-control:focus-visible{outline:3px solid #2563a4;outline-offset:3px}
 .walk-ui{position:fixed;left:clamp(12px,3vw,30px);bottom:calc(188px + env(safe-area-inset-bottom));z-index:7;display:flex;flex-direction:column;align-items:flex-start;gap:9px;pointer-events:none}
 .walk-ui[hidden],.walk-pad[hidden]{display:none!important}
 .walk-ui button,.walk-pad{pointer-events:auto}
@@ -25,8 +32,8 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 .walk-hint{pointer-events:none;max-width:154px;background:#111b2cba;border-radius:7px;padding:5px 7px;font-size:10px;color:#e5d8c7}
 @media(max-width:650px){.walk-ui{left:12px;bottom:calc(219px + env(safe-area-inset-bottom))}.walk-pad{width:104px;height:104px}.walk-knob{width:43px;height:43px}}
 @media(max-height:610px){.walk-ui{bottom:calc(158px + env(safe-area-inset-bottom))}.walk-hint{display:none}}
-.vignette{pointer-events:none;position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,6,12,.50) 0%,transparent 28%,transparent 66%,rgba(3,5,11,.80) 100%),radial-gradient(ellipse at center,transparent 25%,rgba(3,5,12,.40) 100%)}
-.mist{pointer-events:none;position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 80%,rgba(43,148,153,.08),transparent 40%)}
+.vignette{pointer-events:none;position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,rgba(226,236,245,.16),transparent 30%,transparent 70%,rgba(203,219,232,.16))}
+.mist{pointer-events:none;position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 80%,rgba(180,212,231,.12),transparent 50%)}
 .top{position:fixed;z-index:5;top:0;left:0;right:0;display:flex;align-items:start;justify-content:space-between;gap:12px;padding:24px 27px;pointer-events:none}
 .top>*{pointer-events:auto}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
 .emblem{display:grid;place-items:center;width:39px;height:39px;border:1px solid rgba(239,205,140,.67);transform:rotate(45deg);border-radius:5px;color:var(--gold);background:rgba(13,22,29,.8);box-shadow:0 0 23px rgba(222,185,122,.15)}
@@ -316,6 +323,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 </div>
 <section class="catalog" id="catalog"><div class="catalog-head" id="catalogHead" role="button" tabindex="0" aria-expanded="false"><div><small>THE ACTIVE GRIMOIRES</small><h2>知識書籍</h2><p>選擇、召喚與放回書架</p></div></div><p id="gen2Status" role="status">公開功能可直接使用 · GEN2 私有知識尚未授權</p><div id="bookList" class="book-list"></div><div class="shelf-tools" aria-label="實體書架空位統計"><small id="shelfCount">7 座書櫃 · 每座 5 層 × 5 個空格 · 共 175 格</small></div><div class="catalog-bottom"><span id="orbitCount">6 本環繞</span><span class="quality">BETA</span></div></section>
 <footer class="bottom"><div class="hud"><div class="current"><span class="spark">✧</span><div><b id="focusTitle">研究之書</b><small id="focusSubtitle">ACTIVE · RESEARCH</small></div><span class="spark">✧</span></div><div class="pillbar"><button id="prevBtn" class="action" type="button" aria-label="前一本" title="前一本">‹</button><span class="divider"></span><button id="openBtn" class="action main" type="button" aria-label="展開書頁" title="展開書頁">▤</button><span class="divider"></span><button id="nextBtn" class="action" type="button" aria-label="下一本" title="下一本">›</button></div><div class="note">360° 自由轉動視角 · 點書選取 · 雙指縮放 · 書架可召喚</div></div></footer>
+<button id="jumpControl" type="button" class="jump-control" hidden aria-label="跳躍：輕觸起跳，拖曳可調整按鈕位置" title="輕觸跳躍 · 拖曳移動位置">↑</button>
 <div id="exploreControls" class="walk-ui" hidden aria-label="觸點搖桿：空白場景按住拖曳可移動，雙指旋轉與縮放視角">
 <div id="walkPad" class="walk-pad" role="group" aria-label="觸點搖桿：按住拖曳移動，放開停止" hidden>
 <div id="walkKnob" class="walk-knob"></div></div>
@@ -1138,12 +1146,12 @@ if(window.LivingRenderCapability?.isSoftwareRenderer(rendererName)){
 initPhase='RENDERER_INIT';
 const renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:window.innerWidth>690,alpha:true,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<650?1.4:1.7));
-renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0x080e1c);
+renderer.setSize(window.innerWidth,window.innerHeight);renderer.setClearColor(0xeff5fa);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
 stage.append(renderer.domElement);
 initPhase='SCENE_BUILD';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x090e19);scene.fog=new THREE.FogExp2(0x090e19,.024);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xeff5fa);scene.fog=new THREE.FogExp2(0xeff5fa,.012);
 const camera=new THREE.PerspectiveCamera(48,window.innerWidth/window.innerHeight,.1,110);
 const CAMERA_MIN=7.5,CAMERA_MAX=27;let theta=0,phi=.17,distance=window.innerWidth<650?15.8:14.1;const look=new THREE.Vector3(0,2.9,0);
 const targetAngle=new THREE.Vector2(0,.17);
@@ -1175,12 +1183,14 @@ function registerScene(id,groups){
  const anchor=bounds.isEmpty()?groups[0].getWorldPosition(new THREE.Vector3()):bounds.getCenter(new THREE.Vector3());
  worldScanEntries.push({id,kind:'scene',group:groups[0],groups,anchor});
 }
-const floor=cyl(26,26,.3,0,-.42,0,stone,scene,72);registerScene('scene.floor',[floor]);
+// Preserve all existing scene IDs, world anchors and floor geometry. Lighten MATERIAL ONLY.
+const surfaceFloor=simple(0xf7fbff,.02,.98),surfaceGrid=simple(0xc1d3e0,.02,.96),surfaceRing=simple(0xe1e9f0,.02,.96);
+const floor=cyl(26,26,.3,0,-.42,0,surfaceFloor,scene,72);registerScene('scene.floor',[floor]);
 const floorRings=[];
-for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,stone2,scene,Math.PI/2);ring.material=stone2;floorRings.push(ring)}
+for(let i=1;i<14;i++){const ring=torus(i*1.9,.013,0,-.24,0,surfaceRing,scene,Math.PI/2);floorRings.push(ring)}
 registerScene('scene.floor.rings',floorRings);
 const floorGrid=[];
-for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,stone2);floorGrid.push(line)}for(let z=-24;z<=24;z+=3.9){floorGrid.push(box(50,.018,.018,0,-.24,z,stone2))}
+for(let x=-24;x<=24;x+=3.9){const line=box(.018,.018,50,x,-.24,0,surfaceGrid);floorGrid.push(line)}for(let z=-24;z<=24;z+=3.9){floorGrid.push(box(50,.018,.018,0,-.24,z,surfaceGrid))}
 registerScene('scene.floor.grid',floorGrid);
 // RUNE-01: real origin-ground sigil becomes one tagged scene entity.
 // No new geometry, visual changes, touch consumption or save mutations.
@@ -1335,6 +1345,21 @@ document.addEventListener('keyup',e=>{
  if(walkKeys.delete(key)){e.preventDefault();syncRender()}
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
+// Jump only affects character Y (render state); saved contracts and original rune anchors remain fixed.
+const GROUND_Y=.46,JUMP_SPEED=5.7,JUMP_GRAVITY=15;
+let jumpY=0,jumpVelocity=0,jumpActive=false;
+function requestJump(){
+ if(jumpActive||buildState||atlasRuntime?.inFocus||overlayActive())return false;
+ jumpActive=true;jumpVelocity=JUMP_SPEED;jumpY=0;syncRender();return true;
+}
+function stepJump(dt){
+ if(!jumpActive)return 0;
+ const d=Math.max(0,Math.min(.06,dt));
+ jumpY=Math.max(0,jumpY+jumpVelocity*d-.5*JUMP_GRAVITY*d*d);
+ jumpVelocity-=JUMP_GRAVITY*d;
+ if(jumpY<=0&&jumpVelocity<=0){jumpY=0;jumpVelocity=0;jumpActive=false}
+ return jumpY;
+}
 function stepAvatar(dt){
  if(buildState){
   const input=exploreInput();
@@ -1345,22 +1370,67 @@ function stepAvatar(dt){
   buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
   updateHologram(performance.now());return true;
  }
- if(!hasWalkInput()){keeper.position.y=.46;return false}
+ const elevation=stepJump(dt);
+ if(!hasWalkInput()){keeper.position.y=GROUND_Y+elevation;return jumpActive}
  const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
  const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
- if(next.distance<=.00001)return false;
- keeper.position.set(next.x,.46,next.z);
+ if(next.distance<=.00001){keeper.position.y=GROUND_Y+elevation;return jumpActive}
+ keeper.position.set(next.x,GROUND_Y+elevation,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
  const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
  keeper.rotation.y+=delta*Math.min(1,dt*11);
  walkDistance+=next.distance;walkPhase+=dt*8;
- keeper.position.y=.46+(!preferReduced?Math.sin(walkPhase*2)*.045:0);
+ keeper.position.y=GROUND_Y+elevation+(!preferReduced?Math.sin(walkPhase*2)*.045:0);
  // Camera follows the character's world X/Z only; no automatic zoom, pitch or focal-height change.
  look.x=keeper.position.x;
  look.z=keeper.position.z;
  cameraUpdate();return true;
 }
 
+// Jump control: tap to jump, drag to reposition; only its X/Y ratio is stored.
+const jumpButton=document.getElementById('jumpControl'),jumpKey='living-library-jump-button-position-v1';
+const jumpClamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+let jumpPosition={x:.84,y:.74},jumpPointer=null;
+try{
+ const saved=JSON.parse(localStorage.getItem(jumpKey)||'null');
+ if(saved&&Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&saved.x>=0&&saved.x<=1&&saved.y>=0&&saved.y<=1)
+  jumpPosition={x:saved.x,y:saved.y};
+}catch(_){}
+function positionJumpButton(){
+ const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),min=39;
+ const x=jumpClamp(jumpPosition.x*w,min,Math.max(min,w-min)),y=jumpClamp(jumpPosition.y*h,min,Math.max(min,h-min));
+ jumpButton.style.left=Math.round(x-31)+'px';jumpButton.style.top=Math.round(y-31)+'px';
+}
+jumpButton.addEventListener('pointerdown',e=>{
+ if(jumpPointer||(e.pointerType==='mouse'&&e.button!==0))return;
+ jumpPointer={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
+ jumpButton.classList.add('dragging');jumpButton.setPointerCapture(e.pointerId);
+ e.preventDefault();e.stopPropagation();
+});
+jumpButton.addEventListener('pointermove',e=>{
+ if(jumpPointer?.id!==e.pointerId)return;
+ if(Math.hypot(e.clientX-jumpPointer.x,e.clientY-jumpPointer.y)>7)jumpPointer.moved=true;
+ if(jumpPointer.moved){
+  jumpPosition={x:jumpClamp(e.clientX/Math.max(1,innerWidth),0,1),y:jumpClamp(e.clientY/Math.max(1,innerHeight),0,1)};
+  positionJumpButton();
+ }
+ e.preventDefault();e.stopPropagation();
+});
+jumpButton.addEventListener('pointerup',e=>{
+ if(jumpPointer?.id!==e.pointerId)return;
+ const moved=jumpPointer.moved;
+ jumpPointer=null;jumpButton.classList.remove('dragging');
+ if(jumpButton.hasPointerCapture(e.pointerId))jumpButton.releasePointerCapture(e.pointerId);
+ if(moved){try{localStorage.setItem(jumpKey,JSON.stringify(jumpPosition))}catch(_){}}
+ else requestJump();
+ e.preventDefault();e.stopPropagation();
+});
+jumpButton.addEventListener('pointercancel',e=>{
+ if(jumpPointer?.id!==e.pointerId)return;
+ jumpPointer=null;jumpButton.classList.remove('dragging');e.stopPropagation();
+});
+jumpButton.addEventListener('click',e=>{if(e.detail===0)requestJump()}); // Keyboard / accessibility
+window.addEventListener('resize',positionJumpButton);
 // Dust motes
 const dustCount=window.innerWidth<650?150:280,positions=new Float32Array(dustCount*3);
 for(let i=0;i<dustCount;i++){positions[i*3]=(Math.random()-.5)*29;positions[i*3+1]=Math.random()*11+.4;positions[i*3+2]=(Math.random()-.5)*27}
@@ -3145,12 +3215,12 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&!jumpActive&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
  if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
-  performance.now()<runeBindingPulseUntil||hasWalkInput()||truthEye.active()){
+  performance.now()<runeBindingPulseUntil||hasWalkInput()||jumpActive||truthEye.active()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -3183,6 +3253,7 @@ notifyReady({
  syncRender,invalidate
 });
 exploreUI.hidden=false;
+jumpButton.hidden=false;positionJumpButton();
 syncRender();
 }catch(error){
  console.error('Living Library 3D init failed',initPhase,error);
