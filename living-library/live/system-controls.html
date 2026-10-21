@@ -60,13 +60,14 @@
 <input id="cloudWorldToken" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="請貼上私人 GitHub 權杖" aria-label="GitHub 私人世界存檔權杖">
 <p>僅授權私人 <strong>ken12121122-dotcom/gen2-knowledge</strong>（Contents: Read and write）。不選「記住這台裝置」時僅本次頁面有效；選取後以自訂密碼加密存於本機 IndexedDB，重新開啟只需密碼解鎖。切勿把 PAT 或密碼貼給 ChatGPT。</p>
 <label class="cloud-consent" for="cloudWorldConsent"><input type="checkbox" id="cloudWorldConsent"><span>我同意把玩家卡片、書本，以及 3D 世界人物座標、視角、書本狀態、場景錨點與遊戲操作偏好傳至上述私人 GitHub；Git 歷史可能長期保留資料。</span></label>
-<label class="cloud-consent" for="cloudWorldRemember"><input type="checkbox" id="cloudWorldRemember"><span>🔐 記住這台裝置（首次驗證成功後，把 GitHub 權杖以 AES-GCM 加密保存在此瀏覽器；下次輸入自訂密碼解鎖）</span></label>
+<label class="cloud-consent" for="cloudWorldRemember"><input type="checkbox" id="cloudWorldRemember"><span>🔐 首次授權時加密記住這台裝置（勾選後還要按 ☁；僅勾選本身不會儲存）</span></label>
 <label for="cloudWorldPassword">本機解鎖密碼（首次設定至少 12 字，之後用同一密碼）</label>
 <input id="cloudWorldPassword" type="password" autocomplete="new-password" spellcheck="false" placeholder="首次設定／下次解鎖使用，請妥善保管">
-<p>不會儲存密碼本身。換手機、清除網站資料或忘記密碼，需要重新以 GitHub PAT 授權。指紋解鎖須待 Android 原生支援。</p>
+<p>如果這次已經連上 GitHub，只要輸入本機密碼後按下方 🔐，就能直接加密記住，不用重新貼 GitHub 金鑰。只有看到「已加密記住此裝置」才表示真正寫入成功。換手機、清除網站資料或忘記密碼都需重新授權；目前尚未支援指紋。</p>
 <div class="cloud-actions">
 <button type="button" id="cloudWorldConnect" aria-label="授權並開始自動同步" title="授權並開始自動同步">☁</button>
-<button type="button" id="cloudWorldUnlock" aria-label="以本機密碼解鎖並自動同步" title="解鎖已記住的權杖">🔓</button>
+<button type="button" id="cloudWorldRememberNow" aria-label="將已驗證的本次 GitHub 授權加密記住在此裝置" title="🔐 加密記住已連線的授權">🔐</button>
+<button type="button" id="cloudWorldUnlock" aria-label="以本機密碼解鎖並自動同步" title="用密碼解鎖本機加密權杖">🔓</button>
 <button type="button" id="cloudWorldSync" aria-label="立即同步世界存檔" title="立即同步">↻</button>
 <button type="button" id="cloudWorldDisconnect" aria-label="中斷雲端連線並清除記憶體內權杖" title="中斷連線">×</button>
 <button type="button" id="cloudWorldInspect" aria-label="盤點本機世界存檔" title="盤點本機存檔">ⓘ</button>
@@ -200,6 +201,8 @@ const cloudLabels={
 const vaultLabels={
  VAULT_PASSWORD_WEAK:'本機密碼至少需要 12 字。',
  VAULT_PASSWORD_REQUIRED:'請輸入你的本機解鎖密碼。',
+ VAULT_SESSION_NOT_VERIFIED:'這次尚未驗證 GitHub 授權。請先使用 ☁ 連線成功，再按 🔐 加密記住。',
+ VAULT_AUTH_REVOKED:'這次授權已中斷，沒有儲存。請重新連線後再試。',
  VAULT_NOT_SAVED:'這台裝置尚未儲存加密授權。請先用 GitHub PAT 授權。',
  VAULT_UNLOCK_FAILED:'密碼錯誤，或本機加密授權無法解開；原存檔未受影響。',
  VAULT_UNAVAILABLE:'此瀏覽器無法使用安全加密儲存。請改用本次頁面授權。',
@@ -222,6 +225,12 @@ document.getElementById('cloudWorldConnect').addEventListener('click',()=>{
  if(remember&&password.length<12){cloudStatus.textContent=vaultLabels.VAULT_PASSWORD_WEAK;return}
  cloudStatus.textContent=remember?'正在驗證並加密保存在這台裝置…':'正在建立本次頁面授權…';
  cloudSend('cloud-world-connect',{token,remember,...(remember?{password}:{})});
+});
+document.getElementById('cloudWorldRememberNow').addEventListener('click',()=>{
+ const password=cloudPassword.value;cloudPassword.value='';
+ if(password.length<12){cloudStatus.textContent=vaultLabels.VAULT_PASSWORD_WEAK;return}
+ cloudStatus.textContent='正在加密保存已驗證的本次授權…';
+ cloudSend('cloud-world-remember',{password});
 });
 document.getElementById('cloudWorldUnlock').addEventListener('click',()=>{
  const password=cloudPassword.value;clearSecrets();
