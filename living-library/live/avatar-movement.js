@@ -8,6 +8,8 @@
  'use strict';
  const WALK_RADIUS=10.0;
  const WALK_SPEED=3.45;
+ const JUMP_SPEED=5.7;
+ const JUMP_GRAVITY=15;
  const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
  function normalize(x,y){
   x=Number.isFinite(x)?x:0;y=Number.isFinite(y)?y:0;
@@ -27,5 +29,27 @@
   const distance=Math.hypot(x-(position?.x||0),z-(position?.z||0));
   return {x,z,distance,heading:Math.atan2(dx,dz)};
  }
- return {WALK_RADIUS,WALK_SPEED,normalize,move};
+ // Each avatar has its own airborne state. Pure kinematics: no DOM, save writes,
+ // Three.js objects or world-contract ownership changes.
+ function createJump(){
+  let height=0,velocity=0,airborne=false;
+  return Object.freeze({
+   start(){
+    if(airborne)return false;
+    airborne=true;height=0;velocity=JUMP_SPEED;
+    return true;
+   },
+   step(seconds){
+    if(!airborne)return 0;
+    const dt=clamp(Number.isFinite(seconds)?seconds:0,0,.06);
+    height=Math.max(0,height+velocity*dt-.5*JUMP_GRAVITY*dt*dt);
+    velocity-=JUMP_GRAVITY*dt;
+    if(height<=0&&velocity<=0){height=0;velocity=0;airborne=false}
+    return height;
+   },
+   active(){return airborne;},
+   elevation(){return height;}
+  });
+ }
+ return {WALK_RADIUS,WALK_SPEED,normalize,move,createJump};
 });

@@ -1346,19 +1346,10 @@ document.addEventListener('keyup',e=>{
 });
 window.addEventListener('blur',()=>{walkKeys.clear();resetJoystick(true);syncRender()});
 // Jump only affects character Y (render state); saved contracts and original rune anchors remain fixed.
-const GROUND_Y=.46,JUMP_SPEED=5.7,JUMP_GRAVITY=15;
-let jumpY=0,jumpVelocity=0,jumpActive=false;
+const GROUND_Y=.46,avatarJump=Movement3D.createJump();
 function requestJump(){
- if(jumpActive||buildState||atlasRuntime?.inFocus||overlayActive())return false;
- jumpActive=true;jumpVelocity=JUMP_SPEED;jumpY=0;syncRender();return true;
-}
-function stepJump(dt){
- if(!jumpActive)return 0;
- const d=Math.max(0,Math.min(.06,dt));
- jumpY=Math.max(0,jumpY+jumpVelocity*d-.5*JUMP_GRAVITY*d*d);
- jumpVelocity-=JUMP_GRAVITY*d;
- if(jumpY<=0&&jumpVelocity<=0){jumpY=0;jumpVelocity=0;jumpActive=false}
- return jumpY;
+ if(buildState||atlasRuntime?.inFocus||overlayActive()||!avatarJump.start())return false;
+ syncRender();return true;
 }
 function stepAvatar(dt){
  if(buildState){
@@ -1370,11 +1361,11 @@ function stepAvatar(dt){
   buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
   updateHologram(performance.now());return true;
  }
- const elevation=stepJump(dt);
- if(!hasWalkInput()){keeper.position.y=GROUND_Y+elevation;return jumpActive}
+ const elevation=avatarJump.step(dt);
+ if(!hasWalkInput()){keeper.position.y=GROUND_Y+elevation;return avatarJump.active()}
  const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
  const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
- if(next.distance<=.00001){keeper.position.y=GROUND_Y+elevation;return jumpActive}
+ if(next.distance<=.00001){keeper.position.y=GROUND_Y+elevation;return avatarJump.active()}
  keeper.position.set(next.x,GROUND_Y+elevation,next.z);
  bookOrbitAnchor.set(keeper.position.x,0,keeper.position.z);
  const delta=Math.atan2(Math.sin(next.heading-keeper.rotation.y),Math.cos(next.heading-keeper.rotation.y));
@@ -3215,12 +3206,12 @@ function render(now){
  if(now-lastPaint<frameInterval)return;
  paint(now);
  // Book flight animations run even when idle orbit animation is turned off.
- if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&!jumpActive&&now>=runeBindingPulseUntil)syncRender();
+ if((!isMotion()||reduced)&&!hasFlight()&&!hasCardSummon()&&!hasWalkInput()&&!atlasRuntime?.active()&&!runeGesture.active()&&!truthEye.active()&&!runeTransfer&&!spellHold.active()&&!returnCardHold.active()&&!unbindEffect&&!runeReleaseEffect&&!buildState&&!avatarJump.active()&&now>=runeBindingPulseUntil)syncRender();
 }
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
  if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
-  performance.now()<runeBindingPulseUntil||hasWalkInput()||jumpActive||truthEye.active()){
+  performance.now()<runeBindingPulseUntil||hasWalkInput()||avatarJump.active()||truthEye.active()){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
