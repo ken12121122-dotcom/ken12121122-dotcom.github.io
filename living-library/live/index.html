@@ -669,7 +669,7 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
- else if(id==='public.system.controls'&&action.startsWith('cloud-world-')){
+ else if(id==='public.system.controls'&&typeof action==='string'&&action.startsWith('cloud-world-')){
   const source=event.source,origin=event.origin;
   const respond=status=>source.postMessage({kind:'living-library-world-save-status',status},origin);
   if(action==='cloud-world-connect'){
