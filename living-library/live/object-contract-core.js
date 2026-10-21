@@ -80,18 +80,18 @@
    contracts.set(contractId,detail);cards.set(card.id,detail);
    for(const item of mapped){
     if(owners.has(item.key)){
-     warn('DUPLICATE_MEMBER_OWNER',card.id,item.member.id);
-     warn('DUPLICATE_MEMBER_OWNER',owners.get(item.key).ownerCardId,item.member.id);
+     warn('DUPLICATE_MEMBER_OWNER',card.id,item.key);
+     warn('DUPLICATE_MEMBER_OWNER',owners.get(item.key).ownerCardId,item.key);
     }else owners.set(item.key,detail);
    }
   }
   const conflicts=new Set(['DUPLICATE_CONTRACT_OWNER','CONTRACT_ID_MISMATCH','DUPLICATE_MEMBER_OWNER',
-   'INVALID_BINDING','INVALID_CONTRACT','INVALID_MEMBER_SET','DUPLICATE_MEMBER_IN_CONTRACT','INVALID_MEMBER_ID']);
+   'INVALID_BINDING','INVALID_CONTRACT','INVALID_MEMBER_SET','DUPLICATE_MEMBER_IN_CONTRACT','INVALID_MEMBER_ID','UNVERIFIED_SCENE_ID']);
   const healthy=!diagnostics.some(d=>conflicts.has(d.code));
   const ownerOf=ref=>{
    const key=keyOf(ref);
    // On contradictory records, never select an arbitrary current owner.
-   if(diagnostics.some(d=>d.code==='DUPLICATE_MEMBER_OWNER'&&d.detail===ref.id))return null;
+   if(!healthy)return null;
    return owners.get(key)?.ownerCardId||null;
   };
   return Object.freeze({
