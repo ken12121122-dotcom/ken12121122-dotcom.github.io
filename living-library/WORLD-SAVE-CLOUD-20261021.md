@@ -55,3 +55,14 @@ source: living-library/live/object-craft.js; living-library/live/object-backup.j
 - 新狀態 `scene_phase` 與安全同意文案提示「位置／場景／操作偏好」。
 - 本階段只有**觀察與雲端備份**，沒有從 GitHub 還原人物位置、重新生成世界、伺服器長期 OAuth、多裝置同時寫入的自動合併。
 - 私人倉庫的世界觀察檔僅在使用者於已更新手機網頁重新輸入 PAT、授權並成功寫入後才會出現；PR／CI 模擬不能代表真實手機已同步。
+
+## 2026-10-21 第三階段：加密記住本機授權（候選）
+- 第一階段的 PAT 僅記憶體授權仍為**預設**，不啟用無提示背景授權。
+- 《系統之書》→「連線與版本」中，玩家**先勾選上傳同意**，可選「記住這台裝置」並設定至少 12 字的本機密碼；只有私人 GitHub 連線與世界同步成功才封存 PAT。
+- `world-credential-vault.js`：AES-256-GCM、每次隨機 16B salt/12B IV、PBKDF2-HMAC-SHA256 350,000 次；加密負載含經玩家同意之儲存庫／分支；使用網站 origin 綁定 AES-GCM AAD。
+- **僅密文**進入同源 IndexedDB；密碼、衍生密鑰與原始 PAT 不會落地至本機儲存庫、GitHub、public repo、伺服器、URL 或瀏覽器 localStorage。
+- 下次打開網站，玩家只輸入本機密碼並按 🔓；解密後的 PAT 只存在該次頁面的原同步連線記憶體，並沿用私人儲存庫/衝突驗證。無需再次輸入 GitHub PAT 或重複勾同意。
+- × 中斷本次連線但保留加密的裝置授權；🗑 中斷並刪除本機加密授權；不動任何玩家卡片或 GitHub 雲端世界存檔。
+- 錯誤、隱私瀏覽、IndexedDB/WebCrypto 缺失：失敗即停，**不降級成明文**儲存，原本的單次 PAT 登入仍可使用。
+- **界線**：目前仍是純網頁，不呼叫手機指紋或 Android Keystore；WebCrypto 加密並不防止受入侵的同源程式碼/已解鎖時的惡意腳本，裝置密碼若太弱仍有離線破解風險；不支援不解鎖就完全無提示地自動登入；不應誤導使用者以為已具備硬體保護。
+- 真正 Android BiometricPrompt／Keystore 必須獨立 C3 原生審核、CI／模擬器／實機 Gate，不能只改 Web UI 就宣稱完成。
