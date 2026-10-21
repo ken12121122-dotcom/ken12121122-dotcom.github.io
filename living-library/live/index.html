@@ -40,6 +40,14 @@ button{font:inherit;cursor:pointer;color:inherit}button:focus-visible{outline:2p
 #llUpdateReconnect[data-new-version="true"]{background:#69492c;box-shadow:0 0 0 2px #d3b17b80;color:#fff2cb}
 .ll-update-dialog{border:3px solid #b29668;border-radius:19px;width:min(92vw,560px);max-height:87dvh;background:linear-gradient(155deg,#fcf0d4,#e8d5ae);color:#503b28;box-shadow:0 20px 80px #050a17cc,inset 0 0 0 6px #e9d9b8;padding:clamp(15px,4vw,26px)}
 .ll-update-dialog::backdrop{background:#030814c9;backdrop-filter:blur(5px)}
+.world-vault-unlock{width:min(90vw,440px);max-width:440px;max-height:min(88dvh,620px);overflow:auto}
+.world-vault-unlock label{display:block;font-size:14px;font-weight:700;margin:12px 0}
+.world-vault-unlock input[type=password]{display:block;width:100%;min-height:48px;margin-top:7px;border:1px solid #96784b;background:#fffdfa;color:#33281f;border-radius:9px;padding:9px 12px;font-size:16px}
+.world-vault-unlock .world-vault-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:14px}
+.world-vault-unlock .world-vault-actions button{min-width:48px;min-height:48px;padding:10px 15px;background:#694f32;color:#fff7e7;border:1px solid #977644;border-radius:9px}
+.world-vault-unlock .world-vault-actions button:disabled{opacity:.5}
+.world-vault-unlock #worldVaultUnlockStatus{display:block;min-height:20px;line-height:1.5;color:#4a392d;overflow-wrap:anywhere;font-size:13px}
+
 .ll-update-head{display:flex;align-items:center;gap:14px;border-bottom:2px solid #b89e6d;padding-bottom:13px}
 .ll-update-sigil{font-size:33px;line-height:1;background:#ddc796;border:1px solid #a08451;border-radius:11px;padding:15px;color:#4e4635}
 .ll-update-kicker{display:block;color:#846641;letter-spacing:.16em;font-size:10px;font-weight:900}
@@ -408,6 +416,20 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
   <button id="runeReturnConfirm" type="button" class="primary" aria-label="確認還原地面初始法陣" title="確認">✓</button>
  </div>
 </dialog>
+<dialog id="worldVaultUnlockDialog" class="rune-bind-dialog world-vault-unlock" aria-labelledby="worldVaultUnlockTitle" aria-describedby="worldVaultUnlockDescription">
+ <h2 id="worldVaultUnlockTitle">🔐 世界存檔授權解鎖</h2>
+ <p id="worldVaultUnlockDescription">此裝置已保存加密的私人 GitHub 授權。輸入當初設定的本機密碼，即可連線並同步《念動世界》資料；不會還原覆寫你的本機存檔。</p>
+ <form id="worldVaultUnlockForm" autocomplete="off">
+  <label for="worldVaultUnlockPassword">本機解鎖密碼
+   <input id="worldVaultUnlockPassword" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required aria-label="解鎖私人 GitHub 世界存檔授權">
+  </label>
+  <output id="worldVaultUnlockStatus" role="status" aria-live="polite">只解鎖 GitHub 雲端同步；稍後再說仍可正常遊玩。</output>
+  <div class="world-vault-actions">
+   <button type="button" id="worldVaultUnlockSkip" aria-label="稍後再說，直接遊玩" title="稍後再說，直接遊玩">×</button>
+   <button type="submit" id="worldVaultUnlockSubmit" aria-label="以密碼解鎖並同步世界存檔" title="解鎖並同步">🔓</button>
+  </div>
+ </form>
+</dialog>
 <dialog id="llUpdateDialog" class="ll-update-dialog" aria-labelledby="llUpdateHeading" aria-describedby="llUpdateSummary">
  <div class="ll-update-head"><div class="ll-update-sigil" aria-hidden="true">✦</div><div>
  <small class="ll-update-kicker">THE LIVING ARCHIVE · VERSION RECONNECTED</small>
@@ -601,6 +623,101 @@ const worldSave=window.LivingWorldSaveSync.create({
  }
 });
 window.addEventListener('pagehide',()=>worldSave.disconnect());
+
+// At game launch, invite unlocking an ALREADY stored and consented encrypted
+// device credential. Never show a password prompt for unregistered browsers.
+// This is optional cloud access, not a lock on playing the public game.
+const worldVaultUnlockDialog=$('worldVaultUnlockDialog');
+const worldVaultUnlockForm=$('worldVaultUnlockForm');
+const worldVaultUnlockPassword=$('worldVaultUnlockPassword');
+const worldVaultUnlockStatus=$('worldVaultUnlockStatus');
+const worldVaultUnlockSubmit=$('worldVaultUnlockSubmit');
+let worldVaultPromptDismissed=false,worldVaultPromptPending=false,worldVaultUnlockBusy=false;
+function worldVaultBlocker(){
+ return $('llUpdateDialog')?.open||$('gen2Auth')?.open||$('mdSearch')?.open||
+  $('drawerWrap')?.classList.contains('open');
+}
+function presentWorldVaultUnlock(){
+ if(worldVaultPromptDismissed||!credentialVault||document.hidden||worldSave.status().authorized||
+    worldVaultUnlockDialog.open)return;
+ if(worldVaultBlocker()){worldVaultPromptPending=true;return}
+ worldVaultPromptPending=false;
+ worldVaultUnlockStatus.textContent='只解鎖 GitHub 雲端同步；稍後再說仍可正常遊玩。';
+ worldVaultUnlockPassword.value='';
+ worldVaultUnlockDialog.showModal();
+ syncScene();
+ worldVaultUnlockPassword.focus();
+}
+async function offerWorldVaultUnlock(){
+ if(!credentialVault||worldVaultPromptDismissed||worldSave.status().authorized)return;
+ try{
+  const saved=await credentialVault.inspect();
+  if(saved.saved)presentWorldVaultUnlock();
+ }catch{ // Storage unavailable: no fake login prompt and no token disclosure.
+  console.warn('World credential vault unreadable; public gameplay remains available');
+ }
+}
+function closeWorldVaultUnlock(cancelPending=true){
+ worldVaultPromptDismissed=true;
+ credentialVaultEpoch++; // Ignore late decrypt/connection completions after dismissal.
+ if(cancelPending&&worldVaultUnlockBusy)worldSave.disconnect(); // Abort an in-flight GitHub login on user cancel.
+ worldVaultUnlockPassword.value='';
+ worldVaultUnlockBusy=false;
+ worldVaultUnlockSubmit.disabled=false;
+ if(worldVaultUnlockDialog.open)worldVaultUnlockDialog.close();
+ syncScene();
+}
+$('worldVaultUnlockSkip').addEventListener('click',closeWorldVaultUnlock);
+worldVaultUnlockDialog.addEventListener('cancel',event=>{
+ event.preventDefault();closeWorldVaultUnlock();
+});
+worldVaultUnlockDialog.addEventListener('close',()=>{
+ worldVaultUnlockPassword.value='';syncScene();
+});
+worldVaultUnlockForm.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(worldVaultUnlockBusy||!credentialVault)return;
+ const password=worldVaultUnlockPassword.value;
+ worldVaultUnlockPassword.value='';
+ if(!password){worldVaultUnlockStatus.textContent='請輸入本機密碼。';return}
+ const turn=++credentialVaultEpoch;
+ worldVaultUnlockBusy=true;worldVaultUnlockSubmit.disabled=true;
+ worldVaultUnlockStatus.textContent='正在安全解鎖並連接私人 GitHub…';
+ try{
+  const token=await credentialVault.unlock(password);
+  if(turn!==credentialVaultEpoch)return;
+  const status=await worldSave.connect(token);
+  if(turn!==credentialVaultEpoch)return;
+  if(status.credential_verified){
+   worldVaultUnlockStatus.textContent=status.phase==='synced'?'✓ 授權已解鎖，世界存檔同步成功。':
+    '✓ 授權已解鎖；世界同步未完成（'+(status.error||'暫時無法同步')+'），可在系統之書查看。';
+   closeWorldVaultUnlock(false);
+   if(status.phase!=='synced')toast('GitHub 已解鎖，世界同步需檢查：'+(status.error||'未知錯誤'));
+  }else{
+   worldVaultUnlockStatus.textContent='⚠ GitHub 授權驗證失敗：'+(status.error||'未知錯誤')+'。請在系統之書重新授權。';
+  }
+ }catch(error){
+  if(turn===credentialVaultEpoch)
+   worldVaultUnlockStatus.textContent=error?.code==='VAULT_NOT_SAVED'?
+    '此裝置沒有加密憑證，請在系統之書重新授權。':
+    error?.code==='VAULT_UNLOCK_FAILED'?'密碼錯誤或加密資料無法解開，請再試一次。':
+    '⚠ 解鎖失敗；請在系統之書檢查裝置授權。';
+ }finally{
+  if(turn===credentialVaultEpoch){worldVaultUnlockBusy=false;worldVaultUnlockSubmit.disabled=false}
+ }
+});
+$('llUpdateDialog').addEventListener('close',()=>{
+ if(worldVaultPromptPending)queueMicrotask(presentWorldVaultUnlock);
+});
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden&&worldVaultPromptPending)presentWorldVaultUnlock();
+});
+window.addEventListener('pagehide',()=>{
+ worldVaultUnlockPassword.value='';
+ credentialVaultEpoch++;
+});
+setTimeout(offerWorldVaultUnlock,300);
+
 
 // Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
 window.addEventListener('message',event=>{
@@ -1122,6 +1239,11 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
   return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
  }
  function showUpdateNotice(items,firstVisit){
+  // Avoid stacking an update modal over the startup credential prompt.
+  if(typeof worldVaultUnlockDialog!=='undefined'&&worldVaultUnlockDialog.open){
+   worldVaultUnlockDialog.addEventListener('close',()=>showUpdateNotice(items,firstVisit),{once:true});
+   return;
+  }
   $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
   $('llUpdateSummary').textContent=firstVisit?
    '已建立最新卡片與介面版本紀錄。因先前沒有基準快照，以下列出目前已收錄的重點，不能將全部視為本次新增。':
