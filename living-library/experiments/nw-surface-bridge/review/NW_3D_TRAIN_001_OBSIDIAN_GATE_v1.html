@@ -524,6 +524,7 @@ try{
    focus.y+Math.sin(s.pitch)*s.distance,
    focus.z+Math.cos(s.yaw)*Math.cos(s.pitch)*s.distance);
   camera.lookAt(focus);
+  invalidate();
  }
  function setView(yaw,pitch,distance){
   cameraState.yaw=yaw;cameraState.pitch=pitch;cameraState.distance=distance;focus.set(0,3.05,0);
@@ -584,7 +585,7 @@ try{
   spinButton.setAttribute('aria-pressed',String(spin));spinButton.title=spin?'停止旋轉':'自動旋轉';
   spinButton.setAttribute('aria-label',spinButton.title);
  }
- spinButton.addEventListener('click',()=>{spin=!spin;syncSpin()});
+ spinButton.addEventListener('click',()=>{spin=!spin;syncSpin();invalidate()});
  document.querySelectorAll('.mod').forEach(row=>{
   const part=parts[row.dataset.part],button=row.querySelector('button'),label=row.querySelector('span').textContent;
   button.addEventListener('click',()=>{
@@ -592,6 +593,7 @@ try{
    button.setAttribute('aria-pressed',String(!part.visible));
    button.textContent=part.visible?'◉':'◌';
    button.setAttribute('aria-label',part.visible?'隱藏 '+row.dataset.part+' '+label:'顯示 '+row.dataset.part+' '+label);
+   invalidate();
   });
  });
  function resize(){
@@ -602,16 +604,31 @@ try{
  }
  window.addEventListener('resize',resize);resize();
  status.textContent='雕刻精修 v1.1 · 六個模組可獨立檢查';loading.hidden=true;
- let last=0;
+ // Render only when the viewer interacts. Auto-rotation opts into a continuous loop.
+ // This avoids a 60fps shadowed scene while the phone is idle.
+ let last=0,framePending=false;
+ function invalidate(){
+  if(!framePending&&!document.hidden){framePending=true;requestAnimationFrame(render)}
+ }
  function render(now){
-  requestAnimationFrame(render);
+  framePending=false;
   if(document.hidden)return;
   const dt=last?Math.min((now-last)/1000,.07):0;last=now;
-  if(spin&&pointers.size===0)cameraState.yaw+=dt*.28;
-  if(spin)updateCamera();
+  if(spin&&pointers.size===0){
+   cameraState.yaw+=dt*.28;
+   // Don't recurse through updateCamera here; compute the orbit for this frame.
+   const s=cameraState;
+   camera.position.set(focus.x+Math.sin(s.yaw)*Math.cos(s.pitch)*s.distance,
+    focus.y+Math.sin(s.pitch)*s.distance,focus.z+Math.cos(s.yaw)*Math.cos(s.pitch)*s.distance);
+   camera.lookAt(focus);
+  }
   renderer.render(scene,camera);
+  if(spin)invalidate();
  }
- requestAnimationFrame(render);
+ document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){last=0;invalidate()}
+ });
+ invalidate();
  // Export read-only review metadata. No localStorage, network write or game-world mutation.
  window.NW3DReview=Object.freeze({
   id:'NW-3D-TRAIN-001',stage:'candidate',version:'v1.1',
