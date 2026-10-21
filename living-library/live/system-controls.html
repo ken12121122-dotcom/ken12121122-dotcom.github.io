@@ -188,45 +188,70 @@ document.getElementById('resetAtlasParams').addEventListener('click',()=>{
 });
 syncDependent();
 
-// Session-scoped cloud world save controls. Only the trusted system-card parent
-// receives the token; it is immediately cleared from this iframe input.
-const cloudInput=document.getElementById('cloudWorldToken'),cloudStatus=document.getElementById('cloudWorldStatus');
+// Credentials are posted only to this page's same-origin trusted game parent.
+// Password and PAT input elements are cleared synchronously after submission.
+const cloudInput=document.getElementById('cloudWorldToken'),
+ cloudPassword=document.getElementById('cloudWorldPassword'),
+ cloudStatus=document.getElementById('cloudWorldStatus');
 const cloudLabels={
- disconnected:'尚未授權；本機存檔保留。',verifying:'正在確認私人儲存庫與授權…',
+ disconnected:'目前未連接 GitHub；手機存檔保留。',verifying:'正在確認私人儲存庫與授權…',
  ready:'私人 GitHub 已授權。',syncing:'正在同步私人世界快照…',
  synced:'✓ 私人 GitHub 已驗證同步成功。',error:'⚠ 自動同步已停止。'};
-let cloudSeq=0;
-function cloudSend(action,value){
+const vaultLabels={
+ VAULT_PASSWORD_WEAK:'本機密碼至少需要 12 字。',
+ VAULT_PASSWORD_REQUIRED:'請輸入你的本機解鎖密碼。',
+ VAULT_NOT_SAVED:'這台裝置尚未儲存加密授權。請先用 GitHub PAT 授權。',
+ VAULT_UNLOCK_FAILED:'密碼錯誤，或本機加密授權無法解開；原存檔未受影響。',
+ VAULT_UNAVAILABLE:'此瀏覽器無法使用安全加密儲存。請改用本次頁面授權。',
+ VAULT_STORAGE_UNAVAILABLE:'瀏覽器拒絕儲存／讀取加密權杖；同步可繼續但本機記住未成功。',
+ VAULT_INVALID_RECORD:'加密授權格式不正確。請刪除本機憑證後重新授權。'};
+let cloudSeq=0,cloudVaultSaved=false;
+function cloudSend(action,data={}){
  if(window.parent===window){cloudStatus.textContent='請從遊戲的系統之書開啟這張卡。';return}
  window.parent.postMessage({kind:'living-library-public-card-action',action,
-  requestId:++cloudSeq,...(value?{token:value}:{})},window.location.origin);
+  requestId:++cloudSeq,...data},window.location.origin);
 }
+function clearSecrets(){cloudInput.value='';cloudPassword.value=''}
 document.getElementById('cloudWorldConnect').addEventListener('click',()=>{
  if(!document.getElementById('cloudWorldConsent').checked){
-  cloudStatus.textContent='請先勾選私人上傳同意。';return;
+  cloudStatus.textContent='請先勾選私人世界存檔上傳同意。';return;
  }
- const token=cloudInput.value.trim();cloudInput.value='';
+ const token=cloudInput.value.trim(),remember=document.getElementById('cloudWorldRemember').checked;
+ const password=cloudPassword.value;clearSecrets();
  if(token.length<10){cloudStatus.textContent='請填入 GitHub fine-grained PAT。';return}
- cloudStatus.textContent='正在建立本次授權（不會儲存金鑰）…';
- cloudSend('cloud-world-connect',token);
+ if(remember&&password.length<12){cloudStatus.textContent=vaultLabels.VAULT_PASSWORD_WEAK;return}
+ cloudStatus.textContent=remember?'正在驗證並加密保存在這台裝置…':'正在建立本次頁面授權…';
+ cloudSend('cloud-world-connect',{token,remember,...(remember?{password}:{})});
+});
+document.getElementById('cloudWorldUnlock').addEventListener('click',()=>{
+ const password=cloudPassword.value;clearSecrets();
+ if(!password){cloudStatus.textContent=vaultLabels.VAULT_PASSWORD_REQUIRED;return}
+ cloudStatus.textContent='正在解鎖本機加密授權…';
+ cloudSend('cloud-world-unlock',{password});
 });
 document.getElementById('cloudWorldSync').addEventListener('click',()=>cloudSend('cloud-world-sync'));
-document.getElementById('cloudWorldDisconnect').addEventListener('click',()=>{cloudInput.value='';cloudSend('cloud-world-disconnect')});
+document.getElementById('cloudWorldDisconnect').addEventListener('click',()=>{
+ clearSecrets();cloudSend('cloud-world-disconnect');
+});
+document.getElementById('cloudWorldForget').addEventListener('click',()=>{
+ if(!window.confirm('要忘記這台裝置的 GitHub 授權嗎？將刪除本機加密權杖並中斷同步，不會刪除手機卡片或 GitHub 世界存檔。'))return;
+ clearSecrets();cloudSend('cloud-world-forget');
+});
 document.getElementById('cloudWorldInspect').addEventListener('click',()=>cloudSend('cloud-world-inspect'));
-window.addEventListener('pagehide',()=>{cloudInput.value=''});
+window.addEventListener('pagehide',clearSecrets);
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.parent)return;
  const d=event.data;
  if(d?.kind!=='living-library-world-save-status')return;
- if(d.inspection){
-  cloudStatus.textContent='本機盤點：'+d.inspection;
-  return;
- }
+ if(d.inspection){cloudStatus.textContent='本機盤點：'+d.inspection;return}
  const s=d.status;if(!s||typeof s.phase!=='string')return;
+ if(typeof s.vault_saved==='boolean')cloudVaultSaved=s.vault_saved;
  cloudStatus.textContent=(cloudLabels[s.phase]||'狀態未知')+
   (s.error?' 錯誤代碼：'+s.error:'')+
+  (s.vault_error?' ⚠ '+(vaultLabels[s.vault_error]||'本機授權錯誤：'+s.vault_error):'')+
   (s.last_synced?' 最近同步：'+s.last_synced:'')+
   (s.authorized?'｜本次頁面已授權':'')+
+  (cloudVaultSaved?'｜🔐 已加密記住此裝置（重開需密碼）':'｜🔓 尚未記住裝置')+
   (s.scene_phase==='synced'?'｜3D 世界資料已同步':s.scene_phase==='error'?'｜3D 世界同步失敗':'');
 });
 cloudSend('cloud-world-status');
