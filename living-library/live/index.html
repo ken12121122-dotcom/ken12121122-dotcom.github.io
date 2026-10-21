@@ -422,7 +422,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -587,6 +587,18 @@ function isLocalFunctionPage(url){
  }catch(_){return false}
 }
 let readerCard=null,cardSpellExitTimer=null;
+// Cloud-first candidate: this module is independent of the 3D scene and never
+// writes ObjectCraft or browser credentials. Consent occurs in system controls.
+const worldSave=window.LivingWorldSaveSync.create({
+ storage:localStorage,fetchImpl:(...args)=>fetch(...args),
+ notify:status=>{
+  if(readerCard?.id!=='public.system.controls')return;
+  const frame=$('readerFrame')?.contentWindow;
+  frame?.postMessage({kind:'living-library-world-save-status',status},location.origin);
+ }
+});
+window.addEventListener('pagehide',()=>worldSave.disconnect());
+
 // Only the open creator iframe can signal that local objects changed; no arbitrary payload is trusted.
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('readerFrame').contentWindow)return;
@@ -657,6 +669,32 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='connect-gen2'){
   $('authStatus').textContent='';$('gen2Auth').showModal();syncScene();
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
+ else if(id==='public.system.controls'&&typeof action==='string'&&action.startsWith('cloud-world-')){
+  const source=event.source,origin=event.origin;
+  const respond=status=>source.postMessage({kind:'living-library-world-save-status',status},origin);
+  if(action==='cloud-world-connect'){
+   if(typeof event.data.token!=='string'||event.data.token.length>1024)return;
+   worldSave.connect(event.data.token).then(respond).catch(e=>respond({
+    phase:'error',error:'CLOUD_CONNECT_FAILED',authorized:false
+   }));
+  }else if(action==='cloud-world-sync'){
+   worldSave.sync().then(respond).catch(()=>respond({phase:'error',error:'CLOUD_SYNC_FAILED'}));
+  }else if(action==='cloud-world-disconnect'){
+   respond(worldSave.disconnect());
+  }else if(action==='cloud-world-status'){
+   respond(worldSave.status());
+  }else if(action==='cloud-world-inspect'){
+   window.LivingObjectBackup.exportBackup(localStorage)
+    .then(text=>window.LivingObjectBackup.inspectBackup(text))
+    .then(b=>source.postMessage({kind:'living-library-world-save-status',
+     inspection:'共 '+b.summary.total+' 項（卡片 '+b.summary.cards+
+      '／書本 '+b.summary.books+'／已回收 '+b.summary.recycled+
+      '），SHA-256 '+b.sha256.slice(0,12)+
+      '。此為 ObjectCraft 範圍，其他本機系統仍待盤點。'},origin))
+    .catch(e=>source.postMessage({kind:'living-library-world-save-status',
+     inspection:'無法讀取：'+(typeof e?.code==='string'?e.code:'CLOUD_LOCAL_INVALID')},origin));
+  }
+ }
  else if(id==='public.gaming.book.creation'&&action==='open-created-book'){
   let record;try{record=ObjectCraft.listBooks(localStorage).find(b=>b.id===event.data.bookId)}catch(e){toast(e.message);return}
   if(!record)return;closeBook();select(record.id);openBook();

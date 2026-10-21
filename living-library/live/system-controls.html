@@ -12,6 +12,18 @@
 .game-slider small{display:block;font-size:12px;color:#786144}
 #resetCardParams{margin-top:9px;min-width:44px;min-height:44px;border:1px solid #967849;border-radius:11px;background:#ffefc7;color:#4b3420;font-size:24px}
 #resetCardParams:focus-visible,.game-slider input:focus-visible{outline:3px solid #367777;outline-offset:2px}
+
+.cloud-save{margin-top:22px;padding:16px 12px;border:2px solid #ae8c58;border-radius:13px;background:#fff5da}
+.cloud-save h2{font-size:18px;margin:0 0 9px}
+.cloud-save label{font-size:14px;font-weight:700;display:block}
+.cloud-save input[type=password]{width:100%;padding:11px;min-height:48px;font:16px system-ui;color:#34271c;background:white;border:1px solid #987c50;border-radius:8px;margin:7px 0}
+.cloud-save .cloud-consent{display:flex;gap:10px;align-items:start;font-weight:400;margin:10px 0}
+.cloud-save input[type=checkbox]{width:22px;height:22px;flex:none}
+.cloud-save .cloud-actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.cloud-save button{min-width:48px;min-height:48px;font-size:23px;color:#4c3824;background:#ead5a6;border:1px solid #967849;border-radius:9px}
+.cloud-save button:disabled{opacity:.45}
+.cloud-save output{display:block;font-size:13px;color:#365e55;white-space:pre-wrap;overflow-wrap:anywhere;min-height:36px}
+.cloud-save p{font-size:12px;margin:7px 0}
 </style></head>
 <body><main><header><div class="eyebrow">⚙　系統之書 · 管理卡</div><h1>連線與版本</h1></header><p>念動圖書館會自動檢查網頁更新，新增卡片與介面改動不需要重新安裝 APK。以下提供必要的手動維護操作。</p><nav aria-label="卡片操作"><button class="card-action" type="button" data-action="connect-gen2"><b>✦ GEN2 正式來源連線</b><small>授權讀取私有知識，正式來源與 OWNER Gate 不變</small></button>
 <button class="card-action" type="button" data-action="reconnect-web"><b>↻ 重新連結最新版本</b><small>重新載入線上圖書館，並顯示版本差異公告；只重設書庫顯示紀錄</small></button></nav><section class="prefs" aria-labelledby="prefs-title"><h2 id="prefs-title">🎮 操作偏好</h2>
@@ -40,7 +52,24 @@
 <button type="button" id="resetAtlasParams" aria-label="恢復圖鑑參數預設值" title="恢復圖鑑參數預設值" style="min-width:44px;min-height:44px;font-size:24px">↺</button></div>
 <p class="feedback" id="prefStatus" role="status" aria-live="polite"></p>
 <p class="prefs-note">操作設定會在這台裝置保留；與知識庫、GBA 存檔及 GEN2 授權分開儲存。</p>
-</section><div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
+</section>
+<section class="cloud-save" aria-labelledby="cloud-save-title" id="cloudWorldSettings">
+<h2 id="cloud-save-title">☁ 世界存檔｜私人 GitHub</h2>
+<p>位置：系統之書 → 連線與版本。本功能只傳送玩家卡片與書本的 ObjectCraft 存檔，不包含其他未盤點的本機系統。正式同步前仍須保留手機原始存檔。</p>
+<label for="cloudWorldToken">GitHub fine-grained 個人存取權杖（PAT）</label>
+<input id="cloudWorldToken" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="請貼上私人 GitHub 權杖" aria-label="GitHub 私人世界存檔權杖">
+<p>授權儲存庫限 <strong>ken12121122-dotcom/gen2-knowledge</strong>，Contents: Read and write。只保存在遊戲頁面的執行記憶體；關閉或重新載入後須重新授權。請勿貼給 ChatGPT。</p>
+<label class="cloud-consent" for="cloudWorldConsent"><input type="checkbox" id="cloudWorldConsent"><span>我同意把玩家創作存檔（含卡片圖片及歷史狀態）傳至上述私人 GitHub；Git 歷史可能長期保留資料。</span></label>
+<div class="cloud-actions">
+<button type="button" id="cloudWorldConnect" aria-label="授權並開始自動同步" title="授權並開始自動同步">☁</button>
+<button type="button" id="cloudWorldSync" aria-label="立即同步世界存檔" title="立即同步">↻</button>
+<button type="button" id="cloudWorldDisconnect" aria-label="中斷雲端連線並清除記憶體內權杖" title="中斷連線">×</button>
+<button type="button" id="cloudWorldInspect" aria-label="盤點本機世界存檔" title="盤點本機存檔">ⓘ</button>
+</div>
+<output id="cloudWorldStatus" role="status" aria-live="polite">尚未授權。手機本機存檔不會被修改或刪除。</output>
+<p>防護：遇到不同版本、無存檔、超過大小上限、遠端衝突或寫入失敗，停止同步並保留手機存檔。不自動下載覆蓋手機資料。</p>
+</section>
+<div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
 <script src="./card-placement.js"></script>
 <script src="./atlas-state.js"></script>
 <script>
@@ -152,4 +181,46 @@ document.getElementById('resetAtlasParams').addEventListener('click',()=>{
  send('update-preferences',{...window.LivingAtlasState.DEFAULTS});
 });
 syncDependent();
+
+// Session-scoped cloud world save controls. Only the trusted system-card parent
+// receives the token; it is immediately cleared from this iframe input.
+const cloudInput=document.getElementById('cloudWorldToken'),cloudStatus=document.getElementById('cloudWorldStatus');
+const cloudLabels={
+ disconnected:'尚未授權；本機存檔保留。',verifying:'正在確認私人儲存庫與授權…',
+ ready:'私人 GitHub 已授權。',syncing:'正在同步私人世界快照…',
+ synced:'✓ 私人 GitHub 已驗證同步成功。',error:'⚠ 自動同步已停止。'};
+let cloudSeq=0;
+function cloudSend(action,value){
+ if(window.parent===window){cloudStatus.textContent='請從遊戲的系統之書開啟這張卡。';return}
+ window.parent.postMessage({kind:'living-library-public-card-action',action,
+  requestId:++cloudSeq,...(value?{token:value}:{})},window.location.origin);
+}
+document.getElementById('cloudWorldConnect').addEventListener('click',()=>{
+ if(!document.getElementById('cloudWorldConsent').checked){
+  cloudStatus.textContent='請先勾選私人上傳同意。';return;
+ }
+ const token=cloudInput.value.trim();cloudInput.value='';
+ if(token.length<10){cloudStatus.textContent='請填入 GitHub fine-grained PAT。';return}
+ cloudStatus.textContent='正在建立本次授權（不會儲存金鑰）…';
+ cloudSend('cloud-world-connect',token);
+});
+document.getElementById('cloudWorldSync').addEventListener('click',()=>cloudSend('cloud-world-sync'));
+document.getElementById('cloudWorldDisconnect').addEventListener('click',()=>{cloudInput.value='';cloudSend('cloud-world-disconnect')});
+document.getElementById('cloudWorldInspect').addEventListener('click',()=>cloudSend('cloud-world-inspect'));
+window.addEventListener('pagehide',()=>{cloudInput.value=''});
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==window.parent)return;
+ const d=event.data;
+ if(d?.kind!=='living-library-world-save-status')return;
+ if(d.inspection){
+  cloudStatus.textContent='本機盤點：'+d.inspection;
+  return;
+ }
+ const s=d.status;if(!s||typeof s.phase!=='string')return;
+ cloudStatus.textContent=(cloudLabels[s.phase]||'狀態未知')+
+  (s.error?' 錯誤代碼：'+s.error:'')+
+  (s.last_synced?' 最近同步：'+s.last_synced:'')+
+  (s.authorized?'｜已授權至本次頁面關閉':'');
+});
+cloudSend('cloud-world-status');
 </script></body></html>
