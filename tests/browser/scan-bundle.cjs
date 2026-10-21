@@ -49,7 +49,7 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   assert.ok(names.every(x=>x.id&&x.name.trim()),'real names or descriptive fallback');
   assert.ok(names.some(x=>x.id==='scene.floor'&&x.name.includes('地板')),'Chinese geometry label');
   assert.ok(names.some(x=>x.name.includes('之書')),'book names from original library');
-  assert.match(await page.locator('#eyeCount').innerText(),new RegExp('掃描 '+count+' 件物件'));
+  assert.match(await page.locator('#eyeCount').innerText(),new RegExp('掃描 '+count+' 件｜已選 0 件'));
   assert.match(await page.locator('#eyeCount').innerText(),/已選 0 件/,'no implicit selection');
   const visual=await page.locator('#eyeScanReadout').evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderTopWidth}));
   assert.ok(visual.background==='rgba(0, 0, 0, 0)'||visual.background==='transparent','no panel background');
