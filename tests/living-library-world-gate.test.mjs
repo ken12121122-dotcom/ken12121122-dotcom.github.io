@@ -12,6 +12,7 @@ const Gate=ctx.LivingWorldGate;
 test('fixed portal is an ordinary 3D asset with stable identity and no permanent-card dependency',()=>{
  assert.equal(Gate.ID,'scene.gate.obsidian.001');
  assert.match(source,/scanObjectId=ID/);
+ assert.match(source,/inertUntilScanned=true/);
  assert.doesNotMatch(source,/createBlankCard|permanentRegistry|beginPermanentBuild|localStorage\.setItem/);
 });
 test('shipped GLB matches six modular gate components, not a preview HTML or image',()=>{
@@ -29,4 +30,5 @@ test('library attaches gate as scene geometry only, without minting cards',()=>{
  assert.match(html,/LivingWorldGate\.attach\(\{THREE,scene\}\)/);
  assert.match(html,/registerScene\(gate\.id,\[gate\.root\]\)/);
  assert.match(html,/truthEye\.applyPacked\(\)/);
+ assert.match(html,/inertHit\.distance<bookHit\.distance/);
 });

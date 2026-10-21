@@ -2932,10 +2932,15 @@ function pick(e,skipTruthEye=false){
  pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
  ray.setFromCamera(pointer,camera);
  if(pickFloatingCard(ray))return 'card';
+ // Any ordinary, unbound imported 3D mesh is inert until the scanner is used.
+ // Do not let a clickable book BEHIND that mesh steal an otherwise inert tap.
+ const inertRoots=scene.children.filter(n=>n.userData?.inertUntilScanned===true&&n.visible);
+ const inertHit=inertRoots.length?ray.intersectObjects(inertRoots,true)[0]:null;
  // A book always wins over the character and must remain readable with the joystick visible.
  const targets=[];
  bookEntities.filter(o=>o.group.visible).forEach(o=>o.group.traverse(x=>{if(x.isMesh&&x.userData.bookId)targets.push(x)}));
  const bookHit=ray.intersectObjects(targets,false)[0];
+ if(inertHit&&(!bookHit||inertHit.distance<bookHit.distance-.001))return 'inert';
  if(bookHit){
   resetJoystick(true);
   const id=bookHit.object.userData.bookId,o=entityById.get(id);

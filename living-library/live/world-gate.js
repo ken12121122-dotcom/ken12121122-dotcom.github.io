@@ -88,6 +88,8 @@
   outer.userData.scanName='雙界之門';
   outer.userData.displayName='雙界之門';
   outer.userData.sceneObjectId=ID;
+  // Generic ordinary-world interaction policy: visible, but inert to bare taps.
+  outer.userData.inertUntilScanned=true;
   outer.position.set(position.x,position.y,position.z);outer.rotation.y=Math.PI;outer.add(source);
   const modules=Object.fromEntries(['G01','G02','G03','G04','G05','G06'].map(k=>[k,[]]));
   model.traverse(o=>{if(!o.isMesh)return;const k=o.name.slice(0,3);if(modules[k])modules[k].push(o);
