@@ -35,50 +35,50 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   console.log('3D scene ready');
   if(await page.locator('#llUpdateDialog').evaluate(e=>e.open))await page.locator('#llUpdateDone').click();
   const inspect=()=>page.evaluate(()=>LivingScene.truthEye.inspect());
-  const readNames=()=>page.locator('#eyeScanNames li').evaluateAll(nodes=>nodes.map(n=>({name:n.textContent,id:n.dataset.scanId,selected:n.hasAttribute('data-selected')})));
+  const readNames=()=>page.locator('#eyeScanNames li').evaluateAll(nodes=>nodes.map(n=>({name:n.textContent,id:n.dataset.scanId,selected:n.dataset.selected==='true'})));
   await page.locator('#eyeRadius').fill('20');await page.locator('#eyeRadius').dispatchEvent('input');
   await page.waitForTimeout(1400);
   const discovered=await inspect(),count=discovered.scanned.length;
   assert.ok(count>=5,'live scanner discovers authored geometry');
-  assert.deepEqual(discovered.selected,discovered.scanned.map(o=>o.id),'all scanned objects auto-selected');
+  assert.deepEqual(discovered.selected,[],'scanning discovers but does not auto-select');
   assert.ok(!discovered.scanned.some(o=>o.id==='scene.keeper'),'never scan avatar');
   for(const id of ['#eyeScope','#eyeSummon','#eyeSelectAll','#eyeCollect'])assert.equal(await page.locator(id).count(),0,'removed scanner action: '+id);
   await page.waitForFunction(n=>document.querySelectorAll('#eyeScanNames li').length===n,count);
   let names=await readNames();
   assert.equal(names.length,count,'every scanned object has a right-side row');
   assert.ok(names.every(x=>x.id&&x.name.trim()),'real names or descriptive fallback');
-  assert.ok(names.some(x=>x.id==='scene.floor'&&x.name==='地板'),'Chinese geometry label');
+  assert.ok(names.some(x=>x.id==='scene.floor'&&x.name.includes('地板')),'Chinese geometry label');
   assert.ok(names.some(x=>x.name.includes('之書')),'book names from original library');
   assert.match(await page.locator('#eyeCount').innerText(),new RegExp('掃描 '+count+' 件物件'));
-  assert.doesNotMatch(await page.locator('#eyeCount').innerText(),/書本|其他物件|已選/,'scan count has no type distinctions or click selection');
+  assert.match(await page.locator('#eyeCount').innerText(),/已選 0 件/,'no implicit selection');
   const visual=await page.locator('#eyeScanReadout').evaluate(n=>({background:getComputedStyle(n).backgroundColor,border:getComputedStyle(n).borderTopWidth}));
   assert.ok(visual.background==='rgba(0, 0, 0, 0)'||visual.background==='transparent','no panel background');
   assert.equal(visual.border,'0px','no panel frame');
   report.checks.push('right-hand frameless overlay lists '+count+' object names and count, without avatar or action buttons');
 
-  // The live scanner set is automatically selected. No manual tap/mark state.
+  // A touch does NOTHING to normal objects when Eye is absent. With Eye active,
+  // each short tap explicitly selects or deselects one live-scanned member.
   const viewport=page.viewportSize();
   const candidates=discovered.scanned.filter(o=>o.x>25&&o.x<viewport.width-195&&o.y>210&&o.y<viewport.height-35).map(o=>({x:o.x,y:o.y}));
   for(let x=70;x<viewport.width-190;x+=90)for(let y=330;y<viewport.height-40;y+=90)candidates.push({x,y});
   let chosen=null,chosenId=null,chosenKind=null;
   for(const point of candidates){
-   await page.mouse.move(point.x,point.y);await page.mouse.down();
-   const inspected=await inspect();await page.mouse.up();
-   if(inspected.hold?.type==='scan'){
-    chosen=point;chosenId=inspected.hold.targetId;
+   await page.mouse.click(point.x,point.y);
+   const inspected=await inspect();
+   if(inspected.selected.length===1){
+    chosen=point;chosenId=inspected.selected[0];
     chosenKind=inspected.scanned.find(o=>o.id===chosenId)?.kind;break;
    }
   }
-  assert.ok(chosen&&chosenId&&chosenKind,'a real scanned object can start a hold');
-  const automatic=await inspect();
-  assert.deepEqual(automatic.selected,automatic.scanned.map(o=>o.id),'every scanned target auto-selected');
-  assert.doesNotMatch(await page.locator('#eyeCount').innerText(),/已選|已點選/);
-  assert.equal((await readNames()).filter(x=>x.selected).length,0,'no selection markers');
+  assert.ok(chosen&&chosenId&&chosenKind,'manual tap selects a genuine scanned object');
+  assert.deepEqual((await inspect()).selected,[chosenId]);
+  assert.equal((await readNames()).filter(x=>x.selected).length,1,'selected row has its own marker');
+  assert.match(await page.locator('#eyeCount').innerText(),/已選 1 件/);
   const hold=async ms=>{
    await page.mouse.move(chosen.x,chosen.y);await page.mouse.down();
    const snapshot=await inspect();
-   assert.equal(snapshot.hold?.type,'scan');
-   assert.deepEqual(snapshot.hold.scanIds,snapshot.scanned.map(o=>o.id));
+   assert.equal(snapshot.hold?.type,'scan','hold may start ONLY on a selected member');
+   assert.deepEqual(snapshot.hold.scanIds,[chosenId],'contract holds exact manual selection');
    if(ms)await page.waitForTimeout(ms);
    else await page.waitForFunction(()=>document.querySelector('#truthEyeContractConfirm').open,null,{timeout:15000});
    await page.mouse.up();
@@ -86,8 +86,9 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   };
   await hold(180);
   assert.equal(await page.locator('#truthEyeContractConfirm').evaluate(e=>e.open),false,'short tap cannot contract');
-  const afterTap=await inspect();
-  assert.deepEqual(afterTap.selected,afterTap.scanned.map(o=>o.id),'tap cannot add or remove scan members');
+  assert.deepEqual((await inspect()).selected,[],'short-tapping selected member deselects');
+  await page.mouse.click(chosen.x,chosen.y);
+  assert.deepEqual((await inspect()).selected,[chosenId],'tap reselects same unbound object');
   await hold();await page.locator('#truthEyeCancel').click();
   assert.deepEqual((await inspect()).packed,[],'cancel preserves world and save');
   const finalScan=await hold(),expected=finalScan.hold.scanIds;
@@ -98,10 +99,10 @@ const eye={...blank('eye'),title:'真實之眼',runeBinding:{runeId:'artifact.tr
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-library-player-objects-v1')));
   const card=saved.objects.find(c=>c.scanContract);
   assert.ok(card);assert.equal(card.id,'local.card.medium');
-  assert.deepEqual(card.scanContract.members.map(r=>r.id),expected,'only the exact scan snapshot is bound');
+  assert.deepEqual(card.scanContract.members.map(r=>r.id),expected,'only explicitly selected member is bound');
   assert.equal(saved.objects.length,3,'never create extra cards');
   assert.equal((await inspect()).packed.length,expected.length);
-  report.checks.push('scanner set equals implicit selection; long hold binds exact visible snapshot without clicks');
+  report.checks.push('Eye reveals geometry; tap selects one; 3-second hold binds ONLY manual selection');
   await page.screenshot({path:path.join(out,'object-longpress-packed.png')});
 
   await page.reload();await page.waitForFunction(()=>!!window.LivingScene?.truthEye,{timeout:45000});await page.waitForTimeout(700);
