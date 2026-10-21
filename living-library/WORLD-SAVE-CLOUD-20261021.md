@@ -43,3 +43,15 @@ source: living-library/live/object-craft.js; living-library/live/object-backup.j
 - 已登入狀態下可持續的後端短期授權（例如 GitHub App/OAuth），取代跨重載貼 PAT 的方式。
 - 多裝置讀取、手動差異審查與安全還原，正式上雲後切換權威來源。
 - 斷網 outbox 的端到端驗收、WebView 背景同步政策、更多世界模組與手機實測。
+
+## 2026-10-21 擴充觀察同步 v0.2（候選）
+- 沿用同一《系統之書》→「連線與版本」PAT/同意畫面與原分支；無額外憑證或新書。
+- 在相同私人 `gen2-knowledge` 的 `card-inbox` 寫入第二份隔離檔：
+  `world-saves/v1/world-observation.json`；原 `player-world.json` 不變。
+- 世界觀察資料：3D 人物遊戲內座標（x/y/z）、視角角度與距離、書本 active/來源與 ID、既有場景物件穩定 ID/錨點，以及四個明確允許的遊戲本機偏好鍵。
+- 無法啟動 WebGL 時 `session_scene.ready=false`，保存明確允許的偏好，不偽稱讀取 3D 實體。
+- 不枚舉所有 localStorage，不傳送 GEN2 權杖、GBA 儲存、未知欄位、執行動畫或原始網頁 DOM。
+- 快照沒有時間戳，同值不重複上傳；資料改變時才提交。遠端 SHA / 雙重驗證、錯誤停止與本地保護沿用第一階段。
+- 新狀態 `scene_phase` 與安全同意文案提示「位置／場景／操作偏好」。
+- 本階段只有**觀察與雲端備份**，沒有從 GitHub 還原人物位置、重新生成世界、伺服器長期 OAuth、多裝置同時寫入的自動合併。
+- 私人倉庫的世界觀察檔僅在使用者於已更新手機網頁重新輸入 PAT、授權並成功寫入後才會出現；PR／CI 模擬不能代表真實手機已同步。
