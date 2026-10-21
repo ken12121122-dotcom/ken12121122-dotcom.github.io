@@ -49,11 +49,11 @@ async function main(){
   proof.checks.push({case:'pending write failure rolls back version ledger atomically; same revision can retry without source loss',result:'PASS'});
   const changed=await page.evaluate(async()=>{
    const raw=localStorage.getItem(C.KEY);let reads=0,code;
-   // Two safe source reads (cleanup check and export), then mutate before\n    // the capture recheck; this tests a real concurrent mutation.\n    try{await queue.capture({getItem:()=>++reads<=2?raw:null})}catch(e){code=e.code}
+   // Two safe source reads (cleanup check and export), then mutate before\n    // the capture recheck; this tests a real concurrent mutation.\n    try{await queue.capture({getItem:()=>++reads<=2?raw:null})}catch(e){code=e.code||String(e.name||'Error')+':'+String(e.message||'unknown')}
    const prior=await queue.pending();const absent=await queue.capture({getItem:()=>null});
-   return {code,absent,before:prior,after:await queue.pending()};
+   return {code,reads,absent,before:prior,after:await queue.pending()};
   });
-  assert.equal(changed.code,'OBJECT_OUTBOX_SOURCE_CHANGED');assert.equal(changed.absent.queued,0);assert.deepEqual(changed.before,changed.after);
+  assert.equal(changed.code,'OBJECT_OUTBOX_SOURCE_CHANGED',JSON.stringify({reads:changed.reads,code:changed.code}));assert.equal(changed.absent.queued,0);assert.deepEqual(changed.before,changed.after);
   proof.checks.push({case:'changed source is rejected; absent storage never erases pending intents or infers deletion',result:'PASS'});
   const invalid=await page.evaluate(async()=>{
    const before=await queue.pending(),state=C.read(localStorage);state.objects.push({id:'public.synthetic',objectType:'card',templateId:'other',revision:1});let code;
