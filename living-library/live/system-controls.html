@@ -55,19 +55,25 @@
 </section>
 <section class="cloud-save" aria-labelledby="cloud-save-title" id="cloudWorldSettings">
 <h2 id="cloud-save-title">☁ 世界存檔｜私人 GitHub</h2>
-<p>位置：系統之書 → 連線與版本。本功能只傳送玩家卡片與書本的 ObjectCraft 存檔，不包含其他未盤點的本機系統。正式同步前仍須保留手機原始存檔。</p>
+<p>此功能經授權上傳卡片、書本及已列入白名單的 3D 世界狀態；其他本機系統不會上傳。原始手機存檔不會被雲端覆寫。</p>
 <label for="cloudWorldToken">GitHub fine-grained 個人存取權杖（PAT）</label>
 <input id="cloudWorldToken" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="請貼上私人 GitHub 權杖" aria-label="GitHub 私人世界存檔權杖">
-<p>授權儲存庫限 <strong>ken12121122-dotcom/gen2-knowledge</strong>，Contents: Read and write。只保存在遊戲頁面的執行記憶體；關閉或重新載入後須重新授權。請勿貼給 ChatGPT。</p>
+<p>僅授權私人 <strong>ken12121122-dotcom/gen2-knowledge</strong>（Contents: Read and write）。不選「記住這台裝置」時僅本次頁面有效；選取後以自訂密碼加密存於本機 IndexedDB，重新開啟只需密碼解鎖。切勿把 PAT 或密碼貼給 ChatGPT。</p>
 <label class="cloud-consent" for="cloudWorldConsent"><input type="checkbox" id="cloudWorldConsent"><span>我同意把玩家卡片、書本，以及 3D 世界人物座標、視角、書本狀態、場景錨點與遊戲操作偏好傳至上述私人 GitHub；Git 歷史可能長期保留資料。</span></label>
+<label class="cloud-consent" for="cloudWorldRemember"><input type="checkbox" id="cloudWorldRemember"><span>🔐 記住這台裝置（首次驗證成功後，把 GitHub 權杖以 AES-GCM 加密保存在此瀏覽器；下次輸入自訂密碼解鎖）</span></label>
+<label for="cloudWorldPassword">本機解鎖密碼（首次設定至少 12 字，之後用同一密碼）</label>
+<input id="cloudWorldPassword" type="password" autocomplete="new-password" spellcheck="false" placeholder="首次設定／下次解鎖使用，請妥善保管">
+<p>不會儲存密碼本身。換手機、清除網站資料或忘記密碼，需要重新以 GitHub PAT 授權。指紋解鎖須待 Android 原生支援。</p>
 <div class="cloud-actions">
 <button type="button" id="cloudWorldConnect" aria-label="授權並開始自動同步" title="授權並開始自動同步">☁</button>
+<button type="button" id="cloudWorldUnlock" aria-label="以本機密碼解鎖並自動同步" title="解鎖已記住的權杖">🔓</button>
 <button type="button" id="cloudWorldSync" aria-label="立即同步世界存檔" title="立即同步">↻</button>
 <button type="button" id="cloudWorldDisconnect" aria-label="中斷雲端連線並清除記憶體內權杖" title="中斷連線">×</button>
 <button type="button" id="cloudWorldInspect" aria-label="盤點本機世界存檔" title="盤點本機存檔">ⓘ</button>
+<button type="button" id="cloudWorldForget" aria-label="撤銷本機記住授權並清除加密權杖" title="忘記這台裝置">🗑</button>
 </div>
 <output id="cloudWorldStatus" role="status" aria-live="polite">尚未授權。手機本機存檔不會被修改或刪除。</output>
-<p>防護：遇到不同版本、無存檔、超過大小上限、遠端衝突或寫入失敗，停止同步並保留手機存檔。不自動下載覆蓋手機資料。</p>
+<p>× 僅斷開本次同步；🗑 撤銷並刪除這台裝置儲存的加密憑證。遠端衝突、寫入失敗均停止同步，保留手機存檔；不自動從 GitHub 還原。</p>
 </section>
 <div class="foot">本頁只是書內操作介面；實際權限、驗證與更新由圖書館主頁負責，不在公開網頁保存私人憑證。</div></main>
 <script src="./card-placement.js"></script>
