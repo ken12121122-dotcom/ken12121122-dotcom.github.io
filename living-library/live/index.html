@@ -681,6 +681,8 @@ window.addEventListener('message',event=>{
    worldSave.sync().then(respond).catch(()=>respond({phase:'error',error:'CLOUD_SYNC_FAILED'}));
   }else if(action==='cloud-world-disconnect'){
    respond(worldSave.disconnect());
+  }else if(action==='cloud-world-status'){
+   respond(worldSave.status());
   }else if(action==='cloud-world-inspect'){
    window.LivingObjectBackup.exportBackup(localStorage)
     .then(text=>window.LivingObjectBackup.inspectBackup(text))
