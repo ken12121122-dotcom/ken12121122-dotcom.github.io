@@ -32,3 +32,13 @@ test('library attaches gate as scene geometry only, without minting cards',()=>{
  assert.match(html,/truthEye\.applyPacked\(\)/);
  assert.match(html,/inertHit\.distance<bookHit\.distance/);
 });
+test('gate stays in the playable walking circle instead of only at the unreachable world rim',()=>{
+ const movement=requireMovement();
+ assert.equal(movement.WALK_RADIUS,10);
+ assert.match(source,/position=\{x:0,y:0\.006,z:8\.4\}/);
+ const gateCenter=8.4;
+ const gateNearFace=gateCenter-0.9*1.5008;
+ assert.ok(gateNearFace<movement.WALK_RADIUS,'keeper can reach front face within walking limit');
+ assert.ok(gateCenter<movement.WALK_RADIUS,'keeper can reach portal center');
+});
+function requireMovement(){const movementCode=fs.readFileSync(path.join(live,'avatar-movement.js'),'utf8');const context={};context.self=context;vm.runInNewContext(movementCode,context);return context.LivingAvatarMovement;}
