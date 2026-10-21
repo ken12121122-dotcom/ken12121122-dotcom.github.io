@@ -674,16 +674,55 @@ window.addEventListener('message',event=>{
  }else if(id==='public.system.controls'&&action==='reconnect-web')reconnectNow();
  else if(id==='public.system.controls'&&typeof action==='string'&&action.startsWith('cloud-world-')){
   const source=event.source,origin=event.origin;
-  const respond=status=>source.postMessage({kind:'living-library-world-save-status',status},origin);
+  // Same-origin system-book iframe only; vault never stores a bare GitHub token.
+  const respond=async(status,extra={})=>{
+   let vault_saved=false,vault_error=extra.vault_error||'';
+   if(credentialVault){
+    try{vault_saved=(await credentialVault.inspect()).saved}
+    catch{if(!vault_error)vault_error='VAULT_STORAGE_UNAVAILABLE'}
+   }
+   if(source===document.getElementById('readerFrame').contentWindow)
+    source.postMessage({kind:'living-library-world-save-status',
+     status:{...status,vault_saved,vault_error}},origin);
+  };
   if(action==='cloud-world-connect'){
    if(typeof event.data.token!=='string'||event.data.token.length>1024)return;
-   worldSave.connect(event.data.token).then(respond).catch(e=>respond({
-    phase:'error',error:'CLOUD_CONNECT_FAILED',authorized:false
-   }));
+   const rawToken=event.data.token,remember=event.data.remember===true;
+   const password=event.data.password;
+   if(remember&&(typeof password!=='string'||password.length<window.LivingWorldCredentialVault.MIN_PASSWORD)){
+    respond(worldSave.status(),{vault_error:'VAULT_PASSWORD_WEAK'});return;
+   }
+   const turn=++credentialVaultEpoch;
+   worldSave.connect(rawToken).then(async result=>{
+    if(turn!==credentialVaultEpoch)return;
+    if(result.phase==='synced'&&remember){
+     if(!credentialVault){await respond(result,{vault_error:'VAULT_UNAVAILABLE'});return}
+     try{await credentialVault.remember(rawToken,password)}
+     catch(e){await respond(result,{vault_error:typeof e?.code==='string'?e.code:'VAULT_STORAGE_UNAVAILABLE'});return}
+    }
+    if(turn===credentialVaultEpoch)await respond(result);
+   }).catch(()=>respond({phase:'error',error:'CLOUD_CONNECT_FAILED',authorized:false}));
+  }else if(action==='cloud-world-unlock'){
+   const password=event.data.password;
+   const turn=++credentialVaultEpoch;
+   if(!credentialVault){respond(worldSave.status(),{vault_error:'VAULT_UNAVAILABLE'});return}
+   credentialVault.unlock(password).then(async token=>{
+    if(turn!==credentialVaultEpoch)return;
+    const result=await worldSave.connect(token);
+    if(turn===credentialVaultEpoch)await respond(result);
+   }).catch(e=>respond(worldSave.status(),{
+    vault_error:typeof e?.code==='string'?e.code:'VAULT_UNLOCK_FAILED'}));
   }else if(action==='cloud-world-sync'){
    worldSave.sync().then(respond).catch(()=>respond({phase:'error',error:'CLOUD_SYNC_FAILED'}));
   }else if(action==='cloud-world-disconnect'){
+   credentialVaultEpoch++;
    respond(worldSave.disconnect());
+  }else if(action==='cloud-world-forget'){
+   credentialVaultEpoch++;
+   const disconnected=worldSave.disconnect();
+   if(!credentialVault){respond(disconnected,{vault_error:'VAULT_UNAVAILABLE'});return}
+   credentialVault.forget().then(()=>respond(disconnected))
+    .catch(e=>respond(disconnected,{vault_error:typeof e?.code==='string'?e.code:'VAULT_STORAGE_UNAVAILABLE'}));
   }else if(action==='cloud-world-status'){
    respond(worldSave.status());
   }else if(action==='cloud-world-inspect'){
