@@ -422,7 +422,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -591,6 +591,7 @@ let readerCard=null,cardSpellExitTimer=null;
 // writes ObjectCraft or browser credentials. Consent occurs in system controls.
 const worldSave=window.LivingWorldSaveSync.create({
  storage:localStorage,fetchImpl:(...args)=>fetch(...args),
+ observeWorld:()=>window.LivingWorldObservation.collect(localStorage,()=>window.LivingScene?.observeWorld?.()||null),
  notify:status=>{
   if(readerCard?.id!=='public.system.controls')return;
   const frame=$('readerFrame')?.contentWindow;
