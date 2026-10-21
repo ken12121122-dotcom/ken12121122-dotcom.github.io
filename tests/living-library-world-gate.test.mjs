@@ -5,7 +5,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url));
-const live=path.join(here,'../..','living-library/live');
+const live=path.join(here,'..','living-library/live');
 const source=fs.readFileSync(path.join(live,'world-gate.js'),'utf8');
 const ctx={TextDecoder};ctx.self=ctx;vm.runInNewContext(source,ctx);
 const Gate=ctx.LivingWorldGate;
