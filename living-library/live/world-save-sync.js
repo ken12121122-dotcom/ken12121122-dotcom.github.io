@@ -81,7 +81,7 @@
    if(file.path!==PATH||!(/^[a-f0-9]{40}$/).test(file.sha||''))fail('CLOUD_REMOTE_UNREADABLE');
    return file;
   }
-  async function sync(){
+  async function sync({forceVerify=false}={}){
    if(!token||busy)return status();
    busy=true;
    try{
@@ -92,7 +92,7 @@
     if(original!==storage.getItem(Backup.KEY))fail('CLOUD_LOCAL_CHANGED');
     const old=baseline(storage);
     // A successful sync can skip both network calls if the persisted source is unchanged.
-    if(old&&old.source_sha256===verified.sha256){state('synced');return status()}
+    if(!forceVerify&&old&&old.source_sha256===verified.sha256){state('synced');return status()}
     state('syncing');
     const head=await remote();
     if(head){
@@ -142,7 +142,7 @@
     if(ref.ref!=='refs/heads/'+BRANCH)fail('CLOUD_BRANCH_UNAVAILABLE');
     if(mine!==epoch)return status();
     state('ready');
-    const result=await sync();
+    const result=await sync({forceVerify:true});
     if(result.phase==='synced'||result.phase==='error')
      timer=setInterval(()=>{if(token&&!busy)sync()},Math.max(30000,intervalMs));
     return result;
