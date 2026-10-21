@@ -695,13 +695,20 @@ window.addEventListener('message',event=>{
    const turn=++credentialVaultEpoch;
    worldSave.connect(rawToken).then(async result=>{
     if(turn!==credentialVaultEpoch)return;
-    if(result.phase==='synced'&&remember){
+    if(remember&&result.credential_verified===true){
      if(!credentialVault){await respond(result,{vault_error:'VAULT_UNAVAILABLE'});return}
-     try{await credentialVault.remember(rawToken,password)}
+     try{await worldSave.rememberCredential(credentialVault,password)}
      catch(e){await respond(result,{vault_error:typeof e?.code==='string'?e.code:'VAULT_STORAGE_UNAVAILABLE'});return}
     }
     if(turn===credentialVaultEpoch)await respond(result);
    }).catch(()=>respond({phase:'error',error:'CLOUD_CONNECT_FAILED',authorized:false}));
+  }else if(action==='cloud-world-remember'){
+   const password=event.data.password,turn=++credentialVaultEpoch;
+   if(!credentialVault){respond(worldSave.status(),{vault_error:'VAULT_UNAVAILABLE'});return}
+   worldSave.rememberCredential(credentialVault,password).then(()=>{
+    if(turn===credentialVaultEpoch)respond(worldSave.status());
+   }).catch(e=>respond(worldSave.status(),{
+    vault_error:typeof e?.code==='string'?e.code:'VAULT_STORAGE_UNAVAILABLE'}));
   }else if(action==='cloud-world-unlock'){
    const password=event.data.password;
    const turn=++credentialVaultEpoch;
