@@ -51,7 +51,7 @@
  function create({storage,fetchImpl,notify=()=>{},intervalMs=60000}={}){
   if(!storage||typeof storage.getItem!=='function'||typeof storage.setItem!=='function'||typeof fetchImpl!=='function')
    fail('CLOUD_DEPENDENCIES_MISSING');
-  let token='',phase='disconnected',error='',lastSynced=null,timer=null,busy=false,epoch=0;
+  let token='',phase='disconnected',error='',lastSynced=null,timer=null,busy=false,epoch=0,abort=null;
   const status=()=>({phase,error,last_synced:lastSynced,authorized:!!token,
    repo:REPO,branch:BRANCH,path:PATH,token_persisted:false});
   function publish(){try{notify(status())}catch{}}
@@ -60,7 +60,7 @@
   async function request(route,options={}){
    if(!token)fail('CLOUD_NOT_AUTHORIZED');
    let res;
-   try{res=await fetchImpl(API+route,{...options,
+   try{res=await fetchImpl(API+route,{...options,signal:abort?.signal,
     headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',
      Authorization:'Bearer '+token,...(options.headers||{})},
     credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'})}
@@ -83,7 +83,7 @@
   }
   async function sync({forceVerify=false}={}){
    if(!token||busy)return status();
-   busy=true;
+   busy=true;const started=epoch;
    try{
     const original=ensureLocal(storage);
     const backup=await Backup.exportBackup(storage);
@@ -107,6 +107,7 @@
      }
      if(!old||old.blob_sha!==head.sha)fail('CLOUD_REMOTE_CONFLICT');
     }else if(old)fail('CLOUD_REMOTE_MISSING');
+    if(started!==epoch||!token)fail('CLOUD_SESSION_CANCELLED');
     if(original!==storage.getItem(Backup.KEY))fail('CLOUD_LOCAL_CHANGED');
     const payload={message:'data(world-save): synchronized owner world snapshot',
      content:encode(backup),branch:BRANCH};
@@ -122,11 +123,11 @@
     writeBaseline(storage,saved.content.sha,verified.sha256);
     lastSynced=new Date().toISOString();state('synced');
     return status();
-   }catch(e){stop();state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
+   }catch(e){if(started===epoch){stop();state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR')}return status()}
    finally{busy=false}
   }
   async function connect(candidate){
-   stop();token='';epoch++;const mine=epoch;
+   stop();if(abort)abort.abort();abort=new AbortController();token='';epoch++;const mine=epoch;
    if(typeof candidate!=='string'||candidate.trim().length<10||candidate.length>1024)
     return state('error','CLOUD_TOKEN_REQUIRED'),status();
    token=candidate.trim();state('verifying');
@@ -148,7 +149,7 @@
     return result;
    }catch(e){token='';state('error',typeof e?.code==='string'?e.code:'CLOUD_UNKNOWN_ERROR');return status()}
   }
-  function disconnect(){stop();epoch++;token='';state('disconnected');return status()}
+  function disconnect(){stop();epoch++;if(abort)abort.abort();abort=null;token='';state('disconnected');return status()}
   return Object.freeze({connect,sync,disconnect,status});
  }
  return Object.freeze({REPO,BRANCH,PATH,BASELINE,create});
