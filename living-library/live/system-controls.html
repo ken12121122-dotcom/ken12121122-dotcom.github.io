@@ -59,7 +59,7 @@
 <label for="cloudWorldToken">GitHub fine-grained 個人存取權杖（PAT）</label>
 <input id="cloudWorldToken" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="請貼上私人 GitHub 權杖" aria-label="GitHub 私人世界存檔權杖">
 <p>授權儲存庫限 <strong>ken12121122-dotcom/gen2-knowledge</strong>，Contents: Read and write。只保存在遊戲頁面的執行記憶體；關閉或重新載入後須重新授權。請勿貼給 ChatGPT。</p>
-<label class="cloud-consent" for="cloudWorldConsent"><input type="checkbox" id="cloudWorldConsent"><span>我同意把玩家創作存檔（含卡片圖片及歷史狀態）傳至上述私人 GitHub；Git 歷史可能長期保留資料。</span></label>
+<label class="cloud-consent" for="cloudWorldConsent"><input type="checkbox" id="cloudWorldConsent"><span>我同意把玩家卡片、書本，以及 3D 世界人物座標、視角、書本狀態、場景錨點與遊戲操作偏好傳至上述私人 GitHub；Git 歷史可能長期保留資料。</span></label>
 <div class="cloud-actions">
 <button type="button" id="cloudWorldConnect" aria-label="授權並開始自動同步" title="授權並開始自動同步">☁</button>
 <button type="button" id="cloudWorldSync" aria-label="立即同步世界存檔" title="立即同步">↻</button>
@@ -220,7 +220,8 @@ window.addEventListener('message',event=>{
  cloudStatus.textContent=(cloudLabels[s.phase]||'狀態未知')+
   (s.error?' 錯誤代碼：'+s.error:'')+
   (s.last_synced?' 最近同步：'+s.last_synced:'')+
-  (s.authorized?'｜已授權至本次頁面關閉':'');
+  (s.authorized?'｜本次頁面已授權':'')+
+  (s.scene_phase==='synced'?'｜3D 世界資料已同步':s.scene_phase==='error'?'｜3D 世界同步失敗':'');
 });
 cloudSend('cloud-world-status');
 </script></body></html>
