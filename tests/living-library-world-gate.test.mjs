@@ -49,7 +49,9 @@ test('the Eye automatically selects every live-scanned target; no second tap is 
   'a hold contracts the scanned snapshot directly');
  assert.match(eyeSource,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/,
   'inspection exposes scanned objects as the implicit selection');
- assert.match(eyeSource,/countLabel\.textContent='掃描 '\+objects\.length\+' 件物件'/,\n  'scanner displays discovered count without an extra manual-selection tally');\n assert.doesNotMatch(eyeSource,/selectedScanIds|toggleSelected\(/,
+ assert.match(eyeSource,/countLabel\.textContent='掃描 '\+objects\.length\+' 件物件'/,
+  'scanner displays discovered count without an extra manual-selection tally');
+ assert.doesNotMatch(eyeSource,/selectedScanIds|toggleSelected\(/,
   'do not reintroduce an independent tap selection state');
  assert.match(eyeSource,/if\(id&&start\('scan',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/,
   'holding any scanned object starts a single group ritual');
