@@ -1,0 +1,92 @@
+{
+  "schema": "nw-p1-session-evidence-v1",
+  "review_status": "generated",
+  "observed_at": "2026-10-14T16:31:33.775Z",
+  "source_ref": "NW-RUNE-BUILD-001/P1",
+  "base_commit": "e42a76f1ea4cda659130d167dbe74b2477f21c1e",
+  "candidate_commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+  "scope": "P1_PREPARATORY_ONLY; transient target/gesture/voice-result correlation only",
+  "tests": {
+    "local_node": {
+      "result": "PASS",
+      "total": 186,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs"
+    },
+    "targeted_unit": {
+      "result": "PASS",
+      "tests": 9,
+      "file": "tests/living-library-interaction-session.test.mjs"
+    },
+    "ci": {
+      "result": "PASS",
+      "run_id": 38598464614,
+      "commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955"
+    },
+    "browser": {
+      "schema": "nw-interaction-session-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "actions": [
+            "a",
+            "capture",
+            "resolve"
+          ],
+          "reason": "MATCHED",
+          "result": "PASS"
+        },
+        {
+          "actions": [
+            "a",
+            "capture",
+            "release",
+            "resolve"
+          ],
+          "reason": "STALE_INTERACTION",
+          "result": "PASS"
+        },
+        {
+          "actions": [
+            "a",
+            "capture",
+            "b",
+            "resolve"
+          ],
+          "reason": "STALE_INTERACTION",
+          "result": "PASS"
+        },
+        {
+          "actions": [
+            "b",
+            "capture",
+            "resolve",
+            "resolve"
+          ],
+          "reason": "ALREADY_CONSUMED",
+          "result": "PASS"
+        }
+      ],
+      "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance",
+      "commit": "6cc49b06d54d3426e52d1f0bb210ef4f42a52955",
+      "ci_run_id": 38598464614
+    },
+    "local_browser": {
+      "result": "NOT_TESTED",
+      "reason": "Pinned Headless Shell binary absent locally; locked CI install succeeded and ran the fixture"
+    }
+  },
+  "preserved_features": [
+    "14 public books and canonical card IDs",
+    "3D scene, gestures, camera, book placement, joystick",
+    "Player storage and GBA saves",
+    "Native and private-data permissions"
+  ],
+  "limitations": [
+    "No scene, microphone, voice recognition, persistence or network integration enabled",
+    "P0/P1 whole-phase gates remain NOT_TESTED",
+    "No staging deployment, main merge, Pages/APK release or device claim"
+  ],
+  "next_action": "Prepare a controlled event-dispatch adapter with pre-effect context revalidation; do not load it in the 3D scene before P0 runtime gate."
+}

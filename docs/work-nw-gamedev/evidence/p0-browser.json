@@ -1,0 +1,78 @@
+{
+  "schema": "nw-p0-browser-proof-v1",
+  "commit": null,
+  "observed_at": "2026-10-14T15:36:09.405Z",
+  "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+  "checks": [
+    {
+      "id": "actual_3d_startup",
+      "result": "NOT_TESTED",
+      "ready": false,
+      "diagnostic": "診斷 ENGINE_IMPORT · Error · 兩個 Three.js 引擎來源均無法下載",
+      "release": "2026-10-14.touch-preferences-3d-scopefix-v5",
+      "logs": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Living Library 3D init failed ENGINE_IMPORT Error: 兩個 Three.js 引擎來源均無法下載\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:727:21"
+      ],
+      "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+    },
+    {
+      "id": "forced_engine_failure_fallback",
+      "result": "PASS",
+      "books": 14,
+      "joystick_hidden": true
+    },
+    {
+      "id": "public.research.navigation",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.canvas.workbench",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.startup.tasks",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.calendar",
+      "result": "PASS",
+      "scope": "External link target only; no sign-in"
+    },
+    {
+      "id": "public.knowledge.world",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.gba.runtime",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.vault.web",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.gpt.bridge",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "public.system.ui.map",
+      "result": "PASS",
+      "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+    },
+    {
+      "id": "unrelated_storage_preserved",
+      "result": "PASS",
+      "scope": "Synthetic sentinel; not a real GBA-save test"
+    }
+  ],
+  "candidate_source": "Includes uncommitted test-runner navigation fixes; production HTML unchanged at deb1d6be36c1bef8fa84ac7607d544cc3912eb2a. Exact source is the containing candidate commit."
+}

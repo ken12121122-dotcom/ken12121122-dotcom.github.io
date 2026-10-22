@@ -1,0 +1,316 @@
+{
+  "schema": "nw-p2-local-save-v1",
+  "scope": "P2_P5_PREPARATORY_ONLY; unloaded transactional spell store and pending outbox",
+  "result": "PASS_PREPARATORY_ONLY",
+  "observed_at": "2026-10-15T00:31:02.218Z",
+  "acceptance": "Synthetic spell saved with durable pending sync intent; reload/offline edit/exact retries/stale versions/transaction failure checked with real Chromium IndexedDB",
+  "implementation": [
+    "living-library/live/spell-store.js",
+    "tests/browser/spell-store.cjs"
+  ],
+  "local_tests": {
+    "node": {
+      "result": "PASS",
+      "tests": 305
+    },
+    "schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "parity_cases": 56
+    }
+  },
+  "browser": {
+    "schema": "nw-spell-store-browser-v1",
+    "result": "PASS",
+    "checks": [
+      {
+        "case": "click saves card and outbox atomically",
+        "result": "PASS"
+      },
+      {
+        "case": "reload preserves card/outbox and unrelated storage",
+        "result": "PASS"
+      },
+      {
+        "case": "offline edits coalesce and exact retries do not duplicate",
+        "result": "PASS"
+      },
+      {
+        "case": "stale second connection cannot overwrite durable revision",
+        "result": "PASS"
+      },
+      {
+        "case": "outbox write failure rolls back both stores",
+        "result": "PASS"
+      },
+      {
+        "case": "invalid cards rejected with zero external transport",
+        "result": "PASS"
+      }
+    ],
+    "scope": "Isolated real IndexedDB; synthetic card and outbox only, no network transport, scene, deployed UI or device claim"
+  },
+  "playable_feature_delta": {
+    "production": 0,
+    "candidate": "Isolated browser fixture can click save and reload a synthetic spell; no in-book editor/scene integration"
+  },
+  "sync_checks": {
+    "local_save": {
+      "result": "PASS_ISOLATED_CANDIDATE",
+      "scope": "6 Chromium IndexedDB cases; spell only, no live/device UI"
+    },
+    "outbox": {
+      "result": "PASS_PENDING_INTENT_ONLY",
+      "scope": "Atomic pending intent, exact retry dedupe, latest edit coalescing; delivery/ack/retry/backoff NOT_TESTED"
+    },
+    "authorized_transport": {
+      "result": "WAIT_OWNER",
+      "scope": "No scoped private repo/OAuth/GitHub App transport configured"
+    },
+    "remote_roundtrip": {
+      "result": "NOT_TESTED"
+    },
+    "ai_readback": {
+      "result": "NOT_TESTED"
+    }
+  },
+  "limits": [
+    "Spell cards only; standalone RuneCard persistence/export/migration pending",
+    "No transport, network calls, credentials, private repo writes, backoff or remote/AI readback",
+    "Deduplication compares exact serialized snapshot; semantic key-order canonicalization not claimed",
+    "Browser storage is subject to origin/quota/eviction; permanent backup/device storage not verified",
+    "No existing player database/localStorage modified; no destructive migration API",
+    "Live 3D/core and public catalog unchanged, staging/device not tested"
+  ],
+  "rollback_sha": "d4c881df8c3f23c1572deaa977013007b02981a2",
+  "ci": {
+    "result": "PASS",
+    "commit": "0ca8b412de016d4ecae0cd66a562b1d2af8e4946",
+    "checkout_commit": "9d4b54db3cd82ec91c82abcc6f0049ea8a3a0fc5",
+    "run_id": 38660234949,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38660234949",
+    "node_tests": 250,
+    "fail": 0,
+    "skipped": 0,
+    "browser_proofs": [
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "card_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "card_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "non_json",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse_phrase",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      },
+      {
+        "schema": "nw-definition-snapshot-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "input_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "policy_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "platform_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "valid_and_owner_gate",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic definition registration and local invocation; no scene/device claim"
+      },
+      {
+        "schema": "nw-spell-store-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "click saves card and outbox atomically",
+            "result": "PASS"
+          },
+          {
+            "case": "reload preserves card/outbox and unrelated storage",
+            "result": "PASS"
+          },
+          {
+            "case": "offline edits coalesce and exact retries do not duplicate",
+            "result": "PASS"
+          },
+          {
+            "case": "stale second connection cannot overwrite durable revision",
+            "result": "PASS"
+          },
+          {
+            "case": "outbox write failure rolls back both stores",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid cards rejected with zero external transport",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Isolated real IndexedDB; synthetic card and outbox only, no network transport, scene, deployed UI or device claim"
+      }
+    ],
+    "artifact": {
+      "id": 11937764887,
+      "digest": "sha256:0981f9ef6e16fcd39eb25523ca3f3c697ead5aefc3918ac338d070bf0e741bbf"
+    }
+  },
+  "next_action": "READ/SCAN all P0-P7 and five sync checks. Highest-value next independent slice: add version/hash-matched outbox acknowledgements and retry/backoff state with a synthetic mock remote; test stale acknowledgement after a newer offline edit and failed delivery followed by recovery. No real private transport or credentials without scoped authorization. Preserve in-book editor requirement and P0 scene Gate; no more generic P1 hardening as default."
+}
