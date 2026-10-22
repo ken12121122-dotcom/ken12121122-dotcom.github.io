@@ -42,3 +42,15 @@ test('gate stays in the playable walking circle instead of only at the unreachab
  assert.ok(gateCenter<movement.WALK_RADIUS,'keeper can reach portal center');
 });
 function requireMovement(){const movementCode=fs.readFileSync(path.join(live,'avatar-movement.js'),'utf8');const context={};context.self=context;vm.runInNewContext(movementCode,context);return context.LivingAvatarMovement;}
+
+test('the Eye automatically selects every live-scanned target; no second tap is required',()=>{
+ const eyeSource=fs.readFileSync(path.join(live,'truth-eye-world.js'),'utf8');
+ assert.match(eyeSource,/const scanTargets=type==='scan'\?targets\(\):null/,
+  'a hold contracts the scanned snapshot directly');
+ assert.match(eyeSource,/selected:scannedTargets\(\)\.map\(o=>o\.id\)/,
+  'inspection exposes scanned objects as the implicit selection');
+ assert.doesNotMatch(eyeSource,/selectedScanIds|toggleSelected\(/,
+  'do not reintroduce an independent tap selection state');
+ assert.match(eyeSource,/if\(id&&start\('scan',e\.pointerId,e\.clientX,e\.clientY,null,id\)\)/,
+  'holding any scanned object starts a single group ritual');
+});
