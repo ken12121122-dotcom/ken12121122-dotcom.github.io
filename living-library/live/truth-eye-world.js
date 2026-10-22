@@ -86,8 +86,6 @@ function create(opts){
  let cardCeremony=null,cardHold=null;
  const cardCaptured=new Set();
  let hold=null,serial=0,lastScan=0,transfer=null,pending=null,selectedUntil=0;
- // Scanner selection is temporary discovery state, NEVER card ownership.
- const selectedScanIds=new Set();let scanTap=null;
  let bundleTransfer=null,packed=new Map(),bundleError=null,packedRaw,worldCards=[];
  const bundleAnchors=new Map();
  const restoredBundleVersions=new Map();
@@ -102,7 +100,7 @@ function create(opts){
  const host=document.createElement('section');host.className='truthEyeHud';host.setAttribute('aria-label','真實之眼');
  host.innerHTML='<header><button id="eyeToggle" aria-label="掃描開關" title="掃描開關">◉</button><small id="eyeStatus"></small></header><main id="eyeControls"><label>半徑<input id="eyeRadius" type="range" min="2" max="20" step=".5"><output id="eyeRadiusVal"></output></label><label>角度<input id="eyeAperture" type="range" min="15" max="360" step="5"><output id="eyeApertureVal"></output></label><label>方向<input id="eyeDirection" type="range" min="0" max="360" step="5"><output id="eyeDirectionVal"></output></label><select id="eyeMode" aria-label="掃描模式"><option value="both">複合掃描</option><option value="radar">雷達</option><option value="ripple">水波</option></select></main>';
  document.body.append(host);
- // Scan first reveals real geometry. Only the player's explicit taps select contract candidates.
+ // Every runtime-discovered 3D object is directly holdable. Scanned objects are already selected; no separate tap is ever needed.
  // Transparent text readout, not an interactive scan button.
  const readout=document.createElement('aside');
  readout.id='eyeScanReadout';readout.className='truthEyeScanReadout';
@@ -254,7 +252,7 @@ function create(opts){
   el(name).addEventListener('input',e=>{if(busy()){apply();return}cfg[k]=Number(e.target.value);apply();updateMarks()});
  }
  el('Mode').addEventListener('change',e=>{if(busy()){apply();return}cfg.mode=e.target.value;apply()});
- el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;if(!cfg.enabled){selectedScanIds.clear();scanTap=null}state();updateMarks();invalidate()});
+ el('Toggle').addEventListener('click',()=>{if(busy())return;cfg.enabled=!cfg.enabled;state();updateMarks();invalidate()});
  function hit(e,meshes){const rect=renderer.domElement.getBoundingClientRect();if(!rect.width||!rect.height)return null;
   mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   caster.setFromCamera(mouse,camera);return caster.intersectObjects(meshes,true)[0]||null;
@@ -280,15 +278,8 @@ function create(opts){
   for(const o of targets()){for(const g of o.groups||[o.group])if(!backgroundSurface(g))g.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}});const marker=markMap.get(o.id);if(marker?.visible)marker.traverse(m=>{if(m.isMesh){m.userData.truthEyeId=o.id;list.push(m)}})}
   return hit(e,list)?.object.userData.truthEyeId||null;
  }
- // Normal clicks on ordinary world objects are deliberately inert.
- // The scanner is the ONLY way to enter the temporary selection state.
+ // Scanner does not intercept short taps or require manual selection.
  function pick(){return false}
- function selectedTargets(){return targets().filter(o=>selectedScanIds.has(o.id))}
- function toggleSelected(id){
-  if(!targets().some(o=>o.id===id))return false;
-  if(selectedScanIds.has(id))selectedScanIds.delete(id);else selectedScanIds.add(id);
-  updateMarks();invalidate();return true;
- }
  function scannedTargets(){return hold?.type==='scan'?hold.scanTargets:targets()}
  // Names are descriptions of live discoveries, never scan allowlist rules.
  function scanName(o){
@@ -307,26 +298,25 @@ function create(opts){
   return type+' · '+String(id).replace(/^scene\./,'').slice(0,26);
  }
  function renderScanNames(objects){
-  const display=objects.map(o=>[o.id,scanName(o),selectedScanIds.has(o.id)]),key=JSON.stringify(display);
+  const display=objects.map(o=>[o.id,scanName(o)]),key=JSON.stringify(display);
   if(key===previousScanDisplay)return;
   previousScanDisplay=key;
-  countLabel.textContent='掃描 '+objects.length+' 件｜已選 '+display.filter(row=>row[2]).length+' 件';
+  countLabel.textContent='掃描 '+objects.length+' 件物件';
   const fragment=document.createDocumentFragment();
   for(let i=0;i<objects.length;i++){
    const li=document.createElement('li');
-   li.textContent=(display[i][2]?'✓ ':'· ')+display[i][1];li.dataset.scanId=objects[i].id;li.dataset.selected=String(display[i][2]);fragment.append(li);
+   li.textContent=display[i][1];li.dataset.scanId=objects[i].id;fragment.append(li);
   }
   scanNames.replaceChildren(fragment);
  }
  function updateMarks(){
   const t=scannedTargets(),set=new Set(t.map(o=>o.id));
-  for(const id of selectedScanIds)if(!set.has(id))selectedScanIds.delete(id);
   for(const [id,g] of markMap)g.visible=set.has(id);
   for(const o of t){let m=markMap.get(o.id);
    if(!m){m=new T.Group();const r=ring(m,cyan.clone());r.scale.setScalar(.49);const volume=new T.Mesh(new T.SphereGeometry(.45,10,8),new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0}));m.add(volume);
     const j=new T.Mesh(new T.OctahedronGeometry(.10),amber.clone());j.position.y=.72;m.add(j);marks.add(m);markMap.set(o.id,m);}
    if(o.anchor)tmp.copy(o.anchor);else o.group.getWorldPosition(tmp);m.position.copy(tmp);m.position.y+=.7;
-   m.scale.setScalar(selectedScanIds.has(o.id)?1.28:1);
+   m.scale.setScalar(1);
   }
   renderScanNames(t);
  }
@@ -550,10 +540,9 @@ function create(opts){
    selectedUntil=0;bundlePrompt('bundle-cardify',record);return;
   }
   if(type==='scan'){
-   scanTap=null;
    try{const scanned=gesture.scanTargets||[],current=targets();
     const expected=new Set(scanned.map(o=>o.kind+':'+o.id)),now=new Set(current.map(o=>o.kind+':'+o.id));
-    if(!expected.size||expected.size!==scanned.length||[...expected].some(k=>!now.has(k)))
+    if(!expected.size||expected.size!==scanned.length||now.size!==expected.size||[...expected].some(k=>!now.has(k)))
      throw Error('掃描物件或範圍已變動，請重新掃描；不會加入其他物件');
     const members=scanned.map(o=>({kind:o.kind,id:o.id}));
     const id=B.nearest({x:keeper.position.x,z:keeper.position.z},cardEntries());
@@ -661,7 +650,7 @@ function create(opts){
   if(cardCeremony?.phase==='release')clearCardCeremony();
   const box=new T.Box3().makeEmpty();
   // Scan targets displayed now are the ENTIRE implicit selection.
-  const scanTargets=type==='scan'?selectedTargets():null;
+  const scanTargets=type==='scan'?targets():null;
   if(type==='scan'){
    if(!scanObjectId||!scanTargets.some(o=>o.id===scanObjectId))return false;
    for(const o of scanTargets)for(const g of o.groups||[o.group])box.expandByObject(g);
@@ -715,27 +704,14 @@ function create(opts){
   // floor behind the character. Keep the same generous joystick hit radius.
   if(hit(e,[keeper])||caster.ray.distanceToPoint(new T.Vector3(keeper.position.x,keeper.position.y+1.3,keeper.position.z))<1.05)return false;
   const id=at(e);
-  if(id){
-   scanTap={id,pointerId:e.pointerId,x:e.clientX,y:e.clientY};
+  // Hold any scanned object: all currently scanned objects belong to this one contract.
+  if(id&&start('scan',e.pointerId,e.clientX,e.clientY,null,id)){
    heldPointers.add(e.pointerId);
-   // A 3-second hold only acts on objects selected BEFORE the hold.
-   if(selectedScanIds.has(id))start('scan',e.pointerId,e.clientX,e.clientY,null,id);
-   invalidate();return true;
+   return true;
   }
   return false;
  }
  function pointerMove(e){
-  if(scanTap?.pointerId===e.pointerId){
-   const margin=e.pointerType==='touch'||e.pointerType==='pen'?26:15;
-   if(Math.hypot(e.clientX-scanTap.x,e.clientY-scanTap.y)>margin){
-    const origin=scanTap;scanTap=null;
-    if(hold?.id===e.pointerId)stop();
-    heldPointers.delete(e.pointerId);
-    opts.onMemberDrag?.(e,{x:origin.x,y:origin.y});
-    return false;
-   }
-   return true;
-  }
   if(!heldPointers.has(e.pointerId)&&hold?.id!==e.pointerId)return false;
   if(hold?.id===e.pointerId&&Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>
     (e.pointerType==='touch'||e.pointerType==='pen'?26:15)){
@@ -750,15 +726,6 @@ function create(opts){
  }
  function pointerEnd(e){
   const used=heldPointers.delete(e.pointerId);
-  if(scanTap?.pointerId===e.pointerId){
-   const tap=scanTap;scanTap=null;
-   if(hold?.id===e.pointerId){
-    if(e.type==='pointerup'&&performance.now()-hold.started>=3000){complete(hold.token);return true}
-    stop();
-   }
-   if(e.type==='pointerup')toggleSelected(tap.id);
-   return true;
-  }
   if(hold?.id===e.pointerId){
    if(e.type==='pointerup'&&performance.now()-hold.started>=3000)complete(hold.token);
    else{
@@ -776,9 +743,9 @@ function create(opts){
   if(eye.visible&&hit(e,[eye]))e.preventDefault();
  });
  document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){stop();scanTap=null;cancelCardHold();cardCaptured.clear();cancelPrompt()}
+  if(document.hidden){stop();cancelCardHold();cardCaptured.clear();cancelPrompt()}
  });
- root.addEventListener('blur',()=>{stop();scanTap=null;cancelCardHold();cardCaptured.clear()});
+ root.addEventListener('blur',()=>{stop();cancelCardHold();cardCaptured.clear()});
  function tick(now){const t=now/1000;
   tickBundle(now);
   const originalEye=new T.Vector3(keeper.position.x,keeper.position.y+3.50+(reducedMotion?0:.10*Math.sin(t*1.2)),keeper.position.z);
@@ -903,7 +870,7 @@ function create(opts){
  }
  apply();state();
  return Object.freeze({tick,active,applyPacked,isPacked,ownsTransferCard,getBoundWorldAnchor,refreshAfterUnbind,pick,cardTap,
-  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:[...selectedScanIds],config:{...cfg},ritualVisible:ritual.visible,hold:hold?{type:hold.type,phase:hold.ceremonyStarted?'animation':'holding',cardId:hold.cardId,targetId:hold.scanObjectId,scanIds:hold.scanTargets?.map(o=>o.id)||[],progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visibleGroups:(o.groups||[o.group]).filter(g=>g.visible).length,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:scannedTargets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
+  cardPressStart,cardPressMove,cardPressEnd,pointerDown,pointerMove,pointerEnd,inspect:(options={})=>({form:card?.truthEyeContract?.form||'unbound',selected:scannedTargets().map(o=>o.id),config:{...cfg},ritualVisible:ritual.visible,hold:hold?{type:hold.type,phase:hold.ceremonyStarted?'animation':'holding',cardId:hold.cardId,targetId:hold.scanObjectId,scanIds:hold.scanTargets?.map(o=>o.id)||[],progress:clamp((performance.now()-hold.started)/3000,0,1),highlightCount:bundleHighlights.length}:null,objects:entries().map(o=>{const point=screenPoint(o.group);const member=options.pickPoints?boundMemberAt({clientX:point.x,clientY:point.y}):null;return {id:o.id,kind:o.kind,visibleGroups:(o.groups||[o.group]).filter(g=>g.visible).length,visible:(o.groups||[o.group]).some(g=>g.visible),...point,memberPickable:member?.key===o.kind+':'+o.id}}),scanned:scannedTargets().map(o=>({id:o.id,kind:o.kind,...screenPoint(o.group)})),cards:[...floatingCards.values()].filter(e=>e.group.visible).map(e=>({id:e.id,...screenPoint(e.group)})),packed:[...packed],bundleBusy:!!bundleTransfer})});
 }
 root.LivingTruthEyeWorld=Object.freeze({create,model});
 })(typeof self!=='undefined'?self:globalThis);
