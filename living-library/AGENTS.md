@@ -1,5 +1,15 @@
 # Living Library｜強制功能保留與版本回歸規則
 
+## ⛔ 最高優先級 P0｜NW-SCAN-IMPLICIT-SELECT-001：掃描即選取
+
+> **OWNER 2026-10-22 第三次糾正。** 本規則為 `00_CORE / CORE_P0_RELEASE_BLOCKER`，先於舊 `10_SYSTEMS` 掃描草案與任何程式重構。GitHub 現行鏡像：[`rules/NW-SCAN-IMPLICIT-SELECT-001.md`](rules/NW-SCAN-IMPLICIT-SELECT-001.md)。ChatGPT Library 原件：`/念動世界_GAME_DESIGN_KB/00_CORE/NW_SCAN_IMPLICIT_SELECTION_CORE_P0_20261022_v1.0.md`。
+
+1. **掃描即選取**：真實之眼掃描到的有效 3D 物件即為暫時選取集合；不用再短按／勾選／按全選。掃描集合隨站位、方向及半徑動態改變；不建立額外人工選取狀態。
+2. **不等於締約**：掃描不建立新卡、不寫入契約。長按任一已掃描有效物件滿三秒才啟動既有六芒星與明確確認；掃描多件仍可封裝為同一張既有空白卡。短按、取消或失敗不寫入。
+3. **禁止回歸**：不得重新加入 `selectedScanIds`、`toggleSelected()`、二次點選、掃描後另選，或因新增 GLB、雙界之門、書、場景物件、材質、動畫而修改掃描器操作語義。凡衝突之 `10_SYSTEMS` v0.2「掃描不等於選取」、v0.3「預設只長按物件」為歷史紀錄，現行一律以 2026-10-22 P0 為準。
+4. **先讀再改**：不論更動是否直接涉及掃描，先讀 root `AGENTS.md`、本檔、`rules/NW-SCAN-IMPLICIT-SELECT-001.md`、Library 兩份 `00_CORE` P0、相關程式與測試；將 `NW-SCAN-IMPLICIT-SELECT-001: READ / UNCHANGED / TEST_PASS` 附於 PR／交接。
+5. **驗收鎖定**：所有可掃描物件都必須在偵測當下被視為選取、直接長按 3 秒進入確認，不得多一次點擊；尚未締約物件一般觸碰無反應；玩家／相機／受保護物件仍排除；已完成契約不重新掃描。Node、Chromium 回歸失敗或未執行禁止宣稱正式完成；玩家存檔與永久卡保持原狀。只有 OWNER 再次明確授權且建立新版 P0 才能變更這套語義。
+
 適用於 `living-library/**`、與 Living Library 有關的 `packagecanvas/**` 及相應測試。Work／Codex／其他 Agent 每次修改前必須讀取本檔，以及 repository 根目錄 `AGENTS.md`。本檔只管理 Living Library UI／投影，不變更私有 GEN2 的治理規則。
 
 ## P0｜NW-CORE-CONTRACT-001：全物件通用契約不變量（OWNER 核准 2026-10-20）

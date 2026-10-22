@@ -1,5 +1,9 @@
 # Amin Pocket GBA AI Handoff
 
+## ⛔ 念動世界 CORE_P0：掃描即選取（OWNER 2026-10-22）
+
+**每次修改 `living-library/**` 前強制閱讀**：本檔 → `living-library/AGENTS.md` → [`NW-SCAN-IMPLICIT-SELECT-001`](living-library/rules/NW-SCAN-IMPLICIT-SELECT-001.md) → 已核准的 `NW-CORE-CONTRACT-001` 與相關測試。**掃描到＝選取；不需二次點擊。掃描不建卡，長按 3 秒並確認才締約。** 新增 GLB、門、家具、動畫或任何物件不得改寫掃描選取語義；禁止把 2026-10-20 舊 `10_SYSTEMS` 的點選草案當作現行規則。新 PR 須附 `NW-SCAN-IMPLICIT-SELECT-001: READ / UNCHANGED / TEST_PASS`，否則不能宣稱 P0 通過。此條款不放寬原有安全／發布規程。
+
 新 AI、Codex、ChatGPT 或 GitHub Actions 在修改程式前，必須先完整閱讀本檔。
 
 最後人工驗證：2026-10-04（Bridge 103 實機驗收），2026-10-06 正式發布，Asia/Taipei  
