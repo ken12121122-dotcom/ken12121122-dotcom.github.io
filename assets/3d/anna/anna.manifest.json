@@ -1,0 +1,43 @@
+{
+  "schema": "nw-character-asset/v0.1",
+  "character_id": "anna",
+  "stage": "static_preview",
+  "review_status": "generated",
+  "source": {
+    "filename": "anna_ipati_animated.glb",
+    "sha256": "0eb5a6bd0fce27759bcfcea1ac894063f5431bade4742e12e4a80212b2b18aab",
+    "bytes": 344425524
+  },
+  "assets": {
+    "character_glb": {
+      "uri": null,
+      "expected_filename": "anna_character_v0.2.glb",
+      "status": "pending_binary_upload_and_integrity_check"
+    },
+    "rig": {
+      "uri": null,
+      "status": "deferred"
+    },
+    "body_motion": {
+      "uri": null,
+      "status": "deferred"
+    },
+    "face_motion": {
+      "uri": null,
+      "status": "deferred"
+    }
+  },
+  "runtime": {
+    "target": "NW-Unified-Game-Motion-Lab-v0.7.2-MOTION-QA-CANDIDATE.html",
+    "same_scene": true,
+    "new_renderer": false,
+    "scan_contract_enabled": false,
+    "animation_enabled": false
+  },
+  "validation": {
+    "asset_hash": "pending",
+    "threejs_load": "not_tested",
+    "android_fps": "not_tested",
+    "owner_visual": "pending"
+  }
+}
