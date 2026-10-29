@@ -14,7 +14,7 @@ export async function attachAnnaStaticPreview({
   const root = new THREE.Group();
   root.name = "NW_ANNA_STATIC_PREVIEW";
   root.userData = { characterId: "anna", previewOnly: true, contractEnabled: false,
-    sourceSha256: expectedSha256, assetUrl };
+    sourceSha256: expectedSha256, assetUrl, scanProtected: true, scanObjectId: null };
   let gltf;
   try {
     gltf = await loader.loadAsync(assetUrl, onProgress);
@@ -27,6 +27,7 @@ export async function attachAnnaStaticPreview({
         obj.receiveShadow = false;
       }
     });
+    character.userData = { ...character.userData, scanProtected: true, contractEnabled: false };
     root.add(character);
     root.position.set(...position);
     root.scale.setScalar(scale);
