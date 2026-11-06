@@ -1,0 +1,134 @@
+{
+  "schema": "nw-ui-release-v1",
+  "owner_approval": "OWNER current conversation: 發布",
+  "approved_scope": "Upper-left title removal, clean view and icon-only action controls; no unfinished Rune Engine or player sync release",
+  "base_main_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+  "state": "RELEASED_PAGES_HTTP_VERIFIED_DEVICE_NOT_TESTED",
+  "pr": 221,
+  "source_commit": "cdac8728ccabc7d64eac9ae50a2ddaccff64af99",
+  "main_commit": "18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+  "release_marker": "2026-10-15.icon-only-clean-view-v1",
+  "released_at": "2026-10-15T01:29:24.940Z",
+  "live_url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+  "ci": {
+    "premerge": 38665658759,
+    "postmerge": 38665794311,
+    "result": "PASS"
+  },
+  "pages": {
+    "run_id": 38665793490,
+    "result": "PASS"
+  },
+  "http": {
+    "run_id": 38665794302,
+    "job_id": 116197341294,
+    "result": "PASS_EXACT_HTML_AND_SCRIPT_HASH"
+  },
+  "device": "NOT_TESTED",
+  "full_rune_engine_release": "NOT_RELEASED",
+  "rollback": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+  "scene_module_sha256": "b07e756c89705a41559701ca9d41c50d705cf56d2494c4c8b16ae82b481a251f",
+  "evidence_ref": "docs/work-nw-gamedev/evidence/ui-release.json",
+  "release_browser": {
+    "schema": "nw-p0-browser-proof-v1",
+    "commit": "14b67753dc2ac782a13d09745286d55e8ea53384",
+    "observed_at": "2026-10-15T01:27:26.779Z",
+    "isolation": "Browser intercept serves candidate repository bytes; no deployment",
+    "checks": [
+      {
+        "id": "actual_3d_startup",
+        "result": "NOT_TESTED",
+        "ready": false,
+        "diagnostic": "診斷 WEBGL_CONTEXT · Error · 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。",
+        "release": "2026-10-15.icon-only-clean-view-v1",
+        "logs": [
+          "Living Library 3D init failed WEBGL_CONTEXT Error: 軟體 GPU 改用 2D 書庫，避免圖書館渲染阻塞操作。\n    at https://ken12121122-dotcom.github.io/living-library/live/index.html:752:8"
+        ],
+        "limitation": "Renderer unavailable under unchanged production policy; not proof of a phone defect"
+      },
+      {
+        "id": "icon_first_controls",
+        "result": "PASS",
+        "scope": "Icon-only labels retain accessible action names, >=44px touch targets and previous/next/open/close behavior; content names preserved."
+      },
+      {
+        "id": "clean_view_restore_reload",
+        "result": "PASS",
+        "scope": "Brand text removed; panels toggle/reload/restore/Escape; fallback and unrelated storage preserved. No 3D/device acceptance."
+      },
+      {
+        "id": "forced_engine_failure_fallback",
+        "result": "PASS",
+        "books": 14,
+        "joystick_hidden": true
+      },
+      {
+        "id": "public.research.navigation",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.canvas.workbench",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.startup.tasks",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.calendar",
+        "result": "PASS",
+        "scope": "External link target only; no sign-in"
+      },
+      {
+        "id": "public.knowledge.world",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.gba.runtime",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.vault.web",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.gpt.bridge",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "public.system.ui.map",
+        "result": "PASS",
+        "scope": "Public card click, rendered iframe and return; underlying application actions not exercised"
+      },
+      {
+        "id": "unrelated_storage_preserved",
+        "result": "PASS",
+        "scope": "Synthetic sentinel; not a real GBA-save test"
+      }
+    ]
+  },
+  "http_log": [
+    "2026-10-15T01:28:23.9293695Z \u001b[36;1m    echo \"PASS: actual live HTML and clean-view.js match ${GITHUB_SHA}\"\u001b[0m",
+    "2026-10-15T01:29:24.9394381Z PASS: actual live HTML and clean-view.js match 18594dd833b0a30f1b4c09beaeb8fb00b310b10f",
+    "2026-10-15T01:29:24.9406625Z <meta name=\"living-library-release\" content=\"2026-10-15.icon-only-clean-view-v1\">"
+  ],
+  "local_node": {
+    "tests": 157,
+    "pass": 157
+  },
+  "main_reconcile_local_node": {
+    "tests": 305,
+    "pass": 305
+  },
+  "limits": [
+    "No phone acceptance",
+    "UI-only production release does not complete P0/P1/P2/P5/P7 gates"
+  ]
+}

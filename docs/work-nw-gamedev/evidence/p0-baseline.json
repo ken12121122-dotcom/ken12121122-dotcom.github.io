@@ -1,0 +1,124 @@
+{
+  "schema": "nw-p0-baseline-v1",
+  "observed_at": "2026-10-14T15:27:11.568574+00:00",
+  "base_sha": "deb1d6be36c1bef8fa84ac7607d544cc3912eb2a",
+  "candidate_diff": [
+    "tests/gpt-skills-embedded-card.test.mjs: make async callback containing await",
+    ".github/workflows/living-library-ci.yml: include GPT-card test in PR/push paths and execution"
+  ],
+  "baseline_matrix": [
+    {
+      "id": "node_regression",
+      "before": {
+        "tests": 153,
+        "pass": 152,
+        "fail": 1,
+        "error": "SyntaxError: Unexpected reserved word at await access"
+      },
+      "after": {
+        "tests": 157,
+        "pass": 157,
+        "fail": 0,
+        "skipped": 0
+      },
+      "command": "node --test tests/*.test.mjs",
+      "environment": "Node.js v24.19.0 Linux",
+      "result": "PASS"
+    },
+    {
+      "id": "live_http",
+      "url": "https://ken12121122-dotcom.github.io/living-library/live/index.html",
+      "result": "PASS",
+      "release_marker": "2026-10-14.touch-preferences-3d-scopefix-v5",
+      "html_sha256": "928e17cfab16dd0c2b1c1f40bda3e97c89169d63ce1cfdd82cf0ddaeca7dcc53",
+      "matches_base_source": true
+    },
+    {
+      "id": "cloud_browser_3d",
+      "result": "BLOCKED",
+      "diagnostic": "WEBGL_CONTEXT: cannot create WebGL2 context",
+      "scope": "Dedicated cloud Chrome; not Android device evidence"
+    },
+    {
+      "id": "public_fallback_reader",
+      "result": "PASS",
+      "actions": [
+        "Open selected book through fallback",
+        "Dismiss first-update notice",
+        "Open research navigation card",
+        "Verify research-navigation-v04.html iframe rendered"
+      ],
+      "limits": "Only research reader flow observed; remaining interactive public paths NOT_TESTED"
+    },
+    {
+      "id": "android_device",
+      "result": "NOT_TESTED"
+    },
+    {
+      "id": "isolated_staging",
+      "result": "NOT_TESTED",
+      "reason": "Two preview-named branches exist; no verified isolated deployment mechanism or URL found in current workflow definitions"
+    },
+    {
+      "id": "local_playwright",
+      "result": "BLOCKED",
+      "reason": "Playwright package present; Chromium executable absent. Cloud Chrome used for actual UI observation."
+    }
+  ],
+  "existing_action_inventory": [
+    {
+      "id": "character.tap",
+      "implementation": "3D pick -> showJoystick",
+      "runtime_status": "NOT_TESTED"
+    },
+    {
+      "id": "book.tap",
+      "implementation": "3D pick -> select/openBook or summonBook",
+      "runtime_status": "NOT_TESTED"
+    },
+    {
+      "id": "book.return_to_assigned_shelf",
+      "implementation": "moveBook -> setBookActive -> placement/rebuild",
+      "runtime_status": "NOT_TESTED"
+    },
+    {
+      "id": "card.open",
+      "implementation": "openCardReader -> readerFrame",
+      "runtime_status": "PASS_RESEARCH_ONLY"
+    },
+    {
+      "id": "avatar.move",
+      "implementation": "LivingAvatarMovement / joystick / WASD",
+      "runtime_status": "NOT_TESTED"
+    },
+    {
+      "id": "camera.rotate_zoom",
+      "implementation": "pointer single/dual and wheel handlers",
+      "runtime_status": "NOT_TESTED"
+    }
+  ],
+  "risk_register": [
+    {
+      "id": "P0-GPU",
+      "state": "BLOCKED",
+      "reason": "No successful real WebGL2 first-frame and 3D interaction evidence; cannot infer phone defect from cloud environment"
+    },
+    {
+      "id": "P0-STAGING",
+      "state": "NOT_TESTED",
+      "reason": "Preview branch names do not prove an isolated deployment"
+    },
+    {
+      "id": "P0-DEVICE",
+      "state": "NOT_TESTED",
+      "reason": "No Android device connection"
+    }
+  ],
+  "preserved_features": [
+    "No production runtime changes",
+    "No book/card ID changes",
+    "No UI/layout changes",
+    "No native, GEN2, credential or player-data changes"
+  ],
+  "next_action": "Obtain a WebGL2-capable test runner and verify existing 3D interactions before starting P1. Keep draft; no main merge or Pages deployment."
+}

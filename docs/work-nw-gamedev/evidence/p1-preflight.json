@@ -1,0 +1,190 @@
+{
+  "schema": "nw-p1-preflight-v1",
+  "scope": "P1_PREPARATORY_ONLY; unloaded executor static parameter preflight",
+  "observed_at": "2026-10-14T21:26:48.999Z",
+  "defect_id": "LATE_PARAMETER_PARTIAL_EFFECT",
+  "reproduction": {
+    "tests": 8,
+    "pass": 4,
+    "fail": 4,
+    "fingerprint": "LATE_PARAMETER_PARTIAL_EFFECT"
+  },
+  "patch_attempts": 1,
+  "local_tests": {
+    "targeted": 8,
+    "full": 231,
+    "scoped": 176,
+    "result": "PASS",
+    "schema_positive": 2,
+    "schema_negative": 8
+  },
+  "ci": {
+    "result": "PASS",
+    "commit": "05144fd07174e24474b908604c3f3f5b1527b579",
+    "checkout_commit": "46fad2373c43448f197efe65165276a8ebeb177f",
+    "run_id": 38640094944,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38640094944",
+    "node_tests": 176,
+    "node_fail": 0,
+    "schema_positive": 2,
+    "schema_negative": 8,
+    "browser_proofs": [
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      }
+    ],
+    "artifact": {
+      "id": 11928824410,
+      "digest": "sha256:51c4b4e9b9e00989bb2d60036354f6184e1f8504e42170813d529fa34133aeae",
+      "expires_at": "2026-10-21T21:26:00Z"
+    }
+  },
+  "limits": [
+    "Static detached JSON configuration validation only; dynamic guards still checked at invocation",
+    "Draft late binding and disabled/phrase mismatch behavior unchanged",
+    "No scene import, voice, 3D, staging deployment or device acceptance",
+    "Local Playwright pinned dependency present but browser cache absent; candidate CI supplies Chromium"
+  ],
+  "rollback_sha": "53fca6abe121ccdffafb8364760e12e125b4ee93",
+  "result": "PASS_PREPARATORY_ONLY",
+  "next_action": "Audit SpellExecutor configuration snapshot rejection for non-JSON/accessor/serialization-hook inputs with deterministic tests; preserve JSON draft late binding and invocation guards. Unloaded P1 preparation only; scene/voice integration stays behind P0 runtime Gate."
+}

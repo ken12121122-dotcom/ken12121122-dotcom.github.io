@@ -1,0 +1,211 @@
+{
+  "schema": "nw-p1-card-snapshot-v1",
+  "scope": "P1_PREPARATORY_ONLY; unloaded executor configuration boundary",
+  "result": "PASS_PREPARATORY_ONLY",
+  "observed_at": "2026-10-14T22:26:05.814Z",
+  "defect_id": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE",
+  "reproduction": {
+    "tests": 8,
+    "pass": 2,
+    "fail": 6,
+    "fingerprint": "SPELL_CONFIG_SNAPSHOT_DIVERGENCE"
+  },
+  "patch_attempts": 1,
+  "change": "Snapshot data descriptors before contract validation; validate and execute identical immutable JSON data. Reuse bounded snapshot implementation, no serialization hooks.",
+  "local_tests": {
+    "targeted": 8,
+    "full": 239,
+    "scoped": 184,
+    "fail": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "schema_positive": 2,
+    "schema_negative": 8
+  },
+  "ci": {
+    "result": "PASS",
+    "commit": "ebb803e68a7474190b238a791b1e9a1c256797fe",
+    "checkout_commit": "3a5b2b90496fb45858dbc8c8f8a503509ef48744",
+    "run_id": 38647418806,
+    "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38647418806",
+    "node_tests": 184,
+    "fail": 0,
+    "skipped": 0,
+    "schema_positive": 2,
+    "schema_negative": 8,
+    "browser_proofs": [
+      {
+        "schema": "nw-interaction-session-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "actions": [
+              "a",
+              "capture",
+              "resolve"
+            ],
+            "reason": "MATCHED",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "release",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "a",
+              "capture",
+              "b",
+              "resolve"
+            ],
+            "reason": "STALE_INTERACTION",
+            "result": "PASS"
+          },
+          {
+            "actions": [
+              "b",
+              "capture",
+              "resolve",
+              "resolve"
+            ],
+            "reason": "ALREADY_CONSUMED",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM clicks and candidate context module; no 3D, microphone, network or device acceptance"
+      },
+      {
+        "schema": "nw-interaction-dispatch-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "same-context replay rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with none",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with cancel",
+            "result": "PASS"
+          },
+          {
+            "case": "awaited guard with replace",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+      },
+      {
+        "schema": "nw-action-payload-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "sparse input rejected before handlers",
+            "result": "PASS"
+          },
+          {
+            "case": "accessor and serialization hook rejected without execution",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse output rejected and registry lock reusable",
+            "result": "PASS"
+          },
+          {
+            "case": "valid input detached before async guard",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Candidate ActionRegistry module in Chromium with synthetic payloads; not a real 3D or device interaction"
+      },
+      {
+        "schema": "nw-character-tap-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "success",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "not_matched",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "cancel",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          },
+          {
+            "case": "dispose",
+            "result": "PASS",
+            "scope": "Synthetic click and local feedback only"
+          }
+        ],
+        "scope": "Synthetic DOM click to unloaded character.tap/local-feedback adapter; no 3D or device acceptance"
+      },
+      {
+        "schema": "nw-spell-preflight-browser-v1",
+        "result": "PASS",
+        "checks": [
+          {
+            "case": "valid",
+            "result": "PASS"
+          },
+          {
+            "case": "invalid_later",
+            "result": "PASS"
+          },
+          {
+            "case": "disabled",
+            "result": "PASS"
+          },
+          {
+            "case": "guard_rejected",
+            "result": "PASS"
+          },
+          {
+            "case": "card_getter",
+            "result": "PASS"
+          },
+          {
+            "case": "card_hook",
+            "result": "PASS"
+          },
+          {
+            "case": "non_json",
+            "result": "PASS"
+          },
+          {
+            "case": "sparse_phrase",
+            "result": "PASS"
+          }
+        ],
+        "scope": "Unloaded synthetic spell execution; no 3D/device acceptance"
+      }
+    ],
+    "artifact": {
+      "id": 11933510519,
+      "digest": "sha256:2a039da8f162a543217f51dde1681b012d2e1080fabd48b3ce31bdaec7ebcf09"
+    }
+  },
+  "limits": [
+    "P1_PREPARATORY_ONLY; no live scene imports or UI/card/save changes",
+    "Only ordinary JSON-shaped data is supported; not a sandbox for hostile JS Proxies",
+    "Configuration snapshot depth bounded at 20; registry payload depth remains 12 including tested maximum nesting",
+    "Draft late binding preserved; malformed card throws redacted INVALID_CARD_SCHEMA before any guard/handler",
+    "Local pinned Playwright installed; Headless Shell binary absent in this run. CI provides Chromium",
+    "No staging URL, real 3D/device or voice acceptance"
+  ],
+  "rollback_sha": "8cdd1455099f89680da12eb5ac8c93fd3e2fadae",
+  "next_action": "Audit Rune/Spell structural validator against the published JSON Schemas using deterministic parity fixtures; preserve draft parameter late binding, graph semantics, existing IDs and fixed acceptance Gates. Unloaded P1 contract preparation only."
+}

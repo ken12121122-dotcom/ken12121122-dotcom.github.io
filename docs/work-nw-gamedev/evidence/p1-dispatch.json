@@ -1,0 +1,87 @@
+{
+  "schema": "nw-p1-dispatch-evidence-v1",
+  "review_status": "generated",
+  "observed_at": "2026-10-14T17:33:17.341Z",
+  "base_commit": "64f40d335928906e08dc4b5fb406077b9473bfc3",
+  "candidate_commit": "81219b0057ef7148c0f1291a1df04386f12b4548",
+  "scope": "P1_PREPARATORY_ONLY; unloaded controlled local dispatch adapter",
+  "hypothesis": "An interaction valid before an asynchronous guard may become stale before effect entry.",
+  "patch": "Add a deny-only synchronous registry checkpoint after awaited guard; bind one-use session context and explicit local allowlist in an unloaded dispatcher.",
+  "expected_observable_change": "Replacing/cancelling/expiring/aborting while guard awaits prevents effect entry, and context replay is rejected.",
+  "tests": {
+    "targeted": {
+      "result": "PASS",
+      "tests": 11,
+      "command": "node --test tests/living-library-interaction-dispatch.test.mjs"
+    },
+    "local_node": {
+      "result": "PASS",
+      "total": 197,
+      "fail": 0,
+      "skipped": 0,
+      "command": "node --test tests/*.test.mjs",
+      "environment": "Linux Node v24.19.0"
+    },
+    "json_schema": {
+      "result": "PASS",
+      "positive": 2,
+      "negative": 8,
+      "command": "NODE_PATH=<existing locked tests/browser/node_modules> node tests/browser/schema-contract.cjs"
+    },
+    "local_browser": {
+      "result": "NOT_TESTED",
+      "fingerprint": "PLAYWRIGHT_1194_EXECUTABLE_ABSENT",
+      "attempts": 1,
+      "detail": "Pinned Playwright 1.56.1 loaded successfully; cached Headless Shell binary absent. No product/GPU failure inferred, no unchanged retry."
+    },
+    "ci": {
+      "result": "PASS",
+      "commit": "81219b0057ef7148c0f1291a1df04386f12b4548",
+      "checkout_commit": "d2feb050588bfb4a69897192bc4f218f79214a14",
+      "run_id": 38607322312,
+      "url": "https://github.com/ken12121122-dotcom/ken12121122-dotcom.github.io/actions/runs/38607322312",
+      "node_tests": 142,
+      "scope": "CI Living Library/GPT subset, schema and Chromium fixtures; full repository 197 tests verified locally"
+    },
+    "browser": {
+      "schema": "nw-interaction-dispatch-browser-v1",
+      "result": "PASS",
+      "checks": [
+        {
+          "case": "same-context replay rejected",
+          "result": "PASS"
+        },
+        {
+          "case": "awaited guard with none",
+          "result": "PASS"
+        },
+        {
+          "case": "awaited guard with cancel",
+          "result": "PASS"
+        },
+        {
+          "case": "awaited guard with replace",
+          "result": "PASS"
+        }
+      ],
+      "scope": "Synthetic DOM to candidate session/dispatcher/registry/executor; no scene, microphone, deployment or device claim"
+    }
+  },
+  "limits": [
+    "No scene or microphone integration; no P0/P1 full acceptance",
+    "Checkpoint protects synchronous handler entry; trusted async handlers must recheck before later mutations",
+    "Ending grab invalidates remaining sequence; actual release/return lifecycle remains gated",
+    "Existing executor conservatively marks attempted but rejected effects uncertain; no false rollback",
+    "No staging deployment or Android device tests"
+  ],
+  "privacy_review": "PASS_SYNTHETIC_DATA_ONLY_NO_CREDENTIALS",
+  "live_scene_change": "NONE",
+  "release": "NOT_RELEASED",
+  "rollback_sha": "64f40d335928906e08dc4b5fb406077b9473bfc3",
+  "artifact": {
+    "id": 11915806642,
+    "name": "nw-p0-browser-proof",
+    "expires_at": "2026-10-21T17:32:07Z",
+    "digest": "sha256:7fb640f1ba5e0a5cff63e4c58e6f2ee600d42479b18c36240f99da7879969270"
+  }
+}
