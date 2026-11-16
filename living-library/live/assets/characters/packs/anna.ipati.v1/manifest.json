@@ -1,0 +1,58 @@
+{
+ "schema": "nw-character-pack-v1",
+ "id": "anna.ipati.v1",
+ "version": 1,
+ "name": "安娜 Anna",
+ "subtitle": "走路動畫・102 骨",
+ "rig": {
+  "family": "cc-base",
+  "joints": 102,
+  "bones": "CC_Base_*"
+ },
+ "display": {
+  "height": 2.45,
+  "idleTime": 0.2
+ },
+ "requires": [
+  "EXT_meshopt_compression",
+  "KHR_mesh_quantization",
+  "KHR_texture_basisu"
+ ],
+ "gpu": {
+  "textureFormat": "KTX2 (UASTC normals, ETC1S others)",
+  "estimatedTextureMB": 49
+ },
+ "source": {
+  "file": "assets/3d/anna_ipati_animated.glb",
+  "sha256": "0eb5a6bd0fce27759bcfcea1ac894063f5431bade4742e12e4a80212b2b18aab",
+  "builder": "tools/characters/build-character-pack.mjs"
+ },
+ "changes": [
+  "349 facial morph targets and 19 weight channels removed",
+  "textures resized (1024/512) and encoded as KTX2"
+ ],
+ "credit": {
+  "title": "Anna Ipati (animated)",
+  "author": "Jungle Jim",
+  "url": "https://sketchfab.com/3d-models/anna-ipati-animated-9ef7dbea47854f49b496e8c0a8332157",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by/4.0/",
+  "modified": true
+ },
+ "files": [
+  {
+   "role": "model",
+   "path": "anna.glb",
+   "type": "model/gltf-binary",
+   "bytes": 19515752,
+   "sha256": "709fe5120e0d24d43bb7fbfd439d2419d3f13feb38bc92d9036974daaf6b8685"
+  },
+  {
+   "role": "thumbnail",
+   "path": "thumb.webp",
+   "type": "image/webp",
+   "bytes": 4300,
+   "sha256": "c5ed3077533d42cc0d28c5495ba0eb2b894ead8173d59664ad92db979fe2c64c"
+  }
+ ]
+}

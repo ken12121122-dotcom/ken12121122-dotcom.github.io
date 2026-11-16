@@ -1,10 +1,26 @@
-# 換衣世界人物資產
+# 角色包（Character Packs）
+
+換衣世界的人物以**角色包**提供：玩家在換衣世界按 ⬇ 才下載，下載一次存在手機（Cache Storage），之後離線也能載入；有新版本時顯示更新，🗑 可刪除。原本的守書人內建在程式裡，永遠可用。
+
+格式 `nw-character-pack-v1`（`living-library/live/character-packs.js` 驗證）：
+
+```
+packs/<id>/
+  manifest.json   schema、id、version、name、display、credit、files[{role,path,type,bytes,sha256}]
+  <model>.glb     meshopt 網格 + KTX2/Basis 貼圖（GPU 內保持壓縮）
+  thumb.webp      縮圖
+```
+
+下載時逐檔比對位元組數與 SHA-256，全部通過才寫入；更新失敗保留舊版。同一份 manifest 將來給 App 原生下載共用。
+
+## anna.ipati.v1
 
 | 檔案 | Bytes | SHA-256 |
 |---|---:|---|
-| `anna_phone_v1.glb` | 10,796,376 | `8c63642059acba37dc00f000ba44c585f60a31e1c2891c763032f6f5e55e0041` |
+| `anna.glb` | 19,515,752 | `709fe5120e0d24d43bb7fbfd439d2419d3f13feb38bc92d9036974daaf6b8685` |
+| `thumb.webp` | 4,300 | `c5ed3077533d42cc0d28c5495ba0eb2b894ead8173d59664ad92db979fe2c64c` |
 
-## Attribution — 必須保留
+### Attribution — 必須保留
 
 | | |
 |---|---|
@@ -13,23 +29,22 @@
 | Source | https://sketchfab.com/3d-models/anna-ipati-animated-9ef7dbea47854f49b496e8c0a8332157 |
 | Licence | **CC-BY-4.0** — http://creativecommons.org/licenses/by/4.0/ |
 
-`anna_phone_v1.glb` 是衍生版（已修改），不是原作者的原檔。換衣世界畫面上會顯示同一份作者標示。
+這是**已修改**的衍生版，不是原作者原檔。換衣世界畫面顯示同一份作者標示。
 
-## 來源與產生方式
+### 與母檔差異
 
-- 母檔：`assets/3d/anna_ipati_animated.glb`（用 `assets/3d/join.sh` 還原，SHA-256 `0eb5a6bd…8aab`，未修改）。
-- 產生腳本：`tools/characters/anna-phone-build.mjs`（gltf-transform 4.x + meshoptimizer + sharp）：
-  `node anna-phone-build.mjs anna_ipati_animated.glb anna_phone_v1.glb 1024`
-
-## 與母檔的差異（刻意取捨）
-
-| 項目 | 母檔 | 手機版 |
+| 項目 | 母檔 `assets/3d/anna_ipati_animated.glb` | 角色包 |
 |---|---|---|
-| 大小 | 344 MB | 10.8 MB |
-| 骨架 | 102 joints | 102 joints（每個網格各一份 skin，節點相同） |
-| 骨骼動畫 | 302 TRS channels，約 17.97 s | 302 TRS channels，約 17.95 s（resample） |
-| 表情 Morph | 349 FACS targets + 19 weights channels | **移除**（臉部表情不會動） |
-| 貼圖 | 74 張，131 MB | 38 張 WebP，≤1024 px，約 5.8 MB |
-| 壓縮 | 無 | `EXT_meshopt_compression`、`KHR_mesh_quantization`、`EXT_texture_webp`（皆為 required） |
+| 檔案 | 344 MB | 19.5 MB |
+| 貼圖顯示卡記憶體（估算） | 約 970 MB（解壓 RGBA） | 約 49 MB（KTX2，最壞 8 bpp） |
+| 貼圖 | 74 張，最大 4096 px | 38 張 KTX2：法線 UASTC，其餘 ETC1S；1024 / 512 px |
+| 骨架／動畫 | 102 joints；302 骨骼 channels | 相同（每個網格一份 skin、節點相同；resample） |
+| 表情 Morph | 349 targets + 19 weights channels | **移除**（臉部不會動） |
 
-動畫是原地走路循環；換衣世界以 0.2 s 那一格當站姿，走路時播放循環。
+### 重建
+
+```sh
+assets/3d/join.sh
+node tools/characters/build-character-pack.mjs assets/3d/anna_ipati_animated.glb <pack>/anna.glb
+node tools/characters/make-pack-manifest.mjs <pack> <meta.json>   # bytes 與 SHA-256 一律量測
+```

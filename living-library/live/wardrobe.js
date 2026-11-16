@@ -11,13 +11,8 @@ const KIGAE_PATTERNS=Object.freeze(['着替え','着替','きがえ','キガエ'
 const BOOK_PATTERNS=Object.freeze(['book','ブック','ぶっく']);
 const ROSTER=Object.freeze([
  Object.freeze({id:DEFAULT_ID,name:'守書人',subtitle:'原本的圖書館管理員',kind:'builtin'}),
- Object.freeze({id:'anna.ipati.v1',name:'安娜 Anna',subtitle:'走路動畫・102 骨',kind:'glb',
-  url:'assets/characters/anna_phone_v1.glb',bytes:10796376,
-  sha256:'8c63642059acba37dc00f000ba44c585f60a31e1c2891c763032f6f5e55e0041',
-  height:2.45,idleTime:0.2,
-  credit:Object.freeze({title:'Anna Ipati (animated)',author:'Jungle Jim',
-   url:'https://sketchfab.com/3d-models/anna-ipati-animated-9ef7dbea47854f49b496e8c0a8332157',
-   license:'CC-BY-4.0'})})
+ Object.freeze({id:'anna.ipati.v1',name:'安娜 Anna',subtitle:'走路動畫・102 骨',kind:'pack',
+  manifest:'assets/characters/packs/anna.ipati.v1/manifest.json'})
 ]);
 function byId(id){return ROSTER.find(e=>e.id===id)||null}
 function loadChoice(storage){
@@ -42,29 +37,45 @@ function createState(appliedId=DEFAULT_ID){
  };
  return api;
 }
-/* three.js 的 GLTFLoader 以裸模組名 'three' 匯入。圖書館沒有 importmap，而且引擎可能來自
- * jsdelivr 或 unpkg 備援；為了讓 loader 與已載入的引擎是同一個模組實體，下載同版本 addon
- * 原始碼並把 'three' 與相對路徑改寫成實際網址。 */
+/* three.js 的 addon 以裸模組名 'three' 匯入，而且彼此用相對路徑互相引用。圖書館沒有 importmap，
+ * 引擎也可能來自 jsdelivr 或 unpkg 備援；為了讓 addon 與已載入的引擎是同一個模組實體，下載同版本
+ * addon 原始碼，把 'three' 改成實際引擎網址、相對路徑遞迴改成已改寫模組的 blob 網址。 */
+const IMPORT_RE=/(\bfrom\s*|\bimport\s*)(['"])([^'"]+)\2/g;
 function rewriteImports(source,replacements){
- return String(source).replace(/(\bfrom\s*)(['"])([^'"]+)\2/g,(all,head,quote,spec)=>
+ return String(source).replace(IMPORT_RE,(all,head,quote,spec)=>
   Object.prototype.hasOwnProperty.call(replacements,spec)?head+quote+replacements[spec]+quote:all);
 }
+function relativeImports(source){const out=new Set();for(const m of String(source).matchAll(IMPORT_RE))if(/^\.\.?\//.test(m[3]))out.add(m[3]);return [...out]}
 function addonBase(engineUrl){
  const m=/^(https:\/\/[^?#]+\/three@[0-9.]+\/)build\/three\.module\.js$/.exec(String(engineUrl));
  if(!m)throw Error('不明的 Three.js 引擎來源，無法載入人物模型');
  return m[1]+'examples/jsm/';
 }
-async function createGLTFLoader({engineUrl,fetchText,importModule,makeModuleUrl}){
- const base=addonBase(engineUrl);
- const text=async path=>{const t=await fetchText(base+path);if(typeof t!=='string'||!t)throw Error('addon 下載失敗：'+path);return t};
- const [bufferUtils,skeletonUtils,gltf]=await Promise.all([text('utils/BufferGeometryUtils.js'),text('utils/SkeletonUtils.js'),text('loaders/GLTFLoader.js')]);
- const three={three:engineUrl};
- const bufferUrl=makeModuleUrl(rewriteImports(bufferUtils,three));
- const skeletonUrl=makeModuleUrl(rewriteImports(skeletonUtils,three));
- const gltfUrl=makeModuleUrl(rewriteImports(gltf,{...three,'../utils/BufferGeometryUtils.js':bufferUrl,'../utils/SkeletonUtils.js':skeletonUrl}));
- const [loaderModule,decoderModule]=await Promise.all([importModule(gltfUrl),importModule(base+'libs/meshopt_decoder.module.js')]);
+function createAddonImporter({engineUrl,fetchText,importModule,makeModuleUrl}){
+ const base=addonBase(engineUrl),urls=new Map();
+ function moduleUrl(path,trail=[]){
+  if(trail.includes(path))throw Error('addon 循環引用：'+trail.concat(path).join(' → '));
+  if(!urls.has(path))urls.set(path,(async()=>{
+   const source=await fetchText(base+path);if(typeof source!=='string'||!source)throw Error('addon 下載失敗：'+path);
+   const map={three:engineUrl};
+   for(const spec of relativeImports(source))map[spec]=await moduleUrl(new URL(spec,'https://x/'+path).pathname.slice(1),trail.concat(path));
+   // A blob: module has no usable import.meta.url for relative lookups (KTX2Loader finds its WASM that way).
+   return makeModuleUrl(rewriteImports(source,map).replace(/\bimport\.meta\.url\b/g,JSON.stringify(base+path)));
+  })());
+  return urls.get(path);
+ }
+ return {base,moduleUrl,load:async path=>importModule(await moduleUrl(path))};
+}
+async function createGLTFLoader({engineUrl,fetchText,importModule,makeModuleUrl,renderer}){
+ const addons=createAddonImporter({engineUrl,fetchText,importModule,makeModuleUrl});
+ const [gltfModule,ktx2Module,decoderModule]=await Promise.all([addons.load('loaders/GLTFLoader.js'),addons.load('loaders/KTX2Loader.js'),
+  importModule(addons.base+'libs/meshopt_decoder.module.js')]);
  const decoder=decoderModule.MeshoptDecoder;if(decoder?.ready)await decoder.ready;
- const loader=new loaderModule.GLTFLoader();loader.setMeshoptDecoder(decoder);
+ const loader=new gltfModule.GLTFLoader();loader.setMeshoptDecoder(decoder);
+ // GPU-compressed textures (KTX2/Basis) stay compressed in video memory on the phone.
+ const ktx2=new ktx2Module.KTX2Loader().setTranscoderPath(addons.base+'libs/basis/');
+ if(renderer)ktx2.detectSupport(renderer);
+ loader.setKTX2Loader(ktx2);
  return loader;
 }
 /* 把 glTF 場景整理成可掛在 keeper 底下的外觀：腳底貼地、身高統一、面向 +Z。 */
@@ -73,10 +84,6 @@ function fitTransform(box,targetHeight){
  const s=targetHeight/h;
  return {scale:s,offset:{x:-(box.min.x+box.max.x)/2*s,y:-box.min.y*s,z:-(box.min.z+box.max.z)/2*s}};
 }
-function creditText(entry){
- const c=entry?.credit;if(!c)return '';
- return '模型：'+c.title+'｜作者 '+c.author+'｜授權 '+c.license;
-}
 return Object.freeze({STORAGE_KEY,DEFAULT_ID,ROSTER,KIGAE_PATTERNS,BOOK_PATTERNS,byId,loadChoice,saveChoice,createState,
- rewriteImports,addonBase,createGLTFLoader,fitTransform,creditText});
+ rewriteImports,relativeImports,addonBase,createAddonImporter,createGLTFLoader,fitTransform});
 });

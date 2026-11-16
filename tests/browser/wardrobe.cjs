@@ -3,7 +3,7 @@
  * Software GPU 政策只在本測試回應中略過，以驗證功能，不代表手機 GPU 效能。 */
 const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),out=process.env.NW_BROWSER_OUTPUT||path.join(root,'test-evidence');
-const mime={'.js':'text/javascript','.html':'text/html','.json':'application/json','.css':'text/css','.glb':'model/gltf-binary'};
+const mime={'.js':'text/javascript','.html':'text/html','.json':'application/json','.css':'text/css','.glb':'model/gltf-binary','.webp':'image/webp'};
 const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resolve('three')));
 (async()=>{
  await fs.mkdir(out,{recursive:true});
@@ -17,11 +17,11 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   // Same pinned three@0.185.0 files, served from the local package by their CDN path.
   await context.route(/https:\/\/(cdn\.jsdelivr\.net\/npm|unpkg\.com)\/three@0\.185\.0\/(.*)$/,async route=>{
    const rel=new URL(route.request().url()).pathname.replace(/^\/(npm\/)?three@0\.185\.0\//,'');
-   try{await route.fulfill({contentType:'text/javascript',body:await fs.readFile(path.join(threeDir,rel),'utf8')})}catch{await route.fulfill({status:404,body:''})}
+   try{await route.fulfill({contentType:rel.endsWith('.wasm')?'application/wasm':'text/javascript',body:await fs.readFile(path.join(threeDir,rel))})}catch{await route.fulfill({status:404,body:''})}
   });
   await context.route('**/render-capability.js?*',route=>route.fulfill({contentType:'text/javascript',body:'window.LivingRenderCapability={isSoftwareRenderer:()=>false};'}));
   await context.route('https://api.github.com/**',route=>route.abort());
-  page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
+  page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));page.on('console',m=>{if(/wardrobe/.test(m.text()))console.log('PAGE',m.text(),m.location().url)});
   await page.addInitScript(()=>{window.SpeechRecognition=class{constructor(){window.__rec=this}start(){setTimeout(()=>this.onstart?.(),0)}abort(){}}});
   const url='http://127.0.0.1:'+server.address().port+'/living-library/live/index.html';
   await page.goto(url);await page.waitForFunction(()=>!!window.LivingScene?.wardrobe,{timeout:60000});
@@ -50,13 +50,23 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   await page.waitForTimeout(400);await say('Book');await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('atlas-focused')),false,'Book is ignored while dressing');
 
+  const glbRequests=[];page.on('request',r=>{if(r.url().endsWith('/anna.ipati.v1/anna.glb'))glbRequests.push(r.url())});
+  page.on('dialog',d=>d.accept());
   await page.locator('#wardrobeNext').click();
   assert.equal(await page.locator('#wardrobeName').innerText(),'安娜 Anna');
-  assert.match(await page.locator('#wardrobeCredit').innerText(),/Jungle Jim.*CC-BY-4\.0/);
-  await page.waitForFunction(()=>!document.getElementById('wardrobeConfirm').disabled,{timeout:120000});
-  assert.equal(await page.locator('#wardrobeStatus').innerText(),'');
+  await page.waitForFunction(()=>/尚未下載/.test(document.getElementById('wardrobeStatus').textContent)).catch(async e=>{throw Error('status: '+await page.locator('#wardrobeStatus').innerText())});
+  assert.match(await page.locator('#wardrobeStatus').innerText(),/18\.6 MB|19 MB/);
+  assert.equal(await page.locator('#wardrobeDownload').isVisible(),true);assert.equal(await page.locator('#wardrobeConfirm').isDisabled(),true);
+  assert.match(await page.locator('#wardrobeCredit').innerText(),/Jungle Jim.*CC-BY-4\.0（已修改）/);
+  assert.equal(glbRequests.length,0,'nothing is downloaded until the player asks');
+  await page.screenshot({path:path.join(out,'wardrobe-anna-download.png')});
+  await page.locator('#wardrobeDownload').click();
+  await page.waitForFunction(()=>!document.getElementById('wardrobeConfirm').disabled,{timeout:180000});
+  assert.match(await page.locator('#wardrobeStatus').innerText(),/已下載・v1/);
+  assert.equal(glbRequests.length,1);
+  w=await ward();assert.equal(w.durable,true);assert.equal(w.packs['anna.ipati.v1'].version,1);
   await page.waitForTimeout(600);await page.screenshot({path:path.join(out,'wardrobe-anna.png')});
-  report.checks.push('Anna GLB (meshopt + webp) loads through the rewritten GLTFLoader and shows CC-BY credit');
+  report.checks.push('pack downloads once on request, SHA-256 verified, stored in Cache Storage; KTX2 + meshopt GLB renders with CC-BY credit');
 
   // Back = no change.
   await page.locator('#wardrobeBack').click();w=await ward();
@@ -72,10 +82,25 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   await page.waitForTimeout(500);await page.screenshot({path:path.join(out,'library-anna.png')});
   report.checks.push('換上 wears Anna under the same keeper root and saves the choice');
 
-  // Saved outfit is restored after reload; original keeper stays the fallback.
+  // Reload with the pack files AND manifest unreachable: restored from the phone only.
+  await context.route(/\/assets\/characters\/packs\//,route=>route.abort());
   await page.reload();await page.waitForFunction(()=>window.LivingScene?.wardrobe?.()?.worn==='anna.ipati.v1',{timeout:120000});
-  report.checks.push('reload restores Anna');
+  assert.equal(glbRequests.length,1,'no re-download after reload');
   await page.screenshot({path:path.join(out,'library-anna-reload.png')});
+  report.checks.push('reload restores Anna offline from the stored pack (pack URLs blocked)');
+  await context.unroute(/\/assets\/characters\/packs\//);
+
+  // Delete the worn pack: falls back to the original keeper.
+  await page.mouse.click(vp.width*.5,vp.height*.5);
+  const startVoice=async()=>{for(const [fx,fy] of [[.5,.5],[.5,.45],[.5,.55],[.5,.4],[.5,.6]]){if(await page.evaluate(()=>!!window.__rec?.onresult))return;await page.mouse.click(vp.width*fx,vp.height*fy);await page.waitForTimeout(250)}};
+  await startVoice();await page.waitForTimeout(300);await say('きがえ');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
+  assert.equal(await page.locator('#wardrobeName').innerText(),'安娜 Anna');
+  await page.waitForFunction(()=>!document.getElementById('wardrobeRemove').hidden);
+  await page.locator('#wardrobeRemove').click();
+  await page.waitForFunction(()=>/尚未下載/.test(document.getElementById('wardrobeStatus').textContent));
+  w=await ward();assert.equal(w.applied,'keeper.default');assert.equal(w.worn,null);assert.equal(w.defaultVisible,true);assert.deepEqual(w.packs,{});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nw-avatar-wardrobe-v1')),'keeper.default');
+  report.checks.push('🗑 removes the pack; the worn outfit falls back to the original keeper');
 
   assert.deepEqual(report.errors,[],'no page errors');
   console.log(JSON.stringify(report,null,1));

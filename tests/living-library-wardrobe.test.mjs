@@ -6,20 +6,24 @@ import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url);
 const W=require('../living-library/live/wardrobe.js');
 const Voice=require('../living-library/live/atlas-voice.js');
+const P=require('../living-library/live/character-packs.js');
 const live=new URL('../living-library/live/',import.meta.url);
 const html=readFileSync(new URL('index.html',live),'utf8');
 
 function memory(){const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),m}}
 
-test('roster keeps the original keeper as default and every GLB entry carries CC-BY credit',()=>{
+test('roster keeps the original keeper as default; every pack manifest is valid, measured and credited',()=>{
  assert.equal(W.ROSTER[0].id,W.DEFAULT_ID);assert.equal(W.ROSTER[0].kind,'builtin');
- for(const e of W.ROSTER.filter(e=>e.kind==='glb')){
-  assert.ok(e.credit?.author&&e.credit?.license&&e.credit?.url,e.id);
-  const bytes=readFileSync(new URL(e.url,live));
-  assert.equal(bytes.length,e.bytes,e.id);
-  assert.equal(createHash('sha256').update(bytes).digest('hex'),e.sha256,e.id);
-  const readme=readFileSync(new URL('assets/characters/README.md',live),'utf8');
-  assert.ok(readme.includes(e.sha256)&&readme.includes(e.credit.author),'README credit/hash for '+e.id);
+ for(const e of W.ROSTER.filter(e=>e.kind==='pack')){
+  const url=new URL(e.manifest,live),m=P.validateManifest(JSON.parse(readFileSync(url,'utf8')));
+  assert.equal(m.id,e.id);assert.ok(m.credit.author&&m.credit.license&&m.credit.modified===true);
+  for(const f of m.files){const bytes=readFileSync(new URL(f.path,url));
+   assert.equal(bytes.length,f.bytes,f.path);assert.equal(createHash('sha256').update(bytes).digest('hex'),f.sha256,f.path)}
+  const glb=readFileSync(new URL(P.fileOf(m,'model').path,url)),json=JSON.parse(glb.subarray(20,20+glb.readUInt32LE(12)).toString('utf8'));
+  for(const ext of m.requires)assert.ok(json.extensionsUsed.includes(ext),ext);
+  assert.ok(json.images.every(i=>i.mimeType==='image/ktx2'||json.textures.every(t=>t.extensions?.KHR_texture_basisu)),'all textures GPU-compressed');
+  assert.equal(json.skins[0].joints.length,102);assert.ok(json.animations[0].channels.length>=300);
+  assert.ok(json.asset.extras?.author?.includes('Jungle Jim'),'embedded credit kept');
  }
 });
 
@@ -67,21 +71,29 @@ test('legacy function commands and default en-US language still work',()=>{
  assert.throws(()=>Voice.create({host:{},commands:{x:{patterns:['x']}}}));
 });
 
-test('addon loader rewrites bare three imports to the exact engine module that loaded',async()=>{
+test('addon importer rewrites bare three and resolves relative addon imports to the same engine',async()=>{
  const engine='https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js';
  assert.equal(W.addonBase(engine),'https://cdn.jsdelivr.net/npm/three@0.185.0/examples/jsm/');
  assert.equal(W.addonBase('https://unpkg.com/three@0.185.0/build/three.module.js'),'https://unpkg.com/three@0.185.0/examples/jsm/');
  assert.throws(()=>W.addonBase('https://evil.example/x.js'));assert.throws(()=>W.addonBase(''));
- const src="import {\n A } from 'three';\nimport { t } from '../utils/BufferGeometryUtils.js';\nimport {c} from \"../utils/SkeletonUtils.js\";\nexport {x} from './keep.js';";
- const out=W.rewriteImports(src,{three:engine,'../utils/BufferGeometryUtils.js':'blob:b','../utils/SkeletonUtils.js':'blob:s'});
- assert.match(out,new RegExp("from '"+engine.replace(/[.]/g,'\\.')+"'"));assert.match(out,/from 'blob:b'/);assert.match(out,/from "blob:s"/);assert.match(out,/from '.\/keep.js'/);
- const fetched=[],imported=[];let n=0;
- class GLTFLoader{setMeshoptDecoder(d){this.d=d}}
- const loader=await W.createGLTFLoader({engineUrl:engine,fetchText:async u=>{fetched.push(u);return "import {X} from 'three';"},
-  makeModuleUrl:s=>{assert.ok(!s.includes("'three'"));return 'blob:'+(++n)},
-  importModule:async u=>{imported.push(u);return u.endsWith('meshopt_decoder.module.js')?{MeshoptDecoder:{ready:Promise.resolve()}}:{GLTFLoader}}});
- assert.ok(loader instanceof GLTFLoader&&loader.d);assert.equal(fetched.length,3);assert.ok(fetched.every(u=>u.startsWith(W.addonBase(engine))));
- assert.deepEqual(imported,['blob:3',W.addonBase(engine)+'libs/meshopt_decoder.module.js']);
+ const files={'loaders/GLTFLoader.js':"import {A} from 'three';\nimport { t } from '../utils/BufferGeometryUtils.js';\nimport {c} from \"../utils/SkeletonUtils.js\";",
+  'loaders/KTX2Loader.js':"import {B} from 'three';import {W} from '../utils/WorkerPool.js';import {Z} from '../libs/zstddec.module.js';import {S} from '../math/ColorSpaces.js';",
+  'utils/BufferGeometryUtils.js':"import {X} from 'three';",'utils/SkeletonUtils.js':"import {Y} from 'three';",'utils/WorkerPool.js':'export class WorkerPool{}',
+  'libs/zstddec.module.js':'export class ZSTDDecoder{}','math/ColorSpaces.js':"import {C} from 'three';"};
+ const fetched=[],modules=new Map();let n=0;
+ class GLTFLoader{setMeshoptDecoder(d){this.d=d}setKTX2Loader(k){this.k=k}}
+ class KTX2Loader{setTranscoderPath(p){this.p=p;return this}detectSupport(r){this.r=r;return this}}
+ const loader=await W.createGLTFLoader({engineUrl:engine,renderer:'R',
+  fetchText:async u=>{fetched.push(u);const k=u.slice(W.addonBase(engine).length);assert.ok(k in files,'unexpected fetch '+k);return files[k]},
+  makeModuleUrl:src=>{const id='blob:'+(++n);modules.set(id,src);return id},
+  importModule:async u=>u.endsWith('meshopt_decoder.module.js')?{MeshoptDecoder:{ready:Promise.resolve()}}:modules.get(u).includes('{A}')?{GLTFLoader}:{KTX2Loader}});
+ assert.ok(loader instanceof GLTFLoader&&loader.d&&loader.k instanceof KTX2Loader);
+ assert.equal(loader.k.p,W.addonBase(engine)+'libs/basis/');assert.equal(loader.k.r,'R');
+ assert.equal(new Set(fetched).size,fetched.length,'each addon fetched once');assert.equal(fetched.length,7);
+ for(const src of modules.values()){assert.ok(!/from\s*['"](three|\.\.?\/)/.test(src.replace(engine,'')),src)}
+ const cyc={'a.js':"import {b} from './b.js';",'b.js':"import {a} from './a.js';"};
+ const imp=W.createAddonImporter({engineUrl:engine,fetchText:async u=>cyc[u.split('/').pop()],importModule:async()=>({}),makeModuleUrl:()=>'blob:x'});
+ await assert.rejects(imp.moduleUrl('a.js'),/循環/);
 });
 
 test('fitTransform puts feet on the floor, centres X/Z and normalises height',()=>{
