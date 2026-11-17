@@ -1,5 +1,5 @@
 /* 換衣世界：真實瀏覽器 + 實際 index.html + 實際 Anna GLB。
- * 語音以假的 SpeechRecognition 注入「換衣服」文字；這不是麥克風或手機驗收。
+ * 語音以假的 SpeechRecognition 注入「百面相」文字；這不是麥克風或手機驗收。
  * Software GPU 政策只在本測試回應中略過，以驗證功能，不代表手機 GPU 效能。 */
 const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),out=process.env.NW_BROWSER_OUTPUT||path.join(root,'test-evidence');
@@ -37,15 +37,15 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
    if(await page.evaluate(()=>!!window.__rec)){started=true;break}
   }
   assert.ok(started,'tapping the character starts voice listening');
-  assert.equal(await page.evaluate(()=>window.__rec.lang),'zh-TW');
-  await page.waitForFunction(()=>/換衣服/.test(document.getElementById('atlasVoiceState').textContent));
+  assert.equal(await page.evaluate(()=>window.__rec.lang),'ja-JP');
+  await page.waitForFunction(()=>/百面相/.test(document.getElementById('atlasVoiceState').textContent));
   const say=text=>page.evaluate(t=>{const r=window.__rec,k=r.__i=(r.__i||0)+1,results=[];results[k]=Object.assign([{transcript:t}],{isFinal:true});r.onresult({resultIndex:k,results})},text);
-  await say('換衣服');
+  await say('百面相');
   await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
   assert.ok(await page.evaluate(()=>document.body.classList.contains('wardrobe-open')));
   assert.equal(await page.locator('#wardrobeName').innerText(),'守書人');
   await page.screenshot({path:path.join(out,'wardrobe-keeper.png')});
-  report.checks.push('spell 換衣服 opens the dressing world; HUD hidden; starts at the worn outfit');
+  report.checks.push('spell 百面相 opens the dressing world; HUD hidden; starts at the worn outfit');
 
   await page.waitForTimeout(400);await say('Book');await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('atlas-focused')),false,'Book is ignored while dressing');
@@ -73,7 +73,7 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   assert.equal(w.open,false);assert.equal(w.applied,'keeper.default');assert.equal(w.defaultVisible,true);assert.equal(w.worn,null);
   report.checks.push('返回 leaves without changing the outfit');
 
-  await page.waitForTimeout(400);await say('我要換衣服');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
+  await page.waitForTimeout(400);await say('ひゃくめんそう');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
   await page.locator('#wardrobeNext').click();await page.waitForFunction(()=>!document.getElementById('wardrobeConfirm').disabled);
   await page.locator('#wardrobeConfirm').click();
   w=await ward();assert.equal(w.applied,'anna.ipati.v1');assert.equal(w.worn,'anna.ipati.v1');assert.equal(w.defaultVisible,false);
@@ -95,7 +95,7 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   const startVoice=async()=>{for(let round=0;round<3;round++)for(const [fx,fy] of [[.5,.5],[.5,.45],[.5,.55],[.5,.4],[.5,.6],[.45,.5],[.55,.5]]){
    await page.mouse.click(vp.width*fx,vp.height*fy);await page.waitForTimeout(400);if(await page.evaluate(()=>!!window.__rec?.onresult))return}
    throw Error('could not start voice by tapping the character')};
-  await startVoice();await page.waitForTimeout(300);await say('换衣服');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
+  await startVoice();await page.waitForTimeout(300);await say('百面相！');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
   assert.equal(await page.locator('#wardrobeName').innerText(),'安娜 Anna');
   await page.waitForFunction(()=>!document.getElementById('wardrobeRemove').hidden);
   await page.locator('#wardrobeRemove').click();

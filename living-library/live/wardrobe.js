@@ -5,10 +5,10 @@
 'use strict';
 const STORAGE_KEY='nw-avatar-wardrobe-v1';
 const DEFAULT_ID='keeper.default';
-// 換衣咒語：「換衣服」。辨識引擎可能回傳繁體或簡體字。
-const SPELL_PATTERNS=Object.freeze(['換衣服','换衣服']);
-// 中文辨識器通常保留英文 Book；少數會音譯成「布克」。
-const BOOK_PATTERNS=Object.freeze(['book','布克']);
+// 換衣咒語：百面相（ひゃくめんそう／hyakumensō）。辨識引擎可能回傳漢字、假名或羅馬拼音。
+const SPELL_PATTERNS=Object.freeze(['百面相','ひゃくめんそう','ヒャクメンソウ','hyakumensou','hyakumenso']);
+// 日語辨識器常把英語 Book 寫成片假名；原生語音可能回傳英文或中文音譯。
+const BOOK_PATTERNS=Object.freeze(['book','ブック','ぶっく','布克']);
 const ROSTER=Object.freeze([
  Object.freeze({id:DEFAULT_ID,name:'守書人',subtitle:'原本的圖書館管理員',kind:'builtin'}),
  Object.freeze({id:'anna.ipati.v1',name:'安娜 Anna',subtitle:'走路動畫・102 骨',kind:'pack',
