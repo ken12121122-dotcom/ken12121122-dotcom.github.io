@@ -3,13 +3,14 @@
 'use strict';
 /* A command is either a function (its key is the English word) or {patterns,run}.
  * ASCII patterns need word boundaries (notebook is not book); other scripts such as
- * 百面相／ひゃくめんそう／ブック match as substrings (no spaces in CJK). */
+ * 百面相／ひゃくめんそう／ブック match as substrings, tolerating spaces a recognizer
+ * may insert between characters (転移 解除). */
 function escape(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
 function compile(commands){
  return Object.keys(commands).map(key=>{const c=commands[key],run=typeof c==='function'?c:c&&c.run;
   const patterns=(typeof c==='function'?[key]:(c&&c.patterns)||[key]).map(String).filter(Boolean).sort((a,b)=>b.length-a.length);
   if(typeof run!=='function'||!patterns.length)throw Error('語音指令設定錯誤：'+key);
-  const source=patterns.map(p=>/^[\x20-\x7e]+$/.test(p)?'(?<![a-z])'+escape(p)+'(?![a-z])':escape(p)).join('|');
+  const source=patterns.map(p=>/^[\x20-\x7e]+$/.test(p)?'(?<![a-z])'+escape(p)+'(?![a-z])':[...p].map(escape).join('\\s*')).join('|');
   return {key,run,source};
  });
 }

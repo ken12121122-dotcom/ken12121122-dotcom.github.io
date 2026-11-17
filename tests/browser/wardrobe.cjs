@@ -38,14 +38,27 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   }
   assert.ok(started,'tapping the character starts voice listening');
   assert.equal(await page.evaluate(()=>window.__rec.lang),'ja-JP');
-  await page.waitForFunction(()=>/百面相/.test(document.getElementById('atlasVoiceState').textContent));
+  await page.waitForFunction(()=>/百面相.*転移解除/.test(document.getElementById('atlasVoiceState').textContent));
   const say=text=>page.evaluate(t=>{const r=window.__rec,k=r.__i=(r.__i||0)+1,results=[];results[k]=Object.assign([{transcript:t}],{isFinal:true});r.onresult({resultIndex:k,results})},text);
   await say('百面相');
   await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
   assert.ok(await page.evaluate(()=>document.body.classList.contains('wardrobe-open')));
   assert.equal(await page.locator('#wardrobeName').innerText(),'守書人');
+  assert.match(await page.locator('#spellCast').innerText(),/百面相！\s*ひゃくめんそう/);
+  assert.match(await page.locator('#wardrobeHint').innerText(),/転移解除/);
   await page.screenshot({path:path.join(out,'wardrobe-keeper.png')});
-  report.checks.push('spell 百面相 opens the dressing world; HUD hidden; starts at the worn outfit');
+  report.checks.push('spell 百面相 opens the dressing world with the cast effect; HUD hidden; starts at the worn outfit');
+
+  // Saying the entry spell again does NOT toggle out; only the one return spell leaves.
+  await page.waitForTimeout(400);await say('百面相');await page.waitForTimeout(300);
+  assert.equal(await page.locator('#wardrobeWorld').isHidden(),false);
+  assert.match(await page.locator('#toast').innerText(),/已經在換衣世界/);
+  await page.waitForTimeout(400);await say('転移 解除');await page.waitForFunction(()=>document.getElementById('wardrobeWorld').hidden);
+  assert.match(await page.locator('#spellCast').innerText(),/転移解除！/);
+  await page.waitForTimeout(400);await say('てんいかいじょ');await page.waitForTimeout(300);
+  assert.match(await page.locator('#toast').innerText(),/已經在圖書館/);
+  await page.waitForTimeout(400);await say('ひゃくめんそう');await page.waitForFunction(()=>!document.getElementById('wardrobeWorld').hidden);
+  report.checks.push('repeat entry spell stays; universal return spell 転移解除 (spaced or kana) leaves; return at home only informs');
 
   await page.waitForTimeout(400);await say('Book');await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('atlas-focused')),false,'Book is ignored while dressing');
@@ -91,6 +104,9 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
   await context.unroute(/\/assets\/characters\/packs\//);
 
   // Delete the worn pack: falls back to the original keeper.
+  // The library's own update notice may reappear after a reload; dismiss it like a player would.
+  await page.waitForTimeout(1500);
+  if(await page.locator('#llUpdateDialog').evaluate(e=>e.open).catch(()=>false))await page.locator('#llUpdateDone').click();
   // Voice starts only from the existing character tap; a tap elsewhere stops it, so check after every tap.
   const startVoice=async()=>{for(let round=0;round<3;round++)for(const [fx,fy] of [[.5,.5],[.5,.45],[.5,.55],[.5,.4],[.5,.6],[.45,.5],[.55,.5]]){
    await page.mouse.click(vp.width*fx,vp.height*fy);await page.waitForTimeout(400);if(await page.evaluate(()=>!!window.__rec?.onresult))return}

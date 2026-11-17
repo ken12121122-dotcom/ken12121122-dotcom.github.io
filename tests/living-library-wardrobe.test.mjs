@@ -106,7 +106,9 @@ test('fitTransform puts feet on the floor, centres X/Z and normalises height',()
 test('index wiring: wardrobe loads before voice, skins stay under protected keeper, P0 scan semantics untouched',()=>{
  const list=html.match(/const scripts=\[([^\]]+)\]/)[1];
  assert.ok(list.indexOf("'wardrobe.js'")>=0&&list.indexOf("'wardrobe.js'")<list.indexOf("'atlas-voice.js'"));
- assert.match(html,/dress:\{patterns:window\.LivingWardrobe\.SPELL_PATTERNS/);
+ assert.ok(list.indexOf("'world-portal.js'")>=0&&list.indexOf("'world-portal.js'")<list.indexOf("'atlas-voice.js'"));
+ assert.match(html,/worldPortal\.register\(\{id:'wardrobe'/);assert.match(html,/patterns:window\.LivingWardrobe\.SPELL_PATTERNS/);
+ assert.match(html,/commands:worldPortal\.voiceCommands\(/);
  assert.match(html,/lang:'ja-JP'/);
  assert.match(html,/const keeperDefaultParts=\[\.\.\.keeper\.children\];/);
  const block=html.slice(html.indexOf('function createWardrobeWorld(){'),html.indexOf('wardrobeWorld=createWardrobeWorld();'));

@@ -286,7 +286,19 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 #wardrobeProgress{width:min(70vw,280px);height:8px;accent-color:#d7b982}
 #wardrobeProgress[hidden]{display:none}
 #wardrobeHint{font-size:11px;color:#c9a96e}
-body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(.toast):not(script):not(style):not(dialog){visibility:hidden!important}
+body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(#worldVeil):not(#spellCast):not(.toast):not(script):not(style):not(dialog){visibility:hidden!important}
+/* 咒語詠唱與世界轉移：唸出的咒語大字浮現；換場時金光遮幕蓋住場景切換。 */
+#spellCast{position:fixed;left:0;right:0;top:38%;z-index:26;text-align:center;pointer-events:none;opacity:0;
+ font:700 clamp(40px,13vw,76px)/1.1 "Noto Serif TC","Noto Serif JP",Georgia,serif;letter-spacing:.12em;color:#fff3d2;
+ text-shadow:0 0 18px #ffd37a,0 0 42px #e7a33c,0 0 80px #b8742088}
+#spellCast small{display:block;font-size:.26em;letter-spacing:.4em;color:#f0cf8e;margin-top:10px}
+#spellCast.show{animation:spellCast 1.05s ease-out forwards}
+@keyframes spellCast{0%{opacity:0;transform:scale(1.6);filter:blur(6px)}18%{opacity:1;transform:scale(1);filter:blur(0)}70%{opacity:1}100%{opacity:0;transform:scale(.96)}}
+#worldVeil{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;transition:opacity .18s ease-in;
+ background:radial-gradient(circle at 50% 48%,#fff8e2 0%,#f5d58f 28%,#b98a3fcc 55%,#0b1322 100%)}
+#worldVeil.on{opacity:1}
+#worldVeil.off{transition:opacity .34s ease-out}
+@media (prefers-reduced-motion:reduce){#spellCast.show{animation:none;opacity:1}#worldVeil{display:none}}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -304,15 +316,17 @@ body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(.toast):not(script):not
  <button id="permanentBuildCancel" type="button" aria-label="取消本次擺放" title="取消擺放">×</button>
 </div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
+<div id="worldVeil" aria-hidden="true"></div>
+<div id="spellCast" aria-hidden="true"></div>
 <section id="wardrobeWorld" hidden aria-label="換衣世界" aria-modal="true" role="dialog">
- <header><small>咒語 · 百面相 ひゃくめんそう</small><h2>換衣世界</h2></header>
+ <header><small>百面相 · ひゃくめんそう</small><h2>換衣世界</h2></header>
  <div id="wardrobeStage"><button id="wardrobePrev" type="button" aria-label="上一個角色" title="上一個">◀</button><button id="wardrobeNext" type="button" aria-label="下一個角色" title="下一個">▶</button></div>
  <footer>
   <div id="wardrobeName"></div><div id="wardrobeSub"></div><div id="wardrobeStatus" role="status" aria-live="polite"></div>
   <div id="wardrobeActions"><button id="wardrobeBack" type="button" aria-label="不更換，返回圖書館" title="返回">↩</button><button id="wardrobeDownload" type="button" aria-label="下載角色包" title="下載" hidden>⬇</button><button id="wardrobeRemove" type="button" aria-label="刪除這個角色包" title="刪除" hidden>🗑</button><button id="wardrobeConfirm" type="button" aria-label="換上這個角色並返回圖書館" title="換上">✓</button></div>
   <progress id="wardrobeProgress" max="1" value="0" hidden aria-label="角色包下載進度"></progress>
   <div id="wardrobeCredit"></div>
-  <div id="wardrobeHint">再唸一次「百面相」也可以返回</div>
+  <div id="wardrobeHint">唸「転移解除（てんいかいじょ）」返回圖書館</div>
  </footer>
 </section>
 <dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
@@ -478,7 +492,7 @@ body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(.toast):not(script):not
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','character-packs.js','wardrobe.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','character-packs.js','world-portal.js','wardrobe.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1502,7 +1516,7 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
-let atlasRuntime=null,atlasVoice=null,wardrobeWorld=null;
+let atlasRuntime=null,atlasVoice=null,wardrobeWorld=null,worldPortal=null;
 let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
@@ -2236,20 +2250,21 @@ function createWardrobeWorld(){
   atlasRuntime?.exitFocus?.();walkKeys.clear();resetJoystick(false);
   state.enter();spin=0;turntable.rotation.y=0;fitView();
   ui.root.hidden=false;document.body.classList.add('wardrobe-open');
-  showEntry(state.current);toast('進入換衣世界');syncRender();invalidate();
+  showEntry(state.current);syncRender();invalidate();
  }
  function leave(apply){
   if(!state.open)return;
   const before=state.applied,id=apply?state.confirm():state.leave();
   turntable.clear();walkKeys.clear();ui.root.hidden=true;document.body.classList.remove('wardrobe-open');
   if(id===W.DEFAULT_ID)wear(null);else if(skins.has(id))wear(id);else{state.revert(before);wear(skins.has(before)?before:null)}
-  if(apply){W.saveChoice(localStorage,state.applied);toast('已換上：'+(skins.get(state.applied)?.manifest.name||W.byId(state.applied).name))}else toast('返回圖書館');
+  if(apply){W.saveChoice(localStorage,state.applied);toast('已換上：'+(skins.get(state.applied)?.manifest.name||W.byId(state.applied).name))}
   syncRender();invalidate();
  }
  ui.prev.addEventListener('click',()=>{showEntry(state.prev())});
  ui.next.addEventListener('click',()=>{showEntry(state.next())});
  ui.confirm.addEventListener('click',()=>leave(true));
- ui.back.addEventListener('click',()=>leave(false));
+ // ↩ and Escape go through the same portal return as the spell, with the same effect.
+ ui.back.addEventListener('click',()=>worldPortal?worldPortal.back():leave(false));
  ui.download.addEventListener('click',downloadCurrent);
  ui.remove.addEventListener('click',removeCurrent);
  ui.stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag={x:e.clientX,rot:turntable.rotation.y};ui.stage.setPointerCapture?.(e.pointerId)});
@@ -2257,7 +2272,7 @@ function createWardrobeWorld(){
  const endDrag=()=>{drag=null};ui.stage.addEventListener('pointerup',endDrag);ui.stage.addEventListener('pointercancel',endDrag);
  // Capture phase: while dressing, arrows and Escape belong to the wardrobe, not the book list behind it.
  window.addEventListener('keydown',e=>{if(!state.open)return;
-  if(e.key==='Escape')leave(false);else if(e.key==='ArrowLeft')showEntry(state.prev());else if(e.key==='ArrowRight')showEntry(state.next());else return;
+  if(e.key==='Escape'){worldPortal?worldPortal.back():leave(false)}else if(e.key==='ArrowLeft')showEntry(state.prev());else if(e.key==='ArrowRight')showEntry(state.next());else return;
   e.preventDefault();e.stopImmediatePropagation()},true);
  window.addEventListener('resize',()=>{if(state.open){fitView();invalidate()}});
  // Restore the saved outfit from the phone only (never downloads on startup); failure keeps the original keeper.
@@ -2279,13 +2294,33 @@ function createWardrobeWorld(){
  };
 }
 wardrobeWorld=createWardrobeWorld();
-atlasVoice=window.LivingAtlasVoice.create({host:window,lang:'ja-JP',commands:{
- book:{patterns:window.LivingWardrobe.BOOK_PATTERNS,run:()=>{if(wardrobeWorld.open)return;atlasRuntime.toggle();syncRender()}},
- dress:{patterns:window.LivingWardrobe.SPELL_PATTERNS,run:()=>wardrobeWorld.toggle()}},
+/* 世界傳送門：每個世界一句進入咒語，返回咒語全部共用「転移解除」。 */
+const spellCast=document.getElementById('spellCast'),worldVeil=document.getElementById('worldVeil');
+let spellCastTimer=0;
+function castSpell({kind,world,spell,already}){
+ try{navigator.vibrate?.(already?[12]:[18,40,28])}catch{}
+ if(already){toast(kind==='return'?'你已經在圖書館了':'你已經在'+world.name+'了・唸「'+window.LivingWorldPortal.RETURN_SPELL.name+'」返回');return}
+ const reading=kind==='return'?window.LivingWorldPortal.RETURN_SPELL.reading:world.spell.reading||'';
+ spellCast.replaceChildren(spell+'！');if(reading){const r=document.createElement('small');r.textContent=reading;spellCast.append(r)}
+ spellCast.classList.remove('show');void spellCast.offsetWidth;spellCast.classList.add('show');
+ clearTimeout(spellCastTimer);spellCastTimer=setTimeout(()=>spellCast.classList.remove('show'),1100);
+}
+function worldTransition(_kind,swap){
+ if(preferReduced){swap();return}
+ worldVeil.classList.remove('off');worldVeil.classList.add('on');
+ setTimeout(()=>{try{swap()}finally{worldVeil.classList.add('off');worldVeil.classList.remove('on')}},190);
+}
+worldPortal=window.LivingWorldPortal.createPortal({onCast:castSpell,onTransition:worldTransition});
+worldPortal.register({id:'wardrobe',name:'換衣世界',
+ spell:{name:'百面相',reading:'ひゃくめんそう',patterns:window.LivingWardrobe.SPELL_PATTERNS},
+ isOpen:()=>wardrobeWorld.open,enter:()=>wardrobeWorld.enter(),leave:()=>wardrobeWorld.leave(false)});
+const spellList=()=>['Book',...worldPortal.list().map(w=>w.spell.name),window.LivingWorldPortal.RETURN_SPELL.name];
+atlasVoice=window.LivingAtlasVoice.create({host:window,lang:'ja-JP',commands:worldPortal.voiceCommands({
+ book:{patterns:window.LivingWardrobe.BOOK_PATTERNS,run:()=>{atlasRuntime.toggle();syncRender()}}}),
  onState:state=>{const el=document.getElementById('atlasVoiceState');
-  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book／百面相':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 聆聽中：'+spellList().join('／'):state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
   stage.dataset.voiceState=state.status;
-  if(state.status==='listening')toast('語音已開啟：Book・百面相');
+  if(state.status==='listening')toast('語音已開啟：'+spellList().join('・'));
  }});
 window.addEventListener('pagehide',()=>atlasVoice.stop());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
