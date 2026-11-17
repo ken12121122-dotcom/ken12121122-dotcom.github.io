@@ -44,25 +44,25 @@ test('browsing never changes the worn outfit; only confirm does',()=>{
  st.enter();assert.equal(st.current.id,'anna.ipati.v1');st.leave();st.revert('bad');assert.equal(st.applied,'anna.ipati.v1');
 });
 
-test('voice: Japanese kigae toggles, Book keeps its boundaries, both share one recognizer',()=>{
+test('voice: spell 換衣服 toggles, Book keeps its boundaries, both share one recognizer',()=>{
  let now=5000,book=0,kigae=0;const sent=[],native={postMessage:x=>sent.push(JSON.parse(x))};
- const v=Voice.create({host:{LivingLibraryNativeVoice:native},now:()=>now,lang:'ja-JP',commands:{
-  book:{patterns:W.BOOK_PATTERNS,run:()=>book++},kigae:{patterns:W.KIGAE_PATTERNS,run:()=>kigae++}}});
+ const v=Voice.create({host:{LivingLibraryNativeVoice:native},now:()=>now,lang:'zh-TW',commands:{
+  book:{patterns:W.BOOK_PATTERNS,run:()=>book++},kigae:{patterns:W.SPELL_PATTERNS,run:()=>kigae++}}});
  v.start();const session=sent.at(-1).session;
  const say=text=>{now+=1000;native.onmessage({data:JSON.stringify({v:1,session,status:'result',text})})};
- for(const t of ['着替え','きがえ','キガエ','お着替えして','Kigae'])say(t);assert.equal(kigae,5);
- say('notebook');say('key guy');assert.equal(book+kigae,5);
- say('Book');say('ブック');assert.equal(book,2);
+ for(const t of ['換衣服','换衣服','我要換衣服了','換衣服！'])say(t);assert.equal(kigae,4);
+ say('notebook');say('換衣');say('衣服');say('換個衣服');assert.equal(book+kigae,4);
+ say('Book');say('布克');assert.equal(book,2);
 });
 
 test('web recognizer receives the configured language and counts each new Japanese word once',()=>{
  let instance,count=0;class R{constructor(){instance=this}start(){this.onstart?.()}abort(){}}
- const v=Voice.create({host:{SpeechRecognition:R,setTimeout(){},clearTimeout(){}},lang:'ja-JP',
-  commands:{kigae:{patterns:W.KIGAE_PATTERNS,run:()=>count++}}});
- v.start();assert.equal(instance.lang,'ja-JP');
+ const v=Voice.create({host:{SpeechRecognition:R,setTimeout(){},clearTimeout(){}},lang:'zh-TW',
+  commands:{kigae:{patterns:W.SPELL_PATTERNS,run:()=>count++}}});
+ v.start();assert.equal(instance.lang,'zh-TW');
  const ev=(t,f=false)=>({resultIndex:0,results:[Object.assign([{transcript:t}],{isFinal:f})]});
- instance.onresult(ev('きが'));assert.equal(count,0);instance.onresult(ev('きがえ'));assert.equal(count,1);
- instance.onresult(ev('きがえ',true));assert.equal(count,1);
+ instance.onresult(ev('換衣'));assert.equal(count,0);instance.onresult(ev('換衣服'));assert.equal(count,1);
+ instance.onresult(ev('換衣服',true));assert.equal(count,1);
 });
 
 test('legacy function commands and default en-US language still work',()=>{
@@ -106,8 +106,8 @@ test('fitTransform puts feet on the floor, centres X/Z and normalises height',()
 test('index wiring: wardrobe loads before voice, skins stay under protected keeper, P0 scan semantics untouched',()=>{
  const list=html.match(/const scripts=\[([^\]]+)\]/)[1];
  assert.ok(list.indexOf("'wardrobe.js'")>=0&&list.indexOf("'wardrobe.js'")<list.indexOf("'atlas-voice.js'"));
- assert.match(html,/kigae:\{patterns:window\.LivingWardrobe\.KIGAE_PATTERNS/);
- assert.match(html,/lang:'ja-JP'/);
+ assert.match(html,/dress:\{patterns:window\.LivingWardrobe\.SPELL_PATTERNS/);
+ assert.match(html,/lang:'zh-TW'/);
  assert.match(html,/const keeperDefaultParts=\[\.\.\.keeper\.children\];/);
  const block=html.slice(html.indexOf('function createWardrobeWorld(){'),html.indexOf('wardrobeWorld=createWardrobeWorld();'));
  assert.ok(block.length>1000);

@@ -264,7 +264,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
  display:flex;gap:10px;padding:7px;border:1px solid #caa76f;border-radius:25px;background:#14263be9}
 #permanentBuildTools button{min-height:48px;min-width:48px;border:1px solid #a9b0ae;border-radius:50%;font-size:24px;color:#e9dcbb;background:#354959;touch-action:manipulation}
 #permanentBuildTools button[data-on="true"]{border-color:#8eefd1;color:#8eefd1}
-/* 換衣世界：語音「きがえ」進入；畫面中央保留給 3D 轉台拖曳。 */
+/* 換衣世界：咒語「換衣服」進入；畫面中央保留給 3D 轉台拖曳。 */
 #wardrobeWorld{position:fixed;inset:0;z-index:22;display:grid;grid-template-rows:auto 1fr auto;touch-action:none;color:#f5e6c4;
  background:radial-gradient(ellipse at 50% 46%,transparent 52%,#05080fd0 100%);font-family:system-ui,"Noto Sans TC",sans-serif}
 #wardrobeWorld[hidden]{display:none!important}
@@ -305,14 +305,14 @@ body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(.toast):not(script):not
 </div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
 <section id="wardrobeWorld" hidden aria-label="換衣世界" aria-modal="true" role="dialog">
- <header><small>KIGAE · 着替え</small><h2>換衣世界</h2></header>
+ <header><small>咒語 · 換衣服</small><h2>換衣世界</h2></header>
  <div id="wardrobeStage"><button id="wardrobePrev" type="button" aria-label="上一個角色" title="上一個">◀</button><button id="wardrobeNext" type="button" aria-label="下一個角色" title="下一個">▶</button></div>
  <footer>
   <div id="wardrobeName"></div><div id="wardrobeSub"></div><div id="wardrobeStatus" role="status" aria-live="polite"></div>
   <div id="wardrobeActions"><button id="wardrobeBack" type="button" aria-label="不更換，返回圖書館" title="返回">↩</button><button id="wardrobeDownload" type="button" aria-label="下載角色包" title="下載" hidden>⬇</button><button id="wardrobeRemove" type="button" aria-label="刪除這個角色包" title="刪除" hidden>🗑</button><button id="wardrobeConfirm" type="button" aria-label="換上這個角色並返回圖書館" title="換上">✓</button></div>
   <progress id="wardrobeProgress" max="1" value="0" hidden aria-label="角色包下載進度"></progress>
   <div id="wardrobeCredit"></div>
-  <div id="wardrobeHint">再說一次「きがえ」也可以返回</div>
+  <div id="wardrobeHint">再唸一次「換衣服」也可以返回</div>
  </footer>
 </section>
 <dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
@@ -2279,13 +2279,13 @@ function createWardrobeWorld(){
  };
 }
 wardrobeWorld=createWardrobeWorld();
-atlasVoice=window.LivingAtlasVoice.create({host:window,lang:'ja-JP',commands:{
+atlasVoice=window.LivingAtlasVoice.create({host:window,lang:'zh-TW',commands:{
  book:{patterns:window.LivingWardrobe.BOOK_PATTERNS,run:()=>{if(wardrobeWorld.open)return;atlasRuntime.toggle();syncRender()}},
- kigae:{patterns:window.LivingWardrobe.KIGAE_PATTERNS,run:()=>wardrobeWorld.toggle()}},
+ dress:{patterns:window.LivingWardrobe.SPELL_PATTERNS,run:()=>wardrobeWorld.toggle()}},
  onState:state=>{const el=document.getElementById('atlasVoiceState');
-  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book／きがえ':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book／換衣服':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
   stage.dataset.voiceState=state.status;
-  if(state.status==='listening')toast('語音已開啟：Book・きがえ');
+  if(state.status==='listening')toast('語音已開啟：Book・換衣服');
  }});
 window.addEventListener('pagehide',()=>atlasVoice.stop());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});

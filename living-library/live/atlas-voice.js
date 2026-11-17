@@ -3,7 +3,7 @@
 'use strict';
 /* A command is either a function (its key is the English word) or {patterns,run}.
  * ASCII patterns need word boundaries (notebook is not book); other scripts such as
- * 着替え／きがえ／ブック match as substrings because Japanese has no spaces. */
+ * 換衣服 match as substrings because Chinese has no spaces. */
 function escape(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
 function compile(commands){
  return Object.keys(commands).map(key=>{const c=commands[key],run=typeof c==='function'?c:c&&c.run;

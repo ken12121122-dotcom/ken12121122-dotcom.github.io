@@ -5,10 +5,10 @@
 'use strict';
 const STORAGE_KEY='nw-avatar-wardrobe-v1';
 const DEFAULT_ID='keeper.default';
-// 「換衣服」的日語：着替え（きがえ／kigae）。各辨識引擎可能回傳漢字、平假名、片假名或羅馬拼音。
-const KIGAE_PATTERNS=Object.freeze(['着替え','着替','きがえ','キガエ','kigae']);
-// 日語辨識器會把英語 Book 轉成片假名；保留原本的英文 Book。
-const BOOK_PATTERNS=Object.freeze(['book','ブック','ぶっく']);
+// 換衣咒語：「換衣服」。辨識引擎可能回傳繁體或簡體字。
+const SPELL_PATTERNS=Object.freeze(['換衣服','换衣服']);
+// 中文辨識器通常保留英文 Book；少數會音譯成「布克」。
+const BOOK_PATTERNS=Object.freeze(['book','布克']);
 const ROSTER=Object.freeze([
  Object.freeze({id:DEFAULT_ID,name:'守書人',subtitle:'原本的圖書館管理員',kind:'builtin'}),
  Object.freeze({id:'anna.ipati.v1',name:'安娜 Anna',subtitle:'走路動畫・102 骨',kind:'pack',
@@ -84,6 +84,6 @@ function fitTransform(box,targetHeight){
  const s=targetHeight/h;
  return {scale:s,offset:{x:-(box.min.x+box.max.x)/2*s,y:-box.min.y*s,z:-(box.min.z+box.max.z)/2*s}};
 }
-return Object.freeze({STORAGE_KEY,DEFAULT_ID,ROSTER,KIGAE_PATTERNS,BOOK_PATTERNS,byId,loadChoice,saveChoice,createState,
+return Object.freeze({STORAGE_KEY,DEFAULT_ID,ROSTER,SPELL_PATTERNS,BOOK_PATTERNS,byId,loadChoice,saveChoice,createState,
  rewriteImports,relativeImports,addonBase,createAddonImporter,createGLTFLoader,fitTransform});
 });
