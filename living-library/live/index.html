@@ -264,6 +264,41 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
  display:flex;gap:10px;padding:7px;border:1px solid #caa76f;border-radius:25px;background:#14263be9}
 #permanentBuildTools button{min-height:48px;min-width:48px;border:1px solid #a9b0ae;border-radius:50%;font-size:24px;color:#e9dcbb;background:#354959;touch-action:manipulation}
 #permanentBuildTools button[data-on="true"]{border-color:#8eefd1;color:#8eefd1}
+/* 換衣世界：咒語「百面相」進入；畫面中央保留給 3D 轉台拖曳。 */
+#wardrobeWorld{position:fixed;inset:0;z-index:22;display:grid;grid-template-rows:auto 1fr auto;touch-action:none;color:#f5e6c4;
+ background:radial-gradient(ellipse at 50% 46%,transparent 52%,#05080fd0 100%);font-family:system-ui,"Noto Sans TC",sans-serif}
+#wardrobeWorld[hidden]{display:none!important}
+#wardrobeWorld header{padding:calc(16px + env(safe-area-inset-top)) 16px 0;text-align:center;pointer-events:none}
+#wardrobeWorld header small{display:block;letter-spacing:.32em;font-size:11px;color:#c9a96e}
+#wardrobeWorld header h2{margin:4px 0 0;font:normal 26px Georgia,"Noto Serif TC",serif;color:#ffe2a8}
+#wardrobeStage{display:flex;align-items:center;justify-content:space-between;padding:0 10px;cursor:grab}
+#wardrobeStage button{width:56px;height:56px;border-radius:50%;border:1px solid #dfbe80;background:#142b3dd9;color:#f7dbaa;font-size:24px;touch-action:manipulation}
+#wardrobeWorld footer{padding:0 16px calc(18px + env(safe-area-inset-bottom));display:grid;gap:8px;justify-items:center;text-align:center}
+#wardrobeName{font-size:22px;font-weight:700;color:#fff0cc}
+#wardrobeSub,#wardrobeStatus{font-size:12px;color:#b9c7d8;min-height:1em}
+#wardrobeCredit{font-size:10px;color:#93a3b8;max-width:min(92vw,460px)}
+#wardrobeCredit a{color:#c9d8ec}
+#wardrobeActions{display:flex;gap:12px}
+#wardrobeActions button{min-height:56px;min-width:56px;padding:0 18px;border-radius:28px;font-size:24px!important;border:1px solid #dfbe80;background:#142b3de9;color:#f7dbaa;font-size:15px;touch-action:manipulation}
+#wardrobeActions #wardrobeConfirm{background:#d7b982;color:#132235;font-weight:700}
+#wardrobeActions button:disabled{opacity:.45}
+#wardrobeActions button[hidden]{display:none}
+#wardrobeProgress{width:min(70vw,280px);height:8px;accent-color:#d7b982}
+#wardrobeProgress[hidden]{display:none}
+#wardrobeHint{font-size:11px;color:#c9a96e}
+body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(#worldVeil):not(#spellCast):not(.toast):not(script):not(style):not(dialog){visibility:hidden!important}
+/* 咒語詠唱與世界轉移：唸出的咒語大字浮現；換場時金光遮幕蓋住場景切換。 */
+#spellCast{position:fixed;left:0;right:0;top:38%;z-index:26;text-align:center;pointer-events:none;opacity:0;
+ font:700 clamp(40px,13vw,76px)/1.1 "Noto Serif TC","Noto Serif JP",Georgia,serif;letter-spacing:.12em;color:#fff3d2;
+ text-shadow:0 0 18px #ffd37a,0 0 42px #e7a33c,0 0 80px #b8742088}
+#spellCast small{display:block;font-size:.26em;letter-spacing:.4em;color:#f0cf8e;margin-top:10px}
+#spellCast.show{animation:spellCast 1.05s ease-out forwards}
+@keyframes spellCast{0%{opacity:0;transform:scale(1.6);filter:blur(6px)}18%{opacity:1;transform:scale(1);filter:blur(0)}70%{opacity:1}100%{opacity:0;transform:scale(.96)}}
+#worldVeil{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;transition:opacity .18s ease-in;
+ background:radial-gradient(circle at 50% 48%,#fff8e2 0%,#f5d58f 28%,#b98a3fcc 55%,#0b1322 100%)}
+#worldVeil.on{opacity:1}
+#worldVeil.off{transition:opacity .34s ease-out}
+@media (prefers-reduced-motion:reduce){#spellCast.show{animation:none;opacity:1}#worldVeil{display:none}}
 #atlasVoiceState{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:16;max-width:min(85vw,420px);font-size:12px;background:#13283cec;color:#f4d69f;border-radius:8px;padding:7px 10px;pointer-events:none}
 </style>
 </head>
@@ -281,6 +316,19 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
  <button id="permanentBuildCancel" type="button" aria-label="取消本次擺放" title="取消擺放">×</button>
 </div>
 <span id="atlasVoiceState" role="status" aria-live="polite" hidden></span>
+<div id="worldVeil" aria-hidden="true"></div>
+<div id="spellCast" aria-hidden="true"></div>
+<section id="wardrobeWorld" hidden aria-label="換衣世界" aria-modal="true" role="dialog">
+ <header><small>百面相 · ひゃくめんそう</small><h2>換衣世界</h2></header>
+ <div id="wardrobeStage"><button id="wardrobePrev" type="button" aria-label="上一個角色" title="上一個">◀</button><button id="wardrobeNext" type="button" aria-label="下一個角色" title="下一個">▶</button></div>
+ <footer>
+  <div id="wardrobeName"></div><div id="wardrobeSub"></div><div id="wardrobeStatus" role="status" aria-live="polite"></div>
+  <div id="wardrobeActions"><button id="wardrobeBack" type="button" aria-label="不更換，返回圖書館" title="返回">↩</button><button id="wardrobeDownload" type="button" aria-label="下載角色包" title="下載" hidden>⬇</button><button id="wardrobeRemove" type="button" aria-label="刪除這個角色包" title="刪除" hidden>🗑</button><button id="wardrobeConfirm" type="button" aria-label="換上這個角色並返回圖書館" title="換上">✓</button></div>
+  <progress id="wardrobeProgress" max="1" value="0" hidden aria-label="角色包下載進度"></progress>
+  <div id="wardrobeCredit"></div>
+  <div id="wardrobeHint">唸「転移解除（てんいかいじょ）」返回圖書館</div>
+ </footer>
+</section>
 <dialog id="atlasGithubDialog" aria-label="發送圖鑑卡至私人 GitHub">
  <h2>發送到私人 GitHub</h2>
  <p>僅發送右側讀卡格目前這張已儲存卡片，<strong>包含壓縮後的圖片</strong>。目標是私有的 <strong>gen2-knowledge / card-inbox</strong> 分支之 <strong>card-inbox/v1</strong> 資料夾；不會修改正式知識庫 main，也不會發送到公開網站儲存庫。</p>
@@ -444,7 +492,7 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','character-packs.js','world-portal.js','wardrobe.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
 })();
 </script>
@@ -1314,7 +1362,7 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
 })();
 </script>
 <script type="module">
-let THREE,initPhase='ENGINE_IMPORT';
+let THREE,engineSource='',initPhase='ENGINE_IMPORT';
 try {
  // An external CDN interruption must not permanently remove the 3D library.
  // Pin both sources to the same tested Three.js release; never load arbitrary versions.
@@ -1323,7 +1371,7 @@ try {
   'https://unpkg.com/three@0.185.0/build/three.module.js'
  ];
  for(const source of engineSources){
-  try{THREE=await import(source);break}
+  try{THREE=await import(source);engineSource=source;break}
   catch(loadError){console.warn('Three.js source unavailable',source,loadError?.message||loadError)}
  }
  if(!THREE){const e=new Error('兩個 Three.js 引擎來源均無法下載');e.code='ENGINE_IMPORT_FAILED';throw e}
@@ -1457,6 +1505,8 @@ box(.48,.095,.26,0,1.39,.30,gold,keeper);
 for(const sign of [-1,1]){const arm=box(.21,.86,.25,sign*.54,1.25,.05,simple(0x264559),keeper);arm.rotation.z=sign*.55;
 const hand=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),simple(0x8a9da3));hand.position.set(sign*.74,.90,.05);keeper.add(hand)}
 const aura=new THREE.PointLight(0x6ecbd1,4.8,5,2);aura.position.set(0,2.5,1);scene.add(aura);registerScene('scene.keeper',[...keeper.children,aura]);
+// Wardrobe skins are children of the same protected keeper root; the default parts stay as the hit volume.
+const keeperDefaultParts=[...keeper.children];
 registerScene('scene.lighting',[ambient,warm,cold,moon,skylight]);
 // Two opt-in modes: the existing free camera is unchanged until Explore is pressed.
 // Keyboard WASD is optional; touch devices use left joystick + right-stage drag.
@@ -1466,7 +1516,7 @@ const exploreUI=document.getElementById('exploreControls');
 const walkPad=document.getElementById('walkPad');
 const walkKnob=document.getElementById('walkKnob');
 const exploring=true;
-let atlasRuntime=null,atlasVoice=null;
+let atlasRuntime=null,atlasVoice=null,wardrobeWorld=null,worldPortal=null;
 let joy={x:0,y:0},walkPhase=0,walkDistance=0,joystickPointer=null,joystickOrigin=null,joystickVisible=false,placingJoystick=false;
 const walkKeys=new Set();
 // Finger release stops moving but preserves the visible joystick; tap elsewhere to close.
@@ -1554,6 +1604,7 @@ function stepAvatar(dt){
   buildState.position=Build.place(buildState.precise,{grid:buildState.grid}).position;
   updateHologram(performance.now());return true;
  }
+ wardrobeWorld?.animate(dt,hasWalkInput());
  if(!hasWalkInput()){keeper.position.y=.46;return false}
  const heading=atlasRuntime?.inFocus?atlasRuntime.movementYaw:theta;
  const next=Movement3D.move(keeper.position,exploreInput(),heading,dt);
@@ -2059,11 +2110,217 @@ atlasRuntime=window.LivingAtlasRuntime.create({THREE,scene,camera,canvas:rendere
  onCardPressStart:(e,id)=>truthEye.cardPressStart(e,id),
  onCardPressMove:(e,id,moved)=>truthEye.cardPressMove(e,id,moved),
  onCardPressEnd:(e,id,cancel,moved)=>truthEye.cardPressEnd(e,id,cancel,moved)});
-atlasVoice=window.LivingAtlasVoice.create({host:window,commands:{book:()=>{atlasRuntime.toggle();syncRender()}},
+/* 換衣世界：同一個 renderer 切換到獨立的轉台場景；人物外觀只換 keeper 底下的子物件，
+ * scene.keeper 的身分、掃描保護、移動、相機與命中範圍完全不變。
+ * 角色以「角色包」提供：下載一次存在手機，之後離線載入，不重新下載。 */
+function createWardrobeWorld(){
+ const W=window.LivingWardrobe,Packs=window.LivingCharacterPacks,el=id=>document.getElementById(id);
+ const ui={root:el('wardrobeWorld'),stage:el('wardrobeStage'),name:el('wardrobeName'),sub:el('wardrobeSub'),status:el('wardrobeStatus'),
+  credit:el('wardrobeCredit'),confirm:el('wardrobeConfirm'),back:el('wardrobeBack'),prev:el('wardrobePrev'),next:el('wardrobeNext'),
+  download:el('wardrobeDownload'),remove:el('wardrobeRemove'),progress:el('wardrobeProgress')};
+ const state=W.createState(W.loadChoice(localStorage));
+ let store=null;
+ try{store=Packs.createStore({fetch:window.fetch.bind(window),caches:window.caches,crypto:window.crypto,storage:localStorage,
+  persist:()=>navigator.storage?.persist?.()})}catch(e){console.warn('character packs unavailable',e)}
+ const world=new THREE.Scene();world.background=new THREE.Color(0x0b1322);
+ world.add(new THREE.HemisphereLight(0xfff1dc,0x1d2a40,2.1));
+ const key=new THREE.DirectionalLight(0xffe9c8,2.4);key.position.set(2.5,5,4);world.add(key);
+ const rim=new THREE.DirectionalLight(0x7fd4ff,1.4);rim.position.set(-3,3,-4);world.add(rim);
+ const disc=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.62,.16,64),new THREE.MeshStandardMaterial({color:0x2a3346,metalness:.35,roughness:.5}));
+ disc.position.y=-.08;world.add(disc);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.56,.025,8,96),new THREE.MeshBasicMaterial({color:0xe7be7c}));ring.rotation.x=Math.PI/2;world.add(ring);
+ const turntable=new THREE.Group();world.add(turntable);
+ const view=new THREE.PerspectiveCamera(32,window.innerWidth/window.innerHeight,.05,60);
+ const fitView=()=>{view.aspect=window.innerWidth/window.innerHeight;const d=window.innerWidth<window.innerHeight?10.5:7.4;
+  // Aim below the figure's centre so it stands clear of the bottom name/actions panel.
+  view.position.set(0,1.05,d);view.lookAt(0,.62,0);view.updateProjectionMatrix()};
+ const skins=new Map(),pending=new Map();let loader=null,spin=0,drag=null,worn=null,previewId=null;
+ const defaultPreview=new THREE.Group();for(const part of keeperDefaultParts)defaultPreview.add(part.clone());
+ // Last good manifest per pack, so an installed pack still opens with no network.
+ const MANIFEST_KEY='nw-character-pack-manifests-v1';
+ const savedManifests=()=>{try{return JSON.parse(localStorage.getItem(MANIFEST_KEY)||'{}')||{}}catch{return {}}};
+ const manifests=new Map();
+ async function manifestFor(entry){
+  if(manifests.has(entry.id))return manifests.get(entry.id);
+  const url=new URL(entry.manifest,location.href).href;let found;
+  try{found=await store.fetchManifest(url);
+   const all=savedManifests();all[entry.id]={manifest:found.manifest,baseUrl:found.baseUrl};try{localStorage.setItem(MANIFEST_KEY,JSON.stringify(all))}catch{}}
+  catch(e){const old=savedManifests()[entry.id];if(!old)throw e;found={manifest:Packs.validateManifest(old.manifest),baseUrl:old.baseUrl,offline:true}}
+  if(found.manifest.id!==entry.id)throw Error('角色包 ID 不符');
+  manifests.set(entry.id,found);return found;
+ }
+ async function getLoader(){
+  if(!loader)loader=W.createGLTFLoader({engineUrl:engineSource,renderer,
+   fetchText:async url=>{const r=await fetch(url,{cache:'force-cache'});if(!r.ok)throw Error('HTTP '+r.status);return r.text()},
+   importModule:url=>import(url),makeModuleUrl:src=>URL.createObjectURL(new Blob([src],{type:'text/javascript'}))});
+  try{return await loader}catch(e){loader=null;throw e}
+ }
+ function loadSkin(entry){
+  if(skins.has(entry.id))return Promise.resolve(skins.get(entry.id));
+  if(pending.has(entry.id))return pending.get(entry.id);
+  const job=(async()=>{
+   if(!store)throw Error('此裝置無法使用角色包');
+   const {manifest,baseUrl}=await manifestFor(entry);
+   const blob=await store.open(manifest,baseUrl),url=URL.createObjectURL(blob);let gltf;
+   try{gltf=await (await getLoader()).loadAsync(url)}finally{URL.revokeObjectURL(url)}
+   const model=gltf.scene;model.updateMatrixWorld(true);
+   const fit=W.fitTransform(new THREE.Box3().setFromObject(model),manifest.display.height);
+   model.scale.setScalar(fit.scale);model.position.set(fit.offset.x,fit.offset.y,fit.offset.z);
+   const root=new THREE.Group();root.name='wardrobe:'+entry.id;root.userData.wardrobeId=entry.id;root.add(model);
+   // Taps keep using the original keeper volume; skinned raycasts over ~250k vertices would stall a phone.
+   model.traverse(o=>{if(o.isMesh){o.raycast=()=>{};o.frustumCulled=false}});
+   const mixer=new THREE.AnimationMixer(model),clip=gltf.animations[0]||null,action=clip?mixer.clipAction(clip):null;
+   const idleTime=manifest.display.idleTime;
+   if(action){action.play();mixer.setTime(idleTime)}
+   const skin={entry,manifest,root,mixer,action,idleTime,walking:false};skins.set(entry.id,skin);return skin;
+  })();
+  pending.set(entry.id,job);job.finally(()=>pending.delete(entry.id)).catch(()=>{});
+  return job;
+ }
+ function disposeSkin(id){const s=skins.get(id);if(!s)return;s.root.removeFromParent();
+  s.root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();for(const m of [].concat(o.material||[])){for(const v of Object.values(m))if(v?.isTexture)v.dispose();m.dispose()}}});
+  skins.delete(id)}
+ function setPose(skin,walking){
+  if(!skin.action||skin.walking===walking)return;skin.walking=walking;
+  if(!walking)skin.mixer.setTime(skin.idleTime);
+ }
+ function wear(id){
+  for(const s of skins.values())if(s.root.parent===keeper)keeper.remove(s.root);
+  const skin=id?skins.get(id):null;worn=skin||null;
+  for(const part of keeperDefaultParts)part.visible=!skin;
+  if(skin){keeper.add(skin.root);setPose(skin,false);skin.mixer.setTime(skin.idleTime)}
+  invalidate();
+ }
+ function showCredit(credit){
+  ui.credit.replaceChildren();if(!credit)return;
+  const a=document.createElement('a');a.href=credit.url;a.target='_blank';a.rel='noopener';a.textContent=credit.title;
+  ui.credit.append('模型：',a,'｜作者 '+credit.author+'｜'+credit.license+(credit.modified?'（已修改）':''));
+ }
+ function buttons({download=false,update=false,remove=false,confirm=false}={}){
+  ui.download.hidden=!download;ui.download.setAttribute('aria-label',update?'下載角色包新版本':'下載角色包');ui.download.title=update?'更新':'下載';
+  ui.remove.hidden=!remove;ui.confirm.disabled=!confirm;
+ }
+ function progress(value){ui.progress.hidden=value===null;if(value!==null)ui.progress.value=value}
+ function showEntry(entry){
+  previewId=entry.id;turntable.clear();progress(null);
+  ui.name.textContent=entry.name;ui.sub.textContent=entry.subtitle+(entry.id===state.applied?'・目前穿著':'');showCredit(null);
+  if(entry.kind==='builtin'){turntable.add(defaultPreview);ui.status.textContent='';buttons({confirm:true});invalidate();return}
+  buttons();
+  if(!store){ui.status.textContent='這個裝置無法儲存角色包';return}
+  ui.status.textContent='讀取角色包資訊…';
+  const stale=()=>previewId!==entry.id||!state.open;
+  manifestFor(entry).then(async({manifest,baseUrl,offline})=>{
+   if(stale())return;
+   ui.name.textContent=manifest.name;showCredit(manifest.credit);
+   const total=manifest.files.reduce((n,f)=>n+f.bytes,0),size=Packs.formatMB(total);
+   if(store.busy(entry.id)){ui.status.textContent='下載中…';return}
+   const st=await store.status(manifest,baseUrl);if(stale())return;
+   if(st!=='installed'){
+    ui.status.textContent=st==='update'?'有新版本（v'+manifest.version+'，'+size+'）':'尚未下載・'+size+'（下載一次，之後離線也能用）';
+    buttons({download:true,update:st==='update',remove:st==='update'});return;
+   }
+   ui.status.textContent='載入中…'+(offline?'（離線）':'');buttons({remove:true});
+   const skin=await loadSkin(entry);if(stale())return;
+   turntable.add(skin.root);setPose(skin,true);skin.action?.play();
+   ui.status.textContent='已下載・v'+manifest.version+(store.durable?'':'（本次開啟有效）');buttons({remove:true,confirm:true});
+   syncRender();invalidate();
+  }).catch(e=>{console.warn('wardrobe pack',e?.stack||e);if(stale())return;ui.status.textContent='角色包無法使用：'+(e?.message||e)+'（守書人不受影響）';buttons()});
+ }
+ async function downloadCurrent(){
+  const entry=state.current;if(entry.kind!=='pack'||!store)return;
+  try{
+   const {manifest,baseUrl}=await manifestFor(entry);
+   buttons();progress(0);
+   await store.install(manifest,baseUrl,{onProgress:(got,total)=>{if(previewId!==entry.id)return;
+    progress(got/total);ui.status.textContent='下載中 '+Math.floor(got/total*100)+'%（'+Packs.formatMB(got)+'／'+Packs.formatMB(total)+'）'}});
+   disposeSkin(entry.id);if(worn?.entry.id===entry.id)worn=null;
+   toast('角色包已下載：'+manifest.name);
+   if(previewId===entry.id&&state.open)showEntry(entry);
+  }catch(e){if(previewId===entry.id){progress(null);ui.status.textContent='下載失敗：'+(e?.message||e)+'（可以再試一次）';buttons({download:true})}}
+ }
+ async function removeCurrent(){
+  const entry=state.current;if(entry.kind!=='pack'||!store)return;
+  if(!window.confirm('刪除「'+entry.name+'」角色包？之後要用需要重新下載。'))return;
+  await store.remove(entry.id);
+  if(state.applied===entry.id){state.revert(W.DEFAULT_ID);W.saveChoice(localStorage,W.DEFAULT_ID);if(worn?.entry.id===entry.id)worn=null}
+  disposeSkin(entry.id);wear(worn?worn.entry.id:null);toast('已刪除角色包');showEntry(entry);
+ }
+ function enter(){
+  if(state.open)return;
+  atlasRuntime?.exitFocus?.();walkKeys.clear();resetJoystick(false);
+  state.enter();spin=0;turntable.rotation.y=0;fitView();
+  ui.root.hidden=false;document.body.classList.add('wardrobe-open');
+  showEntry(state.current);syncRender();invalidate();
+ }
+ function leave(apply){
+  if(!state.open)return;
+  const before=state.applied,id=apply?state.confirm():state.leave();
+  turntable.clear();walkKeys.clear();ui.root.hidden=true;document.body.classList.remove('wardrobe-open');
+  if(id===W.DEFAULT_ID)wear(null);else if(skins.has(id))wear(id);else{state.revert(before);wear(skins.has(before)?before:null)}
+  if(apply){W.saveChoice(localStorage,state.applied);toast('已換上：'+(skins.get(state.applied)?.manifest.name||W.byId(state.applied).name))}
+  syncRender();invalidate();
+ }
+ ui.prev.addEventListener('click',()=>{showEntry(state.prev())});
+ ui.next.addEventListener('click',()=>{showEntry(state.next())});
+ ui.confirm.addEventListener('click',()=>leave(true));
+ // ↩ and Escape go through the same portal return as the spell, with the same effect.
+ ui.back.addEventListener('click',()=>worldPortal?worldPortal.back():leave(false));
+ ui.download.addEventListener('click',downloadCurrent);
+ ui.remove.addEventListener('click',removeCurrent);
+ ui.stage.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag={x:e.clientX,rot:turntable.rotation.y};ui.stage.setPointerCapture?.(e.pointerId)});
+ ui.stage.addEventListener('pointermove',e=>{if(!drag)return;turntable.rotation.y=drag.rot+(e.clientX-drag.x)*.012;spin=turntable.rotation.y;invalidate()});
+ const endDrag=()=>{drag=null};ui.stage.addEventListener('pointerup',endDrag);ui.stage.addEventListener('pointercancel',endDrag);
+ // Capture phase: while dressing, arrows and Escape belong to the wardrobe, not the book list behind it.
+ window.addEventListener('keydown',e=>{if(!state.open)return;
+  if(e.key==='Escape'){worldPortal?worldPortal.back():leave(false)}else if(e.key==='ArrowLeft')showEntry(state.prev());else if(e.key==='ArrowRight')showEntry(state.next());else return;
+  e.preventDefault();e.stopImmediatePropagation()},true);
+ window.addEventListener('resize',()=>{if(state.open){fitView();invalidate()}});
+ // Restore the saved outfit from the phone only (never downloads on startup); failure keeps the original keeper.
+ if(state.applied!==W.DEFAULT_ID){const entry=W.byId(state.applied);
+  (async()=>{const {manifest,baseUrl}=await manifestFor(entry);if(await store.status(manifest,baseUrl)!=='installed')throw Error('角色包未下載');
+   await loadSkin(entry);if(!state.open)wear(entry.id)})().catch(e=>{console.warn('wardrobe restore failed',e);state.revert(W.DEFAULT_ID)})}
+ return {
+  get open(){return state.open},get applied(){return state.applied},
+  toggle(){state.open?leave(false):enter()},enter,leave,
+  animate(dt,walking){if(!worn||state.open)return;setPose(worn,walking);if(walking&&!preferReduced)worn.mixer.update(dt)},
+  render(dt){
+   if(!drag&&!preferReduced){spin+=dt*.45;turntable.rotation.y=spin}
+   for(const s of skins.values())if(s.root.parent===turntable&&!preferReduced)s.mixer.update(dt);
+   renderer.render(world,view);
+  },
+  inspect(){return {open:state.open,applied:state.applied,preview:previewId,worn:worn?.entry.id||null,
+   defaultVisible:keeperDefaultParts.every(p=>p.visible),keeperChildren:keeper.children.length,
+   packs:store?store.installed():null,durable:store?.durable??null}}
+ };
+}
+wardrobeWorld=createWardrobeWorld();
+/* 世界傳送門：每個世界一句進入咒語，返回咒語全部共用「転移解除」。 */
+const spellCast=document.getElementById('spellCast'),worldVeil=document.getElementById('worldVeil');
+let spellCastTimer=0;
+function castSpell({kind,world,spell,already}){
+ try{navigator.vibrate?.(already?[12]:[18,40,28])}catch{}
+ if(already){toast(kind==='return'?'你已經在圖書館了':'你已經在'+world.name+'了・唸「'+window.LivingWorldPortal.RETURN_SPELL.name+'」返回');return}
+ const reading=kind==='return'?window.LivingWorldPortal.RETURN_SPELL.reading:world.spell.reading||'';
+ spellCast.replaceChildren(spell+'！');if(reading){const r=document.createElement('small');r.textContent=reading;spellCast.append(r)}
+ spellCast.classList.remove('show');void spellCast.offsetWidth;spellCast.classList.add('show');
+ clearTimeout(spellCastTimer);spellCastTimer=setTimeout(()=>spellCast.classList.remove('show'),1100);
+}
+function worldTransition(_kind,swap){
+ if(preferReduced){swap();return}
+ worldVeil.classList.remove('off');worldVeil.classList.add('on');
+ setTimeout(()=>{try{swap()}finally{worldVeil.classList.add('off');worldVeil.classList.remove('on')}},190);
+}
+worldPortal=window.LivingWorldPortal.createPortal({onCast:castSpell,onTransition:worldTransition});
+worldPortal.register({id:'wardrobe',name:'換衣世界',
+ spell:{name:'百面相',reading:'ひゃくめんそう',patterns:window.LivingWardrobe.SPELL_PATTERNS},
+ isOpen:()=>wardrobeWorld.open,enter:()=>wardrobeWorld.enter(),leave:()=>wardrobeWorld.leave(false)});
+const spellList=()=>['Book',...worldPortal.list().map(w=>w.spell.name),window.LivingWorldPortal.RETURN_SPELL.name];
+atlasVoice=window.LivingAtlasVoice.create({host:window,lang:'ja-JP',commands:worldPortal.voiceCommands({
+ book:{patterns:window.LivingWardrobe.BOOK_PATTERNS,run:()=>{atlasRuntime.toggle();syncRender()}}}),
  onState:state=>{const el=document.getElementById('atlasVoiceState');
-  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 正在聆聽：Book':state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
+  el.hidden=state.status==='off';el.textContent=state.status==='listening'?'🎙 聆聽中：'+spellList().join('／'):state.status==='starting'?'正在啟動語音辨識…':state.status==='error'?'語音未啟動：'+state.detail+'。點人物可重試。':state.detail;
   stage.dataset.voiceState=state.status;
-  if(state.status==='listening')toast('語音已開啟：Book');
+  if(state.status==='listening')toast('語音已開啟：'+spellList().join('・'));
  }});
 window.addEventListener('pagehide',()=>atlasVoice.stop());
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&atlasRuntime.inFocus){e.preventDefault();atlasRuntime.exitFocus();syncRender()}});
@@ -3331,6 +3588,7 @@ function stopRenderLoop(){
 let proofPaintAt=0,buildSyncLast=0;
 function paint(now){
  const dt=Math.min(.06,Math.max(0,(now-last)*.001));last=now;
+ if(wardrobeWorld?.open){wardrobeWorld.render(dt);lastPaint=now;return}
  if(isMotion()&&!reduced)elapsed+=dt;
  stepAvatar(dt);
  updateOrbit(elapsed,now);
@@ -3376,7 +3634,7 @@ function render(now){
 function syncRender(){
  if(overlayActive()){stopRenderLoop();return}
  if(((isMotion()||hasFlight()||hasCardSummon()||atlasRuntime?.active())&&!reduced)||runeGesture.active()||!!runeTransfer||spellHold.active()||returnCardHold.active()||!!unbindEffect||!!runeReleaseEffect||!!buildState||
-  performance.now()<runeBindingPulseUntil||hasWalkInput()||truthEye.active()){
+  performance.now()<runeBindingPulseUntil||hasWalkInput()||truthEye.active()||(wardrobeWorld?.open&&!reduced)){
    if(!running){last=performance.now();lastPaint=0;running=true;renderer.setAnimationLoop(render)}
  }else{
    stopRenderLoop();
@@ -3395,6 +3653,7 @@ initPhase='FIRST_RENDER';
 renderer.render(scene,camera); // Capture synchronous GPU failures before reporting the scene ready.
 notifyReady({
  select(id){selectedId=id;invalidate()},
+ wardrobe(){return wardrobeWorld?.inspect()||null},
  observeWorld(){return {ready:true,player:{x:keeper.position.x,y:0,z:keeper.position.z},camera:{theta,phi,distance},books:bookEntities.filter(o=>['public','local'].includes(o.b?.sourceLayer)).map(o=>({id:o.id,active:o.b.active===true,sourceLayer:o.b.sourceLayer})),sceneObjects:worldScanEntries.filter(o=>o.anchor&&o.id!=='scene.keeper'&&o.id!=='scene.dust').map(o=>({id:o.id,position:{x:o.anchor.x,y:o.anchor.y,z:o.anchor.z}}))}},
  rebuild(){rebuild();syncRender();invalidate()},
  setMotion(){syncRender()},
