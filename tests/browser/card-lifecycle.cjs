@@ -8,7 +8,8 @@ const proof={schema:'nw-card-life-browser-v1',result:'NOT_TESTED',checks:[]};
 async function main(){
  const browser=await chromium.launch({headless:true});
  try{
-  const context=await browser.newContext();
+  const context=await browser.newContext();await context.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.origin!==origin)return route.abort();

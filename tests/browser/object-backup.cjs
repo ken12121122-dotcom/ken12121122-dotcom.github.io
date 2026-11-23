@@ -5,7 +5,8 @@ const proof={schema:'nw-object-backup-browser-v1',result:'NOT_TESTED',checks:[]}
 async function main(){
  const browser=await chromium.launch({headless:true});
  try{
-  const context=await browser.newContext({viewport:{width:412,height:915},acceptDownloads:true}),page=await context.newPage();let outbound=0;
+  const context=await browser.newContext({viewport:{width:412,height:915},acceptDownloads:true}),page=await context.newPage();await context.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+let outbound=0;
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());
    if(url.origin!=='https://nw-backup.invalid'){outbound++;return route.abort()}

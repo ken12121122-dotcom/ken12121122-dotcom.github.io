@@ -4,7 +4,8 @@ const proof={schema:'nw-object-outbox-browser-v1',result:'NOT_TESTED',checks:[],
 async function main(){
  const browser=await chromium.launch({headless:true});
  try{
-  const context=await browser.newContext(),page=await context.newPage();let outbound=0;
+  const context=await browser.newContext(),page=await context.newPage();await context.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+let outbound=0;
   await context.route('**/*',route=>{if(route.request().url()==='https://nw-object-queue.invalid/')return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Synthetic object outbox</title>'});outbound++;return route.abort()});
   async function boot(){
    await page.goto('https://nw-object-queue.invalid/');

@@ -13,7 +13,8 @@ const threeDir=process.env.NW_THREE_DIR||path.dirname(path.dirname(require.resol
  const report={phone:'NOT_TESTED',microphone:'NOT_TESTED (fake SpeechRecognition transcript)',checks:[],errors:[]};
  let page;
  try{
-  const context=await browser.newContext({viewport:{width:412,height:860},deviceScaleFactor:1,reducedMotion:'reduce'});
+  const context=await browser.newContext({viewport:{width:412,height:860},deviceScaleFactor:1,reducedMotion:'reduce'});await context.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+
   // Same pinned three@0.185.0 files, served from the local package by their CDN path.
   await context.route(/https:\/\/(cdn\.jsdelivr\.net\/npm|unpkg\.com)\/three@0\.185\.0\/(.*)$/,async route=>{
    const rel=new URL(route.request().url()).pathname.replace(/^\/(npm\/)?three@0\.185\.0\//,'');
