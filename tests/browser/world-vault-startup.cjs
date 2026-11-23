@@ -27,6 +27,8 @@ async function main(){
      return {phase:'synced',credential_verified:true,error:''};
    }
  };
+ // Production title screen state: a saved credential becomes a ☁ chip, never a startup modal.
+ window.LivingStartGate=LivingStartGateKit.createGate({visible:true});
  function syncScene(){}
  function toast(message){window.__notices.push(message)}
  `;
@@ -41,6 +43,10 @@ async function main(){
     return route.fulfill({status:200,contentType:'application/javascript',
      body:await fs.readFile(path.resolve(__dirname,'../../living-library/live/world-credential-vault.js'))});
    }
+   if(u.pathname==='/gate.js'){
+    return route.fulfill({status:200,contentType:'application/javascript',
+     body:await fs.readFile(path.resolve(__dirname,'../../living-library/live/start-gate.js'))});
+   }
    if(u.pathname==='/startup.js'){
     return route.fulfill({status:200,contentType:'application/javascript',body:bootstrap+snippet});
    }
@@ -48,7 +54,7 @@ async function main(){
     body:`<!doctype html><meta charset="utf-8"><dialog id="llUpdateDialog"></dialog>
     <dialog id="gen2Auth"></dialog><dialog id="mdSearch"></dialog>
     <div id="drawerWrap"></div>${dialog}
-    <script src="/vault.js"></script><script src="/startup.js"></script>`});
+    <script src="/vault.js"></script><script src="/gate.js"></script><script src="/startup.js"></script>`});
    return route.abort();
   });
   await page.goto(origin);
@@ -60,14 +66,20 @@ async function main(){
      'valid local password 123');
   });
   await page.reload();
-  await page.waitForFunction(()=>document.querySelector('#worldVaultUnlockDialog').open);
+  await page.waitForFunction(()=>window.LivingStartGate.view().vault===true);
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator('#worldVaultUnlockDialog').evaluate(el=>el.open),false,'no startup password modal');
   assert.deepEqual(await page.evaluate(()=>window.__connectedTokens),[]);
-  proof.checks.push({case:'reopening the game prompts for saved encrypted credentials but never autoconnects',result:'PASS'});
+  await page.evaluate(()=>window.LivingStartGate.openVault());
+  await page.waitForFunction(()=>document.querySelector('#worldVaultUnlockDialog').open);
+  proof.checks.push({case:'reopening the game offers saved credentials as a title-screen ☁ chip only; tapping it opens the unlock dialog; never autoconnects',result:'PASS'});
   await page.locator('#worldVaultUnlockSkip').click();
   assert.equal(await page.locator('#worldVaultUnlockDialog').evaluate(el=>el.open),false);
   assert.deepEqual(await page.evaluate(()=>window.__connectedTokens),[]);
   proof.checks.push({case:'skip returns to game without connecting GitHub or deleting saved credentials',result:'PASS'});
   await page.reload();
+  await page.waitForFunction(()=>window.LivingStartGate.view().vault===true);
+  await page.evaluate(()=>window.LivingStartGate.openVault());
   await page.waitForFunction(()=>document.querySelector('#worldVaultUnlockDialog').open);
   await page.locator('#worldVaultUnlockPassword').fill('wrong local password');
   await page.locator('#worldVaultUnlockSubmit').click();
@@ -84,8 +96,9 @@ async function main(){
   await page.reload();
   await page.waitForTimeout(530);
   assert.equal(await page.locator('#worldVaultUnlockDialog').evaluate(el=>el.open),false);
+  assert.equal(await page.evaluate(()=>window.LivingStartGate.view().vault),false,'no ☁ chip once the device is forgotten');
   assert.equal(outgoing,0);
-  proof.checks.push({case:'forgetting device prevents startup prompt and uses zero external calls',result:'PASS'});
+  proof.checks.push({case:'forgetting device removes the ☁ chip and uses zero external calls',result:'PASS'});
   await context.close();proof.result='PASS';
  }finally{await browser.close()}
 }

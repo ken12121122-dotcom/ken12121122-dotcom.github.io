@@ -287,6 +287,29 @@ body.atlas-focused>#libraryQuickMenu{display:none!important}
 #wardrobeProgress[hidden]{display:none}
 #wardrobeHint{font-size:11px;color:#c9a96e}
 body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(#worldVeil):not(#spellCast):not(.toast):not(script):not(style):not(dialog){visibility:hidden!important}
+/* 開場畫面：像遊戲標題，▶ 或點任意處進入；更新與雲端解鎖只作為小提示，不再自動跳窗。 */
+#startGate{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+ text-align:center;color:#f5e6c4;cursor:pointer;touch-action:manipulation;transition:opacity .45s ease;
+ background:radial-gradient(ellipse at 50% 42%,#0b1426b0 0%,#070c18e8 58%,#04070fff 100%);font-family:system-ui,"Noto Sans TC",sans-serif}
+#startGate[hidden]{display:none!important}
+#startGate.leaving{opacity:0;pointer-events:none}
+#startGate .sg-inner{display:grid;gap:12px;justify-items:center;max-width:min(92vw,440px)}
+#startGate .sg-sigil{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:40px;color:#ffe2a8;
+ border:1px solid #e7be7c;box-shadow:0 0 24px #e7be7c66,inset 0 0 18px #e7be7c44;animation:sgPulse 3.2s ease-in-out infinite}
+@keyframes sgPulse{0%,100%{box-shadow:0 0 18px #e7be7c44,inset 0 0 14px #e7be7c33}50%{box-shadow:0 0 38px #ffd37a99,inset 0 0 22px #ffd37a55}}
+#startGate small{letter-spacing:.42em;font-size:11px;color:#c9a96e}
+#startGate h1{margin:0;font:normal clamp(36px,11vw,58px)/1.1 Georgia,"Noto Serif TC",serif;letter-spacing:.12em;color:#fff0cc;text-shadow:0 0 22px #e7a33c88}
+#startGateAvatar{margin:0;font-size:13px;color:#b9c7d8}
+#startGateGo{width:88px;height:88px;margin-top:10px;border-radius:50%;border:2px solid #f0cf8e;background:#d7b982;color:#132235;font-size:34px;padding-left:6px;
+ box-shadow:0 0 28px #e7be7c88;touch-action:manipulation;cursor:pointer}
+#startGateReady{margin:0;font-size:12px;color:#f0cf8e;min-height:1.2em;letter-spacing:.08em}
+#startGate .sg-notes{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}
+#startGate .sg-notes li{display:flex;align-items:center;gap:10px;font-size:12px;color:#d6dfeb;background:#13283cd9;border:1px solid #52617c;border-radius:24px;padding:4px 14px 4px 4px}
+#startGate .sg-notes li[hidden]{display:none}
+#startGate .sg-notes button{width:40px;height:40px;border-radius:50%;border:1px solid #dfbe80;background:#142b3d;color:#f7dbaa;font-size:18px;touch-action:manipulation}
+#startGateTip{margin:8px 0 0;font-size:11px;color:#93a3b8;min-height:2.4em}
+body.start-gate-open>*:not(#stage):not(#startGate):not(.toast):not(script):not(style):not(dialog){visibility:hidden!important}
+@media (prefers-reduced-motion:reduce){#startGate{transition:none}#startGate .sg-sigil{animation:none}}
 /* 咒語詠唱與世界轉移：唸出的咒語大字浮現；換場時金光遮幕蓋住場景切換。 */
 #spellCast{position:fixed;left:0;right:0;top:38%;z-index:26;text-align:center;pointer-events:none;opacity:0;
  font:700 clamp(40px,13vw,76px)/1.1 "Noto Serif TC","Noto Serif JP",Georgia,serif;letter-spacing:.12em;color:#fff3d2;
@@ -304,6 +327,21 @@ body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(#worldVeil):not(#spellC
 </head>
 <body>
 <div id="stage" role="application" aria-label="Three.js 魔法圖書館互動場景"></div>
+<section id="startGate" hidden role="dialog" aria-modal="true" aria-labelledby="startGateTitle" aria-describedby="startGateReady">
+ <div class="sg-inner">
+  <div class="sg-sigil" aria-hidden="true">✦</div>
+  <small>THE LIVING ARCHIVE</small>
+  <h1 id="startGateTitle">念動圖書館</h1>
+  <p id="startGateAvatar"></p>
+  <button id="startGateGo" type="button" aria-label="開始遊戲，進入圖書館" title="開始">▶</button>
+  <p id="startGateReady" role="status" aria-live="polite">世界載入中…</p>
+  <ul class="sg-notes">
+   <li id="startGateUpdateRow" hidden><button id="startGateUpdate" type="button" aria-label="查看本次書庫更新內容" title="更新內容">✦</button><span id="startGateUpdateText"></span></li>
+   <li id="startGateVaultRow" hidden><button id="startGateVault" type="button" aria-label="用本機密碼解鎖雲端同步" title="雲端同步">☁</button><span>雲端同步未連線・需要時再點 ☁ 解鎖</span></li>
+  </ul>
+  <p id="startGateTip"></p>
+ </div>
+</section>
 <div id="atlasActions" hidden aria-label="卡冊操作">
 <button id="atlasCollectionClose" type="button" aria-label="合上卡片之書，留在內圈" title="合上書本">▰</button>
 <button id="atlasCollectionShelf" type="button" aria-label="卡片之書回到書架" title="回到書架">⇥</button>
@@ -492,8 +530,48 @@ body.wardrobe-open>*:not(#stage):not(#wardrobeWorld):not(#worldVeil):not(#spellC
 /* Parser-time script loading preserves synchronous initialization but bypasses stale WebView script cache. */
 (function(){
  const tick=Date.now();
- const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','character-packs.js','world-portal.js','wardrobe.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
+ const scripts=['book-placement.js','avatar-movement.js','public-catalog.js','card-placement.js','rune-contract.js','rune-hold.js','contract-policy.js','rune-unbind-spell.js','directed-transfer.js','summon-plan.js','render-capability.js','gen2-editor.js','update-manager.js','unbind-card-art.js','object-craft.js','object-backup.js','world-observation.js','world-credential-vault.js','world-save-sync.js','truth-eye-contract.js','scan-bundle.js','scene-scan-discovery.js','world-gate.js','contract-hexagram.js','truth-eye-world.js','permanent-cards.js','permanent-gba.js','permanent-build.js','atlas-state.js','compendium-card.js','card-observer.js','card-github-inbox.js','character-packs.js','world-portal.js','wardrobe.js','start-gate.js','atlas-voice.js','atlas-model.js','atlas-runtime.js'];
  for(const path of scripts)document.write('<scr'+'ipt src="'+path+'?v='+tick+'"></scr'+'ipt>');
+})();
+</script>
+<script>
+/* 開場畫面：每個分頁工作階段一次。點 ▶、點畫面任意處、按 Enter 或空白鍵進入。 */
+(function(){
+ const Kit=window.LivingStartGateKit,root=document.getElementById('startGate');
+ if(!Kit||!root)return;
+ const el=id=>document.getElementById(id),reduce=window.matchMedia?.('(prefers-reduced-motion:reduce)').matches;
+ let session=null;try{session=window.sessionStorage}catch{}
+ const visible=Kit.shouldShow(window.location.search,session);
+ let tipTimer=0,readyTimer=0;
+ const gate=Kit.createGate({visible,toast:m=>window.LivingLibrary?.toast?.(m),onStart(){
+  Kit.markStarted(session);clearInterval(tipTimer);clearInterval(readyTimer);
+  document.body.classList.remove('start-gate-open');
+  const done=()=>{root.hidden=true;root.classList.remove('leaving')};
+  if(reduce)done();else{root.classList.add('leaving');setTimeout(done,460)}
+  window.LivingScene?.syncRender?.();
+ }});
+ window.LivingStartGate=gate;
+ if(!visible)return;
+ try{const W=window.LivingWardrobe;el('startGateAvatar').textContent='目前角色：'+W.byId(W.loadChoice(localStorage)).name}catch{}
+ let tip=Math.floor(Math.random()*Kit.TIPS.length);
+ const showTip=()=>{el('startGateTip').textContent='提示：'+Kit.tipAt(tip++)};showTip();
+ if(!reduce)tipTimer=setInterval(showTip,4200);
+ readyTimer=setInterval(()=>{
+  if(window.LivingScene){el('startGateReady').textContent='世界準備完成・點 ▶ 進入';clearInterval(readyTimer)}
+  else if(document.getElementById('fallback')?.classList.contains('show')){el('startGateReady').textContent='此裝置使用 2D 書庫・點 ▶ 進入';clearInterval(readyTimer)}
+ },300);
+ gate.subscribe(v=>{
+  el('startGateUpdateRow').hidden=!v.update;if(v.update)el('startGateUpdateText').textContent=v.update.text+'・點 ✦ 查看';
+  el('startGateVaultRow').hidden=!v.vault;
+ });
+ root.hidden=false;document.body.classList.add('start-gate-open');
+ root.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.id!=='startGateGo')return;gate.start()});
+ el('startGateUpdate').addEventListener('click',()=>gate.openUpdate());
+ el('startGateVault').addEventListener('click',()=>gate.openVault());
+ // Capture: while the title is up, Enter/Space start the game instead of opening a book behind it.
+ window.addEventListener('keydown',e=>{if(!gate.open||document.querySelector('dialog[open]'))return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopImmediatePropagation();gate.start()}},true);
+ setTimeout(()=>el('startGateGo').focus({preventScroll:true}),0);
 })();
 </script>
 <script>
@@ -700,7 +778,8 @@ async function offerWorldVaultUnlock(){
  if(!credentialVault||worldVaultPromptDismissed||worldSave.status().authorized)return;
  try{
   const saved=await credentialVault.inspect();
-  if(saved.saved)presentWorldVaultUnlock();
+  // Never a startup modal: the title screen shows a ☁ chip; unlocking is the player's choice.
+  if(saved.saved){const gate=window.LivingStartGate;if(gate)gate.offerVault(presentWorldVaultUnlock);else presentWorldVaultUnlock()}
  }catch{ // Storage unavailable: no fake login prompt and no token disclosure.
   console.warn('World credential vault unreadable; public gameplay remains available');
  }
@@ -1286,10 +1365,16 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
  function updateSnapshot(fingerprints){
   return Updates.makeSnapshot(initialCatalog,updateButtons(),updateVersion,fingerprints);
  }
- function showUpdateNotice(items,firstVisit){
+ // While the title screen is up, updates wait behind its ✦ chip; only a reconnect the player asked for opens by itself.
+ function showUpdateNotice(items,firstVisit,explicit=false){
+  const gate=window.LivingStartGate;
+  if(gate){gate.holdUpdate(items,()=>openUpdateNotice(items,firstVisit),explicit);return}
+  openUpdateNotice(items,firstVisit);
+ }
+ function openUpdateNotice(items,firstVisit){
   // Avoid stacking an update modal over the startup credential prompt.
   if(typeof worldVaultUnlockDialog!=='undefined'&&worldVaultUnlockDialog.open){
-   worldVaultUnlockDialog.addEventListener('close',()=>showUpdateNotice(items,firstVisit),{once:true});
+   worldVaultUnlockDialog.addEventListener('close',()=>openUpdateNotice(items,firstVisit),{once:true});
    return;
   }
   $('llUpdateHeading').textContent=firstVisit?'知識書庫首次重新連結':'知識書庫更新完成';
@@ -1332,7 +1417,7 @@ const observationDialog=$('atlasObservationDialog'),observationText=$('atlasObse
       const items=Updates.differences(was,now);
       Updates.write(localStorage,Updates.BASELINE_KEY,now);
       try{sessionStorage.removeItem(Updates.PENDING_KEY)}catch(_){}
-      showUpdateNotice(items,!was);
+      showUpdateNotice(items,!was,!!pendingUpdate);
     }else{Updates.write(localStorage,Updates.BASELINE_KEY,now);}
    }else{
     const baseline=Updates.read(localStorage,Updates.BASELINE_KEY);

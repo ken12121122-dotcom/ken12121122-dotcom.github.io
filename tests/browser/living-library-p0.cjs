@@ -12,7 +12,8 @@ const report={schema:'nw-p0-browser-proof-v1',commit:process.env.GITHUB_SHA||nul
  observed_at:new Date().toISOString(),isolation:'Browser intercept serves candidate repository bytes; no deployment',checks:[]};
 const mime={'.html':'text/html','.js':'text/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.wasm':'application/wasm'};
 async function context(browser,forcedFallback){
- const ctx=await browser.newContext({viewport:{width:412,height:915},reducedMotion:'reduce'});
+ const ctx=await browser.newContext({viewport:{width:412,height:915},reducedMotion:'reduce'});await ctx.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+
  await ctx.route(origin+'/**',async route=>{
   const url=new URL(route.request().url());
   let name=path.resolve(root,'.'+decodeURIComponent(url.pathname));
@@ -32,8 +33,10 @@ async function context(browser,forcedFallback){
 }
 async function dismissUpdate(page){
  const dialog=page.locator('#llUpdateDialog');
- // First-load fingerprint check is asynchronous; wait for it to settle.
- await page.waitForFunction(()=>document.querySelector('#llUpdateDialog')?.open,{timeout:15000});
+ // First-load fingerprint check is asynchronous; it may open the notice or (title screen already passed
+ // in this tab) only toast it. Wait for the check to settle either way, then close the notice if shown.
+ await page.waitForFunction(()=>!!window.LivingStartGate,{timeout:15000});
+ await page.waitForTimeout(1500);
  if(await dialog.isVisible())await page.locator('#llUpdateDone').click();
 }
 async function main(){

@@ -9,7 +9,8 @@ const proof={schema:'nw-world-vault-browser-v1',result:'NOT_TESTED',checks:[]};
 async function main(){
  const browser=await chromium.launch({headless:true});
  try{
-  const context=await browser.newContext({viewport:{width:400,height:850}}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width:400,height:850}}),page=await context.newPage();await context.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+
   let outgoing=0;
   await context.route('**/*',async route=>{
    const u=new URL(route.request().url());

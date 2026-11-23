@@ -1,7 +1,8 @@
 const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),origin='https://ken12121122-dotcom.github.io';
 (async()=>{const browser=await chromium.launch({headless:true});try{
- const ctx=await browser.newContext({viewport:{width:360,height:800}});
+ const ctx=await browser.newContext({viewport:{width:360,height:800}});await ctx.addInitScript(()=>{try{sessionStorage.setItem('nw-start-gate-started-v1','1')}catch{}}); // title screen is covered by start-gate.cjs
+
  await ctx.route(origin+'/**',async r=>{const u=new URL(r.request().url()),file=path.resolve(root,'.'+u.pathname);assert.ok(file.startsWith(root+path.sep));try{await r.fulfill({contentType:file.endsWith('.js')?'text/javascript':'text/html',body:await fs.readFile(file)})}catch{await r.fulfill({status:404,body:'Not found'})}});
  const p=await ctx.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(origin+'/living-library/live/card-creation.html');
  await p.locator('#createCard').click();const first=await p.evaluate(()=>LivingObjectCraft.listCards(localStorage)[0]);assert.equal(first.image,null);assert.equal(first.cardType,'');assert.equal(first.ability,null);
